@@ -278,6 +278,27 @@ public partial class DuckTypeAotAdditionalParityTests
     }
 
     [Fact]
+    public void GeneratedRegistryShouldReplayAParameterTypeNameThatViolatesAGenericConstraint()
+    {
+        // The type a [Duck(ParameterTypeNames)] names can't be loaded (ConstrainedParameter<int> violates `where T : class`):
+        // the TypeLoadException names no type, but it's a failure of dynamic duck typing, not of the generator's environment,
+        // so the registry replays it instead of binding the mapping from metadata.
+        Func<object?> exercise = () => DuckType.Create<IConstrainedParameterProxy>(new ConstrainedParameterTarget())!.Echo("x");
+        DuckType.ResetRuntimeModeForTests();
+        var expected = CaptureFailure(exercise);
+        expected.Should().Contain("DuckTypeException:Error creating duck type for type: ");
+        WithGeneratedRegistry(
+            () => CaptureFailure(exercise).Should().Be(expected),
+            matrix =>
+            {
+                var entry = matrix.Mappings.Should().ContainSingle().Which;
+                entry.DynamicFailureReplayed.Should().BeTrue();
+                entry.CheckedAgainstMetadataOnly.Should().BeFalse();
+            },
+            Mapping(typeof(IConstrainedParameterProxy), typeof(ConstrainedParameterTarget)));
+    }
+
+    [Fact]
     public void GeneratedRegistryShouldOverrideObjectMembersDeclaredByTheProxyInterface()
     {
         // The proxy methods implementing an Equals or GetHashCode declared by the proxy interface also override the object
@@ -774,5 +795,21 @@ public partial class DuckTypeAotAdditionalParityTests
     {
         [DuckReverseMethod]
         public string M(object value) => "impl";
+    }
+
+    public class ConstrainedParameter<T>
+        where T : class
+    {
+    }
+
+    public interface IConstrainedParameterProxy
+    {
+        [Duck(ParameterTypeNames = new[] { "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+ConstrainedParameter`1[[System.Int32, System.Private.CoreLib]], Datadog.Trace.Tools.Runner.Tests" })]
+        string Echo(object value);
+    }
+
+    public class ConstrainedParameterTarget
+    {
+        public string Echo(object value) => "echo";
     }
 }

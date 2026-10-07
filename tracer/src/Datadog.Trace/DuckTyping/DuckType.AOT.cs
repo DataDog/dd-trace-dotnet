@@ -22,9 +22,6 @@ namespace Datadog.Trace.DuckTyping
         private const string ManualRegistrationObsoleteMessage = "Reserved for generated NativeAOT registry bootstrap. Manual registration and registry mixing are unsupported.";
         private const int RuntimeModeStateUninitialized = 0;
 
-        // An assembly-qualified type name is at most 1024 characters: longer proxy type names are truncated (see CreateTypeAndModuleBuilder).
-        private const int MaxProxyTypeNameLength = 1023;
-
         private static int _runtimeModeState;
 
         internal static DuckTypeRuntimeMode RuntimeMode => Volatile.Read(ref _runtimeModeState) == (int)DuckTypeRuntimeMode.Aot
@@ -51,6 +48,21 @@ namespace Datadog.Trace.DuckTyping
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
             DuckTypeAotEngine.RegisterProxy(proxyDefinitionType, targetType, generatedProxyType, activator);
+        }
+
+        /// <summary>
+        /// Registers the activator of a forward AOT proxy of an array type (or System.Array) for the array types assignable to
+        /// it, which have no registration of their own: dynamic duck typing creates a proxy for any array type.
+        /// </summary>
+        /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
+        /// <param name="arrayTargetType">Array target type of the registration.</param>
+        /// <param name="generatedProxyType">Generated proxy implementation type.</param>
+        /// <param name="activator">Activator receiving the instance and the target type the proxy reports as IDuckType.Type.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotArrayProxy(Type proxyDefinitionType, Type arrayTargetType, Type generatedProxyType, Func<object?, Type, object?> activator)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterArrayProxy(proxyDefinitionType, arrayTargetType, generatedProxyType, activator);
         }
 
         /// <summary>
@@ -458,13 +470,33 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="dryRun">Whether to only bind the members, without creating the type.</param>
         /// <returns>The exception dynamic duck typing throws, or null if it creates the proxy type.</returns>
         internal static Exception? GetDynamicProxyTypeFailureForAot(Type proxyDefinitionType, Type targetType, bool reverse, bool dryRun)
+            => GetDynamicProxyTypeFailureForAot(proxyDefinitionType, targetType, reverse, dryRun, out _);
+
+        /// <summary>
+        /// Gets the exception dynamic duck typing throws when it creates the proxy type of a pair (see the other overload), and
+        /// the proxy type it creates otherwise (e.g. a reverse proxy type, of which the generator checks the forward proxies).
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type, or the type to derive from for a reverse proxy.</param>
+        /// <param name="targetType">The target type, or the delegation type for a reverse proxy.</param>
+        /// <param name="reverse">Whether the proxy is a reverse proxy.</param>
+        /// <param name="dryRun">Whether to only bind the members, without creating the type.</param>
+        /// <param name="proxyType">The proxy type, when it is created.</param>
+        /// <returns>The exception dynamic duck typing throws, or null if it creates the proxy type.</returns>
+        internal static Exception? GetDynamicProxyTypeFailureForAot(Type proxyDefinitionType, Type targetType, bool reverse, bool dryRun, out Type? proxyType)
         {
+            proxyType = null;
             try
             {
                 var result = reverse
                                  ? CreateReverseProxyType(proxyDefinitionType, targetType, dryRun)
                                  : CreateProxyType(proxyDefinitionType, targetType, dryRun);
-                return result.FailureException;
+                if (result.FailureException is { } failure)
+                {
+                    return failure;
+                }
+
+                proxyType = dryRun ? null : result.ProxyType;
+                return null;
             }
             catch (Exception ex)
             {
@@ -495,26 +527,6 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Whatever fails here fails when the type is created too: don't share the creation.
                 return targetType;
-            }
-        }
-
-        /// <summary>
-        /// Gets the reverse proxy type dynamic duck typing creates for a pair. Used by the AOT registry generator to know what
-        /// dynamic duck typing does with a reverse proxy instance, e.g. when it's duck typed again.
-        /// </summary>
-        /// <param name="typeToDeriveFrom">The type the reverse proxy derives from or implements.</param>
-        /// <param name="typeToDelegateTo">The delegation type.</param>
-        /// <returns>The reverse proxy type, or null if dynamic duck typing can't create it.</returns>
-        internal static Type? GetDynamicReverseProxyTypeForAot(Type typeToDeriveFrom, Type typeToDelegateTo)
-        {
-            try
-            {
-                var result = CreateReverseProxyType(typeToDeriveFrom, typeToDelegateTo, dryRun: false);
-                return result.CanCreate() ? result.ProxyType : null;
-            }
-            catch (Exception)
-            {
-                return null;
             }
         }
 

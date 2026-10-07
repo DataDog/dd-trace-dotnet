@@ -1,4 +1,4 @@
-﻿// <copyright file="DuckType.Statics.cs" company="Datadog">
+// <copyright file="DuckType.Statics.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,6 +24,9 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        // An assembly-qualified type name is at most 1024 characters: longer proxy type names are truncated (see CreateTypeAndModuleBuilder).
+        private const int MaxProxyTypeNameLength = 1023;
+
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly object Locker;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]

@@ -56,7 +56,7 @@ NativeAOT DuckTyping has two phases.
 2. Runtime phase:
    1. Bootstrap initializes AOT mode and validates contract.
    2. Bootstrap registers forward/reverse mappings.
-   3. `DuckType.GetOrCreateProxyType` and `DuckType.GetOrCreateReverseProxyType` resolve by exact key from the emitted AOT registry.
+   3. `DuckType.GetOrCreateProxyType` and `DuckType.GetOrCreateReverseProxyType` resolve by exact key from the emitted AOT registry. The only exception is array targets: one generated proxy per array mapping serves every array type assignable to the mapped one (see [Array targets](#array-targets)).
 
 ### Runtime Isolation Rules
 
@@ -67,6 +67,34 @@ DuckType runtime mode is immutable per process.
 3. AOT runtime allows a single generated registry assembly identity per process.
 4. AOT runtime does not fall back to runtime IL emission, interpreted expression trees, or reflection-based compatibility scans.
 
+### Changes to Dynamic Duck Typing
+
+Dynamic duck typing (Reflection.Emit) is the reference behavior, and its hot path (`DuckType.Create`, `CreateCache<T>`) is
+unchanged. These intentional changes compared to the previous release apply in both modes:
+
+1. Forward and reverse proxy types are cached separately. Before, one cache keyed by the (proxy, target) pair served both, so
+   `CreateReverse(T, D)` after `Create<T>(d)` (or the other way around) returned the proxy of the other direction.
+2. Creating a reverse proxy over a forward proxy round-trips: `DuckType.CreateReverse`, `DuckImplement`/`TryDuckImplement` and
+   `CreateCache<T>.CreateReverse` (also used by reverse duck chaining) return the original instance when the instance is a
+   forward proxy (`IDuckType`) whose `Instance` already is an instance of the requested type. Before, they tried to build a
+   reverse proxy over the generated forward proxy type, which normally failed. An AOT registry can't contain a reverse proxy
+   for a runtime-generated forward proxy type, so both modes unwrap.
+3. Member binding:
+   - `ExplicitInterfaceTypeName` applies to properties too (before, methods only).
+   - Comma-separated fallback names (`[Duck(Name = "A,B")]`) apply to methods too (before, properties and fields only); names
+     are trimmed, and a comma inside generic arguments (`IDictionary<String,Object>.TryGetValue`) doesn't split a name.
+   - A target method parameter the proxy method omits receives its default value (before, no argument was loaded and the
+     generated method was invalid IL).
+   - A proxy method parameter of type `ValueWithType<T>` passes its `Value` to the target.
+   - The emitted IL uses the right operand sizes for `ldarg.s`/`ldloc.s`/`stloc.s`/`ldloca.s`/`ldc.i4.s` and the long forms
+     past 255 arguments or locals (before, negative `ldc.i4.s` constants and more than 255 locals produced invalid IL).
+4. Failed results: a failed `CreateTypeResult` throws its cached exception from `CreateInstance<T>` for any `T` (before,
+   `CreateInstance<object>` threw an `InvalidCastException`), and proxy definitions that can't be a generic argument (pointers,
+   by-refs, `void`) give a failed result instead of an exception from `GetOrCreateProxyType`.
+5. `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH` (see [Dynamic Discovery to Map Workflow](#dynamic-discovery-to-map-workflow))
+   records each new (proxy, target) pair when a dynamic proxy type is created. When it isn't set, recording costs one check
+   per new pair.
+
 ## NativeAOT Runtime APIs
 
 NativeAOT bootstrapping uses these public APIs on `DuckType`:
@@ -75,6 +103,7 @@ NativeAOT bootstrapping uses these public APIs on `DuckType`:
 2. `DuckType.ValidateAotRegistryContract(...)`
 3. `DuckType.RegisterAotProxy(...)`
 4. `DuckType.RegisterAotReverseProxy(...)`
+5. `DuckType.RegisterAotArrayProxy(...)` (array targets)
 
 The generated bootstrap calls all of these automatically.
 
@@ -84,7 +113,7 @@ Current generated bootstrap behavior:
 2. Failure registrations are emitted as generated throwers and registered through direct `Action` delegates.
 3. The `RuntimeMethodHandle` activator registration overloads remain for legacy/internal callers and focused engine tests. They accept object-bridge activator handles only; typed activator handles are rejected so NativeAOT does not depend on runtime generic binding or reflective invocation. The generated bootstrap uses direct delegates for proxy activators.
 4. Generated failure registrations use direct `Func<Exception>` delegates through `RegisterAotProxyFailureFactory` and `RegisterAotReverseProxyFailureFactory`. Registration creates and caches the exception without throwing. Later calls preserve the dynamic exception type and message, reuse the cached instance on .NET 6 and later, and clone it on older runtimes. Legacy `Action` and parameterless `void` method-handle throwers remain supported.
-4. The public manual registration overloads remain for compatibility but are deprecated for application code. The supported model is generated bootstrap only.
+5. The public manual registration overloads remain for compatibility but are deprecated for application code. The supported model is generated bootstrap only.
 
 ## Proxy Definition Authoring
 
@@ -161,8 +190,13 @@ NativeAOT generation preserves the dynamic duck-typing `FallbackToBaseTypes` beh
 Discovery resolves target types from `--target-folder` inputs (plus `--target-filter`) and requires at least one `--target-folder`.
 
 `ducktype-aot generate` consumes only `--map-file`.
-When `--discover-mappings` is set, generate performs discovery first (same proxy/target inputs), adds the discovered mappings to `--map-file` (creating it if missing or empty; the mappings it already contains are kept, so remove the ones that no longer apply yourself), then continues generation in the same invocation. The map is updated under the lock a recording application takes (`<map>.lock`), atomically, and as text: its comments, formatting and encoding (UTF-8, or the one of its byte order mark) are kept. JSON the text edit doesn't handle (e.g. unquoted property names) is written back from its document, without its comments; a map the map parser rejects (e.g. content after its root object, another `schemaVersion`), or whose `mappings` isn't a single array, is left as it is, with an error. When the map exists and discovery fails, generate warns and uses the map as is.
-Generation also registers the other runtime types a mapped target can have: the target assembly types that derive from it (or implement it), and for generic ones the closed types of `--generic-instantiations` (no other instantiation is known at build time), the arrays of the types deriving from the element type of a mapped array (abstract classes and interfaces too, and arrays of arrays of them for a mapped array of arrays), the underlying type of a mapped `Nullable<T>` (a boxed nullable is a boxed `T`), and the reverse proxy types the registry generates for a mapped target. Like dynamic duck typing, which creates a proxy per runtime type, each of these aliases gets its own proxy, bound to its own members, or replays its own failure. Aliases are internal to the generated registry and do not change the canonical map file or compatibility matrix contract, except that an alias failing only in the registry makes its mapping not `compatible`.
+When `--discover-mappings` is set, generate performs discovery first (same proxy/target inputs), adds the discovered mappings to `--map-file` (creating it if missing or empty; the mappings it already contains are kept, so remove the ones that no longer apply yourself), then continues generation in the same invocation. The map is updated under the lock a recording application takes (`<map>.lock`), atomically, and as text: its comments, formatting and encoding (UTF-8, or the one of its byte order mark) are kept. JSON the text edit doesn't handle (e.g. unquoted property names) is written back from its document, without its comments; a map the map parser rejects (e.g. content after its root object, another `schemaVersion`, bytes that aren't UTF-8 without a byte order mark), or whose `mappings` isn't a single array, is left as it is, with an error. Discovery writes its mappings to a temporary file next to the map, which is merged into the map (a missing map is created) and deleted. When discovery fails, generate warns and uses the existing map as is, or fails when there is no map.
+The map is replaced by a new file, like the recording application writes it: a symbolic link keeps pointing to it (the file it links to is replaced), a read-only map isn't written (error), and the new file has the default permissions of new files.
+Generation also registers the other runtime types a mapped target can have: the target assembly types that derive from it (or implement it), and for generic ones the closed types of `--generic-instantiations` (no other instantiation is known at build time), the underlying type of a mapped `Nullable<T>` (a boxed nullable is a boxed `T`), and the reverse proxy types the registry generates for a mapped target. Like dynamic duck typing, which creates a proxy per runtime type, each of these aliases gets its own proxy, bound to its own members, or replays its own failure. Types the registry can't reference are never aliases (the module type, `System.__Canon`, `void`, `TypedReference`, `ArgIterator`, `RuntimeArgumentHandle`, by-ref-like types). Aliases are internal to the generated registry and do not change the canonical map file or compatibility matrix contract, except that an alias failing only in the registry makes its mapping not `compatible`, flagged `failsOnlyForOtherRuntimeTypes`.
+
+### Array targets
+
+Dynamic duck typing binds the members of `System.Array` for any array type, so one generated proxy per array mapping (or `System.Array` mapping) serves every array type at runtime: the proxy stores the instance as `System.Array`, and `IDuckType.Type` reports the array type it was created for (the looked-up type, like dynamic duck typing). The registry registers it with `DuckType.RegisterAotArrayProxy`; a lookup for an array type without its own registration uses the most derived registered array type assignable from it, else a registration of the same proxy for another array type. The methods the runtime adds to each array type (`Get`, `Set`, `Address`) aren't in metadata: a proxy method dynamic duck typing binds to one of them makes the mapping not `compatible` (`DTAOT0207`, the detail names the runtime method).
 
 ### How the Generator Matches Dynamic Duck Typing
 
@@ -170,13 +204,15 @@ The generator runs the dynamic duck typing engine of its own Datadog.Trace on th
 
 Like dynamic duck typing, a forward proxy implements the accessors of the properties `Type.GetProperties()` returns for the proxy type (for a class, the virtual ones: a property is hidden by an override, or by a more derived property with the same name and signature, not one of another signature or a private one of a base type), then those of its interfaces whose name isn't taken yet, and no event accessors: the others keep the implementation of the proxy type.
 
-A reverse proxy instance gets forward proxies too: dynamic duck typing creates them for its runtime type, the reverse proxy type the registry generates, so the registry registers the forward mappings of its ancestors for it (binding the members of the class contract when it hides members of the mapped target). The generator asks dynamic duck typing about the proxy of the reverse proxy type it creates: its failure is replayed (e.g. setting a member of a struct reverse proxy), and a proxy the registry can't create where dynamic duck typing does makes the forward mapping not `compatible`.
+A class proxy also implements the accessors of the properties of its interfaces whose name isn't taken (`AddInterfaceProperties`, in `Type.GetInterfaces()` order): dynamic duck typing defines a public virtual method for each one, which overrides a base virtual method with the same name and signature (even a protected one) and fails like dynamic duck typing when that method is `final`. The proxy's `ToString` calls the target's public `ToString()` the way `Type.GetMethod("ToString", Type.EmptyTypes)` selects it: through the `object.ToString` slot when the selected method overrides it, and directly otherwise (a `new virtual` method, or an override of one); a static or generic `ToString` isn't called.
+
+A reverse proxy instance gets forward proxies too: dynamic duck typing creates them for its runtime type, the reverse proxy type the registry generates, so the registry registers the forward mappings of the proxy types mapped to its ancestors for it, once per (proxy type, reverse proxy type). Each is bound to the members of the generated reverse proxy type, selected by dynamic duck typing over the reverse proxy type it creates for the same pair (its own `IDuckType` members, `ToString`, members hiding those of the contract...). A failure of dynamic duck typing is replayed (e.g. setting a member of a struct reverse proxy), and a proxy the registry can't create where dynamic duck typing does makes every forward mapping of the group not `compatible`. When the generator can't evaluate the pair with dynamic duck typing (a metadata-only mapping), the registration is bound from metadata and flagged `checkedAgainstMetadataOnly`.
 
 That requires loading the application's assemblies in the generator process:
 
 1. Run the generator on a runtime that can load them (the application's runtime or a newer one). For a mapping whose types it can't load, generate warns and binds from metadata, which approximates dynamic duck typing.
 2. Use the generator of the application's Datadog.Trace build: proxies declared with another build, or contracts that declare their own duck typing attributes, are bound from metadata too.
-3. Generate loads the registry it wrote, when it can: a generated proxy type the runtime can't load would make the whole registry fail to load, so it is registered as a failure instead. When it can't (the generator can't load what the proxy types use), it warns.
+3. Generate loads the registry it wrote, when it can, without running any of its code: a generated proxy type (or an alias target type) the runtime can't load would make the whole registry fail to load, so the registry is emitted again with a failure registration instead (or without the alias), up to three times. When it can't load the registry (the generator can't load what the proxy types use, or it runs on .NET Core 2.x), it warns.
 
 The compatibility matrix marks the mappings bound from metadata with `checkedAgainstMetadataOnly: true`.
 
@@ -869,9 +905,12 @@ Current diagnostic codes emitted by generator:
 
 A mapping that isn't `compatible` is registered as a failure. When dynamic duck typing in the generator fails to create the proxy too, the registry throws its exception (type and message) and the compatibility matrix marks the mapping with `dynamicFailureReplayed: true`. A failure of the generator process (an assembly it can't load) isn't a dynamic duck typing failure: it isn't marked, and generate warns. Other failures (`dynamicFailureReplayed: false`) behave differently in the two modes, and verify-compat rejects them.
 
+The compatibility matrix also flags a mapping with `failsOnlyForOtherRuntimeTypes: true` when only its aliases (the other runtime types of its target, see [Mapping Sources](#mapping-sources)) fail in the registry, and with `checkedAgainstMetadataOnly: true` when it (or one of its aliases) was bound from metadata instead of with dynamic duck typing in the generator.
+
 Known limitations (reported as not `compatible`):
 
-1. The members the runtime only defines on array types (`Get`, `Set`, `Address`) can't be bound: such mappings are reported as not compatible. (Arrays of a type derived from a mapped array's element type are registered, like derived types.)
+1. The methods the runtime only defines on array types (`Get`, `Set`, `Address`) can't be bound: a mapping whose proxy binds one of them in dynamic duck typing is reported as not compatible (`DTAOT0207`, naming the runtime method). The other array types a mapped array can have at runtime are served by the proxy of the array mapping (see [Array targets](#array-targets)).
+2. A mapping whose aliases (derived types, generic instantiations, generated reverse proxy types) fail only in the registry is reported as not compatible and flagged `failsOnlyForOtherRuntimeTypes`: the mapped type itself works, and discovery keeps such mappings in the map it writes (with a warning).
 
 Bible catalog `expectedStatus` overrides:
 

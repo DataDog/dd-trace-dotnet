@@ -114,9 +114,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         continue;
                     }
 
-                    if (result.BehavesLikeDynamicDuckTyping)
+                    // A mapping the registry can't create for another runtime type of its target is kept: its own proxy works,
+                    // and generate reports the other runtime types.
+                    if (result.BehavesLikeDynamicDuckTyping || result.FailsOnlyForOtherRuntimeTypes)
                     {
                         compatibleMappings.Add(mapping);
+                        if (result.FailsOnlyForOtherRuntimeTypes)
+                        {
+                            warnings.Add($"Mapping '{mapping.Key}' is kept, but the registry can't create the proxy of other runtime types of its target like dynamic duck typing does: {result.Detail}");
+                        }
                     }
                     else
                     {

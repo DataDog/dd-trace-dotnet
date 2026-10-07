@@ -1,4 +1,4 @@
-﻿// <copyright file="DuckType.cs" company="Datadog">
+// <copyright file="DuckType.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -1547,7 +1547,7 @@ namespace Datadog.Trace.DuckTyping
                 // DynamicInvoke, which NativeAOT may not support. Dynamic methods can't be rebound: they keep their typed delegate.
                 // A failure is also kept in the activator slot, as an Action that throws it: CreateInstance<T> then reads a single
                 // field, which lets the JIT read it from the fast path entry instead of copying this struct.
-                _activator = failure is not null ? failure as Action ?? CreateFailureThrower(failure)
+                _activator = failure is not null ? CreateFailureThrower(failure)
                            : activator is null or Func<object?, object?> ? activator : TryCreateObjectActivator(activator) ?? activator;
                 _proxyType = proxyType;
                 _failure = failure;
@@ -1585,9 +1585,14 @@ namespace Datadog.Trace.DuckTyping
                         return exceptionInfo.SourceException;
                     }
 
+                    if (_failure is null)
+                    {
+                        return null;
+                    }
+
                     try
                     {
-                        (_failure as Action)?.Invoke();
+                        ThrowFailure(_failure);
                         return null;
                     }
                     catch (Exception ex)
@@ -1596,6 +1601,16 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
             }
+
+            /// <summary>
+            /// Gets the same result for another target type, with another activator when it succeeds: an AOT proxy of an array
+            /// type also serves the array types assignable to it.
+            /// </summary>
+            /// <param name="targetType">The target type.</param>
+            /// <param name="activator">The activator for the target type, or null to keep this one.</param>
+            /// <returns>The result for the target type.</returns>
+            internal CreateTypeResult WithTargetType(Type targetType, Delegate? activator)
+                => new(_proxyType, targetType, _failure is null ? activator ?? _activator : null, _failure);
 
             /// <summary>
             /// Create a new proxy instance from a target instance
@@ -1706,7 +1721,9 @@ namespace Datadog.Trace.DuckTyping
                 if (failure is Action failureThrower)
                 {
                     failureThrower();
-                    return;
+
+                    // A failure registration that doesn't throw still means the proxy can't be created.
+                    DuckTypeException.Throw("The AOT failure registration of this proxy didn't throw an exception.");
                 }
 
                 var exceptionInfo = (ExceptionDispatchInfo)failure;

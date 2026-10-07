@@ -39,13 +39,6 @@ namespace Datadog.Trace.DuckTyping
         private static readonly string? OutputPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DuckTypeAotDiscoveryOutputPath);
 
         /// <summary>
-        /// Stores cached mappings data.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        private static readonly ConcurrentDictionary<string, MapEntry> Mappings = new(StringComparer.Ordinal);
-        private static readonly object FlushLock = new();
-
-        /// <summary>
         /// How long an explicit flush waits for another process holding the output lock file.
         /// Periodic flushes don't wait: a later flush picks their mappings up.
         /// </summary>
@@ -76,6 +69,18 @@ namespace Datadog.Trace.DuckTyping
                 return;
             }
 
+            try
+            {
+                RecordCore(proxyType, targetType, reverse);
+            }
+            catch
+            {
+                // Recording is best effort: it runs while a proxy type is created, and must never make that creation fail.
+            }
+        }
+
+        private static void RecordCore(Type proxyType, Type targetType, bool reverse)
+        {
             // Branch: take this path when (proxyType is null || targetType is null) evaluates to true.
             if (proxyType is null || targetType is null)
             {
@@ -106,7 +111,7 @@ namespace Datadog.Trace.DuckTyping
                 TargetType = targetTypeName,
                 TargetAssembly = targetAssembly
             };
-            if (!Mappings.TryAdd(GetKey(mapEntry), mapEntry))
+            if (!RecorderState.Mappings.TryAdd(GetKey(mapEntry), mapEntry))
             {
                 return;
             }
@@ -156,7 +161,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // A periodic flush is skipped while another flush of this process is running; an explicit one waits for it.
-            if (!Monitor.TryEnter(FlushLock, isExplicit ? Timeout.Infinite : 0))
+            if (!Monitor.TryEnter(RecorderState.FlushLock, isExplicit ? Timeout.Infinite : 0))
             {
                 return;
             }
@@ -199,7 +204,7 @@ namespace Datadog.Trace.DuckTyping
                     mappings[GetKey(existingMapping)] = existingMapping;
                 }
 
-                foreach (var mapping in Mappings)
+                foreach (var mapping in RecorderState.Mappings)
                 {
                     mappings[mapping.Key] = mapping.Value;
                 }
@@ -232,7 +237,7 @@ namespace Datadog.Trace.DuckTyping
             }
             finally
             {
-                Monitor.Exit(FlushLock);
+                Monitor.Exit(RecorderState.FlushLock);
             }
         }
 
@@ -315,6 +320,24 @@ namespace Datadog.Trace.DuckTyping
 
         internal static void WriteAtomically(string outputPath, string contents, Encoding? encoding = null)
         {
+#if NET6_0_OR_GREATER
+            // A symbolic link keeps pointing to the map: the file it links to is replaced.
+            try
+            {
+                outputPath = File.ResolveLinkTarget(outputPath, returnFinalTarget: true)?.FullName ?? outputPath;
+            }
+            catch (IOException)
+            {
+                // A broken link: written like a file.
+            }
+#endif
+
+            // A read-only map isn't replaced, like it isn't written.
+            if (File.Exists(outputPath) && (File.GetAttributes(outputPath) & FileAttributes.ReadOnly) != 0)
+            {
+                throw new UnauthorizedAccessException($"Access to the path '{outputPath}' is denied: the file is read-only.");
+            }
+
             // Readers, and a process that writes without the lock, never see a partially written map.
             var temporaryOutputPath = $"{outputPath}.{Guid.NewGuid():N}.tmp";
             try
@@ -423,6 +446,20 @@ namespace Datadog.Trace.DuckTyping
             /// <value>The target assembly value.</value>
             [JsonProperty("targetAssembly")]
             public string TargetAssembly { get; set; } = string.Empty;
+        }
+
+        /// <summary>
+        /// Recording state, created on first use only: processes that don't record mappings don't pay for it.
+        /// </summary>
+        private static class RecorderState
+        {
+            /// <summary>
+            /// Stores the recorded mappings.
+            /// </summary>
+            /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
+            internal static readonly ConcurrentDictionary<string, MapEntry> Mappings = new(StringComparer.Ordinal);
+
+            internal static readonly object FlushLock = new();
         }
     }
 }

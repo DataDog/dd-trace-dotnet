@@ -127,7 +127,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? generatedProxyAssemblyName,
             string? generatedProxyTypeName,
             bool replaysDynamicFailure = false,
-            bool checkedAgainstMetadataOnly = false)
+            bool checkedAgainstMetadataOnly = false,
+            bool failsOnlyForOtherRuntimeTypes = false)
         {
             Mapping = mapping;
             Status = status;
@@ -137,6 +138,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             GeneratedProxyTypeName = generatedProxyTypeName;
             ReplaysDynamicFailure = replaysDynamicFailure;
             CheckedAgainstMetadataOnly = checkedAgainstMetadataOnly;
+            FailsOnlyForOtherRuntimeTypes = failsOnlyForOtherRuntimeTypes;
         }
 
         /// <summary>
@@ -197,6 +199,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public bool CheckedAgainstMetadataOnly { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the mapping itself behaves like in dynamic duck typing, but the registry can't create
+        /// the proxy of another runtime type of its target (a derived type, a reverse proxy type...) like dynamic duck typing does.
+        /// </summary>
+        /// <value>true if only other runtime types of the target fail; otherwise, false.</value>
+        public bool FailsOnlyForOtherRuntimeTypes { get; }
+
+        /// <summary>
         /// Executes compatible.
         /// </summary>
         /// <param name="mapping">The mapping value.</param>
@@ -251,7 +260,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedProxyAssemblyName,
                 GeneratedProxyTypeName,
                 ReplaysDynamicFailure,
-                CheckedAgainstMetadataOnly);
+                CheckedAgainstMetadataOnly,
+                FailsOnlyForOtherRuntimeTypes);
         }
 
         /// <summary>
@@ -268,7 +278,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedProxyAssemblyName,
                 GeneratedProxyTypeName,
                 replaysDynamicFailure: true,
-                CheckedAgainstMetadataOnly);
+                CheckedAgainstMetadataOnly,
+                FailsOnlyForOtherRuntimeTypes);
         }
 
         /// <summary>
@@ -285,7 +296,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedProxyAssemblyName,
                 GeneratedProxyTypeName,
                 ReplaysDynamicFailure,
-                checkedAgainstMetadataOnly: true);
+                checkedAgainstMetadataOnly: true,
+                FailsOnlyForOtherRuntimeTypes);
+        }
+
+        /// <summary>
+        /// Gets the same result, marked as failing only for other runtime types of the target (see <see cref="FailsOnlyForOtherRuntimeTypes"/>).
+        /// </summary>
+        /// <returns>The result produced by this operation.</returns>
+        public DuckTypeAotMappingEmissionResult WithFailsOnlyForOtherRuntimeTypes()
+        {
+            return new DuckTypeAotMappingEmissionResult(
+                Mapping,
+                Status,
+                DiagnosticCode,
+                Detail,
+                GeneratedProxyAssemblyName,
+                GeneratedProxyTypeName,
+                ReplaysDynamicFailure,
+                CheckedAgainstMetadataOnly,
+                failsOnlyForOtherRuntimeTypes: true);
         }
     }
 }

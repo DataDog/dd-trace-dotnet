@@ -272,7 +272,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var index = 0;
-            return TryCanonicalizeTypeName(trimmedTypeName, ref index, out var canonicalTypeName) && index == trimmedTypeName.Length
+            return TryCanonicalizeTypeName(trimmedTypeName, ref index, keepAssemblyNames: true, out var canonicalTypeName) && index == trimmedTypeName.Length
                        ? canonicalTypeName
                        : trimmedTypeName;
         }
@@ -285,61 +285,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The name of the type as Type.ToString() writes it.</returns>
         internal static string ToTypeToStringName(string typeName)
         {
+            var trimmedTypeName = typeName.Trim();
             var index = 0;
-            var name = ReadTypeToStringName(typeName.Replace('/', '+'), ref index);
-            return index == typeName.Length ? name : typeName.Replace('/', '+');
-
-            static string ReadTypeToStringName(string text, ref int index)
-            {
-                var builder = new StringBuilder();
-                while (index < text.Length && text[index] != ',' && text[index] != ']')
-                {
-                    if (text[index] != '[')
-                    {
-                        builder.Append(text[index++]);
-                    }
-                    else if (index + 1 < text.Length && text[index + 1] == '[')
-                    {
-                        // Assembly qualified generic arguments: [[Type, Assembly],[Type, Assembly]].
-                        index++;
-                        builder.Append('[');
-                        while (index < text.Length && text[index] == '[')
-                        {
-                            index++;
-                            builder.Append(ReadTypeToStringName(text, ref index));
-                            var depth = 0;
-                            while (index < text.Length && (depth > 0 || text[index] != ']'))
-                            {
-                                depth += text[index] == '[' ? 1 : text[index] == ']' ? -1 : 0;
-                                index++;
-                            }
-
-                            index++;
-                            if (index < text.Length && text[index] == ',')
-                            {
-                                builder.Append(',');
-                                index++;
-                            }
-                        }
-
-                        builder.Append(']');
-                        index++;
-                    }
-                    else
-                    {
-                        // Array ranks ("[]", "[,]") and generic arguments written without assemblies.
-                        var depth = 0;
-                        do
-                        {
-                            depth += text[index] == '[' ? 1 : text[index] == ']' ? -1 : 0;
-                            builder.Append(text[index++]);
-                        }
-                        while (index < text.Length && depth > 0);
-                    }
-                }
-
-                return builder.ToString();
-            }
+            return TryCanonicalizeTypeName(trimmedTypeName, ref index, keepAssemblyNames: false, out var name) && index == trimmedTypeName.Length
+                       ? name
+                       : trimmedTypeName.Replace('/', '+');
         }
 
         /// <summary>
@@ -418,7 +368,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            var genericArgumentsStart = FindGenericArgumentsStart(typeName);
             // Branch: take this path when (genericArgumentsStart < 0) evaluates to true.
             if (genericArgumentsStart < 0)
             {
@@ -488,7 +438,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 0;
             }
 
-            var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            var genericArgumentsStart = FindGenericArgumentsStart(typeName);
             if (genericArgumentsStart < 0)
             {
                 genericArgumentsStart = typeName.Length;
@@ -520,7 +470,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            var genericArgumentsStart = FindGenericArgumentsStart(typeName);
             if (genericArgumentsStart < 0)
             {
                 return false;
@@ -532,7 +482,77 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return genericArgumentCount > 0;
         }
 
-        private static bool TryCanonicalizeTypeName(string value, ref int index, out string canonicalTypeName)
+        /// <summary>
+        /// Finds the start of the generic argument list of a reflection type name: "[[Type, Assembly]]" (assembly qualified
+        /// arguments), "[Type]" (unqualified arguments, like Type.GetType accepts), or a mix of both. Array rank specifiers
+        /// ("[]", "[,]", "[*]") aren't generic argument lists.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>The index of the '[' that opens the generic argument list, or -1 when there's none.</returns>
+        internal static int FindGenericArgumentsStart(string typeName)
+        {
+            var bracketIndex = typeName.IndexOf('[');
+            if (bracketIndex < 0 || bracketIndex + 1 >= typeName.Length)
+            {
+                return -1;
+            }
+
+            var next = typeName[bracketIndex + 1];
+            return next == ']' || next == ',' || next == '*' ? -1 : bracketIndex;
+        }
+
+        /// <summary>
+        /// Splits the top-level generic arguments of a generic argument list, removing the brackets of assembly qualified
+        /// arguments: "[[A, Asm],B]" gives "A, Asm" and "B".
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="genericArgumentsStart">The index of the '[' that opens the generic argument list.</param>
+        /// <param name="genericArgumentTypeNames">The generic arguments, with their assembly names when they are qualified.</param>
+        /// <returns>true when the generic argument list is well formed; otherwise, false.</returns>
+        internal static bool TrySplitGenericArguments(string typeName, int genericArgumentsStart, out IReadOnlyList<string> genericArgumentTypeNames)
+        {
+            var arguments = new List<string>();
+            genericArgumentTypeNames = arguments;
+            var bracketDepth = 0;
+            var argumentStart = genericArgumentsStart + 1;
+            for (var i = genericArgumentsStart; i < typeName.Length; i++)
+            {
+                var current = typeName[i];
+                if (current == '[')
+                {
+                    bracketDepth++;
+                }
+                else if (current == ']')
+                {
+                    bracketDepth--;
+                    if (bracketDepth == 0)
+                    {
+                        AddArgument(i);
+                        return arguments.Count > 0 && arguments.TrueForAll(argument => argument.Length > 0);
+                    }
+                }
+                else if (current == ',' && bracketDepth == 1)
+                {
+                    AddArgument(i);
+                    argumentStart = i + 1;
+                }
+            }
+
+            return false;
+
+            void AddArgument(int argumentEnd)
+            {
+                var argument = typeName.Substring(argumentStart, argumentEnd - argumentStart).Trim();
+                if (argument.Length >= 2 && argument[0] == '[' && argument[argument.Length - 1] == ']')
+                {
+                    argument = argument.Substring(1, argument.Length - 2).Trim();
+                }
+
+                arguments.Add(argument);
+            }
+        }
+
+        private static bool TryCanonicalizeTypeName(string value, ref int index, bool keepAssemblyNames, out string canonicalTypeName)
         {
             canonicalTypeName = string.Empty;
             var nameStart = index;
@@ -564,7 +584,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     if (value[index] == '[')
                     {
                         index++;
-                        if (!TryCanonicalizeTypeName(value, ref index, out var argumentTypeName))
+                        if (!TryCanonicalizeTypeName(value, ref index, keepAssemblyNames, out var argumentTypeName))
                         {
                             return false;
                         }
@@ -589,9 +609,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         }
 
                         index++;
-                        argument = argumentAssemblyName.Length == 0 ? $"[{argumentTypeName}]" : $"[{argumentTypeName}, {argumentAssemblyName}]";
+                        argument = !keepAssemblyNames ? argumentTypeName :
+                                   argumentAssemblyName.Length == 0 ? $"[{argumentTypeName}]" : $"[{argumentTypeName}, {argumentAssemblyName}]";
                     }
-                    else if (!TryCanonicalizeTypeName(value, ref index, out argument))
+                    else if (!TryCanonicalizeTypeName(value, ref index, keepAssemblyNames, out argument))
                     {
                         return false;
                     }
@@ -725,55 +746,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Executes count top level generic arguments.
+        /// Counts the top-level generic arguments of a generic argument list (qualified, unqualified or mixed).
         /// </summary>
         /// <param name="typeName">The type name value.</param>
-        /// <param name="genericArgumentsStart">The generic arguments start value.</param>
-        /// <returns>The computed numeric value.</returns>
+        /// <param name="genericArgumentsStart">The index of the '[' that opens the generic argument list.</param>
+        /// <returns>The number of generic arguments, or 0 when the list isn't well formed.</returns>
         private static int CountTopLevelGenericArguments(string typeName, int genericArgumentsStart)
         {
-            var bracketDepth = 0;
-            var argumentCount = 0;
-            var hasStartedRootArgumentList = false;
-
-            for (var i = genericArgumentsStart; i < typeName.Length; i++)
-            {
-                var current = typeName[i];
-                // Branch: take this path when (current == '[') evaluates to true.
-                if (current == '[')
-                {
-                    bracketDepth++;
-                    // Branch: take this path when (bracketDepth == 2 && !hasStartedRootArgumentList) evaluates to true.
-                    if (bracketDepth == 2 && !hasStartedRootArgumentList)
-                    {
-                        hasStartedRootArgumentList = true;
-                        argumentCount = 1;
-                    }
-
-                    continue;
-                }
-
-                // Branch: take this path when (current == ']') evaluates to true.
-                if (current == ']')
-                {
-                    bracketDepth = Math.Max(0, bracketDepth - 1);
-                    // Branch: take this path when (hasStartedRootArgumentList && bracketDepth == 0) evaluates to true.
-                    if (hasStartedRootArgumentList && bracketDepth == 0)
-                    {
-                        break;
-                    }
-
-                    continue;
-                }
-
-                // Branch: take this path when (current == ',' && hasStartedRootArgumentList && bracketDepth == 1) evaluates to true.
-                if (current == ',' && hasStartedRootArgumentList && bracketDepth == 1)
-                {
-                    argumentCount++;
-                }
-            }
-
-            return argumentCount;
+            return TrySplitGenericArguments(typeName, genericArgumentsStart, out var genericArgumentTypeNames) ? genericArgumentTypeNames.Count : 0;
         }
     }
 }

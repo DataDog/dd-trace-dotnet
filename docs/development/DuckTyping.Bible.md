@@ -134,6 +134,8 @@ Behavior:
 - Generated type derives from or implements `typeToDeriveFrom`.
 - Method/property implementations are delegated to `delegationInstance` members marked with `[DuckReverseMethod]`.
 - Signature rules are strict.
+- A forward proxy (`IDuckType`) whose `Instance` already is an instance of `typeToDeriveFrom` round-trips: these entry points,
+  and `CreateCache<T>.CreateReverse` (reverse duck chaining), return that original instance instead of a reverse proxy.
 
 ### 3. DuckCopy struct projection mode
 
@@ -605,7 +607,8 @@ Conversion logic lives in `ILHelpersExtensions.WriteTypeConversion` and `CheckTy
 
 ### Reverse chaining
 
-`AddIlToDuckChainReverse` emits `CreateCache<T>.CreateReverse`.
+`AddIlToDuckChainReverse` emits `CreateCache<T>.CreateReverse`, which returns the original instance of a forward proxy over a
+`T` (see [Reverse proxy mode](#2-reverse-proxy-mode)).
 
 ### Duck instance extraction
 
@@ -663,10 +666,14 @@ This allows access to internals/private metadata in generated dynamic assembly c
 
 ### Global type cache
 
-`DuckTypeCache`:
+`DuckTypeCache` (forward proxies) and `DuckTypeReverseCache` (reverse proxies):
 - Type: `ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>>`
-- Key: `TypesTuple(proxyDefinitionType, targetType)`
+- Key: `TypesTuple(proxyDefinitionType, targetType)`, or `TypesTuple(typeToDeriveFrom, delegationType)` for a reverse proxy.
 - Value: lazy result for deterministic single creation per key.
+- The two directions use separate caches: the same pair of types can have a forward and a reverse proxy, and one must never
+  be served for the other.
+- In AOT mode, `DuckTypeAotEngine` owns the registrations and its own result caches instead (see
+  [DuckTyping.NativeAOT.md](./DuckTyping.NativeAOT.md)).
 
 `TypesTuple` hash uses FNV-like unchecked composition of both type hash codes.
 

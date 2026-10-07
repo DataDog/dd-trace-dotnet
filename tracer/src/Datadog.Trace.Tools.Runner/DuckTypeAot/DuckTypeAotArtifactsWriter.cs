@@ -69,6 +69,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             DiagnosticCode = hasResult ? mappingResult!.DiagnosticCode : null,
                             DynamicFailureReplayed = hasResult && mappingResult!.ReplaysDynamicFailure,
                             CheckedAgainstMetadataOnly = hasResult && mappingResult!.CheckedAgainstMetadataOnly,
+                            FailsOnlyForOtherRuntimeTypes = hasResult && mappingResult!.FailsOnlyForOtherRuntimeTypes,
                             Details = BuildEffectiveCompatibilityDetails(hasResult ? mappingResult : null),
                             GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
                             GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
@@ -284,7 +285,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .AppendLine($"- Total mappings: `{matrix.TotalMappings}`")
                 .AppendLine()
                 .AppendLine("A status marked `(replayed)` is a failure dynamic duck typing has too, which the registry replays. One marked")
-                .AppendLine("`(metadata only)` couldn't be evaluated with dynamic duck typing in the generator, and may differ from it.")
+                .AppendLine("`(metadata only)` couldn't be evaluated with dynamic duck typing in the generator, and may differ from it. One marked")
+                .AppendLine("`(other runtime types)` works for its target, but not for another runtime type of it (a derived type, a reverse proxy type...).")
                 .AppendLine()
                 .AppendLine("| Id | Mode | Source | Status | Diagnostic | Proxy | Target |")
                 .AppendLine("| --- | --- | --- | --- | --- | --- | --- |");
@@ -301,6 +303,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .Append(mapping.Status)
                     .Append(mapping.DynamicFailureReplayed ? " (replayed)" : string.Empty)
                     .Append(mapping.CheckedAgainstMetadataOnly ? " (metadata only)" : string.Empty)
+                    .Append(mapping.FailsOnlyForOtherRuntimeTypes ? " (other runtime types)" : string.Empty)
                     .Append(" | ")
                     .Append(mapping.DiagnosticCode ?? "-")
                     .Append(" | ")
@@ -791,6 +794,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <value>true if the mapping is checked against metadata only; otherwise, false.</value>
         [JsonProperty("checkedAgainstMetadataOnly", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool CheckedAgainstMetadataOnly { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the mapping works for its target, but the registry can't create the proxy of
+        /// another runtime type of it (a derived type, a reverse proxy type...) like dynamic duck typing does.
+        /// </summary>
+        /// <value>true if only other runtime types of the target fail; otherwise, false.</value>
+        [JsonProperty("failsOnlyForOtherRuntimeTypes", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool FailsOnlyForOtherRuntimeTypes { get; set; }
 
         /// <summary>
         /// Gets or sets details.

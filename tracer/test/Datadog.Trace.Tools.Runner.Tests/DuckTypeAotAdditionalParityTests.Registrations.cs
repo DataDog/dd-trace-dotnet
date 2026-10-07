@@ -217,8 +217,13 @@ public partial class DuckTypeAotAdditionalParityTests
         DuckType.Create<IArrayGetProxy>(new[] { 4, 5, 6 })!.At(1).Should().Be(5);
         WithGeneratedRegistry(
             () => { },
-            matrix => matrix.Mappings.Should().ContainSingle()
-                            .Which.Should().Match<DuckTypeAotCompatibilityMapping>(entry => entry.Status != DuckTypeAotCompatibilityStatuses.Compatible && !entry.DynamicFailureReplayed),
+            matrix =>
+            {
+                var entry = matrix.Mappings.Should().ContainSingle().Which;
+                entry.Status.Should().Be(DuckTypeAotCompatibilityStatuses.MissingTargetMethod);
+                entry.DynamicFailureReplayed.Should().BeFalse();
+                entry.Details.Should().Contain("binds the method 'Int32 Get(Int32)' the runtime adds to array type 'System.Int32[]'");
+            },
             extraTargetAssemblies: [typeof(object).Assembly.Location],
             Mapping(typeof(IArrayGetProxy), typeof(int[])));
     }
@@ -237,6 +242,8 @@ public partial class DuckTypeAotAdditionalParityTests
             (typeof(IBoxProxy<string>).FullName!, typeof(Box<string>).FullName!),
             ($"{proxyDefinitionName}[[System.String, System.Private.CoreLib]]", $"{targetDefinitionName}[[System.String, System.Private.CoreLib]]"),
             ($"{proxyDefinitionName}[[System.String]]", $"{targetDefinitionName}[[System.String]]"),
+            // Unqualified generic arguments (like Type.GetType accepts them) are closed types too.
+            ($"{proxyDefinitionName}[System.String]", $"{targetDefinitionName}[System.String]"),
         };
 
         DuckType.ResetRuntimeModeForTests();

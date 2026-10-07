@@ -121,6 +121,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < entries.Count; i++)
             {
                 var entry = entries[i];
+                if (entry is null)
+                {
+                    errors.Add($"--map-file mapping at index {i} is null: {path}");
+                    continue;
+                }
+
                 if (!TryParseEntry(entry, path, i, errors, out var mapping))
                 {
                     continue;
