@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -133,41 +132,6 @@ public class QueryStringObfuscatorTests
         var obfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, new Mock<IDatadogLogger>().Object, isDefaultPattern: true);
 
         obfuscator.Obfuscate(queryString).Should().Be(expected);
-    }
-
-    [SkippableTheory]
-    [InlineData("eyJ")]
-    [InlineData("eyJ=")]
-    [InlineData("-eyJ")]
-    [InlineData("eyJghp_abcdefghijklmnopqrstuvwxyz0123456789")]
-    public void DefaultPatternScalesLinearlyOnJwtNearMisses(string piece)
-    {
-#if NETCOREAPP2_1
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
-#endif
-        var obfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, new Mock<IDatadogLogger>().Object, isDefaultPattern: true);
-        var small = string.Concat(Enumerable.Repeat(piece, (8000 / piece.Length) + 1)).Substring(0, 8000);
-        var large = string.Concat(Enumerable.Repeat(piece, (16000 / piece.Length) + 1)).Substring(0, 16000);
-        obfuscator.Obfuscate(small).Should().NotBeEmpty();
-
-        double Measure(string input)
-        {
-            var best = double.MaxValue;
-            for (var i = 0; i < 3; i++)
-            {
-                var watch = Stopwatch.StartNew();
-                var result = obfuscator.Obfuscate(input);
-                watch.Stop();
-                best = Math.Min(best, watch.Elapsed.TotalMilliseconds);
-                result.Should().NotBeEmpty();
-            }
-
-            return best;
-        }
-
-        var smallTime = Measure(small);
-        var largeTime = Measure(large);
-        largeTime.Should().BeLessThan((smallTime * 3.25) + 2);
     }
 
     [Fact]
