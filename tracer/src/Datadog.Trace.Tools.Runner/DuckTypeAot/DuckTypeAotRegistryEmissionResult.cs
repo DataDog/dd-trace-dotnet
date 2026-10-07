@@ -301,20 +301,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Gets the same result, marked as failing only for other runtime types of the target (see <see cref="FailsOnlyForOtherRuntimeTypes"/>).
+        /// Gets the result of the mapping when it behaves like in dynamic duck typing, but another runtime type of its target
+        /// fails (see <see cref="FailsOnlyForOtherRuntimeTypes"/>): the failure of that runtime type, with the generated proxy
+        /// type of the mapping, which the registry still registers.
         /// </summary>
+        /// <param name="otherRuntimeTypeFailure">The failure of the other runtime type.</param>
         /// <returns>The result produced by this operation.</returns>
-        public DuckTypeAotMappingEmissionResult WithFailsOnlyForOtherRuntimeTypes()
+        public DuckTypeAotMappingEmissionResult WithOtherRuntimeTypeFailure(DuckTypeAotMappingEmissionResult otherRuntimeTypeFailure)
         {
             return new DuckTypeAotMappingEmissionResult(
                 Mapping,
-                Status,
-                DiagnosticCode,
-                Detail,
+                otherRuntimeTypeFailure.Status,
+                otherRuntimeTypeFailure.DiagnosticCode,
+                otherRuntimeTypeFailure.Detail,
                 GeneratedProxyAssemblyName,
                 GeneratedProxyTypeName,
-                ReplaysDynamicFailure,
-                CheckedAgainstMetadataOnly,
+                replaysDynamicFailure: false,
+                CheckedAgainstMetadataOnly || otherRuntimeTypeFailure.CheckedAgainstMetadataOnly,
                 failsOnlyForOtherRuntimeTypes: true);
         }
     }

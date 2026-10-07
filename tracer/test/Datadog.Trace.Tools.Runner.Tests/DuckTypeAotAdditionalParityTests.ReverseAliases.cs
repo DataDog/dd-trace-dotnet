@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
 using FluentAssertions;
@@ -139,9 +140,10 @@ public partial class DuckTypeAotAdditionalParityTests
         Func<object?> exercise = () => DuckType.Create<AliasSealedToStringForward>(DuckType.CreateReverse(contract, new AliasDelegation()))!.Name;
 
         DuckType.ResetRuntimeModeForTests();
-        CaptureOutcome(exercise).Should().StartWith("throws:DuckTypeException");
+        var expected = CaptureOutcome(exercise);
+        expected.Should().Be("throws:DuckTypeException>TypeLoadException");
         WithGeneratedRegistry(
-            () => CaptureOutcome(exercise).Should().Be("throws:DuckTypeException"),
+            () => CaptureOutcome(exercise).Should().Be(expected),
             matrix => matrix.Mappings.Should().OnlyContain(mapping => mapping.Status == DuckTypeAotCompatibilityStatuses.Compatible),
             Mapping(contract, typeof(AliasDelegation), reverse: true),
             Mapping(typeof(AliasSealedToStringForward), contract));
@@ -224,7 +226,7 @@ public partial class DuckTypeAotAdditionalParityTests
         AssertSameOutcome(expected, exercise, mappings);
 
         static string DescribeAliasValue(object? value, object delegation)
-            => ReferenceEquals(value, delegation) ? "delegation" : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "null";
+            => ReferenceEquals(value, delegation) ? "delegation" : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "null";
     }
 
     [Fact]

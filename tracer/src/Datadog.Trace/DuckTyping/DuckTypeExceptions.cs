@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Util;
@@ -730,6 +731,41 @@ namespace Datadog.Trace.DuckTyping
                 string name when name == typeof(DuckTypeDuckCopyStructDoesNotContainsAnyField).FullName => DuckTypeDuckCopyStructDoesNotContainsAnyField.CreateForAot(detail),
                 _ => new DuckTypeAotRegisteredFailureException(failureTypeName, detail)
             };
+        }
+
+        /// <summary>
+        /// Creates the exception dynamic duck typing throws, with the exception it wraps (e.g. the TypeLoadException of
+        /// Reflection.Emit in a DuckTypeException).
+        /// </summary>
+        /// <param name="failureTypeName">The full name of the exception type.</param>
+        /// <param name="detail">The message of the exception.</param>
+        /// <param name="innerExceptionTypeName">The full name of the type of the wrapped exception.</param>
+        /// <param name="innerExceptionMessage">The message of the wrapped exception.</param>
+        /// <returns>The exception.</returns>
+        internal static Exception Create(string failureTypeName, string detail, string innerExceptionTypeName, string innerExceptionMessage)
+        {
+            Exception? innerException = innerExceptionTypeName switch
+            {
+                string name when name == typeof(TypeLoadException).FullName => new TypeLoadException(innerExceptionMessage),
+                string name when name == typeof(AmbiguousMatchException).FullName => new AmbiguousMatchException(innerExceptionMessage),
+                string name when name == typeof(InvalidOperationException).FullName => new InvalidOperationException(innerExceptionMessage),
+                string name when name == typeof(ArgumentException).FullName => new ArgumentException(innerExceptionMessage),
+                string name when name == typeof(NotSupportedException).FullName => new NotSupportedException(innerExceptionMessage),
+                string name when name == typeof(BadImageFormatException).FullName => new BadImageFormatException(innerExceptionMessage),
+                string name when name == typeof(FileLoadException).FullName => new FileLoadException(innerExceptionMessage),
+                string name when name == typeof(MissingMethodException).FullName => new MissingMethodException(innerExceptionMessage),
+                string name when name == typeof(MissingFieldException).FullName => new MissingFieldException(innerExceptionMessage),
+                string name when name == typeof(InvalidCastException).FullName => new InvalidCastException(innerExceptionMessage),
+                string name when name == typeof(MethodAccessException).FullName => new MethodAccessException(innerExceptionMessage),
+                string name when name == typeof(FieldAccessException).FullName => new FieldAccessException(innerExceptionMessage),
+                string name when name == typeof(TypeAccessException).FullName => new TypeAccessException(innerExceptionMessage),
+                string name when name == typeof(InvalidProgramException).FullName => new InvalidProgramException(innerExceptionMessage),
+                _ => null
+            };
+
+            return innerException is not null && failureTypeName == typeof(DuckTypeException).FullName
+                       ? DuckTypeException.Create(detail, innerException)
+                       : Create(failureTypeName, detail);
         }
 
         [DebuggerHidden]

@@ -802,6 +802,15 @@ supportedConfigurations:
       It indicates the home directory of the Datadog tracer.
       On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
       On Linux/Docker, it is typically set to /opt/datadog.
+  DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH:
+  - implementation: A
+    scope: managed
+    type: string
+    default: null
+    const_name: DuckTypeAotDiscoveryOutputPath
+    documentation: |-
+      Testing-only path of the ducktype-aot map file to which dynamic duck typing records the proxy mappings it creates,
+      used to discover the mappings an application needs in NativeAOT. Not set by default: nothing is recorded.
   DD_DUMP_ILREWRITE_ENABLED:
   - implementation: A
     scope: native

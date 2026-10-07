@@ -51,18 +51,19 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Registers the activator of a forward AOT proxy of an array type (or System.Array) for the array types assignable to
-        /// it, which have no registration of their own: dynamic duck typing creates a proxy for any array type.
+        /// Registers the activator of a forward AOT proxy for the runtime types a registry can't name, which have no registration
+        /// of their own: the other array types for an array target type, and the non-public types of the runtime's core library
+        /// that derive from (or implement) the target type. Dynamic duck typing creates a proxy for any runtime type.
         /// </summary>
         /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
-        /// <param name="arrayTargetType">Array target type of the registration.</param>
+        /// <param name="targetType">Target type of the registration: an array type, an interface or a class that isn't sealed.</param>
         /// <param name="generatedProxyType">Generated proxy implementation type.</param>
-        /// <param name="activator">Activator receiving the instance and the target type the proxy reports as IDuckType.Type.</param>
+        /// <param name="activator">Activator receiving the instance and the runtime type the proxy reports as IDuckType.Type.</param>
         [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
-        public static void RegisterAotArrayProxy(Type proxyDefinitionType, Type arrayTargetType, Type generatedProxyType, Func<object?, Type, object?> activator)
+        public static void RegisterAotFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator)
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.RegisterArrayProxy(proxyDefinitionType, arrayTargetType, generatedProxyType, activator);
+            DuckTypeAotEngine.RegisterFallbackProxy(proxyDefinitionType, targetType, generatedProxyType, activator);
         }
 
         /// <summary>
@@ -640,6 +641,26 @@ namespace Datadog.Trace.DuckTyping
                     return dryResult;
                 }))
                 .Value;
+        }
+
+        /// <summary>
+        /// Gets the type a reverse proxy type of dynamic duck typing was created for (the type it derives from or implements):
+        /// the discovery recorder records the forward mappings of that type for the forward duck casts of its instances, which
+        /// the AOT registry serves with the reverse proxy types it generates for it. Only called while recording.
+        /// </summary>
+        /// <param name="reverseProxyType">The runtime type of a reverse proxy instance.</param>
+        /// <returns>The type to derive from of the reverse proxy type, or null for another type.</returns>
+        internal static Type? GetDynamicReverseProxyDefinitionType(Type reverseProxyType)
+        {
+            foreach (var entry in DuckTypeReverseCache)
+            {
+                if (entry.Value.IsValueCreated && entry.Value.Value.CanCreate() && entry.Value.Value.ProxyType == reverseProxyType)
+                {
+                    return entry.Key.ProxyDefinitionType;
+                }
+            }
+
+            return null;
         }
 
         private static CreateTypeResult GetOrCreateDynamicReverseProxyType(Type typeToDeriveFrom, Type delegationType)

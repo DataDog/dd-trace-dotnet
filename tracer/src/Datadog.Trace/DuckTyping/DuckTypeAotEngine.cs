@@ -1,4 +1,4 @@
-﻿// <copyright file="DuckTypeAotEngine.cs" company="Datadog">
+// <copyright file="DuckTypeAotEngine.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -72,16 +72,16 @@ namespace Datadog.Trace.DuckTyping
         private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ReverseMissCache = new();
 
         /// <summary>
-        /// The forward registrations (and failures) whose target is an array type or System.Array, by proxy definition type: an
-        /// array type without registration gets the proxy of one of these (the most derived it is assignable to, if any), like
-        /// dynamic duck typing creates a proxy, which binds the members of System.Array, for any array type.
+        /// The forward registrations that also serve runtime types a registry can't name, by proxy definition type (see
+        /// <see cref="TryGetFallbackResult"/>): those of array types, and those whose proxy receives the target type, for the
+        /// types of the runtime's own core library that aren't public. Failures of their target types serve them too.
         /// </summary>
-        private static readonly ConcurrentDictionary<Type, ArrayTargetRegistration[]> ForwardArrayTargets = new();
+        private static readonly ConcurrentDictionary<Type, FallbackRegistration[]> ForwardFallbackTargets = new();
 
         /// <summary>
-        /// The results created for array types from <see cref="ForwardArrayTargets"/>.
+        /// The results created from <see cref="ForwardFallbackTargets"/>, by proxy definition type and runtime type.
         /// </summary>
-        private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ForwardArrayResults = new();
+        private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ForwardFallbackResults = new();
 
         /// <summary>
         /// Datadog.Trace assembly version for the currently loaded runtime.
@@ -122,6 +122,11 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static int _directObjectActivatorHandleCount;
+
+        /// <summary>
+        /// Incremented when <see cref="ForwardFallbackTargets"/> changes, so a result computed from a previous state isn't cached.
+        /// </summary>
+        private static int _fallbackTargetsVersion;
 
         /// <summary>
         /// The module of the last registration's activator, and its registry identity: a registry registers all its mappings
@@ -223,32 +228,34 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Registers the activator of a forward AOT proxy of an array type (or System.Array) for the array types assignable to it:
-        /// it receives the instance and the target type the proxy reports as IDuckType.Type.
+        /// Registers the activator of a forward AOT proxy for the runtime types a registry can't name, besides its target type:
+        /// the other array types for an array target type (dynamic duck typing binds the members of System.Array for any of
+        /// them), and the types of the runtime's own core library that aren't public, for a target type they derive from or
+        /// implement. The activator receives the instance and the type the proxy reports as IDuckType.Type.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type.</param>
-        /// <param name="arrayTargetType">The array target type of the registration.</param>
+        /// <param name="targetType">The target type of the registration: an array type, an interface or a class that isn't sealed.</param>
         /// <param name="generatedProxyType">The generated proxy type.</param>
         /// <param name="activator">The activator.</param>
-        internal static void RegisterArrayProxy(Type proxyDefinitionType, Type arrayTargetType, Type generatedProxyType, Func<object?, Type, object?> activator)
+        internal static void RegisterFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator)
         {
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
-            if (arrayTargetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(arrayTargetType)); }
+            if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
             if (generatedProxyType is null) { ThrowHelper.ThrowArgumentNullException(nameof(generatedProxyType)); }
             if (activator is null) { ThrowHelper.ThrowArgumentNullException(nameof(activator)); }
 
-            if (!IsArrayTarget(arrayTargetType))
+            if (!IsFallbackTarget(targetType))
             {
-                throw new ArgumentException($"AOT duck typing array target type '{arrayTargetType}' must be an array type or System.Array.", nameof(arrayTargetType));
+                throw new ArgumentException($"AOT duck typing fallback target type '{targetType}' must be an array type, an interface or a class that isn't sealed.", nameof(targetType));
             }
 
             lock (RegistrationLock)
             {
                 EnsureSingleRegistryAssemblyPerProcess(activator);
-                var result = ForwardRegistry.TryGetValue(new TypesTuple(proxyDefinitionType, arrayTargetType), out var registration)
+                var result = ForwardRegistry.TryGetValue(new TypesTuple(proxyDefinitionType, targetType), out var registration)
                                  ? registration.CreateTypeResult
-                                 : new DuckType.CreateTypeResult(proxyDefinitionType, generatedProxyType, arrayTargetType, new Func<object?, object?>(instance => activator(instance, arrayTargetType)), exceptionInfo: null);
-                SetArrayTarget(proxyDefinitionType, arrayTargetType, result, activator);
+                                 : new DuckType.CreateTypeResult(proxyDefinitionType, generatedProxyType, targetType, new Func<object?, object?>(instance => activator(instance, targetType)), exceptionInfo: null);
+                SetFallbackTarget(proxyDefinitionType, targetType, result, activator);
                 DuckType.InvalidateFastPaths();
             }
         }
@@ -417,8 +424,9 @@ namespace Datadog.Trace.DuckTyping
                 ReverseFailureRegistry.Clear();
                 ForwardMissCache.Clear();
                 ReverseMissCache.Clear();
-                ForwardArrayTargets.Clear();
-                ForwardArrayResults.Clear();
+                ForwardFallbackTargets.Clear();
+                ForwardFallbackResults.Clear();
+                Interlocked.Increment(ref _fallbackTargetsVersion);
                 _registeredRegistryAssemblyIdentity = null;
                 _validatedRegistryAssemblyIdentity = null;
                 _lastRegistryModule = null;
@@ -446,7 +454,7 @@ namespace Datadog.Trace.DuckTyping
                     [.. ReverseRegistry],
                     [.. ForwardFailureRegistry],
                     [.. ReverseFailureRegistry],
-                    [.. ForwardArrayTargets],
+                    [.. ForwardFallbackTargets],
                     _registeredRegistryAssemblyIdentity,
                     _validatedRegistryAssemblyIdentity);
             }
@@ -477,12 +485,13 @@ namespace Datadog.Trace.DuckTyping
                 ReverseFailureRegistry.Clear();
                 ForwardMissCache.Clear();
                 ReverseMissCache.Clear();
-                ForwardArrayTargets.Clear();
-                ForwardArrayResults.Clear();
+                ForwardFallbackTargets.Clear();
+                ForwardFallbackResults.Clear();
+                Interlocked.Increment(ref _fallbackTargetsVersion);
 
-                foreach (var entry in snapshot.ForwardArrayTargets)
+                foreach (var entry in snapshot.ForwardFallbackTargets)
                 {
-                    ForwardArrayTargets[entry.Key] = entry.Value;
+                    ForwardFallbackTargets[entry.Key] = entry.Value;
                 }
 
                 foreach (var entry in snapshot.ForwardRegistrations)
@@ -535,9 +544,9 @@ namespace Datadog.Trace.DuckTyping
                 return failureResult;
             }
 
-            if (!reverse && key.TargetType.IsArray && TryGetArrayResult(key, out var arrayResult))
+            if (!reverse && TryGetFallbackResult(key, out var fallbackResult))
             {
-                return arrayResult;
+                return fallbackResult;
             }
 
             // Misses are cached too, so unsupported mappings fail deterministically across threads and repeated calls.
@@ -562,8 +571,9 @@ namespace Datadog.Trace.DuckTyping
             if (generatedProxyType is null) { ThrowHelper.ThrowArgumentNullException(nameof(generatedProxyType)); }
             if (activator is null) { ThrowHelper.ThrowArgumentNullException(nameof(activator)); }
 
-            // Enforce that the generated proxy can always be assigned to the public proxy contract.
-            if (!proxyDefinitionType.IsAssignableFrom(generatedProxyType))
+            // Enforce that the generated proxy can always be assigned to the public proxy contract. The proxy type of a
+            // [DuckCopy] struct is a struct over the target, like dynamic duck typing's: its activator returns a copy.
+            if (!proxyDefinitionType.IsValueType && !proxyDefinitionType.IsAssignableFrom(generatedProxyType))
             {
                 DuckTypeAotGeneratedProxyTypeMismatchException.Throw(proxyDefinitionType, generatedProxyType);
             }
@@ -605,11 +615,6 @@ namespace Datadog.Trace.DuckTyping
 
                 var missCache = reverse ? ReverseMissCache : ForwardMissCache;
                 _ = missCache.TryRemove(key, out _);
-
-                if (!reverse && IsArrayTarget(targetType))
-                {
-                    SetArrayTarget(proxyDefinitionType, targetType, createTypeResult, typedActivator: null);
-                }
 
                 DuckType.InvalidateFastPaths();
             }
@@ -710,9 +715,9 @@ namespace Datadog.Trace.DuckTyping
                 var missCache = reverse ? ReverseMissCache : ForwardMissCache;
                 _ = missCache.TryRemove(key, out _);
 
-                if (!reverse && IsArrayTarget(targetType))
+                if (!reverse && IsFallbackTarget(targetType))
                 {
-                    SetArrayTarget(proxyDefinitionType, targetType, createTypeResult, typedActivator: null);
+                    SetFallbackTarget(proxyDefinitionType, targetType, createTypeResult, typedActivator: null);
                 }
 
                 DuckType.InvalidateFastPaths();
@@ -997,26 +1002,34 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static bool IsArrayTarget(Type targetType) => targetType.IsArray || targetType == typeof(Array);
+        private static bool IsFallbackTarget(Type targetType) => targetType.IsArray || (!targetType.IsValueType && !targetType.IsSealed);
 
         /// <summary>
-        /// Adds or updates the array target registration of a proxy definition type. Must be called under the registration lock.
+        /// Determines whether a type is one of the runtime's own core library that isn't public (e.g. the runtime's MethodInfo,
+        /// Stream or enumerator implementations): a registry can't name them, they differ between runtimes (NativeAOT's aren't
+        /// CoreCLR's), and instances have them.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns>true if the type is a non-public type of the core library; otherwise, false.</returns>
+        private static bool IsRuntimeInternalType(Type type) => !type.IsArray && type.Assembly == typeof(object).Assembly && !type.IsVisible;
+
+        /// <summary>
+        /// Adds or updates the fallback registration of a proxy definition type. Must be called under the registration lock.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type.</param>
-        /// <param name="arrayTargetType">The array target type.</param>
+        /// <param name="targetType">The target type.</param>
         /// <param name="result">The result of the registration (or failure).</param>
-        /// <param name="typedActivator">The activator receiving the target type, or null to keep the current one.</param>
-        private static void SetArrayTarget(Type proxyDefinitionType, Type arrayTargetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator)
+        /// <param name="typedActivator">The activator receiving the target type, or null for a failure.</param>
+        private static void SetFallbackTarget(Type proxyDefinitionType, Type targetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator)
         {
-            var current = ForwardArrayTargets.TryGetValue(proxyDefinitionType, out var registrations) ? registrations : [];
-            var updated = new List<ArrayTargetRegistration>(current.Length + 1);
+            var current = ForwardFallbackTargets.TryGetValue(proxyDefinitionType, out var registrations) ? registrations : [];
+            var updated = new List<FallbackRegistration>(current.Length + 1);
             var replaced = false;
             foreach (var registration in current)
             {
-                if (registration.TargetType == arrayTargetType)
+                if (registration.TargetType == targetType)
                 {
-                    // Kept in place: the order of the registrations decides for array types not assignable to any of them.
-                    updated.Add(new ArrayTargetRegistration(arrayTargetType, result, result.Success ? typedActivator ?? registration.TypedActivator : null));
+                    updated.Add(new FallbackRegistration(targetType, result, result.Success ? typedActivator : null));
                     replaced = true;
                     continue;
                 }
@@ -1026,16 +1039,17 @@ namespace Datadog.Trace.DuckTyping
 
             if (!replaced)
             {
-                updated.Add(new ArrayTargetRegistration(arrayTargetType, result, result.Success ? typedActivator : null));
+                updated.Add(new FallbackRegistration(targetType, result, result.Success ? typedActivator : null));
             }
 
-            ForwardArrayTargets[proxyDefinitionType] = updated.ToArray();
+            ForwardFallbackTargets[proxyDefinitionType] = updated.ToArray();
 
-            // The results created for array types, and their misses, may come from another registration now.
-            ForwardArrayResults.Clear();
+            // The results created for the types these registrations serve, and their misses, may come from another one now.
+            Interlocked.Increment(ref _fallbackTargetsVersion);
+            ForwardFallbackResults.Clear();
             foreach (var missKey in ForwardMissCache.Keys)
             {
-                if (missKey.ProxyDefinitionType == proxyDefinitionType && missKey.TargetType.IsArray)
+                if (missKey.ProxyDefinitionType == proxyDefinitionType && (missKey.TargetType.IsArray || IsRuntimeInternalType(missKey.TargetType)))
                 {
                     _ = ForwardMissCache.TryRemove(missKey, out _);
                 }
@@ -1043,59 +1057,126 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Gets the result for an array type without registration, for this array type: the one of the most derived registered
-        /// array type (or System.Array) it is assignable to, or else of the first one registered that can serve any array type.
-        /// Every array type has the members of System.Array, which their proxies bind, so they all behave the same.
+        /// Gets the result for a runtime type without registration that a registry can't name, like dynamic duck typing creates a
+        /// proxy for it:
+        /// <list type="bullet">
+        /// <item>An array type: the registration of the most derived registered array type it is assignable to, or else of any
+        /// registered array type. Every array type has the members of System.Array, which their proxies bind, so they behave
+        /// the same.</item>
+        /// <item>A non-public type of the core library: the registration of the most derived registered type it derives from or
+        /// implements whose proxy receives the target type (or whose target fails).</item>
+        /// </list>
+        /// The proxy reports the runtime type as IDuckType.Type, and a failure names it like dynamic duck typing's.
         /// </summary>
-        /// <param name="key">The proxy definition type and the array type.</param>
-        /// <param name="result">The result for the array type.</param>
-        /// <returns>true if a registered array type applies; otherwise, false.</returns>
-        private static bool TryGetArrayResult(TypesTuple key, out DuckType.CreateTypeResult result)
+        /// <param name="key">The proxy definition type and the runtime type.</param>
+        /// <param name="result">The result for the runtime type.</param>
+        /// <returns>true if a registration applies; otherwise, false.</returns>
+        private static bool TryGetFallbackResult(TypesTuple key, out DuckType.CreateTypeResult result)
         {
-            if (ForwardArrayResults.TryGetValue(key, out result))
+            var type = key.TargetType;
+            var isArray = type.IsArray;
+            if ((!isArray && !IsRuntimeInternalType(type)) || !ForwardFallbackTargets.TryGetValue(key.ProxyDefinitionType, out var registrations))
+            {
+                result = default;
+                return false;
+            }
+
+            if (ForwardFallbackResults.TryGetValue(key, out result))
             {
                 return true;
             }
 
-            if (!ForwardArrayTargets.TryGetValue(key.ProxyDefinitionType, out var registrations))
-            {
-                return false;
-            }
-
-            ArrayTargetRegistration? selected = null;
+            var version = Volatile.Read(ref _fallbackTargetsVersion);
+            FallbackRegistration? selected = null;
             foreach (var registration in registrations)
             {
-                if (registration.TargetType.IsAssignableFrom(key.TargetType) &&
+                if (registration.TargetType.IsArray == isArray &&
+                    registration.TargetType.IsAssignableFrom(type) &&
                     (selected is null || selected.TargetType.IsAssignableFrom(registration.TargetType)))
                 {
                     selected = registration;
                 }
             }
 
-            if (selected is null)
+            if (selected is null && isArray)
             {
-                // Another array type: only a proxy storing the instance as System.Array (with an activator receiving its type) can.
+                // Another array type: the proxy of any array type, which stores the instance as System.Array, serves it.
                 foreach (var registration in registrations)
                 {
-                    if (registration.TypedActivator is not null || !registration.Result.Success)
+                    if (registration.TargetType.IsArray)
                     {
                         selected = registration;
                         break;
                     }
                 }
+            }
 
-                if (selected is null)
+            if (selected is null)
+            {
+                return false;
+            }
+
+            if (selected.TypedActivator is { } typedActivator)
+            {
+                result = selected.Result.WithTargetType(
+                    type,
+                    new Func<object?, object?>(instance =>
+                    {
+                        // Like the activator dynamic duck typing creates for this type, which casts the instance to it.
+                        if (instance is not null && !type.IsInstanceOfType(instance))
+                        {
+                            ThrowInvalidCast(instance, type);
+                        }
+
+                        return typedActivator(instance, type);
+                    }));
+            }
+            else
+            {
+                result = CreateFallbackFailure(selected.Result, selected.TargetType, key);
+            }
+
+            lock (RegistrationLock)
+            {
+                // A registration made while this result was computed may select another one: it's returned, but not cached.
+                if (version == Volatile.Read(ref _fallbackTargetsVersion))
                 {
-                    return false;
+                    result = ForwardFallbackResults.GetOrAdd(key, result);
                 }
             }
 
-            var targetType = key.TargetType;
-            var typedActivator = selected.TypedActivator;
-            result = ForwardArrayResults.GetOrAdd(
-                key,
-                selected.Result.WithTargetType(targetType, typedActivator is null ? null : new Func<object?, object?>(instance => typedActivator(instance, targetType))));
             return true;
+
+            static void ThrowInvalidCast(object instance, Type type)
+                => throw new InvalidCastException($"Unable to cast object of type '{instance.GetType()}' to type '{type}'.");
+        }
+
+        /// <summary>
+        /// Gets the failure of a registration for another runtime type: dynamic duck typing names the runtime type in the
+        /// message of its failures (e.g. "was not found in the instance of type '...'"), the registration names its own.
+        /// </summary>
+        /// <param name="registeredResult">The failure of the registration.</param>
+        /// <param name="registeredType">The target type of the registration.</param>
+        /// <param name="key">The proxy definition type and the runtime type.</param>
+        /// <returns>The failure for the runtime type.</returns>
+        private static DuckType.CreateTypeResult CreateFallbackFailure(DuckType.CreateTypeResult registeredResult, Type registeredType, TypesTuple key)
+        {
+            var exception = registeredResult.FailureException;
+            if (exception is not null && exception.GetType().FullName is { } exceptionTypeName)
+            {
+                var message = ReplaceQuotedTypeName(ReplaceQuotedTypeName(exception.Message, registeredType.FullName, key.TargetType.FullName), registeredType.ToString(), key.TargetType.ToString());
+                if (!string.Equals(message, exception.Message, StringComparison.Ordinal) &&
+                    DuckTypeAotRegisteredFailureException.Create(exceptionTypeName, message) is { } renamed &&
+                    renamed.GetType() == exception.GetType())
+                {
+                    return new DuckType.CreateTypeResult(key.ProxyDefinitionType, proxyType: null, key.TargetType, activator: null, ExceptionDispatchInfo.Capture(renamed));
+                }
+            }
+
+            return registeredResult.WithTargetType(key.TargetType, activator: null);
+
+            static string ReplaceQuotedTypeName(string text, string? registeredName, string? runtimeName)
+                => StringUtil.IsNullOrEmpty(registeredName) || runtimeName is null ? text : text.Replace($"'{registeredName}'", $"'{runtimeName}'");
         }
 
         /// <summary>
@@ -1157,11 +1238,12 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// A forward registration (or failure) of an array type, with the activator its proxy has for the array types assignable to it.
+        /// A forward registration (or failure) serving runtime types a registry can't name, with the activator its proxy has for
+        /// them (see <see cref="TryGetFallbackResult"/>).
         /// </summary>
-        private sealed class ArrayTargetRegistration
+        private sealed class FallbackRegistration
         {
-            internal ArrayTargetRegistration(Type targetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator)
+            internal FallbackRegistration(Type targetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator)
             {
                 TargetType = targetType;
                 Result = result;
@@ -1185,7 +1267,7 @@ namespace Datadog.Trace.DuckTyping
                 KeyValuePair<TypesTuple, Registration>[] reverseRegistrations,
                 KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] forwardFailures,
                 KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] reverseFailures,
-                KeyValuePair<Type, ArrayTargetRegistration[]>[] forwardArrayTargets,
+                KeyValuePair<Type, FallbackRegistration[]>[] forwardFallbackTargets,
                 string? registeredRegistryAssemblyIdentity,
                 string? validatedRegistryAssemblyIdentity)
             {
@@ -1193,7 +1275,7 @@ namespace Datadog.Trace.DuckTyping
                 ReverseRegistrations = reverseRegistrations;
                 ForwardFailures = forwardFailures;
                 ReverseFailures = reverseFailures;
-                ForwardArrayTargets = forwardArrayTargets;
+                ForwardFallbackTargets = forwardFallbackTargets;
                 RegisteredRegistryAssemblyIdentity = registeredRegistryAssemblyIdentity;
                 ValidatedRegistryAssemblyIdentity = validatedRegistryAssemblyIdentity;
             }
@@ -1206,7 +1288,7 @@ namespace Datadog.Trace.DuckTyping
 
             internal KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] ReverseFailures { get; }
 
-            internal KeyValuePair<Type, ArrayTargetRegistration[]>[] ForwardArrayTargets { get; }
+            internal KeyValuePair<Type, FallbackRegistration[]>[] ForwardFallbackTargets { get; }
 
             internal string? RegisteredRegistryAssemblyIdentity { get; }
 

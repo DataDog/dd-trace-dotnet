@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 
@@ -78,13 +79,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryParseFailureMode(string? value, out DuckTypeAotFailureMode failureMode)
         {
-            if (string.Equals(value, "default", System.StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(value, "default", StringComparison.OrdinalIgnoreCase))
             {
                 failureMode = DuckTypeAotFailureMode.Default;
                 return true;
             }
 
-            if (string.Equals(value, "strict", System.StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(value, "strict", StringComparison.OrdinalIgnoreCase))
             {
                 failureMode = DuckTypeAotFailureMode.Strict;
                 return true;
@@ -110,7 +111,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var failureModeValue = _failureModeOption.GetValue(context);
             if (!TryParseFailureMode(failureModeValue, out var failureMode))
             {
-                Datadog.Trace.Tools.Runner.Utils.WriteError($"Invalid --failure-mode value '{failureModeValue}'. Allowed values are: default, strict.");
+                Utils.WriteError($"Invalid --failure-mode value '{failureModeValue}'. Allowed values are: default, strict.");
                 context.ExitCode = 1;
                 return;
             }

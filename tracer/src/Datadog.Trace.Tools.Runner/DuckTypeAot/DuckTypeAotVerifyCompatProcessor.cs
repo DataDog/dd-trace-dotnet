@@ -1244,8 +1244,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var mapping in matrix.Mappings)
             {
-                // Branch: take this path when (!string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase)) evaluates to true.
-                if (!string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                // A mapping that fails only for other runtime types of its target still registers its proxy type.
+                if (!string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase) && !mapping.FailsOnlyForOtherRuntimeTypes)
                 {
                     continue;
                 }

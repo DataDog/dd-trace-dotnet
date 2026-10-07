@@ -146,6 +146,12 @@ internal static partial class ConfigurationKeys
     public const string DotNetTracerHome = "DD_DOTNET_TRACER_HOME";
 
     /// <summary>
+    /// Testing-only path of the ducktype-aot map file to which dynamic duck typing records the proxy mappings it creates,
+    /// used to discover the mappings an application needs in NativeAOT. Not set by default: nothing is recorded.
+    /// </summary>
+    public const string DuckTypeAotDiscoveryOutputPath = "DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH";
+
+    /// <summary>
     /// Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.Environment"/>

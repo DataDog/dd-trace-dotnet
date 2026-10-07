@@ -1,4 +1,4 @@
-﻿// <copyright file="DuckTypeAotProcessorsTests.cs" company="Datadog">
+// <copyright file="DuckTypeAotProcessorsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -680,7 +680,7 @@ public class DuckTypeAotProcessorsTests
                 var createTypeResult = DuckType.GetOrCreateProxyType(typeof(IAliasForwardProxy), typeof(AliasForwardDerivedTarget));
                 createTypeResult.UsesDynamicInvokeFallback.Should().BeFalse();
                 // Non-generic Create uses the generated object-input, object-output activator directly, not a DynamicInvoke wrapper.
-                var activator = GetCreateTypeResultField<Delegate>(createTypeResult, "_activator");
+                var activator = GetGeneratedObjectActivator(createTypeResult);
                 activator.Should().NotBeNull();
                 activator!.GetType().Should().Be(typeof(Func<object?, object?>));
                 activator.Method.Name.Should().StartWith("ActivateProxy_", "generated registries should register object-input, object-output activators directly");
@@ -7917,8 +7917,11 @@ public class DuckTypeAotProcessorsTests
 
                 var getValueMethod = generatedOuterProxyType.GetMethod("get_Value", Type.EmptyTypes);
                 getValueMethod.Should().NotBeNull();
-                var initialValue = getValueMethod!.Invoke(reverseProxyObject, Array.Empty<object>());
-                initialValue.Should().BeNull();
+
+                // Like dynamic duck typing's reverse proxy, the getter extracts the instance of the duck type the delegation
+                // returns: a null one throws.
+                var readInitialValue = () => getValueMethod!.Invoke(reverseProxyObject, Array.Empty<object>());
+                readInitialValue.Should().Throw<TargetInvocationException>().WithInnerException<NullReferenceException>();
 
                 var innerTarget = new TestDuckReverseChainInnerTarget("alpha");
                 var innerProxyObject = innerConstructor!.Invoke([innerTarget]);
@@ -7937,7 +7940,7 @@ public class DuckTypeAotProcessorsTests
 
                 roundtripResult.Should().BeSameAs(innerTarget);
 
-                var afterSetValue = getValueMethod.Invoke(reverseProxyObject, Array.Empty<object>());
+                var afterSetValue = getValueMethod!.Invoke(reverseProxyObject, Array.Empty<object>());
                 afterSetValue.Should().NotBeNull();
                 afterSetValue.Should().BeSameAs(innerTarget);
             }
@@ -13358,7 +13361,7 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void MergingDiscoveredMappingsShouldNotReplaceAReadOnlyMap()
     {
         var tempDirectory = CreateTempDirectory();
@@ -13368,12 +13371,42 @@ public class DuckTypeAotProcessorsTests
             const string Original = "{ \"mappings\": [] }";
             File.WriteAllText(mapFilePath, Original);
             File.SetAttributes(mapFilePath, File.GetAttributes(mapFilePath) | FileAttributes.ReadOnly);
+            Skip.If(CanOpenForWriting(mapFilePath), "The process can write read-only files (e.g. root).");
             var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
             File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
 
             DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out _, out var error).Should().BeFalse();
             error.Should().NotBeNullOrEmpty();
             File.ReadAllText(mapFilePath).Should().Be(Original);
+        }
+        finally
+        {
+            if (File.Exists(mapFilePath))
+            {
+                File.SetAttributes(mapFilePath, FileAttributes.Normal);
+            }
+
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [SkippableFact]
+    public void MergingDiscoveredMappingsShouldWriteAReadOnlyMapTheProcessCanWrite()
+    {
+        // E.g. root in a CI container: the ReadOnly attribute comes from the permission bits, but the process can write the map.
+        var tempDirectory = CreateTempDirectory();
+        var mapFilePath = Path.Combine(tempDirectory, "map.json");
+        try
+        {
+            File.WriteAllText(mapFilePath, "{ \"mappings\": [] }");
+            File.SetAttributes(mapFilePath, File.GetAttributes(mapFilePath) | FileAttributes.ReadOnly);
+            Skip.IfNot(CanOpenForWriting(mapFilePath), "The process can't write read-only files.");
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out var addedMappings, out var error).Should().BeTrue(error);
+            addedMappings.Should().Be(1);
+            DuckTypeAotMapFileParser.Parse(mapFilePath).Mappings.Select(mapping => mapping.ProxyTypeName).Should().Equal("Ns.IDiscovered");
         }
         finally
         {
@@ -13412,6 +13445,95 @@ public class DuckTypeAotProcessorsTests
         }
     }
 #endif
+
+#if NET6_0_OR_GREATER
+    [SkippableFact]
+    public void MergingDiscoveredMappingsShouldLockTheFileASymbolicLinkPointsTo()
+    {
+        // The map is written to the file the link points to: a recording application and generate take the lock of that file,
+        // whatever path (the link or the file) they use.
+        Skip.If(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "Creating symbolic links requires privileges on Windows.");
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "real-map.json");
+            File.WriteAllText(mapFilePath, "{ \"mappings\": [] }");
+            var linkPath = Path.Combine(tempDirectory, "map.json");
+            File.CreateSymbolicLink(linkPath, mapFilePath);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(linkPath, discoveredMapPath, out _, out var error).Should().BeTrue(error);
+            File.Exists(mapFilePath + ".lock").Should().BeTrue();
+            File.Exists(linkPath + ".lock").Should().BeFalse();
+            using (var heldLock = DuckTypeAotDiscoveryRecorder.AcquireOutputLock(mapFilePath, TimeSpan.Zero))
+            {
+                heldLock.Should().NotBeNull();
+                DuckTypeAotDiscoveryRecorder.AcquireOutputLock(linkPath, TimeSpan.Zero).Should().BeNull("the link and the file share the lock");
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+#endif
+
+    [Theory]
+    // Numbers outside of the range of decimal, or with more digits than it has: the map is read, and its text kept.
+    [InlineData("number-out-of-decimal-range")]
+    [InlineData("numbers-beyond-decimal-precision")]
+    // UTF-16/32 without a byte order mark: valid UTF-8 bytes, but NUL characters; the map isn't read as empty and rewritten.
+    [InlineData("utf16-little-endian-without-bom")]
+    [InlineData("utf16-big-endian-without-bom")]
+    [InlineData("utf32-without-bom")]
+    public void MergingDiscoveredMappingsShouldReadTheMapOrLeaveItAsItIs(string scenario)
+    {
+        const string Existing = "{ \"mode\": \"forward\", \"proxyType\": \"Ns.IExisting\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Existing\", \"targetAssembly\": \"B\" }";
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "map.json");
+            var text = scenario switch
+            {
+                "number-out-of-decimal-range" => "{\n  \"threshold\": 1e400,\n  \"mappings\": [\n    " + Existing + "\n  ]\n}\n",
+                "numbers-beyond-decimal-precision" => "{ mappings: [ " + Existing + " ], ratio: 1.5e-40, big: 123456789012345678901234567890.123 }",
+                _ => "{\n  \"mappings\": [\n    " + Existing + "\n  ]\n}\n",
+            };
+            Encoding encoding = scenario switch
+            {
+                "utf16-little-endian-without-bom" => new UnicodeEncoding(bigEndian: false, byteOrderMark: false),
+                "utf16-big-endian-without-bom" => new UnicodeEncoding(bigEndian: true, byteOrderMark: false),
+                "utf32-without-bom" => new UTF32Encoding(bigEndian: false, byteOrderMark: false),
+                _ => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            };
+            var originalBytes = encoding.GetBytes(text);
+            File.WriteAllBytes(mapFilePath, originalBytes);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            var merged = DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out var addedMappings, out var error);
+            if (scenario.StartsWith("utf", StringComparison.Ordinal))
+            {
+                merged.Should().BeFalse();
+                error.Should().Contain("NUL characters");
+                File.ReadAllBytes(mapFilePath).Should().Equal(originalBytes);
+            }
+            else
+            {
+                merged.Should().BeTrue(error);
+                addedMappings.Should().Be(1);
+                DuckTypeAotMapFileParser.Parse(mapFilePath).Mappings.Select(mapping => mapping.ProxyTypeName).Should().Equal("Ns.IExisting", "Ns.IDiscovered");
+                var mergedText = File.ReadAllText(mapFilePath);
+                (scenario == "number-out-of-decimal-range" ? new[] { "1e400" } : new[] { "1.5e-40", "123456789012345678901234567890.123" })
+                    .Should().OnlyContain(number => mergedText.Contains(number));
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
 
     [Fact]
     public void DiscoverMappingsShouldKeepDeclaredMappingsThatReplayADynamicFailure()
@@ -13602,6 +13724,94 @@ public class DuckTypeAotProcessorsTests
                 propsPath: Path.Combine(directory, "ducktype-aot.props")));
             exitCode.Should().Be(0, output);
             return (outputPath, output);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldFailWhenTheApplicationDatadogTraceMissesARegistryApi()
+    {
+        // The registry calls the generator's Datadog.Trace API: an application's Datadog.Trace without one of those members
+        // (e.g. an older version) would make the registry fail at startup, so the generation fails and names the member.
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var datadogTraceCopyPath = Path.Combine(tempDirectory, "Datadog.Trace.dll");
+            using (var datadogTraceModule = ModuleDefMD.Load(typeof(DuckType).Assembly.Location))
+            {
+                var registerAotProxy = datadogTraceModule.Find(typeof(DuckType).FullName, isReflectionName: true)!.Methods.Single(
+                    method => method.Name == nameof(DuckType.RegisterAotProxy) && method.Parameters.Last().Type.FullName.StartsWith("System.Func", StringComparison.Ordinal));
+                registerAotProxy.Name = "RegisterAotProxyOfAnotherVersion";
+                datadogTraceModule.Mvid = Guid.NewGuid();
+                datadogTraceModule.Write(datadogTraceCopyPath);
+            }
+
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map.json");
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(new { mappings = new[] { CreateMappingDocumentEntry(typeof(ITestDuckProxy), typeof(TestDuckTarget)) } }));
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.MissingApi.dll");
+            var (exitCode, output) = ProcessAndCapture(new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { typeof(DuckTypeAotProcessorsTests).Assembly.Location },
+                targetAssemblies: new[] { typeof(TestDuckTarget).Assembly.Location, datadogTraceCopyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.MissingApi",
+                trimmerDescriptorPath: Path.Combine(tempDirectory, "ducktype-aot.linker.xml"),
+                propsPath: Path.Combine(tempDirectory, "ducktype-aot.props")));
+
+            exitCode.Should().Be(1, output);
+            output.Should().Contain("doesn't define 1 types or members the registry uses").And.Contain("Datadog.Trace.DuckTyping.DuckType::RegisterAotProxy(");
+            File.Exists(outputPath).Should().BeFalse();
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void MappingsThatFailOnlyForOtherRuntimeTypesShouldKeepTheirGeneratedProxyType()
+    {
+        // The registry still registers the proxy of the mapped target itself: the result names it and the trimmer descriptor
+        // roots it, like for a compatible mapping.
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapping = new DuckTypeAotMapping(
+                typeof(ITestDuckProxy).FullName!,
+                typeof(ITestDuckProxy).Assembly.GetName().Name!,
+                typeof(TestDuckTarget).FullName!,
+                typeof(TestDuckTarget).Assembly.GetName().Name!,
+                DuckTypeAotMappingMode.Forward,
+                DuckTypeAotMappingSource.MapFile);
+            const string GeneratedProxyTypeName = "Datadog.Trace.DuckTyping.Generated.Proxies.DuckTypeProxy_0001";
+            var aliasFailure = DuckTypeAotMappingEmissionResult.NotCompatible(mapping, DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207", "derived type").WithCheckedAgainstMetadataOnly();
+            var result = DuckTypeAotMappingEmissionResult.Compatible(mapping, "Registry", GeneratedProxyTypeName).WithOtherRuntimeTypeFailure(aliasFailure);
+
+            result.Status.Should().Be(DuckTypeAotCompatibilityStatuses.MissingTargetMethod);
+            result.Detail.Should().Be("derived type");
+            result.GeneratedProxyAssemblyName.Should().Be("Registry");
+            result.GeneratedProxyTypeName.Should().Be(GeneratedProxyTypeName);
+            result.FailsOnlyForOtherRuntimeTypes.Should().BeTrue();
+            result.CheckedAgainstMetadataOnly.Should().BeTrue();
+            result.BehavesLikeDynamicDuckTyping.Should().BeFalse();
+
+            var descriptorPath = Path.Combine(tempDirectory, "ducktype-aot.linker.xml");
+            DuckTypeAotArtifactsWriter.WriteTrimmerDescriptor(
+                descriptorPath,
+                new DuckTypeAotMappingResolutionResult(new[] { mapping }, new Dictionary<string, string>(), new Dictionary<string, string>(), Array.Empty<DuckTypeAotTypeReference>(), Array.Empty<string>(), Array.Empty<string>()),
+                new DuckTypeAotRegistryEmissionResult(
+                    new DuckTypeAotRegistryAssemblyInfo("Registry", "Registry.Bootstrap", Path.Combine(tempDirectory, "Registry.dll"), Guid.NewGuid()),
+                    new Dictionary<string, DuckTypeAotMappingEmissionResult> { [mapping.Key] = result },
+                    Array.Empty<DuckTypeAotRuntimeRegistration>()));
+            var roots = XDocument.Load(descriptorPath).Descendants("type").Select(type => (string?)type.Attribute("fullname")).ToList();
+            roots.Should().Contain(GeneratedProxyTypeName).And.Contain(mapping.ProxyTypeName).And.Contain(mapping.TargetTypeName);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
         }
     }
 
@@ -14280,7 +14490,7 @@ public class DuckTypeAotProcessorsTests
             var trailingParameter = addMethod!.Parameters.Single(parameter => parameter.MethodSigIndex == 1);
             trailingParameter.ParamDef.Should().NotBeNull();
             trailingParameter.ParamDef!.Constant.Should().NotBeNull();
-            trailingParameter.ParamDef.Attributes &= ~dnlib.DotNet.ParamAttributes.Optional;
+            trailingParameter.ParamDef.Attributes &= ~ParamAttributes.Optional;
             module.Write(mutatedAssemblyPath);
         }
 
@@ -14462,6 +14672,19 @@ public class DuckTypeAotProcessorsTests
         BitConverter.GetBytes((ushort)version.Build).CopyTo(bytes, versionOffset + 4);
         BitConverter.GetBytes((ushort)version.Revision).CopyTo(bytes, versionOffset + 6);
         File.WriteAllBytes(destinationPath, bytes);
+    }
+
+    private static bool CanOpenForWriting(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private static Guid CopyAssemblyWithNewMvid(string sourcePath, string destinationPath)
@@ -14662,6 +14885,15 @@ public class DuckTypeAotProcessorsTests
         public string StandardOutput { get; }
 
         public string StandardError { get; }
+    }
+
+    // The object activator of a generated proxy, without the wrapper that knows its proxy definition type.
+    private static Delegate? GetGeneratedObjectActivator(DuckType.CreateTypeResult result)
+    {
+        var activator = GetCreateTypeResultField<Delegate>(result, "_activator");
+        return activator?.Target is { } target && target.GetType().Name == "ObjectActivator"
+                   ? (Delegate?)target.GetType().GetField("_activator", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(target)
+                   : activator;
     }
 
     private static TField? GetCreateTypeResultField<TField>(DuckType.CreateTypeResult result, string fieldName)
