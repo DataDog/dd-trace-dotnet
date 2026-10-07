@@ -571,20 +571,16 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.ObfuscationQueryStringRegex.Should().Be(expected);
+            settings.ObfuscationQueryStringRegexWasConfigured.Should().Be(value is not null);
         }
 
         [Fact]
-        public void ObfuscationQueryStringRegexTracksExplicitConfiguration()
+        public void CopiedDefaultObfuscationQueryStringRegexWasConfigured()
         {
-            var unset = new TracerSettings(CreateConfigurationSource());
-            var copiedDefault = new TracerSettings(CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex)));
-            var empty = new TracerSettings(CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, string.Empty)));
+            var settings = new TracerSettings(CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex)));
 
-            unset.ObfuscationQueryStringRegex.Should().Be(TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
-            unset.ObfuscationQueryStringRegexWasConfigured.Should().BeFalse();
-            copiedDefault.ObfuscationQueryStringRegex.Should().Be(unset.ObfuscationQueryStringRegex);
-            copiedDefault.ObfuscationQueryStringRegexWasConfigured.Should().BeTrue();
-            empty.ObfuscationQueryStringRegexWasConfigured.Should().BeTrue();
+            settings.ObfuscationQueryStringRegex.Should().Be(TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+            settings.ObfuscationQueryStringRegexWasConfigured.Should().BeTrue();
         }
 
         [Theory]
