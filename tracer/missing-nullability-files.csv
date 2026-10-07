@@ -368,7 +368,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/IThreadContext.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/OwinRequestStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/RequestContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ViewContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/AspNetCoreBlockMiddlewareIntegrationEnd.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSource.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSourceValueProvider.cs

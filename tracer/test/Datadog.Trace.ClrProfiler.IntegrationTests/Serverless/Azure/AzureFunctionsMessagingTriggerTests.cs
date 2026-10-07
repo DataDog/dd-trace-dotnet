@@ -3,7 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
+// Unlike the other Azure Functions tests (which only run in the Windows-only
+// integration_tests_azure_functions stage), these run on Linux in the DockerTest group 2 job,
+// because they need the Service Bus/Event Hubs/Azurite emulators from docker-compose. That job
+// passes an explicit --filter, which bypasses the default (Category!=AzureFunctions) exclusion,
+// so the framework upper bound has to be expressed here instead. Keep it in sync with the
+// TargetFrameworks of Samples.AzureFunctions.V4Isolated.Messaging: Azure Functions doesn't
+// support .NET 11 yet, so the sample isn't built for it, and there's nothing for `func` to start.
+#if NET6_0_OR_GREATER && !NET11_0_OR_GREATER
 
 using System;
 using System.Collections.Immutable;
@@ -79,7 +86,8 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         using (await RunAzureFunctionAndWaitForExit(
                    agent,
                    seedAsync: () => SeedViaHttpAsync("seed/servicebus"),
-                   expectedExitCode: ExpectedFuncKillExitCode))
+                   expectedExitCode: ExpectedFuncKillExitCode,
+                   workerSpanPredicate: s => s.Name == "azure_functions.invoke" && s.Resource == "ServiceBus ServiceBusTrigger"))
         {
             // 7 spans total: 1 health-check ping + 6 meaningful spans
             var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);
@@ -116,7 +124,8 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         using (await RunAzureFunctionAndWaitForExit(
                    agent,
                    seedAsync: () => SeedViaHttpAsync("seed/eventhub"),
-                   expectedExitCode: ExpectedFuncKillExitCode))
+                   expectedExitCode: ExpectedFuncKillExitCode,
+                   workerSpanPredicate: s => s.Name == "azure_functions.invoke" && s.Resource == "EventHub EventHubTrigger"))
         {
             // Wait for at least 7 spans (1 health-check ping + 6 meaningful).
             var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);

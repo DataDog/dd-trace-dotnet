@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET8_0 || NET10_0
+#if NET8_0 || NET10_0 || NET11_0
 
 #nullable enable
 

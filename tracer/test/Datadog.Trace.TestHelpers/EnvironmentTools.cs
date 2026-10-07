@@ -64,11 +64,17 @@ namespace Datadog.Trace.TestHelpers
                                                                        string.Empty;
         }
 
+#if NET6_0_OR_GREATER
+        [System.Runtime.Versioning.SupportedOSPlatformGuard("windows")]
+#endif
         public static bool IsWindows()
         {
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         }
 
+#if NET6_0_OR_GREATER
+        [System.Runtime.Versioning.SupportedOSPlatformGuard("linux")]
+#endif
         public static bool IsLinux()
         {
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
@@ -102,6 +108,9 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+#if NET6_0_OR_GREATER
+        [System.Runtime.Versioning.SupportedOSPlatformGuard("macos")]
+#endif
         public static bool IsOsx()
         {
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX);

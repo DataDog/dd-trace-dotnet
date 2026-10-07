@@ -102,7 +102,7 @@ public sealed class TestSession
         tags.SetCIEnvironmentValues(ciValues);
 
         var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
+            string.IsNullOrEmpty(framework) ? "test_session" : $"{StringUtil.ToLowerInvariant(framework)}.test_session",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);

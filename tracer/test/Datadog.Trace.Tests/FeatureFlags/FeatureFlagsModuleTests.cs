@@ -85,6 +85,43 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void UpdateRemoteConfig_WhenAModifiedFileDropsAFlag_TheFlagIsNoLongerFound()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager);
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+
+        subscription.Invoke(ConfigUpdate(configPath, "kept-flag", "dropped-flag"), null);
+        module.Evaluate("dropped-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().NotBe("FLAG_NOT_FOUND");
+
+        // A modified file keeps its path and never appears in the removed set.
+        subscription.Invoke(ConfigUpdate(configPath, "kept-flag"), null);
+
+        module.Evaluate("dropped-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().Be("FLAG_NOT_FOUND");
+        module.Evaluate("kept-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().NotBe("FLAG_NOT_FOUND");
+
+        static Dictionary<string, List<RemoteConfiguration>> ConfigUpdate(RemoteConfigurationPath path, params string[] flagKeys)
+        {
+            var flags = new FlagCollection();
+            foreach (var key in flagKeys)
+            {
+                flags[key] = new Flag { Key = key, Enabled = true, VariationType = FeatureFlagsValueType.Boolean };
+            }
+
+            var json = JsonConvert.SerializeObject(new ServerConfiguration { Flags = flags });
+            return new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+            };
+        }
+    }
+
+    [Fact]
     public void Create_WithAgentlessSource_DoesNotSubscribeToRc()
     {
         var rcmManager = new MockRcmSubscriptionManager();
@@ -303,6 +340,21 @@ public class FeatureFlagsModuleTests
 
             invocations.Should().BeLessOrEqualTo(1, "iteration {0} delivered one configuration more than once", i);
         }
+    }
+
+    [Theory]
+    [InlineData(FeatureFlagsValueType.String, "fallback")]
+    [InlineData(FeatureFlagsValueType.Boolean, true)]
+    [InlineData(FeatureFlagsValueType.Integer, 42)]
+    [InlineData(FeatureFlagsValueType.Numeric, 1.5)]
+    public void Evaluate_WhenNoConfigurationYet_ReturnsTheDefaultValue(FeatureFlagsValueType type, object defaultValue)
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var result = module.Evaluate("test-flag", type, defaultValue, "user-1", null);
+
+        result.Error.Should().Be("PROVIDER_NOT_READY");
+        result.Value.Should().Be(defaultValue);
     }
 
     [Fact]

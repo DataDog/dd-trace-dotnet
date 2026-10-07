@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RequiresDockerDependency>Mixed</RequiresDockerDependency>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
 
@@ -82,7 +82,12 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <!--
+    net11.0 deliberately stays on the .NET 10 SQLite packages. Microsoft.Data.Sqlite.Core 11.0.0
+    hard-requires SQLitePCLRaw.core 3.0.5, whose linux-x64 libe_sqlite3.so needs GLIBC_2.34, whic
+    our linux tests don't have available yet. Revisit when the test image moves to a newer glibc.
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' or '$(TargetFramework)' == 'net11.0'">
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.0" />
     <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="10.0.0" />

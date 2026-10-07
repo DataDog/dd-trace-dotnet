@@ -49,6 +49,7 @@ partial class Build : NukeBuild
                   .Executes(() =>
                    {
                        GenerateConditionVariables();
+                       GenerateSmokeTestInputsChanged();
                        GenerateUnitTestFrameworkMatrices();
 
                        GenerateIntegrationTestsWindowsMatrices();
@@ -163,6 +164,31 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable(changedTeamValue.VariableName, variableValue);
                     changedTeamValue.IsChanged = isChanged;
                 }
+            }
+
+            void GenerateSmokeTestInputsChanged()
+            {
+                const string variableName = "SmokeTestInputsChanged";
+                var isChanged = false;
+
+                if (Environment.GetEnvironmentVariable("BUILD_REASON") == "PullRequest")
+                {
+                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                    var changedFiles = GetGitChangedFiles(baseBranch);
+                    // Run smoke tests on a PR if any of the files change that most definitely indicate that they _should_ run
+                    var matcher = new Matcher(StringComparison.Ordinal)
+                        .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_snapshots.json")
+                        .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_snapshots_2_1.json")
+                        .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_azurefunctions_snapshots.json")
+                        .AddInclude("tracer/build/_build/SmokeTests/SmokeTestScenario.cs")
+                        .AddInclude("tracer/build/_build/SmokeTests/SmokeTestScenarios.cs")
+                        .AddInclude("tracer/test/test-applications/regression/AspNetCoreSmokeTest/**"); // <- this captures more than we need but in reality doesn't change often
+
+                    isChanged = changedFiles.Any(file => matcher.Match(file).HasMatches);
+                }
+
+                Logger.Information("{Variable} - {IsChanged}", variableName, isChanged);
+                AzurePipelines.Instance.SetOutputVariable(variableName, isChanged.ToString());
             }
 
             void GenerateUnitTestFrameworkMatrices()
@@ -293,6 +319,8 @@ partial class Build : NukeBuild
                     new {framework = TargetFramework.NET8_0 },
                     new {framework = TargetFramework.NET9_0 },
                     new {framework = TargetFramework.NET10_0 },
+                    // Azure Functions does not yet support .NET 11
+                    // new {framework = TargetFramework.NET11_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -690,12 +718,15 @@ partial class Build : NukeBuild
                         (TargetFramework.NET8_0, "macos-14"),
                         (TargetFramework.NET9_0, "macos-14"),
                         (TargetFramework.NET10_0, "macos-14"),
+                        (TargetFramework.NET11_0, "macos-14"),
                         (TargetFramework.NET6_0, "macos-15"),
                         (TargetFramework.NET8_0, "macos-15"),
                         (TargetFramework.NET9_0, "macos-15"),
                         (TargetFramework.NET10_0, "macos-15"),
+                        (TargetFramework.NET11_0, "macos-15"),
                         (TargetFramework.NET6_0, "macOS-15-arm64"),
                         (TargetFramework.NET10_0, "macOS-15-arm64"),
+                        (TargetFramework.NET11_0, "macOS-15-arm64"),
                     };
 
                     var matrix = images.ToDictionary(
