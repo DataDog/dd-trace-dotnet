@@ -250,26 +250,6 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 - **`docs/development/TracerDebugging.md`** — Local debugging techniques, launchSettings.json configuration, $(SolutionDir) path issues, IDE-specific tips, and troubleshooting common tracer loading problems
 
-## CI Reliability Guardrails (recent learnings)
-
-Use this checklist before pushing changes that affect DuckTyping, tooling, or configuration contracts:
-
-1. **Cross-TFM compile sanity for tooling changes**
-   - If you modify `Datadog.Trace.Tools.Runner` or related AOT tooling code, validate compilation across relevant TFMs (especially `net5.0`), not only the local default TFM.
-   - Avoid introducing framework-specific attribute usage without TFM guards (for example code-analysis attributes that can conflict on older TFMs).
-
-2. **Config key contract updates**
-   - Any new `DD_*`, `_DD_*`, `DATADOG_*`, or `OTEL_*` key must be accounted for in telemetry configuration contract tests.
-   - Either register the key in intake normalization rules or explicitly exclude it when it is internal/test-only.
-
-3. **Local test execution concurrency**
-   - Do not run multiple `dotnet test` processes in parallel for projects that use Fody weaving, as file-lock contention can create false failures.
-   - Prefer serialized execution when touching shared build outputs.
-
-4. **Failure triage discipline**
-   - For Azure failures, always extract the exact failing test/error from timeline/logs before implementing a fix.
-   - Avoid assumption-based fixes; patch only after confirming the primary failure signature.
-
 ## Commit & Pull Request Guidelines
 
 - Commits: imperative mood, optional `[Area]` prefix (e.g. `[Debugger]`, `[SymDB]`). Keep messages concise — avoid full diffs or extensive explanation.

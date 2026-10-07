@@ -43,6 +43,11 @@ public class DuckTypeAotGeneratedAssembliesTests
         string Handle(object value);
     }
 
+    public interface IStandaloneNameReader
+    {
+        string Name { get; }
+    }
+
     [Fact]
     public void GeneratedRegistryShouldRegisterTheFailureOfStandaloneContractsThatCantBeLoaded()
     {
@@ -198,6 +203,78 @@ public class DuckTypeAotGeneratedAssembliesTests
     }
 
     [Fact]
+    public void GeneratedRegistryShouldReportForwardMappingsBoundFromMetadataForGeneratedReverseProxyTypes()
+    {
+        // The generator's dynamic duck typing can't read the delegation type's own attributes, so it can't be asked about the
+        // reverse proxy type: the forward proxy for the generated reverse proxy type is bound from metadata, and the forward
+        // mapping, which the generator does evaluate with dynamic duck typing for its own target, says so. The generator loads
+        // the contracts: they get their own assembly name, not the one other tests of this process loaded.
+        var assemblyName = ContractsAssemblyName + Guid.NewGuid().ToString("N");
+        WithStandaloneContracts(assemblyName, (contractsPath, directory) =>
+        {
+            var forward = new DuckTypeAotMapping(
+                typeof(IStandaloneNameReader).FullName!,
+                typeof(IStandaloneNameReader).Assembly.GetName().Name!,
+                $"{ContractsNamespace}.ReverseContract",
+                assemblyName,
+                DuckTypeAotMappingMode.Forward,
+                DuckTypeAotMappingSource.MapFile);
+            var reverse = new DuckTypeAotMapping(
+                $"{ContractsNamespace}.ReverseContract",
+                assemblyName,
+                $"{ContractsNamespace}.ReverseDelegation",
+                assemblyName,
+                DuckTypeAotMappingMode.Reverse,
+                DuckTypeAotMappingSource.MapFile);
+            var registryPath = Generate(directory, contractsPath, forward, reverse);
+            var forwardEntry = ReadMatrix(registryPath).Mappings.Single(entry => entry.Mode == "forward");
+            forwardEntry.Status.Should().Be(DuckTypeAotCompatibilityStatuses.Compatible);
+            forwardEntry.CheckedAgainstMetadataOnly.Should().BeTrue();
+
+            WithRegistry(registryPath, contractsPath, assemblyName, contracts =>
+            {
+                var reverseProxy = DuckType.CreateReverse(
+                    contracts.GetType($"{ContractsNamespace}.ReverseContract")!,
+                    Activator.CreateInstance(contracts.GetType($"{ContractsNamespace}.ReverseDelegation")!)!);
+                DuckType.Create<IStandaloneNameReader>(reverseProxy)!.Name.Should().Be("contract");
+            });
+        });
+    }
+
+    [Fact]
+    public void GeneratedRegistryShouldRegisterTheMappingsTheRuntimeCanLoadWhenOthersReferenceMissingTypes()
+    {
+        // A registration referencing a type the application's runtime doesn't have (e.g. a type of the generator's core library
+        // NativeAOT's doesn't define, for which NativeAOT compiles a method that throws) fails alone: the others are registered.
+        var assemblyName = "IsolationTargets" + Guid.NewGuid().ToString("N");
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var generationPath = WriteIsolationTargets(Path.Combine(directory, "generation"), assemblyName, includeMissingAtRuntime: true);
+            var runtimePath = WriteIsolationTargets(Path.Combine(directory, "runtime"), assemblyName, includeMissingAtRuntime: false);
+            var registryPath = Generate(
+                directory,
+                generationPath,
+                IsolationMapping(assemblyName, "AMissingAtRuntime"),
+                IsolationMapping(assemblyName, "Present"),
+                IsolationMapping(assemblyName, "ZMissingAtRuntime"));
+
+            WithRegistry(registryPath, runtimePath, assemblyName, targets =>
+            {
+                var present = Activator.CreateInstance(targets.GetType("IsolationTargets.Present", throwOnError: true)!)!;
+                DuckType.Create<IStandaloneNameReader>(present)!.Name.Should().Be("present");
+            });
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+
+        static DuckTypeAotMapping IsolationMapping(string assemblyName, string targetTypeName)
+            => new(typeof(IStandaloneNameReader).FullName!, typeof(IStandaloneNameReader).Assembly.GetName().Name!, "IsolationTargets." + targetTypeName, assemblyName, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile);
+    }
+
+    [Fact]
     public void GeneratedRegistryShouldNotReplayFailuresOfTheGeneratorEnvironment()
     {
         // The target references an assembly the generator doesn't have: dynamic duck typing fails in the generator because of
@@ -233,11 +310,14 @@ public class DuckTypeAotGeneratedAssembliesTests
             DuckTypeAotMappingSource.MapFile);
 
     private static void WithStandaloneContracts(Action<string, string> test)
+        => WithStandaloneContracts(ContractsAssemblyName, test);
+
+    private static void WithStandaloneContracts(string assemblyName, Action<string, string> test)
     {
         var directory = CreateTemporaryDirectory();
         try
         {
-            test(WriteStandaloneContracts(directory), directory);
+            test(WriteStandaloneContracts(directory, assemblyName), directory);
         }
         finally
         {
@@ -280,11 +360,14 @@ public class DuckTypeAotGeneratedAssembliesTests
         => JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(registryPath + ".compat.json"))!;
 
     private static void WithRegistry(string registryPath, string contractsPath, Action<Assembly> assertions)
+        => WithRegistry(registryPath, contractsPath, ContractsAssemblyName, assertions);
+
+    private static void WithRegistry(string registryPath, string contractsPath, string contractsAssemblyName, Action<Assembly> assertions)
     {
         var loadContext = new AssemblyLoadContext("DuckTypeAotGeneratedAssembliesTests", isCollectible: true);
 #if NETCOREAPP2_1
         var contracts = Assembly.Load(File.ReadAllBytes(contractsPath));
-        ResolveEventHandler resolveContracts = (_, args) => new AssemblyName(args.Name).Name == ContractsAssemblyName ? contracts : null;
+        ResolveEventHandler resolveContracts = (_, args) => new AssemblyName(args.Name).Name == contractsAssemblyName ? contracts : null;
         AppDomain.CurrentDomain.AssemblyResolve += resolveContracts;
 #endif
         try
@@ -321,9 +404,9 @@ public class DuckTypeAotGeneratedAssembliesTests
     /// <summary>
     /// Writes contracts that declare their own Datadog.Trace.DuckTyping attributes, like standalone AOT contracts can.
     /// </summary>
-    private static string WriteStandaloneContracts(string directory)
+    private static string WriteStandaloneContracts(string directory, string assemblyName)
     {
-        var module = CreateModule(ContractsAssemblyName);
+        var module = CreateModule(assemblyName);
         var stringSig = module.CorLibTypes.String;
         var duckIgnoreConstructor = AddAttribute(module, "DuckIgnoreAttribute");
         var duckCopyConstructor = AddAttribute(module, "DuckCopyAttribute");
@@ -425,7 +508,38 @@ public class DuckTypeAotGeneratedAssembliesTests
         holder.Methods.Add(getInner);
         holder.Properties.Add(new PropertyDefUser("Inner", PropertySig.CreateInstance(inner.ToTypeSig())) { GetMethod = getInner });
 
-        var path = Path.Combine(directory, ContractsAssemblyName + ".dll");
+        // public abstract class ReverseContract { public virtual string Name => "contract"; } and [DuckIgnore] public class
+        // ReverseDelegation { }: the attribute on the delegation type only makes the reverse mapping one the generator's dynamic
+        // duck typing can't read.
+        var reverseContract = AddAbstractClass(module, "ReverseContract", module.CorLibTypes.Object.TypeDefOrRef);
+        AddConstantProperty(module, reverseContract, "Name", "contract", MethodAttributes.Virtual | MethodAttributes.NewSlot);
+        AddClass(module, "ReverseDelegation").CustomAttributes.Add(new CustomAttribute(duckIgnoreConstructor));
+
+        var path = Path.Combine(directory, assemblyName + ".dll");
+        module.Write(path);
+        return path;
+    }
+
+    /// <summary>
+    /// Writes a target assembly with Present { Name => "present" } and, when asked, AMissingAtRuntime and ZMissingAtRuntime: the
+    /// generation and runtime versions of the same assembly.
+    /// </summary>
+    private static string WriteIsolationTargets(string directory, string assemblyName, bool includeMissingAtRuntime)
+    {
+        Directory.CreateDirectory(directory);
+        var module = CreateModule(assemblyName);
+        foreach (var typeName in includeMissingAtRuntime ? new[] { "AMissingAtRuntime", "Present", "ZMissingAtRuntime" } : new[] { "Present" })
+        {
+            var type = new TypeDefUser("IsolationTargets", typeName, module.CorLibTypes.Object.TypeDefOrRef)
+            {
+                Attributes = TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.BeforeFieldInit
+            };
+            module.Types.Add(type);
+            AddDefaultConstructor(module, type, module.CorLibTypes.Object.TypeDefOrRef);
+            AddConstantProperty(module, type, "Name", typeName == "Present" ? "present" : "missing");
+        }
+
+        var path = Path.Combine(directory, assemblyName + ".dll");
         module.Write(path);
         return path;
     }

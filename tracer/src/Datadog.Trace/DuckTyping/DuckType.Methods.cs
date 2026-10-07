@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
@@ -1272,11 +1273,30 @@ namespace Datadog.Trace.DuckTyping
 
                 valueLoaded = true;
 
+                // Like the C# compiler: an omitted [IUnknownConstant] or [IDispatchConstant] object parameter receives a wrapper
+                // of null.
+#pragma warning disable CS0618 // The wrappers of VARIANT marshalling are obsolete on .NET 6+, but still what these defaults are
+                if (value is UnknownWrapper or DispatchWrapper)
+#pragma warning restore CS0618
+                {
+                    il.Emit(OpCodes.Ldnull);
+                    il.Emit(OpCodes.Newobj, value.GetType().GetConstructor([typeof(object)])!);
+                    return il.WriteSafeTypeConversion(value.GetType(), parameterType);
+                }
+
                 var valueType = value.GetType();
                 if (valueType.IsEnum)
                 {
                     valueType = Enum.GetUnderlyingType(valueType);
                     value = Convert.ChangeType(value, valueType, CultureInfo.InvariantCulture);
+                }
+
+                // The constant of a native integer parameter (nint, nuint) is a 32-bit or 64-bit integer.
+                if ((parameterType == typeof(IntPtr) || parameterType == typeof(UIntPtr)) && value is sbyte or byte or short or ushort or int or uint or long or ulong)
+                {
+                    il.Emit(OpCodes.Ldc_I8, value is ulong or uint or ushort or byte ? unchecked((long)Convert.ToUInt64(value, CultureInfo.InvariantCulture)) : Convert.ToInt64(value, CultureInfo.InvariantCulture));
+                    il.Emit(parameterType == typeof(IntPtr) ? OpCodes.Conv_I : OpCodes.Conv_U);
+                    return null;
                 }
 
                 switch (value)

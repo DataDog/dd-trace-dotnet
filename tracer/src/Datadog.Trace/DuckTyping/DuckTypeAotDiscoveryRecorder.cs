@@ -116,13 +116,15 @@ namespace Datadog.Trace.DuckTyping
                 return;
             }
 
-            // A generated class proxy is also a target for forward duck casts. Preserve its
-            // stable base contract so generation can register the corresponding AOT proxy type.
+            // A generated proxy is also a target for forward duck casts: record the stable type the registry serves it with. For a
+            // reverse proxy, the type it was created for (a class it derives from or an interface it implements); otherwise the
+            // base class of a generated class proxy.
             if (!reverse && targetType.Assembly.IsDynamic &&
                 typeof(IDuckType).IsAssignableFrom(targetType) &&
-                targetType.BaseType is { } baseType && baseType != typeof(object) && baseType != typeof(ValueType))
+                (DuckType.GetDynamicReverseProxyDefinitionType(targetType) ??
+                 (targetType.BaseType is { } baseType && baseType != typeof(object) && baseType != typeof(ValueType) ? baseType : null)) is { } stableTargetType)
             {
-                Record(proxyType, baseType, reverse: false);
+                Record(proxyType, stableTargetType, reverse: false);
             }
 
             // Merging into the shared map rereads it, so don't do it on the thread that is creating a proxy.
@@ -143,6 +145,27 @@ namespace Datadog.Trace.DuckTyping
                 AppDomain.CurrentDomain.ProcessExit += (_, _) => Flush();
                 AppDomain.CurrentDomain.DomainUnload += (_, _) => Flush();
             }
+        }
+
+        /// <summary>
+        /// Gets the path of the file a map path designates: a symbolic link keeps pointing to the map, the file it links to is
+        /// the one written (and locked). Symbolic links are followed on .NET 6 and later only.
+        /// </summary>
+        /// <param name="path">The map path.</param>
+        /// <returns>The path of the file to write.</returns>
+        internal static string ResolveMapPath(string path)
+        {
+#if NET6_0_OR_GREATER
+            try
+            {
+                return File.ResolveLinkTarget(path, returnFinalTarget: true)?.FullName ?? path;
+            }
+            catch (IOException)
+            {
+                // A broken link: written like a file.
+            }
+#endif
+            return path;
         }
 
         /// <summary>
@@ -250,8 +273,9 @@ namespace Datadog.Trace.DuckTyping
         {
             // The lock file is intentionally left in place: deleting it on release would let two processes lock
             // different files with the same path. It's opened read-only, so a read-only lock file left behind by
-            // another user or container still works.
-            var lockPath = outputPath + ".lock";
+            // another user or container still works. It's the one of the file a symbolic link points to, which is the one
+            // written (see WriteAtomically), so writers through the link and through the file share it.
+            var lockPath = ResolveMapPath(outputPath) + ".lock";
             var stopwatch = Stopwatch.StartNew();
             while (true)
             {
@@ -320,22 +344,15 @@ namespace Datadog.Trace.DuckTyping
 
         internal static void WriteAtomically(string outputPath, string contents, Encoding? encoding = null)
         {
-#if NET6_0_OR_GREATER
-            // A symbolic link keeps pointing to the map: the file it links to is replaced.
-            try
-            {
-                outputPath = File.ResolveLinkTarget(outputPath, returnFinalTarget: true)?.FullName ?? outputPath;
-            }
-            catch (IOException)
-            {
-                // A broken link: written like a file.
-            }
-#endif
+            outputPath = ResolveMapPath(outputPath);
 
-            // A read-only map isn't replaced, like it isn't written.
-            if (File.Exists(outputPath) && (File.GetAttributes(outputPath) & FileAttributes.ReadOnly) != 0)
+            // A map that can't be written isn't replaced either (replacing it only needs to write its directory). Opening it is
+            // the check: on Unix, the read-only attribute reflects the permission bits, which don't apply to root.
+            if (File.Exists(outputPath))
             {
-                throw new UnauthorizedAccessException($"Access to the path '{outputPath}' is denied: the file is read-only.");
+                using (new FileStream(outputPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+                {
+                }
             }
 
             // Readers, and a process that writes without the lock, never see a partially written map.

@@ -109,7 +109,7 @@ Actions:
 1. Check canonical map entries first.
 2. Confirm `verify-compat` is using the same `--map-file` as `generate`.
 3. Treat any non-compatible mapping that doesn't replay a dynamic duck typing failure (`dynamicFailureReplayed: false`) as a regression until explicitly reviewed and approved. Check the generate warnings, and `checkedAgainstMetadataOnly`, for mappings the generator couldn't evaluate with dynamic duck typing.
-4. A mapping flagged `failsOnlyForOtherRuntimeTypes` works for its mapped target type: one of its aliases (a derived type, a generic instantiation, a generated reverse proxy type) fails only in the registry. Its `details` name the alias; map that type with its own mapping, or change the proxy so it binds the same way for it.
+4. A mapping flagged `failsOnlyForOtherRuntimeTypes` behaves like dynamic duck typing for its mapped target type (it works, or the registry replays the failure dynamic duck typing has): one of its aliases (a derived type, a generic instantiation, a generated reverse proxy type) fails only in the registry. Its `details` name the alias; map that type with its own mapping, or change the proxy so it binds the same way for it.
 5. `missing_target_method` (`DTAOT0207`) on an array mapping whose details mention a method "the runtime adds to array type": the proxy binds `Get`, `Set` or `Address`, which only exist at runtime. Bind `System.Array` members instead (e.g. `object GetValue(int index)` and `void SetValue(object value, int index)`).
 6. Re-run generation and verification with identical artifact inputs.
 

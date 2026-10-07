@@ -471,14 +471,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var genericArgumentsStart = FindGenericArgumentsStart(typeName);
-            if (genericArgumentsStart < 0)
+            if (genericArgumentsStart < 0 ||
+                !TrySplitGenericArguments(typeName, genericArgumentsStart, out var genericArguments, out var genericArgumentsEnd) ||
+                genericArgumentsEnd != typeName.Length)
             {
+                // An array of a closed generic type isn't a closed generic type.
                 return false;
             }
 
             genericTypeDefinitionName = typeName.Substring(0, genericArgumentsStart);
             genericArgumentsSuffix = typeName.Substring(genericArgumentsStart);
-            genericArgumentCount = CountTopLevelGenericArguments(typeName, genericArgumentsStart);
+            genericArgumentCount = genericArguments.Count;
             return genericArgumentCount > 0;
         }
 
@@ -491,7 +494,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The index of the '[' that opens the generic argument list, or -1 when there's none.</returns>
         internal static int FindGenericArgumentsStart(string typeName)
         {
-            var bracketIndex = typeName.IndexOf('[');
+            var bracketIndex = IndexOfUnescaped(typeName, '[', 0);
             if (bracketIndex < 0 || bracketIndex + 1 >= typeName.Length)
             {
                 return -1;
@@ -499,6 +502,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var next = typeName[bracketIndex + 1];
             return next == ']' || next == ',' || next == '*' ? -1 : bracketIndex;
+        }
+
+        /// <summary>
+        /// Finds a character of a reflection type name that isn't escaped with a backslash (e.g. the ',' of a compiler
+        /// generated name "...KeyValuePair<System-String\,System-String>...").
+        /// </summary>
+        /// <param name="typeName">The type name.</param>
+        /// <param name="character">The character to find.</param>
+        /// <param name="startIndex">The index to start from.</param>
+        /// <returns>The index of the character, or -1 when it isn't found.</returns>
+        internal static int IndexOfUnescaped(string typeName, char character, int startIndex)
+        {
+            for (var i = startIndex; i < typeName.Length; i++)
+            {
+                if (typeName[i] == '\\')
+                {
+                    i++;
+                }
+                else if (typeName[i] == character)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         /// <summary>
@@ -510,15 +538,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="genericArgumentTypeNames">The generic arguments, with their assembly names when they are qualified.</param>
         /// <returns>true when the generic argument list is well formed; otherwise, false.</returns>
         internal static bool TrySplitGenericArguments(string typeName, int genericArgumentsStart, out IReadOnlyList<string> genericArgumentTypeNames)
+            => TrySplitGenericArguments(typeName, genericArgumentsStart, out genericArgumentTypeNames, out _);
+
+        /// <summary>
+        /// Splits the top-level generic arguments of a generic argument list (see the other overload), and gets where the list
+        /// ends: what follows is the suffix of an array (or pointer) of the generic type.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="genericArgumentsStart">The index of the '[' that opens the generic argument list.</param>
+        /// <param name="genericArgumentTypeNames">The generic arguments, with their assembly names when they are qualified.</param>
+        /// <param name="genericArgumentsEnd">The index after the ']' that closes the generic argument list.</param>
+        /// <returns>true when the generic argument list is well formed; otherwise, false.</returns>
+        internal static bool TrySplitGenericArguments(string typeName, int genericArgumentsStart, out IReadOnlyList<string> genericArgumentTypeNames, out int genericArgumentsEnd)
         {
             var arguments = new List<string>();
             genericArgumentTypeNames = arguments;
+            genericArgumentsEnd = -1;
             var bracketDepth = 0;
             var argumentStart = genericArgumentsStart + 1;
             for (var i = genericArgumentsStart; i < typeName.Length; i++)
             {
                 var current = typeName[i];
-                if (current == '[')
+                if (current == '\\')
+                {
+                    // An escaped character is part of a name.
+                    i++;
+                }
+                else if (current == '[')
                 {
                     bracketDepth++;
                 }
@@ -528,6 +574,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     if (bracketDepth == 0)
                     {
                         AddArgument(i);
+                        genericArgumentsEnd = i + 1;
                         return arguments.Count > 0 && arguments.TrueForAll(argument => argument.Length > 0);
                     }
                 }
@@ -558,7 +605,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var nameStart = index;
             while (index < value.Length && value[index] != '[' && value[index] != ']' && value[index] != ',')
             {
-                index++;
+                // An escaped character (e.g. "\,") is part of the name.
+                index += value[index] == '\\' && index + 1 < value.Length ? 2 : 1;
             }
 
             var builder = new StringBuilder(value.Substring(nameStart, index - nameStart).Trim().Replace('/', '+'));
@@ -683,6 +731,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < value.Length; i++)
             {
                 var c = value[i];
+                if (c == '\\')
+                {
+                    // An escaped character (e.g. "\,") is part of a type name.
+                    i++;
+                    continue;
+                }
+
                 // Branch: take this path when (c == '[') evaluates to true.
                 if (c == '[')
                 {

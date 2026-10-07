@@ -125,6 +125,24 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                     },
                     new
                     {
+                        // The other array types (long[]) are served by the proxy of this array mapping.
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.IArrayLengthProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "System.Int32[]",
+                        targetAssembly = "System.Private.CoreLib"
+                    },
+                    new
+                    {
+                        // System.RuntimeType, which isn't public, is served by the proxy of System.Type.
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.ITypeNameProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "System.Type",
+                        targetAssembly = "System.Private.CoreLib"
+                    },
+                    new
+                    {
                         mode = "reverse",
                         proxyType = "SampleDuckContracts.IReverseValueProxy",
                         proxyAssembly = "SampleDuckContracts",
@@ -236,6 +254,11 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             var propsPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.NativeAotSample.props");
             var runnerAssemblyPath = typeof(DuckTypeAotGenerateProcessor).Assembly.Location;
 
+            // The core library is a target too (System.Int32[], System.Type), alone in its folder.
+            var coreLibraryDirectory = Path.Combine(tempDirectory, "corelib");
+            Directory.CreateDirectory(coreLibraryDirectory);
+            File.Copy(typeof(object).Assembly.Location, Path.Combine(coreLibraryDirectory, Path.GetFileName(typeof(object).Assembly.Location)));
+
             var generateResult = RunProcess(
                 fileName: "dotnet",
                 workingDirectory: tempDirectory,
@@ -250,6 +273,8 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                     contractsAssemblyPath,
                     "--target-folder",
                     Path.GetDirectoryName(contractsAssemblyPath) ?? tempDirectory,
+                    "--target-folder",
+                    coreLibraryDirectory,
                     "--target-filter",
                     "*.dll",
                     "--map-file",
@@ -377,6 +402,8 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             runResult.StandardOutput.Should().Contain("FAILURE_NON_GENERIC_REPLAY:TargetInvocationException:DuckTypeTargetMethodNotFoundException");
             runResult.StandardOutput.Should().Contain("REVERSE_FAILURE_NON_GENERIC_REPLAY:TargetInvocationException:DuckTypeReverseProxyMissingMethodImplementationException");
             runResult.StandardOutput.Should().Contain("MISS_REPLAY:TargetInvocationException:DuckTypeAotMissingProxyRegistrationException");
+            runResult.StandardOutput.Should().Contain("ARRAY_FALLBACK:3:Int64[]");
+            runResult.StandardOutput.Should().Contain("CORELIB_INTERNAL_FALLBACK:String:True");
             runResult.StandardOutput.Should().Contain("DYNAMIC_CODE:False");
             runResult.StandardOutput.Should().Contain("DYNAMIC_ASSEMBLIES:0");
         }
@@ -496,6 +523,8 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                        "        public abstract int GetValue();",
                        "    }",
                        "    public interface IMissingMemberProxy { int Missing(); }",
+                       "    public interface IArrayLengthProxy { int Length { get; } }",
+                       "    public interface ITypeNameProxy { string Name { get; } }",
                        "    public interface IReverseRefProxy { void Increment(ref int value); }",
                        "    public class ReverseRefDelegation",
                        "    {",
@@ -904,6 +933,10 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "{" + Environment.NewLine +
             "    Console.WriteLine($\"MISS_REPLAY:{ex.GetType().Name}:{ex.InnerException?.GetType().Name}\");" + Environment.NewLine +
             "}" + Environment.NewLine +
+            "var arrayProxy = DuckType.Create<IArrayLengthProxy>(new long[3])!;" + Environment.NewLine +
+            "Console.WriteLine($\"ARRAY_FALLBACK:{arrayProxy.Length}:{((IDuckType)arrayProxy).Type.Name}\");" + Environment.NewLine +
+            "var typeNameProxy = DuckType.Create<ITypeNameProxy>(typeof(string))!;" + Environment.NewLine +
+            "Console.WriteLine($\"CORELIB_INTERNAL_FALLBACK:{typeNameProxy.Name}:{((IDuckType)typeNameProxy).Type == typeof(string).GetType()}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_CODE:{RuntimeFeature.IsDynamicCodeSupported}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_ASSEMBLIES:{dynamicAssemblyLoads}\");" + Environment.NewLine;
     }

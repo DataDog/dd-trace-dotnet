@@ -1691,7 +1691,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         {
             foreach (var (key, value) in environmentVariables)
             {
-                if (string.IsNullOrEmpty(value))
+                if (StringUtil.IsNullOrEmpty(value))
                 {
                     _ = startInfo.Environment.Remove(key);
                 }

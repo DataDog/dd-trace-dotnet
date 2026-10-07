@@ -287,6 +287,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
+            if (text.IndexOf('\0') >= 0)
+            {
+                // ASCII text in UTF-16 or UTF-32 without a byte order mark is valid UTF-8 with NUL characters, which JSON can't
+                // have: rewriting it would lose its mappings.
+                error = $"'{mapFilePath}' can't be read: it isn't UTF-8 (it has NUL characters), and has no byte order mark telling its encoding.";
+                return false;
+            }
+
             var newLine = text.IndexOf('\n') >= 0 ? (text.IndexOf("\r\n", StringComparison.Ordinal) >= 0 ? "\r\n" : "\n") : text.IndexOf('\r') >= 0 ? "\r" : "\n";
             var expectedKeys = new HashSet<string>(StringComparer.Ordinal);
             JObject? document = null;
@@ -297,10 +305,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var existingMap = DuckTypeAotMapFileParser.ParseText(text, mapFilePath, requireMappings: false);
                 try
                 {
-                    // Dates and decimal numbers are kept as written when the map is written back from its document.
-                    document = JObject.Load(
-                        new JsonTextReader(new StringReader(text)) { DateParseHandling = DateParseHandling.None, FloatParseHandling = FloatParseHandling.Decimal },
-                        new JsonLoadSettings { CommentHandling = CommentHandling.Ignore, DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Replace });
+                    document = LoadMapDocument(text);
                 }
                 catch (Exception ex) when (existingMap.Errors.Count == 0)
                 {
@@ -395,6 +400,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var merged = DuckTypeAotMapFileParser.ParseText(candidate, mapFilePath);
                 return merged.Errors.Count == 0 && expectedKeys.SetEquals(merged.Mappings.Select(mapping => mapping.Key));
             }
+
+            static JObject LoadMapDocument(string text)
+            {
+                // Dates and decimal numbers are kept as written if the map is written back from its document; numbers beyond the
+                // range of decimal (which the map parser reads) are read as doubles.
+                try
+                {
+                    return LoadMapDocumentWith(text, FloatParseHandling.Decimal);
+                }
+                catch (JsonReaderException)
+                {
+                    return LoadMapDocumentWith(text, FloatParseHandling.Double);
+                }
+            }
+
+            static JObject LoadMapDocumentWith(string text, FloatParseHandling floatParseHandling)
+                => JObject.Load(
+                    new JsonTextReader(new StringReader(text)) { DateParseHandling = DateParseHandling.None, FloatParseHandling = floatParseHandling },
+                    new JsonLoadSettings { CommentHandling = CommentHandling.Ignore, DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Replace });
         }
 
         internal static bool IsProfilingEnabled()
@@ -645,8 +669,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         case ',':
                             position++;
                             continue;
-                        case '"':
-                            var name = ReadString(text, ref position);
+                        default:
+                            // Like the map parser (Json.NET), names can be quoted with double or single quotes, or not quoted.
+                            if (!TryReadName(text, ref position, out var name))
+                            {
+                                return false;
+                            }
+
                             SkipTrivia(text, ref position);
                             if (position >= text.Length || text[position] != ':')
                             {
@@ -697,8 +726,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                             lastMemberEnd = position;
                             continue;
-                        default:
-                            return false;
                     }
                 }
             }
@@ -776,11 +803,30 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            private static bool TryReadName(string text, ref int position, out string name)
+            {
+                if (text[position] is '"' or '\'')
+                {
+                    name = ReadString(text, ref position);
+                    return true;
+                }
+
+                var start = position;
+                while (position < text.Length && (char.IsLetterOrDigit(text[position]) || text[position] is '_' or '$'))
+                {
+                    position++;
+                }
+
+                name = text.Substring(start, position - start);
+                return position > start;
+            }
+
             private static string ReadString(string text, ref int position)
             {
                 var value = new StringBuilder();
+                var quote = text[position];
                 position++;
-                while (position < text.Length && text[position] != '"')
+                while (position < text.Length && text[position] != quote)
                 {
                     if (text[position] == '\\' && position + 1 < text.Length)
                     {
@@ -811,6 +857,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 switch (text[position])
                 {
                     case '"':
+                    case '\'':
                         ReadString(text, ref position);
                         return position <= text.Length;
                     case '{':
@@ -843,7 +890,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     default:
                         var start = position;
-                        while (position < text.Length && !char.IsWhiteSpace(text[position]) && text[position] != ',' && text[position] != ']' && text[position] != '}' && text[position] != '/')
+                        while (position < text.Length && !char.IsWhiteSpace(text[position]) && text[position] is not (',' or ']' or '}' or '/' or ':'))
                         {
                             position++;
                         }

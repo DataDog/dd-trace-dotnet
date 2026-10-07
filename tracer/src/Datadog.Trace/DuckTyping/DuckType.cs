@@ -145,6 +145,9 @@ namespace Datadog.Trace.DuckTyping
             return GetOrCreateProxyType(typeToDeriveFrom, delegationType, reverse: true);
         }
 
+        // Not inlined: the callers' slow paths (e.g. CreateCache<T>.GetProxy, inlined in every DuckType.Create<T> call site)
+        // stay small.
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static CreateTypeResult GetOrCreateProxyType(Type proxyType, Type targetType, bool reverse)
         {
             // The engines own their caches; per proxy definition fast paths live in CreateCache<T>.
@@ -464,7 +467,8 @@ namespace Datadog.Trace.DuckTyping
 
             if (parentType == typeToDeriveFrom)
             {
-                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.Where(pCtor => pCtor.GetParameters().Length == 0).FirstOrDefault();
+                // The type initializer isn't a constructor the proxy can call.
+                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.Where(pCtor => !pCtor.IsStatic && pCtor.GetParameters().Length == 0).FirstOrDefault();
                 if (proxyCtor != null)
                 {
                     ctorIL.Emit(OpCodes.Ldarg_0);
@@ -1524,7 +1528,7 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="activator">Proxy activator</param>
             /// <param name="exceptionInfo">Exception dispatch info instance</param>
             internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, ExceptionDispatchInfo? exceptionInfo)
-                : this(proxyType, targetType, activator, failure: exceptionInfo)
+                : this(proxyType, targetType, activator, failure: exceptionInfo, proxyTypeDefinition)
             {
             }
 
@@ -1537,11 +1541,11 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="activator">Proxy activator</param>
             /// <param name="failureThrower">Failure thrower instance</param>
             internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, Action? failureThrower)
-                : this(proxyType, targetType, activator, failure: failureThrower)
+                : this(proxyType, targetType, activator, failure: failureThrower, proxyTypeDefinition)
             {
             }
 
-            private CreateTypeResult(Type? proxyType, Type targetType, Delegate? activator, object? failure)
+            private CreateTypeResult(Type? proxyType, Type targetType, Delegate? activator, object? failure, Type? proxyTypeDefinition)
             {
                 // Generated (AOT) activators are rebound to Func<object, object> once, so object-based creation never needs
                 // DynamicInvoke, which NativeAOT may not support. Dynamic methods can't be rebound: they keep their typed delegate.
@@ -1549,6 +1553,14 @@ namespace Datadog.Trace.DuckTyping
                 // field, which lets the JIT read it from the fast path entry instead of copying this struct.
                 _activator = failure is not null ? CreateFailureThrower(failure)
                            : activator is null or Func<object?, object?> ? activator : TryCreateObjectActivator(activator) ?? activator;
+
+                // An object activator knows the proxy definition type, which CreateInstance<T> requires as T, like the typed
+                // activator of dynamic duck typing (see CreateInstanceSlow).
+                if (proxyTypeDefinition is not null && _activator is Func<object?, object?> { Target: not ObjectActivator } objectActivator)
+                {
+                    _activator = new Func<object?, object?>(new ObjectActivator(proxyTypeDefinition, objectActivator).Create);
+                }
+
                 _proxyType = proxyType;
                 _failure = failure;
                 TargetType = targetType;
@@ -1610,7 +1622,7 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="activator">The activator for the target type, or null to keep this one.</param>
             /// <returns>The result for the target type.</returns>
             internal CreateTypeResult WithTargetType(Type targetType, Delegate? activator)
-                => new(_proxyType, targetType, _failure is null ? activator ?? _activator : null, _failure);
+                => new(_proxyType, targetType, _failure is null ? activator ?? _activator : null, _failure, (_activator as Func<object?, object?>)?.Target is ObjectActivator objectActivator ? objectActivator.ProxyTypeDefinition : null);
 
             /// <summary>
             /// Create a new proxy instance from a target instance
@@ -1752,6 +1764,10 @@ namespace Datadog.Trace.DuckTyping
 
             private static Action CreateFailureThrower(object failure) => () => ThrowFailure(failure);
 
+            [DoesNotReturn]
+            private static void ThrowActivatorInvalidCast(Type proxyTypeDefinition, Type requestedActivatorType)
+                => throw new InvalidCastException($"Unable to cast object of type '{typeof(CreateProxyInstance<>).FullName}[{proxyTypeDefinition}]' to type '{requestedActivatorType}'.");
+
             [MethodImpl(MethodImplOptions.NoInlining)]
             [return: NotNull]
             private static T CreateInstanceSlow<T>(Delegate? activator, object? instance)
@@ -1763,6 +1779,13 @@ namespace Datadog.Trace.DuckTyping
 
                 if (activator is Func<object?, object?> objectActivator)
                 {
+                    // Like the cast of dynamic duck typing's typed activator (CreateProxyInstance<TProxyDefinition>) to
+                    // CreateProxyInstance<T>.
+                    if (objectActivator.Target is ObjectActivator { ProxyTypeDefinition: { } proxyTypeDefinition } && proxyTypeDefinition != typeof(T))
+                    {
+                        ThrowActivatorInvalidCast(proxyTypeDefinition, typeof(CreateProxyInstance<T>));
+                    }
+
                     var value = objectActivator(instance);
                     if (value is null)
                     {
@@ -1804,6 +1827,24 @@ namespace Datadog.Trace.DuckTyping
                 {
                     throw new TargetInvocationException(ex);
                 }
+            }
+
+            /// <summary>
+            /// An object activator of a generated (AOT) proxy, with the proxy definition type it creates.
+            /// </summary>
+            private sealed class ObjectActivator
+            {
+                private readonly Func<object?, object?> _activator;
+
+                internal ObjectActivator(Type proxyTypeDefinition, Func<object?, object?> activator)
+                {
+                    ProxyTypeDefinition = proxyTypeDefinition;
+                    _activator = activator;
+                }
+
+                internal Type ProxyTypeDefinition { get; }
+
+                internal object? Create(object? instance) => _activator(instance);
             }
         }
 

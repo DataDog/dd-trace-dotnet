@@ -20,7 +20,7 @@ You need:
 1. A NativeAOT app project.
 2. A small contracts project containing the target type and proxy interface.
 3. A generated DuckTyping AOT registry assembly.
-4. A startup call to `DuckTypeAotRegistryBootstrap.Initialize()`.
+4. A startup call to `DuckTypeAotRegistryBootstrap.Initialize()` (when dynamic code isn't supported, i.e. in NativeAOT).
 
 ## Minimal App Layout
 
@@ -55,6 +55,7 @@ public interface IPersonProxy
 
 ```csharp
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.DuckTyping.Generated;
 
@@ -62,7 +63,11 @@ public static class Program
 {
     public static void Main()
     {
-        DuckTypeAotRegistryBootstrap.Initialize();
+        // Only in NativeAOT: under the JIT, the application keeps dynamic duck typing.
+        if (!RuntimeFeature.IsDynamicCodeSupported)
+        {
+            DuckTypeAotRegistryBootstrap.Initialize();
+        }
 
         var person = new Person { Name = "Alice" };
         var proxy = DuckType.Create<IPersonProxy>(person)!;

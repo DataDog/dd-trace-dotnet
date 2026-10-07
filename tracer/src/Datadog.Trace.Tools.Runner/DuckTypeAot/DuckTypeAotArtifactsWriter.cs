@@ -345,7 +345,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="path">The path value.</param>
         /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
         /// <param name="emissionResult">The emission result value.</param>
-        private static void WriteTrimmerDescriptor(
+        internal static void WriteTrimmerDescriptor(
             string path,
             DuckTypeAotMappingResolutionResult mappingResolutionResult,
             DuckTypeAotRegistryEmissionResult emissionResult)
@@ -365,9 +365,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
+                // A mapping that fails only for other runtime types of its target still registers its proxy type.
                 var effectiveStatus = ResolveEffectiveCompatibilityStatus(mappingResult);
-                // Branch: take this path when (!string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)) evaluates to true.
-                if (!string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
+                if (!string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal) && !mappingResult.FailsOnlyForOtherRuntimeTypes)
                 {
                     continue;
                 }
