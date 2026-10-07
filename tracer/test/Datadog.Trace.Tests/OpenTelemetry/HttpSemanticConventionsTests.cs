@@ -19,7 +19,8 @@ public class HttpSemanticConventionsTests
         reportQueryString: true,
         timeout: 30_000,
         maxSizeBeforeObfuscation: 5000,
-        pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+        pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex,
+        useDefaultPattern: true);
 
     public static TheoryData<string> AllKnownMethods() =>
         new() { "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "QUERY", "TRACE" };

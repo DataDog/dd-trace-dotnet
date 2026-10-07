@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
 using FluentAssertions;
@@ -29,6 +30,16 @@ namespace Datadog.Trace.Tests.Util.Http
 
             var result = queryStringManager.TruncateAndObfuscate(queryString);
             result.Should().Be(expectedResult);
+        }
+
+        [Theory]
+        [InlineData(true, "?jwt=<redacted>")]
+        [InlineData(false, "?jwt<redacted>")]
+        public void CopiedDefaultPatternUsesLiteralReplacementWhenConfigured(bool useDefaultPattern, string expected)
+        {
+            var queryStringManager = new QueryStringManager(true, 200, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, useDefaultPattern: useDefaultPattern);
+
+            queryStringManager.TruncateAndObfuscate("?jwt=eyJabc.eyJdef").Should().Be(expected);
         }
     }
 }

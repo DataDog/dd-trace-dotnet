@@ -573,6 +573,20 @@ namespace Datadog.Trace.Tests.Configuration
             settings.ObfuscationQueryStringRegex.Should().Be(expected);
         }
 
+        [Fact]
+        public void ObfuscationQueryStringRegexTracksExplicitConfiguration()
+        {
+            var unset = new TracerSettings(CreateConfigurationSource());
+            var copiedDefault = new TracerSettings(CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex)));
+            var empty = new TracerSettings(CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, string.Empty)));
+
+            unset.ObfuscationQueryStringRegex.Should().Be(TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+            unset.ObfuscationQueryStringRegexWasConfigured.Should().BeFalse();
+            copiedDefault.ObfuscationQueryStringRegex.Should().Be(unset.ObfuscationQueryStringRegex);
+            copiedDefault.ObfuscationQueryStringRegexWasConfigured.Should().BeTrue();
+            empty.ObfuscationQueryStringRegexWasConfigured.Should().BeTrue();
+        }
+
         [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void QueryStringReportingEnabled(string value, bool expected)

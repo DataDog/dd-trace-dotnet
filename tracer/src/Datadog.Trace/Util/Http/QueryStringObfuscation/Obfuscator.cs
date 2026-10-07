@@ -12,11 +12,13 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
     internal sealed class Obfuscator : ObfuscatorBase
     {
         private const string ReplacementString = "<redacted>";
+        private const string DefaultReplacementString = "${1}<redacted>";
         private readonly Regex _regex;
+        private readonly string _replacement;
         private readonly TimeSpan _timeout;
         private readonly IDatadogLogger _logger;
 
-        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger)
+        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger, bool useDefaultPattern)
         {
             _timeout = timeout;
             _logger = logger;
@@ -32,17 +34,10 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
                                          RegexOptions.CultureInvariant;
 
             _regex = new Regex(pattern, options, _timeout);
+            _replacement = useDefaultPattern ? DefaultReplacementString : ReplacementString;
 
-            try
-            {
-                // Warmup the regex
-                // Can't use empty string, space, or dot, as they are optimized and don't actually trigger the compilation
-                _ = _regex.Match("o");
-            }
-            catch
-            {
-                // Nothing to log here
-            }
+            // Can't use empty string, space, or dot, as they are optimized and don't actually trigger compilation.
+            _ = _regex.Match("o");
         }
 
         /// <summary>
@@ -57,11 +52,15 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 
             try
             {
-                return _regex.Replace(queryString, ReplacementString);
+                return _regex.Replace(queryString, _replacement);
             }
             catch (RegexMatchTimeoutException exception)
             {
                 _logger.Error(exception, "Query string obfuscation timed out with timeout value of {TotalMilliseconds} ms and regex pattern {Pattern}", _timeout.TotalMilliseconds, _regex.ToString());
+            }
+            catch (Exception exception)
+            {
+                _logger.Error(exception, "Query string obfuscation failed");
             }
 
             return string.Empty;

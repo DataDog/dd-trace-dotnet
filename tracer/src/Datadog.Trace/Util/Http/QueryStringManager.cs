@@ -16,11 +16,11 @@ namespace Datadog.Trace.Util.Http
         private readonly int _maxSizeBeforeObfuscation;
         private readonly Lazy<ObfuscatorBase> _obfuscatorLazy;
 
-        internal QueryStringManager(bool reportQueryString, double timeout, int maxSizeBeforeObfuscation, string pattern, IDatadogLogger logger = null)
+        internal QueryStringManager(bool reportQueryString, double timeout, int maxSizeBeforeObfuscation, string pattern, IDatadogLogger logger = null, bool useDefaultPattern = false)
         {
             _reportQueryString = reportQueryString;
             _maxSizeBeforeObfuscation = maxSizeBeforeObfuscation;
-            _obfuscatorLazy = new(() => ObfuscatorFactory.GetObfuscator(timeout, pattern, logger, _reportQueryString));
+            _obfuscatorLazy = new(() => ObfuscatorFactory.GetObfuscator(timeout, pattern, logger, _reportQueryString, useDefaultPattern));
         }
 
         internal string TruncateAndObfuscate(string queryString)
