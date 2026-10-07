@@ -660,6 +660,12 @@ namespace Datadog.Trace
                     if (instanceSettings.OtlpMetricsExportEnabled)
                     {
                         WriteOtlpExporterSettings("METRICS", exporterSettings.OtlpMetricsEndpoint, exporterSettings.OtlpMetricsProtocol, exporterSettings.OtlpMetricsHeaders);
+
+                        writer.WritePropertyName("OTEL_METRIC_EXPORT_INTERVAL");
+                        writer.WriteValue(instanceSettings.OtelMetricExportIntervalMs);
+
+                        writer.WritePropertyName("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE");
+                        writer.WriteValue(StringUtil.ToLowerInvariant(instanceSettings.OtlpMetricsTemporalityPreference.ToString()));
                     }
 
                     if (instanceSettings.OtlpLogsExportEnabled)
