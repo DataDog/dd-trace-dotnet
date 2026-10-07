@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -599,6 +601,53 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("DD_TRACE_OTEL_SEMANTICS_ENABLED");
                     writer.WriteValue(instanceSettings.OtelSemanticsEnabled);
+
+                    writer.WritePropertyName("OTEL_LOG_LEVEL");
+                    writer.WriteValue(DatadogLogging.LoggingLevelSwitch.MinimumLevel switch
+                    {
+                        LogEventLevel.Verbose => "trace",
+                        LogEventLevel.Debug => "debug",
+                        LogEventLevel.Information => "info",
+                        LogEventLevel.Warning => "warn",
+                        LogEventLevel.Error => "error",
+                        LogEventLevel.Fatal => "fatal",
+                        _ => null,
+                    });
+
+                    writer.WritePropertyName("OTEL_SERVICE_NAME");
+                    writer.WriteValue(mutableSettings.DefaultServiceName);
+
+                    writer.WritePropertyName("OTEL_RESOURCE_ATTRIBUTES");
+                    WriteDictionary(mutableSettings.GlobalTags);
+
+                    if (instance.SpanContextPropagator.InjectorNames.SequenceEqual(instance.SpanContextPropagator.ExtractorNames))
+                    {
+                        writer.WritePropertyName("OTEL_PROPAGATORS");
+                        writer.WriteValue(string.Join(",", instance.SpanContextPropagator.InjectorNames));
+                    }
+
+                    if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler && mutableSettings.EffectiveGlobalSamplingRate is { } sampleRate)
+                    {
+                        var sampler = sampleRate switch
+                        {
+                            0 => "always_off",
+                            1 => "always_on",
+                            > 0 and < 1 => "traceidratio",
+                            _ => null,
+                        };
+
+                        if (sampler is not null)
+                        {
+                            writer.WritePropertyName("OTEL_TRACES_SAMPLER");
+                            writer.WriteValue(sampler);
+
+                            if (sampler == "traceidratio")
+                            {
+                                writer.WritePropertyName("OTEL_TRACES_SAMPLER_ARG");
+                                writer.WriteValue(sampleRate);
+                            }
+                        }
+                    }
 
                     if (exporterSettings.IsOtlpTraceExport)
                     {
