@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
@@ -126,6 +127,40 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             // may not contains any trace context.
             var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
             Assert.NotEmpty(tracingContexts);
+        }
+
+        [TestAppFact("Samples.BuggyBits", Frameworks = new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
+        public void CheckProfilingWorksWhenTracingDisabled(string appName, string framework, string appAssembly)
+        {
+            // Production-style configuration: both native loader components (PROFILER and TRACER) are loaded,
+            // the managed SDK is loaded and initialized, and the SDK configures the native profiler through
+            // Stable Configuration while span generation is disabled.
+            // DD_PROFILING_MANAGED_ACTIVATION_ENABLED is deliberately left at its default (enabled):
+            // profiling must be activated by the managed layer, not by the native kill switch.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable("DD_TRACE_ENABLED", "0");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+
+            var traceRequestCount = 0;
+            agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                Interlocked.Increment(ref traceRequestCount);
+            };
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0, $"Expected at least one profiling request. Log directory: {runner.Environment.LogDir}");
+            Assert.True(SamplesHelper.GetSamplesCount(runner.Environment.PprofDir) > 0, $"Expected exported profiles to contain samples. Pprof directory: {runner.Environment.PprofDir}");
+            Assert.True(Volatile.Read(ref traceRequestCount) == 0, $"Expected no trace requests while tracing is disabled. Pprof directory: {runner.Environment.PprofDir}");
+
+            // The successful handshake with the managed layer is observable evidence that the managed SDK was
+            // initialized and that the native profiler accepted its configuration with managed activation enabled.
+            AssertProfilingLogsContains(runner.Environment.LogDir, "Managed layer provides Stable Configuration.");
+            AssertProfilingLogsNotContains(runner.Environment.LogDir, "Managed layer provides Stable Configuration even when managed activation is disabled.");
         }
 
         [TestAppFact("Samples.BuggyBits")]
@@ -286,6 +321,42 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir).Distinct();
 
             endpoints.Should().BeEmpty();
+        }
+
+        private static void AssertProfilingLogsContains(string logDir, string expectedContent)
+        {
+            var logFile = GetProfilerLogFile(logDir);
+            var found = false;
+            foreach (var line in File.ReadLines(logFile))
+            {
+                if (line.Contains(expectedContent))
+                {
+                    found = true;
+                }
+            }
+
+            Assert.True(found, $"No log line contains: {expectedContent} (log file: {logFile})");
+        }
+
+        private static void AssertProfilingLogsNotContains(string logDir, string unexpectedContent)
+        {
+            var logFile = GetProfilerLogFile(logDir);
+            var found = false;
+            foreach (var line in File.ReadLines(logFile))
+            {
+                if (line.Contains(unexpectedContent))
+                {
+                    found = true;
+                }
+            }
+
+            Assert.False(found, $"Log should not contain: {unexpectedContent} (log file: {logFile})");
+        }
+
+        private static string GetProfilerLogFile(string logDir)
+        {
+            return Directory.GetFiles(logDir)
+                            .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
         }
 
         private static HashSet<string> ExtractRuntimeIdsFromTracerRequest(HttpListenerRequest request)
