@@ -6,12 +6,13 @@
 
     <!-- NU1510: System.Diagnostics.DiagnosticSource below is flagged as framework-provided, but it's retained
          to deploy the assembly version that Azure.Core (transitive of Azure.Messaging.ServiceBus) hard-binds
-         against. Azure.Messaging.ServiceBus 7.20.2 requires DiagnosticSource 10.0.9, while earlier versions
-         require 8.0.1. Without an explicit reference, runtimes whose shared framework ships a different version
-         can fail with FileNotFoundException at load time. -->
+         against. Azure.Messaging.ServiceBus 7.21.0 requires DiagnosticSource 10.0.10, 7.20.2 requires 10.0.9,
+         and earlier versions require 8.0.1. Without an explicit reference, runtimes whose shared framework ships
+         a different version can fail with FileNotFoundException at load time. -->
     <NoWarn>$(NoWarn);NU1510</NoWarn>
     <DiagnosticSourceVersion>8.0.1</DiagnosticSourceVersion>
     <DiagnosticSourceVersion Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '7.20.2'))">10.0.9</DiagnosticSourceVersion>
+    <DiagnosticSourceVersion Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '7.21.0'))">10.0.10</DiagnosticSourceVersion>
   </PropertyGroup>
 
   <ItemGroup>
