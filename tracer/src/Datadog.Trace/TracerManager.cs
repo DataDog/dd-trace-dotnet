@@ -649,6 +649,9 @@ namespace Datadog.Trace
                         }
                     }
 
+                    writer.WritePropertyName("OTEL_LOGS_EXPORTER");
+                    writer.WriteValue(instanceSettings.OtelLogsExporterEnabled ? "otlp" : "none");
+
                     if (exporterSettings.IsOtlpTraceExport)
                     {
                         WriteOtlpExporterSettings("TRACES", exporterSettings.OtlpTracesEndpoint, exporterSettings.OtlpTracesProtocol, exporterSettings.OtlpTracesHeaders);
@@ -662,6 +665,15 @@ namespace Datadog.Trace
                     if (instanceSettings.OtlpLogsExportEnabled)
                     {
                         WriteOtlpExporterSettings("LOGS", instanceSettings.OtlpLogsEndpoint, instanceSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
+
+                        writer.WritePropertyName("OTEL_BLRP_SCHEDULE_DELAY");
+                        writer.WriteValue(instanceSettings.LogSubmissionSettings.BatchPeriod.TotalMilliseconds);
+
+                        writer.WritePropertyName("OTEL_BLRP_MAX_QUEUE_SIZE");
+                        writer.WriteValue(instanceSettings.LogSubmissionSettings.QueueSizeLimit);
+
+                        writer.WritePropertyName("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE");
+                        writer.WriteValue(instanceSettings.LogSubmissionSettings.BatchSizeLimit);
                     }
 
                     writer.WritePropertyName("profiler_enabled");
