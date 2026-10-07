@@ -21,10 +21,10 @@ cases:
       - Decorate with the [InstrumentMethod] attribute (assembly/type/method + version range).
       - Implement OnMethodBegin and OnMethodEnd / OnAsyncMethodEnd handlers.
       - Tests under tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests with sample apps in tracer/test/test-applications/integrations.
-      - Mentions the instrumentation generator (e.g. build.ps1 RunInstrumentationGenerator) to scaffold boilerplate.
+      - Mentions the instrumentation generator to scaffold boilerplate. Both the build.ps1 RunInstrumentationGenerator entry point and the documented CLI are valid. docs/development/for-ai/InstrumentationGenerator-CLI.md documents dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options], including inspect <assembly-path> --list-methods <type-full-name> --json for discovery before generation. The project exists and targets net11.0; these names and flags are not fabricated. Listing every invocation is not required.
     bad_signals:
       - Puts the integration under profiler/src.
-      - Invents file paths or test projects that do not exist.
+      - Invents file paths or test projects that do not exist. The documented tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ project, its net11.0 target, and inspect/--list-methods/--json CLI options are valid and do not trigger this signal.
       - Tells the user to edit generated (.g.) files by hand.
 
   - id: dotnet-tracer-test-selection-httpclient-002
@@ -166,9 +166,11 @@ cases:
   - id: dotnet-tracer-confirm-instrumentation-011
     files: [AGENTS.md]
     input: |
-      How can I confirm, from this repo and its runtime logs, whether a given library
-      method is auto-instrumented — both where the instrumentation is declared in source
-      and which log line proves it actually happened at runtime?
+      How can I check whether a given library method is auto-instrumented, from its
+      source declaration through runtime instrumentation? Explain what the repo and
+      runtime logs establish at each stage — selection/enqueue, rewrite preparation,
+      CLR acceptance, and method execution or span production — and where additional
+      evidence is needed.
     expected_criteria:
       - Locates source declarations in InstrumentMethod attributes under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/. Generated definitions may be used as a cross-check; listing every generated artifact is not required.
       - Places per-method rewrite evidence in the native tracer log, not the managed log. Managed initialization messages can provide context but do not prove that a specific method was rewritten.
