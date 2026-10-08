@@ -527,12 +527,13 @@ internal sealed unsafe class ModuleMetadata : IMetaDataImport2, IMetaDataAssembl
     public HResult FindTypeRef(MdToken tkResolutionScope, char* szName, MdTypeRef* ptr)
     {
         var name = NativeBuffers.ReadString(szName);
+        var scope = Rid(tkResolutionScope.Value) == 0 ? 0u : (uint)tkResolutionScope.Value;
         lock (_state.Sync)
         {
             foreach (var token in AllRows(Table.TypeRef, _state.TypeRefs.Count))
             {
                 var info = TypeRefInfo(token);
-                if (info.Scope == (uint)tkResolutionScope.Value && info.FullName == name)
+                if (info.Scope == scope && info.FullName == name)
                 {
                     NativeBuffers.Set(ptr, new MdTypeRef(token));
                     return HResult.S_OK;
@@ -1089,9 +1090,12 @@ internal sealed unsafe class ModuleMetadata : IMetaDataImport2, IMetaDataAssembl
         {
             var (ns, simpleName) = Split(name ?? string.Empty);
             var token = (int)_state.NextToken(Table.TypeRef, _state.TypeRefs);
-            _state.TypeRefs.Add(new ModuleState.OverlayTypeRef { ResolutionScope = (uint)tkResolutionScope.Value, Namespace = ns, Name = simpleName });
+            // Like RegMeta, a nil resolution scope (the native tracer can pass mdAssemblyRefNil) is stored as a nil coded
+            // index, which reads back as mdTokenNil.
+            var scope = Rid(tkResolutionScope.Value) == 0 ? 0u : (uint)tkResolutionScope.Value;
+            _state.TypeRefs.Add(new ModuleState.OverlayTypeRef { ResolutionScope = scope, Namespace = ns, Name = simpleName });
             NativeBuffers.Set(ptr, new MdTypeRef(token));
-            AotLog.Debug($"[{_state.Module.Name}] DefineTypeRefByName {name} -> 0x{token:x8}");
+            AotLog.Debug($"[{_state.Module.Name}] DefineTypeRefByName {name} (scope 0x{tkResolutionScope.Value:x8}) -> 0x{token:x8}");
             return HResult.S_OK;
         }
     }
