@@ -241,6 +241,19 @@ EXTERN_C int STDAPICALLTYPE InitEmbeddedCallTargetDefinitions(UINT32 enabledCate
     return trace::GeneratedDefinitions::InitCallTargets(enabledCategories, platform);
 }
 
+// dd-trace aot instrument (the native tracer hosted offline to instrument NativeAOT applications at build time): waits
+// until the ReJIT work queued so far ran, so the host processes every ReJIT request of the modules it loaded.
+// Returns false on timeout, or when the ReJIT work doesn't run anymore.
+EXTERN_C BOOL STDAPICALLTYPE WaitForPendingRejitWork(UINT32 timeoutMilliseconds)
+{
+    if (trace::profiler == nullptr)
+    {
+        return FALSE;
+    }
+
+    return trace::profiler->WaitForPendingRejitWork(timeoutMilliseconds) ? TRUE : FALSE;
+}
+
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     return trace::profiler->UpdateSettings(keys, values, length);
