@@ -56,6 +56,7 @@ internal sealed class CallTargetRegistryGenerator
     /// <param name="duckTypeRegistry">The DuckType AOT registry with the proxies of the duck typing constraints, if any.</param>
     /// <param name="instantiations">The closed instantiations of the rewritten methods with a generic context (C3).</param>
     /// <param name="isApplication">Whether the module is the application's, whose module initializer initializes the instrumentation.</param>
+    /// <param name="userStrings">For the application: the string literals of the instrumented assemblies (location, value) for IAST's hardcoded secrets analysis.</param>
     public static CallTargetRegistryResult Generate(
         ModuleDef module,
         IEnumerable<MethodDef> rewrittenMethods,
@@ -63,7 +64,8 @@ internal sealed class CallTargetRegistryGenerator
         Func<ITypeDefOrRef, TypeDef?> resolveType,
         CallTargetDuckTypeRegistry? duckTypeRegistry = null,
         IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null,
-        bool isApplication = false)
+        bool isApplication = false,
+        IReadOnlyList<(string Location, string Value)>? userStrings = null)
     {
         var scanned = rewrittenMethods.Where(m => m.Body is not null)
                                       .Select(m => (Method: m, Invocations: CallTargetInvocationScanner.Scan(m.Body)))
@@ -96,7 +98,7 @@ internal sealed class CallTargetRegistryGenerator
 
         if (usesRegistry || isApplication)
         {
-            generator.AddModuleInitializer(duckTypeRegistry, initializeInstrumentation: isApplication);
+            generator.AddModuleInitializer(duckTypeRegistry, initializeInstrumentation: isApplication, isApplication ? userStrings : null);
         }
 
         generator.AddIgnoresAccessChecks(force: isApplication);
@@ -679,18 +681,41 @@ internal sealed class CallTargetRegistryGenerator
     /// run too late), then the application's assembly initializes the instrumentation (<c>Instrumentation.InitializeAot</c>).
     /// Each step is isolated: a failure is logged and the application starts anyway.
     /// </summary>
-    private void AddModuleInitializer(CallTargetDuckTypeRegistry? registry, bool initializeInstrumentation)
+    private void AddModuleInitializer(CallTargetDuckTypeRegistry? registry, bool initializeInstrumentation, IReadOnlyList<(string Location, string Value)>? userStrings)
     {
-        var steps = new List<(string Name, IMethod Method)>();
+        var steps = new List<(string Name, List<Instruction> Body)>();
         if (registry?.Module.Find(CallTargetDuckTypeRegistry.BootstrapTypeName, isReflectionName: true)?.FindMethod("Initialize") is { } registryInitialize)
         {
-            steps.Add(("DuckTypeRegistry", _references.Import(registryInitialize)));
+            steps.Add(("DuckTypeRegistry", [OpCodes.Call.ToInstruction(_references.Import(registryInitialize))]));
+        }
+
+        if (userStrings is { Count: > 0 })
+        {
+            // HardcodedSecretsAnalyzer.AddBuildTimeUserStrings(new[] { location0, value0, location1, value1, ... })
+            var analyzer = new ClassSig(_references.DatadogType("Datadog.Trace.Iast.Analyzers.HardcodedSecretsAnalyzer"));
+            var stringArray = new SZArraySig(_module.CorLibTypes.String);
+            var add = _references.DatadogStaticMethod(analyzer, "AddBuildTimeUserStrings", MethodSig.CreateStatic(_module.CorLibTypes.Void, stringArray));
+            var userStringsBody = new List<Instruction> { Instruction.CreateLdcI4(userStrings.Count * 2), OpCodes.Newarr.ToInstruction(_module.CorLibTypes.String.TypeDefOrRef) };
+            var index = 0;
+            foreach (var (location, value) in userStrings)
+            {
+                foreach (var item in new[] { location, value })
+                {
+                    userStringsBody.Add(OpCodes.Dup.ToInstruction());
+                    userStringsBody.Add(Instruction.CreateLdcI4(index++));
+                    userStringsBody.Add(OpCodes.Ldstr.ToInstruction(item));
+                    userStringsBody.Add(OpCodes.Stelem_Ref.ToInstruction());
+                }
+            }
+
+            userStringsBody.Add(OpCodes.Call.ToInstruction(add));
+            steps.Add(("UserStrings", userStringsBody));
         }
 
         if (initializeInstrumentation)
         {
             var instrumentation = new ClassSig(_references.DatadogType("Datadog.Trace.ClrProfiler.Instrumentation"));
-            steps.Add(("Instrumentation", _references.DatadogStaticMethod(instrumentation, "InitializeAot", MethodSig.CreateStatic(_module.CorLibTypes.Void))));
+            steps.Add(("Instrumentation", [OpCodes.Call.ToInstruction(_references.DatadogStaticMethod(instrumentation, "InitializeAot", MethodSig.CreateStatic(_module.CorLibTypes.Void)))]));
         }
 
         if (steps.Count == 0)
@@ -707,7 +732,7 @@ internal sealed class CallTargetRegistryGenerator
         var body = initialize.Body = new CilBody();
         var registryHelpers = new ClassSig(_references.DatadogType($"{HandlersNamespace}.CallTargetAotRegistry"));
         var logError = _references.DatadogStaticMethod(registryHelpers, "LogInitializationError", MethodSig.CreateStatic(_module.CorLibTypes.Void, _references.Exception));
-        foreach (var (name, method) in steps)
+        foreach (var (name, stepBody) in steps)
         {
             // The call is in its own method: the JIT resolves it (and loads its assembly) when it compiles the method that
             // contains it, which must be inside the try block.
@@ -717,7 +742,11 @@ internal sealed class CallTargetRegistryGenerator
                 MethodImplAttributes.IL | MethodImplAttributes.Managed | MethodImplAttributes.NoInlining,
                 MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig);
             call.Body = new CilBody();
-            call.Body.Instructions.Add(OpCodes.Call.ToInstruction(method));
+            foreach (var instruction in stepBody)
+            {
+                call.Body.Instructions.Add(instruction);
+            }
+
             call.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             Finish(call.Body);
             globalType.Methods.Add(call);

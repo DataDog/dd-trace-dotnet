@@ -25,6 +25,8 @@ internal sealed class AotInstrumentReport
 
     public int JsonModels { get; set; }
 
+    public int UserStrings { get; set; }
+
     public int ReJitProcessed { get; set; }
 
     public List<AssemblyResult> Assemblies { get; } = new();
