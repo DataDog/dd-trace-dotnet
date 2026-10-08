@@ -26,6 +26,7 @@ internal static class CallTargetAot<TIntegration, TDelegate>
 {
     private static TDelegate? _callback;
     private static bool _preserveContext;
+    private static string? _failure;
     private static volatile bool _registered;
 
     /// <summary>
@@ -35,6 +36,19 @@ internal static class CallTargetAot<TIntegration, TDelegate>
     {
         _callback = callback;
         _preserveContext = preserveContext;
+        _failure = null;
+        _registered = true;
+    }
+
+    /// <summary>
+    /// Registers that the integration method can't be bound to this shape. The handler fails as it does when
+    /// <see cref="IntegrationMapper"/> throws, which disables the integration for the target.
+    /// </summary>
+    internal static void RegisterFailure(string message)
+    {
+        _callback = null;
+        _preserveContext = false;
+        _failure = message;
         _registered = true;
     }
 
@@ -45,6 +59,11 @@ internal static class CallTargetAot<TIntegration, TDelegate>
             callback = null;
             preserveContext = false;
             return false;
+        }
+
+        if (_failure is { } failure)
+        {
+            throw new ArgumentException(failure);
         }
 
         callback = _callback;
