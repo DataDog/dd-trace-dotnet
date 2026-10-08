@@ -85,6 +85,43 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void UpdateRemoteConfig_WhenAModifiedFileDropsAFlag_TheFlagIsNoLongerFound()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager);
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+
+        subscription.Invoke(ConfigUpdate(configPath, "kept-flag", "dropped-flag"), null);
+        module.Evaluate("dropped-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().NotBe("FLAG_NOT_FOUND");
+
+        // A modified file keeps its path and never appears in the removed set.
+        subscription.Invoke(ConfigUpdate(configPath, "kept-flag"), null);
+
+        module.Evaluate("dropped-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().Be("FLAG_NOT_FOUND");
+        module.Evaluate("kept-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().NotBe("FLAG_NOT_FOUND");
+
+        static Dictionary<string, List<RemoteConfiguration>> ConfigUpdate(RemoteConfigurationPath path, params string[] flagKeys)
+        {
+            var flags = new FlagCollection();
+            foreach (var key in flagKeys)
+            {
+                flags[key] = new Flag { Key = key, Enabled = true, VariationType = FeatureFlagsValueType.Boolean };
+            }
+
+            var json = JsonConvert.SerializeObject(new ServerConfiguration { Flags = flags });
+            return new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+            };
+        }
+    }
+
+    [Fact]
     public void Create_WithAgentlessSource_DoesNotSubscribeToRc()
     {
         var rcmManager = new MockRcmSubscriptionManager();
@@ -215,6 +252,109 @@ public class FeatureFlagsModuleTests
         // its ETag back and re-download the whole payload on every later poll.
         module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
         module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RegisterOnNewConfigEventHandler_WhenConfigurationAlreadyArrived_InvokesTheHandler()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        // The handler registers after the configuration landed, which is the ordering an application
+        // gets whenever Remote Configuration delivers before it builds a provider.
+        var callbackInvoked = false;
+        module.RegisterOnNewConfigEventHandler(() => callbackInvoked = true);
+
+        callbackInvoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RegisterOnNewConfigEventHandler_WhenNoConfigurationYet_DoesNotInvokeTheHandler()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var callbackInvoked = false;
+        module.RegisterOnNewConfigEventHandler(() => callbackInvoked = true);
+
+        callbackInvoked.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RegisterOnNewConfigEventHandler_WhenTheHandlerThrowsOnReplay_DoesNotPropagate()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        Action register = () => module.RegisterOnNewConfigEventHandler(() => throw new InvalidOperationException("from application code"));
+
+        register.Should().NotThrow();
+    }
+
+    [Fact]
+    public void RegisterOnNewConfigEventHandler_AfterAConfigurationWasDelivered_DoesNotDeliverItAgain()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var invocations = 0;
+        Action handler = () => invocations++;
+        module.RegisterOnNewConfigEventHandler(handler);
+
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        // The handler already has this configuration from the apply, so registering the same handler
+        // again must not replay it. Each handler gets each configuration exactly once.
+        module.RegisterOnNewConfigEventHandler(handler);
+
+        invocations.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RegisterOnNewConfigEventHandler_WhenRegistrationRacesWithApply_DeliversEachConfigurationOnce()
+    {
+        // Registration and delivery both look at the handler and the held configuration. One pass
+        // rarely interleaves them, so repeat: an interleaving that hands the same configuration to
+        // both paths invokes the handler twice and fails here.
+        for (var i = 0; i < 200; i++)
+        {
+            using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+            var invocations = 0;
+            using var start = new ManualResetEventSlim(false);
+
+            var register = Task.Run(() =>
+            {
+                start.Wait();
+                module.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref invocations));
+            });
+
+            var apply = Task.Run(() =>
+            {
+                start.Wait();
+                module.ApplyConfiguration(new ServerConfiguration());
+            });
+
+            start.Set();
+            await Task.WhenAll(register, apply);
+
+            invocations.Should().BeLessOrEqualTo(1, "iteration {0} delivered one configuration more than once", i);
+        }
+    }
+
+    [Theory]
+    [InlineData(FeatureFlagsValueType.String, "fallback")]
+    [InlineData(FeatureFlagsValueType.Boolean, true)]
+    [InlineData(FeatureFlagsValueType.Integer, 42)]
+    [InlineData(FeatureFlagsValueType.Numeric, 1.5)]
+    public void Evaluate_WhenNoConfigurationYet_ReturnsTheDefaultValue(FeatureFlagsValueType type, object defaultValue)
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var result = module.Evaluate("test-flag", type, defaultValue, "user-1", null);
+
+        result.Error.Should().Be("PROVIDER_NOT_READY");
+        result.Value.Should().Be(defaultValue);
     }
 
     [Fact]

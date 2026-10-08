@@ -43,4 +43,25 @@ public class SamplingHelpersTests
     {
         SamplingHelpers.SampleByRate(traceId, rate).Should().Be(expected);
     }
+
+    [Fact]
+    public void ComputeOtelTraceStateRandomValue_ReturnsLower56BitsOfInvertedKnuthHash()
+    {
+        const ulong traceId = 0xfff972474538efffUL;
+        var knuthHash = SamplingHelpers.ComputeKnuthHash(traceId);
+
+        knuthHash.Should().Be(0x10d7b531856e1e39UL);
+        SamplingHelpers.ComputeOtelTraceStateRandomValue(traceId).Should().Be((~knuthHash) >> 8);
+    }
+
+    [Theory]
+    [InlineData(0d, 0xffffffffffffffUL)]
+    [InlineData(0.1d, 0xe6666666666668UL)]
+    [InlineData(1d, 0UL)]
+    public void ComputeOtelTraceStateThreshold_ReturnsClampedThreshold(
+        double samplingRate,
+        ulong expected)
+    {
+        SamplingHelpers.ComputeOtelTraceStateThreshold(samplingRate).Should().Be(expected);
+    }
 }

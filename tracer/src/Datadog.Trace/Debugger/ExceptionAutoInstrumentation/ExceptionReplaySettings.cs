@@ -55,7 +55,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool Enabled { get; }
 
-        public bool CanBeEnabled { get; }
+        public bool CanBeEnabled { get; private set; }
 
         public int MaximumFramesToCapture { get; }
 
@@ -81,6 +81,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public static ExceptionReplaySettings FromDefaultSource()
         {
             return FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+        }
+
+        internal void Disable()
+        {
+            CanBeEnabled = false;
         }
     }
 }

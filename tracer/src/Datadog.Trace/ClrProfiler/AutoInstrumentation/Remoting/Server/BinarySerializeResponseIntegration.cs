@@ -14,7 +14,6 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
 {
@@ -47,21 +46,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IServerResponseChannelSinkStack sinkStack, IMessage msg, ref ITransportHeaders headers, ref Stream stream)
         {
-            if (msg is IMethodReturnMessage methodReturnMessage)
+            if (msg is not IMethodReturnMessage methodReturnMessage
+                || sinkStack is null
+                || !RemotingIntegration.TryGetAndRemoveServerScope(sinkStack, out var scope)
+                || scope is null)
             {
-                var scope = Tracer.Instance.InternalActiveScope;
-                if (scope?.Span.Tags is RemotingTags tags)
-                {
-                    if (methodReturnMessage.Exception is Exception exception)
-                    {
-                        scope.Span.SetException(exception);
-                    }
-
-                    return new CallTargetState(scope);
-                }
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            // ProcessMessage may not have had a request message to read the method name from.
+            RemotingIntegration.SetMethodNameIfMissing(scope, methodReturnMessage);
+
+            if (methodReturnMessage.Exception is Exception exception)
+            {
+                scope.Span.SetException(exception);
+            }
+
+            return new CallTargetState(scope);
         }
 
         /// <summary>

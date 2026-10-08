@@ -1,7 +1,9 @@
 #pragma once
 #include <atomic>
 #include <future>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
@@ -19,6 +21,70 @@ namespace trace
 typedef std::shared_mutex Lock;
 typedef std::unique_lock<Lock> WriteLock;
 typedef std::shared_lock<Lock> ReadLock;
+
+class ModuleLifetime
+{
+    friend class RejitHandler;
+
+private:
+    mutable Lock m_lock;
+    bool m_unloading = false;
+
+public:
+    [[nodiscard]] std::optional<ReadLock> TryAcquire() const
+    {
+        ReadLock lock(m_lock);
+        if (m_unloading)
+        {
+            return std::nullopt;
+        }
+
+        return std::optional<ReadLock>{std::move(lock)};
+    }
+};
+
+struct ModuleIDWithLifetime
+{
+    ModuleID id;
+    std::shared_ptr<ModuleLifetime> lifetime;
+
+    [[nodiscard]] std::optional<ReadLock> TryAcquire() const
+    {
+        return lifetime == nullptr ? std::nullopt : lifetime->TryAcquire();
+    }
+};
+
+struct RejitRequest
+{
+    ModuleID moduleId;
+    mdMethodDef methodToken;
+    std::shared_ptr<ModuleLifetime> lifetime;
+
+    RejitRequest(const ModuleIDWithLifetime& module, mdMethodDef methodToken) :
+        moduleId(module.id), methodToken(methodToken), lifetime(module.lifetime)
+    {
+    }
+
+    [[nodiscard]] std::optional<ReadLock> TryAcquire() const
+    {
+        return lifetime == nullptr ? std::nullopt : lifetime->TryAcquire();
+    }
+
+    bool operator<(const RejitRequest& rhs) const
+    {
+        if (moduleId != rhs.moduleId)
+        {
+            return moduleId < rhs.moduleId;
+        }
+
+        if (methodToken != rhs.methodToken)
+        {
+            return methodToken < rhs.methodToken;
+        }
+
+        return lifetime.owner_before(rhs.lifetime);
+    }
+};
 
 // forward declarations...
 class RejitHandlerModule;
@@ -49,6 +115,7 @@ public:
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
     bool RequestRejitForInlinersInModule(ModuleID moduleId);
+    bool GetRejitRequestsForInlinersInModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests);
     MethodRewriter* GetMethodRewriter();
 
     virtual ~RejitHandlerModuleMethod() = default;
@@ -57,6 +124,7 @@ public:
 using RejitHandlerModuleMethodCreatorFunc =
     std::function<std::unique_ptr<RejitHandlerModuleMethod>(const mdMethodDef, RejitHandlerModule*)>;
 using RejitHandlerModuleMethodUpdaterFunc = std::function<void(RejitHandlerModuleMethod*)>;
+using RejitHandlerModuleMetadataCreatorFunc = std::function<std::unique_ptr<ModuleMetadata>()>;
 
 /// <summary>
 /// Rejit handler representation of a module
@@ -65,9 +133,11 @@ class RejitHandlerModule
 {
 private:
     ModuleID m_moduleId;
+    std::mutex m_metadata_lock;
     std::unique_ptr<ModuleMetadata> m_metadata;
     std::mutex m_methods_lock;
     std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
+    std::vector<RejitHandlerModuleMethod*> m_newMethods;
 
     std::mutex m_ngenProcessedInlinerModulesLock;
     std::unordered_map<ModuleID, bool> m_ngenProcessedInlinerModules;
@@ -80,14 +150,16 @@ public:
     RejitHandler* GetHandler();
 
     ModuleMetadata* GetModuleMetadata();
-    void SetModuleMetadata(ModuleMetadata* metadata);
+    bool CreateModuleMetadataIfNotExists(RejitHandlerModuleMetadataCreatorFunc creator);
 
     bool CreateMethodIfNotExists(mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator,
                                  RejitHandlerModuleMethodUpdaterFunc updater);
     bool ContainsMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
+    std::vector<RejitHandlerModuleMethod*> TakeNewMethods();
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
+    void RemoveProcessedInlinerModule(ModuleID moduleId);
 };
 
 class Rejitter;
@@ -108,6 +180,10 @@ private:
     ICorProfilerInfo10* m_profilerInfo10;
 
     std::shared_ptr<RejitWorkOffloader> m_work_offloader;
+
+    std::mutex m_module_cleanup_lock;
+    Lock m_module_lifetimes_lock;
+    std::unordered_map<ModuleID, std::shared_ptr<ModuleLifetime>> m_module_lifetimes;
 
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
@@ -130,9 +206,13 @@ public:
     bool GetEnableCallTargetStateByRef();
     bool GetEnableByRefInstrumentation();
 
-    void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, bool callRevertExplicitly = false);
-    void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, std::shared_ptr<std::promise<void>> promise = nullptr, bool callRevertExplicitly = false);
-    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly = false);
+    void RequestRejit(const std::vector<RejitRequest>& rejitRequests, bool callRevertExplicitly = false);
+    bool Enqueue(std::unique_ptr<RejitWorkItem>&& item);
+    void EnqueueForRejit(std::vector<RejitRequest> rejitRequests,
+                         std::shared_ptr<std::promise<void>> promise = nullptr,
+                         bool callRevertExplicitly = false);
+    void EnqueueRequestRejit(std::vector<RejitRequest> rejitRequests, std::shared_ptr<std::promise<void>> promise,
+                             bool callRevertExplicitly = false);
 
     void Shutdown();
     bool IsShutdownRequested();
@@ -144,6 +224,11 @@ public:
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     AssemblyProperty* GetCorAssemblyProperty();
+
+    ModuleIDWithLifetime RegisterModule(ModuleID moduleId);
+    ModuleIDWithLifetime GetModuleWithLifetime(ModuleID moduleId);
+    std::vector<ModuleIDWithLifetime> GetModulesWithLifetime(const std::vector<ModuleID>& moduleIds);
+    std::vector<RejitRequest> GetRejitRequests(const std::vector<MethodIdentifier>& methods);
 
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
     void RemoveModule(ModuleID moduleId);

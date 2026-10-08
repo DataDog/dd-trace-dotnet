@@ -69,6 +69,8 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
         yield return [typeof(AwaitUsingCatchFilterFinallyTest), "<RunAsync>d__"];
         // Handwritten MoveNext: finally is last EH; SetException lives in an earlier catch.
         yield return [typeof(FinallyLastEhTest), "FinallyLastSm"];
+        // Handwritten MoveNext: the SetException catch begins with pop rather than stloc.
+        yield return [typeof(CatchPopFirstInstructionTest), "CatchPopSm"];
     }
 
     public override void Dispose()

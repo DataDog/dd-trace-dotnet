@@ -42,6 +42,9 @@ namespace Datadog.Trace.TestHelpers
             // OpenTelemetry semantic convention equivalents of the above (DD_TRACE_OTEL_SEMANTICS_ENABLED=true)
             (new(@"client.address: (.)*(?=,)", RegOptions), "client.address: 127.0.0.1"),
             (new(@"network.peer.address: (.)*(?=,)", RegOptions), "network.peer.address: 127.0.0.1"),
+            // the client's ephemeral socket port, so it changes between runs. The optional ".0"
+            // covers the spans that record the port as a metric rather than as a string tag
+            (new(@"network\.peer\.port: \d+(\.0)?", RegOptions), "network.peer.port: 00000"),
             (new(@"user_agent.original: grpc-dotnet\/(.)*(?=,)", RegOptions), "user_agent.original: grpc-dotnet/123"),
             (new(@"server.port: \d+", RegOptions), "server.port: 00000"),
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
@@ -52,6 +55,13 @@ namespace Datadog.Trace.TestHelpers
         };
 
         private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);
+
+        /// <summary>
+        /// Gets the suffix to add to a snapshot file name for tests whose spans differ on .NET 11.
+        /// It's empty everywhere else, so that only the divergent target framework needs its own
+        /// snapshot and the existing file names are left alone.
+        /// </summary>
+        public static string Net11SnapshotSuffix { get; } = Environment.Version.Major >= 11 ? ".NET_11" : string.Empty;
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -227,7 +237,11 @@ namespace Datadog.Trace.TestHelpers
                              // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
                           && kvp.Key != Tags.LastParentId
                              // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
-                          && kvp.Key != Tags.ProcessTags)
+                          && kvp.Key != Tags.ProcessTags
+                             // same as process tags: `_dd.sdk.otlp_export` is only written to the first span of each
+                             // payload, which makes snapshots unstable. Payload scoping and value are covered by
+                             // SpanMessagePackFormatterTests and OtlpMapperTests instead.
+                          && kvp.Key != Tags.SdkOtlpExport)
                   .Select(
                        kvp => kvp.Key switch
                        {
@@ -264,7 +278,9 @@ namespace Datadog.Trace.TestHelpers
                             // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
                          && kvp.Key != Tags.LastParentId
                             // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
-                         && kvp.Key != Tags.ProcessTags)
+                         && kvp.Key != Tags.ProcessTags
+                            // same as process tags, the otlp export marker is only added to the first span of each payload, which makes snapshots unstable.
+                         && kvp.Key != Tags.SdkOtlpExport)
                   .Select(
                        kvp => kvp.Key switch
                        {

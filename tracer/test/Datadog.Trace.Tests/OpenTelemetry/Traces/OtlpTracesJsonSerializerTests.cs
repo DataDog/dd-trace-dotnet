@@ -94,6 +94,49 @@ public class OtlpTracesJsonSerializerTests
     }
 
     [Theory]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666")]
+    [InlineData("rv:ef284ace7a91e1")]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666;future:value")]
+    public void WriteSpan_WithOtelTraceState_EmitsTraceState(string otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"]!.Value<string>().Should().Be($"ot={otelTraceState}");
+    }
+
+    [Fact]
+    public void WriteSpan_WithDerivedOtelTraceState_EmitsTraceState()
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = new OtelTraceState(headerString: null)
+        {
+            IsModified = true,
+            RandomValue = 0xef284ace7a91e1UL,
+            Threshold = 0xe6666666666666UL,
+        };
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"]!.Value<string>().Should().Be("ot=rv:ef284ace7a91e1;th:e6666666666666");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void WriteSpan_WithoutOtelTraceState_OmitsTraceState(string? otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"].Should().BeNull();
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public void WriteSpan_ErrorSpanWithoutOtelStatusCodeTag_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
@@ -197,10 +240,13 @@ public class OtlpTracesJsonSerializerTests
         using var stringWriter = new StringWriter();
         using (var writer = new VendorJsonTextWriter(stringWriter))
         {
-            serializer.WriteSpan(writer, traceChunk.GetSpanModel(0));
+            writer.WriteStartArray();
+            serializer.WriteSpans(writer, traceChunk, emitStartingComma: false);
+            writer.WriteEndArray();
         }
 
-        return JObject.Parse(stringWriter.ToString());
+        var spans = JArray.Parse(stringWriter.ToString());
+        return (JObject)spans[0]!;
     }
 
     private static JObject WriteAnyValue(object? value)

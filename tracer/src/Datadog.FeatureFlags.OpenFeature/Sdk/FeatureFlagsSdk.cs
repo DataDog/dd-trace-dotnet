@@ -24,6 +24,8 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
+    internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
+
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -82,8 +84,14 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context) =>
-        GetResolutionDetails<T>(Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)));
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null)
+    {
+        var attributes = GetContextAttributes(context);
+        var evaluation = evaluate is null
+                             ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
+                             : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
+        return GetResolutionDetails(flagKey, defaultValue, evaluation);
+    }
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
     {
@@ -104,13 +112,15 @@ internal static class FeatureFlagsSdk
         _ => value.AsObject,
     };
 
-    private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
+    private static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
     {
+        // OpenFeature substitutes the caller's default only when a provider throws. This provider
+        // reports errors as details instead, so every error must carry the default itself.
         if (evaluation is null)
         {
             return new ResolutionDetails<T>(
-                        string.Empty,
-                        default!,
+                        flagKey,
+                        defaultValue,
                         ErrorType.ProviderNotReady,
                         default,
                         default,
@@ -118,11 +128,14 @@ internal static class FeatureFlagsSdk
                         null);
         }
 
-        var value = typeof(T) == typeof(Value) ? JsonToValue(evaluation.Value) : evaluation.Value!;
+        var errorType = ToErrorType(evaluation.Reason, evaluation.Error);
+        var value = errorType != ErrorType.None
+                        ? defaultValue
+                        : typeof(T) == typeof(Value) ? (T)(object)JsonToValue(evaluation.Value) : (T)evaluation.Value!;
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
-            (T)value,
-            ToErrorType(evaluation.Reason, evaluation.Error),
+            value,
+            errorType,
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
@@ -186,6 +199,8 @@ internal static class FeatureFlagsSdk
 
     private static Value ConvertObject(object? obj) => obj switch
     {
+        // The evaluator can return the caller's JSON default, which is already an OpenFeature Value.
+        Value value => value,
         Dictionary<string, object?> dic => ConvertStructure(dic),
         object?[] arr => ConvertArray(arr),
         long intVal => new Value(intVal),

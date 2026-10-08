@@ -571,7 +571,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -596,7 +596,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -618,7 +618,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -642,7 +642,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -664,7 +664,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -688,7 +688,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -710,7 +710,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -734,7 +734,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -758,7 +758,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -780,7 +780,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -804,7 +804,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1021,7 +1021,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1043,7 +1043,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1089,7 +1089,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1142,7 +1142,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1167,7 +1167,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1194,7 +1194,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1221,7 +1221,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1248,7 +1248,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1275,7 +1275,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1299,7 +1299,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1323,7 +1323,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1345,7 +1345,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1367,7 +1367,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1389,7 +1389,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1439,7 +1439,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1463,7 +1463,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1487,7 +1487,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1512,7 +1512,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1536,7 +1536,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1560,7 +1560,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -3758,6 +3758,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionExecutionMiddlewareInvokeIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureFunctions",
+    "AssemblyName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
+    "TargetTypeName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.FunctionsOrchestrator",
+    "TargetMethodName": "RunAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "Microsoft.DurableTask.TaskOrchestrationContext",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionsOrchestratorRunAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -6813,80 +6838,6 @@
   {
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
-    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
-    "TargetMethodName": "Evaluate",
-    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
-    "TargetParameterTypes": [
-      "System.String",
-      "Datadog.Trace.FeatureFlags.ValueType",
-      "System.Object",
-      "System.String",
-      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
-    ],
-    "MinimumVersion": {
-      "Item1": 3,
-      "Item2": 31,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 3,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkEvaluateIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "DatadogTraceManual",
-    "AssemblyName": "Datadog.Trace.Manual",
-    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
-    "TargetMethodName": "IsAvailable",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 3,
-      "Item2": 31,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 3,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkIsAvailableIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "DatadogTraceManual",
-    "AssemblyName": "Datadog.Trace.Manual",
-    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
-    "TargetMethodName": "RegisterOnNewConfigEventHandler",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [
-      "System.Action"
-    ],
-    "MinimumVersion": {
-      "Item1": 3,
-      "Item2": 31,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 3,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "DatadogTraceManual",
-    "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.SpanContextExtractor",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
@@ -8556,7 +8507,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8580,7 +8531,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8604,7 +8555,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8629,7 +8580,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9046,7 +8997,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9071,7 +9022,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9096,7 +9047,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9121,7 +9072,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9146,7 +9097,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9171,7 +9122,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9325,7 +9276,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9350,7 +9301,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9375,7 +9326,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9409,7 +9360,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9474,7 +9425,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9499,7 +9450,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15739,7 +15690,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15761,7 +15712,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18209,7 +18160,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18234,7 +18185,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18256,7 +18207,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18278,7 +18229,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18302,7 +18253,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18327,7 +18278,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18349,7 +18300,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18371,7 +18322,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18395,7 +18346,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18419,7 +18370,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18441,7 +18392,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18465,7 +18416,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19529,7 +19480,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19576,7 +19527,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19989,7 +19940,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20013,7 +19964,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20057,7 +20008,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20079,7 +20030,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20101,7 +20052,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20125,7 +20076,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },

@@ -9,10 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Samples.FeatureFlags\Program.cs" Link="Program.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="OpenFeature" Version="$(ApiVersion)" />
   </ItemGroup>
 
