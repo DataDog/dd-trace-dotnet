@@ -101,10 +101,12 @@ public class Program
 
         await scheduler.ScheduleJob(vetoableJob, vetoableTrigger);
 
-        // Wait for all jobs to finish (success, failure, or veto)
+        // Wait for the listeners to report success, failure, or veto.
         await Task.WhenAll(JobCompletion.HelloTcs.Task, JobCompletion.ExceptionTcs.Task, JobCompletion.VetoTcs.Task);
 
-        await scheduler.Shutdown(); // or Shutdown(waitForJobsToComplete: true)
+        // Listener callbacks run before the workers finish their job-store work.
+        // Wait for the workers so their completion spans are emitted before the process exits.
+        await scheduler.Shutdown(waitForJobsToComplete: true);
         // tracerProvider?.Dispose();
     }
 }
