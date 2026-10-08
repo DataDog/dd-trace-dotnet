@@ -3,40 +3,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.CommandLine;
-using System.CommandLine.Invocation;
+using Datadog.Trace.Tools.Runner.Aot;
 
-namespace Datadog.Trace.Tools.Runner
+namespace Datadog.Trace.Tools.Runner;
+
+/// <summary>
+/// NativeAOT support: build-time instrumentation of the assemblies of an application.
+/// </summary>
+internal class AotCommand : CommandWithExamples
 {
-    internal class AotCommand : CommandWithExamples
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AotCommand"/> class.
+    /// </summary>
+    public AotCommand()
+        : base("aot", "Instrument assemblies at build time for NativeAOT applications")
     {
-        private readonly Argument<string> _inputFolderArgument = new("input-folder");
-        private readonly Argument<string> _outputFolderArgument = new("output-folder");
+        AddExample("dd-trace aot instrument --native-tracer Datadog.Tracer.Native.so --datadog-trace Datadog.Trace.dll --assembly ./obj/MyApp.dll --reference-dir ./runtime --output ./obj/datadog-aot");
 
-        public AotCommand()
-            : base("apply-aot", "Apply AOT automatic instrumentation on application folder")
-        {
-            AddArgument(_inputFolderArgument);
-            AddArgument(_outputFolderArgument);
-
-            AddExample(@"dd-trace apply-aot c:\input\ c:\output\");
-
-            this.SetHandler(Execute);
-        }
-
-        private void Execute(InvocationContext context)
-        {
-            var inputFolder = _inputFolderArgument.GetValue(context);
-            var outputFolder = _outputFolderArgument.GetValue(context);
-
-            try
-            {
-                Aot.AotProcessor.ProcessFolder(inputFolder, outputFolder);
-            }
-            catch
-            {
-                context.ExitCode = 1;
-            }
-        }
+        AddCommand(new AotInstrumentCommand());
     }
 }

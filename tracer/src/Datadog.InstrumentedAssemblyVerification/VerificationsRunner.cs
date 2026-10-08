@@ -32,13 +32,20 @@ namespace Datadog.InstrumentedAssemblyVerification
         private readonly List<(string type, string method)> _methods;
         private readonly IEnumerable<Verification> _verifications;
 
+        private readonly IReadOnlyList<string> _referenceDirectories;
+        private readonly bool _failOnVerificationError;
+
         public VerificationsRunner(string instrumentedModulePath, 
                                    string originalModulePath, 
-                                   List<(string type, string method)> methods)
+                                   List<(string type, string method)> methods,
+                                   IReadOnlyList<string> referenceDirectories = null,
+                                   bool failOnVerificationError = false)
         {
             _instrumentedModulePath = instrumentedModulePath;
             _originalModulePath = originalModulePath;
             _methods = methods;
+            _referenceDirectories = referenceDirectories;
+            _failOnVerificationError = failOnVerificationError;
             _verifications = new List<Verification> { Verification.ILSpy, Verification.PrepareMethod, Verification.ILVerify, Verification.PEVerify };
         }
 
@@ -54,8 +61,8 @@ namespace Datadog.InstrumentedAssemblyVerification
                     {
                         case Verification.ILSpy:
                             errors.AddRange(VerifyOriginalAndInstrumentedAndReturnDiff(
-                                                new IlSpyDecompilationVerification(_originalModulePath, _methods, logger),
-                                                new IlSpyDecompilationVerification(_instrumentedModulePath, _methods, logger)));
+                                                new IlSpyDecompilationVerification(_originalModulePath, _methods, logger, _referenceDirectories),
+                                                new IlSpyDecompilationVerification(_instrumentedModulePath, _methods, logger, _referenceDirectories)));
                             break;
                         case Verification.PrepareMethod:
                             errors.AddRange(VerifyOriginalAndInstrumentedAndReturnDiff(
@@ -79,8 +86,8 @@ namespace Datadog.InstrumentedAssemblyVerification
                                 break;
                             }
                             errors.AddRange(VerifyOriginalAndInstrumentedAndReturnDiff(
-                                                new ILVerifyVerification(_originalModulePath, _methods, logger),
-                                                new ILVerifyVerification(_instrumentedModulePath, _methods, logger)));
+                                                new ILVerifyVerification(_originalModulePath, _methods, logger, _referenceDirectories),
+                                                new ILVerifyVerification(_instrumentedModulePath, _methods, logger, _referenceDirectories)));
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -89,6 +96,10 @@ namespace Datadog.InstrumentedAssemblyVerification
                 catch (Exception e)
                 {
                     logger.Error($"Failed to verify '{Path.GetFileName(_instrumentedModulePath)}' with {verification}: {e.Message}");
+                    if (_failOnVerificationError)
+                    {
+                        errors.Add($"{verification} could not run: {e.Message}");
+                    }
                 }
             }
             return new VerificationOutcome(

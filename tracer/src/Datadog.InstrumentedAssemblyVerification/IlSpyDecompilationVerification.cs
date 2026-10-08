@@ -6,6 +6,7 @@ using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using ICSharpCode.Decompiler.CSharp.Syntax;
 using ICSharpCode.Decompiler.IL;
+using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler.TypeSystem;
 
 namespace Datadog.InstrumentedAssemblyVerification
@@ -29,11 +30,14 @@ namespace Datadog.InstrumentedAssemblyVerification
             ("Expected O, but got I4", "Serilog.LoggerConfiguration::CreateLogger()")
         };
 
-        public IlSpyDecompilationVerification(string module, List<(string type, string method)> methods, InstrumentationVerificationLogger logger)
+        private readonly IReadOnlyList<string> _referenceDirectories;
+
+        public IlSpyDecompilationVerification(string module, List<(string type, string method)> methods, InstrumentationVerificationLogger logger, IReadOnlyList<string> referenceDirectories = null)
         {
             _peFile = module;
             _methods = methods;
             _logger = logger;
+            _referenceDirectories = referenceDirectories;
         }
 
         public List<string> Verify()
@@ -42,7 +46,22 @@ namespace Datadog.InstrumentedAssemblyVerification
 
             var errors = new List<string>();
             var settings = new DecompilerSettings();
-            var decompiler = new CSharpDecompiler(_peFile, settings);
+            CSharpDecompiler decompiler;
+            if (_referenceDirectories is { Count: > 0 })
+            {
+                var module = new PEFile(_peFile);
+                var resolver = new UniversalAssemblyResolver(_peFile, throwOnError: false, module.DetectTargetFrameworkId());
+                foreach (var directory in _referenceDirectories)
+                {
+                    resolver.AddSearchDirectory(directory);
+                }
+
+                decompiler = new CSharpDecompiler(module, resolver, settings);
+            }
+            else
+            {
+                decompiler = new CSharpDecompiler(_peFile, settings);
+            }
             foreach ((string type, string method) in _methods)
             {
                 try

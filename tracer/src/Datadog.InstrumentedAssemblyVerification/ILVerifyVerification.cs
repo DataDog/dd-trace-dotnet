@@ -32,7 +32,7 @@ namespace Datadog.InstrumentedAssemblyVerification
         private readonly Verifier _verifier;
         private readonly InstrumentationVerificationLogger _logger;
 
-        public ILVerifyVerification(string assemblyLocation, List<(string type, string method)> methods, InstrumentationVerificationLogger logger)
+        public ILVerifyVerification(string assemblyLocation, List<(string type, string method)> methods, InstrumentationVerificationLogger logger, IReadOnlyList<string> referenceDirectories = null)
         {
             _logger = logger;
             _assemblyLocation = assemblyLocation;
@@ -40,7 +40,7 @@ namespace Datadog.InstrumentedAssemblyVerification
 
             _verifier =
                 new Verifier(
-                    new Resolver(_assemblyLocation),
+                    new Resolver(_assemblyLocation, referenceDirectories),
                     new VerifierOptions { SanityChecks = true, IncludeMetadataTokensInErrorMessages = true });
         }
 
@@ -330,11 +330,15 @@ namespace Datadog.InstrumentedAssemblyVerification
 
         private class Resolver : IResolver
         {
-            private readonly string _directory;
+            private readonly List<string> _directories;
 
-            public Resolver(string assemblyLocation)
+            public Resolver(string assemblyLocation, IReadOnlyList<string> referenceDirectories = null)
             {
-                _directory = Path.GetDirectoryName(assemblyLocation);
+                _directories = new List<string> { Path.GetDirectoryName(assemblyLocation) };
+                if (referenceDirectories != null)
+                {
+                    _directories.AddRange(referenceDirectories);
+                }
             }
 
             public PEReader Resolve(string simpleName)
@@ -342,18 +346,21 @@ namespace Datadog.InstrumentedAssemblyVerification
                 // TODO: we can use "Runtime package store" to resolve modules that doesn't exist in original modules folder
                 // https://docs.microsoft.com/en-us/dotnet/core/deploying/runtime-store
                 // /usr/local/share/dotnet/store on macOS/Linux and C:/Program Files/dotnet/store on Windows
-                string firstCandidate = Path.Combine(_directory, simpleName);
-                string[] candidates = new string[] {
-                    firstCandidate,
-                    firstCandidate + ".dll",
-                    firstCandidate + ".exe",
-                    firstCandidate + ".so",
-                };
-                foreach (string candidate in candidates)
+                foreach (var directory in _directories)
                 {
-                    if (File.Exists(candidate))
+                    string firstCandidate = Path.Combine(directory, simpleName);
+                    string[] candidates = new string[] {
+                        firstCandidate,
+                        firstCandidate + ".dll",
+                        firstCandidate + ".exe",
+                        firstCandidate + ".so",
+                    };
+                    foreach (string candidate in candidates)
                     {
-                        return new PEReader(File.OpenRead(candidate));
+                        if (File.Exists(candidate))
+                        {
+                            return new PEReader(File.OpenRead(candidate));
+                        }
                     }
                 }
 
