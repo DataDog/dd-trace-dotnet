@@ -2,9 +2,58 @@
   "mappings": [
     {
       "mode": "forward",
+      "proxyType": "Datadog.Trace.AppSec.ApiSec.DuckType.IEndpointMetadataCollectionHttpMethodMetadata",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Http.EndpointMetadataCollection",
+      "targetAssembly": "Microsoft.AspNetCore.Http.Abstractions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.AppSec.ApiSec.DuckType.IHttpMethodMetadata",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.HttpMethodMetadata",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.AppSec.ApiSec.DuckType.RoutePatternRequiredValues",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.Patterns.RoutePattern",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.IEndpointDataSource",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.CompositeEndpointDataSource",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
       "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.IKestrelServer",
       "proxyAssembly": "Datadog.Trace",
       "targetType": "Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl",
+      "targetAssembly": "Microsoft.AspNetCore.Server.Kestrel.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.IKestrelServerOptions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions",
+      "targetAssembly": "Microsoft.AspNetCore.Server.Kestrel.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.IServiceProvider",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Extensions.DependencyInjection.ServiceLookup.ServiceProviderEngineScope",
+      "targetAssembly": "Microsoft.Extensions.DependencyInjection"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.FireOnStartCommon+HttpProtocolStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.Http1Connection`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting]]",
       "targetAssembly": "Microsoft.AspNetCore.Server.Kestrel.Core"
     },
     {
