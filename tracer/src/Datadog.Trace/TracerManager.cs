@@ -618,7 +618,19 @@ namespace Datadog.Trace
                     writer.WriteValue(mutableSettings.DefaultServiceName);
 
                     writer.WritePropertyName("OTEL_RESOURCE_ATTRIBUTES");
-                    WriteDictionary(mutableSettings.GlobalTags);
+                    // Restore promoted attributes as the OTLP serializers do to expose the effective resource configuration.
+                    var resourceAttributes = mutableSettings.GlobalTags.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    if (!StringUtil.IsNullOrEmpty(mutableSettings.ServiceVersion))
+                    {
+                        resourceAttributes["service.version"] = mutableSettings.ServiceVersion;
+                    }
+
+                    if (!StringUtil.IsNullOrEmpty(mutableSettings.Environment))
+                    {
+                        resourceAttributes["deployment.environment.name"] = mutableSettings.Environment;
+                    }
+
+                    WriteDictionary(resourceAttributes);
 
                     if (instance.SpanContextPropagator.InjectorNames.SequenceEqual(instance.SpanContextPropagator.ExtractorNames))
                     {
