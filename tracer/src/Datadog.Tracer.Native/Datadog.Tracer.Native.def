@@ -27,4 +27,5 @@ EXPORTS
     GetInodeForPath
     InitEmbeddedCallSiteDefinitions
     InitEmbeddedCallTargetDefinitions
+    WaitForPendingRejitWork
     GetFileMetadataForPath

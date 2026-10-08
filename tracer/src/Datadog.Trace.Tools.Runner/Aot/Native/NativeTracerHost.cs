@@ -142,10 +142,44 @@ internal sealed unsafe class NativeTracerHost : IDisposable
     }
 
     /// <summary>
-    /// Runs the ReJIT requests the native tracer made, from this thread, like the CLR does before a method runs.
+    /// Runs the ReJIT requests the native tracer made, from this thread, like the CLR does before a method runs. The
+    /// native tracer makes them from its ReJIT worker: a barrier (WaitForPendingRejitWork) tells when the work queued
+    /// so far ran, and requests are processed until a barrier finds none left. A native tracer without the barrier is
+    /// waited for until no request came for <paramref name="idleTimeout"/>.
     /// </summary>
     /// <returns>The number of methods processed.</returns>
     public int ProcessReJitRequests(TimeSpan idleTimeout)
+    {
+        if (!NativeLibrary.TryGetExport(_library, "WaitForPendingRejitWork", out var export))
+        {
+            AotLog.Warn("The native tracer has no ReJIT barrier (WaitForPendingRejitWork): waiting until it stays idle.");
+            return ProcessReJitRequestsUntilIdle(idleTimeout);
+        }
+
+        var waitForPendingRejitWork = (delegate* unmanaged<uint, int>)export;
+        var processed = 0;
+        while (true)
+        {
+            if (waitForPendingRejitWork(120_000) == 0)
+            {
+                AotLog.Warn("The native tracer's ReJIT work didn't complete: waiting until it stays idle.");
+                return processed + ProcessReJitRequestsUntilIdle(idleTimeout);
+            }
+
+            if (_runtime.PendingReJit.IsEmpty)
+            {
+                return processed;
+            }
+
+            while (_runtime.PendingReJit.TryDequeue(out var request))
+            {
+                ProcessReJitRequest(request);
+                processed++;
+            }
+        }
+    }
+
+    private int ProcessReJitRequestsUntilIdle(TimeSpan idleTimeout)
     {
         var processed = 0;
         var idleSince = DateTime.UtcNow;
@@ -157,22 +191,27 @@ internal sealed unsafe class NativeTracerHost : IDisposable
                 continue;
             }
 
-            var functionId = new FunctionId(_runtime.FunctionIdFor(request.Module, request.MethodToken));
-            var rejitId = new ReJITId(functionId.Value);
-            var control = NativeObjectRoots.Add(NativeObjects.ICorProfilerFunctionControl.Wrap(new FunctionControl(_runtime, request.Module, request.MethodToken)));
-            _profiler.ReJITCompilationStarted(functionId, rejitId, 1);
-            var result = _profiler.GetReJITParameters(new ModuleId(request.Module), new MdMethodDef((int)request.MethodToken), control);
-            if (result.Failed)
-            {
-                AotLog.Warn($"GetReJITParameters failed for module {request.Module} method 0x{request.MethodToken:x8}: {result}");
-            }
-
-            _profiler.ReJITCompilationFinished(functionId, rejitId, HResult.S_OK, 1);
+            ProcessReJitRequest(request);
             processed++;
             idleSince = DateTime.UtcNow;
         }
 
         return processed;
+    }
+
+    private void ProcessReJitRequest((int Module, uint MethodToken) request)
+    {
+        var functionId = new FunctionId(_runtime.FunctionIdFor(request.Module, request.MethodToken));
+        var rejitId = new ReJITId(functionId.Value);
+        var control = NativeObjectRoots.Add(NativeObjects.ICorProfilerFunctionControl.Wrap(new FunctionControl(_runtime, request.Module, request.MethodToken)));
+        _profiler.ReJITCompilationStarted(functionId, rejitId, 1);
+        var result = _profiler.GetReJITParameters(new ModuleId(request.Module), new MdMethodDef((int)request.MethodToken), control);
+        if (result.Failed)
+        {
+            AotLog.Warn($"GetReJITParameters failed for module {request.Module} method 0x{request.MethodToken:x8}: {result}");
+        }
+
+        _profiler.ReJITCompilationFinished(functionId, rejitId, HResult.S_OK, 1);
     }
 
     public void Dispose()
