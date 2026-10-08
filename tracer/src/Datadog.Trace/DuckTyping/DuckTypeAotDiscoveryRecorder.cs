@@ -163,7 +163,8 @@ namespace Datadog.Trace.DuckTyping
 
         /// <summary>
         /// Creates the map entry of a mapping. A type of a dynamic assembly (e.g. a proxy type dynamic duck typing generated)
-        /// has none: a registry can't reference it, and the generation would fail.
+        /// has none: a registry can't reference it, and the generation would fail. Composite interfaces are the exception: a
+        /// NativeAOT build generates the same assembly.
         /// </summary>
         /// <param name="proxyType">The proxy type.</param>
         /// <param name="targetType">The target type.</param>
@@ -173,7 +174,7 @@ namespace Datadog.Trace.DuckTyping
         internal static bool TryCreateMapEntry(Type proxyType, Type targetType, bool reverse, out MapEntry mapEntry)
         {
             mapEntry = null!;
-            if (proxyType.Assembly.IsDynamic || targetType.Assembly.IsDynamic)
+            if ((proxyType.Assembly.IsDynamic && !DuckType.IsCompositeInterface(proxyType)) || targetType.Assembly.IsDynamic)
             {
                 return false;
             }
