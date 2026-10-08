@@ -1141,14 +1141,9 @@ namespace Datadog.Trace.DuckTyping
         {
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
 
-            DynamicMethod createProxyMethod = new DynamicMethod(
-                $"CreateProxyInstance<{proxyType.Name}>",
-                proxyDefinitionType,
-                new[] { typeof(object) },
-                typeof(DuckType).Module,
-                true);
+            DynamicMethod createProxyMethod = CreateActivatorMethod($"CreateProxyInstance<{proxyType.Name}>", proxyDefinitionType);
             ILGenerator il = createProxyMethod.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
             if (UseDirectAccessTo(moduleBuilder, targetType))
             {
                 if (targetType.IsValueType)
@@ -1169,8 +1164,37 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
-            Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
-            return createProxyMethod.CreateDelegate(delegateType);
+            return CreateBoundActivator(createProxyMethod, proxyDefinitionType);
+        }
+
+        /// <summary>
+        /// Creates the dynamic method of a typed activator: T Create(object objectActivator, object instance). Its delegate is
+        /// bound to the object activator (see <see cref="CreateBoundActivator"/>), which it ignores.
+        /// </summary>
+        private static DynamicMethod CreateActivatorMethod(string name, Type proxyDefinitionType)
+            => new(name, proxyDefinitionType, [typeof(object), typeof(object)], typeof(DuckType).Module, true);
+
+        /// <summary>
+        /// Creates the typed activator (CreateProxyInstance&lt;TProxyDefinition&gt;) of a typed activator method, bound to an object
+        /// activator (Func&lt;object, object&gt;) that calls it: object-based creation (Create(Type, object), DuckAs, TryDuckCast,
+        /// CreateReverse(Type, object)...) calls the object activator instead of DynamicInvoke (see CreateTypeResult.CreateInstance),
+        /// like the activators of an AOT registry.
+        /// </summary>
+        private static Delegate CreateBoundActivator(DynamicMethod typedActivatorMethod, Type proxyDefinitionType)
+        {
+            DynamicMethod objectActivatorMethod = new($"{typedActivatorMethod.Name}.Object", typeof(object), [typeof(object)], typeof(DuckType).Module, true);
+            ILGenerator il = objectActivatorMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldnull);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, typedActivatorMethod);
+            if (proxyDefinitionType.IsValueType)
+            {
+                il.Emit(OpCodes.Box, proxyDefinitionType);
+            }
+
+            il.Emit(OpCodes.Ret);
+            var objectActivator = (Func<object?, object?>)objectActivatorMethod.CreateDelegate(typeof(Func<object?, object?>));
+            return typedActivatorMethod.CreateDelegate(typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType), objectActivator);
         }
 
         private static DuckTypeDuckCopyStructDoesNotContainsAnyField? CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType, out Delegate? activator)
@@ -1178,12 +1202,7 @@ namespace Datadog.Trace.DuckTyping
             activator = null;
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
 
-            DynamicMethod createStructMethod = new DynamicMethod(
-                $"CreateStructInstance<{proxyType.Name}>",
-                proxyDefinitionType,
-                new[] { typeof(object) },
-                typeof(DuckType).Module,
-                true);
+            DynamicMethod createStructMethod = CreateActivatorMethod($"CreateStructInstance<{proxyType.Name}>", proxyDefinitionType);
             ILGenerator il = createStructMethod.GetILGenerator();
 
             // First we declare the locals
@@ -1192,7 +1211,7 @@ namespace Datadog.Trace.DuckTyping
 
             // We create an instance of the proxy type
             il.Emit(OpCodes.Ldloca_S, proxyLocal);
-            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
             if (UseDirectAccessTo(moduleBuilder, targetType))
             {
                 il.Emit(targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, targetType);
@@ -1241,8 +1260,7 @@ namespace Datadog.Trace.DuckTyping
                 return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
             }
 
-            Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
-            activator = createStructMethod.CreateDelegate(delegateType);
+            activator = CreateBoundActivator(createStructMethod, proxyDefinitionType);
             return null;
         }
 
@@ -1549,7 +1567,9 @@ namespace Datadog.Trace.DuckTyping
             private CreateTypeResult(Type? proxyType, Type targetType, Delegate? activator, object? failure, Type? proxyTypeDefinition)
             {
                 // Generated (AOT) activators are rebound to Func<object, object> once, so object-based creation never needs
-                // DynamicInvoke, which NativeAOT may not support. Dynamic methods can't be rebound: they keep their typed delegate.
+                // DynamicInvoke, which NativeAOT may not support. The typed activators of dynamic duck typing are bound to their
+                // object activator (see GetCreateProxyInstanceDelegate); other dynamic methods can't be rebound: they keep their
+                // typed delegate.
                 // A failure is also kept in the activator slot, as an Action that throws it: CreateInstance<T> then reads a single
                 // field, which lets the JIT read it from the fast path entry instead of copying this struct.
                 // The typed activator of a registry, bound to its object activator, is kept: it serves both (see CreateInstance).
@@ -1677,27 +1697,22 @@ namespace Datadog.Trace.DuckTyping
                 return _failure is null;
             }
 
-            // Not inlined: its callers (Create(Type, object), DuckAs, TryDuckCast...) don't grow with the AOT cases, and the call
-            // is negligible next to DynamicInvoke.
+            // Not inlined: its callers (Create(Type, object), DuckAs, TryDuckCast...) stay small.
             [MethodImpl(MethodImplOptions.NoInlining)]
             internal object CreateInstance(object instance)
             {
-                // Dynamic duck typing creates object-based proxies through DynamicInvoke, so failures and activator exceptions
-                // surface wrapped in a TargetInvocationException: AOT results keep that contract.
+                // Object-based proxies were created through DynamicInvoke, so failures and activator exceptions surface wrapped in a
+                // TargetInvocationException: object activators keep that contract.
                 if (_failure is not null)
                 {
                     ThrowFailureAsTargetInvocationException();
                 }
 
-                if (_activator is Func<object?, object?> objectActivator)
+                // The typed activators of dynamic duck typing and of a registry are bound to their object activator; a registry's
+                // object activator is used as is.
+                if ((_activator?.Target as Func<object?, object?> ?? _activator as Func<object?, object?>) is { } objectActivator)
                 {
                     return InvokeObjectActivator(objectActivator, instance);
-                }
-
-                // The typed activator of a registry is bound to its object activator.
-                if (_activator?.Target is Func<object?, object?> boundObjectActivator)
-                {
-                    return InvokeObjectActivator(boundObjectActivator, instance);
                 }
 
                 if (_activator is null)
@@ -1911,12 +1926,12 @@ namespace Datadog.Trace.DuckTyping
                     return fastPath.Result;
                 }
 
-                // Read the version before computing the result: if an invalidation happens meanwhile, the result may already be
-                // stale, and it isn't stored. The result is a local stored by a call: returning a call's result directly makes the
-                // JIT copy the struct on every fast path hit too.
-                var version = Volatile.Read(ref _fastPathVersion);
+                // Without a fast path yet, read the version before computing the result: if an invalidation happens meanwhile, the
+                // result may already be stale, and it isn't stored (another target type doesn't read it). The result is a local
+                // stored by a call: returning a call's result directly makes the JIT copy the struct on every fast path hit too.
+                var version = fastPath is null ? Volatile.Read(ref _fastPathVersion) : 0;
                 var result = GetOrCreateProxyType(Type, targetType);
-                if (Volatile.Read(ref _forwardFastPath) is null)
+                if (fastPath is null)
                 {
                     // By reference: the struct isn't copied at every call site the method is inlined in.
                     StoreForwardFastPath(in result, version);
@@ -2015,9 +2030,9 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Same shape as GetProxy.
-                var version = Volatile.Read(ref _fastPathVersion);
+                var version = fastPath is null ? Volatile.Read(ref _fastPathVersion) : 0;
                 var result = GetOrCreateReverseProxyType(Type, targetType);
-                if (Volatile.Read(ref _reverseFastPath) is null)
+                if (fastPath is null)
                 {
                     StoreReverseFastPath(in result, version);
                 }

@@ -69,12 +69,10 @@ DuckType runtime mode is immutable per process.
 
 ### Changes to Dynamic Duck Typing
 
-Dynamic duck typing (Reflection.Emit) is the reference behavior, and the code size of its hot path (`DuckType.Create`,
-`CreateCache<T>`) doesn't grow: the AOT mode check, and the AOT cases of object-based creation (`DuckType.Create(Type, object)`,
-`DuckAs`, `TryDuckCast`), are in methods that aren't inlined into their callers, which pass results to the fast path cache by
-reference.
-`CreateCache<T>.CreateReverse` checks per call whether the instance is a proxy (see 2). These intentional changes compared to
-the previous release apply in both modes:
+Dynamic duck typing (Reflection.Emit) is the reference behavior, and its hot path (`DuckType.Create`, `CreateCache<T>`) isn't
+slower: the AOT mode check is in a method that isn't inlined into its callers, which pass results to the fast path cache by
+reference. `CreateCache<T>.CreateReverse` checks per call whether the instance is a proxy (see 2). These intentional changes
+compared to the previous release apply in both modes:
 
 1. Forward and reverse proxy types are cached separately. Before, one cache keyed by the (proxy, target) pair served both, so
    `CreateReverse(T, D)` after `Create<T>(d)` (or the other way around) returned the proxy of the other direction.
@@ -84,7 +82,10 @@ the previous release apply in both modes:
    Before, they tried to build a reverse proxy over the generated proxy type, which normally failed. An AOT registry can't
    contain a reverse proxy for a runtime-generated proxy type, so both modes unwrap.
 3. Member binding:
-   - `ExplicitInterfaceTypeName` applies to properties too (before, methods only).
+   - `ExplicitInterfaceTypeName` applies to properties too (before, methods only). The Protobuf integration's
+     `IMessageProxy.Descriptor` declares it: its proxy can now be created for a message that only implements
+     `IMessage.Descriptor` explicitly (e.g. a hand-written one), which the integration instruments (before, it couldn't, and
+     logged an error on every call).
    - Comma-separated fallback names (`[Duck(Name = "A,B")]`) apply to methods too (before, properties and fields only); a
      comma inside generic arguments (`IDictionary<String,Object>.TryGetValue`) doesn't split a name. Method names are trimmed,
      even without a comma, and property and field names when they list fallback names (before, they weren't:
@@ -94,14 +95,18 @@ the previous release apply in both modes:
      constant (for `nint`/`nuint` and their nullable types, converted to a native integer), `Type.Missing` for an `[Optional]`
      object, and a wrapper of null for an `[IUnknownConstant]`/`[IDispatchConstant]` object (before, no argument was loaded and
      the generated method was invalid IL). A caller information parameter (`[CallerMemberName]`...) receives its declared
-     default value, and a default value of another type (a custom `CustomConstantAttribute`) fails the creation of the proxy.
+     default value, and a default value of another type (a custom `CustomConstantAttribute`) fails the creation of the proxy,
+     like before.
    - A proxy method parameter of type `ValueWithType<T>` passes its `Value` to the target.
    - The generic parameters of a generic proxy method have the constraints of the method it implements (before, they had
      none, and calling a target method with constraints failed verification).
    - A proxy definition method with default parameter values can be implemented (before, each parameter of the proxy method
-     dynamic duck typing generated got the name and default value of the next one, and a default value of another type than
-     its parameter's failed the creation of the proxy). The parameters of the generated method have the names and default
-     values of the proxy definition's, which only reflection over the proxy type sees: a registry doesn't name them.
+     dynamic duck typing generated got the name, the attributes and the default value of the next one, and a default value of
+     another type than its parameter's failed the creation of the proxy). The parameters of the generated method have the
+     names, attributes (`in`, `out`, optional) and default values of the proxy definition's, which a duck cast of the proxy
+     (a proxy of a proxy) binds, e.g. an `out` parameter (before, it failed). A default value the runtime can't store as a
+     parameter constant (a `decimal`, a native integer, a `Missing` value, or null for a value type, which .NET Framework
+     rejects) is left out (before, the creation of the proxy failed).
    - A reverse proxy property has the type of the contract property it implements (before, the type of the delegation's
      property: a duck cast of the reverse proxy saw that type, not the one its getter returns).
    - The emitted IL uses the right operand sizes for `ldarg.s`/`ldloc.s`/`stloc.s`/`ldloca.s`/`ldc.i4.s` and the long forms
@@ -109,7 +114,9 @@ the previous release apply in both modes:
 4. Failed results: a failed `CreateTypeResult` throws its cached exception from `CreateInstance<T>` for any `T` (before,
    `CreateInstance<object>` threw an `InvalidCastException`), and proxy definitions that can't be a generic argument (pointers,
    by-refs, by-ref-like types such as `Span<T>`, `TypedReference`, `ArgIterator`, `RuntimeArgumentHandle`, `void`) give a
-   failed result instead of an exception from `GetOrCreateProxyType`.
+   failed result instead of an exception from `GetOrCreateProxyType`. Object-based creation (`DuckType.Create(Type, object)`,
+   `DuckAs`, `TryDuckCast`, `CreateReverse(Type, object)`, `DuckImplement`...) calls an object activator bound to the typed
+   one instead of `DynamicInvoke` (about six times faster); exceptions are still wrapped in a `TargetInvocationException`.
 5. The base constructor a class proxy calls is the parameterless instance constructor of the proxy definition (before, its
    static constructor could be selected, and every creation of the proxy threw an `InvalidProgramException`).
 6. `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH` (see [Dynamic Discovery to Map Workflow](#dynamic-discovery-to-map-workflow))
@@ -241,6 +248,8 @@ A class proxy also implements the accessors of the properties of its interfaces 
 
 A reverse proxy instance gets forward proxies too: dynamic duck typing creates them for its runtime type, the reverse proxy type the registry generates, so the registry registers the forward mappings of the proxy types mapped to its ancestors for it, once per (proxy type, reverse proxy type). Each is bound to the members of the generated reverse proxy type, selected by dynamic duck typing over the reverse proxy type it creates for the same pair (its own `IDuckType` members, `ToString`, members hiding those of the contract, its private `_currentInstance` field, the overrides of protected contract members, the `[DuckInclude]` methods it doesn't override as `final`...). A failure of dynamic duck typing is replayed (e.g. setting a member of a struct reverse proxy), and a proxy the registry can't create where dynamic duck typing does makes every forward mapping of the group not `compatible`. When the generator can't evaluate the pair with dynamic duck typing (a metadata-only mapping), the registration is bound from metadata and flagged `checkedAgainstMetadataOnly`.
 
+A forward proxy instance gets forward proxies too (a proxy of a proxy, e.g. `DuckType.Create(typeof(IFoo), fooProxy)`): the registry registers, for each forward proxy type it generates, the forward mappings whose target is its proxy definition type (or a base type of it other than `object`, `ValueType` and `IDuckType`), like for the reverse proxy types it generates. Discovery records such a pair with the proxy definition type as the target (the proxy type of dynamic duck typing can't be named). The generated proxy methods have the parameters (names, `in`/`out`/optional, default values) of the methods they implement, like dynamic duck typing's, which the proxy of a proxy binds.
+
 The registry calls a target member the way the proxy dynamic duck typing creates does: with `callvirt` for a public or generic method of a reference type (virtual dispatch, and a `NullReferenceException` for a null instance), and the exact bound method otherwise (no virtual dispatch: a proxy created for a base type calls the base type's member on an instance of a derived type, and no null check). A virtual call to a public override declared by a non-public type of the core library goes through the public method it overrides, which every runtime's core library has. The arguments and return values of the members dynamic duck typing selects get its conversions: boxing a value type to `object`, `ValueType` or an interface it implements, unboxing, an enum to or from its underlying type, `Nullable<T>`, duck chaining..., for parameters, by-ref parameters, setters and indexers, forward and reverse.
 
 `[DuckInclude]` methods whose signature uses a generic parameter of their declaring type are bound with the type's generic arguments. A proxy type that is an array type (e.g. a mapping recorded for an array member, `IProxy[]`) can't be created by dynamic duck typing: the registry replays its failure.
@@ -291,7 +300,8 @@ Notes:
 1. `mode` defaults to `forward`.
 2. Valid modes: `forward`, `reverse`.
 3. `proxyType` and `targetType` can be assembly-qualified; if so, assembly can be inferred.
-4. Open generic map rules are allowed only when they can be expanded from matching closed `--generic-instantiations` roots before registry emission.
+4. Open generic map rules are allowed only when they can be expanded from matching closed `--generic-instantiations` roots before registry emission: an open proxy and an open target with the same arity (each closed root of the target closes both), a non-generic proxy and an open target (e.g. a proxy of every `Message<TKey, TValue>`: each closed root of the target gets the proxy), or an open proxy and a non-generic target (each closed root of the proxy gets the target).
+5. The proxy and target assemblies of a mapping are resolved from the `--proxy-assembly` inputs and the target inputs alike: a recorded map names, e.g., the contract assembly of a library a reverse proxy implements.
 
 ## Generic Instantiation Roots
 
@@ -388,7 +398,7 @@ Generator fails if:
 Given output `X.dll`, generator emits:
 
 1. `X.dll`:
-   1. generated proxy types.
+   1. generated proxy types. Like dynamic duck typing's, their only public constructor takes the target instance: code that creates proxies with `ProxyType.GetConstructors()[0]` (CallTarget's IntegrationMapper, the Activity listeners) works with them. A proxy that also serves other runtime types (array types, non-public core library types) has an internal constructor receiving the type it reports as `IDuckType.Type`, which IntegrationMapper calls with the target type.
    2. bootstrap type `Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap`.
    3. module initializer that calls bootstrap `Initialize()` when dynamic code isn't supported (NativeAOT), see [Option B](#option-b-direct-references). The registration runs once: an explicit `Initialize()` call after it does nothing.
    4. the methods registered: proxy activators (`CreateProxy_XXXX(<targetType>)`) with their object activators (`ActivateProxy_XXXX(object)`) and typed activators (`ActivateTypedProxy_XXXX`), fallback activators (`ActivateFallbackProxy_XXXX`), and failure factories (`CreateFailure_XXXX`).
@@ -954,7 +964,7 @@ Known limitations (reported as not `compatible`):
 Known differences the compatibility matrix doesn't report:
 
 1. Under NativeAOT, some exception messages are the runtime's own: the message of an exception created from an HRESULT, and the names of nested generic types in the messages of the failures of the runtime types a registration serves (see [Array targets](#array-targets)).
-2. When a target has several `[DuckInclude]` methods with the same signature, dynamic duck typing declares a proxy method for each, the registry one: only reflection over the proxy type tells.
+2. When a `[DuckInclude]` method of the target has the name and signature of a proxy method, dynamic duck typing declares two methods with that signature on the proxy type (reflection then finds them ambiguous), the registry one: two such methods are invalid metadata (ECMA-335 II.22.26), which the NativeAOT compiler may reject.
 3. A registration whose types the application's runtime can't load fails at startup (see [NativeAOT Runtime APIs](#nativeaot-runtime-apis)).
 
 Bible catalog `expectedStatus` overrides:
@@ -1053,7 +1063,7 @@ Actions:
 
 Cause:
 
-1. Mapped assembly name not present in provided target/proxy inputs.
+1. Mapped assembly name not present in provided target/proxy inputs (either kind of input provides both sides).
 
 Actions:
 

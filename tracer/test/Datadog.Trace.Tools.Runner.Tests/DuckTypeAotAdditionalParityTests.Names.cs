@@ -151,6 +151,53 @@ public partial class DuckTypeAotAdditionalParityTests
     }
 
     [Fact]
+    public void GeneratedRegistryShouldExpandOpenGenericTargetsOfNonGenericProxiesFromRoots()
+    {
+        // A non-generic proxy of the instances of every instantiation of a generic target (the shape of Kafka's IMessage over
+        // Message<TKey, TValue>): the open rule is expanded with each closed root of the target.
+        var definitionName = typeof(NamesMessage<,>).FullName!;
+        var testAssemblyName = typeof(NamesMessage<,>).Assembly.GetName().Name!;
+        AssertSameOutcomeWithInputs(
+            () => DuckType.Create<INamesMessageProxy>(new NamesMessage<string, int> { Key = "k", Value = 1 })!.Describe() + "|" +
+                  DuckType.Create<INamesMessageProxy>(new NamesMessage<int, string> { Key = 2, Value = "v" })!.Describe(),
+            [TestAssemblyPath],
+            JsonConvert.SerializeObject(new[]
+            {
+                new { type = definitionName + "[[System.String, System.Private.CoreLib],[System.Int32, System.Private.CoreLib]]", assembly = testAssemblyName },
+                new { type = definitionName + "[[System.Int32, System.Private.CoreLib],[System.String, System.Private.CoreLib]]", assembly = testAssemblyName },
+            }),
+            new DuckTypeAotMapping(typeof(INamesMessageProxy).FullName!, testAssemblyName, definitionName, testAssemblyName, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile));
+    }
+
+    [Fact]
+    public void GeneratedRegistryShouldExpandOpenGenericProxiesOfNonGenericTargetsFromRoots()
+    {
+        // A generic proxy of a non-generic target: the open rule is expanded with each closed root of the proxy.
+        var testAssemblyName = typeof(INamesHolderProxy<>).Assembly.GetName().Name!;
+        AssertSameOutcomeWithInputs(
+            () => DuckType.Create<INamesHolderProxy<string>>(new NamesStringHolder())!.Value + "|" + DuckType.Create<INamesHolderProxy<object>>(new NamesStringHolder())!.Value,
+            [TestAssemblyPath],
+            JsonConvert.SerializeObject(new[]
+            {
+                new { type = typeof(INamesHolderProxy<>).FullName + "[[System.String, System.Private.CoreLib]]", assembly = testAssemblyName },
+                new { type = typeof(INamesHolderProxy<>).FullName + "[[System.Object, System.Private.CoreLib]]", assembly = testAssemblyName },
+            }),
+            new DuckTypeAotMapping(typeof(INamesHolderProxy<>).FullName!, testAssemblyName, typeof(NamesStringHolder).FullName!, testAssemblyName, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile));
+    }
+
+    [Fact]
+    public void GeneratedRegistryShouldResolveProxyAssembliesFromTargetInputs()
+    {
+        // A recorded map names the assembly of the proxy type, e.g. the contract of a library a reverse proxy implements (a
+        // logging sink), which only the target inputs have.
+        AssertSameOutcomeWithInputs(
+            () => ((IComparable)DuckType.CreateReverse(typeof(IComparable), new NamesComparableDelegation())).CompareTo(5),
+            [TestAssemblyPath, typeof(object).Assembly.Location],
+            genericInstantiationsJson: null,
+            new DuckTypeAotMapping(typeof(IComparable).FullName!, typeof(IComparable).Assembly.GetName().Name!, typeof(NamesComparableDelegation).FullName!, typeof(NamesComparableDelegation).Assembly.GetName().Name!, DuckTypeAotMappingMode.Reverse, DuckTypeAotMappingSource.MapFile));
+    }
+
+    [Fact]
     public void GeneratedRegistryShouldRegisterDerivedTypesWhoseDependenciesTheGeneratorDoesntHave()
     {
         // Derived : Target implements an interface of an assembly the generator doesn't get (the application has it): the
@@ -329,6 +376,40 @@ public partial class DuckTypeAotAdditionalParityTests
     public interface INamesMoveNextProxy
     {
         bool MoveNext();
+    }
+
+    public class NamesComparableDelegation
+    {
+        [DuckReverseMethod]
+        public int CompareTo(object? value) => value is int number ? number * 2 : -1;
+    }
+
+    public interface INamesMessageProxy
+    {
+        object? Key { get; }
+
+        object? Value { get; }
+
+        string Describe();
+    }
+
+    public class NamesMessage<TKey, TValue>
+    {
+        public TKey? Key { get; set; }
+
+        public TValue? Value { get; set; }
+
+        public string Describe() => typeof(TKey).Name + ":" + Key + "/" + typeof(TValue).Name + ":" + Value;
+    }
+
+    public interface INamesHolderProxy<T>
+    {
+        T Value { get; }
+    }
+
+    public class NamesStringHolder
+    {
+        public string Value => "held";
     }
 
     public interface INamesGenericProxy<T>

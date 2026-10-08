@@ -833,11 +833,23 @@ internal static class IntegrationMapper
     private static void WriteCreateNewProxyInstance(ILGenerator ilWriter, Type proxyType, Type targetType)
     {
         var proxyTypeCtor = proxyType.GetConstructors()[0];
+        var instanceParameterType = proxyTypeCtor.GetParameters()[0].ParameterType;
 
         // No null check is needed for value types
-        if (targetType.IsValueType && !proxyTypeCtor.GetParameters()[0].ParameterType.IsValueType)
+        if (targetType.IsValueType && !instanceParameterType.IsValueType)
         {
             ilWriter.Emit(OpCodes.Box, targetType);
+        }
+
+        // The proxy of an AOT registry that also serves other runtime types (other array types, non-public types of the core
+        // library) has an internal constructor receiving the type it reports as IDuckType.Type: the target type, like the
+        // proxy dynamic duck typing creates for it.
+        if (proxyType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, [instanceParameterType, typeof(Type)], null) is { } reportingCtor)
+        {
+            ilWriter.Emit(OpCodes.Ldtoken, targetType);
+            ilWriter.Emit(OpCodes.Call, typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle))!);
+            ilWriter.Emit(OpCodes.Newobj, reportingCtor);
+            return;
         }
 
         ilWriter.Emit(OpCodes.Newobj, proxyTypeCtor);

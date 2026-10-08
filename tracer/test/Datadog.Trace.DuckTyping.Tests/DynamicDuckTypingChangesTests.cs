@@ -6,9 +6,12 @@
 #pragma warning disable SA1201 // Elements must appear in the correct order
 
 using System;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using FluentAssertions;
 using Xunit;
 
@@ -64,14 +67,34 @@ namespace Datadog.Trace.DuckTyping.Tests
             // The default value of each parameter is the one of that parameter (not of the previous one, nor of the return value).
             var proxy = DuckType.Create<IDefaultValuesProxy>(new DefaultValuesTarget())!;
             proxy.Format(3).Should().Be("3:x");
-            if (DuckType.RuntimeMode == DuckTypeRuntimeMode.Dynamic)
-            {
-                // The parameters of the proxy type's methods are only seen through reflection (callers bind to the proxy
-                // definition's): a registry doesn't name them.
-                var parameters = proxy.GetType().GetMethod(nameof(IDefaultValuesProxy.Format))!.GetParameters();
-                parameters.Select(parameter => parameter.Name).Should().Equal("value", "text");
-                parameters[1].DefaultValue.Should().Be("x");
-            }
+            var parameters = proxy.GetType().GetMethod(nameof(IDefaultValuesProxy.Format))!.GetParameters();
+            parameters.Select(parameter => parameter.Name).Should().Equal("value", "text");
+            parameters[1].DefaultValue.Should().Be("x");
+        }
+
+        [Fact]
+        public void ProxyMethodsWithDefaultValuesTheRuntimeCantStoreShouldBeCreated()
+        {
+            // A null default of a value type (rejected by .NET Framework), a decimal, a native integer and a Missing default
+            // can't be stored as parameter constants of the generated method: they're left out of its metadata.
+            DuckType.Create<IUnstorableDefaultsProxy>(new UnstorableDefaultsTarget())!.Describe(1).Should().Be("1:False:1.5:5:missing");
+        }
+
+        [Fact]
+        public void ObjectBasedCreationShouldNotUseDynamicInvoke()
+        {
+            // The typed activators are bound to object activators, which Create(Type, object), DuckAs, TryDuckCast and
+            // CreateReverse(Type, object) call (before, dynamic duck typing used DynamicInvoke).
+            var result = DuckType.GetOrCreateProxyType(typeof(INameProxy), typeof(NameTarget));
+            result.UsesDynamicInvokeFallback.Should().BeFalse();
+            ((INameProxy)DuckType.Create(typeof(INameProxy), new NameTarget())).Name.Should().Be("name");
+            var copyResult = DuckType.GetOrCreateProxyType(typeof(NameCopy), typeof(NameTarget));
+            copyResult.UsesDynamicInvokeFallback.Should().BeFalse();
+            ((NameCopy)DuckType.Create(typeof(NameCopy), new NameTarget())).Name.Should().Be("name");
+
+            // Like DynamicInvoke, an exception of the activator is wrapped in a TargetInvocationException.
+            var exception = Record.Exception(() => result.CreateInstance(new object()));
+            exception.Should().BeOfType<TargetInvocationException>().Which.InnerException.Should().BeOfType<InvalidCastException>();
         }
 
         [Fact]
@@ -191,6 +214,23 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             string Describe<T>(T value)
                 where T : struct;
+        }
+
+        [DuckCopy]
+        public struct NameCopy
+        {
+            public string Name;
+        }
+
+        public interface IUnstorableDefaultsProxy
+        {
+            string Describe(int value, [Optional] object missing, CancellationToken token = default, decimal amount = 1.5m, nint offset = 5);
+        }
+
+        public class UnstorableDefaultsTarget
+        {
+            public string Describe(int value, object missing, CancellationToken token, decimal amount, nint offset)
+                => value + ":" + token.CanBeCanceled + ":" + amount.ToString(CultureInfo.InvariantCulture) + ":" + offset + ":" + (missing == Type.Missing ? "missing" : "other");
         }
 
         public interface IDefaultValuesProxy
