@@ -55,21 +55,30 @@ internal sealed class CallTargetRegistryGenerator
     /// <param name="resolveType">Resolves a type reference across the loaded modules.</param>
     /// <param name="duckTypeRegistry">The DuckType AOT registry with the proxies of the duck typing constraints, if any.</param>
     /// <param name="instantiations">The closed instantiations of the rewritten methods with a generic context (C3).</param>
+    /// <param name="isApplication">Whether the module is the application's, whose module initializer initializes the instrumentation.</param>
     public static CallTargetRegistryResult Generate(
         ModuleDef module,
         IEnumerable<MethodDef> rewrittenMethods,
         ModuleDef datadogTrace,
         Func<ITypeDefOrRef, TypeDef?> resolveType,
         CallTargetDuckTypeRegistry? duckTypeRegistry = null,
-        IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null)
+        IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null,
+        bool isApplication = false)
     {
         var scanned = rewrittenMethods.Where(m => m.Body is not null)
                                       .Select(m => (Method: m, Invocations: CallTargetInvocationScanner.Scan(m.Body)))
                                       .Where(s => s.Invocations.Count > 0)
                                       .ToList();
-        if (scanned.Count == 0 || FindDatadogTraceScope(scanned[0].Method.Body) is not { } scope)
+        var scope = scanned.Count > 0 ? FindDatadogTraceScope(scanned[0].Method.Body) : null;
+        if (scope is null)
         {
-            return new CallTargetRegistryResult();
+            if (!isApplication)
+            {
+                return new CallTargetRegistryResult();
+            }
+
+            // Nothing of the application itself is instrumented: it still initializes the instrumentation.
+            scope = module.UpdateRowId(new AssemblyRefUser(datadogTrace.Assembly));
         }
 
         var references = new CallTargetReferences(module, datadogTrace, scope);
@@ -79,13 +88,18 @@ internal sealed class CallTargetRegistryGenerator
             generator.AddRegistration(method, invocations);
         }
 
-        if (generator._usesProxies && duckTypeRegistry is not null)
+        var usesRegistry = generator._usesProxies && duckTypeRegistry is not null;
+        if (usesRegistry)
         {
-            generator._accessedAssemblies.Add(duckTypeRegistry.AssemblyName);
-            generator.AddDuckTypeBootstrap(duckTypeRegistry);
+            generator._accessedAssemblies.Add(duckTypeRegistry!.AssemblyName);
         }
 
-        generator.AddIgnoresAccessChecks();
+        if (usesRegistry || isApplication)
+        {
+            generator.AddModuleInitializer(duckTypeRegistry, initializeInstrumentation: isApplication);
+        }
+
+        generator.AddIgnoresAccessChecks(force: isApplication);
         return generator._result;
     }
 
@@ -651,57 +665,75 @@ internal sealed class CallTargetRegistryGenerator
     }
 
     /// <summary>
-    /// The DuckType AOT registry must enable the AOT mode before anything uses duck typing: a call to its bootstrap at
-    /// the start of the module initializer (also under the JIT, where its own module initializer would run too late).
-    /// It never throws: a failure is logged, and the proxies it can't provide fail like in dynamic duck typing.
+    /// The module initializer of an instrumented assembly, before its own code: the DuckType AOT registry must enable the
+    /// AOT mode before anything uses duck typing (also under the JIT, where the registry's own module initializer would
+    /// run too late), then the application's assembly initializes the instrumentation (<c>Instrumentation.InitializeAot</c>).
+    /// Each step is isolated: a failure is logged and the application starts anyway.
     /// </summary>
-    private void AddDuckTypeBootstrap(CallTargetDuckTypeRegistry registry)
+    private void AddModuleInitializer(CallTargetDuckTypeRegistry? registry, bool initializeInstrumentation)
     {
-        if (registry.Module.Find(CallTargetDuckTypeRegistry.BootstrapTypeName, isReflectionName: true)?.FindMethod("Initialize") is not { } initialize)
+        var steps = new List<(string Name, IMethod Method)>();
+        if (registry?.Module.Find(CallTargetDuckTypeRegistry.BootstrapTypeName, isReflectionName: true)?.FindMethod("Initialize") is { } registryInitialize)
+        {
+            steps.Add(("DuckTypeRegistry", _references.Import(registryInitialize)));
+        }
+
+        if (initializeInstrumentation)
+        {
+            var instrumentation = new ClassSig(_references.DatadogType("Datadog.Trace.ClrProfiler.Instrumentation"));
+            steps.Add(("Instrumentation", _references.DatadogStaticMethod(instrumentation, "InitializeAot", MethodSig.CreateStatic(_module.CorLibTypes.Void))));
+        }
+
+        if (steps.Count == 0)
         {
             return;
         }
 
         var globalType = _module.GlobalType;
-
-        // The call is in its own method: the JIT resolves it (and loads the registry assembly) when it compiles the method
-        // that contains it, which must be inside the try block.
-        var callBootstrap = new MethodDefUser(
-            "<DatadogAot>CallDuckTypeRegistryBootstrap",
-            MethodSig.CreateStatic(_module.CorLibTypes.Void),
-            MethodImplAttributes.IL | MethodImplAttributes.Managed | MethodImplAttributes.NoInlining,
-            MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig);
-        callBootstrap.Body = new CilBody();
-        callBootstrap.Body.Instructions.Add(OpCodes.Call.ToInstruction(_references.Import(initialize)));
-        callBootstrap.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
-        Finish(callBootstrap.Body);
-        globalType.Methods.Add(callBootstrap);
-
-        var bootstrap = new MethodDefUser(
-            "<DatadogAot>InitializeDuckTypeRegistry",
+        var initialize = new MethodDefUser(
+            "<DatadogAot>Initialize",
             MethodSig.CreateStatic(_module.CorLibTypes.Void),
             MethodImplAttributes.IL | MethodImplAttributes.Managed,
             MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig);
-        var body = bootstrap.Body = new CilBody();
-        var end = OpCodes.Ret.ToInstruction();
-        var tryStart = OpCodes.Call.ToInstruction(callBootstrap);
-        body.Instructions.Add(tryStart);
-        body.Instructions.Add(OpCodes.Leave.ToInstruction(end));
+        var body = initialize.Body = new CilBody();
         var registryHelpers = new ClassSig(_references.DatadogType($"{HandlersNamespace}.CallTargetAotRegistry"));
-        var handlerStart = OpCodes.Call.ToInstruction(_references.DatadogStaticMethod(registryHelpers, "LogInitializationError", MethodSig.CreateStatic(_module.CorLibTypes.Void, _references.Exception)));
-        body.Instructions.Add(handlerStart);
-        body.Instructions.Add(OpCodes.Leave.ToInstruction(end));
-        body.Instructions.Add(end);
-        body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+        var logError = _references.DatadogStaticMethod(registryHelpers, "LogInitializationError", MethodSig.CreateStatic(_module.CorLibTypes.Void, _references.Exception));
+        foreach (var (name, method) in steps)
         {
-            TryStart = tryStart,
-            TryEnd = handlerStart,
-            HandlerStart = handlerStart,
-            HandlerEnd = end,
-            CatchType = CallTargetReferences.ToTypeDefOrRef(_references.Exception),
-        });
+            // The call is in its own method: the JIT resolves it (and loads its assembly) when it compiles the method that
+            // contains it, which must be inside the try block.
+            var call = new MethodDefUser(
+                $"<DatadogAot>Initialize{name}",
+                MethodSig.CreateStatic(_module.CorLibTypes.Void),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed | MethodImplAttributes.NoInlining,
+                MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig);
+            call.Body = new CilBody();
+            call.Body.Instructions.Add(OpCodes.Call.ToInstruction(method));
+            call.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            Finish(call.Body);
+            globalType.Methods.Add(call);
+
+            var next = OpCodes.Nop.ToInstruction();
+            var tryStart = OpCodes.Call.ToInstruction(call);
+            var handlerStart = OpCodes.Call.ToInstruction(logError);
+            body.Instructions.Add(tryStart);
+            body.Instructions.Add(OpCodes.Leave.ToInstruction(next));
+            body.Instructions.Add(handlerStart);
+            body.Instructions.Add(OpCodes.Leave.ToInstruction(next));
+            body.Instructions.Add(next);
+            body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+            {
+                TryStart = tryStart,
+                TryEnd = handlerStart,
+                HandlerStart = handlerStart,
+                HandlerEnd = next,
+                CatchType = CallTargetReferences.ToTypeDefOrRef(_references.Exception),
+            });
+        }
+
+        body.Instructions.Add(OpCodes.Ret.ToInstruction());
         Finish(body);
-        globalType.Methods.Add(bootstrap);
+        globalType.Methods.Add(initialize);
 
         var initializer = globalType.FindStaticConstructor();
         if (initializer is null)
@@ -717,7 +749,7 @@ internal sealed class CallTargetRegistryGenerator
             globalType.Methods.Add(initializer);
         }
 
-        initializer.Body.Instructions.Insert(0, OpCodes.Call.ToInstruction(bootstrap));
+        initializer.Body.Instructions.Insert(0, OpCodes.Call.ToInstruction(initialize));
     }
 
     /// <summary>
@@ -846,9 +878,9 @@ internal sealed class CallTargetRegistryGenerator
     /// <summary>
     /// Integration methods and handler types are internal to their assemblies more often than not.
     /// </summary>
-    private void AddIgnoresAccessChecks()
+    private void AddIgnoresAccessChecks(bool force)
     {
-        if (_result.Registrations == 0 || _module.Assembly is not { } assembly)
+        if ((_result.Registrations == 0 && !force) || _module.Assembly is not { } assembly)
         {
             return;
         }
