@@ -68,7 +68,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
             }
             catch (Exception exception)
             {
-                _logger.Error(exception, "Query string obfuscation failed");
+                _logger.Error(exception, "Query string obfuscation failed for regex pattern {Pattern}", _regex.ToString());
             }
 
             return string.Empty;
