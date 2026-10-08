@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Loader;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
 using dnlib.DotNet;
 
@@ -93,7 +95,11 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
                 continue;
             }
 
-            if (!assemblyPaths.TryGetValue(mapping.ProxyAssemblyName, out var proxyPath) || !assemblyPaths.TryGetValue(mapping.TargetAssemblyName, out var targetPath))
+            // The assemblies of the generic arguments too (types of the application in a recorded closed generic type).
+            var argumentAssemblies = GenericArgumentAssemblies(mapping.ProxyTypeName).Concat(GenericArgumentAssemblies(mapping.TargetTypeName)).ToList();
+            if (!assemblyPaths.TryGetValue(mapping.ProxyAssemblyName, out var proxyPath)
+             || !assemblyPaths.TryGetValue(mapping.TargetAssemblyName, out var targetPath)
+             || argumentAssemblies.Any(a => !assemblyPaths.ContainsKey(a)))
             {
                 // A catalog covers libraries the application doesn't use.
                 skipped++;
@@ -103,6 +109,10 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
             mappings[mapping.Key] = mapping;
             proxyAssemblies[mapping.ProxyAssemblyName] = proxyPath;
             targetAssemblies[mapping.TargetAssemblyName] = targetPath;
+            foreach (var argumentAssembly in argumentAssemblies)
+            {
+                targetAssemblies[argumentAssembly] = assemblyPaths[argumentAssembly];
+            }
         }
 
         foreach (var (proxyDefinition, target) in runtimeRequests)
@@ -156,7 +166,37 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
             propsPath: Path.Combine(outputDirectory, assemblyName + ".props"));
         var resolution = new DuckTypeAotMappingResolutionResult(mappings.Values, proxyAssemblies, targetAssemblies, Array.Empty<DuckTypeAotTypeReference>(), Array.Empty<string>(), Array.Empty<string>());
         var artifactPaths = DuckTypeAotArtifactPaths.Create(options);
-        var emission = DuckTypeAotRegistryAssemblyEmitter.Emit(options, artifactPaths, resolution);
+        // The generator replays dynamic duck typing in this process with the assemblies of the mappings: the other assemblies
+        // their types need (e.g. the dependencies of the types of a closed generic argument) come from the application.
+        Assembly? ResolveApplicationAssembly(AssemblyLoadContext context, AssemblyName name)
+        {
+            if (name.Name is not { } simpleName || !assemblyPaths.TryGetValue(simpleName, out var path))
+            {
+                return null;
+            }
+
+            try
+            {
+                return context.LoadFromAssemblyPath(path);
+            }
+            catch (Exception)
+            {
+                // E.g. another version of a framework assembly the Runner already loaded: the generator reports the type.
+                return null;
+            }
+        }
+
+        DuckTypeAotRegistryEmissionResult emission;
+        AssemblyLoadContext.Default.Resolving += ResolveApplicationAssembly;
+        try
+        {
+            emission = DuckTypeAotRegistryAssemblyEmitter.Emit(options, artifactPaths, resolution);
+        }
+        finally
+        {
+            AssemblyLoadContext.Default.Resolving -= ResolveApplicationAssembly;
+        }
+
         DuckTypeAotArtifactsWriter.WriteAll(artifactPaths, resolution, emission);
 
         // Loaded from memory: the file stays free for the build to copy.
@@ -218,6 +258,33 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
     /// The reflection name, assembly and path of a closed type (generic arguments assembly qualified), plus the
     /// assemblies of its generic arguments. Arrays, pointers and open types can't be named in a mapping yet.
     /// </summary>
+    /// <summary>
+    /// The assemblies named by the generic arguments of a reflection type name ("Type`1[[Argument, Assembly, …]]"), nested
+    /// ones included. Arguments without an assembly are looked up where the type is.
+    /// </summary>
+    private static IEnumerable<string> GenericArgumentAssemblies(string typeName)
+    {
+        var start = DuckTypeAotNameHelpers.FindGenericArgumentsStart(typeName);
+        if (start < 0 || !DuckTypeAotNameHelpers.TrySplitGenericArguments(typeName, start, out var arguments))
+        {
+            yield break;
+        }
+
+        foreach (var argument in arguments)
+        {
+            var (argumentType, argumentAssembly) = DuckTypeAotNameHelpers.ParseTypeAndAssembly(argument);
+            if (!StringUtil.IsNullOrEmpty(argumentAssembly))
+            {
+                yield return argumentAssembly;
+            }
+
+            foreach (var nested in GenericArgumentAssemblies(argumentType))
+            {
+                yield return nested;
+            }
+        }
+    }
+
     private static TypeDescription? Describe(TypeSig type, Func<ITypeDefOrRef, TypeDef?> resolveType)
     {
         if (type.ContainsGenericParameter)
