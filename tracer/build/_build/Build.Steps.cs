@@ -88,6 +88,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => BuildArtifactsDirectory / "native-obj";
 
+    // Keep in sync with DatadogAotLibDdwafVersion in tracer/src/Datadog.Trace.Aot/Datadog.Trace.Aot.csproj
     const string LibDdwafVersion = "2.0.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0", "1.30.0" };
