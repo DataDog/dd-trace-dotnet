@@ -84,17 +84,28 @@ public class AotInstrumentNativeHostIntegrationTests
                 instrumented);
             exitCode.Should().Be(0, output);
 
-            // The registrations bind every shape without duck typing; the rest falls back to IntegrationMapper (F5).
+            // The registrations bind every shape, the generic ones through their closed instantiations, with the proxies of a
+            // DuckType AOT registry: nothing falls back to IntegrationMapper, and duck typing runs in AOT mode.
             var report = JObject.Parse(File.ReadAllText(Path.Combine(workDirectory, "report.json")));
             var callTarget = report["Assemblies"]![0]!["CallTarget"]!;
             callTarget.Value<int>("Failures").Should().Be(0, callTarget.ToString());
             callTarget.Value<int>("Bound").Should().BeGreaterThan(0, callTarget.ToString());
+            callTarget.Value<int>("InstantiationDeferred").Should().Be(0, callTarget.ToString());
+            var duckTypeRegistry = report["DuckTypeRegistry"]!;
+            duckTypeRegistry.Value<int>("Compatible").Should().Be(duckTypeRegistry.Value<int>("Mappings"), duckTypeRegistry.ToString());
 
             CopyDirectory(appDirectory!, app);
-            File.Copy(Path.Combine(instrumented, "CallTargetNativeTest.dll"), Path.Combine(app, "CallTargetNativeTest.dll"), overwrite: true);
-            File.Copy(Path.Combine(instrumented, "CallTargetNativeTest.pdb"), Path.Combine(app, "CallTargetNativeTest.pdb"), overwrite: true);
+            foreach (var file in Directory.GetFiles(instrumented).Where(f => f.EndsWith(".dll", StringComparison.Ordinal) || f.EndsWith(".pdb", StringComparison.Ordinal)))
+            {
+                File.Copy(file, Path.Combine(app, Path.GetFileName(file)), overwrite: true);
+            }
 
-            for (var arguments = 0; arguments < 10; arguments++)
+            // The DuckType AOT registry isn't in the dependency manifest: without it, the host probes the application folder.
+            File.Delete(Path.Combine(app, "CallTargetNativeTest.deps.json"));
+
+            // 9 arguments go through the slow begin path, whose IntegrationMapper.ConvertType looks proxies up by the runtime
+            // type of the values: those need the mappings recorded at runtime (C6, tracker H-25).
+            for (var arguments = 0; arguments < 9; arguments++)
             {
                 var (appExit, appOutput) = Run("dotnet", app, "CallTargetNativeTest.dll", arguments.ToString());
                 appExit.Should().Be(0, appOutput);

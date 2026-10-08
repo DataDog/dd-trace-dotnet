@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using dnlib.DotNet;
 
 namespace Datadog.Trace.Tools.Runner.Aot.CallTarget;
@@ -42,6 +43,13 @@ internal sealed class CallTargetInvocation
 
     /// <summary>Gets the Task or ValueTask a runtime-async method declares.</summary>
     public TypeSig? DeclaredReturnType { get; }
+
+    public bool ContainsGenericParameter
+        => Integration.ContainsGenericParameter
+        || Target.ContainsGenericParameter
+        || ReturnType?.ContainsGenericParameter == true
+        || DeclaredReturnType?.ContainsGenericParameter == true
+        || Arguments.Any(a => a.ContainsGenericParameter);
 
     public CallTargetInvocation Remap(Func<TypeSig, TypeSig> remap)
     {

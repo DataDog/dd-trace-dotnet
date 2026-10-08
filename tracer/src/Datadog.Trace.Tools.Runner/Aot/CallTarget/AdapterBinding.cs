@@ -39,6 +39,15 @@ internal sealed class AdapterBinding
     /// <summary>Gets a value indicating whether <c>OnAsyncMethodEnd</c> returns a task (async continuation).</summary>
     public bool IsTaskReturn { get; private set; }
 
+    /// <summary>Gets the proxy of the return value, which the adapter unwraps after the call (<c>IntegrationMapper.UnwrapReturnValue</c>).</summary>
+    public DuckProxy? ReturnProxy { get; private set; }
+
+    /// <summary>Gets the type the return value proxy unwraps to.</summary>
+    public TypeSig? ReturnType { get; private set; }
+
+    /// <summary>Gets the indexes of the generic arguments bound to proxies, whose constraints hold by construction.</summary>
+    public HashSet<int> ProxyArguments { get; } = new();
+
     public static AdapterBinding NoMethod() => new(AdapterBindingStatus.NoMethod, null);
 
     public static AdapterBinding Failure(string message) => new(AdapterBindingStatus.Failure, message);
@@ -47,5 +56,11 @@ internal sealed class AdapterBinding
 
     public static AdapterBinding Bound(MethodDef method, bool preserveContext = false, bool isTaskReturn = false)
         => new(AdapterBindingStatus.Bound, null) { Method = method, PreserveContext = preserveContext, IsTaskReturn = isTaskReturn };
+
+    public void SetReturnProxy(DuckProxy proxy, TypeSig returnType)
+    {
+        ReturnProxy = proxy;
+        ReturnType = returnType;
+    }
 }
 #endif

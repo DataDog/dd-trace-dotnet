@@ -66,16 +66,46 @@ internal static class AotInstrumentProcessor
             var modules = host.Runtime.Modules;
             var datadogTrace = modules.First(m => !m.Writable && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.DatadogTracePath), StringComparison.Ordinal)).Module;
             var typeResolver = new LoadedModulesTypeResolver(modules.Select(m => m.Module));
-            foreach (var module in modules.Where(m => m.Writable))
+            var writableModules = modules.Where(m => m.Writable).ToList();
+            var rewrittenByModule = writableModules.ToDictionary(m => m, MethodBodies.ApplyNewBodies);
+
+            // The proxies of the duck typing constraints go to a DuckType AOT registry generated first (C1): the adapters
+            // create them directly.
+            CallTargetDuckTypeRegistry? duckTypeRegistry = null;
+            Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null;
+            if (options.GenerateCallTargetRegistry)
+            {
+                instantiations = GenericInstantiationDiscovery.Discover(writableModules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), rewrittenByModule.Values.SelectMany(m => m), typeResolver.Resolve);
+                AotLog.Info($"Closed instantiations of generic instrumented methods: {instantiations.Values.Sum(i => i.Count)} for {instantiations.Count} methods");
+                var collector = new DuckProxyRequestCollector();
+                foreach (var rewritten in rewrittenByModule.Values)
+                {
+                    CallTargetRegistryGenerator.CollectProxyRequests(rewritten, typeResolver.Resolve, collector, instantiations);
+                }
+
+                AotLog.Info($"Duck typing proxies needed by the CallTarget adapters: {collector.Requests.Count} (+{collector.RuntimeRequests.Count} looked up at runtime)");
+                if (collector.Requests.Count + collector.RuntimeRequests.Count > 0)
+                {
+                    var registryName = $"Datadog.Trace.DuckType.AotRegistry.{writableModules[0].AssemblyName}";
+                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
+                    if (duckTypeRegistry is not null)
+                    {
+                        report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, Warnings = duckTypeRegistry.Warnings.ToList() };
+                        AotLog.Info($"DuckType AOT registry: {duckTypeRegistry.Compatible}/{duckTypeRegistry.Mappings} proxies -> {duckTypeRegistry.AssemblyPath}");
+                    }
+                }
+            }
+
+            foreach (var module in writableModules)
             {
                 var output = Path.Combine(options.OutputDirectory, Path.GetFileName(module.Path));
-                var rewritten = MethodBodies.ApplyNewBodies(module);
+                var rewritten = rewrittenByModule[module];
                 var rewrittenMethods = rewritten.Select(DescribeForVerification).ToList();
                 CallTargetRegistryResult? registry = null;
                 if (options.GenerateCallTargetRegistry)
                 {
-                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve);
-                    AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories)");
+                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations);
+                    AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories); {registry.Instantiations} instantiations of deferred generic shapes ({registry.InstantiationBound} bound, {registry.InstantiationDeferred} still deferred)");
                     foreach (var detail in registry.Details)
                     {
                         AotLog.Debug(detail);
@@ -86,7 +116,7 @@ internal static class AotInstrumentProcessor
                 MethodBodies.Save(module, output);
                 if (options.Verify && rewrittenMethods.Count > 0)
                 {
-                    var outcome = new VerificationsRunner(output, module.Path, rewrittenMethods, options.ReferenceDirectories.Concat(new[] { Path.GetDirectoryName(module.Path)! }).ToList(), failOnVerificationError: true).Run();
+                    var outcome = new VerificationsRunner(output, module.Path, rewrittenMethods, options.ReferenceDirectories.Concat(new[] { Path.GetDirectoryName(module.Path)!, Path.GetFullPath(options.OutputDirectory) }).ToList(), failOnVerificationError: true).Run();
                     if (!outcome.IsValid)
                     {
                         report.Errors.Add($"Verification failed for {module.AssemblyName}: {outcome.FailureReason}");

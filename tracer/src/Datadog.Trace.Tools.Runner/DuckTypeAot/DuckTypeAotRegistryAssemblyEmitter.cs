@@ -715,6 +715,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     runtimeDuplicateKeys));
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeRegistrationsSeconds += seconds);
                 var generatedProxyTargets = new List<KeyValuePair<DuckTypeAotMapping, TypeDef>>();
+                var generatedTypes = new GeneratedTypeIndex(moduleDef);
                 var registrationResults = new Dictionary<string, DuckTypeAotMappingEmissionResult>(StringComparer.Ordinal);
 
                 phaseStopwatch = StartProfilePhase();
@@ -777,7 +778,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     // The proxy types the registry generates, whose instances dynamic duck typing creates forward proxies for: a
                     // reverse proxy type, and a forward proxy type (a proxy of a proxy), see EmitGeneratedProxyTargetAliases.
                     if (emissionResult.Status == DuckTypeAotCompatibilityStatuses.Compatible &&
-                        moduleDef.Find(emissionResult.GeneratedProxyTypeName, isReflectionName: false) is { } generatedProxyType &&
+                        generatedTypes.Find(emissionResult.GeneratedProxyTypeName) is { } generatedProxyType &&
                         (mapping.Mode == DuckTypeAotMappingMode.Reverse || generatedProxyType.Interfaces.Any(implementation => string.Equals(implementation.Interface?.FullName, "Datadog.Trace.DuckTyping.IDuckType", StringComparison.Ordinal))))
                     {
                         generatedProxyTargets.Add(new KeyValuePair<DuckTypeAotMapping, TypeDef>(mapping, generatedProxyType));
@@ -1760,6 +1761,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var mapping in registeredCanonicalMappings)
             {
+                if (mapping.Source == DuckTypeAotMappingSource.CallTarget)
+                {
+                    // Created for the static type only (System.Object would get an alias per type of every input assembly).
+                    continue;
+                }
+
                 var canonicalTargetKey = BuildCanonicalTargetCacheKey(mapping);
                 if (!aliasPlansByCanonicalTargetKey.TryGetValue(canonicalTargetKey, out var aliasPlan))
                 {
@@ -17725,6 +17732,61 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// The answers of dynamic duck typing in the generator, kept across the emission passes of a generation (see Emit): they
         /// don't depend on the pass, and the probes create Reflection.Emit types, which every pass would create again.
         /// </summary>
+        /// <summary>
+        /// Finds the types of the registry being emitted by full name. ModuleDef.Find enumerates every type on each call
+        /// (its cache doesn't see the types added afterwards), which is quadratic with the thousands of registrations of a
+        /// target type that isn't sealed (System.Object, System.Threading.Tasks.Task): the index only reads the types
+        /// added since the previous lookup.
+        /// </summary>
+        private sealed class GeneratedTypeIndex
+        {
+            private readonly ModuleDef _module;
+            private readonly Dictionary<string, TypeDef> _types = new(StringComparer.Ordinal);
+            private int _indexedTopLevelTypes;
+
+            public GeneratedTypeIndex(ModuleDef module)
+            {
+                _module = module;
+            }
+
+            public TypeDef? Find(string? fullName)
+            {
+                if (fullName is null)
+                {
+                    return null;
+                }
+
+                if (_types.TryGetValue(fullName, out var type))
+                {
+                    return type;
+                }
+
+                var topLevelTypes = _module.Types;
+                for (; _indexedTopLevelTypes < topLevelTypes.Count; _indexedTopLevelTypes++)
+                {
+                    foreach (var added in AllTypes(topLevelTypes[_indexedTopLevelTypes]))
+                    {
+                        _types[added.FullName] = added;
+                    }
+                }
+
+                // Types can also be added to the types read before (nested): those are still found, the slow way.
+                return _types.TryGetValue(fullName, out type) ? type : _module.Find(fullName, isReflectionName: false);
+            }
+
+            private static IEnumerable<TypeDef> AllTypes(TypeDef type)
+            {
+                yield return type;
+                foreach (var nested in type.NestedTypes)
+                {
+                    foreach (var nestedType in AllTypes(nested))
+                    {
+                        yield return nestedType;
+                    }
+                }
+            }
+        }
+
         private sealed class DynamicOracleCache
         {
             internal Dictionary<string, FailureProbeCacheEntry> FailureProbes { get; } = new(StringComparer.Ordinal);

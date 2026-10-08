@@ -27,11 +27,34 @@ internal sealed class CallTargetRegistryResult
 
     public int ContinuationFactories { get; set; }
 
+    /// <summary>Gets or sets the closed instantiations of generic targets registered on their own (C3).</summary>
+    public int Instantiations { get; set; }
+
+    public int InstantiationBound { get; set; }
+
+    public int InstantiationDeferred { get; set; }
+
     /// <summary>Gets the shapes that aren't bound, with the reason.</summary>
     public List<string> Details { get; } = new();
 
-    internal void Record(AdapterBindingStatus status, string method, CallTargetInvocation invocation, string? message)
+    internal void Record(AdapterBindingStatus status, string method, CallTargetInvocation invocation, string? message, bool instantiation)
     {
+        if (instantiation)
+        {
+            // The open registration already counted the shape (deferred); the details list what stays deferred.
+            if (status == AdapterBindingStatus.Bound)
+            {
+                InstantiationBound++;
+            }
+            else if (status == AdapterBindingStatus.Deferred)
+            {
+                InstantiationDeferred++;
+                Details.Add($"Deferred instantiation {method} {invocation}: {message}");
+            }
+
+            return;
+        }
+
         switch (status)
         {
             case AdapterBindingStatus.Bound:
