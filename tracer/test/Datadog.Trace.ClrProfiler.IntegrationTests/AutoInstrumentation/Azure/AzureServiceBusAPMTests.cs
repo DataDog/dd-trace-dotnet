@@ -306,9 +306,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestProcessorConnectsToProducerTrace(string packageVersion, string metadataSchemaVersion)
+        public async Task TestProcessorConnectsToProducerTrace(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             // Reproduces a ServiceBusProcessor consumer with the Azure activity source
             // enabled (AZURE_EXPERIMENTAL_ENABLE_ACTIVITY_SOURCE=true + DD_TRACE_OTEL_ENABLED=true).
@@ -347,9 +349,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment(string packageVersion, string metadataSchemaVersion)
+        public async Task TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
