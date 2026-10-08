@@ -13,6 +13,8 @@ using namespace shared;
 namespace debugger
 {
 
+// Only for signatures made of fixed bytes and compressed tokens.
+// Anything built from a type's GetSignature() is unbounded: use SignatureBuilder.
 const int signatureBufferSize = 500;
 
 /**
