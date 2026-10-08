@@ -118,7 +118,8 @@
       <IlcReference Include="@(_DatadogAotInstrumentedReference->'$(_DatadogAotOutput)%(Filename)%(Extension)')" />
       <!-- The DuckType AOT registry the adapters create proxies from. -->
       <IlcReference Include="$(_DatadogAotOutput)Datadog.Trace.DuckType.AotRegistry.*.dll" />
-      <!-- The DuckType AOT registry, and the JSON models of Datadog.Trace (Newtonsoft finds their members by reflection). -->
+      <!-- The DuckType AOT registry, the JSON models of Datadog.Trace (Newtonsoft finds their members by reflection), and
+           the types of the application its integrations find by name. -->
       <TrimmerRootDescriptor Include="$(_DatadogAotOutput)Datadog.Trace.*.linker.xml" />
       <RdXmlFile Include="$(_DatadogAotOutput)Datadog.Trace.*.rd.xml" />
     </ItemGroup>
