@@ -82,6 +82,15 @@ internal static class AotInstrumentProcessor
                 AotLog.Info($"Methods processed for call sites: {report.CallSiteMethods}");
             }
 
+            // IAST's hardcoded secrets: the string literals the native tracer collected from those methods.
+            List<(string Location, string Value)>? userStrings = null;
+            if ((options.Categories & IastCategory) != 0)
+            {
+                userStrings = host.TakeUserStrings();
+                report.UserStrings = userStrings.Count;
+                AotLog.Info($"String literals for the hardcoded secrets analysis: {userStrings.Count}");
+            }
+
             report.ReJitProcessed = host.ProcessReJitRequests(TimeSpan.FromSeconds(1));
 
             Directory.CreateDirectory(options.OutputDirectory);
@@ -142,7 +151,7 @@ internal static class AotInstrumentProcessor
                 CallTargetRegistryResult? registry = null;
                 if (options.GenerateCallTargetRegistry)
                 {
-                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application);
+                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application, userStrings);
                     AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories); {registry.Instantiations} instantiations of deferred generic shapes ({registry.InstantiationBound} bound, {registry.InstantiationDeferred} still deferred)");
                     foreach (var detail in registry.Details)
                     {
