@@ -17,7 +17,9 @@ namespace Datadog.Trace.Tools.Runner.Aot.CallTarget;
 /// <summary>
 /// Finds the closed instantiations of the generic contexts of the rewritten methods (C3): the generic types created and
 /// the generic methods called with closed type arguments in the instrumented assemblies, propagated through the generic
-/// code they instantiate. The proxies of duck typing constraints on generic types can only be generated for those.
+/// code they instantiate, and from generic virtual and interface methods to their implementations (the instrumented
+/// method is the implementation the call reaches). The proxies of duck typing constraints on generic types can only be
+/// generated for those.
 /// </summary>
 internal sealed class GenericInstantiationDiscovery
 {
@@ -29,6 +31,7 @@ internal sealed class GenericInstantiationDiscovery
     private readonly Dictionary<TypeDef, Dictionary<string, IList<TypeSig>>> _typeInstantiations = new();
     private readonly Dictionary<MethodDef, Dictionary<string, Instantiation>> _methodInstantiations = new();
     private readonly Queue<(MethodDef Method, Instantiation Context)> _pending = new();
+    private Dictionary<string, List<MethodDef>>? _genericVirtualMethods;
     private int _contexts;
 
     private GenericInstantiationDiscovery(IEnumerable<ModuleDef> modules, Func<ITypeDefOrRef, TypeDef?> resolveType)
@@ -44,8 +47,12 @@ internal sealed class GenericInstantiationDiscovery
     /// </summary>
     public static Dictionary<MethodDef, List<Instantiation>> Discover(IEnumerable<ModuleDef> modules, IEnumerable<MethodDef> rewrittenMethods, Func<ITypeDefOrRef, TypeDef?> resolveType)
     {
+        var rewritten = rewrittenMethods.ToList();
         var discovery = new GenericInstantiationDiscovery(modules, resolveType);
-        foreach (var module in discovery._modules)
+
+        // Only the code of the modules of the rewritten methods and of those that reference them can instantiate their generic
+        // types and methods: not the framework, most of the inputs (whose methods would use up the contexts first).
+        foreach (var module in discovery.ReferencingModules(rewritten.Select(m => m.Module)))
         {
             foreach (var type in module.GetTypes().Where(t => !t.HasGenericParameters))
             {
@@ -57,8 +64,13 @@ internal sealed class GenericInstantiationDiscovery
         }
 
         discovery.Run();
+        if (discovery._contexts >= MaxContexts)
+        {
+            Native.AotLog.Warn($"Generic instantiation discovery stopped after {MaxContexts} generic contexts: some instantiations of instrumented generic methods may be missing.");
+        }
+
         var result = new Dictionary<MethodDef, List<Instantiation>>();
-        foreach (var method in rewrittenMethods)
+        foreach (var method in rewritten)
         {
             var typeParameters = method.DeclaringType.GenericParameters.Count;
             if (typeParameters == 0 && !method.HasGenericParameters)
@@ -146,6 +158,34 @@ internal sealed class GenericInstantiationDiscovery
         }
     }
 
+    /// <summary>
+    /// The modules of the inputs that are, or reference (directly or not), one of <paramref name="targets"/>.
+    /// </summary>
+    private List<ModuleDef> ReferencingModules(IEnumerable<ModuleDef> targets)
+    {
+        var names = new HashSet<string>(targets.Select(m => m.Assembly?.Name.String ?? m.Name.String), StringComparer.OrdinalIgnoreCase);
+        var referencing = new List<ModuleDef>();
+        var remaining = _modules.ToList();
+        bool added;
+        do
+        {
+            added = false;
+            foreach (var module in remaining.ToList())
+            {
+                if (names.Contains(module.Assembly?.Name.String ?? module.Name.String) || module.GetAssemblyRefs().Any(r => names.Contains(r.Name.String)))
+                {
+                    names.Add(module.Assembly?.Name.String ?? module.Name.String);
+                    referencing.Add(module);
+                    remaining.Remove(module);
+                    added = true;
+                }
+            }
+        }
+        while (added);
+
+        return referencing;
+    }
+
     private MethodDef? ResolveMethod(IMethod method)
         => method switch
         {
@@ -213,18 +253,95 @@ internal sealed class GenericInstantiationDiscovery
             return;
         }
 
-        var instantiation = new Instantiation(typeArguments, closedMethodArguments);
+        AddMethodInstantiation(definition, new Instantiation(typeArguments, closedMethodArguments));
+
+        // A virtual or interface method runs one of its implementations (non-generic types: their type arguments are known).
+        foreach (var implementation in Implementations(definition))
+        {
+            AddMethodInstantiation(implementation, new Instantiation(Array.Empty<TypeSig>(), closedMethodArguments));
+        }
+    }
+
+    private void AddMethodInstantiation(MethodDef definition, Instantiation instantiation)
+    {
         if (!_methodInstantiations.TryGetValue(definition, out var known))
         {
             _methodInstantiations[definition] = known = new Dictionary<string, Instantiation>(StringComparer.Ordinal);
         }
 
-        var key = Key(typeArguments) + "||" + Key(closedMethodArguments);
+        var key = Key(instantiation.TypeArguments) + "||" + Key(instantiation.MethodArguments);
         if (!known.ContainsKey(key))
         {
             known[key] = instantiation;
             _pending.Enqueue((definition, instantiation));
         }
+    }
+
+    /// <summary>
+    /// The generic methods of non-generic types of the modules that implement or override a generic virtual method: same
+    /// name (explicit implementations end with it), generic arity and parameter count, in a type that derives from or
+    /// implements its declaring type.
+    /// </summary>
+    private IEnumerable<MethodDef> Implementations(MethodDef method)
+    {
+        if (!method.IsVirtual)
+        {
+            yield break;
+        }
+
+        _genericVirtualMethods ??= _modules.SelectMany(m => m.GetTypes())
+                                           .Where(t => !t.HasGenericParameters)
+                                           .SelectMany(t => t.Methods)
+                                           .Where(m => m.IsVirtual && m.HasGenericParameters && m.HasBody)
+                                           .GroupBy(m => ShortName(m.Name))
+                                           .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.Ordinal);
+        if (!_genericVirtualMethods.TryGetValue(ShortName(method.Name), out var candidates))
+        {
+            yield break;
+        }
+
+        foreach (var candidate in candidates)
+        {
+            if (candidate != method
+             && candidate.GenericParameters.Count == method.GenericParameters.Count
+             && candidate.MethodSig.Params.Count == method.MethodSig.Params.Count
+             && DerivesFrom(candidate.DeclaringType, method.DeclaringType))
+            {
+                yield return candidate;
+            }
+        }
+
+        static string ShortName(string name) => name.Substring(name.LastIndexOf('.') + 1);
+    }
+
+    private bool DerivesFrom(TypeDef type, TypeDef ancestor)
+    {
+        var visited = new HashSet<TypeDef>();
+        var pending = new Stack<TypeDef>();
+        pending.Push(type);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            if (!visited.Add(current))
+            {
+                continue;
+            }
+
+            if (current != type && current == ancestor)
+            {
+                return true;
+            }
+
+            foreach (var parent in current.Interfaces.Select(i => i.Interface).Append(current.BaseType))
+            {
+                if (parent is not null && _resolveType(parent) is { } resolved)
+                {
+                    pending.Push(resolved);
+                }
+            }
+        }
+
+        return false;
     }
 
     private void VisitType(TypeSig type, Instantiation context)
