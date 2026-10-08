@@ -63,7 +63,6 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
     /// <param name="assemblyName">The name of the registry assembly.</param>
     /// <param name="datadogTracePath">The Datadog.Trace.dll the application ships.</param>
     /// <param name="resolveType">Resolves a type reference across the loaded modules.</param>
-    /// <param name="errors">Receives the recorded mappings whose assemblies aren't loaded.</param>
     public static CallTargetDuckTypeRegistry? Build(
         IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> requests,
         IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> runtimeRequests,
@@ -72,12 +71,12 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
         string outputDirectory,
         string assemblyName,
         string datadogTracePath,
-        Func<ITypeDefOrRef, TypeDef?> resolveType,
-        ICollection<string> errors)
+        Func<ITypeDefOrRef, TypeDef?> resolveType)
     {
         var mappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
         var proxyAssemblies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["Datadog.Trace"] = Path.GetFullPath(datadogTracePath) };
         var targetAssemblies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var skipped = 0;
 
         // The proxies of static types first: a recorded mapping of the same pair comes from IntegrationMapper creating that
         // proxy for the static type (DuckType.Create records the runtime type), so it doesn't need the aliases of a
@@ -96,7 +95,8 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
 
             if (!assemblyPaths.TryGetValue(mapping.ProxyAssemblyName, out var proxyPath) || !assemblyPaths.TryGetValue(mapping.TargetAssemblyName, out var targetPath))
             {
-                errors.Add($"Recorded duck typing mapping {mapping.Key}: its assemblies aren't among the application's references.");
+                // A catalog covers libraries the application doesn't use.
+                skipped++;
                 continue;
             }
 
@@ -108,6 +108,11 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
         foreach (var (proxyDefinition, target) in runtimeRequests)
         {
             AddRequest(proxyDefinition, target, DuckTypeAotMappingSource.MapFile);
+        }
+
+        if (skipped > 0)
+        {
+            Native.AotLog.Info($"{skipped} recorded duck typing mappings skipped: their assemblies aren't among the application's");
         }
 
         if (mappings.Count == 0)
