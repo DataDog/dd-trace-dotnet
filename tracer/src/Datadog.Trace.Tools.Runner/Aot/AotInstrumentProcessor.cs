@@ -68,7 +68,8 @@ internal static class AotInstrumentProcessor
             var typeResolver = new LoadedModulesTypeResolver(modules.Select(m => m.Module));
             // Only the assemblies the native tracer rewrote are written: the others (most of the framework references a
             // publish passes) are left as they are.
-            var writableModules = modules.Where(m => m.Writable && m.NewBodies.Count > 0).ToList();
+            var application = modules.FirstOrDefault(m => m.Writable && options.Assemblies.Count > 0 && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.Assemblies[0]), StringComparison.Ordinal));
+            var writableModules = modules.Where(m => m.Writable && (m.NewBodies.Count > 0 || (m == application && options.GenerateCallTargetRegistry))).ToList();
             AotLog.Info($"{writableModules.Count}/{modules.Count(m => m.Writable)} assemblies instrumented");
             var rewrittenByModule = writableModules.ToDictionary(m => m, MethodBodies.ApplyNewBodies);
 
@@ -115,7 +116,7 @@ internal static class AotInstrumentProcessor
                 CallTargetRegistryResult? registry = null;
                 if (options.GenerateCallTargetRegistry)
                 {
-                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations);
+                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application);
                     AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories); {registry.Instantiations} instantiations of deferred generic shapes ({registry.InstantiationBound} bound, {registry.InstantiationDeferred} still deferred)");
                     foreach (var detail in registry.Details)
                     {
