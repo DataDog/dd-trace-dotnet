@@ -254,6 +254,18 @@ EXTERN_C BOOL STDAPICALLTYPE WaitForPendingRejitWork(UINT32 timeoutMilliseconds)
     return trace::profiler->WaitForPendingRejitWork(timeoutMilliseconds) ? TRUE : FALSE;
 }
 
+// dd-trace aot instrument: runs the call site (IAST/RASP) rewriting of a method, which the JIT events trigger at runtime.
+// Returns false when there is no call site instrumentation or the method isn't processed (excluded module or method).
+EXTERN_C BOOL STDAPICALLTYPE ProcessCallSites(ModuleID moduleId, UINT32 methodToken)
+{
+    if (trace::profiler == nullptr)
+    {
+        return FALSE;
+    }
+
+    return trace::profiler->ProcessCallSites(moduleId, static_cast<mdToken>(methodToken)) ? TRUE : FALSE;
+}
+
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     return trace::profiler->UpdateSettings(keys, values, length);

@@ -28,4 +28,5 @@ EXPORTS
     InitEmbeddedCallSiteDefinitions
     InitEmbeddedCallTargetDefinitions
     WaitForPendingRejitWork
+    ProcessCallSites
     GetFileMetadataForPath

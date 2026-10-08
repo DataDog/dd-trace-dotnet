@@ -253,6 +253,9 @@ public:
     // Offline instrumentation (dd-trace aot instrument): waits until the ReJIT work queued before the call ran.
     bool WaitForPendingRejitWork(unsigned int timeoutMilliseconds);
 
+    // Offline instrumentation (dd-trace aot instrument): the call site (IAST/RASP) rewriting of a method.
+    bool ProcessCallSites(ModuleID moduleId, mdToken methodToken);
+
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;
