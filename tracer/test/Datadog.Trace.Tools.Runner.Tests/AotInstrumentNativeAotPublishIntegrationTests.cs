@@ -236,10 +236,12 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             publishOutput.Should().Contain("Datadog NativeAOT instrumentation:").And.Contain("Datadog.Trace.Manual");
 
             using var agent = MockTracerAgent.Create(_output);
+            var logs = Path.Combine(workDirectory, "logs");
             var (exitCode, output) = Run(
                 Path.Combine(published, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "PkgAot.exe" : "PkgAot"),
                 published,
-                [("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{agent.Port}"), ("DD_APPSEC_ENABLED", "true")],
+                // A WAF timeout (100 ms by default) on a loaded machine would leave the requests without events.
+                [("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{agent.Port}"), ("DD_APPSEC_ENABLED", "true"), ("DD_APPSEC_WAF_TIMEOUT", "10000000"), ("DD_TRACE_DEBUG", "1"), ("DD_TRACE_LOG_DIRECTORY", logs)],
                 $"http://127.0.0.1:{GetFreePort()}");
             exitCode.Should().Be(0, output);
             output.Should().Contain("RESPONSE:world").And.Contain("ATTACK:200").And.Contain("LFI:200").And.Contain("DYNAMIC_CODE:False").And.NotContain("MANUAL_TRACE_ID:0");
@@ -259,6 +261,10 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             var lfi = servers.Should().ContainSingle(s => s.Resource == "GET /file").Which;
             lfi.GetTag("_dd.appsec.json").Should().Contain("rasp-930-100", "the File call site aspect reports the access to RASP");
             lfi.Metrics.Should().ContainKey("_dd.appsec.rasp.rule.eval");
+
+            // libdatadog comes with the package too (hands-off configuration, tracer metadata).
+            var log = string.Concat(Directory.GetFiles(logs, "dotnet-tracer-managed-*").Select(File.ReadAllText));
+            log.Should().Contain("Successfully stored tracer metadata with LibDatadog").And.NotContain("LibDatadogUnavailable");
         }
         finally
         {
