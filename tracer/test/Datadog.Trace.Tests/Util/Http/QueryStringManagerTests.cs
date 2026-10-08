@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.Util.Http
 #if NETCOREAPP2_1
             SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 #endif
-            var queryStringManager = new QueryStringManager(true, 200, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, isDefaultPattern: isDefaultPattern);
+            var queryStringManager = new QueryStringManager(true, 20_000, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, isDefaultPattern: isDefaultPattern);
 
             queryStringManager.TruncateAndObfuscate("?jwt=eyJabc.eyJdef").Should().Be(expected);
         }
