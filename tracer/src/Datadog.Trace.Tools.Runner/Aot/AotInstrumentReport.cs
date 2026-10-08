@@ -6,6 +6,9 @@
 #nullable enable
 
 using System.Collections.Generic;
+#if NET6_0_OR_GREATER
+using Datadog.Trace.Tools.Runner.Aot.CallTarget;
+#endif
 
 namespace Datadog.Trace.Tools.Runner.Aot;
 
@@ -31,5 +34,9 @@ internal sealed class AotInstrumentReport
         public string Path { get; set; } = string.Empty;
 
         public int RewrittenMethods { get; set; }
+#if NET6_0_OR_GREATER
+
+        public CallTargetRegistryResult? CallTarget { get; set; }
+#endif
     }
 }

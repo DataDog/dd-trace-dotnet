@@ -123,16 +123,28 @@ internal static unsafe class MethodBodies
         return MethodBodyReader.CreateCilBody(new OperandResolver(state), reader, method.Parameters, context);
     }
 
-    public static void Write(ModuleState state, string outputPath, IReadOnlyCollection<string> neutralize)
+    /// <summary>
+    /// Replaces the bodies of the methods the native rewriter instrumented and returns them.
+    /// </summary>
+    public static List<MethodDef> ApplyNewBodies(ModuleState state)
     {
+        var methods = new List<MethodDef>();
         foreach (var (rid, raw) in state.NewBodies)
         {
             var method = state.Module.ResolveMethod(rid);
-            var body = ToCilBody(state, method, raw);
-            method.Body = body;
+            method.Body = ToCilBody(state, method, raw);
+            methods.Add(method);
         }
 
-        foreach (var name in neutralize)
+        return methods;
+    }
+
+    /// <summary>
+    /// Empties methods (test only: the definitions injection of CallTargetNativeTest must not run again).
+    /// </summary>
+    public static void Neutralize(ModuleState state, IReadOnlyCollection<string> names)
+    {
+        foreach (var name in names)
         {
             var separator = name.IndexOf("::", StringComparison.Ordinal);
             var type = state.Module.Find(name.Substring(0, separator), isReflectionName: true);
@@ -144,12 +156,17 @@ internal static unsafe class MethodBodies
                 AotLog.Info($"Neutralized {name} (test only)");
             }
         }
+    }
 
+    public static void Save(ModuleState state, string outputPath)
+    {
         var options = new ModuleWriterOptions(state.Module)
         {
             WritePdb = state.Module.PdbState != null,
             Logger = DummyLogger.NoThrowInstance,
         };
+
+        // The rewritten bodies keep the max stack the native rewriter computed; generated bodies set their own.
         options.MetadataOptions.Flags |= MetadataFlags.KeepOldMaxStack;
         state.Module.Write(outputPath, options);
     }
