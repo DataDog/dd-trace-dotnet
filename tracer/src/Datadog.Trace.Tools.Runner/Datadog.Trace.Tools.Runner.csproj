@@ -179,8 +179,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- MSBuild integration of `dd-trace aot instrument` for NativeAOT publishes (prototype of the Datadog.Trace.Aot package). -->
-    <None Include="Aot\Datadog.Trace.Aot.targets" Link="Datadog.Trace.Aot.targets" CopyToOutputDirectory="PreserveNewest" />
+    <!-- MSBuild integration of `dd-trace aot instrument` for NativeAOT publishes (also packed in Datadog.Trace.Aot). -->
+    <None Include="..\Datadog.Trace.Aot\build\Datadog.Trace.Aot.targets" Link="Datadog.Trace.Aot.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

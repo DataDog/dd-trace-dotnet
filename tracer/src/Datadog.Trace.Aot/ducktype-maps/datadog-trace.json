@@ -1,0 +1,123 @@
+{
+  "mappings": [
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.IKestrelServer",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl",
+      "targetAssembly": "Microsoft.AspNetCore.Server.Kestrel.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.IApplicationBuilder",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Builder.ApplicationBuilder",
+      "targetAssembly": "Microsoft.AspNetCore.Http"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies.ITracerProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Datadog.Trace.Tracer",
+      "targetAssembly": "Datadog.Trace.Manual"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+HttpRequestInEndpointMatchedStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Http.DefaultHttpContext",
+      "targetAssembly": "Microsoft.AspNetCore.Http"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+HttpRequestInStartStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Http.DefaultHttpContext",
+      "targetAssembly": "Microsoft.AspNetCore.Http"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+HttpRequestInStopStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Http.DefaultHttpContext",
+      "targetAssembly": "Microsoft.AspNetCore.Http"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+HttpRequestStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Http.DefaultHttpRequest",
+      "targetAssembly": "Microsoft.AspNetCore.Http"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+RoutePatternContentPartStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.Patterns.RoutePatternLiteralPart",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+RoutePatternPathSegmentStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.Patterns.RoutePatternPathSegment",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.DuckTypes.IDiagnosticListener",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.DiagnosticListener",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.EndpointFeatureProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.Http1Connection`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting]]",
+      "targetAssembly": "Microsoft.AspNetCore.Server.Kestrel.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.RequestDelegate",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Http.RequestDelegate",
+      "targetAssembly": "Microsoft.AspNetCore.Http.Abstractions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.RouteEndpoint",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.RouteEndpoint",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.RoutePattern",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.Patterns.RoutePattern",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Util.Http.UriStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Uri",
+      "targetAssembly": "System.Private.Uri"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.IScope",
+      "proxyAssembly": "Datadog.Trace.Manual",
+      "targetType": "Datadog.Trace.Scope",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ISpan",
+      "proxyAssembly": "Datadog.Trace.Manual",
+      "targetType": "Datadog.Trace.Span",
+      "targetAssembly": "Datadog.Trace"
+    }
+  ]
+}

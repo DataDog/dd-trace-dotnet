@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Unconditionally add a prerelease suffix to the package while NativeAOT support is a preview. -->
+    <Version Condition="!$(Version.EndsWith('-prerelease'))">$(Version)-prerelease</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PublishBuildOutput>false</PublishBuildOutput>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <PackageId>Datadog.Trace.Aot</PackageId>
+    <Title>Datadog APM NativeAOT Support</Title>
+    <Description>Instruments .NET applications published with NativeAOT (PublishAot=true) with the Datadog tracer at build time.</Description>
+    <PackageTags>$(PackageTags);NativeAOT;AOT</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- No lib: the package only brings MSBuild targets and the build-time tools. -->
+    <NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    The build-time tools, built by the repository (Nuke) or given explicitly:
+      DatadogAotRunnerDirectory   the dd-trace runner (net8.0 tool build output)
+      DatadogAotDatadogTrace      the full Datadog.Trace.dll (net6.0), which ILC compiles
+      DatadogAotNativeTracer      items: the Datadog.Tracer.Native library of each build host, with the Rid metadata
+  -->
+  <PropertyGroup>
+    <_DatadogAotArtifacts>$(MSBuildThisFileDirectory)..\..\..\artifacts\</_DatadogAotArtifacts>
+    <DatadogAotRunnerDirectory Condition="'$(DatadogAotRunnerDirectory)' == ''">$(_DatadogAotArtifacts)bin\Datadog.Trace.Tools.Runner.Tool\release_net8.0\</DatadogAotRunnerDirectory>
+    <DatadogAotDatadogTrace Condition="'$(DatadogAotDatadogTrace)' == ''">$(_DatadogAotArtifacts)bin\Datadog.Trace\release_net6.0\Datadog.Trace.dll</DatadogAotDatadogTrace>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'@(DatadogAotNativeTracer)' == '' and Exists('$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so')">
+    <DatadogAotNativeTracer Include="$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so" Rid="$(NETCoreSdkRuntimeIdentifier)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build\Datadog.Trace.Aot.targets" Pack="true" PackagePath="build\;buildTransitive\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <!-- The duck typing mappings of Datadog.Trace looked up from runtime types (recorded, C6), served by default. -->
+    <None Include="ducktype-maps\*.json" Pack="true" PackagePath="tools\ducktype-maps\" />
+    <None Include="$(DatadogAotRunnerDirectory)**\*" Exclude="$(DatadogAotRunnerDirectory)**\*.pdb" Pack="true" PackagePath="tools\runner\" Visible="false" />
+    <None Include="$(DatadogAotDatadogTrace)" Pack="true" PackagePath="tools\datadog-trace\" Visible="false" />
+  </ItemGroup>
+
+  <!-- In a target: the package path of each native library comes from its own Rid (batching). -->
+  <Target Name="_DatadogAotPackNativeTracers" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="@(DatadogAotNativeTracer)" Pack="true" PackagePath="tools\native\%(DatadogAotNativeTracer.Rid)" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_DatadogAotCheckPackageInputs" BeforeTargets="GenerateNuspec">
+    <Error Condition="!Exists('$(DatadogAotRunnerDirectory)Datadog.Trace.Tools.Runner.dll')" Text="The dd-trace runner wasn't built: $(DatadogAotRunnerDirectory)" />
+    <Error Condition="!Exists('$(DatadogAotDatadogTrace)')" Text="Datadog.Trace.dll wasn't built: $(DatadogAotDatadogTrace)" />
+    <Warning Condition="'@(DatadogAotNativeTracer)' == ''" Text="No native tracer is packed: the package needs DatadogAotNativeTracerPath." />
+  </Target>
+
+</Project>

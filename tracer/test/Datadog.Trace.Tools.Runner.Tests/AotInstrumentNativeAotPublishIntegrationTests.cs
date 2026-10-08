@@ -58,6 +58,27 @@ public class AotInstrumentNativeAotPublishIntegrationTests
         Console.WriteLine($"DYNAMIC_CODE:{System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported}");
         """;
 
+    private const string ManualApiProgramFile = """
+        using Datadog.Trace;
+
+        var builder = WebApplication.CreateSlimBuilder(args);
+        builder.WebHost.UseUrls(args[0]);
+        builder.Logging.ClearProviders();
+        var app = builder.Build();
+        app.MapGet("/hello", () => "world");
+        await app.StartAsync();
+
+        using (var scope = Tracer.Instance.StartActive("manual.operation"))
+        {
+            using var client = new HttpClient();
+            Console.WriteLine($"RESPONSE:{await client.GetStringAsync($"{args[0]}/hello")}");
+            Console.WriteLine($"MANUAL_TRACE_ID:{scope.Span.TraceId}");
+        }
+
+        await app.StopAsync();
+        Console.WriteLine($"DYNAMIC_CODE:{System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported}");
+        """;
+
     private readonly ITestOutputHelper _output;
 
     public AotInstrumentNativeAotPublishIntegrationTests(ITestOutputHelper output)
@@ -71,7 +92,7 @@ public class AotInstrumentNativeAotPublishIntegrationTests
         var nativeTracer = Environment.GetEnvironmentVariable("DD_AOT_NATIVE_TRACER");
         Skip.IfNot(Environment.GetEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH") == "1" && !string.IsNullOrEmpty(nativeTracer), "Set DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH=1 and DD_AOT_NATIVE_TRACER to publish the NativeAOT sample.");
 
-        var runtimeIdentifier = RuntimeInformation.RuntimeIdentifier.StartsWith("linux-musl", StringComparison.Ordinal) ? RuntimeInformation.RuntimeIdentifier : $"{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" : "linux")}-{RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant()}";
+        var runtimeIdentifier = GetRuntimeIdentifier();
         var runner = typeof(AotInstrumentProcessor).Assembly.Location;
         var targets = Path.Combine(Path.GetDirectoryName(runner)!, "Datadog.Trace.Aot.targets");
         File.Exists(targets).Should().BeTrue("the targets are copied next to the runner");
@@ -161,6 +182,96 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             }
         }
     }
+
+    /// <summary>
+    /// The product setup: the application references the manual API (what the Datadog.Trace package brings) and the
+    /// Datadog.Trace.Aot package, and is published as it is. The package brings the tools, the full Datadog.Trace.dll ILC
+    /// compiles, and the duck typing mappings of Datadog.Trace (the manual API's among them): nothing is recorded.
+    /// </summary>
+    /// <remarks>
+    /// Opt-in: DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH=1, DD_AOT_PACKAGE_FEED (folder with the Datadog.Trace.Aot package) and
+    /// DD_AOT_MANUAL_API (Datadog.Trace.Manual.dll).
+    /// </remarks>
+    [SkippableFact]
+    public async Task ManualApiApplicationWithThePackage()
+    {
+        var feed = Environment.GetEnvironmentVariable("DD_AOT_PACKAGE_FEED");
+        var manualApi = Environment.GetEnvironmentVariable("DD_AOT_MANUAL_API");
+        Skip.IfNot(Environment.GetEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH") == "1" && !string.IsNullOrEmpty(feed) && !string.IsNullOrEmpty(manualApi), "Set DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH=1, DD_AOT_PACKAGE_FEED and DD_AOT_MANUAL_API to publish the NativeAOT sample with the package.");
+        var package = Directory.GetFiles(feed!, "Datadog.Trace.Aot.*.nupkg").Single();
+        var version = Path.GetFileNameWithoutExtension(package).Substring("Datadog.Trace.Aot.".Length);
+
+        var workDirectory = Path.Combine(Path.GetTempPath(), "dd-aot-nativeaot-package", Guid.NewGuid().ToString("N"));
+        var project = Path.Combine(workDirectory, "PkgAot");
+        Directory.CreateDirectory(project);
+        try
+        {
+            File.WriteAllText(Path.Combine(project, "PkgAot.csproj"), PackageProjectFile(manualApi!, feed!, version));
+            File.WriteAllText(Path.Combine(project, "Program.cs"), ManualApiProgramFile);
+            var published = Path.Combine(workDirectory, "nativeaot");
+            var (publishExit, publishOutput) = Run("dotnet", project, [], "publish", "-c", "Release", "-r", GetRuntimeIdentifier(), "-p:DatadogAotFailOnError=true", "-o", published);
+            Skip.If(publishExit != 0 && publishOutput.Contains("Platform linker", StringComparison.OrdinalIgnoreCase), "The NativeAOT toolchain isn't available.");
+            publishExit.Should().Be(0, publishOutput);
+            publishOutput.Should().Contain("Datadog NativeAOT instrumentation:").And.Contain("Datadog.Trace.Manual");
+
+            using var agent = MockTracerAgent.Create(_output);
+            var (exitCode, output) = Run(
+                Path.Combine(published, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "PkgAot.exe" : "PkgAot"),
+                published,
+                [("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{agent.Port}")],
+                $"http://127.0.0.1:{GetFreePort()}");
+            exitCode.Should().Be(0, output);
+            output.Should().Contain("RESPONSE:world").And.Contain("DYNAMIC_CODE:False").And.NotContain("MANUAL_TRACE_ID:0");
+
+            var spans = await agent.WaitForSpansAsync(3);
+            var manual = spans.Should().ContainSingle(s => s.Name == "manual.operation").Which;
+            var client = spans.Should().ContainSingle(s => s.Name == "http.request").Which;
+            var server = spans.Should().ContainSingle(s => s.Name == "aspnet_core.request").Which;
+            client.ParentId.Should().Be(manual.SpanId, "the manual API scope is the active span");
+            server.ParentId.Should().Be(client.SpanId);
+            server.TraceId.Should().Be(manual.TraceId);
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(workDirectory, recursive: true);
+            }
+            catch (IOException)
+            {
+                // Best effort.
+            }
+        }
+    }
+
+    private static string GetRuntimeIdentifier()
+        => RuntimeInformation.RuntimeIdentifier.StartsWith("linux-musl", StringComparison.Ordinal)
+               ? RuntimeInformation.RuntimeIdentifier
+               : $"{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" : "linux")}-{RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant()}";
+
+    private static string PackageProjectFile(string manualApi, string feed, string version)
+        => $"""
+            <Project Sdk="Microsoft.NET.Sdk.Web">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <Nullable>enable</Nullable>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <PublishAot>true</PublishAot>
+                <InvariantGlobalization>true</InvariantGlobalization>
+                <RestoreAdditionalProjectSources>{feed}</RestoreAdditionalProjectSources>
+                <!-- The package goes to its own folder (a rebuilt package keeps its version), the rest comes from the cache. -->
+                <RestorePackagesPath>$(MSBuildThisFileDirectory)packages</RestorePackagesPath>
+                <RestoreFallbackFolders>$(NuGetPackageRoot)</RestoreFallbackFolders>
+              </PropertyGroup>
+              <ItemGroup>
+                <Reference Include="Datadog.Trace.Manual">
+                  <HintPath>{manualApi}</HintPath>
+                  <Private>true</Private>
+                </Reference>
+                <PackageReference Include="Datadog.Trace.Aot" Version="{version}" />
+              </ItemGroup>
+            </Project>
+            """;
 
     private static int GetFreePort()
     {
