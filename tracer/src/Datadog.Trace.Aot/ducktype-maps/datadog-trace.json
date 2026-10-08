@@ -167,6 +167,20 @@
       "proxyAssembly": "Datadog.Trace.Manual",
       "targetType": "Datadog.Trace.Span",
       "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "OpenTelemetry.BaseProcessor`1[[System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource]]",
+      "proxyAssembly": "OpenTelemetry",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.ResourceAttributeReverseProcessor",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.BaseProcessorStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "OpenTelemetry.BaseProcessor`1[[System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource]]",
+      "targetAssembly": "OpenTelemetry"
     }
   ]
 }
