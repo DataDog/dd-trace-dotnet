@@ -79,6 +79,50 @@ internal sealed unsafe class NativeTracerHost : IDisposable
     }
 
     /// <summary>
+    /// Enables the call site (IAST/RASP) aspects embedded in the native tracer for the given categories and target
+    /// framework, like Instrumentation.EnableCallSiteInstrumentations does at runtime. Before the modules are loaded:
+    /// the native tracer's dataflow follows the module loads.
+    /// </summary>
+    public int EnableEmbeddedCallSites(uint categories, uint targetFramework)
+    {
+        var init = (delegate* unmanaged<uint, uint, int>)NativeLibrary.GetExport(_library, "InitEmbeddedCallSiteDefinitions");
+        return init(categories, targetFramework);
+    }
+
+    /// <summary>
+    /// Runs the call site rewriting of every method of a module, which the JIT events trigger at runtime: the native
+    /// tracer requests the ReJIT of the methods it rewrites (excluded assemblies, like the framework's, are skipped).
+    /// </summary>
+    /// <returns>The number of methods the native tracer processed.</returns>
+    public int ProcessCallSites(ModuleState module)
+    {
+        if (!NativeLibrary.TryGetExport(_library, "ProcessCallSites", out var export))
+        {
+            throw new InvalidOperationException("The native tracer can't instrument call sites offline (no ProcessCallSites export): use a matching Datadog.Tracer.Native.");
+        }
+
+        var process = (delegate* unmanaged<nint, uint, int>)export;
+        var processed = 0;
+        foreach (var type in module.Module.GetTypes())
+        {
+            foreach (var method in type.Methods)
+            {
+                if (method.HasBody && process(module.Id, method.MDToken.Raw) != 0)
+                {
+                    processed++;
+                }
+            }
+        }
+
+        if (processed > 0)
+        {
+            AotLog.Debug($"{module.AssemblyName}: {processed} methods processed for call sites");
+        }
+
+        return processed;
+    }
+
+    /// <summary>
     /// Registers definitions by running a managed method that calls Datadog.Trace's NativeMethods (test applications
     /// such as CallTargetNativeTest inject their own definitions this way). The P/Invokes are bound to the hosted library.
     /// </summary>

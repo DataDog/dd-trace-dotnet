@@ -23,6 +23,10 @@ namespace Datadog.Trace.Tools.Runner.Aot;
 /// </summary>
 internal static class AotInstrumentProcessor
 {
+    // InstrumentationCategory of Datadog.Trace
+    private const uint IastCategory = 4;
+    private const uint RaspCategory = 8;
+
     internal static int Process(AotInstrumentOptions options)
     {
 #if NET6_0_OR_GREATER
@@ -37,6 +41,14 @@ internal static class AotInstrumentProcessor
             if (options.UseEmbeddedDefinitions)
             {
                 report.EmbeddedDefinitions = host.EnableEmbeddedDefinitions(options.Categories, options.TargetFramework);
+
+                // IAST and RASP also rewrite call sites (aspects), like Instrumentation.EnableCallSiteInstrumentations.
+                var callSiteCategories = options.Categories & (IastCategory | RaspCategory);
+                if (callSiteCategories != 0)
+                {
+                    report.EmbeddedCallSites = host.EnableEmbeddedCallSites(callSiteCategories, options.TargetFramework);
+                    AotLog.Info($"Call site aspects: {report.EmbeddedCallSites}");
+                }
             }
 
             if (options.DefinitionsAssembly is { } definitionsAssembly && options.DefinitionsMethod is { } definitionsMethod)
@@ -60,6 +72,16 @@ internal static class AotInstrumentProcessor
                                           .Distinct(StringComparer.Ordinal)
                                           .ToList();
             host.LoadReferenceClosure(probeDirectories);
+            if (report.EmbeddedCallSites > 0)
+            {
+                foreach (var module in host.Runtime.Modules.Where(m => m.Writable).ToList())
+                {
+                    report.CallSiteMethods += host.ProcessCallSites(module);
+                }
+
+                AotLog.Info($"Methods processed for call sites: {report.CallSiteMethods}");
+            }
+
             report.ReJitProcessed = host.ProcessReJitRequests(TimeSpan.FromSeconds(1));
 
             Directory.CreateDirectory(options.OutputDirectory);

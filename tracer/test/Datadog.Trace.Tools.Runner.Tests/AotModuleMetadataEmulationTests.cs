@@ -372,6 +372,30 @@ public sealed unsafe class AotModuleMetadataEmulationTests : IDisposable
         new string(userStringBuffer, 0, (int)userStringLength).Should().Be("hello aot");
     }
 
+    /// <summary>
+    /// DefineImportMember (call site aspects): the member keeps its signature in the target scope, whose types become
+    /// TypeRefs of the target (with the AssemblyRefs they need), and importing it again gives the same MemberRef.
+    /// </summary>
+    [Theory]
+    [InlineData("Datadog.Trace.Iast.Aspects.FileAspect", "ReviewPath")] // primitives
+    [InlineData("Datadog.Trace.AppSec.Rasp.RaspModule", "CheckVulnerability")] // generic instance of another assembly, own type
+    [InlineData("Datadog.Trace.ClrProfiler.CallTarget.Handlers.IntegrationOptions", "RestoreScopeFromAsyncExecution")] // in (modreq, byref, value type)
+    public void ImportedMembersKeepTheirSignature(string typeName, string methodName)
+    {
+        var source = _runtime.Modules.Single(m => m.AssemblyName == "Datadog.Trace");
+        var method = source.Module.Find(typeName, isReflectionName: false)!.Methods.Single(m => m.Name == methodName);
+        var target = _runtime.GetMetadata(_runtime.AddModule(typeof(AotModuleMetadataEmulationTests).Assembly.Location, writable: true).Id);
+        var parent = new MdToken(target.ImportTypeRef(target.ImportAssemblyRef(_metadata.GetAssemblyIdentity()), typeName));
+        _metadata.QueryInterface(IMetaDataImport2.Guid, out var import).Code.Should().Be(0);
+
+        MdMemberRef imported, again;
+        target.DefineImportMember(IntPtr.Zero, null, 0, import, new MdToken((int)method.MDToken.Raw), IntPtr.Zero, parent, &imported).Code.Should().Be(0);
+        target.DefineImportMember(IntPtr.Zero, null, 0, import, new MdToken((int)method.MDToken.Raw), IntPtr.Zero, parent, &again).Code.Should().Be(0);
+
+        again.Value.Should().Be(imported.Value);
+        ((dnlib.DotNet.MemberRef)target.State.Resolve((uint)imported.Value)).FullName.Should().Be(method.FullName);
+    }
+
     private static List<T> Enumerate<T>(EnumFunction<T> function)
         where T : unmanaged
     {
