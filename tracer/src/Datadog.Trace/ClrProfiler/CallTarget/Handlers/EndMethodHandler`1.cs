@@ -38,10 +38,10 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
             throw new CallTargetInvokerException(ex);
         }
 
-        if (CallTargetAotContinuation<TIntegration, TTarget, TReturn>.TryGet(out var aotGenerator))
+        if (CallTargetAotContinuation<TIntegration, TTarget, TReturn>.TryGet(out var aotGeneratorFactory))
         {
-            // NativeAOT: the registry created the continuation generator, which needs MakeGenericType otherwise.
-            _continuationGenerator = aotGenerator;
+            // NativeAOT: the registry creates the continuation generator, which needs MakeGenericType otherwise.
+            _continuationGenerator = aotGeneratorFactory?.Invoke();
         }
         else if (returnType.IsGenericType)
         {

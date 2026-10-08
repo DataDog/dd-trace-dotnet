@@ -111,7 +111,7 @@ public class CallTargetAotHolderTests
         CallTargetAot<AsyncRecordingIntegration, EndMethodHandler<AsyncRecordingIntegration, AotTarget5, Task<int>>.InvokeDelegate>.Register(null);
         CallTargetAot<AsyncRecordingIntegration, ContinuationGenerator<AotTarget5, Task<int>, int>.AsyncContinuationMethodDelegate>.Register(
             (AotTarget5? instance, int returnValue, Exception? exception, in CallTargetState state) => Recorder.Hit(AsyncRecordingIntegration.OnAsyncMethodEnd(instance, returnValue, exception, state)));
-        CallTargetAotContinuation<AsyncRecordingIntegration, AotTarget5, Task<int>>.Register(new TaskContinuationGenerator<AsyncRecordingIntegration, AotTarget5, Task<int>, int>());
+        CallTargetAotContinuation<AsyncRecordingIntegration, AotTarget5, Task<int>>.Register(() => new TaskContinuationGenerator<AsyncRecordingIntegration, AotTarget5, Task<int>, int>());
         var aot = await RecordAotAsync(1, () => RunTask<AotTarget5, AsyncRecordingIntegration>(new AotTarget5(), CompleteLater(3)));
 
         aot.Should().Equal(dynamic);
@@ -152,7 +152,7 @@ public class CallTargetAotHolderTests
         CallTargetAot<EndOnlyIntegration, EndMethodHandler<EndOnlyIntegration, AotTarget7, Task<int>>.InvokeDelegate>.Register(
             (AotTarget7? instance, Task<int>? returnValue, Exception? exception, in CallTargetState state) => Recorder.Hit(EndOnlyIntegration.OnMethodEnd<AotTarget7?, Task<int>>(instance, returnValue!, exception, in state)));
         CallTargetAot<EndOnlyIntegration, ContinuationGenerator<AotTarget7, Task<int>, int>.ContinuationMethodDelegate>.Register(null);
-        CallTargetAotContinuation<EndOnlyIntegration, AotTarget7, Task<int>>.Register(new TaskContinuationGenerator<EndOnlyIntegration, AotTarget7, Task<int>, int>());
+        CallTargetAotContinuation<EndOnlyIntegration, AotTarget7, Task<int>>.Register(() => new TaskContinuationGenerator<EndOnlyIntegration, AotTarget7, Task<int>, int>());
         var aot = await RecordAotAsync(1, () => RunTask<AotTarget7, EndOnlyIntegration>(new AotTarget7(), CompleteLater(5)));
 
         aot.Should().Equal(dynamic);
@@ -171,7 +171,7 @@ public class CallTargetAotHolderTests
             (AotTarget8? instance, ValueTask<int> returnValue, Exception? exception, in CallTargetState state) => Recorder.Hit(RecordingIntegration.OnMethodEnd(instance, returnValue, exception, in state)));
         CallTargetAot<RecordingIntegration, ContinuationGenerator<AotTarget8, ValueTask<int>, int>.ContinuationMethodDelegate>.Register(
             (AotTarget8? instance, int returnValue, Exception? exception, in CallTargetState state) => Recorder.Hit(RecordingIntegration.OnAsyncMethodEnd(instance, returnValue, exception, in state)));
-        CallTargetAotContinuation<RecordingIntegration, AotTarget8, ValueTask<int>>.Register(new ValueTaskContinuationGenerator<RecordingIntegration, AotTarget8, ValueTask<int>, int>());
+        CallTargetAotContinuation<RecordingIntegration, AotTarget8, ValueTask<int>>.Register(() => new ValueTaskContinuationGenerator<RecordingIntegration, AotTarget8, ValueTask<int>, int>());
         var aot = await RecordAotAsync(3, () => RunValueTask(new AotTarget8()));
 
         aot.Should().Equal(dynamic);
@@ -212,13 +212,26 @@ public class CallTargetAotHolderTests
     }
 #endif
 
+    [Fact]
+    public void RegisteredFailureFailsLikeIntegrationMapper()
+    {
+        // IntegrationMapper throws AmbiguousMatchException; the registry records the failure it found at build time.
+        Action dynamic = () => CallTargetInvoker.BeginMethod<AmbiguousIntegration, DynamicTarget10>(new DynamicTarget10());
+        CallTargetAot<AmbiguousIntegration, BeginMethodHandler<AmbiguousIntegration, AotTarget10>.InvokeDelegate>.RegisterFailure("Ambiguous match found for 'AmbiguousIntegration OnMethodBegin'.");
+        Action aot = () => CallTargetInvoker.BeginMethod<AmbiguousIntegration, AotTarget10>(new AotTarget10());
+
+        dynamic.Should().Throw<TypeInitializationException>().WithInnerException<CallTargetInvokerException>();
+        aot.Should().Throw<TypeInitializationException>().WithInnerException<CallTargetInvokerException>()
+           .WithInnerException<ArgumentException>().WithMessage("Ambiguous match found*");
+    }
+
     private static void RegisterTaskOfInt<TTarget, TIntegration>(ContinuationGenerator<TTarget, Task<int>, int>.ContinuationMethodDelegate continuation)
     {
         CallTargetAot<TIntegration, BeginMethodHandler<TIntegration, TTarget>.InvokeDelegate>.Register(instance => Recorder.Hit(RecordingIntegration.OnMethodBegin(instance)));
         CallTargetAot<TIntegration, EndMethodHandler<TIntegration, TTarget, Task<int>>.InvokeDelegate>.Register(
             (TTarget? instance, Task<int>? returnValue, Exception? exception, in CallTargetState state) => Recorder.Hit(RecordingIntegration.OnMethodEnd<TTarget?, Task<int>>(instance, returnValue!, exception, in state)));
         CallTargetAot<TIntegration, ContinuationGenerator<TTarget, Task<int>, int>.ContinuationMethodDelegate>.Register(continuation);
-        CallTargetAotContinuation<TIntegration, TTarget, Task<int>>.Register(new TaskContinuationGenerator<TIntegration, TTarget, Task<int>, int>());
+        CallTargetAotContinuation<TIntegration, TTarget, Task<int>>.Register(() => new TaskContinuationGenerator<TIntegration, TTarget, Task<int>, int>());
     }
 
     private static async Task RunTask<TTarget>(TTarget target, Task<int>? task) => await RunTask<TTarget, RecordingIntegration>(target, task);
@@ -435,6 +448,13 @@ public class CallTargetAotHolderTests
         }
     }
 
+    internal sealed class AmbiguousIntegration
+    {
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance) => CallTargetState.GetDefault();
+
+        internal static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, TArg1 arg1) => CallTargetState.GetDefault();
+    }
+
     internal sealed class DynamicTarget1;
 
     internal sealed class AotTarget1;
@@ -470,5 +490,9 @@ public class CallTargetAotHolderTests
     internal sealed class DynamicTarget9;
 
     internal sealed class AotTarget9;
+
+    internal sealed class DynamicTarget10;
+
+    internal sealed class AotTarget10;
 #pragma warning restore SA1402
 }
