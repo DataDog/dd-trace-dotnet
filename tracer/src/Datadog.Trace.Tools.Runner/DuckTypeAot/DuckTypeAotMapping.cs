@@ -45,7 +45,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <summary>
         /// Represents map file.
         /// </summary>
-        MapFile
+        MapFile,
+
+        /// <summary>
+        /// A proxy a NativeAOT CallTarget adapter creates for the static type of a target, argument or return value, like
+        /// CallTarget's IntegrationMapper does with DuckType.GetOrCreateProxyType: it is never looked up by runtime type, so
+        /// the registry doesn't add the aliases of the types assignable to it.
+        /// </summary>
+        CallTarget
     }
 
     /// <summary>

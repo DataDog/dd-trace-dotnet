@@ -35,7 +35,7 @@ internal sealed class CallTargetReferences
         _module = module;
         _datadogTrace = datadogTrace;
         _datadogTraceScope = datadogTraceScope;
-        _importer = new Importer(module, ImporterOptions.TryToUseDefs);
+        _importer = new Importer(module, ImporterOptions.TryToUseDefs, default, new LocalTypeMapper(module));
         if (datadogTrace.Find(HandlersNamespace + ".CallTargetAot`2", isReflectionName: false) is null)
         {
             throw new InvalidOperationException($"{datadogTrace.Location} doesn't support NativeAOT CallTarget registrations: build the application with a Datadog.Trace version that has {HandlersNamespace}.CallTargetAot.");
@@ -153,5 +153,33 @@ internal sealed class CallTargetReferences
             TypeSpec specification => specification.Module == _module && IsLocal(specification.TypeSig),
             _ => false,
         };
+
+    /// <summary>
+    /// Types of the instrumented assembly referenced from another module (the proxy constructors of the DuckType AOT
+    /// registry take the target types): the importer would otherwise make them references to that module.
+    /// </summary>
+    private sealed class LocalTypeMapper : ImportMapper
+    {
+        private readonly ModuleDef _module;
+
+        public LocalTypeMapper(ModuleDef module)
+        {
+            _module = module;
+        }
+
+        public override ITypeDefOrRef? Map(ITypeDefOrRef source)
+        {
+            if (source is TypeRef reference
+             && reference.Module != _module
+             && reference.DefinitionAssembly is { } assembly
+             && _module.Assembly is { } local
+             && string.Equals(assembly.Name, local.Name, StringComparison.Ordinal))
+            {
+                return _module.Find(reference.FullName, isReflectionName: false);
+            }
+
+            return null;
+        }
+    }
 }
 #endif

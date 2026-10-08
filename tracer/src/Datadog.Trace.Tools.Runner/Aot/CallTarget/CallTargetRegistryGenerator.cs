@@ -32,22 +32,36 @@ internal sealed class CallTargetRegistryGenerator
     private readonly CallTargetReferences _references;
     private readonly Func<ITypeDefOrRef, TypeDef?> _resolveType;
     private readonly Func<TypeSig, bool> _derivesFromTask;
+    private readonly IDuckProxyProvider? _proxies;
+    private readonly IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? _instantiations;
     private readonly CallTargetRegistryResult _result = new();
     private readonly SortedSet<string> _accessedAssemblies = new(StringComparer.Ordinal);
+    private bool _usesProxies;
+    private int _registrationTypes;
 
-    private CallTargetRegistryGenerator(ModuleDef module, CallTargetReferences references, Func<ITypeDefOrRef, TypeDef?> resolveType, Func<TypeSig, bool> derivesFromTask)
+    private CallTargetRegistryGenerator(ModuleDef module, CallTargetReferences references, Func<ITypeDefOrRef, TypeDef?> resolveType, Func<TypeSig, bool> derivesFromTask, IDuckProxyProvider? proxies, IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations)
     {
+        _instantiations = instantiations;
         _module = module;
         _references = references;
         _resolveType = resolveType;
         _derivesFromTask = derivesFromTask;
+        _proxies = proxies;
     }
 
     /// <param name="module">The instrumented module, with the rewritten bodies already set.</param>
     /// <param name="rewrittenMethods">The methods the native rewriter instrumented.</param>
     /// <param name="datadogTrace">The <c>Datadog.Trace</c> module the application ships.</param>
     /// <param name="resolveType">Resolves a type reference across the loaded modules.</param>
-    public static CallTargetRegistryResult Generate(ModuleDef module, IEnumerable<MethodDef> rewrittenMethods, ModuleDef datadogTrace, Func<ITypeDefOrRef, TypeDef?> resolveType)
+    /// <param name="duckTypeRegistry">The DuckType AOT registry with the proxies of the duck typing constraints, if any.</param>
+    /// <param name="instantiations">The closed instantiations of the rewritten methods with a generic context (C3).</param>
+    public static CallTargetRegistryResult Generate(
+        ModuleDef module,
+        IEnumerable<MethodDef> rewrittenMethods,
+        ModuleDef datadogTrace,
+        Func<ITypeDefOrRef, TypeDef?> resolveType,
+        CallTargetDuckTypeRegistry? duckTypeRegistry = null,
+        IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null)
     {
         var scanned = rewrittenMethods.Where(m => m.Body is not null)
                                       .Select(m => (Method: m, Invocations: CallTargetInvocationScanner.Scan(m.Body)))
@@ -59,15 +73,84 @@ internal sealed class CallTargetRegistryGenerator
         }
 
         var references = new CallTargetReferences(module, datadogTrace, scope);
-        var generator = new CallTargetRegistryGenerator(module, references, resolveType, type => DerivesFromTask(type, resolveType));
+        var generator = new CallTargetRegistryGenerator(module, references, resolveType, type => DerivesFromTask(type, resolveType), duckTypeRegistry, instantiations);
         foreach (var (method, invocations) in scanned)
         {
             generator.AddRegistration(method, invocations);
         }
 
+        if (generator._usesProxies && duckTypeRegistry is not null)
+        {
+            generator._accessedAssemblies.Add(duckTypeRegistry.AssemblyName);
+            generator.AddDuckTypeBootstrap(duckTypeRegistry);
+        }
+
         generator.AddIgnoresAccessChecks();
         return generator._result;
     }
+
+    /// <summary>
+    /// First pass: binds every instantiation of the rewritten methods (nothing is emitted) to find the proxies the
+    /// adapters need. Only closed types can be named, so the instantiations are used as they are.
+    /// </summary>
+    public static void CollectProxyRequests(
+        IEnumerable<MethodDef> rewrittenMethods,
+        Func<ITypeDefOrRef, TypeDef?> resolveType,
+        DuckProxyRequestCollector collector,
+        IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null)
+    {
+        foreach (var method in rewrittenMethods.Where(m => m.Body is not null))
+        {
+            var invocations = CallTargetInvocationScanner.Scan(method.Body);
+            if (instantiations is not null && instantiations.TryGetValue(method, out var closedInstantiations))
+            {
+                invocations.AddRange(closedInstantiations.SelectMany(i => invocations.Select(invocation => invocation.Remap(t => GenericInstantiationDiscovery.Substitute(t, i)))).ToList());
+            }
+
+            foreach (var invocation in invocations)
+            {
+                if (invocation.Integration is not TypeDefOrRefSig { TypeDefOrRef: { } reference } || resolveType(reference) is not { } integration)
+                {
+                    continue;
+                }
+
+                var target = invocation.Target;
+                var objectType = method.Module.CorLibTypes.Object;
+                switch (invocation.Kind)
+                {
+                    case CallTargetInvocationKind.Begin:
+                        IntegrationBinder.BindBegin(integration, target, invocation.Arguments, collector);
+                        break;
+                    case CallTargetInvocationKind.BeginSlow:
+                        IntegrationBinder.BindSlowBegin(integration, target, collector, method.MethodSig.Params.Select(p => p is ByRefSig byRef ? byRef.Next : p).ToList());
+                        break;
+                    case CallTargetInvocationKind.EndVoid:
+                        IntegrationBinder.BindEndVoid(integration, target, collector);
+                        break;
+                    case CallTargetInvocationKind.EndReturn:
+                        IntegrationBinder.BindEndReturn(integration, target, invocation.ReturnType!, collector);
+                        if (ContinuationResultType(invocation.ReturnType!, objectType) is { } result)
+                        {
+                            IntegrationBinder.BindAsyncEnd(integration, target, result, collector);
+                        }
+
+                        break;
+                    default:
+                        IntegrationBinder.BindEndReturn(integration, target, invocation.DeclaredReturnType!, collector);
+                        IntegrationBinder.BindAsyncEnd(integration, target, invocation.Kind == CallTargetInvocationKind.EndRuntimeAsyncVoid ? objectType : invocation.ReturnType!, collector);
+                        break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The value <c>OnAsyncMethodEnd</c> receives for a Task/ValueTask return type (object without one), or null.
+    /// </summary>
+    private static TypeSig? ContinuationResultType(TypeSig returnType, TypeSig objectType)
+        => returnType.FullName is "System.Threading.Tasks.Task" or "System.Threading.Tasks.ValueTask"
+               ? objectType
+               : returnType is GenericInstSig { GenericArguments.Count: 1 } instance ? instance.GenericArguments[0] : null;
 
     private static IResolutionScope? FindDatadogTraceScope(CilBody body)
         => body.Instructions.Select(i => i.Operand)
@@ -108,7 +191,8 @@ internal sealed class CallTargetRegistryGenerator
         var typeParameters = method.DeclaringType.GenericParameters;
         var methodParameters = method.GenericParameters;
         var arity = typeParameters.Count + methodParameters.Count;
-        var name = $"{RegistrationTypePrefix}{_result.Registrations}" + (arity > 0 ? $"`{arity}" : string.Empty);
+        var index = _registrationTypes++;
+        var name = $"{RegistrationTypePrefix}{index}" + (arity > 0 ? $"`{arity}" : string.Empty);
 
         // Not beforefieldinit: calling Ensure must run the static constructor.
         var registration = new TypeDefUser(string.Empty, name, _module.CorLibTypes.Object.TypeDefOrRef)
@@ -142,18 +226,70 @@ internal sealed class CallTargetRegistryGenerator
             }
             catch (NotSupportedException ex)
             {
-                _result.Record(AdapterBindingStatus.Deferred, method.FullName, invocation, ex.Message);
+                _result.Record(AdapterBindingStatus.Deferred, method.FullName, invocation, ex.Message, instantiation: false);
                 continue;
             }
 
             AddInvocation(builder, remapped);
         }
 
-        if (builder.Items.Count == 0 && builder.Factories.Count == 0)
+        var ensureCalls = new List<IMethod>();
+        if (builder.Items.Count > 0 || builder.Factories.Count > 0)
         {
-            return;
+            var ensure = CompleteRegistration(builder);
+            IMethod ensureReference = ensure;
+            if (arity > 0)
+            {
+                var context = new List<TypeSig>();
+                context.AddRange(typeParameters.Select(p => (TypeSig)new GenericVar(p.Number, method.DeclaringType)));
+                context.AddRange(methodParameters.Select(p => (TypeSig)new GenericMVar(p.Number, method)));
+                ensureReference = new MemberRefUser(_module, ensure.Name, ensure.MethodSig, new TypeSpecUser(new GenericInstSig(new ClassSig(registration), context)));
+            }
+
+            ensureCalls.Add(ensureReference);
         }
 
+        // C3: the shapes the generic context leaves deferred (duck typing proxies of open types) are registered for the
+        // closed instantiations found in the instrumented assemblies, by a registration of their own.
+        if (builder.HasDeferred && _instantiations is not null && _instantiations.TryGetValue(method, out var instantiations))
+        {
+            var instances = new TypeDefUser(string.Empty, $"{RegistrationTypePrefix}{index}_Instantiations", _module.CorLibTypes.Object.TypeDefOrRef)
+            {
+                Attributes = TypeAttributes.NotPublic | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class,
+            };
+            var instancesBuilder = new RegistrationBuilder(instances, method.FullName) { IsInstantiation = true };
+            foreach (var instantiation in instantiations)
+            {
+                foreach (var invocation in invocations)
+                {
+                    var closed = invocation.Remap(t => GenericInstantiationDiscovery.Substitute(t, instantiation));
+                    if (!closed.ContainsGenericParameter)
+                    {
+                        AddInvocation(instancesBuilder, closed);
+                    }
+                }
+            }
+
+            if (instancesBuilder.Items.Count > 0 || instancesBuilder.Factories.Count > 0)
+            {
+                _result.Instantiations += instantiations.Count;
+                ensureCalls.Add(CompleteRegistration(instancesBuilder));
+            }
+        }
+
+        // First instructions: branches and protected regions keep pointing at the original first instruction.
+        for (var i = ensureCalls.Count - 1; i >= 0; i--)
+        {
+            method.Body.Instructions.Insert(0, OpCodes.Call.ToInstruction(ensureCalls[i]));
+        }
+    }
+
+    /// <summary>
+    /// Adds a registration type with its static constructor and its <c>Ensure</c> method, which it returns.
+    /// </summary>
+    private MethodDef CompleteRegistration(RegistrationBuilder builder)
+    {
+        var registration = builder.Registration;
         _module.Types.Add(registration);
         _result.Registrations++;
         HideFromStackTraces(registration);
@@ -162,18 +298,7 @@ internal sealed class CallTargetRegistryGenerator
         ensure.Body = new CilBody();
         ensure.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
         registration.Methods.Add(ensure);
-
-        IMethod ensureReference = ensure;
-        if (arity > 0)
-        {
-            var context = new List<TypeSig>();
-            context.AddRange(typeParameters.Select(p => (TypeSig)new GenericVar(p.Number, method.DeclaringType)));
-            context.AddRange(methodParameters.Select(p => (TypeSig)new GenericMVar(p.Number, method)));
-            ensureReference = new MemberRefUser(_module, ensure.Name, ensure.MethodSig, new TypeSpecUser(new GenericInstSig(new ClassSig(registration), context)));
-        }
-
-        // First instruction: branches and protected regions keep pointing at the original first instruction.
-        method.Body.Instructions.Insert(0, OpCodes.Call.ToInstruction(ensureReference));
+        return ensure;
     }
 
     private void AddInvocation(RegistrationBuilder builder, CallTargetInvocation invocation)
@@ -182,7 +307,7 @@ internal sealed class CallTargetRegistryGenerator
         var integration = integrationType is TypeDefOrRefSig { TypeDefOrRef: { } reference } ? _resolveType(reference) : null;
         if (integration is null)
         {
-            _result.Record(AdapterBindingStatus.Deferred, builder.MethodName, invocation, integrationType is GenericInstSig ? "generic integration type" : "the integration type can't be resolved");
+            Defer(builder, invocation, integrationType is GenericInstSig ? "generic integration type" : "the integration type can't be resolved");
             return;
         }
 
@@ -200,7 +325,7 @@ internal sealed class CallTargetRegistryGenerator
                 var arguments = invocation.Arguments;
                 var handler = $"{HandlersNamespace}.BeginMethodHandler`{arguments.Count + 2}/InvokeDelegate";
                 var delegateType = _references.DatadogGeneric(handler, new[] { integrationType, target }.Concat(arguments).ToArray());
-                var binding = IntegrationBinder.BindBegin(integration, target, arguments);
+                var binding = IntegrationBinder.BindBegin(integration, target, arguments, _proxies);
                 var parameters = new[] { target }.Concat(arguments.Select(a => (TypeSig)new ByRefSig(a))).ToArray();
                 AddItem(builder, invocation, integrationType, delegateType, binding, "Begin", _references.CallTargetState, parameters);
                 break;
@@ -209,7 +334,7 @@ internal sealed class CallTargetRegistryGenerator
             case CallTargetInvocationKind.BeginSlow:
             {
                 var delegateType = _references.DatadogGeneric($"{HandlersNamespace}.BeginMethodSlowHandler`2/InvokeDelegate", integrationType, target);
-                var binding = IntegrationBinder.BindSlowBegin(integration, target);
+                var binding = IntegrationBinder.BindSlowBegin(integration, target, _proxies);
                 AddItem(builder, invocation, integrationType, delegateType, binding, "BeginSlow", _references.CallTargetState, target, new SZArraySig(_module.CorLibTypes.Object));
                 break;
             }
@@ -217,7 +342,7 @@ internal sealed class CallTargetRegistryGenerator
             case CallTargetInvocationKind.EndVoid:
             {
                 var delegateType = _references.DatadogGeneric($"{HandlersNamespace}.EndMethodHandler`2/InvokeDelegate", integrationType, target);
-                var binding = IntegrationBinder.BindEndVoid(integration, target);
+                var binding = IntegrationBinder.BindEndVoid(integration, target, _proxies);
                 AddItem(builder, invocation, integrationType, delegateType, binding, "End", _references.CallTargetReturn, target, _references.Exception, state);
                 break;
             }
@@ -236,13 +361,13 @@ internal sealed class CallTargetRegistryGenerator
                 // RuntimeAsyncEndMethodHandler: OnMethodEnd with the declared Task/ValueTask, OnAsyncMethodEnd with the
                 // unwrapped value (object without one). All or nothing: it takes the AOT path when OnMethodEnd is registered.
                 var declaredReturn = invocation.DeclaredReturnType!;
-                var endBinding = IntegrationBinder.BindEndReturn(integration, target, declaredReturn);
+                var endBinding = IntegrationBinder.BindEndReturn(integration, target, declaredReturn, _proxies);
                 var isVoid = invocation.Kind == CallTargetInvocationKind.EndRuntimeAsyncVoid;
                 var result = isVoid ? _module.CorLibTypes.Object : invocation.ReturnType!;
-                var asyncBinding = IntegrationBinder.BindAsyncEnd(integration, target, result);
+                var asyncBinding = IntegrationBinder.BindAsyncEnd(integration, target, result, _proxies);
                 if (endBinding.Status == AdapterBindingStatus.Deferred || asyncBinding.Status == AdapterBindingStatus.Deferred)
                 {
-                    _result.Record(AdapterBindingStatus.Deferred, builder.MethodName, invocation, endBinding.Message ?? asyncBinding.Message);
+                    Defer(builder, invocation, endBinding.Message ?? asyncBinding.Message);
                     break;
                 }
 
@@ -258,11 +383,17 @@ internal sealed class CallTargetRegistryGenerator
         }
     }
 
+    private void Defer(RegistrationBuilder builder, CallTargetInvocation invocation, string? message)
+    {
+        builder.HasDeferred = true;
+        _result.Record(AdapterBindingStatus.Deferred, builder.MethodName, invocation, message, builder.IsInstantiation);
+    }
+
     private void AddEndReturn(RegistrationBuilder builder, CallTargetInvocation invocation, TypeDef integration, TypeSig integrationType, TypeSig returnType, AdapterBinding? binding = null)
     {
         var target = invocation.Target;
         var delegateType = _references.DatadogGeneric($"{HandlersNamespace}.EndMethodHandler`3/InvokeDelegate", integrationType, target, returnType);
-        binding ??= IntegrationBinder.BindEndReturn(integration, target, returnType);
+        binding ??= IntegrationBinder.BindEndReturn(integration, target, returnType, _proxies);
         AddItem(builder, invocation, integrationType, delegateType, binding, "EndReturn", _references.CallTargetReturnOf(returnType), target, returnType, _references.Exception, new ByRefSig(_references.CallTargetState));
     }
 
@@ -281,7 +412,7 @@ internal sealed class CallTargetRegistryGenerator
                 builder,
                 invocation,
                 integrationType,
-                IntegrationBinder.BindAsyncEnd(integration, target, objectType),
+                IntegrationBinder.BindAsyncEnd(integration, target, objectType, _proxies),
                 target,
                 objectType,
                 _references.DatadogGeneric($"{ContinuationsNamespace}.ContinuationGenerator`2/ObjectContinuationMethodDelegate", target, returnType),
@@ -291,7 +422,7 @@ internal sealed class CallTargetRegistryGenerator
 
         if (returnType is GenericVar)
         {
-            _result.Record(AdapterBindingStatus.Deferred, builder.MethodName, invocation, "generic return type: a Task<T> or ValueTask<T> instantiation needs MakeGenericType for its continuation");
+            Defer(builder, invocation, "generic return type: a Task<T> or ValueTask<T> instantiation needs MakeGenericType for its continuation");
             return;
         }
 
@@ -317,7 +448,7 @@ internal sealed class CallTargetRegistryGenerator
 
                 if (instance.GenericArguments.Count != 1)
                 {
-                    _result.Record(AdapterBindingStatus.Deferred, builder.MethodName, invocation, $"continuation of {returnType.FullName}: result type with several generic arguments");
+                    Defer(builder, invocation, $"continuation of {returnType.FullName}: result type with several generic arguments");
                     return;
                 }
 
@@ -344,7 +475,7 @@ internal sealed class CallTargetRegistryGenerator
             builder,
             invocation,
             integrationType,
-            IntegrationBinder.BindAsyncEnd(integration, target, result),
+            IntegrationBinder.BindAsyncEnd(integration, target, result, _proxies),
             target,
             result,
             _references.DatadogGeneric($"{ContinuationsNamespace}.ContinuationGenerator`3/ContinuationMethodDelegate", target, returnType, result),
@@ -369,9 +500,10 @@ internal sealed class CallTargetRegistryGenerator
 
     private void AddItem(RegistrationBuilder builder, CallTargetInvocation invocation, TypeSig integrationType, TypeSig delegateType, AdapterBinding binding, string kind, TypeSig returnType, params TypeSig[] parameters)
     {
-        _result.Record(binding.Status, builder.MethodName, invocation, binding.Message);
+        _result.Record(binding.Status, builder.MethodName, invocation, binding.Message, builder.IsInstantiation);
         if (binding.Status == AdapterBindingStatus.Deferred)
         {
+            builder.HasDeferred = true;
             return;
         }
 
@@ -433,13 +565,159 @@ internal sealed class CallTargetRegistryGenerator
             {
                 instructions.Add(OpCodes.Box.ToInstruction(TypeOperand(boxType)));
             }
+
+            if (load.Proxy is { } proxy)
+            {
+                EmitCreateProxy(instructions, proxy, load.ProxySource!);
+            }
         }
 
         var method = (IMethodDefOrRef)_references.Import(binding.Method!);
         var instantiation = new GenericInstMethodSig(binding.GenericArguments.Select(_references.Import).ToList());
         instructions.Add(OpCodes.Call.ToInstruction(new MethodSpecUser(method, instantiation)));
+        if (binding.ReturnProxy is { } returnProxy)
+        {
+            EmitUnwrapReturnValue(body, binding, returnProxy);
+        }
+
         instructions.Add(OpCodes.Ret.ToInstruction());
         Finish(body);
+    }
+
+    /// <summary>
+    /// <c>IntegrationMapper.WriteCreateNewProxyInstance</c>: box a value type when the proxy stores an object, report the
+    /// static type when the proxy also serves other runtime types.
+    /// </summary>
+    private void EmitCreateProxy(IList<Instruction> instructions, DuckProxy proxy, TypeSig source)
+    {
+        _usesProxies = true;
+        var constructor = proxy.Constructor!;
+        if (source.IsValueType && !constructor.MethodSig.Params[0].IsValueType)
+        {
+            instructions.Add(OpCodes.Box.ToInstruction(TypeOperand(source)));
+        }
+
+        if (proxy.ReportsTargetType)
+        {
+            instructions.Add(OpCodes.Ldtoken.ToInstruction(TypeOperand(source)));
+            instructions.Add(OpCodes.Call.ToInstruction(_references.GetTypeFromHandle));
+        }
+
+        instructions.Add(OpCodes.Newobj.ToInstruction(_references.Import(constructor)));
+    }
+
+    /// <summary>
+    /// <c>IntegrationMapper.UnwrapReturnValue</c> (<c>UnwrapTaskReturnValue</c> for a task-returning
+    /// <c>OnAsyncMethodEnd</c>). <c>OnMethodEnd</c> returns <c>CallTargetReturn&lt;TProxy&gt;</c>: its value is unwrapped
+    /// into a new <c>CallTargetReturn&lt;TReturn&gt;</c> (<c>IntegrationMapper</c> passes the struct as the proxy, which
+    /// only works because of how the JIT passes a struct with a single reference).
+    /// </summary>
+    private void EmitUnwrapReturnValue(CilBody body, AdapterBinding binding, DuckProxy returnProxy)
+    {
+        var instructions = body.Instructions;
+        var proxyType = _references.Import(returnProxy.Type!.ToTypeSig());
+        var returnType = binding.ReturnType!;
+        var mapper = _references.DatadogType($"{HandlersNamespace}.IntegrationMapper");
+        if (binding.IsTaskReturn)
+        {
+            var unwrapTask = new MemberRefUser(
+                _module,
+                "UnwrapTaskReturnValue",
+                MethodSig.CreateStaticGeneric(2, _references.TaskOf(new GenericMVar(1)), _references.TaskOf(new GenericMVar(0)), _module.CorLibTypes.Boolean),
+                mapper);
+            instructions.Add(Instruction.CreateLdcI4(binding.PreserveContext ? 1 : 0));
+            instructions.Add(OpCodes.Call.ToInstruction(new MethodSpecUser(unwrapTask, new GenericInstMethodSig(proxyType, returnType))));
+            return;
+        }
+
+        var unwrap = new MethodSpecUser(
+            new MemberRefUser(_module, "UnwrapReturnValue", MethodSig.CreateStaticGeneric(2, new GenericMVar(1), new GenericMVar(0)), mapper),
+            new GenericInstMethodSig(proxyType, returnType));
+        if (binding.Method!.Name != IntegrationBinder.EndMethodName)
+        {
+            instructions.Add(OpCodes.Call.ToInstruction(unwrap));
+            return;
+        }
+
+        var proxyReturn = _references.CallTargetReturnOf(proxyType);
+        var local = new Local(proxyReturn);
+        body.Variables.Add(local);
+        body.InitLocals = true;
+        instructions.Add(OpCodes.Stloc.ToInstruction(local));
+        instructions.Add(OpCodes.Ldloca.ToInstruction(local));
+        instructions.Add(OpCodes.Call.ToInstruction(new MemberRefUser(_module, "GetReturnValue", MethodSig.CreateInstance(new GenericVar(0)), new TypeSpecUser(proxyReturn))));
+        instructions.Add(OpCodes.Call.ToInstruction(unwrap));
+        instructions.Add(OpCodes.Newobj.ToInstruction(_references.Constructor(_references.CallTargetReturnOf(returnType), new GenericVar(0))));
+    }
+
+    /// <summary>
+    /// The DuckType AOT registry must enable the AOT mode before anything uses duck typing: a call to its bootstrap at
+    /// the start of the module initializer (also under the JIT, where its own module initializer would run too late).
+    /// It never throws: a failure is logged, and the proxies it can't provide fail like in dynamic duck typing.
+    /// </summary>
+    private void AddDuckTypeBootstrap(CallTargetDuckTypeRegistry registry)
+    {
+        if (registry.Module.Find(CallTargetDuckTypeRegistry.BootstrapTypeName, isReflectionName: true)?.FindMethod("Initialize") is not { } initialize)
+        {
+            return;
+        }
+
+        var globalType = _module.GlobalType;
+
+        // The call is in its own method: the JIT resolves it (and loads the registry assembly) when it compiles the method
+        // that contains it, which must be inside the try block.
+        var callBootstrap = new MethodDefUser(
+            "<DatadogAot>CallDuckTypeRegistryBootstrap",
+            MethodSig.CreateStatic(_module.CorLibTypes.Void),
+            MethodImplAttributes.IL | MethodImplAttributes.Managed | MethodImplAttributes.NoInlining,
+            MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig);
+        callBootstrap.Body = new CilBody();
+        callBootstrap.Body.Instructions.Add(OpCodes.Call.ToInstruction(_references.Import(initialize)));
+        callBootstrap.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+        Finish(callBootstrap.Body);
+        globalType.Methods.Add(callBootstrap);
+
+        var bootstrap = new MethodDefUser(
+            "<DatadogAot>InitializeDuckTypeRegistry",
+            MethodSig.CreateStatic(_module.CorLibTypes.Void),
+            MethodImplAttributes.IL | MethodImplAttributes.Managed,
+            MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig);
+        var body = bootstrap.Body = new CilBody();
+        var end = OpCodes.Ret.ToInstruction();
+        var tryStart = OpCodes.Call.ToInstruction(callBootstrap);
+        body.Instructions.Add(tryStart);
+        body.Instructions.Add(OpCodes.Leave.ToInstruction(end));
+        var registryHelpers = new ClassSig(_references.DatadogType($"{HandlersNamespace}.CallTargetAotRegistry"));
+        var handlerStart = OpCodes.Call.ToInstruction(_references.DatadogStaticMethod(registryHelpers, "LogInitializationError", MethodSig.CreateStatic(_module.CorLibTypes.Void, _references.Exception)));
+        body.Instructions.Add(handlerStart);
+        body.Instructions.Add(OpCodes.Leave.ToInstruction(end));
+        body.Instructions.Add(end);
+        body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+        {
+            TryStart = tryStart,
+            TryEnd = handlerStart,
+            HandlerStart = handlerStart,
+            HandlerEnd = end,
+            CatchType = CallTargetReferences.ToTypeDefOrRef(_references.Exception),
+        });
+        Finish(body);
+        globalType.Methods.Add(bootstrap);
+
+        var initializer = globalType.FindStaticConstructor();
+        if (initializer is null)
+        {
+            initializer = new MethodDefUser(
+                ".cctor",
+                MethodSig.CreateStatic(_module.CorLibTypes.Void),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig);
+            initializer.Body = new CilBody();
+            initializer.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            initializer.Body.MaxStack = 8;
+            globalType.Methods.Add(initializer);
+        }
+
+        initializer.Body.Instructions.Insert(0, OpCodes.Call.ToInstruction(bootstrap));
     }
 
     /// <summary>
@@ -602,6 +880,12 @@ internal sealed class CallTargetRegistryGenerator
         public List<RegistrationItem> Items { get; } = new();
 
         public List<FactoryItem> Factories { get; } = new();
+
+        /// <summary>Gets or sets a value indicating whether this registration serves closed instantiations of a generic target.</summary>
+        public bool IsInstantiation { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether a shape of the method was deferred.</summary>
+        public bool HasDeferred { get; set; }
     }
 
     private sealed class RegistrationItem
