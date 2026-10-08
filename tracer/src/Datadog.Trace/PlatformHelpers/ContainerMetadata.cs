@@ -10,6 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+#if NET5_0_OR_GREATER
+using System.Runtime.InteropServices;
+using System.Text;
+#endif
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
@@ -41,6 +45,21 @@ namespace Datadog.Trace.PlatformHelpers
         private const long HostCgroupNamespaceInode = 0xEFFFFFFB;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
+
+#if NET5_0_OR_GREATER
+        private static readonly Lazy<IntPtr> LibcStatx = new(() =>
+        {
+            foreach (var library in new[] { "libc.so.6", "libc.musl-x86_64.so.1", "libc.musl-aarch64.so.1" })
+            {
+                if (NativeLibrary.TryLoad(library, out var handle) && NativeLibrary.TryGetExport(handle, "statx", out var statx))
+                {
+                    return statx;
+                }
+            }
+
+            return IntPtr.Zero;
+        });
+#endif
 
         public static readonly ContainerMetadata Instance = new();
 
@@ -160,7 +179,53 @@ namespace Datadog.Trace.PlatformHelpers
 
         internal static bool TryGetInode(string path, out long result)
             => TryGetInodeUsingPInvoke(path, out result)
+            || TryGetInodeUsingStatx(path, out result)
             || TryGetInodeUsingStat(path, out result);
+
+        /// <summary>
+        /// Without the native tracer (NativeAOT), libc's statx gives the inode like its lstat (symbolic links aren't
+        /// followed), without the stat command minimal images (distroless) don't have. glibc 2.28+ and musl 1.2.5+.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal static unsafe bool TryGetInodeUsingStatx(string path, out long result)
+        {
+            result = 0;
+#if NET5_0_OR_GREATER
+            const int AtFdCwd = -100;
+            const int AtSymlinkNoFollow = 0x100;
+            const uint StatxIno = 0x100;
+            try
+            {
+                var statx = LibcStatx.Value;
+                if (statx == IntPtr.Zero)
+                {
+                    return false;
+                }
+
+                // struct statx: the same layout on every architecture; stx_mask at 0, stx_ino at 32.
+                var buffer = stackalloc byte[256];
+                var pathBytes = Encoding.UTF8.GetBytes(path + "\0");
+                fixed (byte* pathPointer = pathBytes)
+                {
+                    if (((delegate* unmanaged<int, byte*, int, uint, byte*, int>)statx)(AtFdCwd, pathPointer, AtSymlinkNoFollow, StatxIno, buffer) != 0
+                     || (*(uint*)buffer & StatxIno) == 0)
+                    {
+                        return false;
+                    }
+                }
+
+                result = (long)*(ulong*)(buffer + 32);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error obtaining inode using statx");
+                return false;
+            }
+#else
+            return false;
+#endif
+        }
 
         [TestingAndPrivateOnly]
         internal static bool TryGetInodeUsingPInvoke(string path, out long result)
