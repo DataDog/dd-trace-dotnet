@@ -5,6 +5,9 @@
 
 using System;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection
@@ -21,6 +24,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
             var scalarValueType = assembly.GetType("Serilog.Events.ScalarValue");
             var scalarValueConstructor = scalarValueType.GetConstructor(new[] { typeof(object) });
 
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): a reflection call.
+                CreateScalarValueWith = value => scalarValueConstructor.Invoke(new object[] { value });
+                return;
+            }
+
+#endif
             DynamicMethod createLogEventPropertyMethod = new DynamicMethod(
                 "SerilogLogPropertyHelper",
                 returnType: scalarValueType,
