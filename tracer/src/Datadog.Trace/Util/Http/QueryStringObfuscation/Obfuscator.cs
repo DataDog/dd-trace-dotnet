@@ -12,11 +12,13 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
     internal sealed class Obfuscator : ObfuscatorBase
     {
         private const string ReplacementString = "<redacted>";
+        private const string DefaultPatternReplacementString = "${1}<redacted>";
         private readonly Regex _regex;
+        private readonly string _replacement;
         private readonly TimeSpan _timeout;
         private readonly IDatadogLogger _logger;
 
-        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger)
+        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger, bool isDefaultPattern)
         {
             _timeout = timeout;
             _logger = logger;
@@ -32,6 +34,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
                                          RegexOptions.CultureInvariant;
 
             _regex = new Regex(pattern, options, _timeout);
+            _replacement = isDefaultPattern ? DefaultPatternReplacementString : ReplacementString;
 
             try
             {
@@ -57,11 +60,15 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 
             try
             {
-                return _regex.Replace(queryString, ReplacementString);
+                return _regex.Replace(queryString, _replacement);
             }
             catch (RegexMatchTimeoutException exception)
             {
                 _logger.Error(exception, "Query string obfuscation timed out with timeout value of {TotalMilliseconds} ms and regex pattern {Pattern}", _timeout.TotalMilliseconds, _regex.ToString());
+            }
+            catch (Exception exception)
+            {
+                _logger.Error(exception, "Query string obfuscation failed for regex pattern {Pattern}", _regex.ToString());
             }
 
             return string.Empty;

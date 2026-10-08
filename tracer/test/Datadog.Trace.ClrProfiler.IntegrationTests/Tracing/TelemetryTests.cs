@@ -391,7 +391,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static async Task AssertServiceAsync(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppStarted));
-            AssertService(mockAgent.Telemetry.Cast<TelemetryData>(), expectedServiceName, expectedServiceVersion);
+            AssertService(mockAgent.Telemetry.ToArray().Cast<TelemetryData>(), expectedServiceName, expectedServiceVersion);
         }
 
         private static async Task AssertServiceAsync(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
@@ -412,7 +412,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static async Task AssertDependenciesAsync(MockTracerAgent mockAgent, bool? enableDependencies)
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
-            AssertDependencies(mockAgent.Telemetry.Cast<TelemetryData>(), enableDependencies);
+            AssertDependencies(mockAgent.Telemetry.ToArray().Cast<TelemetryData>(), enableDependencies);
         }
 
         private static async Task AssertDependenciesAsync(MockTelemetryAgent telemetry, bool? enableDependencies)
@@ -454,7 +454,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static async Task AssertNoRedactedErrorLogsAsync(MockTracerAgent mockAgent)
         {
             await WaitForAllTelemetryAsync(mockAgent);
-            AssertNoRedactedErrorLogs(mockAgent.Telemetry.Cast<TelemetryData>());
+            AssertNoRedactedErrorLogs(mockAgent.Telemetry.ToArray().Cast<TelemetryData>());
         }
 
         private static async Task AssertNoRedactedErrorLogsAsync(MockTelemetryAgent telemetry)

@@ -93,7 +93,7 @@ namespace Datadog.Trace
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
             TraceProcessors = traceProcessors ?? [];
-            QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
+            QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex, isDefaultPattern: !settings.ObfuscationQueryStringRegexWasConfigured);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
             {

@@ -42,7 +42,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public async Task WriteTrace_2Traces_SendToApi()
         {
             var spans1 = new SpanCollection(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
-            var traceChunk1 = new TraceChunkModel(spans1);
+            // each flush starts a new payload, so the chunk is always the first one in its payload
+            var traceChunk1 = new TraceChunkModel(spans1, isFirstChunkInPayload: true);
             var spanBufferSerializer = new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk1, SpanFormatterResolver.Instance);
 
@@ -53,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _api.Invocations.Clear();
 
             var spans2 = new SpanCollection(new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow));
-            var traceChunk2 = new TraceChunkModel(spans2);
+            var traceChunk2 = new TraceChunkModel(spans2, isFirstChunkInPayload: true);
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk2, SpanFormatterResolver.Instance);
 
             _ciAgentWriter.WriteTrace(spans2);
