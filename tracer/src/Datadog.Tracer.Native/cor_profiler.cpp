@@ -1417,6 +1417,27 @@ void CorProfiler::DisableTracerCLRProfiler()
     Shutdown();
 }
 
+bool CorProfiler::WaitForPendingRejitWork(unsigned int timeoutMilliseconds)
+{
+    if (rejit_handler == nullptr)
+    {
+        return false;
+    }
+
+    // The ReJIT work offloader runs its items in order: once this one ran, everything queued before it did too (the
+    // ReJIT requests of the modules the host loaded). Abandoned (shutdown, failure), it releases the wait as well.
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    auto item = std::make_unique<RejitWorkItem>([promise]() { promise->set_value(); },
+                                                [promise]() { promise->set_value(); });
+    if (!rejit_handler->Enqueue(std::move(item)))
+    {
+        return false;
+    }
+
+    return future.wait_for(std::chrono::milliseconds(timeoutMilliseconds)) == std::future_status::ready;
+}
+
 void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
