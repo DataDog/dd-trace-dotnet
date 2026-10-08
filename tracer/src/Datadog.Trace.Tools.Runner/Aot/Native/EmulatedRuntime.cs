@@ -99,6 +99,17 @@ internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo8, IDisposable
         }
     }
 
+    /// <summary>
+    /// The scope one of the metadata interfaces handed to the native tracer belongs to.
+    /// </summary>
+    public ModuleMetadata? FindMetadata(IntPtr pointer)
+    {
+        lock (_sync)
+        {
+            return _metadata.Values.FirstOrDefault(m => m.Owns(pointer));
+        }
+    }
+
     public ModuleMetadata GetMetadata(int id)
     {
         lock (_sync)

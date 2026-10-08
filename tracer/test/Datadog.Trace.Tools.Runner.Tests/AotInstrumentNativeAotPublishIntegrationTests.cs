@@ -66,12 +66,32 @@ public class AotInstrumentNativeAotPublishIntegrationTests
         builder.Logging.ClearProviders();
         var app = builder.Build();
         app.MapGet("/hello", () => "world");
+        app.MapGet("/file", (string path) =>
+        {
+            try
+            {
+                return File.ReadAllText(path).Length.ToString();
+            }
+            catch (Exception ex)
+            {
+                return ex.GetType().Name;
+            }
+        });
         await app.StartAsync();
 
         using (var scope = Tracer.Instance.StartActive("manual.operation"))
         {
             using var client = new HttpClient();
             Console.WriteLine($"RESPONSE:{await client.GetStringAsync($"{args[0]}/hello")}");
+
+            // A request a WAF rule flags (security scanner user agent).
+            using var attack = new HttpRequestMessage(HttpMethod.Get, $"{args[0]}/hello?q=<script>alert(1)</script>");
+            attack.Headers.UserAgent.ParseAdd("Arachni/v1.5.1");
+            Console.WriteLine($"ATTACK:{(int)(await client.SendAsync(attack)).StatusCode}");
+
+            // A file access with user input (RASP local file inclusion, through the File call site aspect).
+            using var lfi = await client.GetAsync($"{args[0]}/file?path=../../../../../../../../etc/passwd");
+            Console.WriteLine($"LFI:{(int)lfi.StatusCode}");
             Console.WriteLine($"MANUAL_TRACE_ID:{scope.Span.TraceId}");
         }
 
@@ -186,7 +206,8 @@ public class AotInstrumentNativeAotPublishIntegrationTests
     /// <summary>
     /// The product setup: the application references the manual API (what the Datadog.Trace package brings) and the
     /// Datadog.Trace.Aot package, and is published as it is. The package brings the tools, the full Datadog.Trace.dll ILC
-    /// compiles, and the duck typing mappings of Datadog.Trace (the manual API's among them): nothing is recorded.
+    /// compiles, the duck typing mappings of Datadog.Trace (the manual API's and AppSec's among them; nothing is recorded)
+    /// and libddwaf: AppSec runs the WAF on the requests, and RASP on the file access its call site instrumentation reports.
     /// </summary>
     /// <remarks>
     /// Opt-in: DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH=1, DD_AOT_PACKAGE_FEED (folder with the Datadog.Trace.Aot package) and
@@ -218,18 +239,26 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             var (exitCode, output) = Run(
                 Path.Combine(published, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "PkgAot.exe" : "PkgAot"),
                 published,
-                [("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{agent.Port}")],
+                [("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{agent.Port}"), ("DD_APPSEC_ENABLED", "true")],
                 $"http://127.0.0.1:{GetFreePort()}");
             exitCode.Should().Be(0, output);
-            output.Should().Contain("RESPONSE:world").And.Contain("DYNAMIC_CODE:False").And.NotContain("MANUAL_TRACE_ID:0");
+            output.Should().Contain("RESPONSE:world").And.Contain("ATTACK:200").And.Contain("LFI:200").And.Contain("DYNAMIC_CODE:False").And.NotContain("MANUAL_TRACE_ID:0");
 
-            var spans = await agent.WaitForSpansAsync(3);
+            var spans = await agent.WaitForSpansAsync(7);
             var manual = spans.Should().ContainSingle(s => s.Name == "manual.operation").Which;
-            var client = spans.Should().ContainSingle(s => s.Name == "http.request").Which;
-            var server = spans.Should().ContainSingle(s => s.Name == "aspnet_core.request").Which;
-            client.ParentId.Should().Be(manual.SpanId, "the manual API scope is the active span");
-            server.ParentId.Should().Be(client.SpanId);
-            server.TraceId.Should().Be(manual.TraceId);
+            var clients = spans.Where(s => s.Name == "http.request").ToList();
+            var servers = spans.Where(s => s.Name == "aspnet_core.request").ToList();
+            clients.Should().HaveCount(3).And.OnlyContain(s => s.ParentId == manual.SpanId, "the manual API scope is the active span");
+            servers.Should().HaveCount(3).And.OnlyContain(s => s.TraceId == manual.TraceId && clients.Any(c => c.SpanId == s.ParentId));
+
+            servers.Should().OnlyContain(s => s.Metrics.ContainsKey("_dd.appsec.enabled"));
+            var attack = servers.Should().ContainSingle(s => s.GetTag("http.useragent") == "Arachni/v1.5.1").Which;
+            attack.GetTag("appsec.event").Should().Be("true");
+            attack.GetTag("_dd.appsec.json").Should().Contain("ua0-600-12x");
+
+            var lfi = servers.Should().ContainSingle(s => s.Resource == "GET /file").Which;
+            lfi.GetTag("_dd.appsec.json").Should().Contain("rasp-930-100", "the File call site aspect reports the access to RASP");
+            lfi.Metrics.Should().ContainKey("_dd.appsec.rasp.rule.eval");
         }
         finally
         {

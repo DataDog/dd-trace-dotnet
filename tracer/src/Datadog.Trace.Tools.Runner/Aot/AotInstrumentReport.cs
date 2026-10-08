@@ -19,6 +19,10 @@ internal sealed class AotInstrumentReport
 {
     public int EmbeddedDefinitions { get; set; }
 
+    public int EmbeddedCallSites { get; set; }
+
+    public int CallSiteMethods { get; set; }
+
     public int ReJitProcessed { get; set; }
 
     public List<AssemblyResult> Assemblies { get; } = new();

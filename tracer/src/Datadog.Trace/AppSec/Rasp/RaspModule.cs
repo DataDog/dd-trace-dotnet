@@ -186,12 +186,24 @@ internal static class RaspModule
 
     internal static void OnLfi(string file)
     {
+        // Like OnCommandInjection: nothing is allocated while RASP is disabled (call sites instrumented at build time
+        // for NativeAOT run even then).
+        if (!Security.Instance.RaspEnabled)
+        {
+            return;
+        }
+
         CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.FileAccess] = file }, AddressesConstants.FileAccess);
     }
 
     internal static void OnSSRF(string url)
     {
 #if !NETCOREAPP3_0_OR_GREATER
+        if (!Security.Instance.RaspEnabled)
+        {
+            return;
+        }
+
         CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DownstreamUrl] = url }, AddressesConstants.DownstreamUrl);
 #else
         _processDownstreamRequest = true;
@@ -200,6 +212,11 @@ internal static class RaspModule
 
     internal static void OnSqlQuery(string sql, IntegrationId id)
     {
+        if (!Security.Instance.RaspEnabled)
+        {
+            return;
+        }
+
         var ddbbType = SqlIntegrationIdToDDBBType(id);
         CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DBStatement] = sql, [AddressesConstants.DBSystem] = ddbbType }, AddressesConstants.DBStatement);
     }
