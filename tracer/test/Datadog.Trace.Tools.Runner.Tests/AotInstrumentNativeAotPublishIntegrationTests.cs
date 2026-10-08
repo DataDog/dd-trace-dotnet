@@ -15,6 +15,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Aot;
 using FluentAssertions;
@@ -94,6 +95,10 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             Console.WriteLine($"LFI:{(int)lfi.StatusCode}");
             Console.WriteLine($"MANUAL_TRACE_ID:{scope.Span.TraceId}");
         }
+
+        // A hardcoded secret (IAST): a GitHub personal access token. The analysis polls every 2 s.
+        Console.WriteLine($"SECRET:{"ghp_0123456789abcdefghijklmnopqrstuvwxyz".Length}");
+        await Task.Delay(3000);
 
         await app.StopAsync();
         Console.WriteLine($"DYNAMIC_CODE:{System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported}");
@@ -230,7 +235,8 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             File.WriteAllText(Path.Combine(project, "PkgAot.csproj"), PackageProjectFile(manualApi!, feed!, version));
             File.WriteAllText(Path.Combine(project, "Program.cs"), ManualApiProgramFile);
             var published = Path.Combine(workDirectory, "nativeaot");
-            var (publishExit, publishOutput) = Run("dotnet", project, [], "publish", "-c", "Release", "-r", GetRuntimeIdentifier(), "-p:DatadogAotFailOnError=true", "-o", published);
+            // IAST is opt-in at build time.
+            var (publishExit, publishOutput) = Run("dotnet", project, [], "publish", "-c", "Release", "-r", GetRuntimeIdentifier(), "-p:DatadogAotFailOnError=true", "-p:DatadogAotCategories=tracing%2Cappsec%2Crasp%2Ciast", "-o", published);
             Skip.If(publishExit != 0 && publishOutput.Contains("Platform linker", StringComparison.OrdinalIgnoreCase), "The NativeAOT toolchain isn't available.");
             publishExit.Should().Be(0, publishOutput);
             publishOutput.Should().Contain("Datadog NativeAOT instrumentation:").And.Contain("Datadog.Trace.Manual");
@@ -241,12 +247,27 @@ public class AotInstrumentNativeAotPublishIntegrationTests
                 Path.Combine(published, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "PkgAot.exe" : "PkgAot"),
                 published,
                 // A WAF timeout (100 ms by default) on a loaded machine would leave the requests without events.
-                [("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{agent.Port}"), ("DD_APPSEC_ENABLED", "true"), ("DD_APPSEC_WAF_TIMEOUT", "10000000"), ("DD_TRACE_DEBUG", "1"), ("DD_TRACE_LOG_DIRECTORY", logs)],
+                [
+                    ("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{agent.Port}"),
+                    ("DD_APPSEC_ENABLED", "true"),
+                    ("DD_APPSEC_WAF_TIMEOUT", "10000000"),
+                    ("DD_IAST_ENABLED", "true"),
+                    ("DD_IAST_REQUEST_SAMPLING", "100"),
+                    ("DD_TRACE_SAMPLING_RULES", "[{\"sample_rate\":1.0,\"name\":\"manual.operation\"}]"),
+                    ("DD_TRACE_DEBUG", "1"),
+                    ("DD_TRACE_LOG_DIRECTORY", logs),
+                ],
                 $"http://127.0.0.1:{GetFreePort()}");
             exitCode.Should().Be(0, output);
             output.Should().Contain("RESPONSE:world").And.Contain("ATTACK:200").And.Contain("LFI:200").And.Contain("DYNAMIC_CODE:False").And.NotContain("MANUAL_TRACE_ID:0");
 
-            var spans = await agent.WaitForSpansAsync(7);
+            var spans = await agent.WaitForSpansAsync(8);
+            var log = string.Concat(Directory.GetFiles(logs, "dotnet-tracer-managed-*").Select(File.ReadAllText));
+            foreach (var line in log.Split('\n').Where(l => l.Contains("[ERR]") || l.Contains("[WRN]") || l.Contains("DDAS-0011") || l.Contains("RASP")))
+            {
+                _output.WriteLine(line);
+            }
+
             var manual = spans.Should().ContainSingle(s => s.Name == "manual.operation").Which;
             var clients = spans.Where(s => s.Name == "http.request").ToList();
             var servers = spans.Where(s => s.Name == "aspnet_core.request").ToList();
@@ -256,14 +277,21 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             servers.Should().OnlyContain(s => s.Metrics.ContainsKey("_dd.appsec.enabled"));
             var attack = servers.Should().ContainSingle(s => s.GetTag("http.useragent") == "Arachni/v1.5.1").Which;
             attack.GetTag("appsec.event").Should().Be("true");
-            attack.GetTag("_dd.appsec.json").Should().Contain("ua0-600-12x");
+            AppSecEvents(attack).Should().Contain("ua0-600-12x");
 
             var lfi = servers.Should().ContainSingle(s => s.Resource == "GET /file").Which;
-            lfi.GetTag("_dd.appsec.json").Should().Contain("rasp-930-100", "the File call site aspect reports the access to RASP");
+            AppSecEvents(lfi).Should().Contain("rasp-930-100", "the File call site aspect reports the access to RASP");
             lfi.Metrics.Should().ContainKey("_dd.appsec.rasp.rule.eval");
 
+            // IAST reports the tainted path (JSON models kept for Newtonsoft), and the sampling rules are read.
+            Events(lfi, "_dd.iast.json", "iast").Should().Contain("PATH_TRAVERSAL").And.Contain("http.request.parameter");
+            manual.Metrics.Should().ContainKey("_dd.rule_psr");
+
+            // The string literals the build collected for the hardcoded secrets analysis.
+            var secret = spans.Should().ContainSingle(s => s.Name == "hardcoded_secret").Which;
+            Events(secret, "_dd.iast.json", "iast").Should().Contain("HARDCODED_SECRET").And.Contain("github-pat");
+
             // libdatadog comes with the package too (hands-off configuration, tracer metadata).
-            var log = string.Concat(Directory.GetFiles(logs, "dotnet-tracer-managed-*").Select(File.ReadAllText));
             log.Should().Contain("Successfully stored tracer metadata with LibDatadog").And.NotContain("LibDatadogUnavailable");
         }
         finally
@@ -278,6 +306,15 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             }
         }
     }
+
+    private static string? AppSecEvents(MockSpan span) => Events(span, "_dd.appsec.json", "appsec");
+
+    /// <summary>
+    /// The AppSec or IAST events of a span: in a tag, or in the meta struct once the tracer knows the agent supports it.
+    /// </summary>
+    private static string? Events(MockSpan span, string tag, string metaStructKey)
+        => span.GetTag(tag)
+        ?? (span.MetaStruct?.TryGetValue(metaStructKey, out var events) == true ? Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(MetaStructHelper.ByteArrayToObject(events)) : null);
 
     private static string GetRuntimeIdentifier()
         => RuntimeInformation.RuntimeIdentifier.StartsWith("linux-musl", StringComparison.Ordinal)
