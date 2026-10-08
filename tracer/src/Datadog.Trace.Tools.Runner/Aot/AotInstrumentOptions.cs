@@ -41,6 +41,9 @@ internal sealed class AotInstrumentOptions
 
     public IReadOnlyList<string> Neutralize { get; init; } = Array.Empty<string>();
 
+    /// <summary>Gets a value indicating whether the CallTarget registrations are generated (off only to compare the native rewrite alone).</summary>
+    public bool GenerateCallTargetRegistry { get; init; } = true;
+
     public string? ReportPath { get; init; }
 
     /// <summary>Gets a value indicating whether the rewritten methods are verified (ILSpy, JIT preparation, ILVerify) against the originals.</summary>

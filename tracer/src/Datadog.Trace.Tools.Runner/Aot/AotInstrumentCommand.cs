@@ -28,6 +28,7 @@ internal class AotInstrumentCommand : CommandWithExamples
     private readonly Option<string?> _definitionsAssemblyOption = new("--definitions-assembly", "Assembly with a method that registers extra definitions through Datadog.Trace (tests).") { IsHidden = true };
     private readonly Option<string?> _definitionsMethodOption = new("--definitions-method", "Type::Method that registers the extra definitions (tests).") { IsHidden = true };
     private readonly Option<string[]> _neutralizeOption = new("--neutralize", "Type::Method whose body is replaced by a return (tests).") { IsHidden = true, AllowMultipleArgumentsPerToken = true };
+    private readonly Option<bool> _noCallTargetRegistryOption = new("--no-calltarget-registry", "Do not generate the CallTarget registrations (to compare the native rewrite alone).") { IsHidden = true };
     private readonly Option<string?> _reportOption = new("--report", "Optional JSON report path.");
     private readonly Option<bool> _verifyOption = new("--verify", "Verify the rewritten methods (ILSpy, JIT preparation, ILVerify) against the original assemblies.");
     private readonly Option<bool> _verboseOption = new("--verbose", "Verbose output.");
@@ -46,6 +47,7 @@ internal class AotInstrumentCommand : CommandWithExamples
         AddOption(_definitionsAssemblyOption);
         AddOption(_definitionsMethodOption);
         AddOption(_neutralizeOption);
+        AddOption(_noCallTargetRegistryOption);
         AddOption(_reportOption);
         AddOption(_verifyOption);
         AddOption(_verboseOption);
@@ -86,6 +88,7 @@ internal class AotInstrumentCommand : CommandWithExamples
             DefinitionsAssembly = _definitionsAssemblyOption.GetValue(context),
             DefinitionsMethod = _definitionsMethodOption.GetValue(context),
             Neutralize = (_neutralizeOption.GetValue(context) ?? Array.Empty<string>()).ToList(),
+            GenerateCallTargetRegistry = !_noCallTargetRegistryOption.GetValue(context),
             ReportPath = _reportOption.GetValue(context),
             Verify = _verifyOption.GetValue(context),
             Verbose = _verboseOption.GetValue(context),
