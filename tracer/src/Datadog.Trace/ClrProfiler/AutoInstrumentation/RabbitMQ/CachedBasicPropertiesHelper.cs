@@ -6,6 +6,9 @@
 #nullable enable
 using System;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -24,6 +27,15 @@ internal static class CachedBasicPropertiesHelper<TBasicProperties>
 
             var constructor = targetType.GetConstructor([parameterType])!;
 
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): a reflection call.
+                Activator = properties => (TBasicProperties)constructor.Invoke([properties])!;
+                return;
+            }
+
+#endif
             var createBasicPropertiesMethod = new DynamicMethod(
                 $"TypeActivator_{targetType.Name}_{parameterType.Name}",
                 targetType,

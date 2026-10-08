@@ -7,6 +7,9 @@
 
 using System;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -24,6 +27,14 @@ internal sealed class ActivatorHelper
     {
         _type = type;
         _activator = DefaultActivator;
+#if NETCOREAPP3_0_OR_GREATER
+        // Without dynamic code (NativeAOT), the default activator is the only one.
+        if (!RuntimeFeature.IsDynamicCodeSupported)
+        {
+            return;
+        }
+#endif
+
         Task.Run(CreateCustomActivator);
     }
 

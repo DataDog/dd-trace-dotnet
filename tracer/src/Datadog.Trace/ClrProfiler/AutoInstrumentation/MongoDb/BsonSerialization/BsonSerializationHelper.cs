@@ -7,7 +7,11 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -211,42 +215,22 @@ internal static class BsonSerializationHelper
 
             // Create JSonWriter
             var jsonWriterCtor = jsonWriterType.GetConstructor(new[] { typeof(TextWriter), jsonWriterSettingsType })!;
-
-            DynamicMethod createJsonWriterMethod = new DynamicMethod(
-                $"MongoJsonWriterSerializer",
-                jsonWriterType,
-                parameterTypes: new[] { typeof(TextWriter), typeof(object) },
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator createJsonWriterIl = createJsonWriterMethod.GetILGenerator();
-            createJsonWriterIl.Emit(OpCodes.Ldarg_0);
-            createJsonWriterIl.Emit(OpCodes.Ldarg_1);
-            // createJsonWriterIl.Emit(OpCodes.Castclass, jsonWriterSettingsType); // Not technically necessary
-            createJsonWriterIl.Emit(OpCodes.Newobj, jsonWriterCtor);
-            createJsonWriterIl.Emit(OpCodes.Ret);
-
-            var createJsonWriterFunc = (Func<TextWriter, object, object>)createJsonWriterMethod.CreateDelegate(typeof(Func<TextWriter, object, object>));
-
             var bsonSerializationArgsCtor = bsonSerializationArgsType.GetConstructor(new[] { typeof(Type), typeof(bool), typeof(bool) })!;
 
-            // Create BsonSerializationArgs
-            DynamicMethod createBsonSerializationArgs = new DynamicMethod(
-                $"MongoBsonSerializationArgsType",
-                typeof(object), // boxed bsonSerializationArgsType
-                parameterTypes: new[] { typeof(Type) },
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator bsonWriterIl = createBsonSerializationArgs.GetILGenerator();
-            bsonWriterIl.Emit(OpCodes.Ldarg_0);
-            bsonWriterIl.Emit(OpCodes.Ldc_I4_0);
-            bsonWriterIl.Emit(OpCodes.Ldc_I4_0);
-            bsonWriterIl.Emit(OpCodes.Newobj, bsonSerializationArgsCtor);
-            bsonWriterIl.Emit(OpCodes.Box, bsonSerializationArgsType);
-            bsonWriterIl.Emit(OpCodes.Ret);
-
-            var createBsonSerializationArgsFunc = (Func<Type, object>)createBsonSerializationArgs.CreateDelegate(typeof(Func<Type, object>));
+            Func<TextWriter, object, object> createJsonWriterFunc;
+            Func<Type, object> createBsonSerializationArgsFunc;
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): reflection calls.
+                createJsonWriterFunc = (writer, settings) => jsonWriterCtor.Invoke(new[] { writer, settings })!;
+                createBsonSerializationArgsFunc = nominalType => bsonSerializationArgsCtor.Invoke(new object[] { nominalType, false, false })!;
+            }
+            else
+#endif
+            {
+                CreateDelegates(jsonWriterType, jsonWriterCtor, bsonSerializationArgsType, bsonSerializationArgsCtor, out createJsonWriterFunc, out createBsonSerializationArgsFunc);
+            }
 
             var helper = new BsonHelper(
                 bsonSerializationContextProxy: bsonSerializationContextProxy,
@@ -270,6 +254,49 @@ internal static class BsonSerializationHelper
             }
 
             return helper;
+        }
+
+        private static void CreateDelegates(
+            Type jsonWriterType,
+            ConstructorInfo jsonWriterCtor,
+            Type bsonSerializationArgsType,
+            ConstructorInfo bsonSerializationArgsCtor,
+            out Func<TextWriter, object, object> createJsonWriterFunc,
+            out Func<Type, object> createBsonSerializationArgsFunc)
+        {
+            DynamicMethod createJsonWriterMethod = new DynamicMethod(
+                $"MongoJsonWriterSerializer",
+                jsonWriterType,
+                parameterTypes: new[] { typeof(TextWriter), typeof(object) },
+                typeof(DuckType).Module,
+                true);
+
+            ILGenerator createJsonWriterIl = createJsonWriterMethod.GetILGenerator();
+            createJsonWriterIl.Emit(OpCodes.Ldarg_0);
+            createJsonWriterIl.Emit(OpCodes.Ldarg_1);
+            // createJsonWriterIl.Emit(OpCodes.Castclass, jsonWriterSettingsType); // Not technically necessary
+            createJsonWriterIl.Emit(OpCodes.Newobj, jsonWriterCtor);
+            createJsonWriterIl.Emit(OpCodes.Ret);
+
+            createJsonWriterFunc = (Func<TextWriter, object, object>)createJsonWriterMethod.CreateDelegate(typeof(Func<TextWriter, object, object>));
+
+            // Create BsonSerializationArgs
+            DynamicMethod createBsonSerializationArgs = new DynamicMethod(
+                $"MongoBsonSerializationArgsType",
+                typeof(object), // boxed bsonSerializationArgsType
+                parameterTypes: new[] { typeof(Type) },
+                typeof(DuckType).Module,
+                true);
+
+            ILGenerator bsonWriterIl = createBsonSerializationArgs.GetILGenerator();
+            bsonWriterIl.Emit(OpCodes.Ldarg_0);
+            bsonWriterIl.Emit(OpCodes.Ldc_I4_0);
+            bsonWriterIl.Emit(OpCodes.Ldc_I4_0);
+            bsonWriterIl.Emit(OpCodes.Newobj, bsonSerializationArgsCtor);
+            bsonWriterIl.Emit(OpCodes.Box, bsonSerializationArgsType);
+            bsonWriterIl.Emit(OpCodes.Ret);
+
+            createBsonSerializationArgsFunc = (Func<Type, object>)createBsonSerializationArgs.CreateDelegate(typeof(Func<Type, object>));
         }
     }
 }

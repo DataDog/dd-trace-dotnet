@@ -6,7 +6,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
@@ -39,6 +43,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             var messageAttributeValueType = typeof(TMarkerType).Assembly.GetType("Amazon.SQS.Model.MessageAttributeValue");
             var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes);
 
+            MessageAttributeValueCreator = CreateMessageAttributeValueCreator(messageAttributeValueType, messageAttributeValueCtor);
+
+            // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
+            DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
+
+            Instance = new CachedMessageHeadersHelper<TMarkerType>();
+        }
+
+        public IDictionary CreateMessageAttributes()
+        {
+            return (IDictionary)DictionaryActivator.CreateInstance();
+        }
+
+        private static Func<string, object> CreateMessageAttributeValueCreator(Type messageAttributeValueType, ConstructorInfo messageAttributeValueCtor)
+        {
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): reflection calls.
+                var dataTypeSetter = messageAttributeValueType.GetProperty("DataType").GetSetMethod();
+                var valueSetter = messageAttributeValueType.GetProperty("StringValue").GetSetMethod();
+                return value =>
+                {
+                    var messageAttributeValue = messageAttributeValueCtor.Invoke(null);
+                    dataTypeSetter.Invoke(messageAttributeValue, new object[] { StringDataType });
+                    valueSetter.Invoke(messageAttributeValue, new object[] { value });
+                    return messageAttributeValue;
+                };
+            }
+
+#endif
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
                 $"KafkaCachedMessageHeadersHelpers",
                 messageAttributeValueType,
@@ -59,17 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             messageAttributeIL.Emit(OpCodes.Ret);
 
-            MessageAttributeValueCreator = (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
-
-            // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
-            DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
-
-            Instance = new CachedMessageHeadersHelper<TMarkerType>();
-        }
-
-        public IDictionary CreateMessageAttributes()
-        {
-            return (IDictionary)DictionaryActivator.CreateInstance();
+            return (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
         }
 
         public object CreateMessageAttributeValue(string value)

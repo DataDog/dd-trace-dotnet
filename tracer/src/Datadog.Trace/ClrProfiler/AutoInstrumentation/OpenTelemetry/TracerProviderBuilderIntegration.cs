@@ -7,6 +7,9 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -33,12 +36,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
         private static Func<object, object, object> _cachedAddProcessorDelegate;
-        private static Type _cachedProcessorType;
+        private static Func<object> _cachedCreateProcessorDelegate;
 
         static TracerProviderBuilderIntegration()
         {
             _cachedAddProcessorDelegate = CreateAddProcessorDelegate();
-            _cachedProcessorType = CreateProcessorType();
+            _cachedCreateProcessorDelegate = CreateCreateProcessorDelegate();
         }
 
         /// <summary>
@@ -54,9 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 if (_cachedAddProcessorDelegate is not null
-                    && _cachedProcessorType is not null)
+                    && _cachedCreateProcessorDelegate is not null)
                 {
-                    _cachedAddProcessorDelegate(tracerProviderBuilder, Activator.CreateInstance(_cachedProcessorType));
+                    _cachedAddProcessorDelegate(tracerProviderBuilder, _cachedCreateProcessorDelegate());
                 }
             }
 
@@ -83,6 +86,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return null;
             }
 
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): a reflection call.
+                return (builder, processor) => targetAddProcessorMethod.Invoke(null, new[] { builder, processor });
+            }
+
+#endif
             DynamicMethod dynMethod = new DynamicMethod(
                      $"{nameof(TracerProviderBuilderIntegration)}.AddProcessor",
                      typeof(object),
@@ -102,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             return (Func<object, object, object>)dynMethod.CreateDelegate(typeof(Func<object, object, object>));
         }
 
-        private static Type CreateProcessorType()
+        private static Func<object> CreateCreateProcessorDelegate()
         {
             Type activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
             Type baseProcessorType = Type.GetType("OpenTelemetry.BaseProcessor`1, OpenTelemetry", throwOnError: false);
@@ -114,6 +125,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 
             Type baseProcessorOfActivityType = baseProcessorType.MakeGenericType(activityType);
 
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): a reverse duck typing proxy, which the build generates.
+                return () => ResourceAttributeReverseProcessor.Create(baseProcessorOfActivityType);
+            }
+
+#endif
+            var processorType = CreateProcessorType(activityType, baseProcessorOfActivityType);
+            return processorType is null ? null : () => Activator.CreateInstance(processorType);
+        }
+
+        private static Type CreateProcessorType(Type activityType, Type baseProcessorOfActivityType)
+        {
             var assemblyName = new AssemblyName("Datadog.OpenTelemetry.Dynamic");
             assemblyName.Version = typeof(TracerProviderBuilderIntegration).Assembly.GetName().Version;
             var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
