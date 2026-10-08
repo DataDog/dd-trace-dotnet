@@ -27,6 +27,8 @@
       DatadogAotRunnerDirectory   the dd-trace runner (net8.0 tool build output)
       DatadogAotDatadogTrace      the full Datadog.Trace.dll (net6.0), which ILC compiles
       DatadogAotNativeTracer      items: the Datadog.Tracer.Native library of each build host, with the Rid metadata
+      DatadogAotRuntimeNative     items: the native libraries Datadog.Trace loads at runtime (libdatadog) for each target,
+                                  with the Rid metadata and the PackageFileName its P/Invokes import (LibDatadog.so/.dll/.dylib)
   -->
   <PropertyGroup>
     <_DatadogAotArtifacts>$(MSBuildThisFileDirectory)..\..\..\artifacts\</_DatadogAotArtifacts>
@@ -36,6 +38,10 @@
 
   <ItemGroup Condition="'@(DatadogAotNativeTracer)' == '' and Exists('$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so')">
     <DatadogAotNativeTracer Include="$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so" Rid="$(NETCoreSdkRuntimeIdentifier)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'@(DatadogAotRuntimeNative)' == '' and Exists('$(_DatadogAotArtifacts)native-obj\libdatadog-install\lib\libdatadog_profiling.so')">
+    <DatadogAotRuntimeNative Include="$(_DatadogAotArtifacts)native-obj\libdatadog-install\lib\libdatadog_profiling.so" Rid="$(NETCoreSdkRuntimeIdentifier)" PackageFileName="LibDatadog.so" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -61,6 +67,8 @@
   <Target Name="_DatadogAotPackNativeTracers" BeforeTargets="_GetPackageFiles">
     <ItemGroup>
       <None Include="@(DatadogAotNativeTracer)" Pack="true" PackagePath="tools\native\%(DatadogAotNativeTracer.Rid)" Visible="false" />
+      <!-- NuGet copies runtimes/<RID>/native next to a RID-specific publish. -->
+      <None Include="@(DatadogAotRuntimeNative)" Pack="true" PackagePath="runtimes\%(DatadogAotRuntimeNative.Rid)\native\%(DatadogAotRuntimeNative.PackageFileName)" Visible="false" />
     </ItemGroup>
   </Target>
 
