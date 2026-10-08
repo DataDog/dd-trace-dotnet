@@ -99,7 +99,7 @@ internal static class AotInstrumentProcessor
                     var assemblyPaths = modules.Where(m => !StringUtil.IsNullOrEmpty(m.Path))
                                                .GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase)
                                                .ToDictionary(g => g.Key, g => Path.GetFullPath(g.First().Path), StringComparer.OrdinalIgnoreCase);
-                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve, report.Errors);
+                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
                     if (duckTypeRegistry is not null)
                     {
                         report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, Warnings = duckTypeRegistry.Warnings.ToList() };

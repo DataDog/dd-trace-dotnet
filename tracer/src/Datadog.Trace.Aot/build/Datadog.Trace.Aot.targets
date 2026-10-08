@@ -1,0 +1,125 @@
+<!--
+  Instruments a NativeAOT publish with the Datadog tracer (Datadog.Trace.Aot package).
+
+  After ILC computes its inputs, `dd-trace aot instrument` rewrites the application and the assemblies ILC compiles with
+  it (framework and packages, the Datadog.Trace manual API among them) with the native tracer hosted offline, and
+  generates the CallTarget registrations and the DuckType AOT registry. The rewritten assemblies replace ILC's inputs, and
+  the full Datadog.Trace.dll is added to them (never as a compile reference: the Datadog.Trace package is the manual API).
+  Nothing a build or a `dotnet run` uses changes: only `dotnet publish -p:PublishAot=true` is affected.
+
+  Properties:
+    DatadogAotInstrumentation  false to disable (default: enabled when PublishAot is true)
+    DatadogAotDuckTypeMaps     ducktype-aot map files recorded at runtime (DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH), ';'-separated,
+                               in addition to the package's (DatadogAotBuiltInDuckTypeMaps=false to leave those out)
+    DatadogAotCategories       instrumentation categories (default: tracing,appsec,rasp; add iast to opt in)
+    DatadogAotArguments        extra arguments for `dd-trace aot instrument`
+    DatadogAotFailOnError      true to fail the publish when the instrumentation fails (default: warning, publish uninstrumented)
+    DatadogAotRunnerPath       dd-trace runner (default: the package's)
+    DatadogAotNativeTracerPath Datadog.Tracer.Native library for the build host (default: the package's for the SDK's RID)
+    DatadogAotDatadogTracePath Datadog.Trace.dll ILC compiles when the application doesn't reference it (default: the package's)
+-->
+<Project>
+  <PropertyGroup>
+    <_DatadogAotPackageRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..'))</_DatadogAotPackageRoot>
+    <_DatadogAotHostNativeFile Condition="$([MSBuild]::IsOSPlatform('Windows'))">Datadog.Tracer.Native.dll</_DatadogAotHostNativeFile>
+    <_DatadogAotHostNativeFile Condition="$([MSBuild]::IsOSPlatform('OSX'))">Datadog.Tracer.Native.dylib</_DatadogAotHostNativeFile>
+    <_DatadogAotHostNativeFile Condition="'$(_DatadogAotHostNativeFile)' == ''">Datadog.Tracer.Native.so</_DatadogAotHostNativeFile>
+
+    <!-- The package layout first, then the layout of a dd-trace build (these targets next to the runner). -->
+    <DatadogAotRunnerPath Condition="'$(DatadogAotRunnerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/runner/Datadog.Trace.Tools.Runner.dll')">$(_DatadogAotPackageRoot)tools/runner/Datadog.Trace.Tools.Runner.dll</DatadogAotRunnerPath>
+    <DatadogAotRunnerPath Condition="'$(DatadogAotRunnerPath)' == '' and Exists('$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Runner.dll')">$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Runner.dll</DatadogAotRunnerPath>
+    <DatadogAotNativeTracerPath Condition="'$(DatadogAotNativeTracerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/native/$(NETCoreSdkRuntimeIdentifier)/$(_DatadogAotHostNativeFile)')">$(_DatadogAotPackageRoot)tools/native/$(NETCoreSdkRuntimeIdentifier)/$(_DatadogAotHostNativeFile)</DatadogAotNativeTracerPath>
+    <DatadogAotDatadogTracePath Condition="'$(DatadogAotDatadogTracePath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/datadog-trace/Datadog.Trace.dll')">$(_DatadogAotPackageRoot)tools/datadog-trace/Datadog.Trace.dll</DatadogAotDatadogTracePath>
+  </PropertyGroup>
+
+  <!--
+    _DatadogAotPrepare -> _DatadogAotInstrument (incremental) -> _DatadogAotReplaceIlcInputs, chained with AfterTargets:
+    they run after ILC computes its inputs and before it writes its arguments, and the next one runs even when the previous
+    one is up to date.
+  -->
+  <Target Name="_DatadogAotPrepare"
+          AfterTargets="ComputeIlcCompileInputs"
+          BeforeTargets="WriteIlcRspFileForCompilation"
+          Condition="'$(PublishAot)' == 'true' and '$(DatadogAotInstrumentation)' != 'false'">
+    <PropertyGroup>
+      <_DatadogAotOutput>$(IntermediateOutputPath)datadog-aot/</_DatadogAotOutput>
+      <_DatadogAotStamp>$(_DatadogAotOutput)instrumented.stamp</_DatadogAotStamp>
+      <_DatadogAotRuntimeVersion>$(TargetFrameworkVersion.TrimStart('v')).0</_DatadogAotRuntimeVersion>
+      <_DatadogAotCategories>$(DatadogAotCategories)</_DatadogAotCategories>
+      <_DatadogAotCategories Condition="'$(_DatadogAotCategories)' == ''">tracing,appsec,rasp</_DatadogAotCategories>
+      <_DatadogAotDotnet>$(DOTNET_HOST_PATH)</_DatadogAotDotnet>
+      <_DatadogAotDotnet Condition="'$(_DatadogAotDotnet)' == ''">dotnet</_DatadogAotDotnet>
+    </PropertyGroup>
+    <ItemGroup>
+      <_DatadogAotDatadogTrace Include="@(IlcReference)" Condition="'%(Filename)' == 'Datadog.Trace'" />
+    </ItemGroup>
+
+    <!-- The application only references the manual API: ILC compiles the package's Datadog.Trace.dll. -->
+    <ItemGroup Condition="'@(_DatadogAotDatadogTrace)' == '' and '$(DatadogAotDatadogTracePath)' != ''">
+      <IlcReference Include="$(DatadogAotDatadogTracePath)" />
+      <_DatadogAotDatadogTrace Include="$(DatadogAotDatadogTracePath)" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_DatadogAotDatadogTracePath>@(_DatadogAotDatadogTrace->'%(FullPath)')</_DatadogAotDatadogTracePath>
+      <_DatadogAotSkipReason Condition="'$(_DatadogAotDatadogTracePath)' == ''">no Datadog.Trace.dll to compile (set DatadogAotDatadogTracePath)</_DatadogAotSkipReason>
+      <_DatadogAotSkipReason Condition="'$(_DatadogAotSkipReason)' == '' and ('$(DatadogAotRunnerPath)' == '' or !Exists('$(DatadogAotRunnerPath)'))">the dd-trace runner wasn't found (set DatadogAotRunnerPath)</_DatadogAotSkipReason>
+      <_DatadogAotSkipReason Condition="'$(_DatadogAotSkipReason)' == '' and ('$(DatadogAotNativeTracerPath)' == '' or !Exists('$(DatadogAotNativeTracerPath)'))">no native tracer for the build host $(NETCoreSdkRuntimeIdentifier) (set DatadogAotNativeTracerPath)</_DatadogAotSkipReason>
+      <_DatadogAotReady Condition="'$(_DatadogAotSkipReason)' == ''">true</_DatadogAotReady>
+    </PropertyGroup>
+    <Warning Condition="'$(_DatadogAotReady)' != 'true'" Text="Datadog NativeAOT instrumentation skipped: $(_DatadogAotSkipReason)." />
+
+    <ItemGroup Condition="'$(_DatadogAotReady)' == 'true'">
+      <_DatadogAotReferenceDirectory Include="@(IlcReference->'%(RootDir)%(Directory)')" />
+      <!-- The application first: its module initializer initializes the instrumentation. -->
+      <_DatadogAotAssembly Include="@(IlcCompileInput)" />
+      <_DatadogAotAssembly Include="@(IlcReference)" Condition="'%(Filename)' != 'Datadog.Trace' and '%(Filename)' != 'System.Private.CoreLib'" />
+      <_DatadogAotDuckTypeMap Include="$(DatadogAotDuckTypeMaps)" />
+      <_DatadogAotDuckTypeMap Include="$(_DatadogAotPackageRoot)tools/ducktype-maps/*.json" Condition="'$(DatadogAotBuiltInDuckTypeMaps)' != 'false'" />
+      <_DatadogAotInput Include="@(IlcCompileInput);@(IlcReference);@(_DatadogAotDuckTypeMap);$(DatadogAotRunnerPath);$(DatadogAotNativeTracerPath);$(MSBuildThisFileFullPath)" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_DatadogAotReferenceDirectory)">
+      <Output TaskParameter="Filtered" ItemName="_DatadogAotReferenceDirectories" />
+    </RemoveDuplicates>
+
+    <!-- Written only when different: the arguments are an input of the instrumentation. -->
+    <WriteLinesToFile Condition="'$(_DatadogAotReady)' == 'true'"
+                      File="$(_DatadogAotOutput)arguments.rsp"
+                      Lines="--native-tracer=$(DatadogAotNativeTracerPath);--datadog-trace=$(_DatadogAotDatadogTracePath);@(_DatadogAotAssembly->'--assembly=%(FullPath)');@(_DatadogAotReferenceDirectories->'--reference-dir=%(Identity)');--runtime-version=$(_DatadogAotRuntimeVersion);--categories=$(_DatadogAotCategories);@(_DatadogAotDuckTypeMap->'--ducktype-map=%(FullPath)');--report=$(_DatadogAotOutput)report.json;--output=$(_DatadogAotOutput);$(DatadogAotArguments)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+  </Target>
+
+  <Target Name="_DatadogAotInstrument"
+          AfterTargets="_DatadogAotPrepare"
+          Condition="'$(_DatadogAotReady)' == 'true'"
+          Inputs="@(_DatadogAotInput);$(_DatadogAotOutput)arguments.rsp"
+          Outputs="$(_DatadogAotStamp)">
+    <Delete Files="$(_DatadogAotStamp)" />
+    <Exec Command="&quot;$(_DatadogAotDotnet)&quot; &quot;$(DatadogAotRunnerPath)&quot; aot instrument @&quot;$(_DatadogAotOutput)arguments.rsp&quot;"
+          ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="_DatadogAotExitCode" />
+    </Exec>
+    <Error Condition="'$(_DatadogAotExitCode)' != '0' and '$(DatadogAotFailOnError)' == 'true'" Text="Datadog NativeAOT instrumentation failed (exit code $(_DatadogAotExitCode)): see $(_DatadogAotOutput)report.json." />
+    <Warning Condition="'$(_DatadogAotExitCode)' != '0' and '$(DatadogAotFailOnError)' != 'true'" Text="Datadog NativeAOT instrumentation failed (exit code $(_DatadogAotExitCode)): the application is published without it. See $(_DatadogAotOutput)report.json." />
+    <Touch Condition="'$(_DatadogAotExitCode)' == '0'" Files="$(_DatadogAotStamp)" AlwaysCreate="true" />
+  </Target>
+
+  <!-- Every publish: ILC computes its inputs again, also when the instrumentation is up to date. -->
+  <Target Name="_DatadogAotReplaceIlcInputs"
+          AfterTargets="_DatadogAotInstrument"
+          Condition="'$(_DatadogAotReady)' == 'true' and Exists('$(_DatadogAotStamp)')">
+    <ItemGroup>
+      <_DatadogAotInstrumentedInput Include="@(IlcCompileInput)" Condition="Exists('$(_DatadogAotOutput)%(Filename)%(Extension)')" />
+      <IlcCompileInput Remove="@(_DatadogAotInstrumentedInput)" />
+      <IlcCompileInput Include="@(_DatadogAotInstrumentedInput->'$(_DatadogAotOutput)%(Filename)%(Extension)')" />
+      <_DatadogAotInstrumentedReference Include="@(IlcReference)" Condition="Exists('$(_DatadogAotOutput)%(Filename)%(Extension)')" />
+      <IlcReference Remove="@(_DatadogAotInstrumentedReference)" />
+      <IlcReference Include="@(_DatadogAotInstrumentedReference->'$(_DatadogAotOutput)%(Filename)%(Extension)')" />
+      <!-- The DuckType AOT registry the adapters create proxies from, and its trimmer roots. -->
+      <IlcReference Include="$(_DatadogAotOutput)Datadog.Trace.DuckType.AotRegistry.*.dll" />
+      <TrimmerRootDescriptor Include="$(_DatadogAotOutput)Datadog.Trace.DuckType.AotRegistry.*.linker.xml" />
+    </ItemGroup>
+    <Message Importance="high" Text="Datadog NativeAOT instrumentation: @(_DatadogAotInstrumentedInput->'%(Filename)');@(_DatadogAotInstrumentedReference->'%(Filename)')" />
+  </Target>
+</Project>
