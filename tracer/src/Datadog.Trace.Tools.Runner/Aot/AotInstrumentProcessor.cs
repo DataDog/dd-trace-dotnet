@@ -108,6 +108,10 @@ internal static class AotInstrumentProcessor
             report.ReflectionRoots = ReflectionRootDescriptor.Write(datadogTrace, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Reflection.linker.xml"));
             AotLog.Info($"Types of the application Datadog.Trace finds by name preserved: {report.ReflectionRoots}");
 
+            // The delegate wrappers DelegateInstrumentation instantiates at runtime with MakeGenericType.
+            report.DelegateWrappers = DelegateWrapperDirectives.Write(datadogTrace, Path.Combine(options.OutputDirectory, "Datadog.Trace.Delegates.rd.xml"));
+            AotLog.Info($"Delegate instrumentation wrappers preserved: {report.DelegateWrappers}");
+
             // Only the assemblies the native tracer rewrote are written: the others (most of the framework references a
             // publish passes) are left as they are.
             var application = modules.FirstOrDefault(m => m.Writable && options.Assemblies.Count > 0 && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.Assemblies[0]), StringComparison.Ordinal));
