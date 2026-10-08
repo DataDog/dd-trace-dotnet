@@ -108,6 +108,23 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void ProxiesOfForwardProxiesShouldBeRecordedWithTheProxyDefinitionType()
+        {
+            // A proxy of a proxy: dynamic duck typing creates it for the proxy type it generated, which a registry can't name. The
+            // registry serves the proxy types it generates with the mappings of their proxy definition type.
+            var proxyType = DuckType.Create<IRecordedNameProxy>(new RecordedNameTarget())!.GetType();
+            if (!proxyType.Assembly.IsDynamic)
+            {
+                // AOT mode: nothing is recorded.
+                return;
+            }
+
+            DuckTypeAotDiscoveryRecorder.GetMapEntries(typeof(IRecordedNameProxy), proxyType, reverse: false)
+                                        .Select(entry => entry.TargetType)
+                                        .Should().Equal(typeof(IRecordedNameProxy).FullName);
+        }
+
+        [Fact]
         public void NonPublicCoreLibraryTargetsShouldAlsoBeRecordedWithTheirClosestPublicBaseClass()
         {
             // System.RuntimeType (CoreCLR's, which other runtimes such as NativeAOT don't have) derives from System.Reflection.TypeInfo:

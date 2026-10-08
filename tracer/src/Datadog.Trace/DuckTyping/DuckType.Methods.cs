@@ -728,6 +728,34 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Sets the default value of a parameter of a generated proxy method, metadata only (the method passes the arguments it
+        /// receives): a value the runtime can't store as a parameter constant is left out, like a decimal, a native integer or
+        /// a Missing value (its parameters keep [Optional]), or null for a value type, which .NET Framework rejects.
+        /// </summary>
+        /// <param name="parameter">The parameter of the generated method.</param>
+        /// <param name="definitionParameter">The parameter of the proxy definition method.</param>
+        private static void TrySetDefaultValue(ParameterBuilder parameter, ParameterInfo definitionParameter)
+        {
+            var value = definitionParameter.RawDefaultValue;
+            var parameterType = definitionParameter.ParameterType.IsByRef ? definitionParameter.ParameterType.GetElementType()! : definitionParameter.ParameterType;
+            if ((value is null && parameterType.IsValueType && Nullable.GetUnderlyingType(parameterType) is null) ||
+                value is decimal or Missing ||
+                ((parameterType == typeof(IntPtr) || parameterType == typeof(UIntPtr)) && value is not null))
+            {
+                return;
+            }
+
+            try
+            {
+                parameter.SetConstant(value);
+            }
+            catch (ArgumentException)
+            {
+                // Another value the runtime doesn't store as a constant (e.g. a custom constant attribute's).
+            }
+        }
+
+        /// <summary>
         /// Gets the index of the first name a candidate method has, among the names of a proxy method (its fallback names).
         /// </summary>
         /// <param name="candidateMethod">The candidate method.</param>
@@ -993,7 +1021,7 @@ namespace Datadog.Trace.DuckTyping
                     ParameterBuilder pmImpParameter = proxyMethod.DefineParameter(j + 1, pmDefParameter.Attributes, pmDefParameter.Name);
                     if (pmDefParameter.HasDefaultValue)
                     {
-                        pmImpParameter.SetConstant(pmDefParameter.RawDefaultValue);
+                        TrySetDefaultValue(pmImpParameter, pmDefParameter);
                     }
 
                     proxyMethodParametersBuilders[j] = pmImpParameter;

@@ -106,8 +106,9 @@ namespace Datadog.Trace.DuckTyping
         /// Gets the map entries recorded for a mapping: its own (unless a registry can't name its types), and for a forward one,
         /// the mapping of the type the registry serves the target type with:
         /// <list type="bullet">
-        /// <item>A proxy type dynamic duck typing generated: for a reverse proxy, the type it was created for (a class it derives
-        /// from or an interface it implements); otherwise the base class of a generated class proxy.</item>
+        /// <item>A proxy type dynamic duck typing generated: the type it was created for, for a reverse proxy (a class it derives
+        /// from or an interface it implements) and for a forward proxy (its proxy definition type: a proxy of a proxy); otherwise
+        /// the base class of a generated class proxy.</item>
         /// <item>A class of the core library a registry can't name (it may not exist on another runtime, e.g. NativeAOT): the
         /// closest public class of the core library it derives from, whose proxy serves the classes other runtimes have instead
         /// (see DuckTypeAotEngine.TryGetFallbackResult).</item>
@@ -136,6 +137,7 @@ namespace Datadog.Trace.DuckTyping
                 if (typeof(IDuckType).IsAssignableFrom(targetType))
                 {
                     servingType = DuckType.GetDynamicReverseProxyDefinitionType(targetType) ??
+                                  DuckType.GetDynamicForwardProxyDefinitionType(targetType) ??
                                   (targetType.BaseType is { } baseType && baseType != typeof(object) && baseType != typeof(ValueType) ? baseType : null);
                 }
             }

@@ -625,6 +625,8 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        // Inlined in GetOrCreateProxyType, which isn't: the slow path of CreateCache<T> makes a single call.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static CreateTypeResult GetOrCreateDynamicProxyType(Type proxyType, Type targetType)
         {
             return DuckTypeCache.GetOrAdd(
@@ -663,6 +665,28 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
+        /// <summary>
+        /// Gets the proxy definition type of a forward proxy type of dynamic duck typing: the discovery recorder records the forward
+        /// mappings of that type for the forward duck casts of its instances (a proxy of a proxy), which the AOT registry serves
+        /// with the forward proxy types it generates for it. Only called while recording.
+        /// </summary>
+        /// <param name="proxyType">The runtime type of a forward proxy instance.</param>
+        /// <returns>The proxy definition type of the forward proxy type, or null for another type.</returns>
+        internal static Type? GetDynamicForwardProxyDefinitionType(Type proxyType)
+        {
+            foreach (var entry in DuckTypeCache)
+            {
+                if (entry.Value.IsValueCreated && entry.Value.Value.CanCreate() && entry.Value.Value.ProxyType == proxyType)
+                {
+                    return entry.Key.ProxyDefinitionType;
+                }
+            }
+
+            return null;
+        }
+
+        // Inlined in GetOrCreateProxyType, which isn't: the slow path of CreateCache<T> makes a single call.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static CreateTypeResult GetOrCreateDynamicReverseProxyType(Type typeToDeriveFrom, Type delegationType)
         {
             return DuckTypeReverseCache.GetOrAdd(

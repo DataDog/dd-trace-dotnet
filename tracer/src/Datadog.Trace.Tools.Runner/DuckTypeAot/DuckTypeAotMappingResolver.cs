@@ -67,16 +67,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             Measure(profile, static p => p.ValidateResolvedAssemblyReferencesSeconds, static (p, value) => p.ValidateResolvedAssemblyReferencesSeconds = value, () =>
             {
+                // A recorded map names the assembly of each side (e.g. the contracts of a library a reverse proxy implements, or
+                // Datadog.Trace's own types): an input of the other kind provides it too.
                 foreach (var mapping in resolvedMappings.Values)
                 {
                     if (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName))
                     {
-                        errors.Add($"Mapping proxy assembly '{mapping.ProxyAssemblyName}' could not be resolved from --proxy-assembly inputs.");
+                        if (targetAssemblyPathsByName.TryGetValue(mapping.ProxyAssemblyName, out var proxyAssemblyPath))
+                        {
+                            proxyAssemblyPathsByName[mapping.ProxyAssemblyName] = proxyAssemblyPath;
+                        }
+                        else
+                        {
+                            errors.Add($"Mapping proxy assembly '{mapping.ProxyAssemblyName}' could not be resolved from --proxy-assembly or --target-folder inputs.");
+                        }
                     }
 
                     if (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName))
                     {
-                        errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-folder inputs.");
+                        if (proxyAssemblyPathsByName.TryGetValue(mapping.TargetAssemblyName, out var targetAssemblyPath))
+                        {
+                            targetAssemblyPathsByName[mapping.TargetAssemblyName] = targetAssemblyPath;
+                        }
+                        else
+                        {
+                            errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-folder or --proxy-assembly inputs.");
+                        }
                     }
                 }
             });
@@ -324,7 +340,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Expands one open generic mapping into closed mappings from matching closed generic target roots.
+        /// Expands one open generic mapping into closed mappings from the matching closed generic roots:
+        /// <list type="bullet">
+        /// <item>An open proxy and an open target with the same arity: each closed root of the target closes both.</item>
+        /// <item>A proxy that isn't open (e.g. a non-generic proxy of the instances of every Message&lt;TKey, TValue&gt;) and an
+        /// open target: each closed root of the target gets the proxy.</item>
+        /// <item>An open proxy and a target that isn't open: each closed root of the proxy gets the target.</item>
+        /// </list>
         /// </summary>
         /// <param name="mapping">The mapping value.</param>
         /// <param name="closedGenericTypeRoots">The closed generic type roots value.</param>
@@ -337,16 +359,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var proxyIsOpen = DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName);
             var targetIsOpen = DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName);
-            if (!proxyIsOpen || !targetIsOpen)
-            {
-                return Array.Empty<DuckTypeAotMapping>();
-            }
-
-            var proxyArity = DuckTypeAotNameHelpers.GetDeclaredGenericArity(mapping.ProxyTypeName);
-            var targetArity = DuckTypeAotNameHelpers.GetDeclaredGenericArity(mapping.TargetTypeName);
-            if (proxyArity == 0 ||
-                targetArity == 0 ||
-                proxyArity != targetArity)
+            var proxyArity = proxyIsOpen ? DuckTypeAotNameHelpers.GetDeclaredGenericArity(mapping.ProxyTypeName) : 0;
+            var targetArity = targetIsOpen ? DuckTypeAotNameHelpers.GetDeclaredGenericArity(mapping.TargetTypeName) : 0;
+            if (proxyIsOpen && targetIsOpen && (proxyArity == 0 || targetArity == 0 || proxyArity != targetArity))
             {
                 errors.Add(
                     $"Mapping '{mapping.Key}' contains an open generic rule with incompatible arity. " +
@@ -357,33 +372,49 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var expandedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
             foreach (var typeRoot in closedGenericTypeRoots)
             {
-                if (!string.Equals(typeRoot.AssemblyName, mapping.TargetAssemblyName, StringComparison.OrdinalIgnoreCase) ||
-                    !DuckTypeAotNameHelpers.TrySplitClosedGenericTypeName(
-                        typeRoot.TypeName,
-                        out var targetGenericDefinitionName,
-                        out var genericArgumentsSuffix,
-                        out var genericArgumentCount) ||
-                    !string.Equals(targetGenericDefinitionName, mapping.TargetTypeName, StringComparison.Ordinal) ||
-                    genericArgumentCount != targetArity)
+                if (targetIsOpen)
                 {
-                    continue;
-                }
+                    if (!IsClosedRootOf(typeRoot, mapping.TargetTypeName, mapping.TargetAssemblyName, targetArity, out var genericArgumentsSuffix))
+                    {
+                        continue;
+                    }
 
-                var closedProxyTypeName = string.Concat(mapping.ProxyTypeName, genericArgumentsSuffix);
-                var expandedMapping = new DuckTypeAotMapping(
-                    closedProxyTypeName,
-                    mapping.ProxyAssemblyName,
-                    typeRoot.TypeName,
-                    typeRoot.AssemblyName,
-                    mapping.Mode,
-                    mapping.Source,
-                    mapping.ScenarioId);
-                expandedMappings[expandedMapping.Key] = expandedMapping;
+                    var expandedMapping = new DuckTypeAotMapping(
+                        proxyIsOpen ? string.Concat(mapping.ProxyTypeName, genericArgumentsSuffix) : mapping.ProxyTypeName,
+                        mapping.ProxyAssemblyName,
+                        typeRoot.TypeName,
+                        typeRoot.AssemblyName,
+                        mapping.Mode,
+                        mapping.Source,
+                        mapping.ScenarioId);
+                    expandedMappings[expandedMapping.Key] = expandedMapping;
+                }
+                else if (IsClosedRootOf(typeRoot, mapping.ProxyTypeName, mapping.ProxyAssemblyName, proxyArity, out _))
+                {
+                    var expandedMapping = new DuckTypeAotMapping(
+                        typeRoot.TypeName,
+                        typeRoot.AssemblyName,
+                        mapping.TargetTypeName,
+                        mapping.TargetAssemblyName,
+                        mapping.Mode,
+                        mapping.Source,
+                        mapping.ScenarioId);
+                    expandedMappings[expandedMapping.Key] = expandedMapping;
+                }
             }
 
             return expandedMappings.Values
                                    .OrderBy(item => item.Key, StringComparer.Ordinal)
                                    .ToList();
+
+            static bool IsClosedRootOf(DuckTypeAotTypeReference typeRoot, string genericDefinitionName, string assemblyName, int arity, out string genericArgumentsSuffix)
+            {
+                genericArgumentsSuffix = string.Empty;
+                return string.Equals(typeRoot.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) &&
+                       DuckTypeAotNameHelpers.TrySplitClosedGenericTypeName(typeRoot.TypeName, out var rootDefinitionName, out genericArgumentsSuffix, out var genericArgumentCount) &&
+                       string.Equals(rootDefinitionName, genericDefinitionName, StringComparison.Ordinal) &&
+                       genericArgumentCount == arity;
+            }
         }
 
         /// <summary>

@@ -677,7 +677,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var moduleContext = CreateModuleLoadContext(mappingResolutionResult.ProxyAssemblyPathsByName, mappingResolutionResult.TargetAssemblyPathsByName);
 
             // The types the registry references resolve to the loaded inputs, e.g. the base types of the reverse proxy types it
-            // generates, which forward proxies of reverse proxies bind (see EmitGeneratedReverseTargetAliases).
+            // generates, which forward proxies of reverse proxies bind (see EmitGeneratedProxyTargetAliases).
             moduleDef.Context = moduleContext;
 
             var phaseStopwatch = StartProfilePhase();
@@ -714,7 +714,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     targetTypeIndex,
                     runtimeDuplicateKeys));
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeRegistrationsSeconds += seconds);
-                var generatedReverseTargets = new List<KeyValuePair<DuckTypeAotMapping, TypeDef>>();
+                var generatedProxyTargets = new List<KeyValuePair<DuckTypeAotMapping, TypeDef>>();
                 var registrationResults = new Dictionary<string, DuckTypeAotMappingEmissionResult>(StringComparer.Ordinal);
 
                 phaseStopwatch = StartProfilePhase();
@@ -774,11 +774,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         mappingResults[mapping.Key] = emissionResult;
                     }
 
-                    if (mapping.Mode == DuckTypeAotMappingMode.Reverse &&
-                        emissionResult.Status == DuckTypeAotCompatibilityStatuses.Compatible &&
-                        moduleDef.Find(emissionResult.GeneratedProxyTypeName, isReflectionName: false) is { } generatedReverseType)
+                    // The proxy types the registry generates, whose instances dynamic duck typing creates forward proxies for: a
+                    // reverse proxy type, and a forward proxy type (a proxy of a proxy), see EmitGeneratedProxyTargetAliases.
+                    if (emissionResult.Status == DuckTypeAotCompatibilityStatuses.Compatible &&
+                        moduleDef.Find(emissionResult.GeneratedProxyTypeName, isReflectionName: false) is { } generatedProxyType &&
+                        (mapping.Mode == DuckTypeAotMappingMode.Reverse || generatedProxyType.Interfaces.Any(implementation => string.Equals(implementation.Interface?.FullName, "Datadog.Trace.DuckTyping.IDuckType", StringComparison.Ordinal))))
                     {
-                        generatedReverseTargets.Add(new KeyValuePair<DuckTypeAotMapping, TypeDef>(mapping, generatedReverseType));
+                        generatedProxyTargets.Add(new KeyValuePair<DuckTypeAotMapping, TypeDef>(mapping, generatedProxyType));
                     }
                 }
 
@@ -810,14 +812,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     }
                 }
 
-                aliasFailures.AddRange(EmitGeneratedReverseTargetAliases(
+                aliasFailures.AddRange(EmitGeneratedProxyTargetAliases(
                     moduleDef,
                     bootstrapType,
                     bootstrapRegistrationMethods,
                     importedMembers,
                     mappingResolutionResult,
                     mappingResults,
-                    generatedReverseTargets,
+                    generatedProxyTargets,
                     proxyModulesByAssemblyName,
                     runtimeRegistrations,
                     emissionWarnings));
@@ -1181,30 +1183,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Registers the forward mappings for the reverse proxy types the registry generates: dynamic duck typing creates a forward
-        /// proxy for the runtime type of the instance, and a reverse proxy is an instance of its generated type, which derives from
-        /// (or implements) the mapped target.
+        /// Registers the forward mappings for the proxy types the registry generates: dynamic duck typing creates a forward proxy
+        /// for the runtime type of the instance, and a proxy is an instance of its generated type, which derives from (or
+        /// implements) its proxy definition type. A reverse proxy type is served by the mappings of the contract it derives
+        /// from or implements (or of a type assignable from it); a forward proxy type (a proxy of a proxy) by the mappings of its
+        /// proxy definition type, or of one of its base types other than object, ValueType and IDuckType, which every proxy has.
         /// </summary>
         /// <param name="module">The generated registry module.</param>
         /// <param name="bootstrap">The bootstrap type.</param>
         /// <param name="chunks">The bootstrap registration methods.</param>
         /// <param name="members">The imported members.</param>
         /// <param name="resolution">The mapping resolution result.</param>
-        /// <param name="results">The emission results of the mappings, flagged when a proxy for a generated reverse proxy type is
-        /// bound from metadata.</param>
-        /// <param name="reverseTargets">The generated reverse proxy types, by reverse mapping.</param>
+        /// <param name="results">The emission results of the mappings, flagged when a proxy for a generated proxy type is bound
+        /// from metadata.</param>
+        /// <param name="generatedProxyTargets">The generated proxy types, by the mapping they were generated for.</param>
         /// <param name="proxyModules">The proxy modules by assembly name.</param>
         /// <param name="runtimeRegistrations">The runtime registrations, completed with the ones emitted here.</param>
         /// <param name="emissionWarnings">The emission warnings.</param>
         /// <returns>The failures only the registry has (dynamic duck typing creates those proxies), by canonical mapping key.</returns>
-        private static IReadOnlyList<KeyValuePair<string, DuckTypeAotMappingEmissionResult>> EmitGeneratedReverseTargetAliases(
+        private static IReadOnlyList<KeyValuePair<string, DuckTypeAotMappingEmissionResult>> EmitGeneratedProxyTargetAliases(
             ModuleDef module,
             TypeDef bootstrap,
             IList<MethodDef> chunks,
             ImportedMembers members,
             DuckTypeAotMappingResolutionResult resolution,
             IDictionary<string, DuckTypeAotMappingEmissionResult> results,
-            IReadOnlyList<KeyValuePair<DuckTypeAotMapping, TypeDef>> reverseTargets,
+            IReadOnlyList<KeyValuePair<DuckTypeAotMapping, TypeDef>> generatedProxyTargets,
             IReadOnlyDictionary<string, ModuleDefMD> proxyModules,
             IList<DuckTypeAotRuntimeRegistration> runtimeRegistrations,
             ICollection<string> emissionWarnings)
@@ -1214,18 +1218,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var context = _currentExecutionContext;
 
             // The reverse proxy type dynamic duck typing creates for each pair, which the generated one stands for.
-            foreach (var reverseTarget in reverseTargets)
+            foreach (var generatedTarget in generatedProxyTargets)
             {
-                if (context is not null && context.DynamicReverseProxyTypes.TryGetValue(reverseTarget.Key.Key, out var dynamicReverseProxyType))
+                if (context is not null && context.DynamicReverseProxyTypes.TryGetValue(generatedTarget.Key.Key, out var dynamicReverseProxyType))
                 {
-                    context.GeneratedTypeRuntimeTypes[reverseTarget.Value] = dynamicReverseProxyType;
-                    context.RuntimeTypeGeneratedTypes[dynamicReverseProxyType] = reverseTarget.Value;
+                    context.GeneratedTypeRuntimeTypes[generatedTarget.Value] = dynamicReverseProxyType;
+                    context.RuntimeTypeGeneratedTypes[dynamicReverseProxyType] = generatedTarget.Value;
                 }
             }
 
-            // The forward mappings whose target a generated reverse proxy type is assignable to (a contract it derives from or
-            // implements, IDuckType, object...), grouped by proxy type and generated reverse proxy type: one registration each.
-            // A failure dynamic duck typing has too is replayed for the generated reverse proxy types as well.
+            // The forward mappings whose target a generated proxy type is assignable to, grouped by proxy type and generated proxy
+            // type: one registration each. A failure dynamic duck typing has too is replayed for the generated proxy types as well.
             var groups = new Dictionary<Tuple<Type, TypeDef>, List<DuckTypeAotMapping>>();
             var orderedGroups = new List<Tuple<Type, TypeDef, KeyValuePair<DuckTypeAotMapping, TypeDef>>>();
             foreach (var mapping in resolution.Mappings.Where(mapping => mapping.Mode == DuckTypeAotMappingMode.Forward).OrderBy(mapping => mapping.Key, StringComparer.Ordinal))
@@ -1240,32 +1243,44 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 if (!TryResolveRuntimeType(mapping.ProxyAssemblyName, proxyPath, mapping.ProxyTypeName, out var proxyType) || proxyType is null ||
                     !TryResolveRuntimeType(mapping.TargetAssemblyName, targetPath, mapping.TargetTypeName, out var targetType) || targetType is null)
                 {
-                    if (reverseTargets.Count > 0)
+                    if (generatedProxyTargets.Any(generatedTarget => generatedTarget.Key.Mode == DuckTypeAotMappingMode.Reverse))
                     {
-                        emissionWarnings.Add($"Mapping '{mapping.Key}' gets no registration for the generated reverse proxy types: its types couldn't be loaded.");
+                        emissionWarnings.Add($"Mapping '{mapping.Key}' gets no registration for the generated proxy types: its types couldn't be loaded.");
                     }
 
                     continue;
                 }
 
-                foreach (var reverseTarget in reverseTargets)
+                foreach (var generatedTarget in generatedProxyTargets)
                 {
-                    var reversePath = resolution.ProxyAssemblyPathsByName[reverseTarget.Key.ProxyAssemblyName];
-                    if (!TryResolveRuntimeType(reverseTarget.Key.ProxyAssemblyName, reversePath, reverseTarget.Key.ProxyTypeName, out var reverseContract) ||
-                        reverseContract is null ||
-                        !targetType.IsAssignableFrom(context?.GeneratedTypeRuntimeTypes.TryGetValue(reverseTarget.Value, out var dynamicReverseProxyType) == true ? dynamicReverseProxyType : reverseContract))
+                    var contractPath = resolution.ProxyAssemblyPathsByName[generatedTarget.Key.ProxyAssemblyName];
+                    if (!TryResolveRuntimeType(generatedTarget.Key.ProxyAssemblyName, contractPath, generatedTarget.Key.ProxyTypeName, out var contract) || contract is null)
                     {
                         continue;
                     }
 
-                    // Other spellings of the same proxy type, and other mapped targets of the generated reverse proxy type, share
-                    // its registration.
-                    var groupKey = Tuple.Create(proxyType, reverseTarget.Value);
+                    if (generatedTarget.Key.Mode == DuckTypeAotMappingMode.Forward)
+                    {
+                        if (targetType.FullName is "System.Object" or "System.ValueType" or "Datadog.Trace.DuckTyping.IDuckType" ||
+                            !targetType.IsAssignableFrom(contract) ||
+                            !TryMapDynamicForwardProxyType(generatedTarget, contract))
+                        {
+                            continue;
+                        }
+                    }
+                    else if (!targetType.IsAssignableFrom(context?.GeneratedTypeRuntimeTypes.TryGetValue(generatedTarget.Value, out var dynamicReverseProxyType) == true ? dynamicReverseProxyType : contract))
+                    {
+                        continue;
+                    }
+
+                    // Other spellings of the same proxy type, and other mapped targets of the generated proxy type, share its
+                    // registration.
+                    var groupKey = Tuple.Create(proxyType, generatedTarget.Value);
                     if (!groups.TryGetValue(groupKey, out var groupMappings))
                     {
                         groupMappings = [];
                         groups[groupKey] = groupMappings;
-                        orderedGroups.Add(Tuple.Create(proxyType, reverseTarget.Value, reverseTarget));
+                        orderedGroups.Add(Tuple.Create(proxyType, generatedTarget.Value, generatedTarget));
                     }
 
                     groupMappings.Add(mapping);
@@ -1290,7 +1305,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var registrationMethod = GetBootstrapRegistrationMethod(module, bootstrap, chunks, registrationIndex);
                 runtimeRegistrations.Add(new DuckTypeAotRuntimeRegistration(aliasMapping, mapping.Key, DuckTypeAotRuntimeRegistrationKind.AssignableAlias));
 
-                // What dynamic duck typing does with the reverse proxy type it creates: when it can't create the proxy, the
+                // What dynamic duck typing does with the proxy type it creates: when it can't create the proxy, the
                 // registry replays its failure.
                 var dynamicOutcome = GetDynamicGeneratedReverseAliasOutcome(
                     groupMappings,
@@ -1321,8 +1336,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 // Like the proxy dynamic duck typing creates for the runtime type of the instance, it binds the members of the
-                // generated reverse proxy type (its implementations of the contract, its IDuckType members, its ToString...), and
-                // IDuckType.Type is the generated reverse proxy type.
+                // generated proxy type (its implementations of the contract or proxy definition, its IDuckType members, its
+                // ToString...), and IDuckType.Type is the generated proxy type.
                 var aliasResult = EmitGeneratedReverseAliasMapping(
                     module,
                     bootstrap,
@@ -1340,7 +1355,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 if (string.Equals(aliasResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal) ||
                     (checkedAgainstMetadataOnly && string.Equals(aliasResult.DiagnosticCode, StatusCodeUnloadableProxyType, StringComparison.Ordinal)))
                 {
-                    // The mappings serve the generated reverse proxy type with a proxy bound from metadata: they say so.
+                    // The mappings serve the generated proxy type with a proxy bound from metadata: they say so.
                     if (checkedAgainstMetadataOnly || IsCheckedAgainstMetadataOnly(aliasMapping.Key))
                     {
                         foreach (var groupMapping in groupMappings)
@@ -1355,10 +1370,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                emissionWarnings.Add($"The registry can't create the proxy of mapping '{mapping.Key}' for the generated reverse proxy type '{generatedReverseType.FullName}': {aliasResult.Detail}");
+                emissionWarnings.Add($"The registry can't create the proxy of mapping '{mapping.Key}' for the generated proxy type '{generatedReverseType.FullName}': {aliasResult.Detail}");
                 var aliasFailureDetail = checkedAgainstMetadataOnly
-                                             ? $"The registry can't create the proxy of the generated reverse proxy type of '{reverseMapping.ProxyTypeName}', an instance of the mapped target, and dynamic duck typing couldn't be asked whether it can: {aliasResult.Detail}"
-                                             : $"The registry can't create the proxy of the generated reverse proxy type of '{reverseMapping.ProxyTypeName}', an instance of the mapped target, like dynamic duck typing does: {aliasResult.Detail}";
+                                             ? $"The registry can't create the proxy of the generated proxy type of '{reverseMapping.ProxyTypeName}', an instance of the mapped target, and dynamic duck typing couldn't be asked whether it can: {aliasResult.Detail}"
+                                             : $"The registry can't create the proxy of the generated proxy type of '{reverseMapping.ProxyTypeName}', an instance of the mapped target, like dynamic duck typing does: {aliasResult.Detail}";
                 foreach (var groupMapping in groupMappings)
                 {
                     var aliasFailure = DuckTypeAotMappingEmissionResult.NotCompatible(groupMapping, aliasResult.Status, aliasResult.DiagnosticCode ?? string.Empty, aliasFailureDetail);
@@ -1372,7 +1387,102 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Emits the proxy of a forward mapping for a reverse proxy type the registry generates, bound to the members of that type.
+        /// Defines the parameters of a generated proxy method like dynamic duck typing does for the methods (not the accessors) of a
+        /// proxy: the names and attributes (in, out, optional) of the parameters of the method it implements or overrides, and
+        /// their default values the runtime stores as constants (see DuckType's InitialiseProxyMethod). A proxy of the proxy binds
+        /// them, e.g. an out parameter.
+        /// </summary>
+        /// <param name="definitionMethod">The method of the proxy definition (or contract) the generated method implements.</param>
+        /// <param name="generatedMethod">The generated method.</param>
+        private static void CopyProxyMethodParameters(MethodDef definitionMethod, MethodDef generatedMethod)
+        {
+            var parameterCount = generatedMethod.MethodSig.Params.Count;
+            foreach (var definitionParameter in definitionMethod.ParamDefs.OrderBy(parameter => parameter.Sequence))
+            {
+                if (definitionParameter.Sequence == 0 || definitionParameter.Sequence > parameterCount)
+                {
+                    continue;
+                }
+
+                var attributes = definitionParameter.Attributes & (ParamAttributes.In | ParamAttributes.Out | ParamAttributes.Lcid | ParamAttributes.Retval | ParamAttributes.Optional);
+                var parameter = new ParamDefUser(definitionParameter.Name, definitionParameter.Sequence, attributes);
+                if (GetStoredDefaultValue(definitionParameter, definitionMethod.MethodSig.Params[definitionParameter.Sequence - 1]) is { } constant)
+                {
+                    parameter.Constant = constant;
+                    parameter.Attributes |= ParamAttributes.HasDefault;
+                }
+
+                generatedMethod.ParamDefs.Add(parameter);
+            }
+
+            static Constant? GetStoredDefaultValue(ParamDef definitionParameter, TypeSig parameterType)
+            {
+                parameterType = parameterType.RemovePinnedAndModifiers();
+                if (parameterType is ByRefSig byRefSig)
+                {
+                    parameterType = byRefSig.Next.RemovePinnedAndModifiers();
+                }
+
+                // What Reflection.Emit stores: a DateTime as its ticks; not a decimal or a native integer, nor null for a value
+                // type other than Nullable<T> (rejected by .NET Framework).
+                if (definitionParameter.CustomAttributes.Find("System.Runtime.CompilerServices.DateTimeConstantAttribute") is { ConstructorArguments.Count: 1 } dateTimeConstant &&
+                    dateTimeConstant.ConstructorArguments[0].Value is long ticks)
+                {
+                    return new ConstantUser(ticks, ElementType.I8);
+                }
+
+                if (definitionParameter.Constant is not { } constant ||
+                    parameterType.FullName is "System.IntPtr" or "System.UIntPtr" ||
+                    (constant.Value is null && parameterType.IsValueType && !(parameterType is GenericInstSig genericInstance && genericInstance.GenericType.FullName == "System.Nullable`1")))
+                {
+                    return null;
+                }
+
+                return new ConstantUser(constant.Value, constant.Type);
+            }
+        }
+
+        /// <summary>
+        /// Maps a forward proxy type the registry generates to the one dynamic duck typing creates for the same pair, whose members
+        /// the forward proxies of its instances bind (see TryResolveDynamicSelectionTypes and FindMemberDefInHierarchy).
+        /// </summary>
+        /// <param name="generatedTarget">The generated forward proxy type, by the mapping it was generated for.</param>
+        /// <param name="proxyDefinitionType">The proxy definition type of the mapping.</param>
+        /// <returns>true if dynamic duck typing created the proxy type of the pair; otherwise, false.</returns>
+        private static bool TryMapDynamicForwardProxyType(KeyValuePair<DuckTypeAotMapping, TypeDef> generatedTarget, Type proxyDefinitionType)
+        {
+            if (_currentExecutionContext is not { } context)
+            {
+                return false;
+            }
+
+            if (context.GeneratedTypeRuntimeTypes.ContainsKey(generatedTarget.Value))
+            {
+                return true;
+            }
+
+            var mapping = generatedTarget.Key;
+            if (runtimeTypeResolutionAssemblyPathsByName is not { } assemblyPaths ||
+                !assemblyPaths.TryGetValue(DuckTypeAotNameHelpers.NormalizeAssemblyName(mapping.TargetAssemblyName), out var targetPath) ||
+                !TryResolveRuntimeType(mapping.TargetAssemblyName, targetPath, mapping.TargetTypeName, out var targetType) ||
+                targetType is null)
+            {
+                return false;
+            }
+
+            var result = DuckType.GetOrCreateProxyType(proxyDefinitionType, targetType);
+            if (!result.CanCreate() || result.ProxyType is not { } dynamicProxyType)
+            {
+                return false;
+            }
+
+            context.GeneratedTypeRuntimeTypes[generatedTarget.Value] = dynamicProxyType;
+            context.RuntimeTypeGeneratedTypes[dynamicProxyType] = generatedTarget.Value;
+            return true;
+        }
+
+        /// <summary>
+        /// Emits the proxy of a forward mapping for a proxy type the registry generates, bound to the members of that type.
         /// </summary>
         /// <param name="moduleDef">The generated registry module.</param>
         /// <param name="bootstrapType">The bootstrap type.</param>
@@ -3841,11 +3951,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var generatedConstructorSig = reportedTargetTypeField is null
                                               ? MethodSig.CreateInstance(moduleDef.CorLibTypes.Void, instanceSig)
                                               : MethodSig.CreateInstance(moduleDef.CorLibTypes.Void, instanceSig, importedMembers.SystemTypeSig);
+            // The constructor that also receives the served runtime type is internal: the public constructor of a proxy takes the
+            // instance only, like the one dynamic duck typing creates, which CallTarget's IntegrationMapper (and other emitted
+            // code) calls through Type.GetConstructors()[0].
             var generatedConstructor = new MethodDefUser(
                 ".ctor",
                 generatedConstructorSig,
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
+                (reportedTargetTypeField is null ? MethodAttributes.Public : MethodAttributes.Assembly) | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
             generatedConstructor.Body = new CilBody();
 
             generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
@@ -3853,10 +3966,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             generatedConstructor.Body.Instructions.Add(OpCodes.Stfld.ToInstruction(targetField));
             if (reportedTargetTypeField is not null)
             {
-                // Null for the registered target type itself.
+                // Null for the registered target type itself (which a caller of the constructor may pass too).
+                var storeReportedType = Instruction.Create(OpCodes.Stfld, reportedTargetTypeField);
                 generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
                 generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_2.ToInstruction());
-                generatedConstructor.Body.Instructions.Add(OpCodes.Stfld.ToInstruction(reportedTargetTypeField));
+                generatedConstructor.Body.Instructions.Add(OpCodes.Dup.ToInstruction());
+                generatedConstructor.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
+                generatedConstructor.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+                generatedConstructor.Body.Instructions.Add(OpCodes.Bne_Un_S.ToInstruction(storeReportedType));
+                generatedConstructor.Body.Instructions.Add(OpCodes.Pop.ToInstruction());
+                generatedConstructor.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+                generatedConstructor.Body.Instructions.Add(storeReportedType);
             }
 
             // Class proxy base constructors can call virtual members, so store the target first to match dynamic ducktyping.
@@ -3868,6 +3988,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             generatedConstructor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             generatedType.Methods.Add(generatedConstructor);
+            if (reportedTargetTypeField is not null)
+            {
+                var publicConstructor = new MethodDefUser(
+                    ".ctor",
+                    MethodSig.CreateInstance(moduleDef.CorLibTypes.Void, instanceSig),
+                    MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                    MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
+                publicConstructor.Body = new CilBody();
+                publicConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+                publicConstructor.Body.Instructions.Add(OpCodes.Ldarg_1.ToInstruction());
+                publicConstructor.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+                publicConstructor.Body.Instructions.Add(OpCodes.Call.ToInstruction(generatedConstructor));
+                publicConstructor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+                generatedType.Methods.Add(publicConstructor);
+            }
 
             // The instance can be a reverse proxy type of this registry, whose ToString dynamic duck typing inspects.
             var targetToString = (importedTargetType is TypeDef generatedTargetType ? FindPublicToString(generatedTargetType) : null) ?? FindPublicToString(targetType);
@@ -3895,6 +4030,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     isInterfaceProxy ? GetInterfaceMethodAttributes(proxyMethod) : GetClassOverrideMethodAttributes(proxyMethod, isReverseMapping));
 
                 CopyMethodGenericParameters(moduleDef, proxyMethod, generatedMethod);
+                if (!proxyMethod.IsSpecialName)
+                {
+                    CopyProxyMethodParameters(proxyMethod, generatedMethod);
+                }
+
                 AddInterfaceMethodOverride(moduleDef, generatedType, generatedInterfaceImplementations, isInterfaceProxy, proxyType, generatedMethod, proxyMethod, interfaceMethodContract, closedGenericProxyTypeArguments);
                 generatedMethod.Body = new CilBody();
                 switch (binding.Kind)
