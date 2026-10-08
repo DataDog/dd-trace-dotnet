@@ -9,9 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Datadog.InstrumentedAssemblyVerification;
 #if NET6_0_OR_GREATER
 using Datadog.Trace.Tools.Runner.Aot.CallTarget;
+using dnlib.DotNet.Pdb;
 #endif
 using Datadog.Trace.Tools.Runner.Aot.Native;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -151,7 +153,11 @@ internal static class AotInstrumentProcessor
                 CallTargetRegistryResult? registry = null;
                 if (options.GenerateCallTargetRegistry)
                 {
-                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application, userStrings);
+                    // The PDB isn't there at runtime: its SourceLink document gives the git metadata.
+                    var sourceLink = module == application && module.Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault() is { } link
+                                         ? Encoding.UTF8.GetString(link.FileBlob)
+                                         : null;
+                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application, userStrings, sourceLink);
                     AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories); {registry.Instantiations} instantiations of deferred generic shapes ({registry.InstantiationBound} bound, {registry.InstantiationDeferred} still deferred)");
                     foreach (var detail in registry.Details)
                     {
