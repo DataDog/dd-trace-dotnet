@@ -19,6 +19,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     [Microsoft.Extensions.Logging.ProviderAlias("Datadog")]
     internal sealed class DirectSubmissionLoggerProvider
     {
+        /// <summary>
+        /// The name of the composite interface of the reverse proxy: ILoggerProvider and ISupportExternalScope.
+        /// </summary>
+        internal const string ProxyInterfaceName = "DirectSubmissionLoggerProviderProxy";
+
         private readonly Func<string, DirectSubmissionLogger> _createLoggerFunc;
         private readonly ConcurrentDictionary<string, DirectSubmissionLogger> _loggers = new();
         private readonly IDirectSubmissionLogSink _sink;

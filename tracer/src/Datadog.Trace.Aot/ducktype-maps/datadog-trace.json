@@ -181,6 +181,34 @@
       "proxyAssembly": "Datadog.Trace",
       "targetType": "OpenTelemetry.BaseProcessor`1[[System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource]]",
       "targetAssembly": "OpenTelemetry"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "Datadog.Trace.DuckTyping.Composites.DirectSubmissionLoggerProviderProxy",
+      "proxyAssembly": "Datadog.Trace.DuckType.Composites",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.DirectSubmissionLoggerProvider",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "Microsoft.Extensions.Logging.ILogger",
+      "proxyAssembly": "Microsoft.Extensions.Logging.Abstractions",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.DirectSubmissionLogger",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ILoggerFactory",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Extensions.Logging.LoggerFactory",
+      "targetAssembly": "Microsoft.Extensions.Logging"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.IExternalScopeProvider",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Extensions.Logging.LoggerFactoryScopeProvider",
+      "targetAssembly": "Microsoft.Extensions.Logging"
     }
   ]
 }

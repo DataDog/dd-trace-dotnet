@@ -119,6 +119,12 @@ internal static class AotInstrumentProcessor
             AotLog.Info($"{writableModules.Count}/{modules.Count(m => m.Writable)} assemblies instrumented");
             var rewrittenByModule = writableModules.ToDictionary(m => m, MethodBodies.ApplyNewBodies);
 
+            // The composite interfaces of the reverse proxies of Datadog.Trace, which dynamic duck typing emits at runtime.
+            var compositeCount = 0;
+            var compositeInterfaces = application is null ? null : CompositeInterfaceAssembly.Write(datadogTrace, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module).ToList(), application.Module, options.OutputDirectory, out compositeCount);
+            report.CompositeInterfaces = compositeCount;
+            AotLog.Info($"Composite interfaces of duck typing reverse proxies: {report.CompositeInterfaces}");
+
             // The proxies of the duck typing constraints go to a DuckType AOT registry generated first (C1): the adapters
             // create them directly.
             CallTargetDuckTypeRegistry? duckTypeRegistry = null;
@@ -145,6 +151,11 @@ internal static class AotInstrumentProcessor
                     var assemblyPaths = modules.Where(m => !StringUtil.IsNullOrEmpty(m.Path))
                                                .GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase)
                                                .ToDictionary(g => g.Key, g => Path.GetFullPath(g.First().Path), StringComparer.OrdinalIgnoreCase);
+                    if (compositeInterfaces is not null)
+                    {
+                        assemblyPaths[CompositeInterfaceAssembly.AssemblyName] = compositeInterfaces;
+                    }
+
                     duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
                     if (duckTypeRegistry is not null)
                     {
