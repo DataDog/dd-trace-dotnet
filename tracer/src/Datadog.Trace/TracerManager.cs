@@ -394,7 +394,7 @@ namespace Datadog.Trace
                     void WriteOtlpExporterSettings(string signal, Uri endpoint, OtlpProtocol protocol, IEnumerable<KeyValuePair<string, string>> headers)
                     {
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_ENDPOINT");
-                        writer.WriteValue(endpoint);
+                        writer.WriteValue(UriHelpers.CleanUri(endpoint, removeScheme: false, tryRemoveIds: false));
 
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_PROTOCOL");
                         writer.WriteValue(protocol switch
