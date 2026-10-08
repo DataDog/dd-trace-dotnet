@@ -1075,10 +1075,8 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
             return;
         }
 
-        COR_SIGNATURE fieldSignature[500];
-        unsigned offset = 0;
-        fieldSignature[offset++] = IMAGE_CEE_CS_CALLCONV_FIELD;
-        fieldSignature[offset++] = ELEMENT_TYPE_OBJECT;
+        // Only the bytes written below are part of the signature
+        COR_SIGNATURE fieldSignature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_OBJECT};
 
         mdFieldDef isFirstEntry = mdFieldDefNil;
         hr = metadataEmit->DefineField(typeDef, managed_profiler_debugger_is_first_entry_field_name.c_str(),
