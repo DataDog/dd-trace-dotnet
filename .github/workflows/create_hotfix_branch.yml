@@ -3,6 +3,10 @@ name: Create hotfix branch
 on:
   workflow_dispatch:
     inputs:
+      base_tag:
+        description: 'Release tag to branch from (for example, v3.55.0). Run this workflow from master.'
+        required: true
+        type: string
       version:
         description: 'Hotfix Version Number (x.x.x)'
         required: true
@@ -10,56 +14,57 @@ on:
         description: 'Is Prerelease version? (true/false)'
         default: 'false'
         required: true
+      dry_run:
+        description: 'Validate the version bump without creating a branch or commit'
+        type: boolean
+        default: false
 
 jobs:
-  check_tag:
-    runs-on: ubuntu-latest
-    steps:
-        - name: Verify running from a tag
-          run: |
-            if [[ "${{  github.ref }}" != refs/tags/* ]]; then
-              echo "Error: This workflow can only be run from a tag"
-              echo "Current ref: ${{ github.ref }}"
-              exit 1
-            fi
-
   bump_version:
-    needs: check_tag
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write # Push branches
-      issues: write # change milestones 
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      NewVersion: "${{ github.event.inputs.version }}"
-      NewIsPrerelease: "${{ github.event.inputs.is_prerelease }}"
+      NewVersion: "${{ inputs.version }}"
+      NewIsPrerelease: "${{ inputs.is_prerelease }}"
 
     steps:
-      - name: Support longpaths
-        run: git config --system core.longpaths true
+      - name: Validate release tag name
+        env:
+          BASE_TAG: ${{ inputs.base_tag }}
+        run: git check-ref-format "refs/tags/$BASE_TAG"
 
-      - name: Checkout
+      - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ inputs.base_tag }}
           persist-credentials: false
+
+      - name: Record base commit
+        id: base
+        run: |
+          # github.sha identifies the workflow revision, which can differ from the release tag.
+          base_sha=$(git rev-parse HEAD)
+          echo "sha=$base_sha" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
       - name: "Bump Version"
-        run: .\tracer\build.ps1 UpdateVersion
+        run: ./tracer/build.sh UpdateVersion
 
       - name: "Verify Changes"
         id: changes
-        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
+        run: ./tracer/build.sh VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
 
       - name: "Output Version"
         id: versions
-        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
 
       - name: "Stage version bump"
-        run: git add .
+        run: git add -u
 
       - name: "Push hotfix branch"
         uses: DataDog/commit-headless@79367f840e221d63cb28a359de97833cdfde81dd # action/v3.4.0
@@ -69,5 +74,6 @@ jobs:
           message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
           # Keeps whoever dispatched the workflow as a Co-authored-by trailer.
           author: "${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
-          head-sha: ${{ github.sha }}
+          head-sha: ${{ steps.base.outputs.sha }}
           create-branch: true
+          dry-run: ${{ inputs.dry_run }}
