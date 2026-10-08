@@ -102,119 +102,8 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_8,
-    Name: quartz.jobstore.acquirenexttriggers,
-    Resource: Quartz.JobStore.AcquireNextTriggers,
-    Service: Samples.Quartz,
-    Type: http,
-    Tags: {
-      component: quartz,
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Quartz,
-      otel.library.version: <otel-library-version>,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1,
-      quartz.scheduler.id: NON_CLUSTERED,
-      quartz.scheduler.name: QuartzScheduler,
-      runtime-id: Guid_2,
-      span.kind: client,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      quartz.jobstore.batch.size: 1.0,
-      quartz.jobstore.trigger.count: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
+    TraceId: Id_8,
     SpanId: Id_9,
-    Name: quartz.jobstore.acquirenexttriggers,
-    Resource: Quartz.JobStore.AcquireNextTriggers,
-    Service: Samples.Quartz,
-    Type: http,
-    ParentId: Id_5,
-    Tags: {
-      component: quartz,
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Quartz,
-      otel.library.version: <otel-library-version>,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1,
-      quartz.scheduler.id: NON_CLUSTERED,
-      quartz.scheduler.name: QuartzScheduler,
-      span.kind: client,
-      version: 1.0.0
-    },
-    Metrics: {
-      quartz.jobstore.batch.size: 1.0,
-      quartz.jobstore.trigger.count: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_10,
-    Name: quartz.jobstore.acquirenexttriggers,
-    Resource: Quartz.JobStore.AcquireNextTriggers,
-    Service: Samples.Quartz,
-    Type: http,
-    ParentId: Id_3,
-    Tags: {
-      component: quartz,
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Quartz,
-      otel.library.version: <otel-library-version>,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1,
-      quartz.scheduler.id: NON_CLUSTERED,
-      quartz.scheduler.name: QuartzScheduler,
-      span.kind: client,
-      version: 1.0.0
-    },
-    Metrics: {
-      quartz.jobstore.batch.size: 1.0,
-      quartz.jobstore.trigger.count: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_11,
-    Name: quartz.jobstore.acquirenexttriggers,
-    Resource: Quartz.JobStore.AcquireNextTriggers,
-    Service: Samples.Quartz,
-    Type: http,
-    ParentId: Id_7,
-    Tags: {
-      component: quartz,
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Quartz,
-      otel.library.version: <otel-library-version>,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1,
-      quartz.scheduler.id: NON_CLUSTERED,
-      quartz.scheduler.name: QuartzScheduler,
-      span.kind: client,
-      version: 1.0.0
-    },
-    Metrics: {
-      quartz.jobstore.batch.size: 1.0,
-      quartz.jobstore.trigger.count: 0.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_12,
-    SpanId: Id_13,
     Name: quartz.jobstore.schedulejob,
     Resource: schedule exceptionJob,
     Service: Samples.Quartz,
@@ -226,14 +115,14 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
       otel.library.name: Quartz,
       otel.library.version: <otel-library-version>,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_3,
+      otel.trace_id: Guid_2,
       quartz.job.group: group2,
       quartz.job.name: exceptionJob,
       quartz.scheduler.id: NON_CLUSTERED,
       quartz.scheduler.name: QuartzScheduler,
       quartz.trigger.group: group2,
       quartz.trigger.name: exceptionTrigger,
-      runtime-id: Guid_2,
+      runtime-id: Guid_3,
       span.kind: client,
       version: 1.0.0
     },
@@ -245,8 +134,8 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
     }
   },
   {
-    TraceId: Id_14,
-    SpanId: Id_15,
+    TraceId: Id_10,
+    SpanId: Id_11,
     Name: quartz.jobstore.schedulejob,
     Resource: schedule helloJob,
     Service: Samples.Quartz,
@@ -265,7 +154,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
       quartz.scheduler.name: QuartzScheduler,
       quartz.trigger.group: group1,
       quartz.trigger.name: helloTrigger,
-      runtime-id: Guid_2,
+      runtime-id: Guid_3,
       span.kind: client,
       version: 1.0.0
     },
@@ -277,8 +166,8 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_17,
+    TraceId: Id_12,
+    SpanId: Id_13,
     Name: quartz.jobstore.schedulejob,
     Resource: schedule vetoableJob,
     Service: Samples.Quartz,
@@ -297,7 +186,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
       quartz.scheduler.name: QuartzScheduler,
       quartz.trigger.group: group3,
       quartz.trigger.name: vetoableTrigger,
-      runtime-id: Guid_2,
+      runtime-id: Guid_3,
       span.kind: client,
       version: 1.0.0
     },
@@ -310,7 +199,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
   },
   {
     TraceId: Id_1,
-    SpanId: Id_18,
+    SpanId: Id_14,
     Name: quartz.jobstore.triggeredjobcomplete,
     Resource: Quartz.JobStore.TriggeredJobComplete,
     Service: Samples.Quartz,
@@ -339,7 +228,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
   },
   {
     TraceId: Id_1,
-    SpanId: Id_19,
+    SpanId: Id_15,
     Name: quartz.jobstore.triggeredjobcomplete,
     Resource: Quartz.JobStore.TriggeredJobComplete,
     Service: Samples.Quartz,
@@ -368,7 +257,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
   },
   {
     TraceId: Id_1,
-    SpanId: Id_20,
+    SpanId: Id_16,
     Name: quartz.jobstore.triggeredjobcomplete,
     Resource: Quartz.JobStore.TriggeredJobComplete,
     Service: Samples.Quartz,
@@ -402,7 +291,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
     Resource: Quartz.JobStore.TriggersFired,
     Service: Samples.Quartz,
     Type: http,
-    ParentId: Id_8,
+    ParentId: Id_17,
     Tags: {
       component: quartz,
       env: integration_tests,
@@ -428,7 +317,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
     Resource: Quartz.JobStore.TriggersFired,
     Service: Samples.Quartz,
     Type: http,
-    ParentId: Id_9,
+    ParentId: Id_18,
     Tags: {
       component: quartz,
       env: integration_tests,
@@ -454,7 +343,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext co
     Resource: Quartz.JobStore.TriggersFired,
     Service: Samples.Quartz,
     Type: http,
-    ParentId: Id_10,
+    ParentId: Id_19,
     Tags: {
       component: quartz,
       env: integration_tests,
