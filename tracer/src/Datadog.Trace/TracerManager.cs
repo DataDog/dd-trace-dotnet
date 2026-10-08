@@ -632,9 +632,9 @@ namespace Datadog.Trace
                     {
                         var sampler = sampleRate switch
                         {
-                            0 => "always_off",
-                            1 => "always_on",
-                            > 0 and < 1 => "traceidratio",
+                            0 => "parentbased_always_off",
+                            1 => "parentbased_always_on",
+                            > 0 and < 1 => "parentbased_traceidratio",
                             _ => null,
                         };
 
@@ -643,7 +643,7 @@ namespace Datadog.Trace
                             writer.WritePropertyName("OTEL_TRACES_SAMPLER");
                             writer.WriteValue(sampler);
 
-                            if (sampler == "traceidratio")
+                            if (sampler == "parentbased_traceidratio")
                             {
                                 writer.WritePropertyName("OTEL_TRACES_SAMPLER_ARG");
                                 writer.WriteValue(sampleRate);
