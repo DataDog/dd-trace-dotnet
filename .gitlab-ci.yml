@@ -54,6 +54,9 @@ variables:
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
   SLS_CI_BRANCH: main
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
+  # Build OpenTelemetry Operator-compatible .NET images through one-pipeline.
+  CI_OTEL_OPERATOR_IMAGES_ENABLED: "true"
+  CI_OTEL_OPERATOR_LANGUAGE: dotnet
 
 "llm validation":
   variables:
@@ -717,7 +720,7 @@ build:
         -e CI_PROJECT_NAME `
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
-        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet `
+        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PublishOpenTelemetryStartupHook PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
         --NugetPackageDirectory c:\mnt\packages
       $buildExitCode = $LASTEXITCODE
 
@@ -1057,7 +1060,7 @@ publish:
       do {
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
-              aws s3 cp artifacts-out/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --include "telemetry_forwarder.exe" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              aws s3 cp artifacts-out/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --include "telemetry_forwarder.exe" --include "otel-operator-startup-hook/*.dll" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
               if ($LASTEXITCODE -ne 0) {
                 throw "Error uploading artifacts to S3"
               }
@@ -1094,7 +1097,9 @@ publish:
 download-nuget-packages-to-sign:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 2h15m # based on 3 attempts x40min
+  # Overall job cap across all artifact polls, downloads, and build retries; never resets.
+  # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
+  timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs:
     - job: build
@@ -1177,7 +1182,9 @@ sign-nuget-packages:
 download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 2h15m # based on 3 attempts x40min
+  # Overall job cap across all artifact polls, downloads, and build retries; never resets.
+  # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
+  timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs:
     - job: build
@@ -1224,7 +1231,9 @@ deploy_to_reliability_env:
 download-serverless-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 2h15m # based on 3 attempts x40min
+  # Overall job cap across all artifact polls, downloads, and build retries; never resets.
+  # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
+  timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs: []
   rules:
@@ -1258,10 +1267,7 @@ benchmark-serverless:
   stage: benchmarks
   image: registry.ddbuild.io/ci/serverless-tools:1
   tags: ["arch:amd64"]
-  # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by
-  # replacing the `rules` block below with `when: on_success`
-  rules:
-    - when: never
+  when: on_success
   needs:
     - benchmark-serverless-trigger
   script:
@@ -1280,9 +1286,6 @@ benchmark-serverless:
 
 benchmark-serverless-trigger:
   stage: benchmarks
-  # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by removing this `rules` block
-  rules:
-    - when: never
   needs: []
   trigger:
     project: ${GITLAB_GROUP}/serverless-tools
@@ -1308,13 +1311,18 @@ macrobenchmarks:
   needs: []
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
+  variables:
+    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
+    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
+    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
+    # so downstream code must treat that literal as unset.
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
-    # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by uncommenting the following rules
-    # - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
-    #   when: always
-    # - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
-    #   when: always
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
     - when: manual
 
 microbenchmarks:
@@ -1323,10 +1331,14 @@ microbenchmarks:
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
+  variables:
+    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
+    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
+    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
+    # so downstream code must treat that literal as unset.
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
-    # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by removing this first rule
-    - when: never
     - if: $CI_COMMIT_TAG
       when: never
     - when: always
@@ -1335,13 +1347,18 @@ dsm_throughput:
   stage: benchmarks
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
+  variables:
+    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
+    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
+    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
+    # so downstream code must treat that literal as unset.
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
-    # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by uncommenting the following rules
-    # - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
-    #   when: always
-    # - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
-    #   when: always
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
     - when: manual
 
 

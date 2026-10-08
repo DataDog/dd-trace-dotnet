@@ -39,7 +39,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
             lock (Hasher)
             {
                 var hash = Hasher.ComputeHash(Encoding.UTF8.GetBytes(salt));
-                salt = BitConverter.ToString(hash).ToLowerInvariant();
+                salt = StringUtil.ToLowerInvariant(BitConverter.ToString(hash));
             }
 
             var runFolder = CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
