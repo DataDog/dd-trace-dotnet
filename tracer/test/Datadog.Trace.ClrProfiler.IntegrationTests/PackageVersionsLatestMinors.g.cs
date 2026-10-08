@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.1.0" },
@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "3.1.0" },
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.1.0" },
@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NET5_0
                 new object[] { "3.1.0" },
@@ -198,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NET6_0
                 new object[] { "3.1.0" },
@@ -222,7 +222,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NET7_0
                 new object[] { "3.1.0" },
@@ -246,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NET8_0
                 new object[] { "3.1.0" },
@@ -270,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NET9_0
                 new object[] { "3.1.0" },
@@ -294,7 +294,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #if NET10_0
                 new object[] { "3.1.0" },
@@ -318,7 +318,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
+                new object[] { "4.0.1" },
+                new object[] { "4.1.1" },
+                new object[] { "4.2.4" },
+                new object[] { "4.3.0" },
+                new object[] { "4.4.0" },
 #endif
 #if NET11_0
                 new object[] { "3.1.0" },
@@ -342,7 +347,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.1" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.3" },
+                new object[] { "3.22.4" },
 #endif
 #endif
             };
