@@ -281,7 +281,6 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tests/AspNet/                                    @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/CallTarget/                                @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/                @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/ClrProfiler/QuartzCommonTests.cs           @chojomok
 /tracer/test/Datadog.Trace.Tests/Configuration/                             @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/ContinuousProfiler/                        @DataDog/profiling-dotnet
 /tracer/test/Datadog.Trace.Tests/DatabaseMonitoring/                        @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
