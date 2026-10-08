@@ -57,6 +57,7 @@ internal sealed class CallTargetRegistryGenerator
     /// <param name="instantiations">The closed instantiations of the rewritten methods with a generic context (C3).</param>
     /// <param name="isApplication">Whether the module is the application's, whose module initializer initializes the instrumentation.</param>
     /// <param name="userStrings">For the application: the string literals of the instrumented assemblies (location, value) for IAST's hardcoded secrets analysis.</param>
+    /// <param name="sourceLink">For the application: the SourceLink document of its PDB (git metadata).</param>
     public static CallTargetRegistryResult Generate(
         ModuleDef module,
         IEnumerable<MethodDef> rewrittenMethods,
@@ -65,7 +66,8 @@ internal sealed class CallTargetRegistryGenerator
         CallTargetDuckTypeRegistry? duckTypeRegistry = null,
         IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null,
         bool isApplication = false,
-        IReadOnlyList<(string Location, string Value)>? userStrings = null)
+        IReadOnlyList<(string Location, string Value)>? userStrings = null,
+        string? sourceLink = null)
     {
         var scanned = rewrittenMethods.Where(m => m.Body is not null)
                                       .Select(m => (Method: m, Invocations: CallTargetInvocationScanner.Scan(m.Body)))
@@ -98,7 +100,7 @@ internal sealed class CallTargetRegistryGenerator
 
         if (usesRegistry || isApplication)
         {
-            generator.AddModuleInitializer(duckTypeRegistry, initializeInstrumentation: isApplication, isApplication ? userStrings : null);
+            generator.AddModuleInitializer(duckTypeRegistry, initializeInstrumentation: isApplication, isApplication ? userStrings : null, isApplication ? sourceLink : null);
         }
 
         generator.AddIgnoresAccessChecks(force: isApplication);
@@ -681,7 +683,7 @@ internal sealed class CallTargetRegistryGenerator
     /// run too late), then the application's assembly initializes the instrumentation (<c>Instrumentation.InitializeAot</c>).
     /// Each step is isolated: a failure is logged and the application starts anyway.
     /// </summary>
-    private void AddModuleInitializer(CallTargetDuckTypeRegistry? registry, bool initializeInstrumentation, IReadOnlyList<(string Location, string Value)>? userStrings)
+    private void AddModuleInitializer(CallTargetDuckTypeRegistry? registry, bool initializeInstrumentation, IReadOnlyList<(string Location, string Value)>? userStrings, string? sourceLink)
     {
         var steps = new List<(string Name, List<Instruction> Body)>();
         if (registry?.Module.Find(CallTargetDuckTypeRegistry.BootstrapTypeName, isReflectionName: true)?.FindMethod("Initialize") is { } registryInitialize)
@@ -710,6 +712,14 @@ internal sealed class CallTargetRegistryGenerator
 
             userStringsBody.Add(OpCodes.Call.ToInstruction(add));
             steps.Add(("UserStrings", userStringsBody));
+        }
+
+        if (sourceLink is not null && _module.Assembly is { } assembly)
+        {
+            // SourceLinkInformationExtractor.AddBuildTimeSourceLink(assemblyName, sourceLink): the git metadata of the PDB.
+            var extractor = new ClassSig(_references.DatadogType("Datadog.Trace.Pdb.SourceLinkInformationExtractor"));
+            var add = _references.DatadogStaticMethod(extractor, "AddBuildTimeSourceLink", MethodSig.CreateStatic(_module.CorLibTypes.Void, _module.CorLibTypes.String, _module.CorLibTypes.String));
+            steps.Add(("SourceLink", [OpCodes.Ldstr.ToInstruction(assembly.Name.String), OpCodes.Ldstr.ToInstruction(sourceLink), OpCodes.Call.ToInstruction(add)]));
         }
 
         if (initializeInstrumentation)

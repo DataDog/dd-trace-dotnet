@@ -89,6 +89,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             repositoryUrl.Should().BeNull();
         }
 
+        [Fact]
+        public void BuildTimeSourceLink_IsUsedWithoutAttributesNorPdb()
+        {
+            // NativeAOT: the build gives the SourceLink document of the application's PDB.
+            var assembly = CreateTestAssembly(repositoryUrl: null, informationalVersion: null);
+            SourceLinkInformationExtractor.AddBuildTimeSourceLink(
+                assembly.GetName().Name!,
+                "{\"documents\":{\"/src/*\":\"https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*\"}}");
+
+            var result = SourceLinkInformationExtractor.TryGetSourceLinkInfo(assembly, out var commitSha, out var repositoryUrl);
+
+            result.Should().BeTrue();
+            commitSha.Should().Be("dd35903c688a74b62d1c6a9e4f41371c65704db8");
+            repositoryUrl.Should().Be("https://github.com/DataDog/dd-trace-dotnet");
+        }
+
         private static Assembly CreateTestAssembly(string? repositoryUrl, string? informationalVersion)
         {
             var assemblyName = new AssemblyName($"TestAssembly_{System.Guid.NewGuid():N}");
