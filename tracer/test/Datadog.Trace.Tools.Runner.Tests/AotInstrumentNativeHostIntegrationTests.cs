@@ -13,6 +13,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Tools.Runner.Aot;
+using Datadog.Trace.Tools.Runner.Aot.CallTarget;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -76,9 +78,17 @@ public class AotInstrumentNativeHostIntegrationTests
                 "--neutralize",
                 "CallTargetNativeTest.Program::InjectCallTargetDefinitions",
                 "--verify",
+                "--report",
+                Path.Combine(workDirectory, "report.json"),
                 "--output",
                 instrumented);
             exitCode.Should().Be(0, output);
+
+            // The registrations bind every shape without duck typing; the rest falls back to IntegrationMapper (F5).
+            var report = JObject.Parse(File.ReadAllText(Path.Combine(workDirectory, "report.json")));
+            var callTarget = report["Assemblies"]![0]!["CallTarget"]!;
+            callTarget.Value<int>("Failures").Should().Be(0, callTarget.ToString());
+            callTarget.Value<int>("Bound").Should().BeGreaterThan(0, callTarget.ToString());
 
             CopyDirectory(appDirectory!, app);
             File.Copy(Path.Combine(instrumented, "CallTargetNativeTest.dll"), Path.Combine(app, "CallTargetNativeTest.dll"), overwrite: true);
@@ -111,6 +121,9 @@ public class AotInstrumentNativeHostIntegrationTests
                 var (modeExit, modeOutput) = Run("dotnet", app, "CallTargetNativeTest.dll", mode);
                 modeExit.Should().Be(0, modeOutput);
                 modeOutput.Should().Contain("ProfilerOK", mode);
+
+                // Like IntegrationMapper's dynamic methods, the adapters don't show in stack traces.
+                modeOutput.Should().NotContain(CallTargetRegistryGenerator.RegistrationTypePrefix, mode);
             }
         }
         finally

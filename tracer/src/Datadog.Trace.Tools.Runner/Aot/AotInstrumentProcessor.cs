@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.InstrumentedAssemblyVerification;
+#if NET6_0_OR_GREATER
+using Datadog.Trace.Tools.Runner.Aot.CallTarget;
+#endif
 using Datadog.Trace.Tools.Runner.Aot.Native;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -60,11 +63,27 @@ internal static class AotInstrumentProcessor
             report.ReJitProcessed = host.ProcessReJitRequests(TimeSpan.FromSeconds(1));
 
             Directory.CreateDirectory(options.OutputDirectory);
-            foreach (var module in host.Runtime.Modules.Where(m => m.Writable))
+            var modules = host.Runtime.Modules;
+            var datadogTrace = modules.First(m => !m.Writable && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.DatadogTracePath), StringComparison.Ordinal)).Module;
+            var typeResolver = new LoadedModulesTypeResolver(modules.Select(m => m.Module));
+            foreach (var module in modules.Where(m => m.Writable))
             {
                 var output = Path.Combine(options.OutputDirectory, Path.GetFileName(module.Path));
-                var rewrittenMethods = module.NewBodies.Keys.Select(rid => module.Module.ResolveMethod(rid)).Where(m => m is not null).Select(DescribeForVerification).ToList();
-                MethodBodies.Write(module, output, options.Neutralize);
+                var rewritten = MethodBodies.ApplyNewBodies(module);
+                var rewrittenMethods = rewritten.Select(DescribeForVerification).ToList();
+                CallTargetRegistryResult? registry = null;
+                if (options.GenerateCallTargetRegistry)
+                {
+                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve);
+                    AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories)");
+                    foreach (var detail in registry.Details)
+                    {
+                        AotLog.Debug(detail);
+                    }
+                }
+
+                MethodBodies.Neutralize(module, options.Neutralize);
+                MethodBodies.Save(module, output);
                 if (options.Verify && rewrittenMethods.Count > 0)
                 {
                     var outcome = new VerificationsRunner(output, module.Path, rewrittenMethods, options.ReferenceDirectories.Concat(new[] { Path.GetDirectoryName(module.Path)! }).ToList(), failOnVerificationError: true).Run();
@@ -74,7 +93,7 @@ internal static class AotInstrumentProcessor
                     }
                 }
 
-                report.Assemblies.Add(new AotInstrumentReport.AssemblyResult { Name = module.AssemblyName, Path = output, RewrittenMethods = module.NewBodies.Count });
+                report.Assemblies.Add(new AotInstrumentReport.AssemblyResult { Name = module.AssemblyName, Path = output, RewrittenMethods = module.NewBodies.Count, CallTarget = registry });
                 AotLog.Info($"{module.AssemblyName}: {module.NewBodies.Count} methods instrumented -> {output}");
             }
         }
