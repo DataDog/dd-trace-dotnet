@@ -25,7 +25,20 @@ internal sealed class AotInstrumentReport
 
     public Dictionary<string, int> NotImplemented { get; set; } = new();
 
+    public DuckTypeRegistryResult? DuckTypeRegistry { get; set; }
+
     public List<string> Errors { get; } = new();
+
+    internal sealed class DuckTypeRegistryResult
+    {
+        public string Path { get; set; } = string.Empty;
+
+        public int Mappings { get; set; }
+
+        public int Compatible { get; set; }
+
+        public List<string> Warnings { get; set; } = new();
+    }
 
     internal sealed class AssemblyResult
     {

@@ -33,4 +33,11 @@ internal static class CallTargetAotRegistry
     /// </summary>
     internal static void LogRegistrationError(Exception exception)
         => Log.Error(exception, "The NativeAOT CallTarget registration of an instrumented method failed.");
+
+    /// <summary>
+    /// Called by the module initializer of an instrumented assembly when the DuckType AOT registry fails to initialize:
+    /// the application starts anyway, and the proxies it can't provide fail like in dynamic duck typing.
+    /// </summary>
+    internal static void LogInitializationError(Exception exception)
+        => Log.Error(exception, "The NativeAOT DuckType registry of an instrumented assembly failed to initialize.");
 }

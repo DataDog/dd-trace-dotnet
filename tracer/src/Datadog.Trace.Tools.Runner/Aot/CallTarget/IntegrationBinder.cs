@@ -31,7 +31,7 @@ internal static class IntegrationBinder
     /// <summary>
     /// <c>IntegrationMapper.CreateBeginMethodDelegate</c>. Adapter parameters: <c>(TTarget instance, ref TArg1 arg1, ...)</c>.
     /// </summary>
-    public static AdapterBinding BindBegin(TypeDef integration, TypeSig target, IReadOnlyList<TypeSig> arguments)
+    public static AdapterBinding BindBegin(TypeDef integration, TypeSig target, IReadOnlyList<TypeSig> arguments, IDuckProxyProvider? proxies = null)
     {
         if (FindMethod(integration, BeginMethodName) is not { } lookup)
         {
@@ -74,15 +74,9 @@ internal static class IntegrationBinder
 
         var binding = AdapterBinding.Bound(method);
         var mustLoadInstance = parameters.Count != arguments.Count;
-        if (FirstConstraint(genericParameters[0], excludeDuckType: false) is { } instanceConstraint)
+        if (BindInstance(binding, genericParameters[0], target, mustLoadInstance, null, BeginMethodName, proxies) is { } unboundInstance)
         {
-            return AdapterBinding.Deferred($"{BeginMethodName}: duck typing constraint on the instance ({instanceConstraint.FullName})");
-        }
-
-        binding.GenericArguments.Add(target);
-        if (mustLoadInstance)
-        {
-            binding.Loads.Add(AdapterLoad.Argument(0));
+            return unboundInstance;
         }
 
         for (var i = mustLoadInstance ? 1 : 0; i < parameters.Count; i++)
@@ -95,7 +89,16 @@ internal static class IntegrationBinder
             {
                 if (FirstConstraint(genericParameters[(int)variable.Number], excludeDuckType: true) is { } constraint)
                 {
-                    return AdapterBinding.Deferred($"{BeginMethodName}: duck typing constraint on argument {argumentIndex + 1} ({constraint.FullName})");
+                    var proxy = RequestProxy(proxies, constraint, source);
+                    if (!IsUsable(proxy))
+                    {
+                        return Unbound(proxy, $"{BeginMethodName}: duck typing constraint on argument {argumentIndex + 1} ({constraint.FullName})");
+                    }
+
+                    binding.ProxyArguments.Add(binding.GenericArguments.Count);
+                    binding.GenericArguments.Add(ProxyTypeSig(proxy, constraint));
+                    binding.Loads.Add(AdapterLoad.Proxied(adapterParameter, source, proxy, source));
+                    continue;
                 }
 
                 binding.GenericArguments.Add(source);
@@ -129,7 +132,11 @@ internal static class IntegrationBinder
     /// <summary>
     /// <c>IntegrationMapper.CreateSlowBeginMethodDelegate</c>. Adapter parameters: <c>(TTarget instance, object[] arguments)</c>.
     /// </summary>
-    public static AdapterBinding BindSlowBegin(TypeDef integration, TypeSig target)
+    /// <param name="integration">The integration type.</param>
+    /// <param name="target">The target type.</param>
+    /// <param name="proxies">The DuckType AOT proxies.</param>
+    /// <param name="argumentTypes">The parameter types of the instrumented method, whose values duck typing converts at runtime.</param>
+    public static AdapterBinding BindSlowBegin(TypeDef integration, TypeSig target, IDuckProxyProvider? proxies = null, IReadOnlyList<TypeSig>? argumentTypes = null)
     {
         if (FindMethod(integration, BeginMethodName) is not { } lookup)
         {
@@ -162,15 +169,9 @@ internal static class IntegrationBinder
 
         var binding = AdapterBinding.Bound(method);
         var mustLoadInstance = IsMethodVariable(parameters[0], 0);
-        if (FirstConstraint(genericParameters[0], excludeDuckType: false) is { } instanceConstraint)
+        if (BindInstance(binding, genericParameters[0], target, mustLoadInstance, null, BeginMethodName, proxies) is { } unboundInstance)
         {
-            return AdapterBinding.Deferred($"{BeginMethodName}: duck typing constraint on the instance ({instanceConstraint.FullName})");
-        }
-
-        binding.GenericArguments.Add(target);
-        if (mustLoadInstance)
-        {
-            binding.Loads.Add(AdapterLoad.Argument(0));
+            return unboundInstance;
         }
 
         for (var i = mustLoadInstance ? 1 : 0; i < parameters.Count; i++)
@@ -182,6 +183,11 @@ internal static class IntegrationBinder
                 if (FirstConstraint(genericParameters[(int)variable.Number], excludeDuckType: true) is { } constraint)
                 {
                     // Duck typing at runtime: IntegrationMapper.ConvertType, which the DuckType AOT registry serves.
+                    if (proxies is not null && argumentTypes is not null && element < argumentTypes.Count)
+                    {
+                        proxies.RequestRuntimeProxy(constraint, argumentTypes[element]);
+                    }
+
                     binding.GenericArguments.Add(constraint);
                     binding.Loads.Add(AdapterLoad.ArrayElementConvert(element, constraint));
                 }
@@ -212,7 +218,7 @@ internal static class IntegrationBinder
     /// <c>IntegrationMapper.CreateEndMethodDelegate(integration, target)</c>. Adapter parameters:
     /// <c>(TTarget instance, Exception exception, in CallTargetState state)</c>.
     /// </summary>
-    public static AdapterBinding BindEndVoid(TypeDef integration, TypeSig target)
+    public static AdapterBinding BindEndVoid(TypeDef integration, TypeSig target, IDuckProxyProvider? proxies = null)
     {
         if (FindEndMethod(integration, "CallTargetReturn") is not { } method)
         {
@@ -237,16 +243,10 @@ internal static class IntegrationBinder
             return invalid;
         }
 
-        if (FirstConstraint(genericParameters[0], excludeDuckType: false) is { } instanceConstraint)
-        {
-            return AdapterBinding.Deferred($"{EndMethodName}: duck typing constraint on the instance ({instanceConstraint.FullName})");
-        }
-
         var binding = AdapterBinding.Bound(method);
-        binding.GenericArguments.Add(target);
-        if (parameters.Count == 3)
+        if (BindInstance(binding, genericParameters[0], target, parameters.Count == 3, parameters[0], EndMethodName, proxies) is { } unboundInstance)
         {
-            binding.Loads.Add(AdapterLoad.Argument(0, BoxFor(parameters[0], target)));
+            return unboundInstance;
         }
 
         binding.Loads.Add(AdapterLoad.Argument(1));
@@ -258,7 +258,7 @@ internal static class IntegrationBinder
     /// <c>IntegrationMapper.CreateEndMethodDelegate(integration, target, returnType)</c>. Adapter parameters:
     /// <c>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)</c>.
     /// </summary>
-    public static AdapterBinding BindEndReturn(TypeDef integration, TypeSig target, TypeSig returnType)
+    public static AdapterBinding BindEndReturn(TypeDef integration, TypeSig target, TypeSig returnType, IDuckProxyProvider? proxies = null)
     {
         if (FindEndMethod(integration, "CallTargetReturn`1") is not { } method)
         {
@@ -271,7 +271,7 @@ internal static class IntegrationBinder
             return AdapterBinding.Failure($"The return type of the method: {EndMethodName} in type: {typeName} is not CallTargetReturn");
         }
 
-        return BindReturnValueMethod(integration, method, target, returnType, EndMethodName, isAsync: false);
+        return BindReturnValueMethod(integration, method, target, returnType, EndMethodName, isAsync: false, proxies);
     }
 
     /// <summary>
@@ -279,7 +279,7 @@ internal static class IntegrationBinder
     /// <c>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)</c>; it returns
     /// <c>TResult</c> or <c>Task&lt;TResult&gt;</c>.
     /// </summary>
-    public static AdapterBinding BindAsyncEnd(TypeDef integration, TypeSig target, TypeSig returnType)
+    public static AdapterBinding BindAsyncEnd(TypeDef integration, TypeSig target, TypeSig returnType, IDuckProxyProvider? proxies = null)
     {
         if (FindMethod(integration, EndAsyncMethodName) is not { } lookup)
         {
@@ -291,10 +291,10 @@ internal static class IntegrationBinder
             return ambiguous;
         }
 
-        return BindReturnValueMethod(integration, lookup.Method!, target, returnType, EndAsyncMethodName, isAsync: true);
+        return BindReturnValueMethod(integration, lookup.Method!, target, returnType, EndAsyncMethodName, isAsync: true, proxies);
     }
 
-    private static AdapterBinding BindReturnValueMethod(TypeDef integration, MethodDef method, TypeSig target, TypeSig returnType, string name, bool isAsync)
+    private static AdapterBinding BindReturnValueMethod(TypeDef integration, MethodDef method, TypeSig target, TypeSig returnType, string name, bool isAsync, IDuckProxyProvider? proxies)
     {
         var typeName = integration.ReflectionFullName;
         var isTaskReturn = false;
@@ -329,18 +329,18 @@ internal static class IntegrationBinder
         }
 
         var preserveContext = isAsync && method.CustomAttributes.Any(a => a.AttributeType?.FullName == PreserveContextAttributeName);
-        if (FirstConstraint(genericParameters[0], excludeDuckType: false) is { } instanceConstraint)
-        {
-            return AdapterBinding.Deferred($"{name}: duck typing constraint on the instance ({instanceConstraint.FullName})");
-        }
-
         var binding = AdapterBinding.Bound(method, preserveContext, isTaskReturn);
         if (returnTypeCheck is not null)
         {
             binding.Checks.Add(returnTypeCheck);
         }
 
-        binding.GenericArguments.Add(target);
+        if (BindInstance(binding, genericParameters[0], target, parameters.Count == 4, parameters[0], name, proxies) is { } unboundInstance)
+        {
+            return unboundInstance;
+        }
+
+        var returnLoad = AdapterLoad.Argument(1);
         var returnParameterIndex = parameters.Count == 4 ? 1 : 0;
         var returnParameter = parameters[returnParameterIndex];
         if (returnParameter is GenericMVar or GenericVar)
@@ -352,10 +352,21 @@ internal static class IntegrationBinder
 
             if (FirstConstraint(genericParameters[1], excludeDuckType: false) is { } returnConstraint)
             {
-                return AdapterBinding.Deferred($"{name}: duck typing constraint on the return value ({returnConstraint.FullName})");
-            }
+                var proxy = RequestProxy(proxies, returnConstraint, returnType);
+                if (!IsUsable(proxy))
+                {
+                    return Unbound(proxy, $"{name}: duck typing constraint on the return value ({returnConstraint.FullName})");
+                }
 
-            binding.GenericArguments.Add(returnType);
+                binding.ProxyArguments.Add(binding.GenericArguments.Count);
+                binding.GenericArguments.Add(ProxyTypeSig(proxy, returnConstraint));
+                binding.SetReturnProxy(proxy, returnType);
+                returnLoad = AdapterLoad.Proxied(1, null, proxy, returnType);
+            }
+            else
+            {
+                binding.GenericArguments.Add(returnType);
+            }
         }
         else if (returnParameter.ContainsGenericParameter)
         {
@@ -366,12 +377,7 @@ internal static class IntegrationBinder
             AddCheck(binding, sameType: true, returnParameter, returnType, $"The ReturnValue type parameter of the method: {name} in type: {typeName} is invalid. [{returnParameter.ReflectionFullName} != {returnType.ReflectionFullName}]");
         }
 
-        if (parameters.Count == 4)
-        {
-            binding.Loads.Add(AdapterLoad.Argument(0, BoxFor(parameters[0], target)));
-        }
-
-        binding.Loads.Add(AdapterLoad.Argument(1));
+        binding.Loads.Add(returnLoad);
         binding.Loads.Add(AdapterLoad.Argument(2));
         binding.Loads.Add(LoadState(parameters, 3));
         return Complete(binding, method);
@@ -428,6 +434,12 @@ internal static class IntegrationBinder
         for (var i = 0; i < genericParameters.Count; i++)
         {
             var genericParameter = genericParameters[i];
+            if (binding.ProxyArguments.Contains(i))
+            {
+                // A proxy implements its duck type and IDuckType.
+                continue;
+            }
+
             if ((genericParameter.Flags & GenericParamAttributes.SpecialConstraintMask) != 0)
             {
                 return AdapterBinding.Deferred($"{method.Name}: unsupported special constraint on {genericParameter.Name}");
@@ -448,6 +460,64 @@ internal static class IntegrationBinder
 
         return binding;
     }
+
+    /// <summary>
+    /// The instance: the target type, or the proxy of its duck typing constraint (on <c>IDuckType</c> too), which the
+    /// integration method is instantiated with even when it has no instance parameter.
+    /// </summary>
+    private static AdapterBinding? BindInstance(AdapterBinding binding, GenericParam instanceParameter, TypeSig target, bool load, TypeSig? parameterType, string name, IDuckProxyProvider? proxies)
+    {
+        if (FirstConstraint(instanceParameter, excludeDuckType: false) is { } constraint)
+        {
+            var proxy = RequestProxy(proxies, constraint, target);
+            if (!IsUsable(proxy))
+            {
+                return Unbound(proxy, $"{name}: duck typing constraint on the instance ({constraint.FullName})");
+            }
+
+            binding.ProxyArguments.Add(binding.GenericArguments.Count);
+            binding.GenericArguments.Add(ProxyTypeSig(proxy, constraint));
+            if (load)
+            {
+                binding.Loads.Add(AdapterLoad.Proxied(0, null, proxy, target));
+            }
+
+            return null;
+        }
+
+        binding.GenericArguments.Add(target);
+        if (load)
+        {
+            binding.Loads.Add(AdapterLoad.Argument(0, parameterType is null ? null : BoxFor(parameterType, target)));
+        }
+
+        return null;
+    }
+
+    private static bool IsUsable(DuckProxy proxy) => proxy.Status is DuckProxyStatus.Available or DuckProxyStatus.Pending;
+
+    /// <summary>
+    /// The proxy type, or the duck type itself while the proxies are collected (nothing is emitted then).
+    /// </summary>
+    private static TypeSig ProxyTypeSig(DuckProxy proxy, TypeSig proxyDefinition) => proxy.Type?.ToTypeSig() ?? proxyDefinition;
+
+    private static DuckProxy RequestProxy(IDuckProxyProvider? proxies, TypeSig proxyDefinition, TypeSig target)
+    {
+        if (proxies is null)
+        {
+            return DuckProxy.Unavailable("no DuckType AOT registry");
+        }
+
+        // The proxy depends on the instantiation of a generic target (instantiations aren't discovered yet, C3).
+        return target.ContainsGenericParameter ? DuckProxy.Unavailable("open generic type") : proxies.Resolve(proxyDefinition, target);
+    }
+
+    /// <summary>
+    /// <c>DuckType.GetOrCreateProxyType</c> failing makes <c>IntegrationMapper</c> throw; a proxy that can't be named yet
+    /// defers the shape.
+    /// </summary>
+    private static AdapterBinding Unbound(DuckProxy proxy, string context)
+        => proxy.Status == DuckProxyStatus.Failure ? AdapterBinding.Failure(proxy.Message ?? context) : AdapterBinding.Deferred($"{context}: {proxy.Message}");
 
     private static void AddCheck(AdapterBinding binding, bool sameType, TypeSig left, TypeSig right, string message)
     {

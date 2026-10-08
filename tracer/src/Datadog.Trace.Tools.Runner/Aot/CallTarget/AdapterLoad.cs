@@ -15,12 +15,14 @@ namespace Datadog.Trace.Tools.Runner.Aot.CallTarget;
 /// </summary>
 internal sealed class AdapterLoad
 {
-    private AdapterLoad(AdapterLoadKind kind, int index, TypeSig? type, TypeSig? boxType)
+    private AdapterLoad(AdapterLoadKind kind, int index, TypeSig? type, TypeSig? boxType, DuckProxy? proxy = null, TypeSig? proxySource = null)
     {
         Kind = kind;
         Index = index;
         Type = type;
         BoxType = boxType;
+        Proxy = proxy;
+        ProxySource = proxySource;
     }
 
     public AdapterLoadKind Kind { get; }
@@ -34,9 +36,18 @@ internal sealed class AdapterLoad
     /// <summary>Gets the value type (or generic parameter) boxed for a reference type parameter.</summary>
     public TypeSig? BoxType { get; }
 
+    /// <summary>Gets the duck typing proxy the loaded value is wrapped in (<c>IntegrationMapper.WriteCreateNewProxyInstance</c>).</summary>
+    public DuckProxy? Proxy { get; }
+
+    /// <summary>Gets the type of the value the proxy wraps (boxed for a value type, reported as <c>IDuckType.Type</c>).</summary>
+    public TypeSig? ProxySource { get; }
+
     public static AdapterLoad Argument(int index, TypeSig? boxType = null) => new(AdapterLoadKind.Argument, index, null, boxType);
 
     public static AdapterLoad ArgumentValue(int index, TypeSig type, TypeSig? boxType = null) => new(AdapterLoadKind.ArgumentValue, index, type, boxType);
+
+    public static AdapterLoad Proxied(int index, TypeSig? valueType, DuckProxy proxy, TypeSig source)
+        => new(valueType is null ? AdapterLoadKind.Argument : AdapterLoadKind.ArgumentValue, index, valueType, null, proxy, source);
 
     public static AdapterLoad ArrayElement(int index) => new(AdapterLoadKind.ArrayElement, index, null, null);
 
