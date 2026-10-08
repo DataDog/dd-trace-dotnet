@@ -27,6 +27,18 @@ internal sealed unsafe class NativeTracerHost : IDisposable
 {
     // The standard tracer CLSID: offline instrumentation uses the same profiler object as a runtime attach.
     private static readonly Guid TracerClsid = new("846F5F1C-F9AE-4B07-969E-05C26BC060D8");
+
+    // Settings of the native tracer for offline instrumentation (H-14). Dynamic Instrumentation and Exception Replay
+    // instrument at runtime (probes, ReJIT), which a NativeAOT application doesn't have: their hot standby would add
+    // fields to the application's async state machines.
+    private static readonly KeyValuePair<string, string>[] NativeSettings =
+    [
+        new("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "false"),
+        new("DD_DYNAMIC_INSTRUMENTATION_MANAGED_ACTIVATION_ENABLED", "false"),
+        new("DD_EXCEPTION_REPLAY_ENABLED", "false"),
+        new("DD_EXCEPTION_REPLAY_MANAGED_ACTIVATION_ENABLED", "false"),
+    ];
+
     private static int _created;
 
     private readonly IntPtr _library;
@@ -50,6 +62,11 @@ internal sealed unsafe class NativeTracerHost : IDisposable
             throw new InvalidOperationException("The native tracer can only be hosted once per process.");
         }
 
+        foreach (var setting in NativeSettings)
+        {
+            SetNativeEnvironmentVariable(setting.Key, setting.Value);
+        }
+
         var library = NativeLibrary.Load(nativeTracerPath);
         var dllGetClassObject = (delegate* unmanaged<Guid*, Guid*, IntPtr*, int>)NativeLibrary.GetExport(library, "DllGetClassObject");
         var clsid = TracerClsid;
@@ -67,6 +84,24 @@ internal sealed unsafe class NativeTracerHost : IDisposable
         Check(profiler.AppDomainCreationFinished(new AppDomainId(1), HResult.S_OK), "AppDomainCreationFinished");
         return new NativeTracerHost(library, profiler, runtime);
     }
+
+    /// <summary>
+    /// Sets an environment variable the native tracer reads (getenv): on Unix, .NET keeps its own copy of the environment.
+    /// </summary>
+    private static void SetNativeEnvironmentVariable(string name, string value)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Environment.SetEnvironmentVariable(name, value);
+        }
+        else if (SetEnv(name, value, 1) != 0)
+        {
+            AotLog.Warn($"setenv {name} failed: {Marshal.GetLastPInvokeError()}");
+        }
+    }
+
+    [DllImport("libc", EntryPoint = "setenv", SetLastError = true)]
+    private static extern int SetEnv([MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string value, int overwrite);
 
     /// <summary>
     /// Enables the CallTarget definitions embedded in the native tracer for the given categories and target framework,
