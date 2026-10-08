@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
@@ -36,6 +37,50 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 public class CallTargetRegistryGeneratorTests
 {
     private const string RegistrationPrefix = CallTargetRegistryGenerator.RegistrationTypePrefix;
+
+    public CallTargetRegistryGeneratorTests()
+    {
+        // What Instrumentation.InitializeAot does: the probe integrations are of the default category.
+        CallTargetAotCategories.Enable(InstrumentationCategory.Tracing);
+    }
+
+    [Theory]
+    [InlineData("Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration", 1u)] // Tracing
+    [InlineData("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.MvcOptionsIntegration", 2u)] // AppSec
+    [InlineData("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.DefaultModelBindingContext_SetResult_Integration", 6u)] // AppSec | Iast
+    [InlineData("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration", 1u)] // Tracing
+    [InlineData("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration", 4u)] // Iast
+    public void IntegrationsHaveTheCategoriesOfTheirDefinitions(string integration, uint categories)
+    {
+        var datadogTrace = ModuleDefMD.Load(typeof(Tracer).Assembly.Location);
+        var type = datadogTrace.Find(integration, isReflectionName: false);
+        type.Should().NotBeNull();
+        IntegrationCategories.Get(datadogTrace, type!).Should().Be(categories);
+    }
+
+    [Fact]
+    public void IntegrationFollowsItsCategory()
+    {
+        var probe = new ProbeModule(nameof(IntegrationFollowsItsCategory));
+        var target = probe.AddType("Target");
+        var run = probe.AddEchoMethod(target, "Run", typeof(RefArgumentIntegration), probe.Module.CorLibTypes.String);
+
+        var (assembly, _) = probe.Generate(run);
+        var targetType = assembly.GetType("Probe.Target")!;
+        var instance = Activator.CreateInstance(targetType);
+        try
+        {
+            CallTargetAotCategories.Disable(InstrumentationCategory.Tracing);
+            targetType.GetMethod("Run")!.Invoke(instance, new object[] { "hello" }).Should().Be("hello", "the registration registers the integration before its first call");
+
+            CallTargetAotCategories.Enable(InstrumentationCategory.Tracing);
+            targetType.GetMethod("Run")!.Invoke(instance, new object[] { "hello" }).Should().Be("begin:hello|end");
+        }
+        finally
+        {
+            CallTargetAotCategories.Enable(InstrumentationCategory.Tracing);
+        }
+    }
 
     [Fact]
     public void ClosedTargetUsesTheGeneratedAdapters()
@@ -134,7 +179,7 @@ public class CallTargetRegistryGeneratorTests
 
         var (assembly, result) = probe.Generate(run);
         result.Deferred.Should().Be(2);
-        result.Registrations.Should().Be(0);
+        result.Registrations.Should().Be(1, "the registration still registers the integration with its categories");
 
         var targetType = assembly.GetType("Probe.Target")!;
         targetType.GetMethod("Run")!.Invoke(Activator.CreateInstance(targetType), new object[] { "hello" }).Should().Be("hello");
@@ -149,7 +194,7 @@ public class CallTargetRegistryGeneratorTests
     private static void AssertAdapter(Type handler)
         => InvokeDelegateOf(handler).Method.DeclaringType!.Name.Should().StartWith(RegistrationPrefix, $"{handler} must use the generated adapter");
 
-    // Public: nothing is generated, so the module gets no IgnoresAccessChecksTo (real integrations are public).
+    // Public, like the real integrations.
     public sealed class DuckIntegration
     {
         public interface ITarget
