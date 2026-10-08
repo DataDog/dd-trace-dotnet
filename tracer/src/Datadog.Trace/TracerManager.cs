@@ -25,6 +25,7 @@ using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
@@ -588,7 +589,7 @@ namespace Datadog.Trace
                                   || instanceSettings.OtlpMetricsExportEnabled
                                   || instanceSettings.OtlpLogsExportEnabled
                                   || instanceSettings.OtelSemanticsEnabled
-                                  || exporterSettings.IsOtlpTraceExport);
+                                  || (mutableSettings.TraceEnabled && exporterSettings.IsOtlpTraceExport));
 
                     writer.WritePropertyName("DD_TRACE_OTEL_ENABLED");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
@@ -619,7 +620,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("OTEL_RESOURCE_ATTRIBUTES");
                     // Restore promoted attributes as the OTLP serializers do to expose the effective resource configuration.
-                    var resourceAttributes = mutableSettings.GlobalTags.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    var resourceAttributes = mutableSettings.GlobalTags
+                                                            .Where(static kvp => !OtlpMapper.IsHandledResourceAttribute(kvp.Key))
+                                                            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                     if (!StringUtil.IsNullOrEmpty(mutableSettings.ServiceVersion))
                     {
                         resourceAttributes["service.version"] = mutableSettings.ServiceVersion;
@@ -635,12 +638,16 @@ namespace Datadog.Trace
                     if (instance.SpanContextPropagator.InjectorNames.SequenceEqual(instance.SpanContextPropagator.ExtractorNames))
                     {
                         writer.WritePropertyName("OTEL_PROPAGATORS");
-                        writer.WriteValue(string.Join(",", instance.SpanContextPropagator.InjectorNames));
+                        writer.WriteValue(instance.SpanContextPropagator.InjectorNames.Any() ? string.Join(",", instance.SpanContextPropagator.InjectorNames) : "none");
                     }
 
                     // Custom samplers may ignore the configured global rate; an unset or invalid rate
                     // has no fixed-rate OTel sampler equivalent.
-                    if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler && mutableSettings.EffectiveGlobalSamplingRate is { } sampleRate)
+                    // Registered local or remote custom rules take precedence over the global rate, so suppress
+                    // OTEL_TRACES_SAMPLER and OTEL_TRACES_SAMPLER_ARG when present: reporting only the global rate would misrepresent effective sampling.
+                    if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler managedSampler
+                     && !managedSampler.GetRules().Any(static rule => rule is CustomSamplingRule)
+                     && mutableSettings.EffectiveGlobalSamplingRate is { } sampleRate)
                     {
                         var sampler = sampleRate switch
                         {
