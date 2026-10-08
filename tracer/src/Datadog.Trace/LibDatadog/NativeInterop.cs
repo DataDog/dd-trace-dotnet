@@ -14,7 +14,7 @@ namespace Datadog.Trace.LibDatadog;
 
 internal static class NativeInterop
 {
-    private const string DllName = "LibDatadog";
+    internal const string DllName = "LibDatadog";
 
     internal static class Common
     {
