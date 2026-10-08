@@ -8,6 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -112,6 +114,25 @@ public class ExposureApiTests
                 await Task.WhenAny(dispose, Task.Delay(TimeSpan.FromSeconds(3)));
             }
         }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DisposeDoesNotPropagateSendLoopFailure(bool canceled)
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local);
+        using var api = new ExposureApi(CreateSettings(), transport);
+        var sendLoop = canceled
+                           ? Task.FromCanceled(new CancellationToken(canceled: true))
+                           : Task.FromException(new InvalidOperationException("send loop failed"));
+        typeof(ExposureApi).GetField("_sendLoopTask", BindingFlags.Instance | BindingFlags.NonPublic)!
+                           .SetValue(api, sendLoop);
+
+        Action dispose = api.Dispose;
+
+        dispose.Should().NotThrow();
     }
 
     [Fact]
