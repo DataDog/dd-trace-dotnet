@@ -133,7 +133,7 @@ internal sealed class ModuleState
             case Table.TypeRef:
                 {
                     var row = TypeRefs[index];
-                    var scope = (IResolutionScope)Resolve(row.ResolutionScope, context);
+                    var scope = row.ResolutionScope == 0 ? null : (IResolutionScope)Resolve(row.ResolutionScope, context);
                     return new TypeRefUser(Module, row.Namespace, row.Name, scope);
                 }
 
