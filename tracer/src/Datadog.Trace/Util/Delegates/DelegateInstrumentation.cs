@@ -9,9 +9,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Delegates;
@@ -20,6 +24,11 @@ namespace Datadog.Trace.Util.Delegates;
 
 internal static class DelegateInstrumentation
 {
+    // NativeAOT on .NET 8 passes a wrong `this` to a shared generic method of a struct called (constrained) from the code of
+    // a generic instantiation built at runtime, which the wrappers are: their callbacks' generic methods go through the boxed
+    // interface there (fixed in .NET 9).
+    private static readonly bool CallCallbacksThroughInterface = !DuckTypeAotEngine.IsDynamicCodeSupported && FrameworkDescription.Instance.RuntimeVersion.Major < 9;
+
     public static TDelegate Wrap<TDelegate, TCallbacks>(TDelegate? target, TCallbacks callbacks)
         where TDelegate : Delegate
         where TCallbacks : struct, ICallbacks
@@ -194,6 +203,14 @@ internal static class DelegateInstrumentation
         {
             _wrapperType = wrapperType;
             _activator = DefaultActivator;
+#if NETCOREAPP3_0_OR_GREATER
+            // Without dynamic code (NativeAOT), the default activator is the only one.
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                return;
+            }
+#endif
+
             Task.Run(CreateCustomActivator);
         }
 
@@ -516,7 +533,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1);
+                    state = CallCallbacksThroughInterface ? ((IBegin1Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1) : Callbacks.OnDelegateBegin(sender, ref arg1);
                 }
                 catch (Exception innerException)
                 {
@@ -575,7 +592,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2);
+                    state = CallCallbacksThroughInterface ? ((IBegin2Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2);
                 }
                 catch (Exception innerException)
                 {
@@ -635,7 +652,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3);
+                    state = CallCallbacksThroughInterface ? ((IBegin3Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3);
                 }
                 catch (Exception innerException)
                 {
@@ -696,7 +713,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4);
+                    state = CallCallbacksThroughInterface ? ((IBegin4Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4);
                 }
                 catch (Exception innerException)
                 {
@@ -758,7 +775,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
+                    state = CallCallbacksThroughInterface ? ((IBegin5Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
                 }
                 catch (Exception innerException)
                 {
@@ -843,7 +860,7 @@ internal static class DelegateInstrumentation
                         returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
                     }
 
-                    returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
+                    returnValue = CallCallbacksThroughInterface ? ((IReturnCallback)Callbacks).OnDelegateEnd(sender, returnValue, exception, state) : Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
@@ -887,7 +904,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1);
+                    state = CallCallbacksThroughInterface ? ((IBegin1Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1) : Callbacks.OnDelegateBegin(sender, ref arg1);
                 }
                 catch (Exception innerException)
                 {
@@ -913,7 +930,7 @@ internal static class DelegateInstrumentation
                         returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
                     }
 
-                    returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
+                    returnValue = CallCallbacksThroughInterface ? ((IReturnCallback)Callbacks).OnDelegateEnd(sender, returnValue, exception, state) : Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
@@ -958,7 +975,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2);
+                    state = CallCallbacksThroughInterface ? ((IBegin2Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2);
                 }
                 catch (Exception innerException)
                 {
@@ -984,7 +1001,7 @@ internal static class DelegateInstrumentation
                         returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
                     }
 
-                    returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
+                    returnValue = CallCallbacksThroughInterface ? ((IReturnCallback)Callbacks).OnDelegateEnd(sender, returnValue, exception, state) : Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
@@ -1030,7 +1047,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3);
+                    state = CallCallbacksThroughInterface ? ((IBegin3Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3);
                 }
                 catch (Exception innerException)
                 {
@@ -1056,7 +1073,7 @@ internal static class DelegateInstrumentation
                         returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
                     }
 
-                    returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
+                    returnValue = CallCallbacksThroughInterface ? ((IReturnCallback)Callbacks).OnDelegateEnd(sender, returnValue, exception, state) : Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
@@ -1103,7 +1120,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4);
+                    state = CallCallbacksThroughInterface ? ((IBegin4Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4);
                 }
                 catch (Exception innerException)
                 {
@@ -1129,7 +1146,7 @@ internal static class DelegateInstrumentation
                         returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
                     }
 
-                    returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
+                    returnValue = CallCallbacksThroughInterface ? ((IReturnCallback)Callbacks).OnDelegateEnd(sender, returnValue, exception, state) : Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
@@ -1177,7 +1194,7 @@ internal static class DelegateInstrumentation
             {
                 try
                 {
-                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
+                    state = CallCallbacksThroughInterface ? ((IBegin5Callbacks)Callbacks).OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5) : Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
                 }
                 catch (Exception innerException)
                 {
@@ -1203,7 +1220,7 @@ internal static class DelegateInstrumentation
                         returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
                     }
 
-                    returnValue = Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
+                    returnValue = CallCallbacksThroughInterface ? ((IReturnCallback)Callbacks).OnDelegateEnd(sender, returnValue, exception, state) : Callbacks.OnDelegateEnd(sender, returnValue, exception, state);
                 }
                 catch (Exception innerException)
                 {
