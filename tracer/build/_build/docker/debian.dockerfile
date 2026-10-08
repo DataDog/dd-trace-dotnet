@@ -100,6 +100,7 @@ FROM base AS tester
 
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
+# Include the .NET 10 SDK for pre-.NET 11 CI Visibility coverage tests until dotnet/runtime#134541 ships.
 
 RUN if [ "$(uname -m)" = "x86_64" ]; \
     then export NETCORERUNTIME2_1=aspnetcore; \
@@ -115,7 +116,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 10.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 ARG AZURE_FUNCTIONS_CORE_TOOLS_VERSION=4.11.0

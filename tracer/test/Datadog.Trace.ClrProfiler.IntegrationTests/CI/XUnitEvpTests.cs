@@ -520,7 +520,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                                       agent,
                                       arguments: "--collect:\"XPlat Code Coverage\"",
                                       packageVersion: packageVersion,
-                                      expectedExitCode: 1);
+                                      expectedExitCode: 1,
+                                      useCoverageCompatibleVSTest: true);
 
         // Check the tests, suites and modules count
         Assert.Equal(ExpectedTestCount, tests.Count);

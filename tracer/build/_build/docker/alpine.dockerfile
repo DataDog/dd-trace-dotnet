@@ -91,6 +91,7 @@ WORKDIR /project
 FROM base AS tester
 
 # Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
+# Include the .NET 10 SDK for pre-.NET 11 CI Visibility coverage tests until dotnet/runtime#134541 ships.
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
     && chmod +x ./dotnet-install.sh \
     && { if [ "$(uname -m)" != "aarch64" ]; then \
@@ -103,7 +104,7 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 10.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 
