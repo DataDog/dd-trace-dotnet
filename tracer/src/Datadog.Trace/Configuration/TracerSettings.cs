@@ -492,9 +492,11 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
                                       .AsBool(defaultValue: false);
 
-            ObfuscationQueryStringRegex = config
-                                         .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+            var obfuscationRegexResult = config
+                                        .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
+                                        .AsStringResult();
+            ObfuscationQueryStringRegex = obfuscationRegexResult.WithDefault(new DefaultResult<string>(TracerSettingsConstants.DefaultObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex));
+            ObfuscationQueryStringRegexWasConfigured = obfuscationRegexResult.ConfigurationResult.IsPresent;
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -1218,6 +1220,11 @@ namespace Datadog.Trace.Configuration
         /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the query string obfuscation regex was explicitly configured, including an empty value.
+        /// </summary>
+        internal bool ObfuscationQueryStringRegexWasConfigured { get; }
 
         /// <summary>
         /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
