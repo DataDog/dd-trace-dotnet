@@ -65,6 +65,23 @@ namespace Datadog.Trace.Activity.Helpers
         */
         public static AllocationFreeForEachDelegate BuildAllocationFreeForEachDelegate(Type enumerableType)
         {
+#if NETCOREAPP3_0_OR_GREATER
+            if (!System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): the same enumeration, through IEnumerable<TItem>.
+                return static (TEnumerable instance, ref TState state, ForEachDelegate itemCallback) =>
+                {
+                    foreach (var item in instance)
+                    {
+                        if (!itemCallback(ref state, item))
+                        {
+                            break;
+                        }
+                    }
+                };
+            }
+
+#endif
             var itemCallbackType = typeof(ForEachDelegate);
 
             var getEnumeratorMethod = ResolveGetEnumeratorMethodForType(enumerableType);
