@@ -1100,23 +1100,23 @@ internal sealed unsafe class ModuleMetadata : IMetaDataImport2, IMetaDataAssembl
     {
         var name = NativeBuffers.ReadString(szName);
         var signature = NativeBuffers.ReadBytes(pvSigBlob, cbSigBlob);
-        lock (_state.Sync)
-        {
-            foreach (var existing in AllRows(Table.MemberRef, _state.MemberRefs.Count))
-            {
-                var info = MemberRefInfo(existing);
-                if (info.Parent == (uint)tkImport.Value && info.Name == name && info.Signature.AsSpan().SequenceEqual(signature))
-                {
-                    NativeBuffers.Set(pmr, new MdMemberRef(existing));
-                    return HResult.S_OK;
-                }
-            }
+        NativeBuffers.Set(pmr, new MdMemberRef(ImportMemberRef((uint)tkImport.Value, name ?? string.Empty, signature)));
+        return HResult.S_OK;
+    }
 
-            var token = (int)_state.NextToken(Table.MemberRef, _state.MemberRefs);
-            _state.MemberRefs.Add(new ModuleState.OverlayMemberRef { Parent = (uint)tkImport.Value, Name = name ?? string.Empty, Signature = signature });
-            NativeBuffers.Set(pmr, new MdMemberRef(token));
-            return HResult.S_OK;
+    public HResult DefineImportMember(IntPtr pAssemImport, byte* pbHashValue, int cbHashValue, IntPtr pImport, MdToken mbMember, IntPtr pAssemEmit, MdToken tkParent, MdMemberRef* pmr)
+    {
+        var source = _runtime.FindMetadata(pImport);
+        if (source is null || !source.TryGetMember(mbMember.Value, out var name, out var signature))
+        {
+            AotLog.Warn($"[{_state.Module.Name}] DefineImportMember: member 0x{mbMember.Value:x8} not found in the import scope");
+            return HResult.E_INVALIDARG;
         }
+
+        var token = ImportMemberRef((uint)tkParent.Value, name, new MetadataImporter(source, this).ImportSignature(signature));
+        NativeBuffers.Set(pmr, new MdMemberRef(token));
+        AotLog.Debug($"[{_state.Module.Name}] DefineImportMember {source.State.Module.Name}!0x{mbMember.Value:x8} {name} -> 0x{token:x8}");
+        return HResult.S_OK;
     }
 
     public HResult DefineMethodSpec(MdToken tkParent, IntPtr pvSigBlob, int cbSigBlob, MdMethodSpec* pmi)
@@ -1186,34 +1186,8 @@ internal sealed unsafe class ModuleMetadata : IMetaDataImport2, IMetaDataAssembl
 
     public HResult GetTokenFromTypeSpec(IntPtr pvSig, int cbSig, MdTypeSpec* ptypespec)
     {
-        var signature = NativeBuffers.ReadBytes(pvSig, cbSig);
-        lock (_state.Sync)
-        {
-            var original = _state.OriginalRows(Table.TypeSpec);
-            for (uint rid = 1; rid <= original; rid++)
-            {
-                Tables.TryReadTypeSpecRow(rid, out var row);
-                if (Blob(row.Signature).AsSpan().SequenceEqual(signature))
-                {
-                    NativeBuffers.Set(ptypespec, new MdTypeSpec(Tok(Table.TypeSpec, rid)));
-                    return HResult.S_OK;
-                }
-            }
-
-            for (var i = 0; i < _state.TypeSpecs.Count; i++)
-            {
-                if (_state.TypeSpecs[i].AsSpan().SequenceEqual(signature))
-                {
-                    NativeBuffers.Set(ptypespec, new MdTypeSpec(Tok(Table.TypeSpec, original + (uint)i + 1)));
-                    return HResult.S_OK;
-                }
-            }
-
-            var token = (int)_state.NextToken(Table.TypeSpec, _state.TypeSpecs);
-            _state.TypeSpecs.Add(signature);
-            NativeBuffers.Set(ptypespec, new MdTypeSpec(token));
-            return HResult.S_OK;
-        }
+        NativeBuffers.Set(ptypespec, new MdTypeSpec(ImportTypeSpec(NativeBuffers.ReadBytes(pvSig, cbSig))));
+        return HResult.S_OK;
     }
 
     public HResult DefineUserString(char* szString, int cchString, MdString* pstk)
@@ -1270,6 +1244,206 @@ internal sealed unsafe class ModuleMetadata : IMetaDataImport2, IMetaDataAssembl
             NativeBuffers.Set(pmdar, new MdToken(token));
             AotLog.Debug($"[{_state.Module.Name}] DefineAssemblyRef {name} {version} -> 0x{token:x8}");
             return HResult.S_OK;
+        }
+    }
+
+    // ---------------------------------------------------------------- cross-scope import (MetadataImporter)
+
+    /// <summary>
+    /// Whether the pointer is one of the interfaces of this scope.
+    /// </summary>
+    public bool Owns(IntPtr pointer)
+        => pointer == (IntPtr)_import || pointer == (IntPtr)_emit || pointer == (IntPtr)_assemblyImport || pointer == (IntPtr)_assemblyEmit;
+
+    /// <summary>
+    /// The name and signature of a MethodDef, FieldDef or MemberRef of this scope.
+    /// </summary>
+    internal bool TryGetMember(int token, out string name, out byte[] signature)
+    {
+        lock (_state.Sync)
+        {
+            switch (TableOf(token))
+            {
+                case Table.Method when Tables.TryReadMethodRow(Rid(token), out var method):
+                    (name, signature) = (Str(method.Name), Blob(method.Signature));
+                    return true;
+                case Table.Field when Tables.TryReadFieldRow(Rid(token), out var field):
+                    (name, signature) = (Str(field.Name), Blob(field.Signature));
+                    return true;
+                case Table.MemberRef:
+                    (_, name, signature) = MemberRefInfo(token);
+                    return true;
+                default:
+                    (name, signature) = (string.Empty, Array.Empty<byte>());
+                    return false;
+            }
+        }
+    }
+
+    internal (string FullName, uint EnclosingRid) GetTypeDef(uint rid)
+    {
+        lock (_state.Sync)
+        {
+            return (TypeDefFullName(rid), EnclosingTypeOf(rid));
+        }
+    }
+
+    internal (uint Scope, string FullName) GetTypeRef(int token)
+    {
+        lock (_state.Sync)
+        {
+            return TypeRefInfo(token);
+        }
+    }
+
+    internal byte[] GetTypeSpec(int token)
+    {
+        lock (_state.Sync)
+        {
+            if (_state.IsOverlay((uint)token))
+            {
+                return _state.TypeSpecs[_state.OverlayIndex((uint)token)];
+            }
+
+            Tables.TryReadTypeSpecRow(Rid(token), out var row);
+            return Blob(row.Signature);
+        }
+    }
+
+    internal AssemblyIdentity GetAssemblyIdentity()
+    {
+        var assembly = _state.Module.Assembly ?? throw new InvalidOperationException($"{_state.Module.Name} isn't an assembly manifest module.");
+        return new AssemblyIdentity(assembly.Name, assembly.Version, assembly.Culture ?? string.Empty, assembly.PublicKeyToken?.Data ?? Array.Empty<byte>(), 0);
+    }
+
+    internal AssemblyIdentity GetAssemblyRefIdentity(int token)
+    {
+        lock (_state.Sync)
+        {
+            if (_state.IsOverlay((uint)token))
+            {
+                var overlay = _state.AssemblyRefs[_state.OverlayIndex((uint)token)];
+                return new AssemblyIdentity(overlay.Name, overlay.Version, overlay.Culture, overlay.PublicKeyOrToken, overlay.Flags);
+            }
+
+            Tables.TryReadAssemblyRefRow(Rid(token), out var row);
+            return new AssemblyIdentity(Str(row.Name), new Version(row.MajorVersion, row.MinorVersion, row.BuildNumber, row.RevisionNumber), Str(row.Locale), Blob(row.PublicKeyOrToken), row.Flags);
+        }
+    }
+
+    /// <summary>
+    /// The TypeDef of a top-level type when the assembly is this one.
+    /// </summary>
+    internal int? FindOwnTypeDef(AssemblyIdentity assembly, string fullName)
+    {
+        if (!string.Equals(assembly.Name, _state.Module.Assembly?.Name?.String, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return _state.Module.Find(fullName, isReflectionName: false) is { DeclaringType: null } type ? (int)type.MDToken.Raw : null;
+    }
+
+    internal int ImportAssemblyRef(AssemblyIdentity assembly)
+    {
+        lock (_state.Sync)
+        {
+            var original = _state.OriginalRows(Table.AssemblyRef);
+            for (uint rid = 1; rid <= original; rid++)
+            {
+                Tables.TryReadAssemblyRefRow(rid, out var row);
+                if (string.Equals(Str(row.Name), assembly.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Tok(Table.AssemblyRef, rid);
+                }
+            }
+
+            for (var i = 0; i < _state.AssemblyRefs.Count; i++)
+            {
+                if (string.Equals(_state.AssemblyRefs[i].Name, assembly.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Tok(Table.AssemblyRef, original + (uint)i + 1);
+                }
+            }
+
+            var token = (int)_state.NextToken(Table.AssemblyRef, _state.AssemblyRefs);
+            _state.AssemblyRefs.Add(new ModuleState.OverlayAssemblyRef
+            {
+                Name = assembly.Name,
+                Version = assembly.Version,
+                Culture = assembly.Culture,
+                PublicKeyOrToken = assembly.PublicKeyOrToken,
+                Flags = assembly.Flags,
+            });
+            AotLog.Debug($"[{_state.Module.Name}] AssemblyRef {assembly.Name} {assembly.Version} imported -> 0x{token:x8}");
+            return token;
+        }
+    }
+
+    internal int ImportTypeRef(int scope, string fullName)
+    {
+        lock (_state.Sync)
+        {
+            foreach (var token in AllRows(Table.TypeRef, _state.TypeRefs.Count))
+            {
+                var info = TypeRefInfo(token);
+                if (info.Scope == (uint)scope && info.FullName == fullName)
+                {
+                    return token;
+                }
+            }
+
+            var (ns, simpleName) = Split(fullName);
+            var created = (int)_state.NextToken(Table.TypeRef, _state.TypeRefs);
+            _state.TypeRefs.Add(new ModuleState.OverlayTypeRef { ResolutionScope = (uint)scope, Namespace = ns, Name = simpleName });
+            return created;
+        }
+    }
+
+    internal int ImportTypeSpec(byte[] signature)
+    {
+        lock (_state.Sync)
+        {
+            var original = _state.OriginalRows(Table.TypeSpec);
+            for (uint rid = 1; rid <= original; rid++)
+            {
+                Tables.TryReadTypeSpecRow(rid, out var row);
+                if (Blob(row.Signature).AsSpan().SequenceEqual(signature))
+                {
+                    return Tok(Table.TypeSpec, rid);
+                }
+            }
+
+            for (var i = 0; i < _state.TypeSpecs.Count; i++)
+            {
+                if (_state.TypeSpecs[i].AsSpan().SequenceEqual(signature))
+                {
+                    return Tok(Table.TypeSpec, original + (uint)i + 1);
+                }
+            }
+
+            var token = (int)_state.NextToken(Table.TypeSpec, _state.TypeSpecs);
+            _state.TypeSpecs.Add(signature);
+            return token;
+        }
+    }
+
+    internal int ImportMemberRef(uint parent, string name, byte[] signature)
+    {
+        lock (_state.Sync)
+        {
+            foreach (var existing in AllRows(Table.MemberRef, _state.MemberRefs.Count))
+            {
+                var info = MemberRefInfo(existing);
+                if (info.Parent == parent && info.Name == name && info.Signature.AsSpan().SequenceEqual(signature))
+                {
+                    return existing;
+                }
+            }
+
+            var token = (int)_state.NextToken(Table.MemberRef, _state.MemberRefs);
+            _state.MemberRefs.Add(new ModuleState.OverlayMemberRef { Parent = parent, Name = name, Signature = signature });
+            return token;
         }
     }
 
