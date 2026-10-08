@@ -29,6 +29,8 @@ internal sealed class AotInstrumentReport
 
     public int DelegateWrappers { get; set; }
 
+    public int CompositeInterfaces { get; set; }
+
     public int UserStrings { get; set; }
 
     public int ReJitProcessed { get; set; }
