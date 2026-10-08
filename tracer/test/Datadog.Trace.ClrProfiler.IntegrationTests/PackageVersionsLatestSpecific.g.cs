@@ -113,6 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NET11_0
                 new object[] { "3.22.4" },
+                new object[] { "4.4.0" },
 #endif
 #endif
             };
