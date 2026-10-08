@@ -88,6 +88,10 @@ internal static class AotInstrumentProcessor
             var modules = host.Runtime.Modules;
             var datadogTrace = modules.First(m => !m.Writable && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.DatadogTracePath), StringComparison.Ordinal)).Module;
             var typeResolver = new LoadedModulesTypeResolver(modules.Select(m => m.Module));
+
+            // The models Datadog.Trace (de)serializes with Newtonsoft by reflection, which ILC must keep.
+            report.JsonModels = JsonModelDescriptor.Write(datadogTrace, Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.linker.xml"), Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.rd.xml"));
+            AotLog.Info($"JSON models of Datadog.Trace preserved: {report.JsonModels}");
             // Only the assemblies the native tracer rewrote are written: the others (most of the framework references a
             // publish passes) are left as they are.
             var application = modules.FirstOrDefault(m => m.Writable && options.Assemblies.Count > 0 && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.Assemblies[0]), StringComparison.Ordinal));

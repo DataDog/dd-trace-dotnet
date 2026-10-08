@@ -116,9 +116,11 @@
       <_DatadogAotInstrumentedReference Include="@(IlcReference)" Condition="Exists('$(_DatadogAotOutput)%(Filename)%(Extension)')" />
       <IlcReference Remove="@(_DatadogAotInstrumentedReference)" />
       <IlcReference Include="@(_DatadogAotInstrumentedReference->'$(_DatadogAotOutput)%(Filename)%(Extension)')" />
-      <!-- The DuckType AOT registry the adapters create proxies from, and its trimmer roots. -->
+      <!-- The DuckType AOT registry the adapters create proxies from. -->
       <IlcReference Include="$(_DatadogAotOutput)Datadog.Trace.DuckType.AotRegistry.*.dll" />
-      <TrimmerRootDescriptor Include="$(_DatadogAotOutput)Datadog.Trace.DuckType.AotRegistry.*.linker.xml" />
+      <!-- The DuckType AOT registry, and the JSON models of Datadog.Trace (Newtonsoft finds their members by reflection). -->
+      <TrimmerRootDescriptor Include="$(_DatadogAotOutput)Datadog.Trace.*.linker.xml" />
+      <RdXmlFile Include="$(_DatadogAotOutput)Datadog.Trace.*.rd.xml" />
     </ItemGroup>
     <Message Importance="high" Text="Datadog NativeAOT instrumentation: @(_DatadogAotInstrumentedInput->'%(Filename)');@(_DatadogAotInstrumentedReference->'%(Filename)')" />
   </Target>
