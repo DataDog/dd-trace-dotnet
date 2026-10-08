@@ -13,7 +13,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <PackageId>Datadog.Trace.Aot</PackageId>
     <Title>Datadog APM NativeAOT Support</Title>
     <Description>Instruments .NET applications published with NativeAOT (PublishAot=true) with the Datadog tracer at build time.</Description>
@@ -37,6 +36,16 @@
 
   <ItemGroup Condition="'@(DatadogAotNativeTracer)' == '' and Exists('$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so')">
     <DatadogAotNativeTracer Include="$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so" Rid="$(NETCoreSdkRuntimeIdentifier)" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Keep in sync with LibDdwafVersion in tracer/build/_build/Build.Steps.cs -->
+    <DatadogAotLibDdwafVersion Condition="'$(DatadogAotLibDdwafVersion)' == ''">2.0.1</DatadogAotLibDdwafVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The only dependency: the WAF native library of AppSec, which a RID-specific publish copies next to the application. -->
+    <PackageReference Include="libddwaf" Version="$(DatadogAotLibDdwafVersion)" />
   </ItemGroup>
 
   <ItemGroup>
