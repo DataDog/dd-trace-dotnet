@@ -7,6 +7,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -34,15 +35,24 @@ internal static class IntegrationOptions
 internal static class IntegrationOptions<TIntegration, TTarget>
 #pragma warning restore SA1402
 {
+    private const int DisabledByError = 1;
+    private const int DisabledByCategory = 2;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationOptions<TIntegration, TTarget>));
 
     private static readonly Lazy<IntegrationId?> _integrationId = new(() => InstrumentationDefinitions.GetIntegrationId(typeof(TIntegration).FullName, typeof(TTarget)));
-    private static volatile bool _disableIntegration;
+    private static int _disabled;
 
-    internal static bool IsIntegrationEnabled => !_disableIntegration;
+    internal static bool IsIntegrationEnabled => Volatile.Read(ref _disabled) == 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void DisableIntegration() => _disableIntegration = true;
+    internal static void DisableIntegration() => SetDisabled(DisabledByError, true);
+
+    /// <summary>
+    /// Enables or disables the integration with its instrumentation categories, in an application instrumented at build
+    /// time (<see cref="CallTargetAotCategories"/>). An integration disabled by an error stays disabled.
+    /// </summary>
+    internal static void SetCategoryEnabled(bool enabled) => SetDisabled(DisabledByCategory, !enabled);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void LogException(Exception exception)
@@ -58,7 +68,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
                 Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(DuckTypeException));
             }
 
-            _disableIntegration = true;
+            DisableIntegration();
         }
         else if (exception is CallTargetInvokerException)
         {
@@ -69,7 +79,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
                 Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(CallTargetInvokerException));
             }
 
-            _disableIntegration = true;
+            DisableIntegration();
         }
         else if (exception is MissingMemberException or TargetInvocationException { InnerException: MissingMemberException })
         {
@@ -86,7 +96,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
                 Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(MissingMemberException));
             }
 
-            _disableIntegration = true;
+            DisableIntegration();
         }
         else
         {
@@ -103,6 +113,22 @@ internal static class IntegrationOptions<TIntegration, TTarget>
         if (_integrationId.Value is { } integrationIdValue)
         {
             Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(integrationIdValue);
+        }
+    }
+
+    private static void SetDisabled(int reason, bool disabled)
+    {
+        var current = Volatile.Read(ref _disabled);
+        while (true)
+        {
+            var value = disabled ? current | reason : current & ~reason;
+            var previous = Interlocked.CompareExchange(ref _disabled, value, current);
+            if (previous == current)
+            {
+                return;
+            }
+
+            current = previous;
         }
     }
 }

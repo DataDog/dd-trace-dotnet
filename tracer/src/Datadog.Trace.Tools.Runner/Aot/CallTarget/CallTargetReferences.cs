@@ -36,9 +36,10 @@ internal sealed class CallTargetReferences
         _datadogTrace = datadogTrace;
         _datadogTraceScope = datadogTraceScope;
         _importer = new Importer(module, ImporterOptions.TryToUseDefs, default, new LocalTypeMapper(module));
-        if (datadogTrace.Find(HandlersNamespace + ".CallTargetAot`2", isReflectionName: false) is null)
+        if (datadogTrace.Find(HandlersNamespace + ".CallTargetAot`2", isReflectionName: false) is null
+         || datadogTrace.Find(HandlersNamespace + ".CallTargetAotCategories", isReflectionName: false) is null)
         {
-            throw new InvalidOperationException($"{datadogTrace.Location} doesn't support NativeAOT CallTarget registrations: build the application with a Datadog.Trace version that has {HandlersNamespace}.CallTargetAot.");
+            throw new InvalidOperationException($"{datadogTrace.Location} doesn't support NativeAOT CallTarget registrations: build the application with a Datadog.Trace version that has {HandlersNamespace}.CallTargetAot and CallTargetAotCategories.");
         }
 
         CallTargetState = new ValueTypeSig(DatadogType(CallTargetNamespace + ".CallTargetState"));
@@ -53,6 +54,8 @@ internal sealed class CallTargetReferences
     }
 
     public ModuleDef Module => _module;
+
+    public ModuleDef DatadogTrace => _datadogTrace;
 
     public TypeSig CallTargetState { get; }
 

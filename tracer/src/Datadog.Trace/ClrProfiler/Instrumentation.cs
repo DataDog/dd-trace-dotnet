@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
@@ -42,6 +43,12 @@ namespace Datadog.Trace.ClrProfiler
         private static int _firstInitialization = 1;
 
         private static int _firstNonNativePartsInitialization = 1;
+
+        /// <summary>
+        /// Whether the application was instrumented at build time (NativeAOT, see <see cref="InitializeAot"/>): the
+        /// instrumentation categories are enabled through <see cref="CallTargetAotCategories"/>, not the native tracer.
+        /// </summary>
+        private static bool _aot;
 
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
@@ -280,11 +287,40 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            _aot = true;
             try
             {
                 var sw = RefStopwatch.Create();
                 Log.Debug("NativeAOT initialization started.");
                 InitializeNoNativeParts(ref sw);
+
+                try
+                {
+                    // The categories Initialize() enables in the native tracer.
+                    var categories = InstrumentationCategory.Tracing;
+                    if (Security.Instance.AppsecEnabled)
+                    {
+                        categories |= InstrumentationCategory.AppSec;
+                    }
+
+                    if (Iast.Iast.Instance.Settings.Enabled)
+                    {
+                        categories |= InstrumentationCategory.Iast;
+                        Iast.Iast.Instance.InitAnalyzers();
+                    }
+
+                    if (Security.Instance.Settings.RaspEnabled)
+                    {
+                        categories |= InstrumentationCategory.Rasp;
+                    }
+
+                    EnableTracerInstrumentations(categories);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error enabling the NativeAOT instrumentation categories");
+                }
+
                 Log.Debug("NativeAOT initialization finished.");
             }
             catch (Exception ex)
@@ -661,6 +697,15 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
+            if (_aot)
+            {
+                // The instrumentation is compiled in: the integrations of the categories are enabled.
+                var integrations = CallTargetAotCategories.Enable(categories);
+                Log.Information<InstrumentationCategory, int>("NativeAOT instrumentation categories {Categories} enabled: {Count} integrations.", categories, integrations);
+                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, integrations);
+                return;
+            }
+
             var defs = NativeMethods.EnableCallTargetDefinitions((uint)categories);
             TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
             EnableCallSiteInstrumentations(categories, sw);
@@ -701,6 +746,12 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
+            if (_aot)
+            {
+                CallTargetAotCategories.Disable(categories);
+                return;
+            }
+
             NativeMethods.DisableCallTargetDefinitions((uint)categories);
         }
     }

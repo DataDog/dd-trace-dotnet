@@ -248,7 +248,7 @@ internal sealed class CallTargetRegistryGenerator
         }
 
         var ensureCalls = new List<IMethod>();
-        if (builder.Items.Count > 0 || builder.Factories.Count > 0)
+        if (builder.Items.Count > 0 || builder.Factories.Count > 0 || builder.Integrations.Count > 0)
         {
             var ensure = CompleteRegistration(builder);
             IMethod ensureReference = ensure;
@@ -331,6 +331,15 @@ internal sealed class CallTargetRegistryGenerator
         }
 
         var target = invocation.Target;
+
+        // The integration is enabled while one of its instrumentation categories is (CallTargetAotCategories), like the
+        // native tracer enables its definitions. The open registration runs for every instantiation that is called.
+        var key = integrationType.FullName + "|" + target.FullName;
+        if (!builder.IsInstantiation && !builder.Integrations.ContainsKey(key))
+        {
+            builder.Integrations[key] = new IntegrationItem(integrationType, target, IntegrationCategories.Get(_references.DatadogTrace, integration));
+        }
+
         var state = new ByRefSig(_references.CallTargetState);
         switch (invocation.Kind)
         {
@@ -772,6 +781,14 @@ internal sealed class CallTargetRegistryGenerator
         var type = _references.Type;
         var canAssign = _references.DatadogStaticMethod(registry, "CanAssign", MethodSig.CreateStatic(_module.CorLibTypes.Boolean, type, type));
         var isSameType = _references.DatadogStaticMethod(registry, "IsSameType", MethodSig.CreateStatic(_module.CorLibTypes.Boolean, type, type));
+        var categories = new ClassSig(_references.DatadogType($"{HandlersNamespace}.CallTargetAotCategories"));
+        var registerIntegration = _references.DatadogStaticMethod(categories, "Register", MethodSig.CreateStaticGeneric(2, _module.CorLibTypes.Void, _module.CorLibTypes.UInt32));
+
+        foreach (var integration in builder.Integrations.Values)
+        {
+            instructions.Add(Instruction.CreateLdcI4((int)integration.Categories));
+            instructions.Add(OpCodes.Call.ToInstruction(new MethodSpecUser(registerIntegration, new GenericInstMethodSig(integration.Integration, integration.Target))));
+        }
 
         foreach (var item in builder.Items)
         {
@@ -913,6 +930,9 @@ internal sealed class CallTargetRegistryGenerator
 
         public List<FactoryItem> Factories { get; } = new();
 
+        /// <summary>Gets the integrations of the method by integration and target, with their instrumentation categories.</summary>
+        public Dictionary<string, IntegrationItem> Integrations { get; } = new(StringComparer.Ordinal);
+
         /// <summary>Gets or sets a value indicating whether this registration serves closed instantiations of a generic target.</summary>
         public bool IsInstantiation { get; set; }
 
@@ -937,6 +957,22 @@ internal sealed class CallTargetRegistryGenerator
         public AdapterBinding Binding { get; }
 
         public MethodDef? Adapter { get; }
+    }
+
+    private sealed class IntegrationItem
+    {
+        public IntegrationItem(TypeSig integration, TypeSig target, uint categories)
+        {
+            Integration = integration;
+            Target = target;
+            Categories = categories;
+        }
+
+        public TypeSig Integration { get; }
+
+        public TypeSig Target { get; }
+
+        public uint Categories { get; }
     }
 
     private sealed class FactoryItem
