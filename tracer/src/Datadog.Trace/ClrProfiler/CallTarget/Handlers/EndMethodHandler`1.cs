@@ -23,7 +23,12 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         var returnType = typeof(TReturn);
         try
         {
-            if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType) is { } dynMethod)
+            if (CallTargetAot<TIntegration, InvokeDelegate>.TryGet(out var aotCallback, out _))
+            {
+                // NativeAOT: the registry bound the integration method at build time (null when it has none).
+                _invokeDelegate = aotCallback;
+            }
+            else if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType) is { } dynMethod)
             {
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }
@@ -33,7 +38,12 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
             throw new CallTargetInvokerException(ex);
         }
 
-        if (returnType.IsGenericType)
+        if (CallTargetAotContinuation<TIntegration, TTarget, TReturn>.TryGet(out var aotGenerator))
+        {
+            // NativeAOT: the registry created the continuation generator, which needs MakeGenericType otherwise.
+            _continuationGenerator = aotGenerator;
+        }
+        else if (returnType.IsGenericType)
         {
             if (typeof(Task).IsAssignableFrom(returnType))
             {

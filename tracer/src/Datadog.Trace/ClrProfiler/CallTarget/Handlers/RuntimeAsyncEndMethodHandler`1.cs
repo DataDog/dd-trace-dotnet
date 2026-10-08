@@ -70,6 +70,27 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
     {
         try
         {
+            if (CallTargetAot<TIntegration, EndMethodHandler<TIntegration, TTarget, TDeclaredReturn>.InvokeDelegate>.TryGet(out var aotOnMethodEnd, out _))
+            {
+                // NativeAOT: the registry bound the integration methods at build time (null when it has none).
+                if (CallTargetAot<TIntegration, ContinuationGenerator<TTarget, TReturn, TReturn>.AsyncContinuationMethodDelegate>.TryGet(out var aotAsyncOnMethodEnd, out _) && aotAsyncOnMethodEnd is not null)
+                {
+                    UnsupportedAsyncCallback = new NotSupportedException(
+                        $"Integration '{typeof(TIntegration).FullName}' has an async 'OnAsyncMethodEnd', which cannot be invoked on the .NET 11 runtime-async target '{typeof(TTarget).FullName}' because the CallTarget epilog runs inside a finally block. The integration will be disabled for this target.");
+                }
+                else if (CallTargetAot<TIntegration, ContinuationGenerator<TTarget, TReturn, TReturn>.ContinuationMethodDelegate>.TryGet(out var aotSyncOnMethodEnd, out _))
+                {
+                    OnAsyncMethodEnd = aotSyncOnMethodEnd;
+                }
+
+                if (aotOnMethodEnd is not null)
+                {
+                    OnMethodEnd = aotOnMethodEnd;
+                }
+
+                return;
+            }
+
             var asyncResult = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TReturn));
             if (asyncResult.Method is { } asyncMethod)
             {

@@ -19,6 +19,13 @@ internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TA
     {
         try
         {
+            if (CallTargetAot<TIntegration, InvokeDelegate>.TryGet(out var aotCallback, out _))
+            {
+                // NativeAOT: the registry bound the integration method at build time (null when it has none).
+                _invokeDelegate = aotCallback!;
+                return;
+            }
+
             var tArg1ByRef = typeof(TArg1).IsByRef ? typeof(TArg1) : typeof(TArg1).MakeByRefType();
             var tArg2ByRef = typeof(TArg2).IsByRef ? typeof(TArg2) : typeof(TArg2).MakeByRefType();
             var tArg3ByRef = typeof(TArg3).IsByRef ? typeof(TArg3) : typeof(TArg3).MakeByRefType();
