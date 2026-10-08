@@ -66,7 +66,10 @@ internal static class AotInstrumentProcessor
             var modules = host.Runtime.Modules;
             var datadogTrace = modules.First(m => !m.Writable && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.DatadogTracePath), StringComparison.Ordinal)).Module;
             var typeResolver = new LoadedModulesTypeResolver(modules.Select(m => m.Module));
-            var writableModules = modules.Where(m => m.Writable).ToList();
+            // Only the assemblies the native tracer rewrote are written: the others (most of the framework references a
+            // publish passes) are left as they are.
+            var writableModules = modules.Where(m => m.Writable && m.NewBodies.Count > 0).ToList();
+            AotLog.Info($"{writableModules.Count}/{modules.Count(m => m.Writable)} assemblies instrumented");
             var rewrittenByModule = writableModules.ToDictionary(m => m, MethodBodies.ApplyNewBodies);
 
             // The proxies of the duck typing constraints go to a DuckType AOT registry generated first (C1): the adapters
@@ -75,7 +78,11 @@ internal static class AotInstrumentProcessor
             Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null;
             if (options.GenerateCallTargetRegistry)
             {
-                instantiations = GenericInstantiationDiscovery.Discover(writableModules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), rewrittenByModule.Values.SelectMany(m => m), typeResolver.Resolve);
+                // The instantiations come from all the given assemblies (the application creates the framework's generic types).
+                var genericRewritten = rewrittenByModule.Values.SelectMany(m => m).Where(m => m.HasGenericParameters || m.DeclaringType.HasGenericParameters).ToList();
+                instantiations = genericRewritten.Count == 0
+                                     ? new Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>()
+                                     : GenericInstantiationDiscovery.Discover(modules.Where(m => m.Writable).Select(m => (dnlib.DotNet.ModuleDef)m.Module), genericRewritten, typeResolver.Resolve);
                 AotLog.Info($"Closed instantiations of generic instrumented methods: {instantiations.Values.Sum(i => i.Count)} for {instantiations.Count} methods");
                 var collector = new DuckProxyRequestCollector();
                 foreach (var rewritten in rewrittenByModule.Values)
@@ -87,7 +94,7 @@ internal static class AotInstrumentProcessor
                 var recordedMappings = ReadDuckTypeMaps(options.DuckTypeMaps, report);
                 if (collector.Requests.Count + collector.RuntimeRequests.Count + recordedMappings.Count > 0)
                 {
-                    var registryName = $"Datadog.Trace.DuckType.AotRegistry.{writableModules[0].AssemblyName}";
+                    var registryName = $"Datadog.Trace.DuckType.AotRegistry.{Path.GetFileNameWithoutExtension(options.Assemblies[0])}";
                     var assemblyPaths = modules.Where(m => !StringUtil.IsNullOrEmpty(m.Path))
                                                .GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase)
                                                .ToDictionary(g => g.Key, g => Path.GetFullPath(g.First().Path), StringComparer.OrdinalIgnoreCase);
