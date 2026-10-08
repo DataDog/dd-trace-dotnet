@@ -571,6 +571,16 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.ObfuscationQueryStringRegex.Should().Be(expected);
+            settings.ObfuscationQueryStringRegexWasConfigured.Should().Be(value is not null);
+        }
+
+        [Fact]
+        public void CopiedDefaultObfuscationQueryStringRegexWasConfigured()
+        {
+            var settings = new TracerSettings(CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex)));
+
+            settings.ObfuscationQueryStringRegex.Should().Be(TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+            settings.ObfuscationQueryStringRegexWasConfigured.Should().BeTrue();
         }
 
         [Theory]
