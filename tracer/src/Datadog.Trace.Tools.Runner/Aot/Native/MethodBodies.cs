@@ -129,11 +129,26 @@ internal static unsafe class MethodBodies
     public static List<MethodDef> ApplyNewBodies(ModuleState state)
     {
         var methods = new List<MethodDef>();
+        var sequencePoints = 0;
         foreach (var (rid, raw) in state.NewBodies)
         {
             var method = state.Module.ResolveMethod(rid);
-            method.Body = ToCilBody(state, method, raw);
+            var original = method.Body;
+            var rewritten = ToCilBody(state, method, raw);
+
+            // The PDB keeps the source lines of the rewritten methods (stack traces, debuggers, ILC's debug information).
+            if (original is not null)
+            {
+                sequencePoints += SequencePointTransfer.Transfer(original, rewritten);
+            }
+
+            method.Body = rewritten;
             methods.Add(method);
+        }
+
+        if (sequencePoints > 0)
+        {
+            AotLog.Debug($"{state.AssemblyName}: {sequencePoints} sequence points moved to the rewritten methods");
         }
 
         return methods;
