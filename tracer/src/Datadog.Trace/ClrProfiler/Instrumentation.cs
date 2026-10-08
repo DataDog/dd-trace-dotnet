@@ -266,6 +266,40 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        /// <summary>
+        /// Initializes the instrumentation of an application instrumented at build time for NativeAOT, from the module
+        /// initializer <c>dd-trace aot instrument</c> adds to it: the CallTarget instrumentation is compiled into the
+        /// application and there is no native tracer, so only the managed parts start (tracer, AppSec, diagnostic
+        /// observers, Activity and OpenTelemetry). It never throws.
+        /// </summary>
+        internal static void InitializeAot()
+        {
+            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            {
+                // Initialize() or InitializeAot() was already called before
+                return;
+            }
+
+            try
+            {
+                var sw = RefStopwatch.Create();
+                Log.Debug("NativeAOT initialization started.");
+                InitializeNoNativeParts(ref sw);
+                Log.Debug("NativeAOT initialization finished.");
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    Log.Error(ex, "Error initializing the NativeAOT instrumentation. Functionality may be impacted.");
+                }
+                catch
+                {
+                    // The application must start anyway.
+                }
+            }
+        }
+
         private static void RunShutdown(Exception ex)
         {
             InstrumentationDefinitions.Dispose();
