@@ -158,6 +158,38 @@ internal sealed unsafe class NativeTracerHost : IDisposable
     }
 
     /// <summary>
+    /// Takes the string literals the native tracer's IAST analysis collected from the methods it processed (hardcoded
+    /// secrets), which the managed tracer polls at runtime (GetUserStrings): location (method) and value.
+    /// </summary>
+    public List<(string Location, string Value)> TakeUserStrings()
+    {
+        var userStrings = new List<(string Location, string Value)>();
+        if (!NativeLibrary.TryGetExport(_library, "GetUserStrings", out var export))
+        {
+            return userStrings;
+        }
+
+        const int BatchSize = 100;
+        var getUserStrings = (delegate* unmanaged<int, UserStringInterop*, int>)export;
+        var batch = stackalloc UserStringInterop[BatchSize];
+        int count;
+        do
+        {
+            count = getUserStrings(BatchSize, batch);
+            for (var i = 0; i < count; i++)
+            {
+                if (Marshal.PtrToStringUni(batch[i].Location) is { } location && Marshal.PtrToStringUni(batch[i].Value) is { } value)
+                {
+                    userStrings.Add((location, value));
+                }
+            }
+        }
+        while (count == BatchSize);
+
+        return userStrings;
+    }
+
+    /// <summary>
     /// Registers definitions by running a managed method that calls Datadog.Trace's NativeMethods (test applications
     /// such as CallTargetNativeTest inject their own definitions this way). The P/Invokes are bound to the hosted library.
     /// </summary>
@@ -310,6 +342,14 @@ internal sealed unsafe class NativeTracerHost : IDisposable
         {
             throw new InvalidOperationException($"{operation} failed: {hr}");
         }
+    }
+
+    // iast::UserStringInterop of the native tracer.
+    [StructLayout(LayoutKind.Sequential)]
+    private struct UserStringInterop
+    {
+        public IntPtr Location;
+        public IntPtr Value;
     }
 }
 #endif
