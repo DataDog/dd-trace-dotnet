@@ -7,6 +7,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -32,6 +33,8 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 /// </remarks>
 public class AotInstrumentNativeHostIntegrationTests
 {
+    private static readonly string[] Modes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "withref", "without", "withrefstruct", "abstract", "interface", "extras", "calltargetbubbleupexceptions", "instrumentationexceptions"];
+
     private readonly ITestOutputHelper _output;
 
     public AotInstrumentNativeHostIntegrationTests(ITestOutputHelper output)
@@ -47,46 +50,22 @@ public class AotInstrumentNativeHostIntegrationTests
         Skip.If(string.IsNullOrEmpty(nativeTracer) || string.IsNullOrEmpty(appDirectory), "DD_AOT_NATIVE_TRACER and DD_AOT_CALLTARGET_NATIVE_TEST_DIR are required");
 
         var workDirectory = Path.Combine(Path.GetTempPath(), "dd-aot-native-host", Guid.NewGuid().ToString("N"));
-        var instrumented = Path.Combine(workDirectory, "instrumented");
-        var app = Path.Combine(workDirectory, "app");
         try
         {
-            var runtimeDirectory = RuntimeEnvironment.GetRuntimeDirectory();
-            var appAssembly = Path.Combine(appDirectory!, "CallTargetNativeTest.dll");
-            var runner = typeof(AotInstrumentProcessor).Assembly.Location;
-            var (exitCode, output) = Run(
-                "dotnet",
-                appDirectory!,
-                runner,
-                "aot",
-                "instrument",
-                "--native-tracer",
-                nativeTracer!,
-                "--datadog-trace",
-                Path.Combine(appDirectory!, "Datadog.Trace.dll"),
-                "--assembly",
-                appAssembly,
-                "--reference-dir",
-                runtimeDirectory,
-                "--runtime-version",
-                Environment.Version.ToString(3),
-                "--no-embedded-definitions",
-                "--definitions-assembly",
-                appAssembly,
-                "--definitions-method",
-                "CallTargetNativeTest.Program::InjectCallTargetDefinitions",
-                "--neutralize",
-                "CallTargetNativeTest.Program::InjectCallTargetDefinitions",
-                "--verify",
-                "--report",
-                Path.Combine(workDirectory, "report.json"),
-                "--output",
-                instrumented);
-            exitCode.Should().Be(0, output);
+            // 1. The native rewrite alone: IntegrationMapper and dynamic duck typing run, and record the duck typing mappings the
+            //    application creates at runtime, among them the ones looked up by the runtime type of a value (C6).
+            var (recordingApp, _) = Instrument(nativeTracer!, appDirectory!, workDirectory, "recording", "--no-calltarget-registry");
+            var map = Path.Combine(workDirectory, "ducktype-map.json");
+            foreach (var mode in Modes)
+            {
+                var (recordingExit, recordingOutput) = Run(recordingApp, mode, ("DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH", map));
+                recordingExit.Should().Be(0, recordingOutput);
+            }
 
-            // The registrations bind every shape, the generic ones through their closed instantiations, with the proxies of a
-            // DuckType AOT registry: nothing falls back to IntegrationMapper, and duck typing runs in AOT mode.
-            var report = JObject.Parse(File.ReadAllText(Path.Combine(workDirectory, "report.json")));
+            // 2. With the registrations and the recorded mappings: every shape is bound (the generic ones through their closed
+            //    instantiations) with the proxies of a DuckType AOT registry, which enables the AOT mode of duck typing: nothing
+            //    falls back to IntegrationMapper or creates a proxy dynamically.
+            var (app, report) = Instrument(nativeTracer!, appDirectory!, workDirectory, "aot", "--ducktype-map", map);
             var callTarget = report["Assemblies"]![0]!["CallTarget"]!;
             callTarget.Value<int>("Failures").Should().Be(0, callTarget.ToString());
             callTarget.Value<int>("Bound").Should().BeGreaterThan(0, callTarget.ToString());
@@ -94,20 +73,9 @@ public class AotInstrumentNativeHostIntegrationTests
             var duckTypeRegistry = report["DuckTypeRegistry"]!;
             duckTypeRegistry.Value<int>("Compatible").Should().Be(duckTypeRegistry.Value<int>("Mappings"), duckTypeRegistry.ToString());
 
-            CopyDirectory(appDirectory!, app);
-            foreach (var file in Directory.GetFiles(instrumented).Where(f => f.EndsWith(".dll", StringComparison.Ordinal) || f.EndsWith(".pdb", StringComparison.Ordinal)))
+            for (var arguments = 0; arguments < 10; arguments++)
             {
-                File.Copy(file, Path.Combine(app, Path.GetFileName(file)), overwrite: true);
-            }
-
-            // The DuckType AOT registry isn't in the dependency manifest: without it, the host probes the application folder.
-            File.Delete(Path.Combine(app, "CallTargetNativeTest.deps.json"));
-
-            // 9 arguments go through the slow begin path, whose IntegrationMapper.ConvertType looks proxies up by the runtime
-            // type of the values: those need the mappings recorded at runtime (C6, tracker H-25).
-            for (var arguments = 0; arguments < 9; arguments++)
-            {
-                var (appExit, appOutput) = Run("dotnet", app, "CallTargetNativeTest.dll", arguments.ToString());
+                var (appExit, appOutput) = Run(app, arguments.ToString());
                 appExit.Should().Be(0, appOutput);
                 var begin = arguments < 9 ? $"ProfilerOK: BeginMethod\\({arguments}\\)" : "ProfilerOK: BeginMethod\\(Array\\)";
                 var (expectedCalls, expectedExceptions) = arguments switch
@@ -121,7 +89,7 @@ public class AotInstrumentNativeHostIntegrationTests
                 Regex.Matches(appOutput, "Exception thrown.").Count.Should().Be(expectedExceptions, $"arguments: {arguments}");
             }
 
-            var (refExit, refOutput) = Run("dotnet", app, "CallTargetNativeTest.dll", "withref");
+            var (refExit, refOutput) = Run(app, "withref");
             refExit.Should().Be(0, refOutput);
             Regex.Matches(refOutput, "ProfilerOK: BeginMethod\\(1\\)").Count.Should().Be(9);
             Regex.Matches(refOutput, "ProfilerOK: BeginMethod\\(2\\)").Count.Should().Be(8);
@@ -129,7 +97,7 @@ public class AotInstrumentNativeHostIntegrationTests
 
             foreach (var mode in new[] { "without", "withrefstruct", "abstract", "interface", "extras", "calltargetbubbleupexceptions", "instrumentationexceptions" })
             {
-                var (modeExit, modeOutput) = Run("dotnet", app, "CallTargetNativeTest.dll", mode);
+                var (modeExit, modeOutput) = Run(app, mode);
                 modeExit.Should().Be(0, modeOutput);
                 modeOutput.Should().Contain("ProfilerOK", mode);
 
@@ -160,7 +128,62 @@ public class AotInstrumentNativeHostIntegrationTests
         }
     }
 
-    private (int ExitCode, string Output) Run(string fileName, string workingDirectory, params string[] arguments)
+    /// <summary>
+    /// Instruments CallTargetNativeTest into its own application folder.
+    /// </summary>
+    private (string Application, JObject Report) Instrument(string nativeTracer, string appDirectory, string workDirectory, string name, params string[] extraArguments)
+    {
+        var instrumented = Path.Combine(workDirectory, name, "instrumented");
+        var app = Path.Combine(workDirectory, name, "app");
+        var reportPath = Path.Combine(workDirectory, name, "report.json");
+        var appAssembly = Path.Combine(appDirectory, "CallTargetNativeTest.dll");
+        var arguments = new List<string>
+        {
+            typeof(AotInstrumentProcessor).Assembly.Location,
+            "aot",
+            "instrument",
+            "--native-tracer",
+            nativeTracer,
+            "--datadog-trace",
+            Path.Combine(appDirectory, "Datadog.Trace.dll"),
+            "--assembly",
+            appAssembly,
+            "--reference-dir",
+            RuntimeEnvironment.GetRuntimeDirectory(),
+            "--runtime-version",
+            Environment.Version.ToString(3),
+            "--no-embedded-definitions",
+            "--definitions-assembly",
+            appAssembly,
+            "--definitions-method",
+            "CallTargetNativeTest.Program::InjectCallTargetDefinitions",
+            "--neutralize",
+            "CallTargetNativeTest.Program::InjectCallTargetDefinitions",
+            "--verify",
+            "--report",
+            reportPath,
+            "--output",
+            instrumented,
+        };
+        arguments.AddRange(extraArguments);
+        var (exitCode, output) = RunProcess("dotnet", appDirectory, arguments, []);
+        exitCode.Should().Be(0, output);
+
+        CopyDirectory(appDirectory, app);
+        foreach (var file in Directory.GetFiles(instrumented).Where(f => f.EndsWith(".dll", StringComparison.Ordinal) || f.EndsWith(".pdb", StringComparison.Ordinal)))
+        {
+            File.Copy(file, Path.Combine(app, Path.GetFileName(file)), overwrite: true);
+        }
+
+        // The DuckType AOT registry isn't in the dependency manifest: without it, the host probes the application folder.
+        File.Delete(Path.Combine(app, "CallTargetNativeTest.deps.json"));
+        return (app, JObject.Parse(File.ReadAllText(reportPath)));
+    }
+
+    private (int ExitCode, string Output) Run(string application, string mode, params (string Name, string Value)[] environment)
+        => RunProcess("dotnet", application, ["CallTargetNativeTest.dll", mode], environment);
+
+    private (int ExitCode, string Output) RunProcess(string fileName, string workingDirectory, IEnumerable<string> arguments, (string Name, string Value)[] environment)
     {
         var startInfo = new ProcessStartInfo(fileName)
         {
@@ -179,11 +202,15 @@ public class AotInstrumentNativeHostIntegrationTests
         startInfo.Environment["DD_TRACE_AGENT_URL"] = "http://127.0.0.1:1";
         startInfo.Environment["DD_TELEMETRY_ENABLED"] = "0";
         startInfo.Environment["DD_REMOTE_CONFIGURATION_ENABLED"] = "0";
+        foreach (var (name, value) in environment)
+        {
+            startInfo.Environment[name] = value;
+        }
 
         using var process = Process.Start(startInfo)!;
         var standardOutput = process.StandardOutput.ReadToEndAsync();
         var standardError = process.StandardError.ReadToEndAsync();
-        process.WaitForExit(300_000).Should().BeTrue($"{fileName} {string.Join(" ", arguments)} timed out");
+        process.WaitForExit(300_000).Should().BeTrue($"{fileName} {string.Join(" ", startInfo.ArgumentList)} timed out");
         var output = standardOutput.Result + Environment.NewLine + standardError.Result;
         if (process.ExitCode != 0)
         {

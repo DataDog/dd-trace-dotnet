@@ -41,6 +41,12 @@ internal sealed class AotInstrumentOptions
 
     public IReadOnlyList<string> Neutralize { get; init; } = Array.Empty<string>();
 
+    /// <summary>
+    /// Gets the ducktype-aot map files recorded by dynamic duck typing (<c>DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH</c>) whose
+    /// mappings the DuckType AOT registry also serves: the proxies created from runtime types.
+    /// </summary>
+    public IReadOnlyList<string> DuckTypeMaps { get; init; } = Array.Empty<string>();
+
     /// <summary>Gets a value indicating whether the CallTarget registrations are generated (off only to compare the native rewrite alone).</summary>
     public bool GenerateCallTargetRegistry { get; init; } = true;
 

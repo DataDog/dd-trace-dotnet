@@ -55,42 +55,85 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
     /// Generates the registry for <paramref name="requests"/> into <paramref name="outputDirectory"/> (assembly, trimmer
     /// descriptor, props and compatibility reports), or returns null when no request names a proxy.
     /// </summary>
+    /// <param name="requests">The proxies the adapters create for static types.</param>
+    /// <param name="runtimeRequests">The proxies looked up by runtime type for values of static types (begin slow path).</param>
+    /// <param name="recordedMappings">The mappings recorded at runtime by dynamic duck typing (C6).</param>
+    /// <param name="assemblyPaths">The paths of the loaded assemblies, by name, for the recorded mappings.</param>
+    /// <param name="outputDirectory">The output directory.</param>
+    /// <param name="assemblyName">The name of the registry assembly.</param>
+    /// <param name="datadogTracePath">The Datadog.Trace.dll the application ships.</param>
+    /// <param name="resolveType">Resolves a type reference across the loaded modules.</param>
+    /// <param name="errors">Receives the recorded mappings whose assemblies aren't loaded.</param>
     public static CallTargetDuckTypeRegistry? Build(
         IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> requests,
         IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> runtimeRequests,
+        IEnumerable<DuckTypeAotMapping> recordedMappings,
+        IReadOnlyDictionary<string, string> assemblyPaths,
         string outputDirectory,
         string assemblyName,
         string datadogTracePath,
-        Func<ITypeDefOrRef, TypeDef?> resolveType)
+        Func<ITypeDefOrRef, TypeDef?> resolveType,
+        ICollection<string> errors)
     {
         var mappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
         var proxyAssemblies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["Datadog.Trace"] = Path.GetFullPath(datadogTracePath) };
         var targetAssemblies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        // Runtime lookups first: a pair also created for its static type keeps the aliases.
-        foreach (var (proxyDefinition, target, runtimeLookup) in runtimeRequests.Select(r => (r.ProxyDefinition, r.Target, true)).Concat(requests.Select(r => (r.ProxyDefinition, r.Target, false))))
+
+        // The proxies of static types first: a recorded mapping of the same pair comes from IntegrationMapper creating that
+        // proxy for the static type (DuckType.Create records the runtime type), so it doesn't need the aliases of a
+        // runtime lookup, which for System.Object would be every type of the inputs.
+        foreach (var (proxyDefinition, target) in requests)
         {
-            if (Describe(proxyDefinition, resolveType) is not { } proxy || Describe(target, resolveType) is not { } targetType)
+            AddRequest(proxyDefinition, target, DuckTypeAotMappingSource.CallTarget);
+        }
+
+        foreach (var mapping in recordedMappings)
+        {
+            if (mappings.ContainsKey(mapping.Key))
             {
                 continue;
             }
 
-            var source = runtimeLookup ? DuckTypeAotMappingSource.MapFile : DuckTypeAotMappingSource.CallTarget;
-            var mapping = new DuckTypeAotMapping(proxy.TypeName, proxy.AssemblyName, targetType.TypeName, targetType.AssemblyName, DuckTypeAotMappingMode.Forward, source);
-            if (!mappings.ContainsKey(mapping.Key))
+            if (!assemblyPaths.TryGetValue(mapping.ProxyAssemblyName, out var proxyPath) || !assemblyPaths.TryGetValue(mapping.TargetAssemblyName, out var targetPath))
             {
-                mappings[mapping.Key] = mapping;
+                errors.Add($"Recorded duck typing mapping {mapping.Key}: its assemblies aren't among the application's references.");
+                continue;
             }
 
-            proxyAssemblies[proxy.AssemblyName] = proxy.Path;
-            foreach (var (targetAssemblyName, path) in targetType.Assemblies)
-            {
-                targetAssemblies[targetAssemblyName] = path;
-            }
+            mappings[mapping.Key] = mapping;
+            proxyAssemblies[mapping.ProxyAssemblyName] = proxyPath;
+            targetAssemblies[mapping.TargetAssemblyName] = targetPath;
+        }
+
+        foreach (var (proxyDefinition, target) in runtimeRequests)
+        {
+            AddRequest(proxyDefinition, target, DuckTypeAotMappingSource.MapFile);
         }
 
         if (mappings.Count == 0)
         {
             return null;
+        }
+
+        void AddRequest(TypeSig proxyDefinition, TypeSig target, DuckTypeAotMappingSource source)
+        {
+            if (Describe(proxyDefinition, resolveType) is not { } proxy || Describe(target, resolveType) is not { } targetType)
+            {
+                return;
+            }
+
+            var mapping = new DuckTypeAotMapping(proxy.TypeName, proxy.AssemblyName, targetType.TypeName, targetType.AssemblyName, DuckTypeAotMappingMode.Forward, source);
+            if (mappings.ContainsKey(mapping.Key))
+            {
+                return;
+            }
+
+            mappings[mapping.Key] = mapping;
+            proxyAssemblies[proxy.AssemblyName] = proxy.Path;
+            foreach (var (targetAssemblyName, path) in targetType.Assemblies)
+            {
+                targetAssemblies[targetAssemblyName] = path;
+            }
         }
 
         Directory.CreateDirectory(outputDirectory);

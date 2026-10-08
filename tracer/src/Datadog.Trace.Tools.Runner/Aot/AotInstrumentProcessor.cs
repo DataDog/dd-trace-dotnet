@@ -84,10 +84,14 @@ internal static class AotInstrumentProcessor
                 }
 
                 AotLog.Info($"Duck typing proxies needed by the CallTarget adapters: {collector.Requests.Count} (+{collector.RuntimeRequests.Count} looked up at runtime)");
-                if (collector.Requests.Count + collector.RuntimeRequests.Count > 0)
+                var recordedMappings = ReadDuckTypeMaps(options.DuckTypeMaps, report);
+                if (collector.Requests.Count + collector.RuntimeRequests.Count + recordedMappings.Count > 0)
                 {
                     var registryName = $"Datadog.Trace.DuckType.AotRegistry.{writableModules[0].AssemblyName}";
-                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
+                    var assemblyPaths = modules.Where(m => !StringUtil.IsNullOrEmpty(m.Path))
+                                               .GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase)
+                                               .ToDictionary(g => g.Key, g => Path.GetFullPath(g.First().Path), StringComparer.OrdinalIgnoreCase);
+                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve, report.Errors);
                     if (duckTypeRegistry is not null)
                     {
                         report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, Warnings = duckTypeRegistry.Warnings.ToList() };
@@ -154,6 +158,23 @@ internal static class AotInstrumentProcessor
 #if NET6_0_OR_GREATER
     private static (string Type, string Method) DescribeForVerification(dnlib.DotNet.MethodDef method)
         => (method.DeclaringType.ReflectionFullName, $"{method.Name}({string.Join(",", method.Parameters.Where(p => !p.IsHiddenThisParameter).Select(p => p.Type.FullName))})");
+
+    /// <summary>
+    /// The mappings of the ducktype-aot map files recorded at runtime (C6).
+    /// </summary>
+    private static List<DuckTypeAot.DuckTypeAotMapping> ReadDuckTypeMaps(IReadOnlyList<string> paths, AotInstrumentReport report)
+    {
+        var mappings = new List<DuckTypeAot.DuckTypeAotMapping>();
+        foreach (var path in paths)
+        {
+            var result = DuckTypeAot.DuckTypeAotMapFileParser.Parse(path);
+            report.Errors.AddRange(result.Errors.Select(e => $"{path}: {e}"));
+            mappings.AddRange(result.Mappings);
+            AotLog.Info($"{path}: {result.Mappings.Count} recorded duck typing mappings");
+        }
+
+        return mappings;
+    }
 #endif
 
     private static void Validate(AotInstrumentOptions options)
