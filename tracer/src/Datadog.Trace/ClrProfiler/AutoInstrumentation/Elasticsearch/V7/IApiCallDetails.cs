@@ -6,9 +6,11 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
 {
+    [DuckType("Elasticsearch.Net.ApiCallDetails", "Elasticsearch.Net")]
     internal interface IApiCallDetails
     {
         public Uri? Uri { get; }

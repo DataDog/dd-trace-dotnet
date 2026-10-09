@@ -63,16 +63,17 @@ Libraries or features that don't work with NativeAOT behave the same with and wi
 - Stack frames (error stacks, RASP stacks, IAST locations) have file and line with .NET 11 and later (see
   `StackTraceLineNumberSupport`). Earlier versions of NativeAOT have no line information at runtime: the frames have the
   method only.
-- Duck typing (how the tracer reads the types of the libraries it instruments) can't create code at runtime: the package
-  brings the mappings of the supported libraries, generated at publish. For mappings created from types only known at
-  runtime, record them under JIT and pass them to the publish (see [Duck typing mappings](#duck-typing-mappings)).
+- Duck typing (how the tracer reads the types of the libraries it instruments) can't create code at runtime: the mappings
+  of the supported libraries are generated at publish, from the ones the tracer declares. For mappings created from types
+  only known at runtime, record them under JIT and pass them to the publish (see [Duck typing mappings](#duck-typing-mappings)).
 
 ## Duck typing mappings
 
-The package has a catalog of the duck typing mappings the supported integrations create from runtime types. When an
-application uses a library version or a code path the catalog doesn't cover, the tracer logs that a duck typing mapping is
-missing and the integration is disabled. To add them, run the application under JIT with the tracer attached and
-`DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH=<file>`, which records every mapping created, and pass the file to the publish:
+The tracer declares the duck typing mappings the supported integrations create from runtime types, and the publish
+generates them for the library versions the application references. When an application creates a mapping the tracer
+doesn't declare, the tracer logs that a duck typing mapping is missing and the integration is disabled. To add them, run
+the application under JIT with the tracer attached and `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH=<file>`, which records every
+mapping created, and pass the file to the publish (the report lists the recorded mappings the tracer doesn't declare):
 
 ```xml
 <PropertyGroup>
@@ -107,7 +108,7 @@ any of those runtime identifiers.
 | Property | Description |
 |---|---|
 | `DatadogAotInstrumentation` | `false` to disable the instrumentation. |
-| `DatadogAotDuckTypeMaps` | ducktype-aot map files recorded at runtime with `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH` (`;`-separated): the duck typing mappings created from runtime types, in addition to the package's catalog (`DatadogAotBuiltInDuckTypeMaps=false` leaves it out). |
+| `DatadogAotDuckTypeMaps` | ducktype-aot map files recorded at runtime with `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH` (`;`-separated): the duck typing mappings created from runtime types, in addition to the ones the tracer declares. |
 | `DatadogAotCategories` | Instrumentation categories (default `tracing,appsec,rasp`; add `iast` to opt in). |
 | `DatadogAotFailOnError` | `true` to fail the publish when the instrumentation fails. By default, the application is published without it, with a warning. |
 | `DatadogAotTraceMethods` | Methods to trace, with the `DD_TRACE_METHODS` syntax: they are instrumented when publishing (default: `DD_TRACE_METHODS` of the build). |

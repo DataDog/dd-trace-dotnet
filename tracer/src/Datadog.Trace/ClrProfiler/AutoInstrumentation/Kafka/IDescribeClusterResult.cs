@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.Admin.DescribeClusterResult
 /// </summary>
+[DuckType("Confluent.Kafka.Admin.DescribeClusterResult", "Confluent.Kafka")]
 internal interface IDescribeClusterResult
 {
     string? ClusterId { get; }

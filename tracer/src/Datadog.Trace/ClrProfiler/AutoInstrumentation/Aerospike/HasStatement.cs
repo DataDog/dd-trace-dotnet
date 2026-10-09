@@ -8,6 +8,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
     [DuckCopy]
+    [DuckCopy("Aerospike.Client.QueryPartitionCommand", "AerospikeClient")]
     internal struct HasStatement
     {
         [DuckField(Name = "statement")]

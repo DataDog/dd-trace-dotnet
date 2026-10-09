@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 /// <summary>
 /// Duck type for Azure.Messaging.EventHubs.EventData
 /// </summary>
+[DuckType("Azure.Messaging.EventHubs.EventData", "Azure.Messaging.EventHubs")]
 internal interface IEventData : IDuckType
 {
     IDictionary<string, object> Properties { get; }

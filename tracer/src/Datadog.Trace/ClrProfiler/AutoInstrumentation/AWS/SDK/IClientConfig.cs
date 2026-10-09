@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// IClientConfig interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.Runtime.ClientConfig", "AWSSDK.Core", IncludeDerivedTypes = true)]
     internal interface IClientConfig
     {
         /// <summary>

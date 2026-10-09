@@ -98,6 +98,7 @@ public static class FireOnStartCommon
     }
 
     [DuckCopy]
+    [DuckCopy("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.Http1Connection`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting]]", "Microsoft.AspNetCore.Server.Kestrel.Core")]
     internal struct HttpProtocolStruct
     {
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]

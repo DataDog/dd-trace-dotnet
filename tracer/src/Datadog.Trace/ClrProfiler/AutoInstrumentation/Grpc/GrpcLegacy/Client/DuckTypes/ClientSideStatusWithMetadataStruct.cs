@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core/Internal/ClientSideStatus.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.Core.Internal.ClientSideStatus", "Grpc.Core")]
     internal struct ClientSideStatusWithMetadataStruct
     {
         public StatusStruct Status;

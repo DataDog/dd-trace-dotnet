@@ -4,12 +4,14 @@
 // </copyright>
 
 using System.Reflection;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase;
 
 /// <summary>
 /// Ducktyping of Couchbase.Configuration.Client.PoolConfiguration
 /// </summary>
+[DuckType("Couchbase.Configuration.Client.PoolConfiguration", "Couchbase.NetClient")]
 internal interface IPoolConfiguration
 {
     IClientConfiguration ClientConfiguration { get; }

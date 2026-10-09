@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
     /// Body interface for ducktyping
     /// </summary>
+    [DuckType("System.ReadOnlyMemory`1[[System.Byte, System.Private.CoreLib]]", "System.Private.CoreLib")]
     internal interface IBody
     {
         /// <summary>

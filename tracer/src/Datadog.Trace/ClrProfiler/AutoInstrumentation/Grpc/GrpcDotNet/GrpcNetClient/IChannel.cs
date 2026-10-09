@@ -5,11 +5,13 @@
 
 #nullable enable
 using System;
+using Datadog.Trace.DuckTyping;
 
 #if !NET461
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient;
 
+[DuckType("Grpc.Net.Client.GrpcChannel", "Grpc.Net.Client")]
 internal interface IChannel
 {
     Uri Address { get; }

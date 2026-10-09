@@ -5,8 +5,11 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
 {
+    [DuckType("Nest.ResponseBase", "Nest", IncludeDerivedTypes = true)]
     internal interface IElasticsearchResponse
     {
         IApiCallDetails? ApiCall { get; }

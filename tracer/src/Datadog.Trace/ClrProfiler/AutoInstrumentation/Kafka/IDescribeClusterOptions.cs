@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.Admin.DescribeClusterOptions
 /// </summary>
+[DuckType("Confluent.Kafka.Admin.DescribeClusterOptions", "Confluent.Kafka")]
 internal interface IDescribeClusterOptions
 {
     TimeSpan? RequestTimeout { get; set; }
