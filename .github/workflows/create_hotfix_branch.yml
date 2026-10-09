@@ -25,7 +25,8 @@ jobs:
 
   bump_version:
     needs: check_tag
-    runs-on: windows-latest
+    # commit-headless does not support Windows runners.
+    runs-on: ubuntu-latest
     permissions:
       contents: write # Push branches
       issues: write # change milestones 
@@ -35,28 +36,26 @@ jobs:
       NewIsPrerelease: "${{ github.event.inputs.is_prerelease }}"
 
     steps:
-      - name: Support longpaths
-        run: git config --system core.longpaths true
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.sha }}
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
       - name: "Bump Version"
-        run: .\tracer\build.ps1 UpdateVersion
+        run: ./tracer/build.sh UpdateVersion
 
       - name: "Verify Changes"
         id: changes
-        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
+        run: ./tracer/build.sh VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
 
       - name: "Output Version"
         id: versions
-        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
 
       - name: "Stage version bump"
         run: git add .
@@ -66,7 +65,7 @@ jobs:
         with:
           command: commit
           branch: hotfix/${{ steps.versions.outputs.full_version }}
-          message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
+          message: "[Version Bump] ${{ steps.versions.outputs.full_version }}"
           # Keeps whoever dispatched the workflow as a Co-authored-by trailer.
           author: "${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
           head-sha: ${{ github.sha }}
