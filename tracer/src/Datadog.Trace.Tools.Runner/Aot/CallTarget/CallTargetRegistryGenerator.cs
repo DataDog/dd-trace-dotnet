@@ -276,8 +276,12 @@ internal sealed class CallTargetRegistryGenerator
                 Attributes = TypeAttributes.NotPublic | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class,
             };
             var instancesBuilder = new RegistrationBuilder(instances, method.FullName) { IsInstantiation = true };
-            foreach (var instantiation in instantiations)
+            foreach (var found in instantiations)
             {
+                // The type arguments can be types of another assembly (the application's): references of this module.
+                var instantiation = new GenericInstantiationDiscovery.Instantiation(
+                    found.TypeArguments.Select(_references.Import).ToList(),
+                    found.MethodArguments.Select(_references.Import).ToList());
                 foreach (var invocation in invocations)
                 {
                     var closed = invocation.Remap(t => GenericInstantiationDiscovery.Substitute(t, instantiation));
