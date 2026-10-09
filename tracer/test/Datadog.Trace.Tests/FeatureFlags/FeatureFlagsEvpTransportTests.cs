@@ -158,6 +158,74 @@ public class FeatureFlagsEvpTransportTests
         }
     }
 
+    [Fact]
+    public async Task DelayedOldAgentDiscoveryCannotAuthorizeReplacementAgent()
+    {
+        const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
+        using var replacement = new HttpListener();
+        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
+        replacement.Prefixes.Add(replacementUrl);
+        replacement.Start();
+        var received = replacement.GetContextAsync();
+        var settings = CreateSettings(
+            (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
+            (ConfigurationKeys.AgentUri, "http://old-agent:8126/"));
+        var factoryA = CreateFactory("http://old-agent:8126/", uri => new TestApiRequest(uri, responseContent: CapableInfo));
+        var factoryB = CreateFactory(replacementUrl, uri => new TestApiRequest(uri, responseContent: "{\"endpoints\":[\"evp_proxy/v4\"]}"));
+        var originalSettings = settings.Manager.InitialExporterSettings;
+        await using var discovery = new DiscoveryService(factoryA, new ServiceRemappingHash(null), 1, 1, 30_000, autoStartLoop: false, exporterSettings: originalSettings);
+        using var discoverySettings = settings.Manager.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedExporter is { } exporter)
+            {
+                discovery.UpdateRequestFactory(factoryB, exporter);
+            }
+        });
+        var notificationStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseNotification = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        // Discovery invokes a captured subscriber list outside its lock. Delay A before EVP's callback.
+        discovery.SubscribeToChanges(configuration =>
+        {
+            if (ReferenceEquals(configuration.DiscoverySettings, originalSettings))
+            {
+                notificationStarted.TrySetResult(true);
+                releaseNotification.Task.GetAwaiter().GetResult();
+            }
+        });
+        using var transport = new FeatureFlagsEvpTransport(settings, discovery);
+        var oldDiscovery = Task.Run(() => discovery.RunOneIterationAsync(null));
+        try
+        {
+            (await Task.WhenAny(notificationStarted.Task, Task.Delay(TimeSpan.FromSeconds(3)))).Should().BeSameAs(notificationStarted.Task);
+            settings.Manager.UpdateManualConfigurationSettings(
+                new ManualInstrumentationConfigurationSource(new Dictionary<string, object?> { { TracerSettingKeyConstants.AgentUriKey, new Uri(replacementUrl) } }, useDefaultSources: true),
+                NullConfigurationTelemetry.Instance).Should().BeTrue();
+            releaseNotification.TrySetResult(true);
+            await oldDiscovery;
+
+            var send = transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+            var stillWaiting = Task.Delay(TimeSpan.FromMilliseconds(200));
+            (await Task.WhenAny(received, send, stillWaiting)).Should().BeSameAs(stillWaiting, "A's delayed callback cannot validate B or release B's discovery waiter");
+            await discovery.RunOneIterationAsync(null);
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(3)))).Should().BeSameAs(send);
+            await send;
+            received.IsCompleted.Should().BeFalse("B does not advertise identity-header forwarding");
+        }
+        finally
+        {
+            releaseNotification.TrySetResult(true);
+            await oldDiscovery;
+            replacement.Close();
+            try
+            {
+                await received;
+            }
+            catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException)
+            {
+            }
+        }
+    }
+
     [Theory]
     [InlineData(200)]
     [InlineData(503)]
