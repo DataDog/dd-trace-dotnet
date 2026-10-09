@@ -200,7 +200,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 targetType,
                 targetAssembly,
                 mode.Value,
-                DuckTypeAotMappingSource.MapFile);
+                DuckTypeAotMappingSource.MapFile,
+                includesDerivedTypes: mode.Value == DuckTypeAotMappingMode.Forward && entry.IncludeDerivedTypes);
             return true;
         }
 
@@ -319,6 +320,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// <value>The mode value.</value>
             [JsonProperty("mode")]
             public string? Mode { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the proxy of the target type also serves the classes deriving from it
+            /// (<c>[DuckType(IncludeDerivedTypes = true)]</c>).
+            /// </summary>
+            [JsonProperty("includeDerivedTypes")]
+            public bool IncludeDerivedTypes { get; set; }
 
             /// <summary>
             /// Gets or sets additional properties.

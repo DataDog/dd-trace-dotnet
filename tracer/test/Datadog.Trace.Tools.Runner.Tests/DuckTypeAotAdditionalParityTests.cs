@@ -460,7 +460,8 @@ public partial class DuckTypeAotAdditionalParityTests
                 proxyType = mapping.ProxyTypeName,
                 proxyAssembly = mapping.ProxyAssemblyName,
                 targetType = mapping.TargetTypeName,
-                targetAssembly = mapping.TargetAssemblyName
+                targetAssembly = mapping.TargetAssemblyName,
+                includeDerivedTypes = mapping.IncludesDerivedTypes
             })
         }));
         return mapPath;
