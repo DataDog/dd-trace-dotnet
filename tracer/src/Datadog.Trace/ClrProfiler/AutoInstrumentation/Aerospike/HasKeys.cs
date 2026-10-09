@@ -9,6 +9,11 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
     [DuckCopy]
+    [DuckCopy("Aerospike.Client.AsyncBatchExistsArrayCommand", "AerospikeClient")]
+    [DuckCopy("Aerospike.Client.AsyncBatchGetArrayCommand", "AerospikeClient")]
+    [DuckCopy("Aerospike.Client.BatchExistsArrayCommand", "AerospikeClient")]
+    [DuckCopy("Aerospike.Client.BatchGetArrayCommand", "AerospikeClient")]
+    [DuckCopy("Aerospike.Client.QueryPartitionCommand", "AerospikeClient")]
     internal struct HasKeys
     {
         [DuckField(Name = "keys")]

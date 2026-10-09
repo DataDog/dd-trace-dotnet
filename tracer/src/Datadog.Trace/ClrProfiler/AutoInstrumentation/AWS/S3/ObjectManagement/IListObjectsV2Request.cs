@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 /// ListObjectsV2Request interface for ducktyping.
 /// Mirrors Amazon.S3.Model.ListObjectsV2Request with unused values removed.
 /// </summary>
+[DuckType("Amazon.S3.Model.ListObjectsV2Request", "AWSSDK.S3")]
 internal interface IListObjectsV2Request : IDuckType
 {
     /// <summary>

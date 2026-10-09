@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 
+[DuckType("Amazon.SQS.Model.ReceiveMessageRequest", "AWSSDK.SQS")]
 internal interface IReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
 {
     List<string?>? MessageAttributeNames { get; set; }

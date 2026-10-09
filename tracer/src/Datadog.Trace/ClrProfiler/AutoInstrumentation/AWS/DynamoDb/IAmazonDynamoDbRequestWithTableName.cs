@@ -5,11 +5,15 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 
 /// <summary>
 /// Interface for duck typing AmazonDynamoDbRequest implementations with the TableName property
 /// </summary>
+[DuckType("Amazon.DynamoDBv2.Model.GetItemRequest", "AWSSDK.DynamoDBv2")]
+[DuckType("Amazon.DynamoDBv2.Model.PutItemRequest", "AWSSDK.DynamoDBv2")]
 internal interface IAmazonDynamoDbRequestWithTableName
 {
     /// <summary>

@@ -15,6 +15,7 @@ namespace Datadog.Trace.AppSec.ApiSec.DuckType
     /// RoutePattern for duck typing
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Microsoft.AspNetCore.Routing.Patterns.RoutePattern", "Microsoft.AspNetCore.Routing")]
     public struct RoutePatternRequiredValues
     {
         /// <summary>

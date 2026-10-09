@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     /// <summary>
     /// GraphQL.ExecutionError interface for ducktyping with Extensions
     /// </summary>
+    [DuckType("GraphQL.ExecutionError", "GraphQL", IncludeDerivedTypes = true)]
     internal interface IExecutionErrorExtensions : IExecutionError
     {
         /// <summary>

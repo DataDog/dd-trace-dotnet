@@ -8,6 +8,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43
 {
+    [DuckType("NLog.Layouts.SimpleLayout", "NLog")]
     internal interface IJsonLayout4Proxy : IDuckType
     {
         IList Attributes { get; }

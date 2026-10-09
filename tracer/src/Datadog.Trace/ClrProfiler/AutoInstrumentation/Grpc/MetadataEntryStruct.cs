@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core.Api/Metadata.cs#L276
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.Core.Metadata+Entry", "Grpc.Core.Api")]
     internal struct MetadataEntryStruct
     {
         public string Key;

@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase;
 /// Ducktyping of Couchbase.IO.IConnection
 /// </summary>
 [DuckCopy]
+[DuckCopy("Couchbase.IO.MultiplexingConnection", "Couchbase.NetClient")]
 internal struct ConnectionStruct
 {
     /// <summary>

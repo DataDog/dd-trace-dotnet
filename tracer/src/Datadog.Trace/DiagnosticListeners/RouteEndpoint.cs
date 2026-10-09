@@ -11,6 +11,7 @@ namespace Datadog.Trace.DiagnosticListeners;
 /// Endpoint for duck typing
 /// </summary>
 [DuckCopy]
+[DuckCopy("Microsoft.AspNetCore.Routing.RouteEndpoint", "Microsoft.AspNetCore.Routing")]
 internal struct RouteEndpoint
 {
     /// <summary>

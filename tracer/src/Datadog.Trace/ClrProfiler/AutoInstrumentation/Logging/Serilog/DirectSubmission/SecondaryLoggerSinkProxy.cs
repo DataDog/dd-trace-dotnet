@@ -10,6 +10,10 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
 
 [DuckCopy]
+[DuckCopy("Serilog.Core.Sinks.FilteringSink", "Serilog")]
+[DuckCopy("Serilog.Core.Sinks.SafeAggregateSink", "Serilog")]
+[DuckCopy("Serilog.Core.Sinks.SecondaryLoggerSink", "Serilog")]
+[DuckCopy("Serilog.Sinks.File.FileSink", "Serilog.Sinks.File")]
 internal struct SecondaryLoggerSinkProxy
 {
     [DuckField(Name = "_logger")]

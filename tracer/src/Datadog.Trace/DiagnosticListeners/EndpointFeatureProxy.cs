@@ -13,6 +13,8 @@ namespace Datadog.Trace.DiagnosticListeners
     /// Also see AspNetCoreDiagnosticObserver.EndpointFeatureStruct
     /// </summary>
 #pragma warning  disable DDSEAL001 // Types should be sealed where possible. Types used for duck-typing cannot be sealed.
+    [DuckType("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.Http1Connection`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting]]", "Microsoft.AspNetCore.Server.Kestrel.Core")]
+    [DuckType("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2.Http2Stream`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting]]", "Microsoft.AspNetCore.Server.Kestrel.Core")]
     internal class EndpointFeatureProxy
 #pragma warning restore DDSEAL001
     {

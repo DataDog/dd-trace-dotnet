@@ -4,12 +4,14 @@
 // </copyright>
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     /// <summary>
     /// CreateQueueResponse interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.SQS.Model.CreateQueueResponse", "AWSSDK.SQS")]
     internal interface ICreateQueueResponse : IAmazonWebServiceResponse
     {
         /// <summary>

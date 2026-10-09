@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// MongoDB.Bson.BsonDocument interface for duck-typing
     /// </summary>
     [DuckCopy]
+    [DuckCopy("MongoDB.Bson.BsonElement", "MongoDB.Bson")]
     internal struct BsonElementStruct
     {
         /// <summary>

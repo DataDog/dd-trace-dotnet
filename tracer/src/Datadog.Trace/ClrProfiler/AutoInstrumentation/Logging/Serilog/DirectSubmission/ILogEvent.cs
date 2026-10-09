@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     /// <summary>
     /// Duck type for LogEvent
     /// </summary>
+    [DuckType("Serilog.Events.LogEvent", "Serilog")]
     internal interface ILogEvent : IDuckType
     {
         /// <summary>

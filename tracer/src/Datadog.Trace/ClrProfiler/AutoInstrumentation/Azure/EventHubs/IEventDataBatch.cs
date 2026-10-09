@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 /// <summary>
 /// Duck type for Azure.Messaging.EventHubs.Producer.EventDataBatch
 /// </summary>
+[DuckType("Azure.Messaging.EventHubs.Producer.EventDataBatch", "Azure.Messaging.EventHubs")]
 internal interface IEventDataBatch : IDuckType
 {
     int Count { get; }

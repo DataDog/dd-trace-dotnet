@@ -9,6 +9,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Activity.DuckTypes;
 
+[DuckType("System.Diagnostics.ActivitySpanId", "System.Diagnostics.DiagnosticSource")]
 internal interface IActivitySpanId : IDuckType
 {
     [DuckField(Name = "_hexString")]

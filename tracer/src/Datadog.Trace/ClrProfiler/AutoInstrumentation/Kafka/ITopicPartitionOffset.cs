@@ -4,8 +4,12 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
+[DuckType("Confluent.Kafka.TopicPartitionOffset", "Confluent.Kafka")]
+[DuckType("Confluent.Kafka.TopicPartitionOffsetError", "Confluent.Kafka")]
 internal interface ITopicPartitionOffset
 {
     public string Topic { get; }

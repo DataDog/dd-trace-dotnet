@@ -7,6 +7,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
+    [DuckType("NLog.Targets.FileTarget", "NLog")]
     internal interface ITargetWithLayoutProxy : IDuckType
     {
         public object Layout { get; }

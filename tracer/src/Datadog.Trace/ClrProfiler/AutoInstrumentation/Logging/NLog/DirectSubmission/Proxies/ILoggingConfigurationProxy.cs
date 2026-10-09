@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// <summary>
     /// Duck type for LoggingConfiguration for NLog 4.5+
     /// </summary>
+    [DuckType("NLog.Config.XmlLoggingConfiguration", "NLog")]
     internal interface ILoggingConfigurationProxy
     {
         /// <summary>

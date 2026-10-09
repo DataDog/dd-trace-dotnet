@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.AdminClientBuilder and DependentAdminClientBuilder
 /// </summary>
+[DuckType("Confluent.Kafka.DependentAdminClientBuilder", "Confluent.Kafka")]
 internal interface IAdminClientBuilder
 {
     IAdminClient Build();

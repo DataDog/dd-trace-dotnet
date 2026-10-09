@@ -9,6 +9,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43
 {
+    [DuckType("NLog.LogFactory", "NLog")]
     internal interface ILogFactoryPre43Proxy : IDuckType
     {
         // Note - when this is get/set it will do a _lot_ of re-configuration of NLog

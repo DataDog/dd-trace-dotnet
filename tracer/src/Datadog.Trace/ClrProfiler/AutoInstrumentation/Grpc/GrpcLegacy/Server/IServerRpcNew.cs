@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 {
     /// <summary>
@@ -12,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
     /// Interface because used in constraints
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core/Internal/ServerRpcNew.cs
     /// </summary>
+    [DuckType("Grpc.Core.Internal.ServerRpcNew", "Grpc.Core")]
     internal interface IServerRpcNew
     {
         public IMetadata RequestMetadata { get; }

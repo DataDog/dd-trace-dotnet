@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
 {
+    [DuckType("Grpc.Core.Channel", "Grpc.Core")]
     internal interface IChannel : IDuckType
     {
         string Target { get; }

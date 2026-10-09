@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     /// <summary>
     /// Ducktyping of Couchbase.Core.ClusterNode
     /// </summary>
+    [DuckType("Couchbase.Core.ClusterNode", "Couchbase.NetClient")]
     internal interface IClusterNode
     {
         [DuckField(Name = "_context")]

@@ -13,6 +13,7 @@ namespace Datadog.Trace.Activity.DuckTypes;
 
 // https://github.com/dotnet/runtime/blob/f2a9ef8d392b72e6f039ec0b87f3eae4307c6cae/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/ActivityContext.cs#L13
 
+[DuckType("System.Diagnostics.ActivityContext", "System.Diagnostics.DiagnosticSource")]
 internal interface IActivityContext : IDuckType
 {
     IActivityTraceId TraceId { get; }

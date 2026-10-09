@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 /// <summary>
 /// Duck type for Azure.Messaging.EventHubs.Producer.EventHubProducerClient
 /// </summary>
+[DuckType("Azure.Messaging.EventHubs.Producer.EventHubProducerClient", "Azure.Messaging.EventHubs")]
 internal interface IEventHubProducerClient : IDuckType
 {
     string EventHubName { get; }
@@ -20,6 +21,7 @@ internal interface IEventHubProducerClient : IDuckType
     IEventHubConnection Connection { get; }
 }
 
+[DuckType("Azure.Messaging.EventHubs.EventHubConnection", "Azure.Messaging.EventHubs")]
 internal interface IEventHubConnection
 {
     Uri? ServiceEndpoint { get; }

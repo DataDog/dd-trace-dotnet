@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
@@ -13,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// Duck type for HttpWebRequestMessage
 /// https://github.com/aws/aws-sdk-net/blob/41a9184cb88ddf671cf35b276cc74d545aca49a7/sdk/src/Core/Amazon.Runtime/Pipeline/HttpHandler/_netstandard/HttpRequestMessageFactory.cs#L385
 /// </summary>
+[DuckType("Amazon.Runtime.HttpWebRequestMessage", "AWSSDK.Core")]
 internal interface IHttpWebRequestMessage
 {
     Uri? RequestUri { get; }

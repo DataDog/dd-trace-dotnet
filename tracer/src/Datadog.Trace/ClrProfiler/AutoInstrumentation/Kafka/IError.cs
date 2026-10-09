@@ -3,11 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
     /// Error interface for duck-typing
     /// </summary>
+    [DuckType("Confluent.Kafka.Error", "Confluent.Kafka")]
     internal interface IError
     {
         /// <summary>

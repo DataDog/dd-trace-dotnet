@@ -5,9 +5,12 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Activity.DuckTypes
 {
     // Using interface instead of [DuckCopy] struct as we need to set values too
+    [DuckType("System.Diagnostics.Activity", "System.Diagnostics.DiagnosticSource")]
     internal interface IActivityFormat
     {
         ActivityIdFormat DefaultIdFormat { get; set; }

@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     /// OpenTelemetry.BaseProcessor`1[System.Diagnostics.Activity]. Without dynamic code (NativeAOT), the build generates
     /// that proxy instead of the type <see cref="TracerProviderBuilderIntegration"/> emits.
     /// </summary>
+    [DuckReverseDelegation("OpenTelemetry.BaseProcessor`1[[System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource]]", "OpenTelemetry")]
     internal sealed class ResourceAttributeReverseProcessor
     {
         private readonly DuckType.CreateTypeResult _baseProcessorProxyType;

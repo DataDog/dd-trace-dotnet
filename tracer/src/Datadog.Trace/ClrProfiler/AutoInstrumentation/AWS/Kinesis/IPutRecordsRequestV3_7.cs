@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Collections;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
     /// PutRecordsRequest interface for duck typing.
     /// </summary>
+    [DuckType("Amazon.Kinesis.Model.PutRecordsRequest", "AWSSDK.Kinesis")]
     internal interface IPutRecordsRequestV3_7 : IAmazonKinesisRequestWithStreamNameAndStreamArn, IContainsRecords
     {
     }

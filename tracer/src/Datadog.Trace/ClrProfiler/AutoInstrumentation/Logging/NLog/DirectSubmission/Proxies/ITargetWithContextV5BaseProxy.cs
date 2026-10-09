@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// Duck type for TargetWithContext
     /// Represents target that supports context capture using ScopeContext
     /// </summary>
+    [DuckType("NLog.Targets.TargetWithContext", "NLog")]
     internal interface ITargetWithContextV5BaseProxy
     {
         /// <summary>

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.IMessage
 /// </summary>
+[DuckType("Google.Protobuf.IMessage", "Google.Protobuf", IncludeDerivedTypes = true)]
 internal interface IMessageProxy : IDuckType
 {
     /// <summary>
@@ -25,6 +26,7 @@ internal interface IMessageProxy : IDuckType
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.Reflection.MessageDescriptor/FieldCollection
 /// </summary>
+[DuckType("Google.Protobuf.Reflection.MessageDescriptor+FieldCollection", "Google.Protobuf")]
 internal interface IFieldCollectionProxy : IDuckType
 {
     IList InDeclarationOrder(); // <IFieldDescriptorProxy>
@@ -35,6 +37,7 @@ internal interface IFieldCollectionProxy : IDuckType
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.Reflection.FieldDescriptor
 /// </summary>
+[DuckType("Google.Protobuf.Reflection.FieldDescriptor", "Google.Protobuf")]
 internal interface IFieldDescriptorProxy
 {
     string Name { get; }
@@ -54,6 +57,7 @@ internal interface IFieldDescriptorProxy
 /// DuckTyping interface for Google.Protobuf.Reflection.MessageDescriptor
 /// </summary>
 [DuckCopy]
+[DuckCopy("Google.Protobuf.Reflection.MessageDescriptor", "Google.Protobuf")]
 internal struct MessageDescriptorProxy
 {
     public string Name;
@@ -64,6 +68,8 @@ internal struct MessageDescriptorProxy
 }
 
 [DuckCopy]
+[DuckCopy("Google.Protobuf.Reflection.EnumValueDescriptor", "Google.Protobuf")]
+[DuckCopy("Google.Protobuf.Reflection.FileDescriptor", "Google.Protobuf")]
 internal struct IDescriptorProxy
 {
     public string Name;
@@ -73,6 +79,7 @@ internal struct IDescriptorProxy
 /// DuckTyping interface for Google.Protobuf.Reflection.EnumDescriptor
 /// </summary>
 [DuckCopy]
+[DuckCopy("Google.Protobuf.Reflection.EnumDescriptor", "Google.Protobuf")]
 internal struct EnumDescriptorProxy
 {
     public string Name;

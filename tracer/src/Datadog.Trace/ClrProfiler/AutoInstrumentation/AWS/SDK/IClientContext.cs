@@ -4,12 +4,14 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
 /// <summary>
 /// Information about client configuration and execution environment.
 /// </summary>
+[DuckType("Amazon.Lambda.RuntimeSupport.CognitoClientContext", "Amazon.Lambda.RuntimeSupport")]
 internal interface IClientContext
 {
     /// <summary>

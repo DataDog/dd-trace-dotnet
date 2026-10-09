@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 /// <summary>
 /// Duck type for Azure.Messaging.EventHubs.Amqp.AmqpConsumer
 /// </summary>
+[DuckType("Azure.Messaging.EventHubs.Amqp.AmqpConsumer", "Azure.Messaging.EventHubs")]
 internal interface IAmqpConsumer : IDuckType
 {
     string EventHubName { get; }
@@ -19,6 +20,7 @@ internal interface IAmqpConsumer : IDuckType
     IAmqpConnectionScope? ConnectionScope { get; }
 }
 
+[DuckType("Azure.Messaging.EventHubs.Amqp.AmqpConnectionScope", "Azure.Messaging.EventHubs")]
 internal interface IAmqpConnectionScope
 {
     System.Uri? ServiceEndpoint { get; }

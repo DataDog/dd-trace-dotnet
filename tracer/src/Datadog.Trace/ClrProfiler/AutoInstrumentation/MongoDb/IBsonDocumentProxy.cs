@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// <summary>
     /// MongoDB.Bson.BsonDocument interface for duck-typing
     /// </summary>
+    [DuckType("MongoDB.Bson.BsonDocument", "MongoDB.Bson")]
     internal interface IBsonDocumentProxy : IDuckType
     {
         /// <summary>

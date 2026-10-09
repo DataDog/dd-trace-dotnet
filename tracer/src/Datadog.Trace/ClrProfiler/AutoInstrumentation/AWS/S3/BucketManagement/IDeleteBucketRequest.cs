@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
 /// DeleteBucketRequest interface for ducktyping.
 /// Mirrors Amazon.S3.Model.DeleteBucketRequest with unused values removed.
 /// </summary>
+[DuckType("Amazon.S3.Model.DeleteBucketRequest", "AWSSDK.S3")]
 internal interface IDeleteBucketRequest : IDuckType
 {
     /// <summary>

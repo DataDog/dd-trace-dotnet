@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
     /// <summary>
     /// GraphQL.ExecutionError interface for ducktyping
     /// </summary>
+    [DuckType("GraphQL.ExecutionError", "GraphQL", IncludeDerivedTypes = true)]
     internal interface IExecutionError : IDuckType
     {
         /// <summary>

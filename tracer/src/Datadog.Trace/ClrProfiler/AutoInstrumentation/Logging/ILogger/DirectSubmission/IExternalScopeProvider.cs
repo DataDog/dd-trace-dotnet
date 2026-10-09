@@ -5,12 +5,15 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
 {
     /// <summary>
     /// A duck type for Microsoft.Extensions.Logging.IExternalScopeProvider
     /// </summary>
+    [DuckType("Microsoft.Extensions.Logging.LoggerFactoryScopeProvider", "Microsoft.Extensions.Logging")]
+    [DuckType("Microsoft.Extensions.Logging.LoggerFactoryScopeProvider", "Microsoft.Extensions.Telemetry")]
     internal interface IExternalScopeProvider
     {
         /// <summary>

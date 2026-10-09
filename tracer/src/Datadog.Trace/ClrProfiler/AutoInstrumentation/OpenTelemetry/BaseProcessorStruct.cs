@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     /// Ducktype for type OpenTelemetry.BaseProcessor`1
     /// </summary>
     [DuckCopy]
+    [DuckCopy("OpenTelemetry.BaseProcessor`1[[System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource]]", "OpenTelemetry")]
     internal struct BaseProcessorStruct
     {
         public object? ParentProvider;

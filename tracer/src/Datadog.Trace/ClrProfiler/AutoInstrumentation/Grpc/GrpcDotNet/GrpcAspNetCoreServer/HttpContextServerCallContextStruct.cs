@@ -5,12 +5,15 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer
 {
     /// <summary>
     /// Duck type for HttpContextServerCallContext
     /// Interface as used in constraints
     /// </summary>
+    [DuckCopy("Grpc.AspNetCore.Server.Internal.HttpContextServerCallContext", "Grpc.AspNetCore.Server")]
     internal struct HttpContextServerCallContextStruct
     {
         public StatusStruct StatusCore;

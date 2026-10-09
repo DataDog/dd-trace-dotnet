@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// Duck type for LogLevel
     /// </summary>
     [DuckCopy]
+    [DuckCopy("NLog.LogLevel", "NLog")]
     internal struct LogLevelProxy
     {
         /// <summary>

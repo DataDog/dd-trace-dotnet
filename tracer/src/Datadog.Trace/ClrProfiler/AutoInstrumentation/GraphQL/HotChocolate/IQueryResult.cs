@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
@@ -12,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// HotChocolate.Execution.IQueryResult interface for ducktyping
     /// https://github.com/ChilliCream/graphql-platform/blob/35301472065248ce4e2f34894041f39124e3c7b8/src/HotChocolate/Core/src/Abstractions/Execution/IQueryResult.cs
     /// </summary>
+    [DuckType("HotChocolate.Execution.OperationResult", "HotChocolate.Execution.Abstractions")]
     internal interface IQueryResult
     {
         /// <summary>

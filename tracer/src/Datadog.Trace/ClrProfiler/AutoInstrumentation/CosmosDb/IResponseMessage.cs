@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// <remarks>
     /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/Handler/ResponseMessage.cs
     /// </remarks>
+    [DuckType("Microsoft.Azure.Cosmos.ResponseMessage", "Microsoft.Azure.Cosmos.Client")]
     internal interface IResponseMessage : IDuckType
     {
         HttpStatusCode StatusCode { get; }

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 /// Connection interface for duck typing
 /// </summary>
 [DuckCopy]
+[DuckCopy("RabbitMQ.Client.Framing.Connection", "RabbitMQ.Client")]
 internal struct IConnection
 {
     /// <summary>

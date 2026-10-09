@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
     /// BasicProperties interface for ducktyping
     /// </summary>
+    [DuckType("RabbitMQ.Client.BasicProperties", "RabbitMQ.Client")]
     internal interface IBasicProperties : IReadOnlyBasicProperties
     {
         /// <summary>

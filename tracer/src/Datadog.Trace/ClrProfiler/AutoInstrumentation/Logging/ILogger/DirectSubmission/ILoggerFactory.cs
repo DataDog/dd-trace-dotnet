@@ -12,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// Duck type for ILogLevel
     /// </summary>
+    [DuckType("Microsoft.Extensions.Logging.ExtendedLoggerFactory", "Microsoft.Extensions.Telemetry")]
+    [DuckType("Microsoft.Extensions.Logging.LoggerFactory", "Microsoft.Extensions.Logging")]
     internal interface ILoggerFactory : IDuckType
     {
         /// <summary>

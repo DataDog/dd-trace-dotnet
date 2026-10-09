@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// <summary>
     /// BasicGetResult interface for ducktyping
     /// </summary>
+    [DuckType("RabbitMQ.Client.BasicGetResult", "RabbitMQ.Client")]
     internal interface IBasicGetResult
     {
         /// <summary>

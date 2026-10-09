@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// Partition for duck-typing
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Confluent.Kafka.Offset", "Confluent.Kafka")]
     internal struct Offset
     {
         private const long RdKafkaOffsetBeginning = -2;

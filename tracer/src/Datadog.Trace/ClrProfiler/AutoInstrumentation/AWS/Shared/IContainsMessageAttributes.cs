@@ -6,12 +6,17 @@
 #nullable enable
 using System.Collections;
 using System.IO;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 {
     /// <summary>
     /// MessageAttributes interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.SQS.Model.SendMessageBatchRequestEntry", "AWSSDK.SQS")]
+    [DuckType("Amazon.SQS.Model.SendMessageRequest", "AWSSDK.SQS")]
+    [DuckType("Amazon.SimpleNotificationService.Model.PublishBatchRequestEntry", "AWSSDK.SimpleNotificationService")]
+    [DuckType("Amazon.SimpleNotificationService.Model.PublishRequest", "AWSSDK.SimpleNotificationService")]
     internal interface IContainsMessageAttributes
     {
         /// <summary>
@@ -20,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         IDictionary? MessageAttributes { get; set; } // <string, IMessageAttributeValue>
     }
 
+    [DuckType("Amazon.SQS.Model.MessageAttributeValue", "AWSSDK.SQS")]
     internal interface IMessageAttributeValue
     {
         string? DataType { get; set; } // can be String, Number, or Binary

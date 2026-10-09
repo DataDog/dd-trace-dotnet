@@ -52,6 +52,7 @@ public sealed class BasicPublishAsyncCachedStringsIntegration
 /// DuckTyping interface for RabbitMQ.Client.CachedString
 /// </summary>
 #pragma warning disable SA1201 // An interface should not follow a class
+[DuckType("RabbitMQ.Client.CachedString", "RabbitMQ.Client")]
 internal interface ICachedStringProxy : IDuckType
 {
     /// <summary>

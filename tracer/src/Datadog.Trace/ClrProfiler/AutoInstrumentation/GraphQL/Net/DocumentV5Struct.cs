@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
     /// https://github.com/graphql-dotnet/parser/blob/efb83a9f4054c0752cfeaac1e3c6b7cde5fa5607/src/GraphQLParser/AST/GraphQLDocument.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("GraphQLParser.AST.GraphQLDocumentWithLocation", "GraphQLParser")]
     internal struct DocumentV5Struct
     {
         public object? Source;

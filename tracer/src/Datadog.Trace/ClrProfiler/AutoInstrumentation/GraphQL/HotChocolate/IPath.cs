@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
@@ -13,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// HotChocolate.Path interface for ducktyping
     /// Represents HotChocolate.Path class (available in v11+)
     /// </summary>
+    [DuckType("HotChocolate.NamePathSegment", "HotChocolate.Execution.Abstractions")]
     internal interface IPath
     {
         /// <summary>

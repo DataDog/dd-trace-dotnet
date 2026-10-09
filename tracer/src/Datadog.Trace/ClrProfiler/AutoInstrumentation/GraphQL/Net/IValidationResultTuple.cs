@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
     /// <summary>
     /// ValueTuple returned by DocumentValidator in GraphQL4
     /// </summary>
+    [DuckType("System.ValueTuple`2[[GraphQL.Validation.IValidationResult, GraphQL],[GraphQL.Validation.Variables, GraphQL]]", "System.Private.CoreLib")]
     internal interface IValidationResultTuple
     {
         [DuckField]

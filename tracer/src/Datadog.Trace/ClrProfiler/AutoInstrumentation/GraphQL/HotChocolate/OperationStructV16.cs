@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// In v16 the Type property was renamed to Kind
     /// </summary>
     [DuckCopy]
+    [DuckCopy("HotChocolate.Execution.Processing.Operation", "HotChocolate.Types")]
     internal struct OperationStructV16
     {
         /// <summary>

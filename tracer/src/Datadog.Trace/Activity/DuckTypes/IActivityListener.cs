@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.Activity.DuckTypes
 {
     // Using interface instead of [DuckCopy] struct as we need to set values too
+    [DuckType("System.Diagnostics.ActivityListener", "System.Diagnostics.DiagnosticSource")]
     internal interface IActivityListener : IDuckType
     {
         object ActivityStarted { get; set; }

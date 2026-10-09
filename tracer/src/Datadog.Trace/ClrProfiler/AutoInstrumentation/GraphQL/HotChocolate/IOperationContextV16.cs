@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// https://github.com/ChilliCream/graphql-platform/blob/16.1.4/src/HotChocolate/Core/src/Types/Execution/Processing/OperationContext.Operation.cs
     /// In v16 OperationContext moved from HotChocolate.Execution to HotChocolate.Types
     /// </summary>
+    [DuckType("HotChocolate.Execution.Processing.OperationContext", "HotChocolate.Types")]
     internal interface IOperationContextV16 : IDuckType
     {
         /// <summary>

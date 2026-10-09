@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
+[DuckType("Azure.Messaging.ServiceBus.ServiceBusMessage", "Azure.Messaging.ServiceBus")]
 internal interface IServiceBusMessage : IDuckType
 {
     string? MessageId { get; }

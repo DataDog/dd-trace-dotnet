@@ -14,6 +14,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 /// Differs from HasKey in that the former reads from a field called "key" and the latter reads from a property called "Key"
 /// </summary>
 [DuckCopy]
+[DuckCopy("Aerospike.Client.AsyncBatchExistsArrayCommand", "AerospikeClient")]
+[DuckCopy("Aerospike.Client.AsyncBatchGetArrayCommand", "AerospikeClient")]
+[DuckCopy("Aerospike.Client.AsyncDelete", "AerospikeClient")]
+[DuckCopy("Aerospike.Client.AsyncWrite", "AerospikeClient")]
+[DuckCopy("Aerospike.Client.BatchExistsArrayCommand", "AerospikeClient")]
+[DuckCopy("Aerospike.Client.BatchGetArrayCommand", "AerospikeClient")]
+[DuckCopy("Aerospike.Client.QueryPartitionCommand", "AerospikeClient")]
 internal struct HasKeyV8
 {
     public Key Key;

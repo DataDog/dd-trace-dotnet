@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 /// <summary>
 /// Proxy for https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Bson/ObjectModel/BsonBinaryData.cs
 /// </summary>
+[DuckType("MongoDB.Bson.BsonBinaryData", "MongoDB.Bson")]
 internal interface IBsonBinaryDataProxy : IDuckType
 {
     int SubType { get; }

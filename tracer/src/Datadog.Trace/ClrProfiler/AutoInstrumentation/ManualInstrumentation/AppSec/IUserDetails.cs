@@ -8,6 +8,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
 
+[DuckType("Datadog.Trace.UserDetails", "Datadog.Trace.Manual")]
 internal interface IUserDetails
 {
     string Id { get; }

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// MongoDB.Driver.DatabaseNamespace interface for duck-typing
     /// </summary>
     [DuckCopy]
+    [DuckCopy("MongoDB.Driver.DatabaseNamespace", "MongoDB.Driver")]
     internal struct DatabaseNamespaceStruct
     {
         /// <summary>

@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     /// Duck type for KeyValuePair&lt;object, LogEventPropertyValue&gt;
     /// </summary>
     [DuckCopy]
+    [DuckCopy("System.Collections.Generic.KeyValuePair`2[[System.String, System.Private.CoreLib],[Serilog.Events.LogEventPropertyValue, Serilog]]", "System.Private.CoreLib")]
     internal struct KeyValuePairStringStruct
     {
         /// <summary>

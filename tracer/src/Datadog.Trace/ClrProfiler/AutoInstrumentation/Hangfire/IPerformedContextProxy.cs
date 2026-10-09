@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 
@@ -14,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <remarks>
 /// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/Server/PerformedContext.cs
 /// </remarks>
+[DuckType("Hangfire.Server.PerformedContext", "Hangfire.Core")]
 public interface IPerformedContextProxy : IPerformContextProxy
 {
     /// <summary>

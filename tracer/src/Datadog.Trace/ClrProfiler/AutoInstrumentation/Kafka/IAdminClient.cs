@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// <summary>
 /// Duck Type for Confluent.Kafka.AdminClient
 /// </summary>
+[DuckType("Confluent.Kafka.AdminClient", "Confluent.Kafka")]
 internal interface IAdminClient : IDuckType, IDisposable
 {
     IDuckTypeTask<IDescribeClusterResult> DescribeClusterAsync(object? options);

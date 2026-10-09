@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// IRequest interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.Runtime.Internal.DefaultRequest", "AWSSDK.Core")]
     internal interface IRequest
     {
         /// <summary>

@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     /// <summary>
     /// Duck type interface for Azure.Core.Shared.MessagingClientDiagnostics
     /// </summary>
+    [DuckType("Azure.Core.Shared.MessagingClientDiagnostics", "Azure.Messaging.ServiceBus")]
     internal interface IMessagingClientDiagnostics : IDuckType
     {
         [DuckField(Name = "_entityPath")]

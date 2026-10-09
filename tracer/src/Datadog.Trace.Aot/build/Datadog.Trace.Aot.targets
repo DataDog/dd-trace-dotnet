@@ -10,7 +10,7 @@
   Properties:
     DatadogAotInstrumentation  false to disable (default: enabled when PublishAot is true)
     DatadogAotDuckTypeMaps     ducktype-aot map files recorded at runtime (DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH), ';'-separated,
-                               in addition to the package's (DatadogAotBuiltInDuckTypeMaps=false to leave those out)
+                               in addition to the mappings Datadog.Trace declares with attributes
     DatadogAotCategories       instrumentation categories (default: tracing,appsec,rasp; add iast to opt in)
     DatadogAotTraceMethods     methods to trace, with the DD_TRACE_METHODS syntax: instrumented at build time, as a NativeAOT
                                application can't instrument them at runtime (default: DD_TRACE_METHODS of the build)
@@ -103,7 +103,6 @@
       <_DatadogAotAssembly Include="@(IlcCompileInput)" />
       <_DatadogAotAssembly Include="@(IlcReference)" Condition="'%(Filename)' != 'Datadog.Trace' and '%(Filename)' != 'System.Private.CoreLib'" />
       <_DatadogAotDuckTypeMap Include="$(DatadogAotDuckTypeMaps)" />
-      <_DatadogAotDuckTypeMap Include="$(_DatadogAotPackageRoot)tools/ducktype-maps/*.json" Condition="'$(DatadogAotBuiltInDuckTypeMaps)' != 'false'" />
       <_DatadogAotInput Include="@(IlcCompileInput);@(IlcReference);@(_DatadogAotDuckTypeMap);$(DatadogAotRunnerPath);$(DatadogAotNativeTracerPath);$(MSBuildThisFileFullPath)" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_DatadogAotReferenceDirectory)">

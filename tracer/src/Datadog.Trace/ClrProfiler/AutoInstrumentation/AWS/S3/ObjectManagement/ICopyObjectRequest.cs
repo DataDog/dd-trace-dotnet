@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 /// CopyObjectRequest interface for ducktyping.
 /// Mirrors Amazon.S3.Model.CopyObjectRequest with unused values removed.
 /// </summary>
+[DuckType("Amazon.S3.Model.CopyObjectRequest", "AWSSDK.S3")]
 internal interface ICopyObjectRequest : IDuckType
 {
     /// <summary>

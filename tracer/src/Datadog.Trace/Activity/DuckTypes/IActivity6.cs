@@ -5,8 +5,11 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Activity.DuckTypes
 {
+    [DuckType("System.Diagnostics.Activity", "System.Diagnostics.DiagnosticSource")]
     internal interface IActivity6 : IActivity5
     {
         ActivityStatusCode Status { get; }

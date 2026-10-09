@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     /// Duck typing for MessageTemplate
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Serilog.Events.MessageTemplate", "Serilog")]
     internal struct MessageTemplateProxy
     {
         /// <summary>

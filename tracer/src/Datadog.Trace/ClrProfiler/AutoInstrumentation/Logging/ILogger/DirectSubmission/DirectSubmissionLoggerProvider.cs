@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// Duck type for ILoggerProvider
     /// </summary>
     [Microsoft.Extensions.Logging.ProviderAlias("Datadog")]
+    [DuckReverseDelegation("Datadog.Trace.DuckTyping.Composites.DirectSubmissionLoggerProviderProxy", "Datadog.Trace.DuckType.Composites")]
     internal sealed class DirectSubmissionLoggerProvider
     {
         /// <summary>

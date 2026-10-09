@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.IClient
 /// </summary>
+[DuckType("Confluent.Kafka.Producer`2[[Confluent.Kafka.Null, Confluent.Kafka],[Confluent.Kafka.Null, Confluent.Kafka]]", "Confluent.Kafka")]
 internal interface IClientHandle
 {
     object? Handle { get; }

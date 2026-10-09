@@ -6,9 +6,11 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
+[DuckType("Azure.Messaging.ServiceBus.ServiceBusReceivedMessage", "Azure.Messaging.ServiceBus")]
 internal interface IServiceBusReceivedMessage : IServiceBusMessage
 {
     public DateTimeOffset EnqueuedTime { get; }

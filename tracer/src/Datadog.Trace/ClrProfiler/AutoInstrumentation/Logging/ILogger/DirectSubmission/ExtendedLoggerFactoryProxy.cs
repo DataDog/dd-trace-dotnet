@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 /// Duck type for https://github.com/dotnet/extensions/blob/e7430144e8009f87ed510e7922c8c780fbb0d9ac/src/Libraries/Microsoft.Extensions.Telemetry/Logging/ExtendedLoggerFactory.cs
 /// </summary>
 [DuckCopy]
+[DuckCopy("Microsoft.Extensions.Logging.ExtendedLoggerFactory", "Microsoft.Extensions.Telemetry")]
 internal struct ExtendedLoggerFactoryProxy
 {
     [DuckField(Name = "_scopeProvider")]

@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// <remarks>
     /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/Headers/Headers.cs
     /// </remarks>
+    [DuckType("Microsoft.Azure.Cosmos.Headers", "Microsoft.Azure.Cosmos.Client")]
     internal interface IResponseHeaders : IDuckType
     {
         [Duck(Name = "SubStatusCodeLiteral")]

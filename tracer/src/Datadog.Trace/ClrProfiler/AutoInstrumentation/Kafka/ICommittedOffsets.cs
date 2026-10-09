@@ -4,8 +4,11 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
+[DuckType("Confluent.Kafka.CommittedOffsets", "Confluent.Kafka")]
 internal interface ICommittedOffsets
 {
     public ITopicPartitionOffsets Offsets { get; }

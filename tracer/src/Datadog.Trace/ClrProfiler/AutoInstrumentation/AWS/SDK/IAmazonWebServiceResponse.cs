@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
     /// <summary>
     /// AmazonWebServiceResponse interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.Runtime.AmazonWebServiceResponse", "AWSSDK.Core", IncludeDerivedTypes = true)]
     internal interface IAmazonWebServiceResponse : IDuckType
     {
         /// <summary>

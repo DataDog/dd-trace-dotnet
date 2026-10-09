@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
     /// Duck type for Grpc.Core.Status
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.Core.Status", "Grpc.Core.Api")]
     internal struct StatusStruct
     {
         public int StatusCode;

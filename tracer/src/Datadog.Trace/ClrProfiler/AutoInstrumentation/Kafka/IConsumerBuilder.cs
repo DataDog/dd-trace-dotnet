@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// Duck Type for Consumer[TKey, TValue]+Config
 /// Interface, as used in generic constraint
 /// </summary>
+[DuckType("Confluent.Kafka.ConsumerBuilder`2[[System.String, System.Private.CoreLib],[System.String, System.Private.CoreLib]]", "Confluent.Kafka")]
 internal interface IConsumerBuilder
 {
     IEnumerable<KeyValuePair<string, string>> Config { get; }

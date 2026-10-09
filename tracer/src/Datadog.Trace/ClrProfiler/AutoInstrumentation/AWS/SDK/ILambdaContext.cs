@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
@@ -10,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// Object that allows you to access useful information available within
 /// the Lambda execution environment.
 /// </summary>
+[DuckType("Amazon.Lambda.RuntimeSupport.LambdaContext", "Amazon.Lambda.RuntimeSupport")]
 internal interface ILambdaContext
 {
     /// <summary>

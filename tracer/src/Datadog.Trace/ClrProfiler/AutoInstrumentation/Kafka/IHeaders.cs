@@ -4,12 +4,14 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
     /// Headers interface for duck-typing
     /// </summary>
+    [DuckType("Confluent.Kafka.Headers", "Confluent.Kafka")]
     internal interface IHeaders
     {
         /// <summary>

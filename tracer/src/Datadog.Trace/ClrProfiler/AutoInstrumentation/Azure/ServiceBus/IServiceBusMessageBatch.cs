@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     /// <summary>
     /// Duck type interface for Azure.Messaging.ServiceBus.ServiceBusMessageBatch
     /// </summary>
+    [DuckType("Azure.Messaging.ServiceBus.ServiceBusMessageBatch", "Azure.Messaging.ServiceBus")]
     internal interface IServiceBusMessageBatch : IDuckType
     {
         int Count { get; }

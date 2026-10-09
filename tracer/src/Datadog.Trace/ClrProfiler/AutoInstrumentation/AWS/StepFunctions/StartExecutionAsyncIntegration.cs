@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
     {
         private const string Operation = "StartExecutionAsync";
 
+        [DuckType("Amazon.StepFunctions.Model.StartExecutionRequest", "AWSSDK.StepFunctions")]
         internal interface IStartExecutionRequest : IAwsStepFunctionsRequestWithStateMachineArn, IContainsInput
         {
         }

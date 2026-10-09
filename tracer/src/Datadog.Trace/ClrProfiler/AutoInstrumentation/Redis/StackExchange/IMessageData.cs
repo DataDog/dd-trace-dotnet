@@ -12,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// <summary>
     /// Message data interface for ducktyping
     /// </summary>
+    [DuckType("StackExchange.Redis.Message", "StackExchange.Redis")]
+    [DuckType("StackExchange.Redis.Message", "StackExchange.Redis.StrongName")]
     internal interface IMessageData
     {
         /// <summary>

@@ -16,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 /// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/UpdateItemRequest.cs
 /// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/DeleteItemRequest.cs
 /// </summary>
+[DuckType("Amazon.DynamoDBv2.Model.DeleteItemRequest", "AWSSDK.DynamoDBv2")]
+[DuckType("Amazon.DynamoDBv2.Model.UpdateItemRequest", "AWSSDK.DynamoDBv2")]
 internal interface IAmazonDynamoDbRequestWithKnownKeys
 {
     /// <summary>
@@ -37,6 +39,7 @@ internal interface IAmazonDynamoDbRequestWithKnownKeys
 /// <summary>
 /// Interface for duck typing DynamoDB keys collection with indexer.
 /// </summary>
+[DuckType("System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib],[Amazon.DynamoDBv2.Model.AttributeValue, AWSSDK.DynamoDBv2]]", "System.Private.CoreLib")]
 internal interface IDynamoDbKeysObject : IDuckType
 {
     /// <summary>
@@ -54,6 +57,7 @@ internal interface IDynamoDbKeysObject : IDuckType
 /// <summary>
 /// Interface for duck typing DynamoDB attribute values
 /// </summary>
+[DuckType("Amazon.DynamoDBv2.Model.AttributeValue", "AWSSDK.DynamoDBv2")]
 internal interface IDynamoDbAttributeValue : IDuckType
 {
     /// <summary>

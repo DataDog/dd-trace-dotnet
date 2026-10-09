@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// Multiplexer data structure for duck typing
     /// </summary>
     [DuckCopy]
+    [DuckCopy("StackExchange.Redis.ConnectionMultiplexer", "StackExchange.Redis")]
+    [DuckCopy("StackExchange.Redis.ConnectionMultiplexer", "StackExchange.Redis.StrongName")]
     internal struct MultiplexerData
     {
         /// <summary>

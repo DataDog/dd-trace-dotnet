@@ -9,6 +9,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Activity.DuckTypes
 {
+    [DuckType("System.Diagnostics.Activity", "System.Diagnostics.DiagnosticSource")]
     internal interface IW3CActivity : IActivity
     {
         // Note that TraceId and SpanId will not be null when using W3C IDs, but they

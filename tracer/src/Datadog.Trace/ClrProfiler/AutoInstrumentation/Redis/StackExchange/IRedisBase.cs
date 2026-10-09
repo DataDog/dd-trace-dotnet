@@ -12,6 +12,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// <summary>
     /// RedisBase interface for ducktyping
     /// </summary>
+    [DuckType("StackExchange.Redis.RedisBase", "StackExchange.Redis")]
+    [DuckType("StackExchange.Redis.RedisBase", "StackExchange.Redis.StrongName")]
+    [DuckType("StackExchange.Redis.RedisBatch", "StackExchange.Redis")]
+    [DuckType("StackExchange.Redis.RedisTransaction", "StackExchange.Redis")]
     internal interface IRedisBase
     {
         /// <summary>
