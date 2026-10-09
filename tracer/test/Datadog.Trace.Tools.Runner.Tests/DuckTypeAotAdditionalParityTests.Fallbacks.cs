@@ -76,6 +76,12 @@ public partial class DuckTypeAotAdditionalParityTests
     [InlineData("completed-task")]
     [InlineData("async-method-void-task")]
     [InlineData("delay-task")]
+    // Classes deriving from the target of a mapping that includes derived types ([DuckType(IncludeDerivedTypes = true)]): the
+    // proxy of the most derived registered base class, else of the most derived registered interface.
+    [InlineData("derived-types-base-class")]
+    [InlineData("derived-types-most-derived-base-class")]
+    [InlineData("derived-types-interface")]
+    [InlineData("derived-types-activator")]
     public void GeneratedRegistryShouldServeRuntimeTypesItCantNameLikeDynamicMode(string scenario)
     {
         var (exercises, mappings) = scenario switch
@@ -299,6 +305,39 @@ public partial class DuckTypeAotAdditionalParityTests
                     () => DuckType.CanCreate<IFallbackContinueWithProxy>(Task.Delay(Timeout.Infinite, new CancellationTokenSource().Token)),
                 },
                 new[] { Mapping(typeof(IFallbackContinueWithProxy), typeof(Task)) }),
+            "derived-types-base-class" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackNameProxy>(new FallbackDerivedBase())!.Name,
+                    () => DuckType.Create<IFallbackNameProxy>(new FallbackDerivedChild())!.Name,
+                    () => DescribeDuckType(DuckType.Create<IFallbackNameProxy>(new FallbackDerivedGrandChild())),
+                    () => DuckType.CanCreate<IFallbackNameProxy>(new FallbackDerivedOther()),
+                    () => DuckType.Create<IFallbackNameProxy>((FallbackDerivedBase)new FallbackDerivedOther())!.Name,
+                },
+                new[] { Mapping(typeof(IFallbackNameProxy), typeof(FallbackDerivedBase)).WithDerivedTypes() }),
+            "derived-types-most-derived-base-class" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackExtraProxy>(new FallbackDerivedBase())!.Extra,
+                    () => DuckType.Create<IFallbackExtraProxy>(new FallbackDerivedChild())!.Extra,
+                    () => DuckType.Create<IFallbackExtraProxy>(new FallbackDerivedGrandChild())!.Extra,
+                    () => DuckType.CanCreate<IFallbackExtraProxy>(new FallbackDerivedGrandChild()),
+                },
+                new[] { Mapping(typeof(IFallbackExtraProxy), typeof(FallbackDerivedBase)).WithDerivedTypes(), Mapping(typeof(IFallbackExtraProxy), typeof(FallbackDerivedChild)).WithDerivedTypes() }),
+            "derived-types-interface" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackNameProxy>(new FallbackDerivedContractImplementation())!.Name,
+                    () => DescribeDuckType(DuckType.Create<IFallbackNameProxy>(new FallbackDerivedContractImplementation())),
+                },
+                new[] { Mapping(typeof(IFallbackNameProxy), typeof(IFallbackDerivedContract)).WithDerivedTypes() }),
+            "derived-types-activator" => (
+                new Func<object?>[]
+                {
+                    () => DescribeDuckType(DuckType.GetOrCreateProxyType(typeof(IFallbackNameProxy), typeof(FallbackDerivedChild)).CreateInstance<IFallbackNameProxy>(new FallbackDerivedGrandChild())),
+                    () => DescribeDuckType(DuckType.GetOrCreateProxyType(typeof(IFallbackNameProxy), typeof(FallbackDerivedChild)).CreateInstance<IFallbackNameProxy>(new FallbackDerivedOther())),
+                },
+                new[] { Mapping(typeof(IFallbackNameProxy), typeof(FallbackDerivedBase)).WithDerivedTypes() }),
             _ => (
                 new Func<object?>[]
                 {
@@ -587,6 +626,42 @@ public partial class DuckTypeAotAdditionalParityTests
 
     public class FallbackDerivedElement : FallbackElement
     {
+    }
+
+    public interface IFallbackExtraProxy
+    {
+        int Extra { get; }
+    }
+
+    public interface IFallbackDerivedContract
+    {
+        string Name { get; }
+    }
+
+    public class FallbackDerivedBase
+    {
+        public virtual string Name => "base";
+    }
+
+    public class FallbackDerivedChild : FallbackDerivedBase
+    {
+        public override string Name => "child";
+
+        public int Extra => 1;
+    }
+
+    public class FallbackDerivedGrandChild : FallbackDerivedChild
+    {
+        public override string Name => "grandchild";
+    }
+
+    public class FallbackDerivedOther : FallbackDerivedBase
+    {
+    }
+
+    public class FallbackDerivedContractImplementation : IFallbackDerivedContract
+    {
+        public string Name => "implementation";
     }
 
     public class FallbackVirtualNameBase
