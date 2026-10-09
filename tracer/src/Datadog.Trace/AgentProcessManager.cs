@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -161,7 +162,7 @@ namespace Datadog.Trace
                         {
                             if (metadata.SequentialFailures >= MaxFailures)
                             {
-                                Log.Error<string, int>("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
+                                Log.Error<int, string>("Maximum retries ({ErrorCount}) reached starting {Process}.", MaxFailures, path);
                                 metadata.ProcessState = ProcessState.Faulted;
                                 return;
                             }
@@ -202,6 +203,11 @@ namespace Datadog.Trace
                                             metadata.ProcessState = ProcessState.ReadyToStart;
                                             break;
                                         }
+
+                                        if (metadata.ProcessState == ProcessState.Healthy)
+                                        {
+                                            Log.Information("{Process} is already running and was not started by this process. Using it.", path);
+                                        }
                                     }
                                     else
                                     {
@@ -212,12 +218,18 @@ namespace Datadog.Trace
                                 else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
                                 {
                                     // This means we have tried to start from this domain before
+                                    var wasHealthy = metadata.ProcessState == ProcessState.Healthy;
+                                    LogIfOwnProcessExited(metadata);
                                     metadata.ProcessState = metadata.ProcessIsHealthy() ? ProcessState.Healthy : ProcessState.ReadyToStart;
+                                    if (wasHealthy && metadata.ProcessState == ProcessState.ReadyToStart)
+                                    {
+                                        Log.Information("{Process} is no longer available. Starting a new one.", path);
+                                    }
                                 }
 
                                 if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
-                                    Log.Information("Attempting to start {Process}.", path);
+                                    Log.Debug("Attempting to start {Process}.", path);
 
                                     var startInfo = new ProcessStartInfo
                                     {
@@ -230,7 +242,11 @@ namespace Datadog.Trace
                                     }
 
                                     metadata.Process = Process.Start(startInfo);
-                                    var timeout = 2000;
+                                    var childPid = GetProcessId(metadata.Process);
+                                    Log.Information("Started {Process} with pid {ChildPid}.", path, childPid);
+
+                                    const int startupTimeout = 2000;
+                                    var timeout = startupTimeout;
 
                                     while (timeout > 0)
                                     {
@@ -239,19 +255,37 @@ namespace Datadog.Trace
                                         {
                                             metadata.SequentialFailures = 0;
                                             metadata.ProcessState = ProcessState.Healthy;
-                                            Log.Information("Successfully started {Process}.", path);
+                                            if (metadata.Process == null || metadata.Process.HasExited)
+                                            {
+                                                // The health check passed because of another instance, not the one we started
+                                                Log.Information(
+                                                    "{Process} with pid {ChildPid} exited with code {ExitCode}, but another instance is already running. Using it.",
+                                                    path,
+                                                    childPid,
+                                                    GetExitCode(metadata.Process));
+                                            }
+                                            else
+                                            {
+                                                Log.Information("Successfully started {Process} with pid {ChildPid}.", path, childPid);
+                                            }
+
                                             break;
                                         }
 
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
-                                            Log.Error("Failed to start {Process}.", path);
+                                            Log.Error("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
                                             metadata.ProcessState = ProcessState.Faulted;
                                             break;
                                         }
 
                                         await Task.Delay(100).ConfigureAwait(false);
                                         timeout -= 100;
+                                    }
+
+                                    if (timeout <= 0 && metadata.ProcessState == ProcessState.ReadyToStart)
+                                    {
+                                        Log.Warning<string, string, int>("{Process} with pid {ChildPid} is running but did not open its named pipe within {Timeout} ms.", path, childPid, startupTimeout);
                                     }
                                 }
                             }
@@ -286,6 +320,62 @@ namespace Datadog.Trace
                         metadata.IsBeingManaged = false;
                     }
                 });
+        }
+
+        private static void LogIfOwnProcessExited(ProcessMetadata metadata)
+        {
+            var process = metadata.Process;
+            if (process == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (!process.HasExited)
+                {
+                    return;
+                }
+
+                Log.Information(
+                    "{Process} with pid {ChildPid} started by this process exited with code {ExitCode}.",
+                    metadata.ProcessPath,
+                    GetProcessId(process),
+                    GetExitCode(process));
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error when checking whether {Process} exited.", metadata.ProcessPath);
+                return;
+            }
+
+            // Only report each exit once
+            metadata.Process = null;
+            process.Dispose();
+        }
+
+        private static string GetProcessId(Process process)
+        {
+            try
+            {
+                return process?.Id.ToString(CultureInfo.InvariantCulture) ?? "unknown";
+            }
+            catch
+            {
+                return "unknown";
+            }
+        }
+
+        private static string GetExitCode(Process process)
+        {
+            try
+            {
+                return process?.ExitCode.ToString(CultureInfo.InvariantCulture) ?? "unknown";
+            }
+            catch
+            {
+                return "unknown";
+            }
         }
 
         internal sealed class ProcessMetadata
@@ -348,7 +438,7 @@ namespace Datadog.Trace
                         return true;
                     }
 
-                    Log.Information("Program [{Process}] is no longer running", ProcessPath);
+                    Log.Debug("Program [{Process}] is no longer running", ProcessPath);
 
                     return false;
                 }
