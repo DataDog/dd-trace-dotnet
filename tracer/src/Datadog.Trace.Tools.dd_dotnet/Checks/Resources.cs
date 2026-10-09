@@ -78,9 +78,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set.";
 
-        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist.";
+        public static string TracerHomeNotFoundFormat(string key, string tracerHome) => $"{key} is set to '{tracerHome}' but the directory does not exist.";
 
-        public static string TracerHomeFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' and the directory was found correctly.";
+        public static string TracerHomeFoundFormat(string key, string tracerHome) => $"{key} is set to '{tracerHome}' and the directory was found correctly.";
+
+        public static string TracerHomeNotSet(string key, string fallbackKey) => $"Neither the environment variable {key} nor {fallbackKey} is set.";
 
         public static string WrongEnvironmentVariableFormat(string key, string expectedValue, string? actualValue) => $"The environment variable {key} should be set to '{expectedValue}' (current value: {EscapeOrNotSet(actualValue)})";
 

@@ -39,6 +39,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 #endif
 
         private const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+        private const string TracerHomeKey = "DD_DOTNET_TRACER_HOME";
+        private const string OpenTelemetryAutoHomeKey = "OTEL_DOTNET_AUTO_HOME";
         private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
         public ProcessBasicChecksTests(ITestOutputHelper output)
@@ -95,7 +97,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 LoaderNotLoaded,
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"));
+                TracerHomeNotSet(TracerHomeKey, OpenTelemetryAutoHomeKey));
 
             standardOutput.Should().ContainAll(
                 WrongEnvironmentVariableFormat(CorProfilerKey, Profilerid, null),
@@ -136,7 +138,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 LoaderNotLoaded,
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
+                TracerHomeNotFoundFormat(TracerHomeKey, "TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
                 MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
@@ -187,7 +189,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+                TracerHomeNotSet(TracerHomeKey, OpenTelemetryAutoHomeKey));
 
             standardOutput.Should().Contain(
                 CorrectlySetupEnvironment(CorProfilerKey, Profilerid),
@@ -277,7 +279,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                                        NativeTracerNotLoaded,
                                        TracerNotLoaded,
                                        "LD_PRELOAD",
-                                       TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME")
+                                       TracerHomeNotSet(TracerHomeKey, OpenTelemetryAutoHomeKey)
                                    ])
                                   .Except([expected]));
 
