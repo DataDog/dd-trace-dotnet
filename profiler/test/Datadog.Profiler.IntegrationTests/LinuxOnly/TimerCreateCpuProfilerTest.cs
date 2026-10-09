@@ -6,6 +6,7 @@
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -101,6 +102,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotBeEmpty("No samples were found");
         }
 
+        [Flaky("timer_create CPU profiling intermittently produces no samples in CI")]
         [TestAppFact("Samples.Computer01")]
         public void CheckCpuSamples(string appName, string framework, string appAssembly)
         {
