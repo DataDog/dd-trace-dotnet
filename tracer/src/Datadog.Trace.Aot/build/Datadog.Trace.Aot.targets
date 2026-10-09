@@ -54,6 +54,14 @@
       <_DatadogAotDatadogTrace Include="@(IlcReference)" Condition="'%(Filename)' == 'Datadog.Trace'" />
     </ItemGroup>
 
+    <!-- Datadog.Trace.Trimming (trimmed applications with the tracer the native profiler loads) roots assemblies the
+         application may not have, which ILC can't load: this build generates the descriptors Datadog.Trace needs. -->
+    <ItemGroup>
+      <_DatadogAotTrimmingDescriptor Include="@(TrimmerRootDescriptor)" Condition="'%(Filename)' == 'Datadog.Trace.Trimming'" />
+      <TrimmerRootDescriptor Remove="@(_DatadogAotTrimmingDescriptor)" />
+    </ItemGroup>
+    <Message Importance="high" Condition="'@(_DatadogAotTrimmingDescriptor)' != ''" Text="Datadog NativeAOT instrumentation: the Datadog.Trace.Trimming descriptor isn't used with NativeAOT (the instrumentation generates the descriptors Datadog.Trace needs)." />
+
     <!-- The application only references the manual API: ILC compiles the package's Datadog.Trace.dll. -->
     <ItemGroup Condition="'@(_DatadogAotDatadogTrace)' == '' and '$(DatadogAotDatadogTracePath)' != ''">
       <IlcReference Include="$(DatadogAotDatadogTracePath)" />
