@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
     /// </summary>
     public sealed class DatadogHangfireServerFilter
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatadogHangfireServerFilter>();
+
         /// <summary>
         /// Called before the job is performed.
         /// </summary>
@@ -33,7 +36,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             // baggage around each job instead of leaking it into the next one (see OnPerformed).
             performingContext.Items[HangfireConstants.DatadogBaggageKey] = Baggage.Current;
 
-            var spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
+            Dictionary<string, string?>? spanContextData = null;
+            try
+            {
+                spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
+            }
+            catch (Exception ex)
+            {
+                // Hangfire resolves the type name it stored the parameter with: the job is traced without its parent then.
+                Log.Debug(ex, "Error reading the propagation context of the Hangfire job.");
+            }
+
             var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
             Baggage.Current = propagationContext.Baggage ?? new Baggage();
 
