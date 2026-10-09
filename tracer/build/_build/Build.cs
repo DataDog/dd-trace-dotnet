@@ -403,6 +403,24 @@ partial class Build : NukeBuild
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions"));
         });
 
+    Target BuildNativeAotNuget => _ => _
+        .Unlisted()
+        .Description("Creates the Datadog.Trace.Aot package (NativeAOT instrumentation at build time) from the runner and the tracer home of every platform")
+        .After(CreateBundleHome, ExtractDebugInfoLinux, BuildRunnerTool)
+        .Executes(() =>
+        {
+            // The package isn't in the solution: it only packs the outputs of other projects.
+            var configuration = BuildConfiguration.ToString().ToLowerInvariant();
+            DotNetPack(x => x
+                .SetProject(SourceDirectory / Projects.DatadogTraceAot / $"{Projects.DatadogTraceAot}.csproj")
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetProperty("DatadogAotMonitoringHome", MonitoringHomeDirectory)
+                .SetProperty("DatadogAotRunnerDirectory", BuildArtifactsDirectory / "bin" / "Datadog.Trace.Tools.Runner.Tool" / $"{configuration}_{TargetFramework.NET8_0}" + Path.DirectorySeparatorChar)
+                .SetProperty("DatadogAotDatadogTrace", BuildArtifactsDirectory / "bin" / Projects.DatadogTrace / $"{configuration}_{TargetFramework.NET6_0}" / "Datadog.Trace.dll")
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "aot"));
+        });
+
     Target BuildBenchmarkNuget => _ => _
         .Unlisted()
         .DependsOn(CreateBenchmarkIntegrationHome)
