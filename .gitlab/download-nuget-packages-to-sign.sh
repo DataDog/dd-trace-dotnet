@@ -1,10 +1,12 @@
 #!/bin/bash
 #
 # Downloads the NuGet packages built by Azure DevOps that need their contents Authenticode-signed
-# in GitLab: dd-trace (the dotnet tool), Datadog.Trace.Bundle and Datadog.AzureFunctions. These
-# packages embed the full monitoring home, which Azure DevOps assembles by fanning in per-platform
-# artifacts that can only be built there - so unlike the other 5 NuGet packages (which GitLab builds
-# and signs itself), these 3 have to be pulled in as a finished .nupkg and signed in place.
+# in GitLab: dd-trace (the dotnet tool), Datadog.Trace.Bundle, Datadog.AzureFunctions and
+# Datadog.Trace.Aot (prerelease). These packages embed the full monitoring home (or, for
+# Datadog.Trace.Aot, the native tracer of every build host), which Azure DevOps assembles by fanning
+# in per-platform artifacts that can only be built there - so unlike the other 5 NuGet packages
+# (which GitLab builds and signs itself), these 4 have to be pulled in as a finished .nupkg and
+# signed in place.
 #
 # Shares its Azure DevOps build-resolution and artifact-polling logic with
 # download-single-step-artifacts.sh and download-serverless-artifacts.sh via
@@ -20,7 +22,7 @@ source "$SCRIPT_DIR/download-azure-artifacts-helper.sh"
 target_dir=packages-to-sign
 mkdir -p $target_dir
 
-artifactNames=("runner-dotnet-tool" "bundle-nuget-package" "azurefunctions-nuget-package")
+artifactNames=("runner-dotnet-tool" "bundle-nuget-package" "azurefunctions-nuget-package" "aot-nuget-package")
 download_azure_artifacts_from_one_build "$target_dir" "${artifactNames[@]}"
 
 # Flatten every .nupkg found (regardless of which artifact/subfolder it came from) directly into
