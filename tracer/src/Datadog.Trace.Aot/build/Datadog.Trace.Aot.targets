@@ -31,9 +31,17 @@
     <DatadogAotRunnerPath Condition="'$(DatadogAotRunnerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/runner/Datadog.Trace.Tools.Runner.dll')">$(_DatadogAotPackageRoot)tools/runner/Datadog.Trace.Tools.Runner.dll</DatadogAotRunnerPath>
     <DatadogAotRunnerPath Condition="'$(DatadogAotRunnerPath)' == '' and Exists('$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Runner.dll')">$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Runner.dll</DatadogAotRunnerPath>
     <DatadogAotNativeTracerPath Condition="'$(DatadogAotNativeTracerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/native/$(NETCoreSdkRuntimeIdentifier)/$(_DatadogAotHostNativeFile)')">$(_DatadogAotPackageRoot)tools/native/$(NETCoreSdkRuntimeIdentifier)/$(_DatadogAotHostNativeFile)</DatadogAotNativeTracerPath>
+    <!-- Linux: the SDKs of the distributions (source built) have the distribution's RID (ubuntu.24.04-x64), the portable one then. -->
+    <_DatadogAotHostArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant())</_DatadogAotHostArchitecture>
+    <_DatadogAotHostRid Condition="$([MSBuild]::IsOSPlatform('Linux')) and (Exists('/lib/ld-musl-x86_64.so.1') or Exists('/lib/ld-musl-aarch64.so.1'))">linux-musl-$(_DatadogAotHostArchitecture)</_DatadogAotHostRid>
+    <_DatadogAotHostRid Condition="'$(_DatadogAotHostRid)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">linux-$(_DatadogAotHostArchitecture)</_DatadogAotHostRid>
+    <DatadogAotNativeTracerPath Condition="'$(DatadogAotNativeTracerPath)' == '' and '$(_DatadogAotHostRid)' != '' and Exists('$(_DatadogAotPackageRoot)tools/native/$(_DatadogAotHostRid)/$(_DatadogAotHostNativeFile)')">$(_DatadogAotPackageRoot)tools/native/$(_DatadogAotHostRid)/$(_DatadogAotHostNativeFile)</DatadogAotNativeTracerPath>
     <!-- macOS: one universal binary for x64 and arm64 hosts. -->
     <DatadogAotNativeTracerPath Condition="'$(DatadogAotNativeTracerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/native/osx/$(_DatadogAotHostNativeFile)')">$(_DatadogAotPackageRoot)tools/native/osx/$(_DatadogAotHostNativeFile)</DatadogAotNativeTracerPath>
     <DatadogAotDatadogTracePath Condition="'$(DatadogAotDatadogTracePath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/datadog-trace/Datadog.Trace.dll')">$(_DatadogAotPackageRoot)tools/datadog-trace/Datadog.Trace.dll</DatadogAotDatadogTracePath>
+
+    <!-- .NET 11+ NativeAOT: file and line in the stack frames (error stacks, RASP stacks, IAST locations), like under JIT. -->
+    <StackTraceLineNumberSupport Condition="'$(StackTraceLineNumberSupport)' == '' and '$(DatadogAotInstrumentation)' != 'false'">true</StackTraceLineNumberSupport>
   </PropertyGroup>
 
   <!--
