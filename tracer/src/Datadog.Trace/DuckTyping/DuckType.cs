@@ -621,6 +621,9 @@ namespace Datadog.Trace.DuckTyping
                 var attributeType = customAttributeData.AttributeType;
                 if (attributeType == typeof(DuckAttribute)
                  || attributeType == typeof(DuckCopyAttribute)
+                 || attributeType == typeof(DuckTypeAttribute)
+                 || attributeType == typeof(DuckReverseAttribute)
+                 || attributeType == typeof(DuckReverseDelegationAttribute)
                  || attributeType == typeof(DuckFieldAttribute)
                  || attributeType == typeof(DuckIgnoreAttribute)
                  || attributeType == typeof(DuckIncludeAttribute)

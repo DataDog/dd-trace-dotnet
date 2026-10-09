@@ -981,6 +981,49 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void DerivedTypesProxyRegistrationServesTheClassesDerivingFromItsTargetType()
+        {
+            // [DuckType(IncludeDerivedTypes = true)]: the registry can't name the classes deriving from the target type.
+            RegisterDerivedTypesProxy(typeof(DerivedTypesBase), "base");
+            RegisterDerivedTypesProxy(typeof(IDerivedTypesContract), "contract");
+
+            // A registered base class wins over an interface, and the proxy reports the looked-up type.
+            var proxy = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(DerivedTypesGrandChild)).CreateInstance<ITypeNameProxy>(new DerivedTypesGrandChild());
+            proxy.Name.Should().Be("base");
+            ((IDuckType)proxy).Type.Should().Be(typeof(DerivedTypesGrandChild));
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(DerivedTypesContractImplementation)).CreateInstance<ITypeNameProxy>(new DerivedTypesContractImplementation()).Name.Should().Be("contract");
+
+            // A closer base class registered later serves the classes deriving from it.
+            RegisterDerivedTypesProxy(typeof(DerivedTypesChild), "child");
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(DerivedTypesGrandChild)).CreateInstance<ITypeNameProxy>(new DerivedTypesGrandChild()).Name.Should().Be("child");
+
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(ForwardTarget)).CanCreate().Should().BeFalse();
+
+            static void RegisterDerivedTypesProxy(Type targetType, string name)
+                => DuckTypeAotEngine.RegisterFallbackProxy(
+                    typeof(ITypeNameProxy),
+                    targetType,
+                    typeof(DisposableNameGeneratedProxy),
+                    (instance, type) => new DisposableNameGeneratedProxy(instance!, type, name),
+                    derivedTypes: true);
+        }
+
+        [Theory]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(DerivedTypesSealed))]
+        [InlineData(typeof(object[]))]
+        public void DerivedTypesProxyRegistrationRequiresATypeWithDerivedClasses(Type targetType)
+        {
+            Action register = () => DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                targetType,
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type),
+                derivedTypes: true);
+            register.Should().Throw<ArgumentException>();
+        }
+
+        [Fact]
         public void ReplayedFailuresKeepTheExceptionDynamicDuckTypingWraps()
         {
             var failure = DuckTypeAotRegisteredFailureException.Create(typeof(DuckTypeException).FullName!, "Error creating duck type", typeof(TypeLoadException).FullName!, "Method 'get_Name' does not have an implementation.");
@@ -1444,6 +1487,30 @@ namespace Datadog.Trace.DuckTyping.Tests
         private interface IForwardProxy
         {
             string Value { get; }
+        }
+
+        private interface IDerivedTypesContract
+        {
+        }
+
+        private class DerivedTypesBase
+        {
+        }
+
+        private class DerivedTypesChild : DerivedTypesBase
+        {
+        }
+
+        private class DerivedTypesGrandChild : DerivedTypesChild, IDerivedTypesContract
+        {
+        }
+
+        private class DerivedTypesContractImplementation : IDerivedTypesContract
+        {
+        }
+
+        private sealed class DerivedTypesSealed
+        {
         }
 
         private class ForwardTarget

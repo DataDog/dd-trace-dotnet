@@ -180,7 +180,23 @@ internal static class AotInstrumentProcessor
                 }
 
                 AotLog.Info($"Duck typing proxies needed by the CallTarget adapters: {collector.Requests.Count} (+{collector.RuntimeRequests.Count} looked up at runtime)");
-                var recordedMappings = ReadDuckTypeMaps(options.DuckTypeMaps, report);
+                // The mappings Datadog's assemblies declare ([DuckType], [DuckReverseDelegation]...), then the recorded ones.
+                var declaredMappings = ReadDeclaredDuckTypeMappings(options.DatadogTracePath, modules.Select(m => (m.AssemblyName, m.Path)), report);
+                var mapFileMappings = ReadDuckTypeMaps(options.DuckTypeMaps, report);
+                var recordedMappings = declaredMappings.Concat(mapFileMappings).ToList();
+                var undeclaredMappings = new List<string>();
+                if (mapFileMappings.Count > 0)
+                {
+                    var modulesByAssembly = modules.GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First().Module, StringComparer.OrdinalIgnoreCase);
+                    undeclaredMappings = CallTargetDuckTypeRegistry.FindUndeclared(
+                        collector.Requests,
+                        collector.RuntimeRequests,
+                        declaredMappings,
+                        mapFileMappings,
+                        (assembly, typeName) => modulesByAssembly.TryGetValue(assembly, out var module) ? module.Find(typeName, isReflectionName: true) : null,
+                        typeResolver.Resolve);
+                }
+
                 if (collector.Requests.Count + collector.RuntimeRequests.Count + recordedMappings.Count > 0)
                 {
                     var registryName = $"Datadog.Trace.DuckType.AotRegistry.{Path.GetFileNameWithoutExtension(options.Assemblies[0])}";
@@ -198,6 +214,14 @@ internal static class AotInstrumentProcessor
                         report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, Warnings = duckTypeRegistry.Warnings.ToList() };
                         AotLog.Info($"DuckType AOT registry: {duckTypeRegistry.Compatible}/{duckTypeRegistry.Mappings} proxies -> {duckTypeRegistry.AssemblyPath}");
                     }
+                }
+
+                // A recorded mapping dynamic duck typing doesn't create (e.g. a probe of an application's type) fails without
+                // its declaration too: only the ones with a proxy are missing.
+                report.UndeclaredDuckTypeMappings = undeclaredMappings.Where(key => duckTypeRegistry?.CreatesProxy(key) == true).ToList();
+                if (report.UndeclaredDuckTypeMappings.Count > 0)
+                {
+                    AotLog.Warn($"{report.UndeclaredDuckTypeMappings.Count} recorded duck typing mappings of Datadog's proxies aren't declared (see the report): without the recording, the build wouldn't generate them. Declare them with [DuckType] next to the proxy.");
                 }
             }
 
@@ -263,6 +287,32 @@ internal static class AotInstrumentProcessor
 #if NET6_0_OR_GREATER
     private static (string Type, string Method) DescribeForVerification(dnlib.DotNet.MethodDef method)
         => (method.DeclaringType.ReflectionFullName, $"{method.Name}({string.Join(",", method.Parameters.Where(p => !p.IsHiddenThisParameter).Select(p => p.Type.FullName))})");
+
+    /// <summary>
+    /// The duck typing mappings Datadog's assemblies declare with attributes: the proxies of the library types integrations
+    /// only know at runtime, which travel with the proxies (see docs/development/NativeAOT.md).
+    /// </summary>
+    private static List<DuckTypeAot.DuckTypeAotMapping> ReadDeclaredDuckTypeMappings(string datadogTracePath, IEnumerable<(string AssemblyName, string Path)> modules, AotInstrumentReport report)
+    {
+        var paths = new List<string> { Path.GetFullPath(datadogTracePath) };
+        foreach (var (assemblyName, path) in modules)
+        {
+            if (assemblyName.StartsWith("Datadog.", StringComparison.Ordinal) && !StringUtil.IsNullOrEmpty(path))
+            {
+                var fullPath = Path.GetFullPath(path);
+                if (!paths.Contains(fullPath, StringComparer.Ordinal) && !string.Equals(assemblyName, "Datadog.Trace", StringComparison.Ordinal))
+                {
+                    paths.Add(fullPath);
+                }
+            }
+        }
+
+        var result = DuckTypeAot.DuckTypeAotAttributeDiscovery.Discover(paths);
+        report.Errors.AddRange(result.Errors);
+        report.DeclaredDuckTypeMappings = result.Mappings.Count;
+        AotLog.Info($"Duck typing mappings declared by Datadog's assemblies: {result.Mappings.Count} ({result.Mappings.Count(m => m.IncludesDerivedTypes)} for derived types too)");
+        return result.Mappings.ToList();
+    }
 
     /// <summary>
     /// The mappings of the ducktype-aot map files recorded at runtime (C6).

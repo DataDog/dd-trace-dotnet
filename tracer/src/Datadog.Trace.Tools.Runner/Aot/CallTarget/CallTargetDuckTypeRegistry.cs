@@ -90,8 +90,14 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
 
         foreach (var mapping in recordedMappings)
         {
-            if (mappings.ContainsKey(mapping.Key))
+            if (mappings.TryGetValue(mapping.Key, out var existing))
             {
+                // A [DuckType(IncludeDerivedTypes = true)] declaration of a pair also requested otherwise.
+                if (mapping.IncludesDerivedTypes)
+                {
+                    mappings[mapping.Key] = existing.WithDerivedTypes();
+                }
+
                 continue;
             }
 
@@ -204,6 +210,14 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
         return new CallTargetDuckTypeRegistry(artifactPaths.OutputAssemblyPath, assemblyName, module, emission, resolveType);
     }
 
+    /// <summary>
+    /// Gets whether the registry creates a proxy for a mapping: it is compatible, and dynamic duck typing creates it too.
+    /// </summary>
+    /// <param name="key">The key of the mapping.</param>
+    /// <returns>Whether the registry creates a proxy for it.</returns>
+    public bool CreatesProxy(string key)
+        => _results.TryGetValue(key, out var result) && result.Status == DuckTypeAotCompatibilityStatuses.Compatible && !result.ReplaysDynamicFailure;
+
     public void RequestRuntimeProxy(TypeSig proxyDefinition, TypeSig target)
     {
         // Generated in the first pass; ConvertType finds them at runtime.
@@ -283,6 +297,94 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
                 yield return nested;
             }
         }
+    }
+
+    /// <summary>
+    /// The recorded mappings of Datadog's proxies a NativeAOT build wouldn't generate without the recording: neither declared
+    /// with attributes (also by a <c>[DuckType(IncludeDerivedTypes = true)]</c> declaration of a base type), nor requested by
+    /// the duck typing constraints of the CallTarget adapters. They should be declared next to their proxies.
+    /// </summary>
+    /// <param name="requests">The proxies the adapters create.</param>
+    /// <param name="runtimeRequests">The proxies the adapters look up by runtime type.</param>
+    /// <param name="declared">The mappings Datadog's assemblies declare.</param>
+    /// <param name="recorded">The mappings recorded at runtime.</param>
+    /// <param name="findType">Finds a type definition by assembly name and reflection name.</param>
+    /// <param name="resolveType">Resolves a type reference across the loaded modules.</param>
+    /// <returns>The keys of the undeclared mappings.</returns>
+    public static List<string> FindUndeclared(
+        IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> requests,
+        IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> runtimeRequests,
+        IReadOnlyCollection<DuckTypeAotMapping> declared,
+        IEnumerable<DuckTypeAotMapping> recorded,
+        Func<string, string, TypeDef?> findType,
+        Func<ITypeDefOrRef, TypeDef?> resolveType)
+    {
+        var known = new HashSet<string>(declared.Select(m => m.Key), StringComparer.Ordinal);
+        foreach (var (proxyDefinition, target) in requests.Concat(runtimeRequests))
+        {
+            if (Describe(proxyDefinition, resolveType) is { } proxy && Describe(target, resolveType) is { } targetType)
+            {
+                known.Add(new DuckTypeAotMapping(proxy.TypeName, proxy.AssemblyName, targetType.TypeName, targetType.AssemblyName, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.CallTarget).Key);
+            }
+        }
+
+        var derived = declared.Where(m => m.IncludesDerivedTypes).ToList();
+        var undeclared = new List<string>();
+        foreach (var mapping in recorded)
+        {
+            var datadogAssembly = mapping.Mode == DuckTypeAotMappingMode.Forward ? mapping.ProxyAssemblyName : mapping.TargetAssemblyName;
+            if (!datadogAssembly.StartsWith("Datadog.", StringComparison.Ordinal) || known.Contains(mapping.Key))
+            {
+                continue;
+            }
+
+            var bases = derived.Where(d => d.ProxyTypeName == mapping.ProxyTypeName && d.ProxyAssemblyName == mapping.ProxyAssemblyName).ToList();
+            if (mapping.Mode == DuckTypeAotMappingMode.Forward && bases.Count > 0 &&
+                findType(mapping.TargetAssemblyName, mapping.TargetTypeName.Split('[')[0]) is { } targetDefinition &&
+                bases.Any(b => DerivesFrom(targetDefinition, b.TargetTypeName, b.TargetAssemblyName, resolveType)))
+            {
+                continue;
+            }
+
+            undeclared.Add(mapping.Key);
+        }
+
+        return undeclared.Distinct(StringComparer.Ordinal).OrderBy(k => k, StringComparer.Ordinal).ToList();
+    }
+
+    private static bool DerivesFrom(TypeDef type, string baseTypeName, string baseAssemblyName, Func<ITypeDefOrRef, TypeDef?> resolveType)
+    {
+        var pending = new Stack<TypeDef>();
+        var seen = new HashSet<TypeDef>();
+        pending.Push(type);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            if (!seen.Add(current))
+            {
+                continue;
+            }
+
+            if (current.ReflectionFullName == baseTypeName && string.Equals(current.Module?.Assembly?.Name, baseAssemblyName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (current.BaseType is { } baseType && resolveType(baseType) is { } baseDefinition)
+            {
+                pending.Push(baseDefinition);
+            }
+
+            foreach (var implemented in current.Interfaces)
+            {
+                if (resolveType(implemented.Interface) is { } interfaceDefinition)
+                {
+                    pending.Push(interfaceDefinition);
+                }
+            }
+        }
+
+        return false;
     }
 
     private static TypeDescription? Describe(TypeSig type, Func<ITypeDefOrRef, TypeDef?> resolveType)

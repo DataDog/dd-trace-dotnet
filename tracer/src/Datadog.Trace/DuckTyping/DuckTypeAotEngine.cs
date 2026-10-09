@@ -284,16 +284,23 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">The target type of the registration: an array type, or an interface or a class that isn't sealed of the core library.</param>
         /// <param name="generatedProxyType">The generated proxy type.</param>
         /// <param name="activator">The activator.</param>
-        internal static void RegisterFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator)
+        /// <param name="derivedTypes">Whether the registration also serves the classes that derive from (or implement) the
+        /// target type and have no registration of their own: the duck type declares the target type with
+        /// <c>[DuckType(IncludeDerivedTypes = true)]</c>, whose members are the ones it binds.</param>
+        internal static void RegisterFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator, bool derivedTypes = false)
         {
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
             if (generatedProxyType is null) { ThrowHelper.ThrowArgumentNullException(nameof(generatedProxyType)); }
             if (activator is null) { ThrowHelper.ThrowArgumentNullException(nameof(activator)); }
 
-            if (!IsFallbackTarget(targetType))
+            if (derivedTypes ? targetType.IsValueType || targetType.IsSealed || targetType.IsArray : !IsFallbackTarget(targetType))
             {
-                throw new ArgumentException($"AOT duck typing fallback target type '{targetType}' must be an array type, or an interface or a class that isn't sealed of the core library.", nameof(targetType));
+                throw new ArgumentException(
+                    derivedTypes
+                        ? $"AOT duck typing derived types target type '{targetType}' must be an interface or a class that isn't sealed."
+                        : $"AOT duck typing fallback target type '{targetType}' must be an array type, or an interface or a class that isn't sealed of the core library.",
+                    nameof(targetType));
             }
 
             lock (RegistrationLock)
@@ -302,7 +309,7 @@ namespace Datadog.Trace.DuckTyping
                 var result = ForwardRegistry.TryGetValue(new TypesTuple(proxyDefinitionType, targetType), out var registration)
                                  ? registration.CreateTypeResult
                                  : new DuckType.CreateTypeResult(proxyDefinitionType, generatedProxyType, targetType, new Func<object?, object?>(instance => activator(instance, targetType)), exceptionInfo: null);
-                SetFallbackTarget(proxyDefinitionType, targetType, result, activator);
+                SetFallbackTarget(proxyDefinitionType, targetType, result, activator, derivedTypes);
                 DuckType.InvalidateFastPaths();
             }
         }
@@ -1149,7 +1156,8 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">The target type.</param>
         /// <param name="result">The result of the registration (or failure).</param>
         /// <param name="typedActivator">The activator receiving the target type, or null for a failure.</param>
-        private static void SetFallbackTarget(Type proxyDefinitionType, Type targetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator)
+        /// <param name="derivedTypes">Whether the registration also serves the classes deriving from the target type.</param>
+        private static void SetFallbackTarget(Type proxyDefinitionType, Type targetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator, bool derivedTypes = false)
         {
             var current = ForwardFallbackTargets.TryGetValue(proxyDefinitionType, out var registrations) ? registrations : [];
             var updated = new List<FallbackRegistration>(current.Length + 1);
@@ -1158,7 +1166,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 if (registration.TargetType == targetType)
                 {
-                    updated.Add(new FallbackRegistration(targetType, result, result.Success ? typedActivator : null));
+                    updated.Add(new FallbackRegistration(targetType, result, result.Success ? typedActivator : null, derivedTypes || registration.ServesDerivedTypes));
                     replaced = true;
                     continue;
                 }
@@ -1168,7 +1176,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (!replaced)
             {
-                updated.Add(new FallbackRegistration(targetType, result, result.Success ? typedActivator : null));
+                updated.Add(new FallbackRegistration(targetType, result, result.Success ? typedActivator : null, derivedTypes));
             }
 
             ForwardFallbackTargets[proxyDefinitionType] = updated.ToArray();
@@ -1178,7 +1186,7 @@ namespace Datadog.Trace.DuckTyping
             ForwardFallbackResults.Clear();
             foreach (var missKey in ForwardMissCache.Keys)
             {
-                if (missKey.ProxyDefinitionType == proxyDefinitionType && (missKey.TargetType.IsArray || IsRuntimeInternalType(missKey.TargetType)))
+                if (missKey.ProxyDefinitionType == proxyDefinitionType && (missKey.TargetType.IsArray || IsRuntimeInternalType(missKey.TargetType) || (derivedTypes && targetType.IsAssignableFrom(missKey.TargetType))))
                 {
                     _ = ForwardMissCache.TryRemove(missKey, out _);
                 }
@@ -1214,7 +1222,8 @@ namespace Datadog.Trace.DuckTyping
 
             var type = key.TargetType;
             var isArray = type.IsArray;
-            if (!isArray && !IsRuntimeInternalType(type))
+            var isRuntimeInternal = !isArray && IsRuntimeInternalType(type);
+            if (!isArray && !isRuntimeInternal && type.IsValueType)
             {
                 result = default;
                 return false;
@@ -1225,7 +1234,9 @@ namespace Datadog.Trace.DuckTyping
                 return true;
             }
 
-            var selected = isArray ? SelectArrayFallbackRegistration(registrations, type) : SelectCoreLibraryFallbackRegistration(registrations, type);
+            var selected = isArray ? SelectArrayFallbackRegistration(registrations, type)
+                           : isRuntimeInternal ? SelectCoreLibraryFallbackRegistration(registrations, type)
+                           : SelectDerivedTypesRegistration(registrations, type);
             if (selected is null)
             {
                 return false;
@@ -1356,6 +1367,42 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Selects the registration serving a class without registration of its own that derives from (or implements) the target
+        /// type of a <c>[DuckType(IncludeDerivedTypes = true)]</c> declaration: the most derived registered base class, else the
+        /// most derived registered interface. The proxy binds the members of that type, which the class inherits.
+        /// </summary>
+        /// <param name="registrations">The fallback registrations of the proxy definition type.</param>
+        /// <param name="type">The class.</param>
+        /// <returns>The registration, or null.</returns>
+        private static FallbackRegistration? SelectDerivedTypesRegistration(FallbackRegistration[] registrations, Type type)
+        {
+            for (var baseType = type.BaseType; baseType is not null && baseType != typeof(object); baseType = baseType.BaseType)
+            {
+                foreach (var registration in registrations)
+                {
+                    if (registration.ServesDerivedTypes && registration.TargetType == baseType)
+                    {
+                        return registration;
+                    }
+                }
+            }
+
+            FallbackRegistration? selected = null;
+            foreach (var registration in registrations)
+            {
+                if (registration.ServesDerivedTypes &&
+                    registration.TargetType.IsInterface &&
+                    registration.TargetType.IsAssignableFrom(type) &&
+                    (selected is null || selected.TargetType.IsAssignableFrom(registration.TargetType)))
+                {
+                    selected = registration;
+                }
+            }
+
+            return selected;
+        }
+
+        /// <summary>
         /// Gets the failure of a registration for another runtime type: dynamic duck typing names the runtime type in the
         /// message of its failures (e.g. "was not found in the instance of type '...'"), the registration names its own.
         /// </summary>
@@ -1447,11 +1494,12 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         private sealed class FallbackRegistration
         {
-            internal FallbackRegistration(Type targetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator)
+            internal FallbackRegistration(Type targetType, DuckType.CreateTypeResult result, Func<object?, Type, object?>? typedActivator, bool servesDerivedTypes)
             {
                 TargetType = targetType;
                 Result = result;
                 TypedActivator = typedActivator;
+                ServesDerivedTypes = servesDerivedTypes;
             }
 
             internal Type TargetType { get; }
@@ -1459,6 +1507,9 @@ namespace Datadog.Trace.DuckTyping
             internal DuckType.CreateTypeResult Result { get; }
 
             internal Func<object?, Type, object?>? TypedActivator { get; }
+
+            /// <summary>Gets a value indicating whether the registration serves the classes deriving from the target type.</summary>
+            internal bool ServesDerivedTypes { get; }
         }
 
         /// <summary>
