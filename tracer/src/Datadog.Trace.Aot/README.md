@@ -28,6 +28,13 @@ assemblies it compiles with it (the framework and the packages) with the Datadog
 profiler does at runtime. It also generates the code the instrumentation needs instead of dynamic code: the CallTarget
 registrations and a DuckType AOT registry. The rewritten assemblies replace ILC's inputs.
 
+## Platforms
+
+The instrumentation runs on the machine that publishes (the build host) and the package brings the native tracer for
+`win-x64`, `win-x86`, `linux-x64`, `linux-musl-x64`, `linux-arm64`, `linux-musl-arm64` and macOS. Build hosts on arm64
+(`linux-arm64`, `linux-musl-arm64`, Apple silicon) aren't supported yet: the publish goes on without the instrumentation,
+with a warning. The application can target any of those runtime identifiers.
+
 ## Properties
 
 | Property | Description |
@@ -36,3 +43,4 @@ registrations and a DuckType AOT registry. The rewritten assemblies replace ILC'
 | `DatadogAotDuckTypeMaps` | ducktype-aot map files recorded at runtime with `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH` (`;`-separated): the duck typing mappings created from runtime types. |
 | `DatadogAotCategories` | Instrumentation categories (default `tracing,appsec,rasp`; add `iast` to opt in). |
 | `DatadogAotFailOnError` | `true` to fail the publish when the instrumentation fails. By default, the application is published without it, with a warning. |
+| `DatadogAotTraceMethods` | Methods to trace, with the `DD_TRACE_METHODS` syntax: they are instrumented when publishing (default: `DD_TRACE_METHODS` of the build). |
