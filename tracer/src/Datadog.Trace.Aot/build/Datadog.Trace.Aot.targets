@@ -31,6 +31,8 @@
     <DatadogAotRunnerPath Condition="'$(DatadogAotRunnerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/runner/Datadog.Trace.Tools.Runner.dll')">$(_DatadogAotPackageRoot)tools/runner/Datadog.Trace.Tools.Runner.dll</DatadogAotRunnerPath>
     <DatadogAotRunnerPath Condition="'$(DatadogAotRunnerPath)' == '' and Exists('$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Runner.dll')">$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Runner.dll</DatadogAotRunnerPath>
     <DatadogAotNativeTracerPath Condition="'$(DatadogAotNativeTracerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/native/$(NETCoreSdkRuntimeIdentifier)/$(_DatadogAotHostNativeFile)')">$(_DatadogAotPackageRoot)tools/native/$(NETCoreSdkRuntimeIdentifier)/$(_DatadogAotHostNativeFile)</DatadogAotNativeTracerPath>
+    <!-- macOS: one universal binary for x64 and arm64 hosts. -->
+    <DatadogAotNativeTracerPath Condition="'$(DatadogAotNativeTracerPath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/native/osx/$(_DatadogAotHostNativeFile)')">$(_DatadogAotPackageRoot)tools/native/osx/$(_DatadogAotHostNativeFile)</DatadogAotNativeTracerPath>
     <DatadogAotDatadogTracePath Condition="'$(DatadogAotDatadogTracePath)' == '' and Exists('$(_DatadogAotPackageRoot)tools/datadog-trace/Datadog.Trace.dll')">$(_DatadogAotPackageRoot)tools/datadog-trace/Datadog.Trace.dll</DatadogAotDatadogTracePath>
   </PropertyGroup>
 

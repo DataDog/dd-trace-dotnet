@@ -6,6 +6,7 @@ public static class Projects
     public const string DatadogTraceAnnotations = "Datadog.Trace.Annotations";
     public const string DatadogTraceBundle = "Datadog.Trace.Bundle";
     public const string DatadogAzureFunctions = "Datadog.AzureFunctions";
+    public const string DatadogTraceAot = "Datadog.Trace.Aot";
     public const string DatadogTraceMsBuild = "Datadog.Trace.MSBuild";
     public const string DatadogTraceBenchmarkDotNet = "Datadog.Trace.BenchmarkDotNet";
     public const string DatadogTraceOpenTracing = "Datadog.Trace.OpenTracing";

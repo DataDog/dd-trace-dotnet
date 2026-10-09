@@ -4024,8 +4024,8 @@ stages:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
-      displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark)
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget BuildNativeAotNuget
+      displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark, NativeAOT)
       timeoutInMinutes: 20
       retryCountOnTaskFailure: 1
       env:
@@ -4042,6 +4042,10 @@ stages:
     - publish: $(artifacts)/nuget/benchmark
       displayName: Uploading Benchmark package
       artifact: benchmark-nuget-package
+
+    - publish: $(artifacts)/nuget/aot
+      displayName: Uploading Datadog.Trace.Aot package
+      artifact: aot-nuget-package
 
     - publish: $(artifacts)/nuget/dd-trace
       displayName: Uploading runner dotnet tool artifact
