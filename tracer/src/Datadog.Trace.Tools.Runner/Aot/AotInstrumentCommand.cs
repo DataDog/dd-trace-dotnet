@@ -30,6 +30,7 @@ internal class AotInstrumentCommand : CommandWithExamples
     private readonly Option<string[]> _neutralizeOption = new("--neutralize", "Type::Method whose body is replaced by a return (tests).") { IsHidden = true, AllowMultipleArgumentsPerToken = true };
     private readonly Option<bool> _noCallTargetRegistryOption = new("--no-calltarget-registry", "Do not generate the CallTarget registrations (to compare the native rewrite alone).") { IsHidden = true };
     private readonly Option<string[]> _duckTypeMapOption = new("--ducktype-map", "ducktype-aot map file recorded at runtime (DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH) with the duck typing mappings to serve too. Can be provided multiple times.") { AllowMultipleArgumentsPerToken = true };
+    private readonly Option<string?> _traceMethodsOption = new("--trace-methods", "Methods to trace, with the DD_TRACE_METHODS syntax (a NativeAOT application instruments them at build time).");
     private readonly Option<string?> _reportOption = new("--report", "Optional JSON report path.");
     private readonly Option<bool> _verifyOption = new("--verify", "Verify the rewritten methods (ILSpy, JIT preparation, ILVerify) against the original assemblies.");
     private readonly Option<bool> _verboseOption = new("--verbose", "Verbose output.");
@@ -50,6 +51,7 @@ internal class AotInstrumentCommand : CommandWithExamples
         AddOption(_neutralizeOption);
         AddOption(_noCallTargetRegistryOption);
         AddOption(_duckTypeMapOption);
+        AddOption(_traceMethodsOption);
         AddOption(_reportOption);
         AddOption(_verifyOption);
         AddOption(_verboseOption);
@@ -92,6 +94,7 @@ internal class AotInstrumentCommand : CommandWithExamples
             Neutralize = (_neutralizeOption.GetValue(context) ?? Array.Empty<string>()).ToList(),
             GenerateCallTargetRegistry = !_noCallTargetRegistryOption.GetValue(context),
             DuckTypeMaps = (_duckTypeMapOption.GetValue(context) ?? Array.Empty<string>()).ToList(),
+            TraceMethods = _traceMethodsOption.GetValue(context),
             ReportPath = _reportOption.GetValue(context),
             Verify = _verifyOption.GetValue(context),
             Verbose = _verboseOption.GetValue(context),
