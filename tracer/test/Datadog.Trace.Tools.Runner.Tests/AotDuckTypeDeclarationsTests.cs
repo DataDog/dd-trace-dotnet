@@ -44,6 +44,7 @@ public class AotDuckTypeDeclarationsTests
         result.Mappings.Should().Contain(m => m.IncludesDerivedTypes && m.TargetTypeName == "Amazon.Runtime.AmazonWebServiceResponse");
         result.Mappings.Should().Contain(m => m.Mode == DuckTypeAotMappingMode.Reverse && m.ProxyTypeName == "Microsoft.Extensions.Logging.ILogger");
         result.Mappings.Should().Contain(m => m.ProxyAssemblyName == "Datadog.Trace.Manual" && m.ProxyTypeName == "Datadog.Trace.IScope");
+        result.Mappings.Should().Contain(m => DuckTypeAotRegistryAssemblyEmitter.IsGenericProxyMapping(m) && m.TargetTypeName == "Grpc.Net.Client.Internal.GrpcCall`2");
     }
 
     [Fact]
@@ -54,7 +55,13 @@ public class AotDuckTypeDeclarationsTests
         TypeDef? FindType(string assembly, string name) => assembly == assemblyName ? module.Find(name, isReflectionName: true) : null;
         TypeSig Sig(Type type) => FindType(assemblyName, type.FullName!)!.ToTypeSig();
 
-        var declared = new[] { Forward(typeof(IDeclaredProxy), typeof(DeclaredTarget)), Forward(typeof(IDeclaredProxy), typeof(DeclaredBase)).WithDerivedTypes() };
+        var declared = new[]
+        {
+            Forward(typeof(IDeclaredProxy), typeof(DeclaredTarget)),
+            Forward(typeof(IDeclaredProxy), typeof(DeclaredBase)).WithDerivedTypes(),
+            Forward(typeof(IRequestedProxy), typeof(GenericDeclaredBase<>)).WithDerivedTypes(),
+            Forward(typeof(IRequestedProxy), typeof(GenericDeclaredTarget<>)),
+        };
         var requests = new[] { (Sig(typeof(IRequestedProxy)), Sig(typeof(DeclaredTarget))) };
         var undeclaredTarget = Forward(typeof(IDeclaredProxy), typeof(UndeclaredTarget));
         var undeclaredReverse = new DuckTypeAotMapping(typeof(DeclaredBase).FullName!, "App", typeof(DeclaredTarget).FullName!, assemblyName, DuckTypeAotMappingMode.Reverse, DuckTypeAotMappingSource.MapFile);
@@ -63,6 +70,8 @@ public class AotDuckTypeDeclarationsTests
             Forward(typeof(IDeclaredProxy), typeof(DeclaredTarget)),
             Forward(typeof(IDeclaredProxy), typeof(DeclaredGrandChild)),
             Forward(typeof(IRequestedProxy), typeof(DeclaredTarget)),
+            Forward(typeof(IRequestedProxy), typeof(GenericDeclaredTarget<UndeclaredTarget>)),
+            Forward(typeof(IRequestedProxy), typeof(GenericDeclaredChild<UndeclaredTarget>)),
             undeclaredTarget,
             undeclaredReverse,
             new DuckTypeAotMapping(typeof(IDeclaredProxy).FullName!, "App", typeof(UndeclaredTarget).FullName!, assemblyName, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile),
@@ -100,6 +109,18 @@ public class AotDuckTypeDeclarationsTests
     }
 
     public class UndeclaredTarget
+    {
+    }
+
+    public class GenericDeclaredTarget<T>
+    {
+    }
+
+    public class GenericDeclaredBase<T>
+    {
+    }
+
+    public class GenericDeclaredChild<T> : GenericDeclaredBase<T>
     {
     }
 }

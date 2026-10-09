@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     [DuckCopy("Couchbase.IO.Operations.Config", "Couchbase.NetClient")]
     [DuckCopy("Couchbase.IO.Operations.Delete", "Couchbase.NetClient")]
     [DuckCopy("Couchbase.IO.Operations.Get`1[[System.Object, System.Private.CoreLib]]", "Couchbase.NetClient")]
+    [DuckCopy("Couchbase.IO.Operations.OperationBase", "Couchbase.NetClient", IncludeDerivedTypes = true)]
     internal struct OperationStruct
     {
         /// <summary>
