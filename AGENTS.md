@@ -250,6 +250,22 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 - **`docs/development/TracerDebugging.md`** — Local debugging techniques, launchSettings.json configuration, $(SolutionDir) path issues, IDE-specific tips, and troubleshooting common tracer loading problems
 
+## Code Review Rules
+
+- Check changes to shared tracer behavior (e.g., context propagation, sampling, configuration, or telemetry) for cross-language impact, using relevant specifications and other tracer implementations as references.
+- When an issue stems from the shared design or specification, explicitly flag it as a **design issue** requiring coordination with the affected tracer teams.
+- Explain why a .NET-only fix is insufficient or would create divergence.
+- Distinguish this from a .NET implementation bug that can be fixed locally to match the agreed behavior.
+- Validation across all dd-trace- repositories is not required.
+
+- [Java (`dd-trace-java`)](https://github.com/DataDog/dd-trace-java)
+- [Python (`dd-trace-py`)](https://github.com/DataDog/dd-trace-py)
+- [Node.js (`dd-trace-js`)](https://github.com/DataDog/dd-trace-js)
+- [Go (`dd-trace-go`)](https://github.com/DataDog/dd-trace-go)
+- [PHP (`dd-trace-php`)](https://github.com/DataDog/dd-trace-php)
+- [Ruby (`dd-trace-rb`)](https://github.com/DataDog/dd-trace-rb)
+- [C++ (`dd-trace-cpp`)](https://github.com/DataDog/dd-trace-cpp)
+
 ## Commit & Pull Request Guidelines
 
 - Commits: imperative mood, optional `[Area]` prefix (e.g. `[Debugger]`, `[SymDB]`). Keep messages concise — avoid full diffs or extensive explanation.
