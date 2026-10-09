@@ -36,7 +36,7 @@ public class VetoTriggerListener : ITriggerListener
         return ValueTask.FromResult(false); // Don't veto other jobs
     }
 
-    public ValueTask TriggerMisfired(ITrigger trigger, CancellationToken cancellationToken = default)
+    public ValueTask TriggerMisfired(ITrigger trigger, IScheduler scheduler, CancellationToken cancellationToken = default)
     {
         return ValueTask.CompletedTask;
     }
