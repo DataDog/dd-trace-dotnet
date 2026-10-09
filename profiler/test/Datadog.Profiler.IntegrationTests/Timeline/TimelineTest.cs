@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +21,7 @@ namespace Datadog.Profiler.IntegrationTests.Timeline
             _output = output;
         }
 
+        [Flaky("Samples.BuggyBits intermittently exits with code 255 during profiling")]
         [TestAppFact("Samples.BuggyBits")]
         public void CheckTimestampAsLabel(string appName, string framework, string appAssembly)
         {
