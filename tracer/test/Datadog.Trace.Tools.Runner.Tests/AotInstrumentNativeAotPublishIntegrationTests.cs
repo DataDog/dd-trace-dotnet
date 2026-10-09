@@ -14,11 +14,14 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Aot;
 using FluentAssertions;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,8 +37,13 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 /// Opt-in (two publishes, one of them NativeAOT): set DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH=1 and DD_AOT_NATIVE_TRACER
 /// (Datadog.Tracer.Native library for this host).
 /// </remarks>
+[UsesVerify]
 public class AotInstrumentNativeAotPublishIntegrationTests
 {
+    // The NativeAOT binary of the package test application (ASP.NET Core, AppSec, RASP and IAST, net8.0, linux-x64): 38 MB
+    // (12 MB without the instrumentation) plus a margin.
+    private const long BinarySizeBudget = 44L * 1024 * 1024;
+
     private const string ProgramFile = """
         // The recording run (JIT, with the profiler attached but without the managed loader) initializes the instrumentation.
         if (Environment.GetEnvironmentVariable("ASPAOT_INITIALIZE") == "1")
@@ -236,15 +244,19 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             File.WriteAllText(Path.Combine(project, "Program.cs"), ManualApiProgramFile);
             var published = Path.Combine(workDirectory, "nativeaot");
             // IAST is opt-in at build time.
-            var (publishExit, publishOutput) = Run("dotnet", project, [], "publish", "-c", "Release", "-r", GetRuntimeIdentifier(), "-p:DatadogAotFailOnError=true", "-p:DatadogAotCategories=tracing%2Cappsec%2Crasp%2Ciast", "-o", published);
+            // TrimmerSingleWarn=false: each AOT analysis warning of Datadog.Trace, not one for the assembly.
+            var (publishExit, publishOutput) = Run("dotnet", project, [], "publish", "-c", "Release", "-r", GetRuntimeIdentifier(), "-p:DatadogAotFailOnError=true", "-p:DatadogAotCategories=tracing%2Cappsec%2Crasp%2Ciast", "-p:TrimmerSingleWarn=false", "-o", published);
             Skip.If(publishExit != 0 && publishOutput.Contains("Platform linker", StringComparison.OrdinalIgnoreCase), "The NativeAOT toolchain isn't available.");
             publishExit.Should().Be(0, publishOutput);
             publishOutput.Should().Contain("Datadog NativeAOT instrumentation:").And.Contain("Datadog.Trace.Manual");
+            var executable = Path.Combine(published, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "PkgAot.exe" : "PkgAot");
+            _output.WriteLine($"Binary size: {new FileInfo(executable).Length} bytes");
+            new FileInfo(executable).Length.Should().BeLessThan(BinarySizeBudget, "the instrumentation must not grow the binary unnoticed (raise the budget when it's expected)");
 
             using var agent = MockTracerAgent.Create(_output);
             var logs = Path.Combine(workDirectory, "logs");
             var (exitCode, output) = Run(
-                Path.Combine(published, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "PkgAot.exe" : "PkgAot"),
+                executable,
                 published,
                 // A WAF timeout (100 ms by default) on a loaded machine would leave the requests without events.
                 [
@@ -293,6 +305,13 @@ public class AotInstrumentNativeAotPublishIntegrationTests
 
             // libdatadog comes with the package too (hands-off configuration, tracer metadata).
             log.Should().Contain("Successfully stored tracer metadata with LibDatadog").And.NotContain("LibDatadogUnavailable");
+
+            // The AOT analysis warnings of Datadog.Trace: a new one is code NativeAOT may not run (dynamic code, members it
+            // doesn't keep). Once it's handled (guarded, preserved by the instrumentation...), accept it in the snapshot.
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            settings.UseFileName($"{nameof(AotInstrumentNativeAotPublishIntegrationTests)}.DatadogTraceAotWarnings");
+            await Verifier.Verify(string.Join("\n", DatadogTraceAotWarnings(publishOutput)), settings);
         }
         finally
         {
@@ -308,6 +327,17 @@ public class AotInstrumentNativeAotPublishIntegrationTests
     }
 
     private static string? AppSecEvents(MockSpan span) => Events(span, "_dd.appsec.json", "appsec");
+
+    // "Datadog.Trace.dll : warning IL3050: Datadog.Trace.Type.Method(): Using member ... [project]"
+    private static List<string> DatadogTraceAotWarnings(string publishOutput)
+        => publishOutput.Split('\n')
+                        .Select(line => Regex.Match(line, @"warning (IL\d+): (Datadog\.Trace\..*?)(?: \[[^\]]*\])?\s*$"))
+                        .Where(match => match.Success)
+                        // Without the ordinals of the compiler-generated members (<M>b__12_0, <M>d__3, <>c__DisplayClass5_0...).
+                        .Select(match => $"{match.Groups[1].Value}: {Regex.Replace(match.Groups[2].Value, @"(?<=b__|d__|DisplayClass|\|)\d+(_\d+)?", "N")}")
+                        .Distinct()
+                        .OrderBy(warning => warning, StringComparer.Ordinal)
+                        .ToList();
 
     /// <summary>
     /// The AppSec or IAST events of a span: in a tag, or in the meta struct once the tracer knows the agent supports it.
