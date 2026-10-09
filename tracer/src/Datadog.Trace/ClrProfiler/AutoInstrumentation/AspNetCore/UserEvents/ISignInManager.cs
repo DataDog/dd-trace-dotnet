@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 #nullable enable
 using System.ComponentModel;
+using Datadog.Trace.DuckTyping;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -15,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
+[DuckType("Microsoft.AspNetCore.Identity.SignInManager`1", "Microsoft.AspNetCore.Identity", IncludeDerivedTypes = true)]
 internal interface ISignInManager
 {
     /// <summary>

@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core/CallInvocationDetails.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.Core.CallInvocationDetails`2", "Grpc.Core")]
     internal struct CallInvocationDetailsStruct
     {
         public IChannel Channel;

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
     /// Duck type for Grpc.AspNetCore.Server.Internal.CallHandlers.ServerCallHandlerBase{Service, TRequest, TResponse}
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.AspNetCore.Server.Internal.CallHandlers.ServerCallHandlerBase`3", "Grpc.AspNetCore.Server", IncludeDerivedTypes = true)]
     internal struct ServerCallHandlerBaseStruct
     {
         public ServerMethodInvokerBaseStruct MethodInvoker;

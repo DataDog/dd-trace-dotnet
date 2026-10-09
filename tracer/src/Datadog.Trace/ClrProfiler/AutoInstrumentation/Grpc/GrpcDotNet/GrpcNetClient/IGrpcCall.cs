@@ -7,12 +7,14 @@
 #if !NET461
 
 using System.Net.Http;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
     /// <summary>
     /// Duck type for Grpc.Net.Client.Internal.GrpcCall{TRequest, TResponse}
     /// </summary>
+    [DuckType("Grpc.Net.Client.Internal.GrpcCall`2", "Grpc.Net.Client")]
     internal interface IGrpcCall
     {
         public IChannel Channel { get; }

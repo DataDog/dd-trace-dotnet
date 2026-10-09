@@ -14,6 +14,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core/Internal/ServerCallHandler.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.Core.Internal.UnaryServerCallHandler`2", "Grpc.Core")]
+    [DuckCopy("Grpc.Core.Internal.ClientStreamingServerCallHandler`2", "Grpc.Core")]
+    [DuckCopy("Grpc.Core.Internal.ServerStreamingServerCallHandler`2", "Grpc.Core")]
+    [DuckCopy("Grpc.Core.Internal.DuplexStreamingServerCallHandler`2", "Grpc.Core")]
     internal struct ServerCallHandlerStruct
     {
         [DuckField(Name = "method")]

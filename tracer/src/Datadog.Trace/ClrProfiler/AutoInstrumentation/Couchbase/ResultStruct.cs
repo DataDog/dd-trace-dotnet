@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     /// Ducktyping of Couchbase.IResult and generic implementations
     /// </summary>
     [DuckCopy]
-    [DuckCopy("Couchbase.OperationResult", "Couchbase.NetClient")]
+    [DuckCopy("Couchbase.OperationResult", "Couchbase.NetClient", IncludeDerivedTypes = true)]
     [DuckCopy("Couchbase.OperationResult`1[[Couchbase.Configuration.Server.Serialization.BucketConfig, Couchbase.NetClient]]", "Couchbase.NetClient")]
     [DuckCopy("Couchbase.OperationResult`1[[System.Object, System.Private.CoreLib]]", "Couchbase.NetClient")]
     internal struct ResultStruct
