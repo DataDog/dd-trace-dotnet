@@ -19,6 +19,7 @@ public class AgentlessEndpointTests
     [Theory]
     [InlineData("datadoghq.com", "https://ufc-server.ff-cdn.datadoghq.com" + DefaultPath)]
     [InlineData("DATADOGHQ.COM", "https://ufc-server.ff-cdn.datadoghq.com" + DefaultPath)] // site is lowercased
+    [InlineData(" datadoghq.com ", "https://ufc-server.ff-cdn.datadoghq.com" + DefaultPath)] // surrounding whitespace is trimmed
     [InlineData("datad0g.com", "https://ufc-server.ff-cdn.datad0g.com" + DefaultPath)] // staging
     [InlineData("ddog-gov.com", "https://ufc-server.ff-cdn.ddog-gov.com" + DefaultPath)] // govcloud
     public void DerivesManagedEndpointFromSite(string site, string expected)
@@ -140,6 +141,11 @@ public class AgentlessEndpointTests
     [InlineData("datadoghq.com/../evil")] // a path escapes the host
     [InlineData("datadoghq.com?x=1")] // a query escapes the host
     [InlineData("datadoghq.com#f")] // a fragment escapes the host
+    [InlineData("datadoghq.com\\attacker.example")] // a backslash can be normalized as a URL separator
+    [InlineData("dátadoghq.com")] // managed endpoints do not implicitly convert Unicode to IDN
+    [InlineData("-datadoghq.com")]
+    [InlineData("datadoghq.com-")]
+    [InlineData("datadoghq..com")]
     public void RejectsMalformedSiteWithoutThrowing(string site)
     {
         AgentlessEndpoint.TryCreate(site, baseUrl: null, out var endpoint, out var error)

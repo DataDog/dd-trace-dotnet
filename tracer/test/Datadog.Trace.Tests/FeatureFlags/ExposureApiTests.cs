@@ -14,11 +14,13 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
@@ -64,7 +66,7 @@ public class ExposureApiTests
 
             local.RequestsSent.Should().HaveCount(2, "the second exposure is sent by the shutdown flush");
             var finalRequest = local.RequestsSent[1].Should().BeOfType<BlockingApiRequest>().Subject;
-            finalRequest.Endpoint.AbsolutePath.Should().Be("/evp_proxy/v2/api/v2/exposures");
+            finalRequest.Endpoint.AbsolutePath.Should().Be("/evp_proxy/v4/api/v2/exposures");
             finalRequest.Compression.Should().Be(MultipartCompression.GZip);
             var payload = JObject.Parse(finalRequest.PayloadJson);
             payload["context"]!["service"]!.Value<string>().Should().NotBeNullOrEmpty();
@@ -150,7 +152,12 @@ public class ExposureApiTests
     }
 
     private static FeatureFlagsEvpTransport CreateLocalTransport(TestRequestFactory local)
-        => new(local);
+        => new(
+            FeatureFlagsSource.Agentless,
+            local,
+            directRequestFactory: null,
+            discoveryService: new DiscoveryServiceMock(),
+            initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
 
     private static ExposureEvent CreateExposure(string flag)
         => new(
