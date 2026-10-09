@@ -119,6 +119,10 @@ internal static class AotInstrumentProcessor
             report.DelegateWrappers = DelegateWrapperDirectives.Write(datadogTrace, Path.Combine(options.OutputDirectory, "Datadog.Trace.Delegates.rd.xml"));
             AotLog.Info($"Delegate instrumentation wrappers preserved: {report.DelegateWrappers}");
 
+            // The facades the libraries resolve the type names they store through.
+            report.Facades = FacadeDirectives.Write(modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Facades.rd.xml"));
+            AotLog.Info($"Facades preserved: {report.Facades}");
+
             // Only the assemblies the native tracer rewrote are written: the others (most of the framework references a
             // publish passes) are left as they are.
             var application = modules.FirstOrDefault(m => m.Writable && options.Assemblies.Count > 0 && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.Assemblies[0]), StringComparison.Ordinal));
