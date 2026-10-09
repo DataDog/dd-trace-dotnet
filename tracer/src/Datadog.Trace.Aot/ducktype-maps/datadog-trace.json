@@ -2995,6 +2995,216 @@
       "proxyAssembly": "Datadog.Trace",
       "targetType": "log4net.Core.LoggingEvent",
       "targetAssembly": "log4net"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IMessagingClientDiagnostics",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Core.Shared.MessagingClientDiagnostics",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IServiceBusMessageBatch",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.ServiceBus.ServiceBusMessageBatch",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IClusterOptions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.ClusterOptions",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IConnectionString",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.ConnectionString",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IClusterContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Core.ClusterContext",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IClusterNode",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Core.ClusterNode",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.OperationStructV3",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Core.IO.Operations.Authentication.SaslList",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.OperationStructV3",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Core.IO.Operations.Errors.GetErrorMap",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.OperationStructV3",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Core.IO.Operations.Hello",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.OperationStructV3",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Core.IO.Operations.Noop",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.FeatureFlags.IEvaluation",
+      "proxyAssembly": "Datadog.FeatureFlags.OpenFeature",
+      "targetType": "Datadog.Trace.FeatureFlags.Evaluation",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Execution.UnhandledError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrorExtensions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Execution.UnhandledError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IValidationResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.SuccessfullyValidatedResult",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IValidationResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.ValidationResult",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.CosmosContextClientStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.ClientContextCore",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.ContainerInlineCore",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.IContainer",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.ContainerInlineCore",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.CosmosClientStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.CosmosClient",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.CosmosClientOptionsStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.CosmosClientOptions",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseNewStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.DatabaseInlineCore",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.IDatabase",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.DatabaseInlineCore",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.IRequestInvokerHandlerProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.Handlers.RequestInvokerHandler",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.IResponseHeaders",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.Headers",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.QueryDefinitionStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.QueryDefinition",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.IResponseMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Azure.Cosmos.ResponseMessage",
+      "targetAssembly": "Microsoft.Azure.Cosmos.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Extensions.Logging.ExtendedLoggerFactory",
+      "targetAssembly": "Microsoft.Extensions.Telemetry"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ILoggerFactory",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Extensions.Logging.ExtendedLoggerFactory",
+      "targetAssembly": "Microsoft.Extensions.Telemetry"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.IExternalScopeProvider",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Extensions.Logging.LoggerFactoryScopeProvider",
+      "targetAssembly": "Microsoft.Extensions.Telemetry"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IValidationResultTuple",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.ValueTuple`2[[GraphQL.Validation.IValidationResult, GraphQL, Version=5.2.0.0, Culture=neutral, PublicKeyToken=null],[GraphQL.Validation.Variables, GraphQL, Version=5.2.0.0, Culture=neutral, PublicKeyToken=null]]",
+      "targetAssembly": "System.Private.CoreLib"
     }
   ]
 }
