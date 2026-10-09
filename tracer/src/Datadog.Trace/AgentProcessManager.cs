@@ -504,48 +504,14 @@ namespace Datadog.Trace
                 }
             }
 
+            /// <summary>
+            /// The agent is healthy only while its named pipe exists, whoever started it. A process that
+            /// matches by name but was not started by us does not count; the process we started is
+            /// tracked through <see cref="OwnProcessIsRunning"/> instead.
+            /// </summary>
             public bool ProcessIsHealthy()
             {
-                // Named pipe can return false in some circumstances while it is being written to, so have a fallback
-                return NamedPipeIsBound() || ProgramIsRunning();
-            }
-
-            private bool ProgramIsRunning()
-            {
-                try
-                {
-                    if (string.IsNullOrWhiteSpace(ProcessPath))
-                    {
-                        return false;
-                    }
-
-                    // fileName will match either TraceAgentMetadata.Name or DogStatsDMetadata.Name
-                    var fileName = Path.GetFileNameWithoutExtension(ProcessPath);
-                    var processesByName = Process.GetProcessesByName(fileName);
-
-                    if (processesByName.Length > 0)
-                    {
-                        // We enforce a unique enough naming within contexts where we would use child processes
-                        return true;
-                    }
-
-                    Log.Debug("Program [{Process}] is no longer running", ProcessPath);
-
-                    return false;
-                }
-                catch (Exception ex)
-                {
-                    try
-                    {
-                        Log.Error(ex, "Error when checking for running program {Process}.", ProcessPath);
-                    }
-                    catch
-                    {
-                        // ignore, to be safe
-                    }
-
-                    return false;
-                }
+                return NamedPipeIsBound();
             }
 
             private bool NamedPipeIsBound()

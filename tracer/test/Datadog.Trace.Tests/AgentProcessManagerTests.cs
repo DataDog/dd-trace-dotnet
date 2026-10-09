@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Diagnostics;
 using FluentAssertions;
 using Xunit;
 using KeepAliveAction = Datadog.Trace.AgentProcessManager.KeepAliveAction;
@@ -33,5 +35,25 @@ public class AgentProcessManagerTests
     {
         AgentProcessManager.GetKeepAliveAction(isHealthy: true, ownProcessIsRunning)
                            .Should().Be(KeepAliveAction.None);
+    }
+
+    [Fact]
+    public void ProcessIsHealthy_IgnoresProcessNotStartedByUsWhenPipeIsMissing()
+    {
+        // A process with the agent's name is running (this test process), but nothing serves the pipe
+        string runningProcessPath;
+        using (var currentProcess = Process.GetCurrentProcess())
+        {
+            runningProcessPath = currentProcess.MainModule!.FileName;
+        }
+
+        var metadata = new AgentProcessManager.ProcessMetadata
+        {
+            Name = "test-agent",
+            PipeName = $"dd-test-missing-pipe-{Guid.NewGuid():N}",
+            ProcessPath = runningProcessPath,
+        };
+
+        metadata.ProcessIsHealthy().Should().BeFalse();
     }
 }
