@@ -16,7 +16,7 @@ namespace Datadog.Trace
 
         public static bool TryGetRuntimeIdFromNative(out string runtimeId)
         {
-            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm)
+            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm || !ClrProfiler.NativeMethods.CanBeLoaded)
             {
                 runtimeId = default;
                 return false;

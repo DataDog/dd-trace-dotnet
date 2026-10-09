@@ -178,7 +178,7 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         internal static bool TryGetInode(string path, out long result)
-            => TryGetInodeUsingPInvoke(path, out result)
+            => (NativeMethods.CanBeLoaded && TryGetInodeUsingPInvoke(path, out result))
             || TryGetInodeUsingStatx(path, out result)
             || TryGetInodeUsingStat(path, out result);
 

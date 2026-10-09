@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Iast.Analyzers;
 
@@ -15,6 +16,22 @@ namespace Datadog.Trace.ClrProfiler
     /// </remarks>
     internal static class NativeMethods
     {
+        /// <summary>
+        /// Gets a value indicating whether the native tracer can be loaded: never in NativeAOT applications (there is no CLR
+        /// profiling API), where calling it only throws <see cref="DllNotFoundException"/>.
+        /// </summary>
+        public static bool CanBeLoaded
+        {
+            get
+            {
+#if NETCOREAPP3_0_OR_GREATER
+                return RuntimeFeature.IsDynamicCodeCompiled;
+#else
+                return true;
+#endif
+            }
+        }
+
         public static bool IsWindows
         {
             get
@@ -47,6 +64,11 @@ namespace Datadog.Trace.ClrProfiler
         /// </value>
         public static bool IsProfilerAttached()
         {
+            if (!CanBeLoaded)
+            {
+                return false;
+            }
+
             if (IsWindows)
             {
                 return Windows.IsProfilerAttached();
