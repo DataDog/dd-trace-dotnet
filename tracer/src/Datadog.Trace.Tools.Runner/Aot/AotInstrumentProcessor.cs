@@ -125,6 +125,15 @@ internal static class AotInstrumentProcessor
             report.CompositeInterfaces = compositeCount;
             AotLog.Info($"Composite interfaces of duck typing reverse proxies: {report.CompositeInterfaces}");
 
+            // Code Origin for spans: the source locations of the endpoint methods, which the PDBs give at runtime otherwise.
+            var codeOriginLocations = new List<string>();
+            foreach (var module in modules.Where(m => m.Writable))
+            {
+                report.CodeOriginLocations += CodeOriginLocations.Collect(module.Module, module.Path, codeOriginLocations);
+            }
+
+            AotLog.Info($"Source locations of endpoint methods for Code Origin: {report.CodeOriginLocations}");
+
             // The proxies of the duck typing constraints go to a DuckType AOT registry generated first (C1): the adapters
             // create them directly.
             CallTargetDuckTypeRegistry? duckTypeRegistry = null;
@@ -177,7 +186,7 @@ internal static class AotInstrumentProcessor
                     var sourceLink = module == application && module.Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault() is { } link
                                          ? Encoding.UTF8.GetString(link.FileBlob)
                                          : null;
-                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application, userStrings, sourceLink);
+                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application, userStrings, sourceLink, codeOriginLocations);
                     AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories); {registry.Instantiations} instantiations of deferred generic shapes ({registry.InstantiationBound} bound, {registry.InstantiationDeferred} still deferred)");
                     foreach (var detail in registry.Details)
                     {

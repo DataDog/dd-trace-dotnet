@@ -58,6 +58,7 @@ internal sealed class CallTargetRegistryGenerator
     /// <param name="isApplication">Whether the module is the application's, whose module initializer initializes the instrumentation.</param>
     /// <param name="userStrings">For the application: the string literals of the instrumented assemblies (location, value) for IAST's hardcoded secrets analysis.</param>
     /// <param name="sourceLink">For the application: the SourceLink document of its PDB (git metadata).</param>
+    /// <param name="codeOriginLocations">For the application: the source locations of the endpoint methods of the assemblies (see <see cref="CodeOriginLocations"/>).</param>
     public static CallTargetRegistryResult Generate(
         ModuleDef module,
         IEnumerable<MethodDef> rewrittenMethods,
@@ -67,7 +68,8 @@ internal sealed class CallTargetRegistryGenerator
         IReadOnlyDictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null,
         bool isApplication = false,
         IReadOnlyList<(string Location, string Value)>? userStrings = null,
-        string? sourceLink = null)
+        string? sourceLink = null,
+        IReadOnlyList<string>? codeOriginLocations = null)
     {
         var scanned = rewrittenMethods.Where(m => m.Body is not null)
                                       .Select(m => (Method: m, Invocations: CallTargetInvocationScanner.Scan(m.Body)))
@@ -100,7 +102,7 @@ internal sealed class CallTargetRegistryGenerator
 
         if (usesRegistry || isApplication)
         {
-            generator.AddModuleInitializer(duckTypeRegistry, initializeInstrumentation: isApplication, isApplication ? userStrings : null, isApplication ? sourceLink : null);
+            generator.AddModuleInitializer(duckTypeRegistry, initializeInstrumentation: isApplication, isApplication ? userStrings : null, isApplication ? sourceLink : null, isApplication ? codeOriginLocations : null);
         }
 
         generator.AddIgnoresAccessChecks(force: isApplication);
@@ -687,7 +689,7 @@ internal sealed class CallTargetRegistryGenerator
     /// run too late), then the application's assembly initializes the instrumentation (<c>Instrumentation.InitializeAot</c>).
     /// Each step is isolated: a failure is logged and the application starts anyway.
     /// </summary>
-    private void AddModuleInitializer(CallTargetDuckTypeRegistry? registry, bool initializeInstrumentation, IReadOnlyList<(string Location, string Value)>? userStrings, string? sourceLink)
+    private void AddModuleInitializer(CallTargetDuckTypeRegistry? registry, bool initializeInstrumentation, IReadOnlyList<(string Location, string Value)>? userStrings, string? sourceLink, IReadOnlyList<string>? codeOriginLocations)
     {
         var steps = new List<(string Name, List<Instruction> Body)>();
         if (registry?.Module.Find(CallTargetDuckTypeRegistry.BootstrapTypeName, isReflectionName: true)?.FindMethod("Initialize") is { } registryInitialize)
@@ -701,21 +703,19 @@ internal sealed class CallTargetRegistryGenerator
             var analyzer = new ClassSig(_references.DatadogType("Datadog.Trace.Iast.Analyzers.HardcodedSecretsAnalyzer"));
             var stringArray = new SZArraySig(_module.CorLibTypes.String);
             var add = _references.DatadogStaticMethod(analyzer, "AddBuildTimeUserStrings", MethodSig.CreateStatic(_module.CorLibTypes.Void, stringArray));
-            var userStringsBody = new List<Instruction> { Instruction.CreateLdcI4(userStrings.Count * 2), OpCodes.Newarr.ToInstruction(_module.CorLibTypes.String.TypeDefOrRef) };
-            var index = 0;
-            foreach (var (location, value) in userStrings)
-            {
-                foreach (var item in new[] { location, value })
-                {
-                    userStringsBody.Add(OpCodes.Dup.ToInstruction());
-                    userStringsBody.Add(Instruction.CreateLdcI4(index++));
-                    userStringsBody.Add(OpCodes.Ldstr.ToInstruction(item));
-                    userStringsBody.Add(OpCodes.Stelem_Ref.ToInstruction());
-                }
-            }
-
+            var userStringsBody = NewStringArray(userStrings.SelectMany(s => new[] { s.Location, s.Value }).ToList());
             userStringsBody.Add(OpCodes.Call.ToInstruction(add));
             steps.Add(("UserStrings", userStringsBody));
+        }
+
+        if (codeOriginLocations is { Count: > 0 })
+        {
+            // SpanCodeOrigin.AddBuildTimeLocations(new[] { assembly0, key0, file0, line0, column0, ... })
+            var codeOrigin = new ClassSig(_references.DatadogType("Datadog.Trace.Debugger.SpanCodeOrigin.SpanCodeOrigin"));
+            var add = _references.DatadogStaticMethod(codeOrigin, "AddBuildTimeLocations", MethodSig.CreateStatic(_module.CorLibTypes.Void, new SZArraySig(_module.CorLibTypes.String)));
+            var locationsBody = NewStringArray(codeOriginLocations);
+            locationsBody.Add(OpCodes.Call.ToInstruction(add));
+            steps.Add(("CodeOrigin", locationsBody));
         }
 
         if (sourceLink is not null && _module.Assembly is { } assembly)
@@ -802,6 +802,21 @@ internal sealed class CallTargetRegistryGenerator
         }
 
         initializer.Body.Instructions.Insert(0, OpCodes.Call.ToInstruction(initialize));
+    }
+
+    // Pushes a string[] with the items.
+    private List<Instruction> NewStringArray(IReadOnlyList<string> items)
+    {
+        var instructions = new List<Instruction> { Instruction.CreateLdcI4(items.Count), OpCodes.Newarr.ToInstruction(_module.CorLibTypes.String.TypeDefOrRef) };
+        for (var i = 0; i < items.Count; i++)
+        {
+            instructions.Add(OpCodes.Dup.ToInstruction());
+            instructions.Add(Instruction.CreateLdcI4(i));
+            instructions.Add(OpCodes.Ldstr.ToInstruction(items[i]));
+            instructions.Add(OpCodes.Stelem_Ref.ToInstruction());
+        }
+
+        return instructions;
     }
 
     /// <summary>
