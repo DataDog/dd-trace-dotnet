@@ -280,5 +280,15 @@ internal static class AotInstrumentProcessor
         {
             throw new ArgumentException("No reference directory contains System.Private.CoreLib.dll.");
         }
+
+        // A NativeAOT application contains a single Datadog.Trace: the one of this version (the native tracer's). An application
+        // that references the Datadog.Trace package of an older major version brings its own (the whole tracer of that version).
+        var version = AssemblyName.GetAssemblyName(options.DatadogTracePath).Version;
+        var expected = typeof(Tracer).Assembly.GetName().Version;
+        if (version is not null && expected is not null && version.ToString(3) != expected.ToString(3))
+        {
+            throw new InvalidOperationException(
+                $"The application references Datadog.Trace {version.ToString(3)} ({options.DatadogTracePath}), but a NativeAOT application can only contain one Datadog.Trace, the version of the instrumentation ({expected.ToString(3)}). Reference the Datadog.Trace {expected.ToString(3)} package (the manual instrumentation API) instead.");
+        }
     }
 }
