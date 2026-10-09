@@ -8,7 +8,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -30,10 +33,13 @@ namespace Datadog.Trace
 
         private const int ErrorSemTimeout = 121;
         private const int ErrorPipeBusy = 231;
+        private const int TraceAgentConnectTimeout = 500;
+        private const int TraceAgentResponseTimeout = 2_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
             Name = "datadog-trace-agent",
+            IsTraceAgent = true,
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
@@ -50,6 +56,8 @@ namespace Datadog.Trace
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AgentProcessManager));
+
+        private static readonly byte[] TraceAgentInfoRequest = Encoding.ASCII.GetBytes("GET /info HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
 
         internal enum ProcessState
         {
@@ -182,7 +190,7 @@ namespace Datadog.Trace
                                 {
                                     // This means we have never tried from this domain
 
-                                    if (metadata.ProcessIsHealthy())
+                                    if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
                                     {
                                         // This means one of two things:
                                         // - Another domain has already started this process
@@ -200,7 +208,7 @@ namespace Datadog.Trace
                                         {
                                             await Task.Delay((int)delay).ConfigureAwait(false);
 
-                                            if (metadata.ProcessIsHealthy())
+                                            if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
                                             {
                                                 // Should result in a max delay of ~3.28 seconds before giving up
                                                 delay = delay * 1.75d;
@@ -229,7 +237,7 @@ namespace Datadog.Trace
                                     // This means we have tried to start from this domain before
                                     var previousState = metadata.ProcessState;
                                     LogIfOwnProcessExited(metadata);
-                                    var isHealthy = metadata.ProcessIsHealthy();
+                                    var isHealthy = await metadata.ProcessIsHealthyAsync().ConfigureAwait(false);
                                     var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning());
                                     if (isHealthy)
                                     {
@@ -278,12 +286,12 @@ namespace Datadog.Trace
                                     Log.Information("Started {Process} with pid {ChildPid}.", path, childPid);
 
                                     const int startupTimeout = 2000;
-                                    var timeout = startupTimeout;
+                                    var startupStopwatch = Stopwatch.StartNew();
 
-                                    while (timeout > 0)
+                                    while (startupStopwatch.ElapsedMilliseconds < startupTimeout)
                                     {
                                         // Loop and watch for evidence that the process is up and running
-                                        if (metadata.ProcessIsHealthy())
+                                        if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
                                         {
                                             metadata.SequentialFailures = 0;
                                             metadata.ProcessState = ProcessState.Healthy;
@@ -312,12 +320,11 @@ namespace Datadog.Trace
                                         }
 
                                         await Task.Delay(100).ConfigureAwait(false);
-                                        timeout -= 100;
                                     }
 
-                                    if (timeout <= 0 && metadata.ProcessState == ProcessState.ReadyToStart)
+                                    if (metadata.ProcessState == ProcessState.ReadyToStart)
                                     {
-                                        Log.Warning<string, string, int>("{Process} with pid {ChildPid} is running but did not open its named pipe within {Timeout} ms.", path, childPid, startupTimeout);
+                                        Log.Warning<string, string, int>("{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms.", path, childPid, startupTimeout);
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                     }
                                 }
@@ -505,6 +512,11 @@ namespace Datadog.Trace
 
             public string ProcessArguments { get; set; }
 
+            /// <summary>
+            /// Gets or sets a value indicating whether the health check sends a request to the agent over its pipe.
+            /// </summary>
+            public bool IsTraceAgent { get; set; }
+
             public bool OwnProcessIsRunning()
             {
                 try
@@ -523,9 +535,15 @@ namespace Datadog.Trace
             /// matches by name but was not started by us does not count; the process we started is
             /// tracked through <see cref="OwnProcessIsRunning"/> instead.
             /// </summary>
-            public bool ProcessIsHealthy()
+            public async Task<bool> ProcessIsHealthyAsync()
             {
-                return NamedPipeIsBound();
+                if (!NamedPipeIsBound())
+                {
+                    return false;
+                }
+
+                // DogStatsD never replies, so its pipe being present is all we can check
+                return !IsTraceAgent || await TraceAgentRespondsAsync().ConfigureAwait(false);
             }
 
             private bool NamedPipeIsBound()
@@ -538,6 +556,56 @@ namespace Datadog.Trace
                 }
 
                 return namedPipeIsBound;
+            }
+
+            /// <summary>
+            /// Sends GET /info over the trace agent's pipe and checks that an HTTP response comes back.
+            /// The connect and the response are both bounded, so a hung agent fails the check.
+            /// </summary>
+            private async Task<bool> TraceAgentRespondsAsync()
+            {
+                using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
+                using var timeoutCancellation = new CancellationTokenSource();
+                var exchange = SendInfoRequestAsync(pipe);
+                var completed = await Task.WhenAny(exchange, Task.Delay(TraceAgentResponseTimeout, timeoutCancellation.Token)).ConfigureAwait(false);
+                if (completed == exchange)
+                {
+                    timeoutCancellation.Cancel();
+                    return await exchange.ConfigureAwait(false);
+                }
+
+                // Timed out: disposing the pipe aborts the pending read
+                return false;
+            }
+
+            private async Task<bool> SendInfoRequestAsync(NamedPipeClientStream pipe)
+            {
+                try
+                {
+                    await pipe.ConnectAsync(TraceAgentConnectTimeout).ConfigureAwait(false);
+                    await pipe.WriteAsync(TraceAgentInfoRequest, 0, TraceAgentInfoRequest.Length).ConfigureAwait(false);
+
+                    // Any status line means the agent is serving requests
+                    var statusLineStart = new byte[5];
+                    var read = 0;
+                    while (read < statusLineStart.Length)
+                    {
+                        var count = await pipe.ReadAsync(statusLineStart, read, statusLineStart.Length - read).ConfigureAwait(false);
+                        if (count == 0)
+                        {
+                            return false;
+                        }
+
+                        read += count;
+                    }
+
+                    return Encoding.ASCII.GetString(statusLineStart) == "HTTP/";
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Trace agent did not respond on named pipe {PipeName}.", PipeName);
+                    return false;
+                }
             }
         }
     }

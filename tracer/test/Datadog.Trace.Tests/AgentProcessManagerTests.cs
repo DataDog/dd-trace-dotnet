@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 using KeepAliveAction = Datadog.Trace.AgentProcessManager.KeepAliveAction;
@@ -38,7 +39,7 @@ public class AgentProcessManagerTests
     }
 
     [Fact]
-    public void ProcessIsHealthy_IgnoresProcessNotStartedByUsWhenPipeIsMissing()
+    public async Task ProcessIsHealthyAsync_IgnoresProcessNotStartedByUsWhenPipeIsMissing()
     {
         // A process with the agent's name is running (this test process), but nothing serves the pipe
         string runningProcessPath;
@@ -54,7 +55,7 @@ public class AgentProcessManagerTests
             ProcessPath = runningProcessPath,
         };
 
-        metadata.ProcessIsHealthy().Should().BeFalse();
+        (await metadata.ProcessIsHealthyAsync()).Should().BeFalse();
     }
 
     [Theory]
