@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Tools.Runner.Aot;
 using Datadog.Trace.Tools.Runner.Aot.CallTarget;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using dnlib.DotNet;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -140,6 +141,109 @@ public class AotInstrumentNativeHostIntegrationTests
         }
     }
 
+    /// <summary>
+    /// The same inputs give the same outputs (F2.10): incremental builds and build caches can rely on them.
+    /// </summary>
+    [SkippableFact]
+    public void InstrumentationIsDeterministic()
+    {
+        var nativeTracer = Environment.GetEnvironmentVariable("DD_AOT_NATIVE_TRACER");
+        var appDirectory = Environment.GetEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_DIR");
+        Skip.If(string.IsNullOrEmpty(nativeTracer) || string.IsNullOrEmpty(appDirectory), "DD_AOT_NATIVE_TRACER and DD_AOT_CALLTARGET_NATIVE_TEST_DIR are required");
+
+        var workDirectory = Path.Combine(Path.GetTempPath(), "dd-aot-native-host", Guid.NewGuid().ToString("N"));
+        try
+        {
+            // The same output folder too, like a project's: the instrumented assemblies name their PDB with its path.
+            Instrument(nativeTracer!, appDirectory!, workDirectory, "run", verify: false);
+            var first = Path.Combine(workDirectory, "first");
+            CopyDirectory(Path.Combine(workDirectory, "run", "instrumented"), first);
+            Instrument(nativeTracer!, appDirectory!, workDirectory, "run", verify: false);
+            var second = Path.Combine(workDirectory, "run", "instrumented");
+            // What ILC compiles: the assemblies, their PDBs and the descriptors (the reports have the time they were written).
+            var files = Directory.GetFiles(first)
+                                 .Select(Path.GetFileName)
+                                 .OfType<string>()
+                                 .Where(f => Path.GetExtension(f) is ".dll" or ".pdb" or ".xml")
+                                 .OrderBy(f => f, StringComparer.Ordinal)
+                                 .ToList();
+            files.Should().Contain("CallTargetNativeTest.dll").And.Contain(f => f.StartsWith("Datadog.Trace.DuckType.AotRegistry.", StringComparison.Ordinal));
+            files.Where(file => !File.ReadAllBytes(Path.Combine(first, file)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(second, file))))
+                 .Should().BeEmpty("the instrumentation must write the same bytes for the same inputs");
+        }
+        finally
+        {
+            if (Directory.Exists(workDirectory))
+            {
+                Directory.Delete(workDirectory, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The DD_* settings of the build environment are the application's runtime settings: they don't change what is
+    /// instrumented (the native tracer reads them from the environment).
+    /// </summary>
+    [SkippableFact]
+    public void BuildEnvironmentDoesNotChangeTheInstrumentation()
+    {
+        var nativeTracer = Environment.GetEnvironmentVariable("DD_AOT_NATIVE_TRACER");
+        var appDirectory = Environment.GetEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_DIR");
+        Skip.If(string.IsNullOrEmpty(nativeTracer) || string.IsNullOrEmpty(appDirectory), "DD_AOT_NATIVE_TRACER and DD_AOT_CALLTARGET_NATIVE_TEST_DIR are required");
+
+        var workDirectory = Path.Combine(Path.GetTempPath(), "dd-aot-native-host", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var (_, baseline) = Instrument(nativeTracer!, appDirectory!, workDirectory, "baseline", verify: false, "--trace-methods", "CallTargetNativeTest.Program[Main]");
+            var (_, report) = InstrumentWithEnvironment(
+                nativeTracer!,
+                appDirectory!,
+                workDirectory,
+                "environment",
+                verify: false,
+                [("DD_TRACE_ENABLED", "false"), ("DD_TRACE_ANNOTATIONS_ENABLED", "false"), ("DD_DISABLED_INTEGRATIONS", "CallTargetNativeTest")],
+                "--trace-methods",
+                "CallTargetNativeTest.Program[Main]");
+
+            report["Assemblies"]![0]!.Value<int>("RewrittenMethods").Should().Be(baseline["Assemblies"]![0]!.Value<int>("RewrittenMethods"), report.ToString());
+            Directory.GetFiles(Path.Combine(workDirectory, "environment", "instrumented", "logs")).Should().NotBeEmpty("the native tracer logs to the output folder");
+        }
+        finally
+        {
+            if (Directory.Exists(workDirectory))
+            {
+                Directory.Delete(workDirectory, recursive: true);
+            }
+        }
+    }
+
+    [SkippableFact]
+    public void ApplicationGivenTwiceKeepsItsModuleInitializer()
+    {
+        var nativeTracer = Environment.GetEnvironmentVariable("DD_AOT_NATIVE_TRACER");
+        var appDirectory = Environment.GetEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_DIR");
+        Skip.If(string.IsNullOrEmpty(nativeTracer) || string.IsNullOrEmpty(appDirectory), "DD_AOT_NATIVE_TRACER and DD_AOT_CALLTARGET_NATIVE_TEST_DIR are required");
+
+        var workDirectory = Path.Combine(Path.GetTempPath(), "dd-aot-native-host", Guid.NewGuid().ToString("N"));
+        try
+        {
+            // The .NET 11 SDK also passes the application as a reference of ILC: it is instrumented once, as the application.
+            var (_, report) = Instrument(nativeTracer!, appDirectory!, workDirectory, "twice", verify: false, "--assembly", Path.Combine(appDirectory!, "CallTargetNativeTest.dll"));
+            report["Assemblies"]!.Count(a => a.Value<string>("Name") == "CallTargetNativeTest").Should().Be(1, report.ToString());
+
+            using var module = ModuleDefMD.Load(Path.Combine(workDirectory, "twice", "instrumented", "CallTargetNativeTest.dll"));
+            module.GlobalType.FindStaticConstructor().Should().NotBeNull();
+            module.GlobalType.Methods.Should().Contain(m => m.Name == "<DatadogAot>InitializeInstrumentation");
+        }
+        finally
+        {
+            if (Directory.Exists(workDirectory))
+            {
+                Directory.Delete(workDirectory, recursive: true);
+            }
+        }
+    }
+
     private static void CopyDirectory(string source, string destination)
     {
         foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
@@ -158,6 +262,9 @@ public class AotInstrumentNativeHostIntegrationTests
     /// Instruments CallTargetNativeTest into its own application folder.
     /// </summary>
     private (string Application, JObject Report) Instrument(string nativeTracer, string appDirectory, string workDirectory, string name, bool verify, params string[] extraArguments)
+        => InstrumentWithEnvironment(nativeTracer, appDirectory, workDirectory, name, verify, [], extraArguments);
+
+    private (string Application, JObject Report) InstrumentWithEnvironment(string nativeTracer, string appDirectory, string workDirectory, string name, bool verify, (string Name, string Value)[] environment, params string[] extraArguments)
     {
         var instrumented = Path.Combine(workDirectory, name, "instrumented");
         var app = Path.Combine(workDirectory, name, "app");
@@ -196,7 +303,7 @@ public class AotInstrumentNativeHostIntegrationTests
         }
 
         arguments.AddRange(extraArguments);
-        var (exitCode, output) = RunProcess("dotnet", appDirectory, arguments, []);
+        var (exitCode, output) = RunProcess("dotnet", appDirectory, arguments, environment);
         exitCode.Should().Be(0, output);
 
         CopyDirectory(appDirectory, app);
