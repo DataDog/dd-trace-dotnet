@@ -7,6 +7,11 @@
 
 using System;
 using System.Diagnostics.Tracing;
+using Datadog.Trace.Logging;
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.Grpc;
+#endif
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation
 {
@@ -17,12 +22,15 @@ namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Imp
     /// </summary>
     internal sealed class OpenTelemetryProtocolExporterEventSource
     {
+        private static readonly IDatadogLogger DatadogLogger = DatadogLogging.GetLoggerFor<OpenTelemetryProtocolExporterEventSource>();
+
         public static OpenTelemetryProtocolExporterEventSource Log { get; } = new OpenTelemetryProtocolExporterEventSource();
 
-        public bool IsEnabled(EventLevel level, EventKeywords keywords) => false;
+        public bool IsEnabled(EventLevel level, EventKeywords keywords) => true;
 
         public void FailedToReachCollector(Uri endpoint, Exception ex)
         {
+            DatadogLogger.Error(ex, "OpenTelemetryProtocolExporterEventSource.FailedToReachCollector: Exporter failed send data to collector to {Endpoint} endpoint. Data will not be sent.", endpoint);
         }
 
         public void ExportMethodException(Exception ex, bool isRetry = false)
@@ -49,44 +57,59 @@ namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Imp
         {
         }
 
-        public void ResponseDeserializationFailed(params object?[]? args)
+        public void ResponseDeserializationFailed(Uri endpoint)
         {
+            DatadogLogger.Error<Uri>("OpenTelemetryProtocolExporterEventSource.ResponseDeserializationFailed: Failed to deserialize response from {Endpoint}.", endpoint);
         }
 
-        public void ExportSuccess(params object?[]? args)
+        public void ExportSuccess(Uri endpoint, string message)
         {
+            if (DatadogLogger.IsEnabled(LogEventLevel.Debug))
+            {
+                DatadogLogger.Debug("OpenTelemetryProtocolExporterEventSource.ExportSuccess: Export succeeded for {Endpoint}. Message: {Message}.", endpoint, message);
+            }
         }
 
-        public void ExportFailure(params object?[]? args)
+#if NETCOREAPP3_1_OR_GREATER
+        public void ExportFailure(Uri endpoint, string message, Status status)
         {
+            DatadogLogger.Error<Uri, string, Status>("OpenTelemetryProtocolExporterEventSource.ExportFailure: Export failed for {Endpoint}. Message: {Message}. Status: {Status}.", endpoint, message, status);
+        }
+#endif
+
+        public void TransientHttpError(Uri endpoint, Exception ex)
+        {
+            DatadogLogger.Error(ex, "OpenTelemetryProtocolExporterEventSource.TransientHttpError: Transient HTTP error when communicating with {Endpoint}.", endpoint);
         }
 
-        public void TransientHttpError(params object?[]? args)
+        public void HttpRequestFailed(Uri endpoint, string? response, Exception ex)
         {
+            DatadogLogger.Error<Uri, string>(ex, "OpenTelemetryProtocolExporterEventSource.ExportSuccess: HTTP request to {Endpoint} failed. Response: {Response}.", endpoint, response ?? "null");
         }
 
-        public void HttpRequestFailed(params object?[]? args)
+        public void OperationUnexpectedlyCanceled(Uri endpoint, Exception ex)
         {
+            DatadogLogger.Error(ex, "OpenTelemetryProtocolExporterEventSource.OperationUnexpectedlyCanceled: Operation unexpectedly canceled for {Endpoint}.", endpoint);
         }
 
-        public void OperationUnexpectedlyCanceled(params object?[]? args)
+        public void RequestTimedOut(Uri endpoint, Exception ex)
         {
+            DatadogLogger.Error(ex, "OpenTelemetryProtocolExporterEventSource.RequestTimedOut: Request to {Endpoint} time out.", endpoint);
         }
 
-        public void RequestTimedOut(params object?[]? args)
+        public void GrpcRetryDelayParsingFailed(string? grpcStatusDetailsHeader, Exception ex)
         {
-        }
-
-        public void GrpcRetryDelayParsingFailed(params object?[]? args)
-        {
+            DatadogLogger.Error<string>(ex, "OpenTelemetryProtocolExporterEventSource.GrpcRetryDelayParsingFailed: Failed to parse gRPC retry delay from grpcStatusDetailsHeader: {GrpcStatusDetailsHeader}.", grpcStatusDetailsHeader ?? "null");
         }
 
         public void BufferExceededMaxSize(string signalType, int bufferSize)
         {
+            DatadogLogger.Error<string, int>("OpenTelemetryProtocolExporterEventSource.BufferExceededMaxSize: Buffer exceeded max size for {SignalType}. Buffer size: {BufferSize}.", signalType, bufferSize);
         }
 
         public void BufferResizeFailedDueToMemory(string signalType)
         {
+            DatadogLogger.Error<string>("OpenTelemetryProtocolExporterEventSource.BufferResizeFailedDueToMemory: Buffer resize failed due to insufficient memory for {SignalType}.", signalType);
         }
     }
 }
