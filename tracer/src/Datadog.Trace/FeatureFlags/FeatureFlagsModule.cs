@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
@@ -70,6 +71,7 @@ namespace Datadog.Trace.FeatureFlags
         private FlagEvaluationAgentSender? _evaluationSender;
         private FlagEvaluationWriter? _evaluationWriter;
         private IDisposable? _evaluationSettingsSubscription;
+        private FeatureFlagsEvpTransport? _evpTransport;
         private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
@@ -143,6 +145,7 @@ namespace Datadog.Trace.FeatureFlags
             FlagEvaluationWriter? writer;
             FlagEvaluationAgentSender? sender;
             IDisposable? settingsSubscription;
+            FeatureFlagsEvpTransport? evpTransport;
 
             lock (_stateLock)
             {
@@ -159,6 +162,7 @@ namespace Datadog.Trace.FeatureFlags
                 writer = _evaluationWriter;
                 sender = _evaluationSender;
                 settingsSubscription = _evaluationSettingsSubscription;
+                evpTransport = _evpTransport;
 
                 _rcmSubscription = null;
                 _agentlessSource = null;
@@ -166,11 +170,12 @@ namespace Datadog.Trace.FeatureFlags
                 Volatile.Write(ref _evaluationWriter, null);
                 _evaluationSender = null;
                 _evaluationSettingsSubscription = null;
+                _evpTransport = null;
             }
 
             // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
             var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
-            _ = FinishDisposalAsync(close, sender, settingsSubscription, subscription, agentlessSource, exposureApi);
+            _ = FinishDisposalAsync(close, sender, settingsSubscription, subscription, agentlessSource, exposureApi, evpTransport);
             return _disposeCompletion.Task;
         }
 
@@ -436,7 +441,8 @@ namespace Datadog.Trace.FeatureFlags
             IDisposable? settingsSubscription,
             ISubscription? subscription,
             IFeatureFlagsDeliverySource? agentlessSource,
-            ExposureApi? exposureApi)
+            ExposureApi? exposureApi,
+            FeatureFlagsEvpTransport? evpTransport)
         {
             try
             {
@@ -467,6 +473,7 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     // Dispose stops new sends but preserves any request still live after the deadline.
                     sender?.Dispose();
+                    evpTransport?.Dispose();
                     _disposeCompletion.TrySetResult(true);
                 }
             }
@@ -628,7 +635,9 @@ namespace Datadog.Trace.FeatureFlags
                 exposureApi = _exposureApi;
                 if (exposureApi is null)
                 {
-                    exposureApi = new ExposureApi(_tracerSettings);
+                    // Keep the HTTP client and its settings subscription lazy with the first exposure.
+                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings);
+                    exposureApi = new ExposureApi(_tracerSettings, _evpTransport);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }
 

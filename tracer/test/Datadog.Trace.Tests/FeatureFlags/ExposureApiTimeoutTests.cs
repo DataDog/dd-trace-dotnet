@@ -19,6 +19,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
@@ -46,7 +47,7 @@ public class ExposureApiTimeoutTests
                                          : new ApiWebRequestFactory(uri, EventPlatformHeaderHelper.Instance.DefaultHeaders, asyncTimeout: TimeSpan.FromSeconds(5));
         try
         {
-            var send = factory.Create(factory.GetEndpoint(ExposureApi.ExposurePath)).PostAsJsonAsync(Observation("first"), MultipartCompression.GZip, ExposureApi.SerializerSettings);
+            var send = factory.Create(factory.GetEndpoint(FeatureFlagsEvpTransport.EventPlatformProxyV2 + "/" + FeatureFlagsEvpTransport.ExposureIntakePath)).PostAsJsonAsync(Observation("first"), MultipartCompression.GZip, ExposureApi.SerializerSettings);
             using var connection = await Within(listener.AcceptAsync(), 10);
             using var stream = new NetworkStream(connection);
             (await Within(ReadExposure(stream), 10)).Should().Contain("\"id\":\"first\"");
@@ -73,7 +74,9 @@ public class ExposureApiTimeoutTests
         listener.Bind(unixSocket ? new UnixDomainSocketEndPoint(path) : new IPEndPoint(IPAddress.Loopback, 0));
         listener.Listen(2);
         var uri = unixSocket ? "unix://" + path : "http://127.0.0.1:" + ((IPEndPoint)listener.LocalEndPoint!).Port;
-        using var api = new ExposureApi(new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { "DD_TRACE_AGENT_URL", uri } })));
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { "DD_TRACE_AGENT_URL", uri } }));
+        using var transport = new FeatureFlagsEvpTransport(settings);
+        using var api = new ExposureApi(settings, transport);
         try
         {
             api.SendExposure(Observation("first"));
@@ -103,7 +106,7 @@ public class ExposureApiTimeoutTests
     private static async Task<string> ReadExposure(Stream stream)
     {
         var request = await MockHttpParser.ReadRequest(stream);
-        request.PathAndQuery.Should().Be("/" + ExposureApi.ExposurePath);
+        request.PathAndQuery.Should().Be("/" + FeatureFlagsEvpTransport.EventPlatformProxyV2 + "/" + FeatureFlagsEvpTransport.ExposureIntakePath);
         var remaining = request.ContentLength;
         var buffer = new byte[4096];
         using var compressed = new MemoryStream();

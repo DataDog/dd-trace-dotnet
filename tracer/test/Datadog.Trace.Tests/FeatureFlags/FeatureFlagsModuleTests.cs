@@ -6,13 +6,21 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Evp;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -27,6 +35,94 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    [Fact]
+    public void DefaultModuleDoesNotCreateExposureTransportUntilFirstUse()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+        var transportField = typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        settings.FeatureFlags.Enabled.Should().BeTrue();
+        module.Should().NotBeNull();
+        transportField.GetValue(module).Should().BeNull("applications that never use exposures need no HTTP client or settings subscription");
+
+        var exposureApi = module!.GetExposureApi();
+        exposureApi.Should().NotBeNull();
+        transportField.GetValue(module).Should().NotBeNull();
+        module.GetExposureApi().Should().BeSameAs(exposureApi);
+
+        module.Dispose();
+        transportField.GetValue(module).Should().BeNull();
+        module.GetExposureApi().Should().BeNull();
+    }
+
+    [Fact]
+    public void DisposingUnusedModuleDoesNotCreateExposureTransport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        module!.Dispose();
+
+        module.GetExposureApi().Should().BeNull();
+        typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                  .GetValue(module).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExposureSettingsUpdateUntilModuleDisposalRemovesSubscriptions(bool activateEvaluationWriter)
+    {
+        var settings = CreateSettings();
+        var subscribers = (ICollection)typeof(TracerSettings.SettingsManager)
+                                     .GetField("_subscribers", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                     .GetValue(settings.Manager)!;
+        var initialSubscriptions = subscribers.Count;
+        using var module = CreateModule(settings, new MockRcmSubscriptionManager());
+        if (activateEvaluationWriter)
+        {
+            module.Activate();
+            module.EvaluationWriter.Should().NotBeNull();
+        }
+
+        var api = module.GetExposureApi()!;
+        var transport = (FeatureFlagsEvpTransport)typeof(FeatureFlagsModule)
+                                                .GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                                .GetValue(module)!;
+        var factoryField = typeof(FeatureFlagsEvpTransport).GetField("_localRequestFactory", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var contextField = typeof(ExposureApi).GetField("_context", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        subscribers.Count.Should().Be(initialSubscriptions + 2 + (activateEvaluationWriter ? 1 : 0), "exposure transport, exposure context, and an active evaluation writer subscribe to settings");
+        UpdateSettings("before-disposal", new Uri("http://127.0.0.1:18126/updated/"));
+
+        var factory = (IApiRequestFactory)factoryField.GetValue(transport)!;
+        factory.GetEndpoint("evp_proxy/v2/api/v2/exposures").Should().Be(new Uri("http://127.0.0.1:18126/updated/evp_proxy/v2/api/v2/exposures"));
+        var context = (Dictionary<string, string>)contextField.GetValue(api)!;
+        context["service"].Should().Be("before-disposal");
+
+        await module.DisposeAsync();
+
+        subscribers.Count.Should().Be(initialSubscriptions, "module disposal must remove all event settings subscriptions");
+        module.EvaluationWriter.Should().BeNull();
+        UpdateSettings("after-disposal", new Uri("http://127.0.0.1:28126/ignored/"));
+        factoryField.GetValue(transport).Should().BeSameAs(factory);
+        contextField.GetValue(api).Should().BeSameAs(context);
+
+        void UpdateSettings(string service, Uri agentUri)
+        {
+            settings.Manager.UpdateManualConfigurationSettings(
+                new ManualInstrumentationConfigurationSource(
+                    new Dictionary<string, object?>
+                    {
+                        { TracerSettingKeyConstants.ServiceNameKey, service },
+                        { TracerSettingKeyConstants.AgentUriKey, agentUri },
+                    },
+                    useDefaultSources: false),
+                NullConfigurationTelemetry.Instance).Should().BeTrue();
+        }
+    }
+
     [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {
