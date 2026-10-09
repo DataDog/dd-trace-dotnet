@@ -7510,6 +7510,55 @@
   },
   {
     "IntegrationName": "DotnetTest",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.Client",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.Client.Execution.TestRunRequest",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Int32",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 15,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 15,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestRunRequestExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DotnetTest",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.Client",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.Client.Execution.TestRunRequest",
+    "TargetMethodName": "HandleTestRunComplete",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.TestRunCompleteEventArgs",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.TestRunChangedEventArgs",
+      "System.Collections.Generic.ICollection`1[Microsoft.VisualStudio.TestPlatform.ObjectModel.AttachmentSet]",
+      "System.Collections.Generic.ICollection`1[System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 15,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 15,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestRunRequestHandleTestRunCompleteIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DotnetTest",
     "AssemblyName": "Microsoft.VisualStudio.TraceDataCollector",
     "TargetTypeName": "Microsoft.VisualStudio.TraceCollector.VanguardCollector.ManagedVanguard",
     "TargetMethodName": "Stop",
