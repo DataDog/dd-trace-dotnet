@@ -20,7 +20,11 @@ namespace Datadog.Trace.Tools.Runner.Aot.Native;
 /// <summary>
 /// Emulates the subset of ICorProfilerInfo the native tracer uses while rewriting modules offline.
 /// </summary>
-internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo8, IDisposable
+/// <remarks>
+/// It implements ICorProfilerInfo12 because the native tracer requires it on ARM (where it means .NET 5+), but it only
+/// exposes ICorProfilerInfo8 and ICorProfilerInfo12: ICorProfilerInfo10 would enable the runtime ReJIT path.
+/// </remarks>
+internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo12, IDisposable
 {
     private const int AppDomain = 1;
 
@@ -32,6 +36,7 @@ internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo8, IDisposable
     private readonly Dictionary<IntPtr, int> _allocations = new();
     private readonly object _sync = new();
     private readonly NativeObjects.ICorProfilerInfo8 _info;
+    private readonly NativeObjects.ICorProfilerInfo12 _info12;
     private readonly NativeObjects.IMethodMalloc _malloc;
     private nint _nextFunctionId = 0x10000;
     private int _reJitRequests;
@@ -40,6 +45,7 @@ internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo8, IDisposable
     {
         RuntimeVersion = runtimeVersion;
         _info = NativeObjects.ICorProfilerInfo8.Wrap(this);
+        _info12 = NativeObjects.ICorProfilerInfo12.Wrap(this);
         _malloc = NativeObjects.IMethodMalloc.Wrap(new MethodMalloc(this));
     }
 
@@ -187,6 +193,12 @@ internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo8, IDisposable
             guid == ICorProfilerInfo8.Guid)
         {
             ptr = _info;
+            return HResult.S_OK;
+        }
+
+        if (guid == ICorProfilerInfo12.Guid)
+        {
+            ptr = _info12;
             return HResult.S_OK;
         }
 
