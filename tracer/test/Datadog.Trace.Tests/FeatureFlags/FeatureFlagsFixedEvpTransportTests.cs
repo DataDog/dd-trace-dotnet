@@ -49,6 +49,7 @@ public class FeatureFlagsFixedEvpTransportTests
             var request = await received;
             request.Request.Url!.AbsolutePath.Should().Be("/prefix/evp_proxy/v2/api/v2/exposures");
             request.Request.Headers[TelemetryConstants.ApiKeyHeader].Should().BeNull();
+            request.Request.Headers["X-Datadog-EVP-Subdomain"].Should().Be("event-platform-intake");
             await request.Request.InputStream.CopyToAsync(Stream.Null);
             request.Response.StatusCode = status;
             request.Response.Close();

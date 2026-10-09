@@ -59,9 +59,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     private LocalEndpoint _localEndpoint;
     private int _directIsSticky;
     private int _disposed;
-    private int _localRecoveryProbeInProgress;
     private int _unavailableWarningLogged;
-    private long _localUnavailableUntilUtcTicks;
 
     internal FeatureFlagsEvpTransport(TracerSettings settings, IDiscoveryService discoveryService, Action<string>? warningSink = null)
     {
@@ -211,7 +209,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 #else
         // HttpWebRequest uses the platform default proxy and bypass list. Redirects stay disabled
         // so the API key is sent only to the configured intake host.
-        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false);
+        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false, enforceAsyncTimeout: true);
 #endif
     }
 
@@ -446,7 +444,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         local.ProxyEndpoint = endpoint;
         if (endpoint is not null)
         {
-            Interlocked.Exchange(ref _localUnavailableUntilUtcTicks, 0);
+            local.UnavailableUntilUtcTicks = 0;
         }
 
         local.Discovery.TrySetResult(true);
@@ -454,11 +452,11 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     private async Task TrySendLocalAsync(string intakePath, LocalEndpoint local, string localProxyEndpoint, Func<IApiRequest, Task<IApiResponse>> sendAsync)
     {
-        var unavailableUntilUtcTicks = Interlocked.Read(ref _localUnavailableUntilUtcTicks);
+        var unavailableUntilUtcTicks = local.UnavailableUntilUtcTicks;
         var isRecoveryProbe = unavailableUntilUtcTicks != 0;
         if (isRecoveryProbe
          && (_utcNow().UtcTicks < unavailableUntilUtcTicks
-          || Interlocked.CompareExchange(ref _localRecoveryProbeInProgress, 1, 0) != 0))
+          || !local.TryStartRecoveryProbe()))
         {
             if (Interlocked.Exchange(ref _unavailableWarningLogged, 1) == 0)
             {
@@ -470,28 +468,28 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
         try
         {
-            await SendLocalAsync(intakePath, local.Factory, localProxyEndpoint, sendAsync).ConfigureAwait(false);
+            await SendLocalAsync(intakePath, local, localProxyEndpoint, sendAsync).ConfigureAwait(false);
         }
         finally
         {
             if (isRecoveryProbe)
             {
-                Interlocked.Exchange(ref _localRecoveryProbeInProgress, 0);
+                local.FinishRecoveryProbe();
             }
         }
     }
 
-    private async Task SendLocalAsync(string intakePath, IApiRequestFactory localFactory, string localProxyEndpoint, Func<IApiRequest, Task<IApiResponse>> sendAsync)
+    private async Task SendLocalAsync(string intakePath, LocalEndpoint local, string localProxyEndpoint, Func<IApiRequest, Task<IApiResponse>> sendAsync)
     {
-        var endpoint = localFactory.GetEndpoint($"{localProxyEndpoint}/{intakePath}");
+        var endpoint = local.Factory.GetEndpoint($"{localProxyEndpoint}/{intakePath}");
 
         try
         {
-            var request = localFactory.Create(endpoint);
+            var request = local.Factory.Create(endpoint);
             using var response = await sendAsync(request).ConfigureAwait(false);
             if (response.StatusCode is >= 200 and < 300)
             {
-                Interlocked.Exchange(ref _localUnavailableUntilUtcTicks, 0);
+                local.UnavailableUntilUtcTicks = 0;
                 return;
             }
 
@@ -499,7 +497,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             // payload. An upstream 403 is not safe to replay because it may have been forwarded.
             if (response.StatusCode is 404 or 405)
             {
-                if (LeaveLocalRoute())
+                if (LeaveLocalRoute(local))
                 {
                     await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
                 }
@@ -513,12 +511,12 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
             // Other responses may have come from upstream after the Agent accepted the payload.
             // Never replay this batch, but leave the failed route for future Agentless batches.
-            LeaveLocalRoute();
+            LeaveLocalRoute(local);
             Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", response.StatusCode);
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.DefinitivePreSend)
         {
-            if (LeaveLocalRoute())
+            if (LeaveLocalRoute(local))
             {
                 await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
             }
@@ -531,13 +529,13 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         {
             // The local relay may have received this payload. Switch only future payloads so the
             // current one can never be duplicated across the local and direct routes.
-            LeaveLocalRoute();
+            LeaveLocalRoute(local);
 
             Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
         }
     }
 
-    private bool LeaveLocalRoute()
+    private bool LeaveLocalRoute(LocalEndpoint local)
     {
         if (_source != FeatureFlagsSource.Agentless)
         {
@@ -551,7 +549,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         }
 
         var unavailableUntil = _utcNow().Add(_routeRecoveryCooldown).UtcTicks;
-        Interlocked.Exchange(ref _localUnavailableUntilUtcTicks, unavailableUntil);
+        local.UnavailableUntilUtcTicks = unavailableUntil;
         return false;
     }
 
@@ -595,6 +593,8 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     private sealed class LocalEndpoint(IApiRequestFactory factory, ExporterSettings? exporterSettings)
     {
         private string? _proxyEndpoint;
+        private long _unavailableUntilUtcTicks;
+        private int _recoveryProbeInProgress;
 
         public IApiRequestFactory Factory { get; } = factory;
 
@@ -602,10 +602,20 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
         public TaskCompletionSource<bool> Discovery { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        public long UnavailableUntilUtcTicks
+        {
+            get => Interlocked.Read(ref _unavailableUntilUtcTicks);
+            set => Interlocked.Exchange(ref _unavailableUntilUtcTicks, value);
+        }
+
         public string? ProxyEndpoint
         {
             get => Volatile.Read(ref _proxyEndpoint);
             set => Volatile.Write(ref _proxyEndpoint, value);
         }
+
+        public bool TryStartRecoveryProbe() => Interlocked.CompareExchange(ref _recoveryProbeInProgress, 1, 0) == 0;
+
+        public void FinishRecoveryProbe() => Interlocked.Exchange(ref _recoveryProbeInProgress, 0);
     }
 }

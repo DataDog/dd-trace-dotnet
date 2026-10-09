@@ -159,6 +159,79 @@ public class FeatureFlagsEvpTransportTests
     }
 
     [Theory]
+    [InlineData(200)]
+    [InlineData(503)]
+    public async Task LateOldAgentResponseDoesNotSuppressReplacementAgent(int oldStatus)
+    {
+        const string CapableInfo = "{\"endpoints\":[\"evp_proxy/v4\"],\"evp_proxy_allowed_headers\":[\"DD-EVP-ORIGIN\",\"DD-EVP-ORIGIN-VERSION\"]}";
+        using var oldAgent = new HttpListener();
+        using var replacement = new HttpListener();
+        var oldUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
+        var replacementUrl = $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}/";
+        oldAgent.Prefixes.Add(oldUrl);
+        replacement.Prefixes.Add(replacementUrl);
+        oldAgent.Start();
+        replacement.Start();
+        var settings = CreateSettings(
+            (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
+            (ConfigurationKeys.AgentUri, oldUrl));
+        var factoryA = CreateFactory(oldUrl, uri => new TestApiRequest(uri, responseContent: CapableInfo));
+        var factoryB = CreateFactory(replacementUrl, uri => new TestApiRequest(uri, responseContent: CapableInfo));
+        await using var discovery = new DiscoveryService(factoryA, new ServiceRemappingHash(null), 1, 1, 30_000, autoStartLoop: false, exporterSettings: settings.Manager.InitialExporterSettings);
+        using var discoverySettings = settings.Manager.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedExporter is { } exporter)
+            {
+                discovery.UpdateRequestFactory(factoryB, exporter);
+            }
+        });
+        using var transport = new FeatureFlagsEvpTransport(settings, discovery);
+        await discovery.RunOneIterationAsync(null);
+        var receivedOld = oldAgent.GetContextAsync();
+        var sendOld = transport.SendAsync(new { Batch = "old" }, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        (await Task.WhenAny(receivedOld, Task.Delay(TimeSpan.FromSeconds(3)))).Should().BeSameAs(receivedOld);
+        var oldRequest = await receivedOld;
+        await oldRequest.Request.InputStream.CopyToAsync(Stream.Null);
+        var receivedReplacement = replacement.GetContextAsync();
+
+        try
+        {
+            settings.Manager.UpdateManualConfigurationSettings(
+                new ManualInstrumentationConfigurationSource(new Dictionary<string, object?> { { TracerSettingKeyConstants.AgentUriKey, new Uri(replacementUrl) } }, useDefaultSources: true),
+                NullConfigurationTelemetry.Instance).Should().BeTrue();
+            await discovery.RunOneIterationAsync(null);
+            oldRequest.Response.StatusCode = oldStatus;
+            oldRequest.Response.Close();
+            (await Task.WhenAny(sendOld, Task.Delay(TimeSpan.FromSeconds(3)))).Should().BeSameAs(sendOld);
+            await sendOld;
+
+            var sendNew = transport.SendAsync(new { Batch = "new" }, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+            (await Task.WhenAny(receivedReplacement, Task.Delay(TimeSpan.FromSeconds(3))))
+               .Should().BeSameAs(receivedReplacement, "a late response from the old Agent must not suppress the validated replacement");
+            var request = await receivedReplacement;
+            request.Request.Url!.AbsolutePath.Should().Be("/evp_proxy/v4/api/v2/exposures");
+            request.Request.Headers[TelemetryConstants.ApiKeyHeader].Should().BeNull();
+            await request.Request.InputStream.CopyToAsync(Stream.Null);
+            request.Response.StatusCode = 200;
+            request.Response.Close();
+            (await Task.WhenAny(sendNew, Task.Delay(TimeSpan.FromSeconds(3)))).Should().BeSameAs(sendNew);
+            await sendNew;
+        }
+        finally
+        {
+            oldRequest.Response.Close();
+            replacement.Close();
+            try
+            {
+                await receivedReplacement;
+            }
+            catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException)
+            {
+            }
+        }
+    }
+
+    [Theory]
     [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4, FeatureFlagsEvpTransport.ExposureIntakePath)]
     [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4, FeatureFlagsEvpTransport.FlagEvaluationIntakePath)]
     [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV2, FeatureFlagsEvpTransport.ExposureIntakePath)]
@@ -606,7 +679,7 @@ public class FeatureFlagsEvpTransportTests
 
     [Theory]
     [InlineData("http://localhost:8126/")]
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [InlineData("unix:///tmp/dd-evp-redirect-test.socket")]
 #endif
     public void LocalFactoriesDisableRedirectsWithoutChangingHistoricalDefaults(string agentUrl)

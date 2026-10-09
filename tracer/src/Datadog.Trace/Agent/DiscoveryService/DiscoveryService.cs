@@ -497,10 +497,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 obfuscationVersion: obfuscationVersion,
                 traceFilterConfig: traceFilterConfig,
                 featureFlags: featureFlags!,
-                eventPlatformProxySupportsEvpOriginHeaders: eventPlatformProxySupportsEvpOriginHeaders)
-            {
-                DiscoverySettings = requestFactory.ExporterSettings,
-            };
+                eventPlatformProxySupportsEvpOriginHeaders: eventPlatformProxySupportsEvpOriginHeaders,
+                discoverySettings: requestFactory.ExporterSettings);
 
             NotifySubscribers(newConfig, requestFactory, HexString.ToHexString(sha256.Hash), containerTagsHash);
         }

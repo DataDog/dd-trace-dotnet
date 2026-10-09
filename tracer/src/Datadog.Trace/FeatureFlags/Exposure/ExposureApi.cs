@@ -100,8 +100,9 @@ internal sealed class ExposureApi : IDisposable
 
         if (sendLoopTask is not null)
         {
-            var completed = Task.WhenAny(sendLoopTask, Task.Delay(_shutdownTimeout)).GetAwaiter().GetResult();
-            if (completed != sendLoopTask)
+            // A timed wait still expires when ThreadPool timers cannot run. WhenAny prevents a
+            // faulted or canceled send loop from propagating an exception out of Dispose.
+            if (!Task.WhenAny(sendLoopTask).Wait(_shutdownTimeout))
             {
                 Log.Warning("Could not finish flushing Feature Flags exposures before process end");
             }
