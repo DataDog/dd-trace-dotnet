@@ -63,6 +63,47 @@ de ellos (H-62).
 - Siguen abiertos dos hallazgos que no cambian la paridad: H-58 (Code Origin apunta al código generado por RDG, igual que
   bajo JIT) y H-60 (contexto de hilo OTel, opt-in, pendiente del empaquetado nativo).
 
+## Por TFM (net8.0, net9.0, net10.0, net11.0)
+
+Un subconjunto representativo (20 samples, con la configuración de su integration test) en cada TFM, con las herramientas
+finales (2026-10-09). Para net11.0 (11.0.0-rc.1) el oráculo JIT no arranca en local (H-68): NativeAOT net11 se compara con
+JIT net10. Spans JIT / NativeAOT:
+
+| Sample | net8.0 | net9.0 | net10.0 | net11.0 |
+|---|---|---|---|---|
+| HttpMessageHandler | 222 / 222 | 222 / 222 | 222 / 222 | 222 / 222 |
+| WebRequest | 134 / 134 | 134 / 134 | 134 / 134 | 134 / 134 |
+| ManualInstrumentation (y 3 checkpoints DSM) | 47 / 47 | 47 / 47 | 47 / 47 | 47 / 47 |
+| TraceAnnotations (`DD_TRACE_METHODS`) | 68 / 68 | 68 / 68 | 68 / 68 | 68 / 68 |
+| FakeDbCommand | 112 / 112 | 112 / 112 | 112 / 112 | 112 / 112 |
+| Microsoft.Data.Sqlite | 126 / 126 | 126 / 126 | 126 / 126 | 126 / 126 |
+| OpenTelemetrySdk (1.18.0) | 38 / 38 | 38 / 38 | 38 / 38 | 38 / 38 |
+| GrpcDotNet (2.67.0) | 80 / 80 | 80 / 80 | 80 / 80 | — (no tiene net11.0) |
+| RabbitMQ (7.2.2, y 6 checkpoints DSM) | 108 / 108 | 108 / 108 | 108 / 108 | 108 / 108 |
+| StackExchange.Redis (3.3.0), parcial | 203 / 199 | 203 / 199 | 203 / 199 | 203 / 199 |
+| Npgsql (10.0.3), parcial | 181 / 112 | 181 / 112 | 181 / 112 | 181 / 112 |
+| Hangfire (con OTel) | 3 / 3 | 3 / 3 | 3 / 3 | 3 / 3 |
+| Quartz (3.22.0) | 2 / 2 | 2 / 2 | 2 / 2 | 2 / 2 |
+| LogsInjection.ILogger (y logs de envío directo) | 5 / 5 | 5 / 5 | 5 / 5 | 5 / 5 |
+| WeakCipher (IAST) | 6 / 6 | 6 / 6 | 6 / 6 | 6 / 6 |
+| CodeOrigin.MinimalApi (app de test) | 6 / 6 | 6 / 6 | 6 / 6 | 6 / 6 |
+| OpenFeature (Remote Configuration) | 2 / 2 | 2 / 2 | 2 / 2 | 2 / 2 |
+| RuntimeMetrics (nombres de métricas) | 22 / 22 | 22 / 22 | 20 / 22 | 20 (net10) / 22 |
+| LifetimeManager.TerminationSignals (SIGTERM) | ok | ok | ok | ok (NativeAOT) |
+| Rasp.MinimalApi (app de test: `_dd.stack` de RASP y `error.stack`) | 4 / 4 | 4 / 4 | 4 / 4 | 4 / 4 |
+
+- Las mismas diferencias en todos los TFMs, y ninguna del tracer: Redis y Npgsql son los parciales de la tabla general
+  (llamadas `dynamic` y `Assembly.LoadFile` del sample), los logs de ILogger solo difieren en cuántas veces repite el sample
+  un mensaje de espera, y las dos métricas de más en net10/net11 son de recolecciones gen2 que la ejecución JIT de net10 no
+  tuvo.
+- Salieron y quedaron corregidos: H-64 (runtime del generador: net9 perdía 4 proxies DuckType y el servicio de OTel, y
+  con el runner en .NET 11 una app net8 con logs de ILogger se caía al arrancar), H-65 (genéricos sobre tipos de CoreLib,
+  RabbitMQ 7), H-66 (net11: la app llegaba dos veces y no se inicializaba el tracer) y H-63 (frames de RASP del cliente).
+  En net11 el catálogo del paquete no tenía el mapeo de las excepciones no controladas de ASP.NET Core
+  (`HostingApplicationDiagnostics+UnhandledExceptionData`), que en los demás TFMs aportaba la grabación JIT: añadido.
+- En net11, con `StackTraceLineNumberSupport` (H-36), `error.stack` y los frames de RASP llevan fichero y línea como bajo
+  JIT (sin columna).
+
 ## tracer/test/test-applications/integrations
 
 Versión probada entre paréntesis (la de los integration tests en net8.0 o la última del sample).
