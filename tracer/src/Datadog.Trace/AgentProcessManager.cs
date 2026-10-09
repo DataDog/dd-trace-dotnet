@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -25,7 +26,7 @@ namespace Datadog.Trace
     {
         internal const int KeepAliveInterval = 10_000;
         internal const int ExceptionRetryInterval = 2_000;
-        internal const int MaxFailures = 5;
+        internal const int MaxRetryInterval = 60_000;
 
         private const int ErrorSemTimeout = 121;
         private const int ErrorPipeBusy = 231;
@@ -175,13 +176,6 @@ namespace Datadog.Trace
 
                         while (true)
                         {
-                            if (metadata.SequentialFailures >= MaxFailures)
-                            {
-                                Log.Error<int, string>("Maximum retries ({ErrorCount}) reached starting {Process}.", MaxFailures, path);
-                                metadata.ProcessState = ProcessState.Faulted;
-                                return;
-                            }
-
                             try
                             {
                                 if (metadata.ProcessState == ProcessState.NeverChecked)
@@ -239,6 +233,7 @@ namespace Datadog.Trace
                                     var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning());
                                     if (isHealthy)
                                     {
+                                        metadata.SequentialFailures = 0;
                                         metadata.ProcessState = ProcessState.Healthy;
                                         if (previousState == ProcessState.Unhealthy)
                                         {
@@ -327,6 +322,10 @@ namespace Datadog.Trace
                                     }
                                 }
                             }
+                            catch (ThreadAbortException)
+                            {
+                                throw;
+                            }
                             catch (Exception ex)
                             {
                                 metadata.ProcessState = ProcessState.Faulted;
@@ -337,8 +336,8 @@ namespace Datadog.Trace
                                 if (metadata.ProcessState == ProcessState.Faulted)
                                 {
                                     metadata.SequentialFailures++;
-                                    // Quicker retry in these cases
-                                    await Task.Delay(ExceptionRetryInterval).ConfigureAwait(false);
+                                    // Quicker retry in these cases, backing off while failures repeat
+                                    await Task.Delay(GetRetryDelay(metadata.SequentialFailures)).ConfigureAwait(false);
                                 }
                                 else
                                 {
@@ -372,6 +371,21 @@ namespace Datadog.Trace
             }
 
             return KeepAliveAction.Start;
+        }
+
+        /// <summary>
+        /// Gets the delay before retrying after a failed start: <see cref="ExceptionRetryInterval"/> after the
+        /// first failure, doubling with each further failure up to <see cref="MaxRetryInterval"/>. Retries never stop.
+        /// </summary>
+        internal static int GetRetryDelay(int sequentialFailures)
+        {
+            var delay = ExceptionRetryInterval;
+            for (var i = 1; i < sequentialFailures && delay < MaxRetryInterval; i++)
+            {
+                delay *= 2;
+            }
+
+            return Math.Min(delay, MaxRetryInterval);
         }
 
         private static void LogIfOwnProcessExited(ProcessMetadata metadata)

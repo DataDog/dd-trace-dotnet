@@ -56,4 +56,20 @@ public class AgentProcessManagerTests
 
         metadata.ProcessIsHealthy().Should().BeFalse();
     }
+
+    [Theory]
+    [InlineData(0, 2_000)]
+    [InlineData(1, 2_000)]
+    [InlineData(2, 4_000)]
+    [InlineData(3, 8_000)]
+    [InlineData(4, 16_000)]
+    [InlineData(5, 32_000)]
+    [InlineData(6, 60_000)]
+    [InlineData(7, 60_000)]
+    [InlineData(1_000, 60_000)]
+    [InlineData(int.MaxValue, 60_000)]
+    public void GetRetryDelay_DoublesFromTwoSecondsUpToSixtySeconds(int sequentialFailures, int expectedDelay)
+    {
+        AgentProcessManager.GetRetryDelay(sequentialFailures).Should().Be(expectedDelay);
+    }
 }
