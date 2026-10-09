@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.Tests.CallTarget;
 /// </summary>
 public class CallTargetAotHolderTests
 {
+    private static TaskCompletionSource<bool> _release = NewRelease();
+
     [Fact]
     public void BeginWithRefArgumentAndEndWithReturnValue()
     {
@@ -137,7 +140,8 @@ public class CallTargetAotHolderTests
         static async Task RunVoidTask<TTarget>(TTarget target)
         {
             var state = CallTargetInvoker.BeginMethod<RecordingIntegration, TTarget>(target);
-            var result = CallTargetInvoker.EndMethod<RecordingIntegration, TTarget, Task>(target, Task.Delay(10), null, in state);
+            var result = CallTargetInvoker.EndMethod<RecordingIntegration, TTarget, Task>(target, WaitForRelease(), null, in state);
+            Release();
             await result.GetReturnValue()!;
             Recorder.Add("completed");
         }
@@ -181,6 +185,7 @@ public class CallTargetAotHolderTests
         {
             var state = CallTargetInvoker.BeginMethod<RecordingIntegration, TTarget>(target);
             var result = CallTargetInvoker.EndMethod<RecordingIntegration, TTarget, ValueTask<int>>(target, new ValueTask<int>(CompleteLater(9)), null, in state);
+            Release();
             Recorder.Add($"result: {await result.GetReturnValue()}");
         }
     }
@@ -240,6 +245,7 @@ public class CallTargetAotHolderTests
     {
         var state = CallTargetInvoker.BeginMethod<TIntegration, TTarget>(target);
         var result = CallTargetInvoker.EndMethod<TIntegration, TTarget, Task<int>>(target, task, null, in state);
+        Release();
         var returned = result.GetReturnValue();
         Recorder.Add($"returned task is null: {returned is null}");
         if (returned is null)
@@ -257,15 +263,23 @@ public class CallTargetAotHolderTests
         }
     }
 
+    // The tasks of the targets complete when released, after EndMethod returned them: still running then, like a delayed
+    // task, without depending on the timing (on a busy machine, a delayed task can complete before EndMethod).
+    private static Task WaitForRelease() => Volatile.Read(ref _release).Task;
+
+    private static void Release() => Interlocked.Exchange(ref _release, NewRelease()).TrySetResult(true);
+
+    private static TaskCompletionSource<bool> NewRelease() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     private static async Task<int> CompleteLater(int value)
     {
-        await Task.Delay(10).ConfigureAwait(false);
+        await WaitForRelease().ConfigureAwait(false);
         return value;
     }
 
     private static async Task<int> FailLater()
     {
-        await Task.Delay(10).ConfigureAwait(false);
+        await WaitForRelease().ConfigureAwait(false);
         throw new InvalidOperationException("async boom");
     }
 
