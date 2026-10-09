@@ -39,7 +39,13 @@ internal static class AotInstrumentProcessor
         try
         {
             Validate(options);
-            using var host = NativeTracerHost.Create(options.NativeTracerPath, options.RuntimeVersion);
+            if (Environment.Version.Major != options.RuntimeVersion.Major)
+            {
+                // The DuckType AOT registry generator loads the application's assemblies (see AotRuntimeSelector).
+                AotLog.Warn($"The instrumentation runs on .NET {Environment.Version.ToString(2)} and the application targets .NET {options.RuntimeVersion.ToString(2)}: duck typing mappings may be missing or differ from the application's. Install the .NET {options.RuntimeVersion.Major} runtime where the application is published.");
+            }
+
+            using var host = NativeTracerHost.Create(options.NativeTracerPath, options.RuntimeVersion, Path.Combine(options.OutputDirectory, "logs"), options.Verbose);
 
             if (options.UseEmbeddedDefinitions)
             {
@@ -71,9 +77,19 @@ internal static class AotInstrumentProcessor
                 AotLog.Info($"Trace methods: {options.TraceMethods}");
             }
 
-            foreach (var assembly in options.Assemblies)
+            // An assembly can be given twice (the .NET 11 SDK also passes the application as a reference): the first one is
+            // instrumented, a second one would overwrite its output without the application's module initializer.
+            var fileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var assembly in options.Assemblies.Select(Path.GetFullPath))
             {
-                host.LoadModule(Path.GetFullPath(assembly), writable: true);
+                if (fileNames.Add(Path.GetFileName(assembly)))
+                {
+                    host.LoadModule(assembly, writable: true);
+                }
+                else
+                {
+                    AotLog.Debug($"Skipping {assembly}: an assembly with the same file name is already instrumented");
+                }
             }
 
             var probeDirectories = options.Assemblies.Select(a => Path.GetDirectoryName(Path.GetFullPath(a))!)

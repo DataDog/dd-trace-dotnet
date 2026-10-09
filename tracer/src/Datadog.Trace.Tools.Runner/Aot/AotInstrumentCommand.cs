@@ -100,6 +100,10 @@ internal class AotInstrumentCommand : CommandWithExamples
             Verbose = _verboseOption.GetValue(context),
         };
 
+#if NET6_0_OR_GREATER
+        context.ExitCode = AotRuntimeSelector.TryRelaunch(options.RuntimeVersion) ?? AotInstrumentProcessor.Process(options);
+#else
         context.ExitCode = AotInstrumentProcessor.Process(options);
+#endif
     }
 }

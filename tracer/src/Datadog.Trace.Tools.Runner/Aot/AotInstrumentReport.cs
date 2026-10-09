@@ -17,6 +17,12 @@ namespace Datadog.Trace.Tools.Runner.Aot;
 /// </summary>
 internal sealed class AotInstrumentReport
 {
+    /// <summary>Gets the version of the tracer that instrumented the application.</summary>
+    public string TracerVersion { get; } = TracerConstants.AssemblyVersion;
+
+    /// <summary>Gets or sets the version of the runtime that ran the instrumentation (see <c>AotRuntimeSelector</c>).</summary>
+    public string InstrumentationRuntime { get; set; } = System.Environment.Version.ToString();
+
     public int EmbeddedDefinitions { get; set; }
 
     public int EmbeddedCallSites { get; set; }
