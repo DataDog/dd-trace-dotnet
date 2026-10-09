@@ -117,7 +117,9 @@ namespace Datadog.Trace.Debugger
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled || IsDisposed)
+            var enabled = _settings.DynamicInstrumentationCanBeEnabled
+                       && (_settings.DynamicSettings.DynamicInstrumentationEnabled ?? _settings.DynamicInstrumentationEnabled);
+            if (!enabled || IsDisposed)
             {
                 return;
             }

@@ -405,6 +405,38 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void MergeConfigurations_DebuggerSettings_CorrectPriorityMerging()
+        {
+            // Arrange
+            var wildcardConfig = CreateRemoteConfig(
+                "wildcard",
+                new
+                {
+                    service_target = new { service = "*", env = "*" },
+                    lib_config = new { dynamic_instrumentation_enabled = true, exception_replay_enabled = true, code_origin_enabled = true }
+                });
+
+            var serviceEnvConfig = CreateRemoteConfig(
+                "service-env",
+                new
+                {
+                    service_target = new { service = "test-service", env = "production" },
+                    lib_config = new { exception_replay_enabled = false }
+                });
+
+            var configs = new List<RemoteConfiguration> { wildcardConfig, serviceEnvConfig };
+
+            // Act
+            var result = ApmTracingConfigMerger.MergeConfigurations(configs, "test-service", "production");
+
+            // Assert
+            var libConfig = result["lib_config"];
+            libConfig?["exception_replay_enabled"]?.Value<bool>().Should().BeFalse();       // Service+Env (6)
+            libConfig?["dynamic_instrumentation_enabled"]?.Value<bool>().Should().BeTrue(); // Wildcard (0)
+            libConfig?["code_origin_enabled"]?.Value<bool>().Should().BeTrue();             // Wildcard (0)
+        }
+
+        [Fact]
         public void ApmTracingConfig_MergeWith_HigherPriorityWins()
         {
             // Arrange

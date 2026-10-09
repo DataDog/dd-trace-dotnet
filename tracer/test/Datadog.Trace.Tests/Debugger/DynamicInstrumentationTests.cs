@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -233,34 +234,51 @@ public class DynamicInstrumentationTests
         globalRateLimiter.SetRateCallCount.Should().Be(0);
     }
 
-    [Fact]
-    public async Task DynamicInstrumentationEnabled_ServicesCalled()
+    [Theory]
+    [InlineData("1", null, true)]
+    [InlineData(null, true, true)]
+    [InlineData(null, null, false)]
+    [InlineData("0", null, false)]
+    [InlineData("0", true, false)]
+    [InlineData("1", false, false)]
+    public async Task DynamicInstrumentationEnablement_ServicesCalledOnlyWhenEnabled(string? envEnabled, bool? remoteEnabled, bool expectedEnabled)
     {
-        var settings = DebuggerSettings.FromSource(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
-            NullConfigurationTelemetry.Instance);
+        var source = new NameValueCollection();
+        if (envEnabled is not null)
+        {
+            source.Add(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, envEnabled);
+        }
+
+        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(source), NullConfigurationTelemetry.Instance) with
+        {
+            DynamicSettings = new ImmutableDynamicDebuggerSettings { DynamicInstrumentationEnabled = remoteEnabled },
+        };
 
         var discoveryService = new DiscoveryServiceMock();
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
-        var lineProbeResolver = new LineProbeResolverMock();
         var snapshotUploader = new SnapshotUploaderMock();
-        var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var globalRateLimiter = new GlobalRateLimiterMock();
         var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
 
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
-        debugger.Initialize();
-        await WaitForInitializationAsync(debugger);
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, new LineProbeResolverMock(), snapshotUploader, new LogUploaderMock(), diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
+        try
+        {
+            debugger.Initialize();
+            await WaitForInitializationAsync(debugger);
 
-        discoveryService.Called.Should().BeTrue();
-        debugger.IsInitialized.Should().BeTrue("Dynamic instrumentation should be initialized");
-
-        probeStatusPoller.Called.Should().BeTrue();
-        snapshotUploader.Called.Should().BeTrue();
-        diagnosticsUploader.Called.Should().BeTrue();
-        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
+            debugger.IsInitialized.Should().Be(expectedEnabled);
+            discoveryService.Called.Should().Be(expectedEnabled);
+            probeStatusPoller.Called.Should().Be(expectedEnabled);
+            snapshotUploader.Called.Should().Be(expectedEnabled);
+            diagnosticsUploader.Called.Should().Be(expectedEnabled);
+            rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().Be(expectedEnabled);
+        }
+        finally
+        {
+            debugger.Dispose();
+        }
     }
 
     [Fact]
@@ -302,33 +320,6 @@ public class DynamicInstrumentationTests
         {
             debugger.Dispose();
         }
-    }
-
-    [Fact]
-    public void DynamicInstrumentationDisabled_ServicesNotCalled()
-    {
-        var settings = DebuggerSettings.FromSource(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
-            NullConfigurationTelemetry.Instance);
-
-        var discoveryService = new DiscoveryServiceMock();
-        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
-        var lineProbeResolver = new LineProbeResolverMock();
-        var snapshotUploader = new SnapshotUploaderMock();
-        var logUploader = new LogUploaderMock();
-        var diagnosticsUploader = new UploaderMock();
-        var probeStatusPoller = new ProbeStatusPollerMock();
-        var globalRateLimiter = new GlobalRateLimiterMock();
-        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
-
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
-        debugger.Initialize();
-        lineProbeResolver.Called.Should().BeFalse();
-        probeStatusPoller.Called.Should().BeFalse();
-        snapshotUploader.Called.Should().BeFalse();
-        diagnosticsUploader.Called.Should().BeFalse();
-        probeStatusPoller.Called.Should().BeFalse();
-        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
 
     private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 30)
