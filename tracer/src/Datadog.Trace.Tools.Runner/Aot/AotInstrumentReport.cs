@@ -33,6 +33,8 @@ internal sealed class AotInstrumentReport
 
     public int UserStrings { get; set; }
 
+    public int CodeOriginLocations { get; set; }
+
     public int ReJitProcessed { get; set; }
 
     public List<AssemblyResult> Assemblies { get; } = new();
