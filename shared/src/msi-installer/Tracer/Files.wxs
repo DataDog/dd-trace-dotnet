@@ -9,16 +9,19 @@
 
     <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Tracer.Files.Native.64" Directory="INSTALLFOLDER.win_x64">
-      <Component>
+      <!-- ddwaf.dll used to be its own component; merged into Datadog.Tracer.Native's
+           so it can be a CompanionFile (WiX/MSI require a companion to live in the
+           same component as the file whose version decides its replacement on
+           upgrade). See Shared.Files.NativeLoader.64 in shared/Files.wxs for the
+           same treatment of libdatadog. -->
+      <Component Id="Datadog.Tracer.Native">
         <File Id="Datadog.Tracer.Native"
               Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>
-      </Component>
-      <Component>
         <File Id="LibDdwaf"
               Source="$(var.MonitoringHomeDirectory)\win-x64\ddwaf.dll"
-              Checksum="yes">
+              CompanionFile="Datadog.Tracer.Native">
         </File>
       </Component>
     </ComponentGroup>
@@ -33,7 +36,7 @@
         </File>
         <File Id="LibDdwaf.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\ddwaf.dll"
-              Checksum="yes">
+              CompanionFile="Datadog.Tracer.Native.32">
         </File>
       </Component>
     </ComponentGroup>

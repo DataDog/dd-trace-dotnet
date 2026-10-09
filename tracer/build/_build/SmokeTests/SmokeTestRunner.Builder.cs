@@ -209,6 +209,28 @@ public static partial class SmokeTestRunner
                 // Rename any *.msi file in the artifacts directory
                 RenameArtifact(artifactsDir, "*.msi", "datadog-apm.msi");
 
+                if (scenario.PreviousReleaseVersion is { } previousReleaseVersion)
+                {
+                    // In-place-upgrade regression scenario: installs previousReleaseVersion
+                    // first, then upgrades to the locally-built MSI, and asserts every
+                    // independently-versioned native binary was actually replaced. See
+                    // smoke.windows.upgrade.dockerfile for the assertion itself -- there's
+                    // no dd-dotnet variant to build for this one.
+                    const string upgradeDockerfilePath = "build/_build/docker/smoke.windows.upgrade.dockerfile";
+                    var upgradeBuildArgs = new Dictionary<string, string>
+                    {
+                        ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
+                        ["RUNTIME_IMAGE"] = ImageDigests.GetImageWithDigest(scenario.RuntimeImage),
+                        ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+                        ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
+                        ["PREVIOUS_RELEASE_VERSION"] = previousReleaseVersion,
+                    };
+
+                    await DockerService.BuildImageFromDockerfileAsync(tracerDir, upgradeDockerfilePath, scenario.DockerTag, upgradeBuildArgs, artifactsDir);
+
+                    return new[] {scenario.DockerTag};
+                }
+
                 // Build the standard MSI image
                 const string dockerfilePath = "build/_build/docker/smoke.windows.dockerfile";
                 var runtimeImage = ImageDigests.GetImageWithDigest(scenario.RuntimeImage);
