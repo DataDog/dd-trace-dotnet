@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -25,6 +26,9 @@ namespace Datadog.Trace
         internal const int KeepAliveInterval = 10_000;
         internal const int ExceptionRetryInterval = 2_000;
         internal const int MaxFailures = 5;
+
+        private const int ErrorSemTimeout = 121;
+        private const int ErrorPipeBusy = 231;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
@@ -402,6 +406,32 @@ namespace Datadog.Trace
             process.Dispose();
         }
 
+        /// <summary>
+        /// Checks whether a server instance of the named pipe exists, without connecting to it.
+        /// A pipe whose instances are all busy still exists.
+        /// </summary>
+        private static bool NamedPipeExists(string namedPipe)
+        {
+            if (!FrameworkDescription.Instance.IsWindows())
+            {
+                return File.Exists(namedPipe);
+            }
+
+            // 1 ms keeps the check cheap: 0 would wait for the server's default timeout
+            if (WaitNamedPipe(namedPipe, 1))
+            {
+                return true;
+            }
+
+            // ERROR_FILE_NOT_FOUND (and anything else unexpected) means no usable pipe
+            var error = Marshal.GetLastWin32Error();
+            return error == ErrorSemTimeout || error == ErrorPipeBusy;
+        }
+
+        [DllImport("kernel32.dll", EntryPoint = "WaitNamedPipeW", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool WaitNamedPipe(string name, uint timeout);
+
         private static string GetProcessId(Process process)
         {
             try
@@ -521,7 +551,7 @@ namespace Datadog.Trace
             private bool NamedPipeIsBound()
             {
                 var namedPipe = $"\\\\.\\pipe\\{PipeName}";
-                var namedPipeIsBound = File.Exists(namedPipe);
+                var namedPipeIsBound = NamedPipeExists(namedPipe);
                 if (!namedPipeIsBound)
                 {
                     Log.Debug("NamedPipe  [{NamedPipe}] is not present.", namedPipe);
