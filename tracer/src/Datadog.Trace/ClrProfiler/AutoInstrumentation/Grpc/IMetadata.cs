@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
 {
@@ -14,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
     /// Interface, as need to call methods on it
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core.Api/Metadata.cs
     /// </summary>
+    [DuckType("Grpc.Core.Metadata", "Grpc.Core.Api")]
     internal interface IMetadata
     {
         public bool IsReadOnly { get; }

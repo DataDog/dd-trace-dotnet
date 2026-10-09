@@ -10,6 +10,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// <summary>
     /// Message interface for duck-typing
     /// </summary>
+    [DuckType("Confluent.Kafka.Message`2[[System.Byte[], System.Private.CoreLib],[System.Byte[], System.Private.CoreLib]]", "Confluent.Kafka")]
+    [DuckType("Confluent.Kafka.Message`2[[System.String, System.Private.CoreLib],[System.String, System.Private.CoreLib]]", "Confluent.Kafka")]
     internal interface IMessage : IDuckType
     {
         /// <summary>

@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
     /// Ducktyping proxy for https://github.com/serilog/serilog/blob/1aabe1d6bde10382233fb2a50e0e2c6e0c9b8287/src/Serilog/Events/LogEvent.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Serilog.Events.LogEvent", "Serilog")]
     internal struct LogEventProxy
     {
         /// <summary>

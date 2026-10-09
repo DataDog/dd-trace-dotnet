@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.IO;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
     /// Data interface for duck typing.
     /// </summary>
+    [DuckType("Amazon.Kinesis.Model.PutRecordsRequestEntry", "AWSSDK.Kinesis")]
     internal interface IContainsData
     {
         /// <summary>

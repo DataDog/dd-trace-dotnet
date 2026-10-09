@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/CosmosClient.cs
     /// </remarks>
     [DuckCopy]
+    [DuckCopy("Microsoft.Azure.Cosmos.CosmosClient", "Microsoft.Azure.Cosmos.Client")]
     internal struct CosmosClientStruct
     {
         /// <summary>

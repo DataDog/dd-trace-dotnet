@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
 /// <summary>
 /// Proxy for static class https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Bson/Serialization/BsonSerializer.cs
 /// </summary>
+[DuckType("MongoDB.Bson.Serialization.BsonSerializer", "MongoDB.Bson")]
 internal interface IBsonSerializerLookupProxy
 {
     // static lookup function

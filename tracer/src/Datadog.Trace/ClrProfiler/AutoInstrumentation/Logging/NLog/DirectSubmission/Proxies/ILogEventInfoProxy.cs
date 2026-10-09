@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
@@ -11,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// Duck type for LogEventInfo  for NLog &gt; 4.5
     /// Using virtual members, as will need to be boxed, so no advantage from using a struct
     /// </summary>
+    [DuckType("NLog.LogEventInfo", "NLog")]
     internal interface ILogEventInfoProxy : ILogEventInfoProxyBase
     {
         /// <summary>

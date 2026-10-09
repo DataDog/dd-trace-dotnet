@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 /// Proxy for https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Bson/IO/JsonWriterSettings.cs
 /// </summary>
 [DuckCopy]
+[DuckCopy("MongoDB.Bson.IO.JsonWriterSettings", "MongoDB.Bson")]
 internal struct JsonWriterSettingsProxy
 {
     public object Defaults;

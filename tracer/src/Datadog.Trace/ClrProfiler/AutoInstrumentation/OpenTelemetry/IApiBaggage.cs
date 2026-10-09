@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     /// OpenTelemetry.Baggage interface for duck-typing
     /// https://github.com/open-telemetry/opentelemetry-dotnet/blob/db429bf642c1a2c2f71b49f88d63e0a661018298/src/OpenTelemetry.Api/Baggage.cs#L16
     /// </summary>
+    [DuckType("OpenTelemetry.Baggage", "OpenTelemetry.Api")]
     internal interface IApiBaggage
     {
         [DuckField(Name = "baggage")]

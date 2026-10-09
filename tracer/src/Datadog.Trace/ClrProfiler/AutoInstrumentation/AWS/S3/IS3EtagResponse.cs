@@ -12,6 +12,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 /// Shared interface for ducktyping for PutObjectResponse, CopyObjectResponse, and
 /// CompleteMultipartUploadResponse.
 /// </summary>
+[DuckType("Amazon.S3.Model.CompleteMultipartUploadResponse", "AWSSDK.S3")]
+[DuckType("Amazon.S3.Model.CopyObjectResponse", "AWSSDK.S3")]
+[DuckType("Amazon.S3.Model.PutObjectResponse", "AWSSDK.S3")]
 internal interface IS3EtagResponse : IDuckType
 {
     /// <summary>

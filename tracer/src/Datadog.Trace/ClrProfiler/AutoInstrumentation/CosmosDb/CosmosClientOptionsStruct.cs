@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/CosmosClientOptions.cs
     /// </remarks>
     [DuckCopy]
+    [DuckCopy("Microsoft.Azure.Cosmos.CosmosClientOptions", "Microsoft.Azure.Cosmos.Client")]
     internal struct CosmosClientOptionsStruct
     {
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]

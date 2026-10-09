@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// <summary>
     /// HotChocolate.Execution.IOperationRequest interface for ducktyping
     /// </summary>
+    [DuckType("HotChocolate.Execution.IOperationRequest", "HotChocolate.Execution.Abstractions")]
     internal interface IOperationRequest : IDuckType
     {
         object? Document { get; }

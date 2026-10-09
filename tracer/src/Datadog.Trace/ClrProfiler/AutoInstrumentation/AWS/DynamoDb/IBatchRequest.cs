@@ -6,12 +6,15 @@
 #nullable enable
 
 using System.Collections;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 
 /// <summary>
 /// BatchRequest interface for duck typing.
 /// </summary>
+[DuckType("Amazon.DynamoDBv2.Model.BatchGetItemRequest", "AWSSDK.DynamoDBv2")]
+[DuckType("Amazon.DynamoDBv2.Model.BatchWriteItemRequest", "AWSSDK.DynamoDBv2")]
 internal interface IBatchRequest
 {
     /// <summary>

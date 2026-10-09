@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
     /// <summary>
     /// Ducktype for type OpenTelemetry.Resources.Resource
     /// </summary>
+    [DuckType("OpenTelemetry.Resources.Resource", "OpenTelemetry")]
     internal interface IResource
     {
         IEnumerable<KeyValuePair<string, object>> Attributes { get; }

@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
     /// PutEventsRequest interface for ducktyping.
     /// Mirrors Amazon.EventBridge.Model.PutEventsRequest.
     /// </summary>
+    [DuckType("Amazon.EventBridge.Model.PutEventsRequest", "AWSSDK.EventBridge")]
     internal interface IPutEventsRequest : IDuckType
     {
         ValueWithType<IEnumerable> Entries { get; }

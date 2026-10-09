@@ -11,6 +11,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.AppSec.ApiSec.DuckType;
 
+[DuckType("Microsoft.AspNetCore.Http.EndpointMetadataCollection", "Microsoft.AspNetCore.Http.Abstractions")]
 internal interface IEndpointMetadataCollectionHttpMethodMetadata
 {
     [Duck(Name = "GetMetadata", GenericParameterTypeNames = ["Microsoft.AspNetCore.Routing.HttpMethodMetadata, Microsoft.AspNetCore.Routing"])]

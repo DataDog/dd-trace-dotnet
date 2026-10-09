@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
@@ -12,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     /// Duck type for MappedDiagnosticsLogicalContext in NLog 4.6+
     /// </summary>
 #pragma warning  disable DDSEAL001 // Types should be sealed where possible. Types used for duck-typing cannot be sealed.
+    [DuckType("NLog.MappedDiagnosticsLogicalContext", "NLog")]
     internal class MappedDiagnosticsLogicalContextSetterProxy
 #pragma warning restore DDSEAL001
     {

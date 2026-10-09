@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
@@ -12,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// Interface that contains all the information necessary to handle an invocation of an AWS Lambda function.
 /// This is the DuckType for Amazon.Lambda.RuntimeSupport.InvocationRequest
 /// </summary>
+[DuckType("Amazon.Lambda.RuntimeSupport.InvocationRequest", "Amazon.Lambda.RuntimeSupport")]
 internal interface IInvocationRequest : IDisposable
 {
     /// <summary>

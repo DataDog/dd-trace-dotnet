@@ -14,6 +14,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.Activity.DuckTypes
 {
     [DuckCopy]
+    [DuckCopy("System.Diagnostics.ActivityEvent", "System.Diagnostics.DiagnosticSource")]
     internal struct ActivityEvent
     {
         public string Name;

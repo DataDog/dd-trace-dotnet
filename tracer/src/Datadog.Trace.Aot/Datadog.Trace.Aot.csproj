@@ -80,7 +80,6 @@
     <None Include="build\Datadog.Trace.Aot.targets" Pack="true" PackagePath="build\;buildTransitive\" />
     <None Include="README.md" Pack="true" PackagePath="\" />
     <!-- The duck typing mappings of Datadog.Trace looked up from runtime types (recorded, C6), served by default. -->
-    <None Include="ducktype-maps\*.json" Pack="true" PackagePath="tools\ducktype-maps\" />
     <None Include="$(DatadogAotRunnerDirectory)**\*" Exclude="$(DatadogAotRunnerDirectory)**\*.pdb" Pack="true" PackagePath="tools\runner\" Visible="false" />
     <None Include="$(DatadogAotDatadogTrace)" Pack="true" PackagePath="tools\datadog-trace\" Visible="false" />
   </ItemGroup>

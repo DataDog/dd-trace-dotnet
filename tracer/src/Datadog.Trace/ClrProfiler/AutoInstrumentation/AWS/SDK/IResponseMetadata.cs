@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// ResponseMetadata interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.Runtime.ResponseMetadata", "AWSSDK.Core")]
     internal interface IResponseMetadata
     {
         /// <summary>
