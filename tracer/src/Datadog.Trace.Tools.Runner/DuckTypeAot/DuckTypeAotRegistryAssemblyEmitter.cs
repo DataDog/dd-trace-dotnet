@@ -16722,26 +16722,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             /// <inheritdoc />
-            public override TypeRef? Map(Type source)
-            {
-                if (source.Assembly != typeof(DuckType).Assembly || source.HasElementType || source.IsGenericParameter || (source.IsGenericType && !source.IsGenericTypeDefinition))
-                {
-                    return null;
-                }
-
-                if (!_typeRefs.TryGetValue(source, out var typeRef))
-                {
-                    // Like dnlib's importer: reflection escapes the metadata name (e.g. the ',' of a compiler-generated name).
-                    var name = UnescapeReflectionName(source.Name);
-                    typeRef = source.DeclaringType is { } declaringType
-                                  ? new TypeRefUser(_moduleDef, string.Empty, name, Map(declaringType))
-                                  : new TypeRefUser(_moduleDef, source.Namespace ?? string.Empty, name, _datadogTraceAssemblyRef);
-                    typeRef = _moduleDef.UpdateRowId(typeRef);
-                    _typeRefs[source] = typeRef;
-                }
-
-                return typeRef;
-            }
+            public override ITypeDefOrRef? Map(Type source) => MapTypeRef(source);
 
             private static string UnescapeReflectionName(string name)
             {
@@ -16762,6 +16743,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 return unescaped.ToString();
+            }
+
+            private TypeRef? MapTypeRef(Type source)
+            {
+                if (source.Assembly != typeof(DuckType).Assembly || source.HasElementType || source.IsGenericParameter || (source.IsGenericType && !source.IsGenericTypeDefinition))
+                {
+                    return null;
+                }
+
+                if (!_typeRefs.TryGetValue(source, out var typeRef))
+                {
+                    // Like dnlib's importer: reflection escapes the metadata name (e.g. the ',' of a compiler-generated name).
+                    var name = UnescapeReflectionName(source.Name);
+                    typeRef = source.DeclaringType is { } declaringType
+                                  ? new TypeRefUser(_moduleDef, string.Empty, name, MapTypeRef(declaringType))
+                                  : new TypeRefUser(_moduleDef, source.Namespace ?? string.Empty, name, _datadogTraceAssemblyRef);
+                    typeRef = _moduleDef.UpdateRowId(typeRef);
+                    _typeRefs[source] = typeRef;
+                }
+
+                return typeRef;
             }
         }
 
