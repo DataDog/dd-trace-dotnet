@@ -1384,7 +1384,7 @@ stages:
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-      - script: tracer\build.cmd RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      - script: tracer\build.cmd RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled) --native-aot-instrumentation-gate $(nativeAotInstrumentationGate)
         displayName: Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1441,7 +1441,7 @@ stages:
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-      - script: ./tracer/build.sh RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      - script: ./tracer/build.sh RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled) --native-aot-instrumentation-gate $(nativeAotInstrumentationGate)
         displayName: Run unit tests
         retryCountOnTaskFailure: 1
         env:
@@ -1500,7 +1500,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled) --duck-type-aot-gates $(duckTypeAotGates)"
+        command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled) --duck-type-aot-gates $(duckTypeAotGates) --native-aot-instrumentation-gate $(nativeAotInstrumentationGate)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/make-artifacts-uploadable.yml
@@ -1558,7 +1558,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+            command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled) --native-aot-instrumentation-gate $(nativeAotInstrumentationGate)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - template: steps/make-artifacts-uploadable.yml

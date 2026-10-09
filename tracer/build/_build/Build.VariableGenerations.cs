@@ -167,15 +167,20 @@ partial class Build : NukeBuild
 
             void GenerateUnitTestFrameworkMatrices()
             {
-                GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows));
-                GenerateTfmsMatrix("unit_tests_macos_matrix", GetTestingFrameworks(PlatformFamily.OSX));
+                GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows), nativeAotInstrumentationGate: true);
+                GenerateTfmsMatrix("unit_tests_macos_matrix", GetTestingFrameworks(PlatformFamily.OSX), nativeAotInstrumentationGate: true);
                 GenerateLinuxMatrix("x64", GetTestingFrameworks(PlatformFamily.Linux));
                 GenerateLinuxMatrix("arm64", GetTestingFrameworks(PlatformFamily.Linux, isArm64: true));
 
-                void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)
+                // nativeAotInstrumentationGate: the NativeAOT instrumentation gate runs in one job (net8.0, or the newest framework).
+                void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks, bool nativeAotInstrumentationGate = false)
                 {
-                    var matrix = frameworks
-                       .ToDictionary(t => t.ToString(), t => new { framework = t, });
+                    var frameworkList = frameworks.ToList();
+                    var gateFramework = nativeAotInstrumentationGate
+                                            ? frameworkList.Contains(TargetFramework.NET8_0) ? TargetFramework.NET8_0 : frameworkList.LastOrDefault()
+                                            : null;
+                    var matrix = frameworkList
+                       .ToDictionary(t => t.ToString(), t => new { framework = t, nativeAotInstrumentationGate = Equals(t, gateFramework) ? "true" : "false" });
 
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable(name, JsonConvert.SerializeObject(matrix, Formatting.None));
@@ -192,11 +197,16 @@ partial class Build : NukeBuild
                                                         ? frameworkList.Contains(TargetFramework.NET9_0) ? TargetFramework.NET9_0 : frameworkList.LastOrDefault()
                                                         : null;
 
+                    // The NativeAOT instrumentation gate runs on each build host architecture, in one glibc job: the native
+                    // tracer hosted offline (x64 with the DuckType AOT gates).
+                    var nativeAotGateFramework = duckTypeAotGatesFramework ?? (frameworkList.Contains(TargetFramework.NET8_0) ? TargetFramework.NET8_0 : frameworkList.LastOrDefault());
+
                     foreach (var framework in frameworkList)
                     {
                         var duckTypeAotGates = Equals(framework, duckTypeAotGatesFramework) ? "true" : "false";
-                        matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "debian", artifactSuffix = $"linux-{platform}", duckTypeAotGates = duckTypeAotGates });
-                        matrix.Add($"musl_{framework}", new { framework = framework, baseImage = "alpine", artifactSuffix = $"linux-musl-{platform}", duckTypeAotGates = "false" });
+                        var nativeAotGate = Equals(framework, nativeAotGateFramework) ? "true" : "false";
+                        matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "debian", artifactSuffix = $"linux-{platform}", duckTypeAotGates = duckTypeAotGates, nativeAotInstrumentationGate = nativeAotGate });
+                        matrix.Add($"musl_{framework}", new { framework = framework, baseImage = "alpine", artifactSuffix = $"linux-musl-{platform}", duckTypeAotGates = "false", nativeAotInstrumentationGate = "false" });
                     }
 
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));

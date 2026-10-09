@@ -82,6 +82,9 @@ partial class Build : NukeBuild
     [Parameter("Whether the DuckType AOT gates run with the managed unit tests. CI declares it in the Linux x64 unit test matrix; locally they only run when a RunDuckTypeAot* target is invoked")]
     readonly bool? DuckTypeAotGates;
 
+    [Parameter("Whether the NativeAOT instrumentation gate runs with the managed unit tests (default: with the DuckType AOT gates). CI declares it in a Linux x64 and a Linux arm64 unit test job")]
+    readonly bool? NativeAotInstrumentationGate;
+
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
