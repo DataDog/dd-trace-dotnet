@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Datadog.Trace.Util;
 
 #nullable enable
 
@@ -42,9 +43,8 @@ internal static class StackReporter
         // Collect all valid frames
         foreach (var frame in frames)
         {
-            var declaringType = frame?.GetMethod()?.DeclaringType;
-            var assembly = declaringType?.Assembly.GetName().Name;
-            if (assembly != null && !AssemblyExcluded(assembly))
+            // NativeAOT: the methods without reflection metadata come from the stack trace data.
+            if (StackFrameMethod.TryGet(frame, out var method) && method.AssemblyNameForFilters is { } assembly && !AssemblyExcluded(assembly))
             {
                 var fileName = System.IO.Path.GetFileName(frame?.GetFileName());
                 var fileNameValid = !string.IsNullOrEmpty(fileName);
@@ -54,9 +54,9 @@ internal static class StackReporter
                     fileName,
                     (uint?)(fileNameValid ? frame?.GetFileLineNumber() : null),
                     (uint?)(fileNameValid ? frame?.GetFileColumnNumber() : null),
-                    declaringType?.Namespace,
-                    declaringType?.Name,
-                    frame?.GetMethod()?.Name));
+                    method.Namespace,
+                    method.TypeName,
+                    method.Name));
                 counter++;
             }
         }
