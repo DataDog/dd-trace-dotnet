@@ -210,6 +210,29 @@ internal interface IResponseProxy
 
 The registry registers the proxy of the base type with `DuckType.RegisterAotDerivedTypesProxy`, and a lookup for a class without its own registration that derives from it (or implements it, for an interface) uses the registration of its most derived registered base class, else of its most derived registered interface. The proxy binds the members of that type (which the class may override), and reports the class as `IDuckType.Type`, like the proxy dynamic duck typing creates for it. Members only the derived classes have aren't bound: declare the types that add them too. Value types and sealed types don't have derived types.
 
+### Generic Proxies
+
+A proxy used with the instantiations of a generic type of a library that the library creates over types only known at runtime
+(e.g. over the application's types, through dependency injection), which no input names, declares the open generic type:
+
+```csharp
+[DuckType("MyCompany.External.Handler`2", "MyCompany.External")]
+internal interface IHandlerProxy
+{
+    object Method { get; }
+}
+```
+
+The generator emits the mapping for the target instantiated over placeholder classes (evaluated with dynamic duck typing like
+any other), then makes the proxy type and its activators generic over the type parameters of the target, in a factory
+implementing `IDuckTypeAotGenericProxyActivator`. The registry registers it with `DuckType.RegisterAotGenericProxy`, and creates
+the factory of an instantiation with `typeof(Factory<,>).MakeGenericType(arguments)`: NativeAOT builds those instantiations at
+runtime from the canonical code of the generic types, for reference type arguments. A lookup for a runtime type that is an
+instantiation of the open generic type (or, with `IncludeDerivedTypes`, derives from one or implements one) gets the proxy of
+that instantiation, which binds its members like dynamic duck typing does. Instantiations with value type arguments aren't served
+(NativeAOT has no code for them unless it compiled them): a recorded map gives them their own proxy. The generic parameters
+of the target can be constrained to classes and to `new()`, not to other types.
+
 ### Reverse Proxy
 
 Reverse mappings are supported and are typically declared with type-level `[DuckReverse]` attributes, then materialized into the canonical map through `ducktype-aot discover-mappings`. A reverse proxy created from a runtime type is declared on the type it delegates to, with the type it derives from (or implements):
