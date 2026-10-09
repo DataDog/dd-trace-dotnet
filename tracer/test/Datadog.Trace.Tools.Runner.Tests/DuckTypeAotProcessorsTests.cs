@@ -1007,6 +1007,39 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
+    /// <summary>
+    /// The application's framework assemblies (its runtime pack, the NativeAOT System.Private.CoreLib) are other versions of
+    /// the generator's runtime ones, which it can't load: its own stand for them.
+    /// </summary>
+    [Fact]
+    public void RuntimeTypeResolverShouldUseTheRuntimeFrameworkAssemblyForAnotherVersionOfIt()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var module = new ModuleDefUser("System.Private.CoreLib.dll") { Kind = ModuleKind.Dll };
+            new AssemblyDefUser("System.Private.CoreLib", new Version(99, 0, 0, 0)).Modules.Add(module);
+            var coreLibPath = Path.Combine(tempDirectory, "System.Private.CoreLib.dll");
+            module.Write(coreLibPath);
+
+            var emitterType = typeof(DuckTypeAotGenerateProcessor).Assembly.GetType("Datadog.Trace.Tools.Runner.DuckTypeAot.DuckTypeAotRegistryAssemblyEmitter");
+            var tryResolveRuntimeType = emitterType!.GetMethod(
+                "TryResolveRuntimeType",
+                BindingFlags.Static | BindingFlags.NonPublic,
+                binder: null,
+                types: new[] { typeof(string), typeof(string), typeof(string), typeof(Type).MakeByRefType() },
+                modifiers: null);
+            var arguments = new object?[] { "System.Private.CoreLib", coreLibPath, "System.ReadOnlyMemory`1[[System.Byte, System.Private.CoreLib]]", null };
+
+            ((bool)tryResolveRuntimeType!.Invoke(obj: null, parameters: arguments)!).Should().BeTrue();
+            arguments[3].Should().Be(typeof(ReadOnlyMemory<byte>));
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
     [Fact]
     public void RuntimeTypeResolverShouldRejectLoadedTypeWhenExplicitAssemblyPathDoesNotMatch()
     {
