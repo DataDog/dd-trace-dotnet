@@ -14,19 +14,34 @@ namespace Datadog.Trace.Tests;
 
 public class AgentProcessManagerTests
 {
-    [Fact]
-    public void GetKeepAliveAction_DoesNotStartWhileOwnProcessIsRunning()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void GetKeepAliveAction_DoesNotStartWhileOwnProcessIsRunning(int failedHealthChecks)
     {
         // e.g. the startup wait timed out while the process we started is still running
-        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true)
+        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true, failedHealthChecks)
                            .Should().Be(KeepAliveAction.None);
     }
 
-    [Fact]
-    public void GetKeepAliveAction_StartsWhenUnhealthyAndOwnProcessIsNotRunning()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(10)]
+    public void GetKeepAliveAction_StartsWhenUnhealthyAndOwnProcessIsNotRunning(int failedHealthChecks)
     {
-        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: false)
+        // Never Restart: an agent we did not start is never stopped
+        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: false, failedHealthChecks)
                            .Should().Be(KeepAliveAction.Start);
+    }
+
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void GetKeepAliveAction_RestartsOwnProcessAfterRepeatedFailedHealthChecks(int failedHealthChecks)
+    {
+        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true, failedHealthChecks)
+                           .Should().Be(KeepAliveAction.Restart);
     }
 
     [Theory]
@@ -34,7 +49,7 @@ public class AgentProcessManagerTests
     [InlineData(false)]
     public void GetKeepAliveAction_DoesNothingWhenHealthy(bool ownProcessIsRunning)
     {
-        AgentProcessManager.GetKeepAliveAction(isHealthy: true, ownProcessIsRunning)
+        AgentProcessManager.GetKeepAliveAction(isHealthy: true, ownProcessIsRunning, failedHealthChecks: 0)
                            .Should().Be(KeepAliveAction.None);
     }
 
