@@ -1516,6 +1516,7 @@ partial class Build
         .After(CompileManagedUnitTests)
         .DependsOn(CleanTestLogs)
         .DependsOn(RunDuckTypeAotGates)
+        .DependsOn(RunNativeAotInstrumentationGate)
         .Executes(() =>
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
@@ -1688,6 +1689,49 @@ partial class Build
         .DependsOn(RunDuckTypeAotProcessorGate)
         .DependsOn(RunDuckTypeAotFullSuiteParityGate)
         .DependsOn(RunDuckTypeAotNativeAotPublishGate);
+
+    /// <summary>
+    /// The NativeAOT instrumentation (dd-trace aot instrument): the native tracer hosted offline on CallTargetNativeTest
+    /// (the same behavior as with the profiler, determinism, build environment), and an ASP.NET Core application published
+    /// with NativeAOT (skipped without the NativeAOT toolchain). CI runs it on Linux x64 and arm64, macOS (arm64) and
+    /// Windows x64 build hosts (--native-aot-instrumentation-gate), and with the DuckType AOT gates by default.
+    /// </summary>
+    Target RunNativeAotInstrumentationGate => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => NativeAotInstrumentationGate ?? (ShouldRunDuckTypeAotGatesInCurrentJob() || InvokedTargets.Any(target => target.Name == nameof(RunNativeAotInstrumentationGate))))
+        .After(RunDuckTypeAotNativeAotPublishGate)
+        .After(BuildRunnerTool)
+        .DependsOn(BuildRunnerTool)
+        .Executes(() =>
+        {
+            // macOS: one universal binary for x64 and arm64.
+            var (arch, extension) = GetUnixArchitectureAndExtension();
+            var nativeTracer = IsWin
+                                   ? MonitoringHomeDirectory / "win-x64" / "Datadog.Tracer.Native.dll"
+                                   : MonitoringHomeDirectory / (IsOsx ? "osx" : arch) / $"Datadog.Tracer.Native.{extension}";
+            EnsureFileExists(nativeTracer, "Native tracer");
+
+            var callTargetNativeTestProjectPath = TracerDirectory / "test" / "test-applications" / "instrumentation" / "CallTargetNativeTest" / "CallTargetNativeTest.csproj";
+            var runnerTestsProjectPath = TracerDirectory / "test" / "Datadog.Trace.Tools.Runner.Tests" / "Datadog.Trace.Tools.Runner.Tests.csproj";
+            EnsureFileExists(callTargetNativeTestProjectPath, "CallTargetNativeTest project");
+            EnsureFileExists(runnerTestsProjectPath, "NativeAOT instrumentation test project");
+            DotnetBuild(new[] { callTargetNativeTestProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+            DotnetBuild(new[] { runnerTestsProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+            var callTargetNativeTest = GetProjectBinDirectory("CallTargetNativeTest", "net8.0");
+            EnsureFileExists(callTargetNativeTest / "CallTargetNativeTest.dll", "CallTargetNativeTest");
+
+            DotNetTest(x => x
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetConfiguration(BuildConfiguration)
+                .SetProjectFile(runnerTestsProjectPath)
+                .SetFramework("net8.0")
+                .SetFilter("FullyQualifiedName~AotInstrumentNativeHostIntegrationTests|FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.AspNetCoreSpansReachTheAgent")
+                .SetProcessEnvironmentVariable("DD_AOT_NATIVE_TRACER", nativeTracer)
+                .SetProcessEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_DIR", callTargetNativeTest)
+                .SetProcessEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH", "1")
+                .WithDatadogLogger());
+        });
 
     Target RunDuckTypeAotProcessorGate => _ => _
         .Unlisted()
