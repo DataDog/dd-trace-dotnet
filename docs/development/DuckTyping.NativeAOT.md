@@ -194,9 +194,44 @@ internal struct RoutePatternProxy
 }
 ```
 
+A proxy has a `[DuckType]` (or `[DuckCopy]`) attribute per target type it is used with (e.g. the same type in several assemblies or namespaces across library versions). `[DuckCopy]` without arguments only marks the struct as a copy proxy.
+
+### Derived Types
+
+A proxy used with the classes deriving from a type (e.g. the response types of a library, which the generator can't list) declares the base type with `IncludeDerivedTypes = true`:
+
+```csharp
+[DuckType("MyCompany.External.ResponseBase", "MyCompany.External", IncludeDerivedTypes = true)]
+internal interface IResponseProxy
+{
+    int StatusCode { get; }
+}
+```
+
+The registry registers the proxy of the base type with `DuckType.RegisterAotDerivedTypesProxy`, and a lookup for a class without its own registration that derives from it (or implements it, for an interface) uses the registration of its most derived registered base class, else of its most derived registered interface. The proxy binds the members of that type (which the class may override), and reports the class as `IDuckType.Type`, like the proxy dynamic duck typing creates for it. Members only the derived classes have aren't bound: declare the types that add them too. Value types and sealed types don't have derived types.
+
 ### Reverse Proxy
 
-Reverse mappings are supported and are typically declared with type-level `[DuckReverse]` attributes, then materialized into the canonical map through `ducktype-aot discover-mappings`.
+Reverse mappings are supported and are typically declared with type-level `[DuckReverse]` attributes, then materialized into the canonical map through `ducktype-aot discover-mappings`. A reverse proxy created from a runtime type is declared on the type it delegates to, with the type it derives from (or implements):
+
+```csharp
+[DuckReverseDelegation("MyCompany.External.IEventListener", "MyCompany.External")]
+internal class EventListenerDelegation
+{
+    [DuckReverseMethod]
+    public void OnEvent(string name)
+    {
+    }
+}
+```
+
+### Assembly-Level Mappings
+
+The proxies of another assembly, and closed generic proxies, are declared at assembly level:
+
+```csharp
+[assembly: DuckTypeMapping("Datadog.Trace.IScope", "Datadog.Trace.Manual", "Datadog.Trace.Scope", "Datadog.Trace")]
+```
 
 ```json
 {
@@ -214,7 +249,7 @@ NativeAOT generation preserves the dynamic duck-typing `FallbackToBaseTypes` beh
 
 ## Mapping Sources
 
-`ducktype-aot discover-mappings` discovers mappings from proxy assembly type-level attributes (`[DuckType]`, `[DuckCopy]`, `[DuckReverse]`) and writes a canonical map.
+`ducktype-aot discover-mappings` discovers mappings from proxy assembly attributes (`[DuckType]`, `[DuckCopy]`, `[DuckReverse]`, `[DuckReverseDelegation]`, `[assembly: DuckTypeMapping]`) and writes a canonical map. `dd-trace aot instrument` reads the ones of `Datadog.Trace` (and of the other `Datadog.*` assemblies of the application) the same way, in addition to the duck typing constraints of the integrations and the recorded maps.
 Discovery resolves target types from `--target-folder` inputs (plus `--target-filter`) and requires at least one `--target-folder`.
 
 `ducktype-aot generate` consumes only `--map-file`.
