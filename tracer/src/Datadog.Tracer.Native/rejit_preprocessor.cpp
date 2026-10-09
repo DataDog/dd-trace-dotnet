@@ -175,7 +175,8 @@ void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNe
         return;
     }
 
-    // RemoveModule erases an unloading ModuleID under this lock, so it has to be held across the CLR calls.
+    // AddNGenInlinerModule and RemoveModule change the NGen module list under this lock, so it has to be held while
+    // iterating it. RemoveModule erases an unloading ModuleID, so it also has to be held across the CLR calls.
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
     if (m_isDesktopClr)
     {
