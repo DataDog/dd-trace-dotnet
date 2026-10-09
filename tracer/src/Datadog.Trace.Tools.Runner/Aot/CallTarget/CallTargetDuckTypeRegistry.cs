@@ -329,11 +329,24 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
         }
 
         var derived = declared.Where(m => m.IncludesDerivedTypes).ToList();
+        var generic = declared.Where(DuckTypeAotRegistryAssemblyEmitter.IsGenericProxyMapping).ToList();
         var undeclared = new List<string>();
         foreach (var mapping in recorded)
         {
             var datadogAssembly = mapping.Mode == DuckTypeAotMappingMode.Forward ? mapping.ProxyAssemblyName : mapping.TargetAssemblyName;
             if (!datadogAssembly.StartsWith("Datadog.", StringComparison.Ordinal) || known.Contains(mapping.Key))
+            {
+                continue;
+            }
+
+            // An instantiation of an open generic target the proxy is declared for (a generic proxy).
+            var targetDefinitionName = mapping.TargetTypeName.Split('[')[0];
+            if (mapping.Mode == DuckTypeAotMappingMode.Forward &&
+                !string.Equals(targetDefinitionName, mapping.TargetTypeName, StringComparison.Ordinal) &&
+                generic.Any(g => g.ProxyTypeName == mapping.ProxyTypeName &&
+                                 g.ProxyAssemblyName == mapping.ProxyAssemblyName &&
+                                 g.TargetTypeName == targetDefinitionName &&
+                                 string.Equals(g.TargetAssemblyName, mapping.TargetAssemblyName, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }
@@ -370,14 +383,15 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
                 return true;
             }
 
-            if (current.BaseType is { } baseType && resolveType(baseType) is { } baseDefinition)
+            // A generic base type or interface (an instantiation) by its definition, which an open generic target names.
+            if (current.BaseType is { } baseType && resolveType(baseType.ScopeType ?? baseType) is { } baseDefinition)
             {
                 pending.Push(baseDefinition);
             }
 
             foreach (var implemented in current.Interfaces)
             {
-                if (resolveType(implemented.Interface) is { } interfaceDefinition)
+                if (resolveType(implemented.Interface.ScopeType ?? implemented.Interface) is { } interfaceDefinition)
                 {
                     pending.Push(interfaceDefinition);
                 }
