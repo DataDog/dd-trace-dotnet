@@ -337,14 +337,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var addedEntries = addedMappingsToWrite.Select(
-                                                       mapping => JsonConvert.SerializeObject(new
-                                                       {
-                                                           mode = mapping.Mode == DuckTypeAotMappingMode.Reverse ? "reverse" : "forward",
-                                                           proxyType = mapping.ProxyTypeName,
-                                                           proxyAssembly = mapping.ProxyAssemblyName,
-                                                           targetType = mapping.TargetTypeName,
-                                                           targetAssembly = mapping.TargetAssemblyName
-                                                       }))
+                                                       mapping => mapping.IncludesDerivedTypes
+                                                                      ? JsonConvert.SerializeObject(new
+                                                                      {
+                                                                          mode = "forward",
+                                                                          proxyType = mapping.ProxyTypeName,
+                                                                          proxyAssembly = mapping.ProxyAssemblyName,
+                                                                          targetType = mapping.TargetTypeName,
+                                                                          targetAssembly = mapping.TargetAssemblyName,
+                                                                          includeDerivedTypes = true
+                                                                      })
+                                                                      : JsonConvert.SerializeObject(new
+                                                                      {
+                                                                          mode = mapping.Mode == DuckTypeAotMappingMode.Reverse ? "reverse" : "forward",
+                                                                          proxyType = mapping.ProxyTypeName,
+                                                                          proxyAssembly = mapping.ProxyAssemblyName,
+                                                                          targetType = mapping.TargetTypeName,
+                                                                          targetAssembly = mapping.TargetAssemblyName
+                                                                      }))
                                                    .ToList();
             string? newText;
             if (document is null)

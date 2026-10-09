@@ -226,7 +226,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                               ProxyType = mapping.ProxyTypeName,
                               ProxyAssembly = mapping.ProxyAssemblyName,
                               TargetType = mapping.TargetTypeName,
-                              TargetAssembly = mapping.TargetAssemblyName
+                              TargetAssembly = mapping.TargetAssemblyName,
+                              IncludeDerivedTypes = mapping.IncludesDerivedTypes ? true : null
                           })
                           .ToList()
             };
@@ -315,6 +316,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             [JsonProperty("targetAssembly")]
             public string TargetAssembly { get; set; } = string.Empty;
+
+            [JsonProperty("includeDerivedTypes", NullValueHandling = NullValueHandling.Ignore)]
+            public bool? IncludeDerivedTypes { get; set; }
         }
 
         private sealed class DiscoverWarningsReport

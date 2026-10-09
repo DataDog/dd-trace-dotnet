@@ -83,6 +83,24 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers the proxies of the instantiations of an open generic target type, which the library creates over types only
+        /// known at runtime (e.g. over the application's types): the registry generates a proxy type generic over the type
+        /// parameters of the target, and its activator for an instantiation is created with the type arguments of the runtime
+        /// type.
+        /// </summary>
+        /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
+        /// <param name="targetGenericTypeDefinition">The open generic target type.</param>
+        /// <param name="derivedTypes">Whether the classes deriving from an instantiation (or implementing it) are served too.</param>
+        /// <param name="activatorFactory">Creates the activator (an <see cref="IDuckTypeAotGenericProxyActivator"/>) for the type
+        /// arguments of an instantiation.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotGenericProxy(Type proxyDefinitionType, Type targetGenericTypeDefinition, bool derivedTypes, Func<Type[], object> activatorFactory)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterGenericProxy(proxyDefinitionType, targetGenericTypeDefinition, derivedTypes, activatorFactory);
+        }
+
+        /// <summary>
         /// Registers a forward AOT proxy using an object-bridge method handle.
         /// </summary>
         /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>

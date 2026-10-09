@@ -87,6 +87,12 @@ namespace Datadog.Trace.DuckTyping
         private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ForwardFallbackResults = new();
 
         /// <summary>
+        /// The forward registrations of open generic target types, by proxy definition type (see <see cref="TryGetGenericResult"/>).
+        /// Their results are cached with the fallback ones.
+        /// </summary>
+        private static readonly ConcurrentDictionary<Type, GenericRegistration[]> ForwardGenericTargets = new();
+
+        /// <summary>
         /// Datadog.Trace assembly version for the currently loaded runtime.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
@@ -315,6 +321,57 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers the proxies of the instantiations of an open generic target type: the activator of an instantiation is created
+        /// with its type arguments (see <see cref="TryGetGenericResult"/>).
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetGenericTypeDefinition">The open generic target type.</param>
+        /// <param name="derivedTypes">Whether the classes deriving from an instantiation (or implementing it) are served too.</param>
+        /// <param name="activatorFactory">Creates the <see cref="IDuckTypeAotGenericProxyActivator"/> of the type arguments of an
+        /// instantiation.</param>
+        internal static void RegisterGenericProxy(Type proxyDefinitionType, Type targetGenericTypeDefinition, bool derivedTypes, Func<Type[], object> activatorFactory)
+        {
+            if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
+            if (targetGenericTypeDefinition is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetGenericTypeDefinition)); }
+            if (activatorFactory is null) { ThrowHelper.ThrowArgumentNullException(nameof(activatorFactory)); }
+
+            if (!targetGenericTypeDefinition.IsGenericTypeDefinition)
+            {
+                throw new ArgumentException($"AOT duck typing generic target type '{targetGenericTypeDefinition}' must be a generic type definition.", nameof(targetGenericTypeDefinition));
+            }
+
+            lock (RegistrationLock)
+            {
+                EnsureSingleRegistryAssemblyPerProcess(activatorFactory);
+                var current = ForwardGenericTargets.TryGetValue(proxyDefinitionType, out var registrations) ? registrations : [];
+                var updated = new List<GenericRegistration>(current.Length + 1);
+                foreach (var registration in current)
+                {
+                    if (registration.TargetGenericTypeDefinition != targetGenericTypeDefinition)
+                    {
+                        updated.Add(registration);
+                    }
+                }
+
+                updated.Add(new GenericRegistration(targetGenericTypeDefinition, derivedTypes, activatorFactory));
+                ForwardGenericTargets[proxyDefinitionType] = updated.ToArray();
+
+                // The results created for the types these registrations serve, and their misses, may come from this one now.
+                Interlocked.Increment(ref _fallbackTargetsVersion);
+                ForwardFallbackResults.Clear();
+                foreach (var missKey in ForwardMissCache.Keys)
+                {
+                    if (missKey.ProxyDefinitionType == proxyDefinitionType)
+                    {
+                        _ = ForwardMissCache.TryRemove(missKey, out _);
+                    }
+                }
+
+                DuckType.InvalidateFastPaths();
+            }
+        }
+
+        /// <summary>
         /// Registers a forward AOT mapping failure with a cached exception.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type.</param>
@@ -480,6 +537,7 @@ namespace Datadog.Trace.DuckTyping
                 ReverseMissCache.Clear();
                 ForwardFallbackTargets.Clear();
                 ForwardFallbackResults.Clear();
+                ForwardGenericTargets.Clear();
                 Interlocked.Increment(ref _fallbackTargetsVersion);
                 _registeredRegistryAssemblyIdentity = null;
                 _validatedRegistryAssemblyIdentity = null;
@@ -529,6 +587,7 @@ namespace Datadog.Trace.DuckTyping
                     [.. ForwardFailureRegistry],
                     [.. ReverseFailureRegistry],
                     [.. ForwardFallbackTargets],
+                    [.. ForwardGenericTargets],
                     _registeredRegistryAssemblyIdentity,
                     _validatedRegistryAssemblyIdentity);
             }
@@ -561,11 +620,17 @@ namespace Datadog.Trace.DuckTyping
                 ReverseMissCache.Clear();
                 ForwardFallbackTargets.Clear();
                 ForwardFallbackResults.Clear();
+                ForwardGenericTargets.Clear();
                 Interlocked.Increment(ref _fallbackTargetsVersion);
 
                 foreach (var entry in snapshot.ForwardFallbackTargets)
                 {
                     ForwardFallbackTargets[entry.Key] = entry.Value;
+                }
+
+                foreach (var entry in snapshot.ForwardGenericTargets)
+                {
+                    ForwardGenericTargets[entry.Key] = entry.Value;
                 }
 
                 foreach (var entry in snapshot.ForwardRegistrations)
@@ -618,7 +683,7 @@ namespace Datadog.Trace.DuckTyping
                 return failureResult;
             }
 
-            if (!reverse && TryGetFallbackResult(key, out var fallbackResult))
+            if (!reverse && (TryGetGenericResult(key, out var fallbackResult) || TryGetFallbackResult(key, out fallbackResult)))
             {
                 return fallbackResult;
             }
@@ -1194,6 +1259,141 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Gets the result for an instantiation of a registered open generic target type (see <see cref="RegisterGenericProxy"/>),
+        /// which the library created over types only known at runtime: the runtime type itself, or, for a registration that
+        /// serves derived types, its closest base class, else an interface it implements. The activator of the proxy type the
+        /// registry generated over the type parameters of the target is created with the type arguments of the instantiation;
+        /// none for an instantiation the runtime can't create it for (NativeAOT has no code for a value type argument it didn't
+        /// compile).
+        /// </summary>
+        /// <param name="key">The proxy definition type and the runtime type.</param>
+        /// <param name="result">The result for the runtime type.</param>
+        /// <returns>true if a registration applies; otherwise, false.</returns>
+        private static bool TryGetGenericResult(TypesTuple key, out DuckType.CreateTypeResult result)
+        {
+            var version = Volatile.Read(ref _fallbackTargetsVersion);
+            var type = key.TargetType;
+            if (!ForwardGenericTargets.TryGetValue(key.ProxyDefinitionType, out var registrations) || type.IsArray || type.IsGenericTypeDefinition)
+            {
+                result = default;
+                return false;
+            }
+
+            if (ForwardFallbackResults.TryGetValue(key, out result))
+            {
+                return true;
+            }
+
+            // A type no registration served is a miss until the registrations change (see RegisterGenericProxy).
+            if (ForwardMissCache.ContainsKey(key) ||
+                !TrySelectGenericRegistration(registrations, type, out var registration, out var instantiation))
+            {
+                return false;
+            }
+
+            IDuckTypeAotGenericProxyActivator? activator;
+            try
+            {
+                activator = registration.ActivatorFactory(instantiation.GetGenericArguments()) as IDuckTypeAotGenericProxyActivator;
+            }
+            catch (Exception)
+            {
+                // E.g. NotSupportedException: NativeAOT has no code for this instantiation.
+                activator = null;
+            }
+
+            if (activator is null)
+            {
+                return false;
+            }
+
+            result = new DuckType.CreateTypeResult(
+                key.ProxyDefinitionType,
+                activator.GetProxyType(),
+                type,
+                new Func<object?, object?>(instance =>
+                {
+                    // Like the activator dynamic duck typing creates for this type, which casts the instance to it.
+                    if (instance is not null && !type.IsInstanceOfType(instance))
+                    {
+                        ThrowActivatorInvalidCast(instance, type);
+                    }
+
+                    return activator.CreateInstance(instance, type);
+                }),
+                exceptionInfo: null);
+
+            lock (RegistrationLock)
+            {
+                // A registration made while this result was computed may select another one: it's returned, but not cached.
+                if (version == Volatile.Read(ref _fallbackTargetsVersion))
+                {
+                    result = ForwardFallbackResults.GetOrAdd(key, result);
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Selects the generic registration serving a runtime type, and the instantiation of its target type the runtime type is.
+        /// </summary>
+        /// <param name="registrations">The generic registrations of the proxy definition type.</param>
+        /// <param name="type">The runtime type.</param>
+        /// <param name="registration">The registration.</param>
+        /// <param name="instantiation">The instantiation of the target type: the runtime type, or a type it derives from or implements.</param>
+        /// <returns>true if a registration serves the runtime type; otherwise, false.</returns>
+        private static bool TrySelectGenericRegistration(GenericRegistration[] registrations, Type type, [NotNullWhen(true)] out GenericRegistration? registration, [NotNullWhen(true)] out Type? instantiation)
+        {
+            for (var current = type; current is not null; current = current.BaseType)
+            {
+                if (current.IsGenericType)
+                {
+                    var definition = current.GetGenericTypeDefinition();
+                    foreach (var candidate in registrations)
+                    {
+                        if (candidate.TargetGenericTypeDefinition == definition && (current == type || candidate.ServesDerivedTypes))
+                        {
+                            registration = candidate;
+                            instantiation = current;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            registration = null;
+            instantiation = null;
+            foreach (var implemented in type.GetInterfaces())
+            {
+                if (!implemented.IsGenericType)
+                {
+                    continue;
+                }
+
+                var definition = implemented.GetGenericTypeDefinition();
+                foreach (var candidate in registrations)
+                {
+                    if (candidate.TargetGenericTypeDefinition == definition && candidate.ServesDerivedTypes)
+                    {
+                        if (instantiation is not null && instantiation != implemented)
+                        {
+                            // Two instantiations of the interface: the proxy would bind either.
+                            registration = null;
+                            instantiation = null;
+                            return false;
+                        }
+
+                        registration = candidate;
+                        instantiation = implemented;
+                    }
+                }
+            }
+
+            return registration is not null && instantiation is not null;
+        }
+
+        /// <summary>
         /// Gets the result for a runtime type without registration that a registry can't name, like dynamic duck typing creates a
         /// proxy for it:
         /// <list type="bullet">
@@ -1513,6 +1713,26 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// A registration of an open generic target type (see <see cref="RegisterGenericProxy"/>).
+        /// </summary>
+        private sealed class GenericRegistration
+        {
+            internal GenericRegistration(Type targetGenericTypeDefinition, bool servesDerivedTypes, Func<Type[], object> activatorFactory)
+            {
+                TargetGenericTypeDefinition = targetGenericTypeDefinition;
+                ServesDerivedTypes = servesDerivedTypes;
+                ActivatorFactory = activatorFactory;
+            }
+
+            internal Type TargetGenericTypeDefinition { get; }
+
+            /// <summary>Gets a value indicating whether the registration serves the classes deriving from an instantiation.</summary>
+            internal bool ServesDerivedTypes { get; }
+
+            internal Func<Type[], object> ActivatorFactory { get; }
+        }
+
+        /// <summary>
         /// Represents a test-only snapshot of generated registry state.
         /// </summary>
         private sealed class TestSnapshot
@@ -1523,6 +1743,7 @@ namespace Datadog.Trace.DuckTyping
                 KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] forwardFailures,
                 KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] reverseFailures,
                 KeyValuePair<Type, FallbackRegistration[]>[] forwardFallbackTargets,
+                KeyValuePair<Type, GenericRegistration[]>[] forwardGenericTargets,
                 string? registeredRegistryAssemblyIdentity,
                 string? validatedRegistryAssemblyIdentity)
             {
@@ -1531,6 +1752,7 @@ namespace Datadog.Trace.DuckTyping
                 ForwardFailures = forwardFailures;
                 ReverseFailures = reverseFailures;
                 ForwardFallbackTargets = forwardFallbackTargets;
+                ForwardGenericTargets = forwardGenericTargets;
                 RegisteredRegistryAssemblyIdentity = registeredRegistryAssemblyIdentity;
                 ValidatedRegistryAssemblyIdentity = validatedRegistryAssemblyIdentity;
             }
@@ -1544,6 +1766,8 @@ namespace Datadog.Trace.DuckTyping
             internal KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] ReverseFailures { get; }
 
             internal KeyValuePair<Type, FallbackRegistration[]>[] ForwardFallbackTargets { get; }
+
+            internal KeyValuePair<Type, GenericRegistration[]>[] ForwardGenericTargets { get; }
 
             internal string? RegisteredRegistryAssemblyIdentity { get; }
 

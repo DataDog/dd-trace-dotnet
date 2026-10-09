@@ -1015,6 +1015,51 @@ namespace Datadog.Trace.DuckTyping.Tests
                     derivedTypes: true);
         }
 
+        [Fact]
+        public void GenericProxyRegistrationServesTheInstantiationsOfItsTargetType()
+        {
+            // The registry generates the proxy generic over the type parameters of the target: the activator of an instantiation
+            // is created with its type arguments.
+            DuckTypeAotEngine.RegisterGenericProxy(
+                typeof(ITypeNameProxy),
+                typeof(GenericProxyTarget<>),
+                derivedTypes: true,
+                arguments => Activator.CreateInstance(typeof(GenericProxyActivator<>).MakeGenericType(arguments))!);
+
+            var proxy = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(GenericProxyTarget<ForwardTarget>)).CreateInstance<ITypeNameProxy>(new GenericProxyTarget<ForwardTarget>());
+            proxy.Name.Should().Be(nameof(ForwardTarget));
+            ((IDuckType)proxy).Type.Should().Be(typeof(GenericProxyTarget<ForwardTarget>));
+
+            // A class deriving from an instantiation: the proxy of the instantiation, reporting the class.
+            var derived = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(GenericProxyTargetChild)).CreateInstance<ITypeNameProxy>(new GenericProxyTargetChild());
+            derived.Name.Should().Be(nameof(String));
+            ((IDuckType)derived).Type.Should().Be(typeof(GenericProxyTargetChild));
+
+            // No activator for the type arguments (here, a value type the activator's constraint rejects): no proxy.
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(GenericProxyTarget<int>)).CanCreate().Should().BeFalse();
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(ForwardTarget)).CanCreate().Should().BeFalse();
+        }
+
+        [Fact]
+        public void GenericProxyRegistrationServesDerivedClassesOnlyWhenDeclared()
+        {
+            DuckTypeAotEngine.RegisterGenericProxy(
+                typeof(ITypeNameProxy),
+                typeof(GenericProxyTarget<>),
+                derivedTypes: false,
+                arguments => Activator.CreateInstance(typeof(GenericProxyActivator<>).MakeGenericType(arguments))!);
+
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(GenericProxyTarget<string>)).CanCreate().Should().BeTrue();
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(GenericProxyTargetChild)).CanCreate().Should().BeFalse();
+        }
+
+        [Fact]
+        public void GenericProxyRegistrationRequiresAGenericTypeDefinition()
+        {
+            Action register = () => DuckTypeAotEngine.RegisterGenericProxy(typeof(ITypeNameProxy), typeof(GenericProxyTarget<string>), derivedTypes: false, _ => new object());
+            register.Should().Throw<ArgumentException>();
+        }
+
         [Theory]
         [InlineData(typeof(int))]
         [InlineData(typeof(DerivedTypesSealed))]
@@ -1498,6 +1543,22 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         private interface IDerivedTypesContract
         {
+        }
+
+        private class GenericProxyTarget<T>
+        {
+        }
+
+        private class GenericProxyTargetChild : GenericProxyTarget<string>
+        {
+        }
+
+        private sealed class GenericProxyActivator<T> : IDuckTypeAotGenericProxyActivator
+            where T : class
+        {
+            public object? CreateInstance(object? instance, Type targetType) => new DisposableNameGeneratedProxy(instance!, targetType, typeof(T).Name);
+
+            public Type GetProxyType() => typeof(DisposableNameGeneratedProxy);
         }
 
         private class DerivedTypesBase

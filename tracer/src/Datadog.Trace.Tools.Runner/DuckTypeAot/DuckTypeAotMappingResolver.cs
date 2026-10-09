@@ -331,7 +331,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                _ = resolvedMappings.Remove(mapping.Key);
+                // A proxy that isn't generic of an open generic target is also a generic proxy, which serves the instantiations
+                // the roots don't name (see DuckTypeAotRegistryAssemblyEmitter.IsGenericProxyMapping).
+                if (!DuckTypeAotRegistryAssemblyEmitter.IsGenericProxyMapping(mapping))
+                {
+                    _ = resolvedMappings.Remove(mapping.Key);
+                }
+
                 foreach (var expandedMapping in expandedMappings)
                 {
                     resolvedMappings[expandedMapping.Key] = expandedMapping;
@@ -426,8 +432,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var mapping in mappings)
             {
-                if (!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) &&
-                    !DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName))
+                if ((!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) &&
+                     !DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName)) ||
+                    DuckTypeAotRegistryAssemblyEmitter.IsGenericProxyMapping(mapping))
                 {
                     continue;
                 }
