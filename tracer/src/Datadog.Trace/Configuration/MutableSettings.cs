@@ -121,6 +121,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
     public double? GlobalSamplingRate { get; }
 
+    internal double? EffectiveGlobalSamplingRate => GlobalSamplingRate is < 0 or > 1 ? null : GlobalSamplingRate;
+
     /// <summary>
     /// Gets a value indicating whether correlation identifiers are
     /// automatically injected into the logging context.
