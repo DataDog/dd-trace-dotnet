@@ -38,6 +38,8 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _enumToObjectMethodInfo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly MethodInfo _objectToStringMethodInfo;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly PropertyInfo? _duckTypeInstancePropertyInfo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _methodBuilderGetToken;
@@ -70,6 +72,7 @@ namespace Datadog.Trace.DuckTyping
 
             _getTypeFromHandleMethodInfo = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle));
             _enumToObjectMethodInfo = typeof(Enum).GetMethod(nameof(Enum.ToObject), new[] { typeof(Type), typeof(object) });
+            _objectToStringMethodInfo = typeof(object).GetMethod(nameof(object.ToString), Type.EmptyTypes)!;
             _duckTypeInstancePropertyInfo = typeof(IDuckType).GetProperty(nameof(IDuckType.Instance));
             _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                                   ?? typeof(MethodBuilder).GetProperty("MetadataToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
