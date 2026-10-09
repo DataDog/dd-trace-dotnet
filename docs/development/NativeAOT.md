@@ -95,6 +95,7 @@ references the target's assembly:
 |---|---|
 | `[DuckType("Target.Type", "TargetAssembly")]` on a proxy interface or class | proxy over the target |
 | `[DuckType(..., IncludeDerivedTypes = true)]` | one proxy over a base type, used for the types deriving from it (the generator can't know them: e.g. the responses of AWS SDK clients) |
+| ``[DuckType("Library.Type`2", "Library")]`` (an open generic type) | a proxy generic over the type parameters of the target, instantiated at runtime for the instantiations the library creates over the application's types (e.g. gRPC's call handlers); reference type arguments only |
 | `[DuckCopy("Target.Type", "TargetAssembly")]` on a `[DuckCopy]` struct | copy of the target |
 | `[DuckReverseDelegation("Base.Type", "BaseAssembly")]` on the Datadog type a reverse proxy delegates to | reverse proxy deriving from the base type |
 | `[assembly: DuckTypeMapping(proxy, proxyAssembly, target, targetAssembly)]` | proxies of another Datadog assembly or closed generic proxies |

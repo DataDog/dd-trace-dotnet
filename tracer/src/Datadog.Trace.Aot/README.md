@@ -70,7 +70,8 @@ Libraries or features that don't work with NativeAOT behave the same with and wi
 ## Duck typing mappings
 
 The tracer declares the duck typing mappings the supported integrations create from runtime types, and the publish
-generates them for the library versions the application references. When an application creates a mapping the tracer
+generates them for the library versions the application references, including the generic types the libraries create over
+the application's types (over reference types). When an application creates a mapping the tracer
 doesn't declare, the tracer logs that a duck typing mapping is missing and the integration is disabled. To add them, run
 the application under JIT with the tracer attached and `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH=<file>`, which records every
 mapping created, and pass the file to the publish (the report lists the recorded mappings the tracer doesn't declare):
