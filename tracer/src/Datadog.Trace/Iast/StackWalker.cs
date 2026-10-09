@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -69,17 +70,21 @@ internal static class StackWalker
         var frames = stackTrace.GetFrames() ?? [];
         foreach (var frame in frames)
         {
-            var declaringType = frame?.GetMethod()?.DeclaringType;
+            // NativeAOT: the methods without reflection metadata come from the stack trace data.
+            if (!StackFrameMethod.TryGet(frame, out var method))
+            {
+                continue;
+            }
 
             foreach (var excludeType in ExcludeSpanGenerationTypes)
             {
-                if (excludeType == declaringType?.FullName)
+                if (excludeType == method.TypeFullName)
                 {
                     return false;
                 }
             }
 
-            var assembly = declaringType?.Assembly.GetName().Name;
+            var assembly = method.AssemblyNameForFilters;
             if (assembly != null && !MustSkipAssembly(assembly))
             {
                 targetFrame = frame;
