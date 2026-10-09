@@ -27,20 +27,21 @@ internal sealed class AwsSnsHandlerCommon
         var tracer = Tracer.Instance;
         var scope = AwsSnsCommon.CreateScope(tracer, sendType.OperationName, SpanKinds.Producer, out var tags);
 
-        var topicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
-        if (tags is not null && requestProxy.TopicArn is not null)
+        var topicArn = requestProxy.TopicArn;
+        var topicName = AwsSnsCommon.GetTopicName(topicArn);
+        if (tags is not null && topicArn is not null)
         {
-            tags.TopicArn = requestProxy.TopicArn;
+            tags.TopicArn = topicArn;
             tags.TopicName = topicName;
         }
 
-        if (scope?.Span.Context is { } context && !StringUtil.IsNullOrEmpty(topicName))
+        if (scope?.Span.Context is { } context && !StringUtil.IsNullOrEmpty(topicArn))
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             var edgeTags = dataStreamsManager is { IsEnabled: true }
                                ? dataStreamsManager.GetOrCreateEdgeTags(
-                                   new SnsEdgeTagCacheKey(topicName),
-                                   static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"])
+                                   new SnsEdgeTagCacheKey(topicArn),
+                                   static k => ["direction:out", $"topic:{k.TopicArn}", "type:sns"])
                                : [];
 
             if (sendType == SendType.SingleMessage)
