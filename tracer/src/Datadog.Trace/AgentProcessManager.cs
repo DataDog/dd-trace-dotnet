@@ -30,11 +30,13 @@ namespace Datadog.Trace
         internal const int KeepAliveInterval = 10_000;
         internal const int ExceptionRetryInterval = 2_000;
         internal const int MaxRetryInterval = 60_000;
+        internal const int MaxFailedHealthChecks = 3;
 
         private const int ErrorSemTimeout = 121;
         private const int ErrorPipeBusy = 231;
         private const int TraceAgentConnectTimeout = 500;
         private const int TraceAgentResponseTimeout = 2_000;
+        private const int StopTimeout = 1_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
@@ -75,7 +77,8 @@ namespace Datadog.Trace
         internal enum KeepAliveAction
         {
             None,
-            Start
+            Start,
+            Restart
         }
 
         /// <summary>
@@ -238,7 +241,8 @@ namespace Datadog.Trace
                                     var previousState = metadata.ProcessState;
                                     LogIfOwnProcessExited(metadata);
                                     var isHealthy = await metadata.ProcessIsHealthyAsync().ConfigureAwait(false);
-                                    var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning());
+                                    metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
+                                    var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning(), metadata.FailedHealthChecks);
                                     if (isHealthy)
                                     {
                                         metadata.SequentialFailures = 0;
@@ -256,6 +260,18 @@ namespace Datadog.Trace
                                             Log.Information("{Process} is no longer available. Starting a new one.", path);
                                         }
                                     }
+                                    else if (action == KeepAliveAction.Restart)
+                                    {
+                                        // Only reached for the process we started: we never stop an agent we did not start.
+                                        // Log once; later attempts only happen if stopping it failed.
+                                        var firstAttempt = metadata.FailedHealthChecks == MaxFailedHealthChecks;
+                                        if (firstAttempt)
+                                        {
+                                            Log.Warning<string, string, int>("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row. Restarting it.", path, GetProcessId(metadata.Process), metadata.FailedHealthChecks);
+                                        }
+
+                                        metadata.ProcessState = TryStopOwnProcess(metadata, firstAttempt) ? ProcessState.ReadyToStart : ProcessState.Unhealthy;
+                                    }
                                     else
                                     {
                                         // The process we started is still running: never start a second copy
@@ -270,6 +286,7 @@ namespace Datadog.Trace
                                 if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
                                     Log.Debug("Attempting to start {Process}.", path);
+                                    metadata.FailedHealthChecks = 0;
 
                                     var startInfo = new ProcessStartInfo
                                     {
@@ -368,16 +385,62 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Decides what the keep-alive does after a health check. A new process is started only when
-        /// the agent is unhealthy and the process this keep-alive started is no longer running.
+        /// the agent is unhealthy and the process this keep-alive started is no longer running. The process
+        /// this keep-alive started is restarted after <see cref="MaxFailedHealthChecks"/> failed checks in a row.
         /// </summary>
-        internal static KeepAliveAction GetKeepAliveAction(bool isHealthy, bool ownProcessIsRunning)
+        internal static KeepAliveAction GetKeepAliveAction(bool isHealthy, bool ownProcessIsRunning, int failedHealthChecks)
         {
-            if (isHealthy || ownProcessIsRunning)
+            if (isHealthy)
             {
                 return KeepAliveAction.None;
             }
 
-            return KeepAliveAction.Start;
+            if (!ownProcessIsRunning)
+            {
+                return KeepAliveAction.Start;
+            }
+
+            // Only the process we started is ever restarted
+            return failedHealthChecks >= MaxFailedHealthChecks ? KeepAliveAction.Restart : KeepAliveAction.None;
+        }
+
+        /// <summary>
+        /// Kills the process this keep-alive started. Returns false if it is still running afterwards,
+        /// in which case it stays tracked so that a second copy is never started next to it.
+        /// </summary>
+        private static bool TryStopOwnProcess(ProcessMetadata metadata, bool logErrorAsWarning)
+        {
+            var process = metadata.Process;
+            if (process == null)
+            {
+                return true;
+            }
+
+            try
+            {
+                process.Kill();
+                process.WaitForExit(StopTimeout);
+            }
+            catch (Exception ex)
+            {
+                if (logErrorAsWarning)
+                {
+                    Log.Warning<string, string>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                }
+                else
+                {
+                    Log.Debug<string, string>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                }
+            }
+
+            if (metadata.OwnProcessIsRunning())
+            {
+                return false;
+            }
+
+            metadata.Process = null;
+            process.Dispose();
+            return true;
         }
 
         /// <summary>
@@ -495,6 +558,8 @@ namespace Datadog.Trace
             public bool IsBeingManaged { get; set; }
 
             public int SequentialFailures { get; set; }
+
+            public int FailedHealthChecks { get; set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
