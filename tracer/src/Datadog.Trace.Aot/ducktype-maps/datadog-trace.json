@@ -209,6 +209,2792 @@
       "proxyAssembly": "Datadog.Trace",
       "targetType": "Microsoft.Extensions.Logging.LoggerFactoryScopeProvider",
       "targetAssembly": "Microsoft.Extensions.Logging"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IHttpWebRequestMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Runtime.HttpWebRequestMessage",
+      "targetAssembly": "AWSSDK.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IExecutionContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Runtime.IExecutionContext",
+      "targetAssembly": "AWSSDK.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Runtime.Internal.DefaultRequest",
+      "targetAssembly": "AWSSDK.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IRequestContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Runtime.Internal.RequestContext",
+      "targetAssembly": "AWSSDK.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IResponseMetadata",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Runtime.ResponseMetadata",
+      "targetAssembly": "AWSSDK.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.AmazonDynamoDBConfig",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IDynamoDbAttributeValue",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.AttributeValue",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IBatchRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.BatchGetItemRequest",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.BatchGetItemResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IBatchRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.BatchWriteItemRequest",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.BatchWriteItemResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.CreateTableResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IAmazonDynamoDbRequestWithKnownKeys",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.DeleteItemRequest",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.DeleteItemResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.DeleteTableResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IAmazonDynamoDbRequestWithTableName",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.GetItemRequest",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.GetItemResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IAmazonDynamoDbRequestWithTableName",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.PutItemRequest",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.PutItemResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IAmazonDynamoDbRequestWithKnownKeys",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.UpdateItemRequest",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.DynamoDBv2.Model.UpdateItemResponse",
+      "targetAssembly": "AWSSDK.DynamoDBv2"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.EventBridge.AmazonEventBridgeConfig",
+      "targetAssembly": "AWSSDK.EventBridge"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.EventBridge.Model.CreateEventBusResponse",
+      "targetAssembly": "AWSSDK.EventBridge"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.EventBridge.Model.DeleteEventBusResponse",
+      "targetAssembly": "AWSSDK.EventBridge"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge.IPutEventsRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.EventBridge.Model.PutEventsRequest",
+      "targetAssembly": "AWSSDK.EventBridge"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge.IPutEventsRequestEntry",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.EventBridge.Model.PutEventsRequestEntry",
+      "targetAssembly": "AWSSDK.EventBridge"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.EventBridge.Model.PutEventsResponse",
+      "targetAssembly": "AWSSDK.EventBridge"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.AmazonKinesisConfig",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.Model.CreateStreamResponse",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.Model.DeleteStreamResponse",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.IPutRecordRequestV3_7",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.Model.PutRecordRequest",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.Model.PutRecordResponse",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.IPutRecordsRequestV3_7",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.Model.PutRecordsRequest",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.IContainsData",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.Model.PutRecordsRequestEntry",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Kinesis.Model.PutRecordsResponse",
+      "targetAssembly": "AWSSDK.Kinesis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.AmazonS3Config",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.ICompleteMultipartUploadRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.CompleteMultipartUploadRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.IS3EtagResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.CompleteMultipartUploadResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.CompleteMultipartUploadResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.ICopyObjectRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.CopyObjectRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.IS3EtagResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.CopyObjectResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.CopyObjectResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.IDeleteBucketRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.DeleteBucketRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.DeleteBucketResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.IDeleteObjectRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.DeleteObjectRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.DeleteObjectResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.IDeleteObjectsRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.DeleteObjectsRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.DeleteObjectsResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.IGetObjectRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.GetObjectRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.GetObjectResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.IInitiateMultipartUploadRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.InitiateMultipartUploadRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.InitiateMultipartUploadResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.ListBucketsResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.IListObjectsV2Request",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.ListObjectsV2Request",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.ListObjectsV2Response",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.IPutBucketRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.PutBucketRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.PutBucketResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.IPutObjectRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.PutObjectRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.IS3EtagResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.PutObjectResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.PutObjectResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.IUploadPartRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.UploadPartRequest",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.S3.Model.UploadPartResponse",
+      "targetAssembly": "AWSSDK.S3"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.AmazonSQSConfig",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ICreateQueueRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.CreateQueueRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.CreateQueueResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ICreateQueueResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.CreateQueueResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.DeleteMessageBatchRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.DeleteMessageBatchResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.DeleteMessageRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.DeleteMessageResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.DeleteQueueRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.DeleteQueueResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.GetQueueUrlResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.ListQueuesResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.Message",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared.IMessageAttributeValue",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.MessageAttributeValue",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.PurgeQueueResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IReceiveMessageRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.ReceiveMessageRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.ReceiveMessageResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IReceiveMessageResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.ReceiveMessageResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.SendMessageBatchRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ISendMessageBatchRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.SendMessageBatchRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared.IContainsMessageAttributes",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.SendMessageBatchRequestEntry",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.SendMessageBatchResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.SendMessageRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared.IContainsMessageAttributes",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.SendMessageRequest",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SQS.Model.SendMessageResponse",
+      "targetAssembly": "AWSSDK.SQS"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceConfig",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.CreateTopicResponse",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.DeleteTopicResponse",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.IAmazonSNSRequestWithTopicArn",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.PublishBatchRequest",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.IPublishBatchRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.PublishBatchRequest",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared.IContainsMessageAttributes",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.PublishBatchRequestEntry",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.PublishBatchResponse",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.IAmazonSNSRequestWithTopicArn",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.PublishRequest",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared.IContainsMessageAttributes",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.PublishRequest",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.SimpleNotificationService.Model.PublishResponse",
+      "targetAssembly": "AWSSDK.SimpleNotificationService"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.StepFunctions.AmazonStepFunctionsConfig",
+      "targetAssembly": "AWSSDK.StepFunctions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.StepFunctions.Model.CreateStateMachineResponse",
+      "targetAssembly": "AWSSDK.StepFunctions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.StepFunctions.Model.DeleteStateMachineResponse",
+      "targetAssembly": "AWSSDK.StepFunctions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartExecutionAsyncIntegration+IStartExecutionRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.StepFunctions.Model.StartExecutionRequest",
+      "targetAssembly": "AWSSDK.StepFunctions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.StepFunctions.Model.StartExecutionResponse",
+      "targetAssembly": "AWSSDK.StepFunctions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncBatchExistsArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeyV8",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncBatchExistsArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeys",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncBatchExistsArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncBatchGetArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeyV8",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncBatchGetArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeys",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncBatchGetArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncDelete",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeyV8",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncDelete",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncExists",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncRead",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncWrite",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeyV8",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.AsyncWrite",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.BatchExistsArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeyV8",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.BatchExistsArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeys",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.BatchExistsArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.BatchGetArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeyV8",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.BatchGetArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeys",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.BatchGetArrayCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.DeleteCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.ExistsCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.Key",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.Key",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.QueryPartitionCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeyV8",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.QueryPartitionCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKeys",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.QueryPartitionCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasStatement",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.QueryPartitionCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.ReadCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.Statement",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.Statement",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.HasKey",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Aerospike.Client.WriteCommand",
+      "targetAssembly": "AerospikeClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Lambda.RuntimeSupport.CognitoClientContext",
+      "targetAssembly": "Amazon.Lambda.RuntimeSupport"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IInvocationRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Lambda.RuntimeSupport.InvocationRequest",
+      "targetAssembly": "Amazon.Lambda.RuntimeSupport"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IInvocationResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Lambda.RuntimeSupport.InvocationResponse",
+      "targetAssembly": "Amazon.Lambda.RuntimeSupport"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.ILambdaContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Amazon.Lambda.RuntimeSupport.LambdaContext",
+      "targetAssembly": "Amazon.Lambda.RuntimeSupport"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IAmqpAnnotatedMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Core.Amqp.AmqpAnnotatedMessage",
+      "targetAssembly": "Azure.Core.Amqp"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.IAmqpConnectionScope",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.EventHubs.Amqp.AmqpConnectionScope",
+      "targetAssembly": "Azure.Messaging.EventHubs"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.IAmqpConsumer",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.EventHubs.Amqp.AmqpConsumer",
+      "targetAssembly": "Azure.Messaging.EventHubs"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.IEventData",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.EventHubs.EventData",
+      "targetAssembly": "Azure.Messaging.EventHubs"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.IEventHubConnection",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.EventHubs.EventHubConnection",
+      "targetAssembly": "Azure.Messaging.EventHubs"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.IEventDataBatch",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.EventHubs.Producer.EventDataBatch",
+      "targetAssembly": "Azure.Messaging.EventHubs"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.IEventHubProducerClient",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.EventHubs.Producer.EventHubProducerClient",
+      "targetAssembly": "Azure.Messaging.EventHubs"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IServiceBusConnection",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.ServiceBus.ServiceBusConnection",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IServiceBusMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.ServiceBus.ServiceBusMessage",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IServiceBusReceivedMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.ServiceBus.ServiceBusReceivedMessage",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IServiceBusReceiver",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.ServiceBus.ServiceBusReceiver",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.IServiceBusSender",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.ServiceBus.ServiceBusSender",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.ITransportSender",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Azure.Messaging.ServiceBus.ServiceBusSender",
+      "targetAssembly": "Azure.Messaging.ServiceBus"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDescribeClusterOptions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Admin.DescribeClusterOptions",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDescribeClusterResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Admin.DescribeClusterResult",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IAdminClient",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.AdminClient",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ICommittedOffsets",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.CommittedOffsets",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IConsumeException",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.ConsumeException",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IConsumeResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.ConsumeResult`2[[System.Byte[], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Byte[], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IConsumeResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.ConsumeResult`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IConsumerBuilder",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.ConsumerBuilder`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDeliveryReport",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.DeliveryReport`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDeliveryResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.DeliveryResult`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IAdminClientBuilder",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.DependentAdminClientBuilder",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Error",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IHeaders",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Headers",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Message`2[[System.Byte[], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Byte[], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IMessage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Message`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.Offset",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Offset",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.Partition",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Partition",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IProduceException",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.ProduceException`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IProducerBuilder",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.ProducerBuilder`2[[Confluent.Kafka.Null, Confluent.Kafka, Version=2.15.1.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e],[Confluent.Kafka.Null, Confluent.Kafka, Version=2.15.1.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IProducerBuilder",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.ProducerBuilder`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITypedDeliveryHandlerShimAction",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IClientHandle",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Producer`2[[Confluent.Kafka.Null, Confluent.Kafka, Version=2.15.1.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e],[Confluent.Kafka.Null, Confluent.Kafka, Version=2.15.1.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e]]",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITimestamp",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Timestamp",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITopicPartition",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.TopicPartition",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITopicPartitionOffset",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.TopicPartitionOffset",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITopicPartitionOffset",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.TopicPartitionOffsetError",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "Hangfire.Client.IClientFilter",
+      "proxyAssembly": "Hangfire.Core",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.DatadogHangfireClientFilter",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "Hangfire.Server.IServerFilter",
+      "proxyAssembly": "Hangfire.Core",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.DatadogHangfireServerFilter",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "log4net.Appender.IAppender",
+      "proxyAssembly": "log4net",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission.DirectSubmissionLog4NetAppender",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "NLog.Targets.TargetWithContext",
+      "proxyAssembly": "NLog",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.DirectSubmissionNLogV5Target",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "Serilog.Core.ILogEventSink",
+      "proxyAssembly": "Serilog",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.DirectSubmissionSerilogSink",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "MongoDB.Bson.IO.IBsonWriter",
+      "proxyAssembly": "MongoDB.Bson",
+      "targetType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.MongoBsonWriterV3",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.ICommonTracer",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Datadog.Trace.ClrProfiler.ManualTracer",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ISpanContext",
+      "proxyAssembly": "Datadog.Trace.Manual",
+      "targetType": "Datadog.Trace.SpanContext",
+      "targetAssembly": "Datadog.Trace"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies.SpanContextProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Datadog.Trace.SpanContext",
+      "targetAssembly": "Datadog.Trace.Manual"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.IUserDetails",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Datadog.Trace.UserDetails",
+      "targetAssembly": "Datadog.Trace.Manual"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IApiCallDetails",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Elasticsearch.Net.ApiCallDetails",
+      "targetAssembly": "Elasticsearch.Net"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.EnumDescriptorProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Google.Protobuf.Reflection.EnumDescriptor",
+      "targetAssembly": "Google.Protobuf"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.IDescriptorProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Google.Protobuf.Reflection.EnumValueDescriptor",
+      "targetAssembly": "Google.Protobuf"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.IFieldDescriptorProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Google.Protobuf.Reflection.FieldDescriptor",
+      "targetAssembly": "Google.Protobuf"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.IDescriptorProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Google.Protobuf.Reflection.FileDescriptor",
+      "targetAssembly": "Google.Protobuf"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageDescriptorProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Google.Protobuf.Reflection.MessageDescriptor",
+      "targetAssembly": "Google.Protobuf"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.IFieldCollectionProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Google.Protobuf.Reflection.MessageDescriptor+FieldCollection",
+      "targetAssembly": "Google.Protobuf"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrors",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.EmptyExecutionErrors",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionContextV5AndV7",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Execution.ExecutionContext",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrors",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.ExecutionErrors",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.Errors.ArgumentsOfCorrectTypeError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrorExtensions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.Errors.ArgumentsOfCorrectTypeError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.Errors.FieldsOnCorrectTypeError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrorExtensions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.Errors.FieldsOnCorrectTypeError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IValidationResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.IValidationResult",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IValidationContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.ValidationContext",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Server.Transports.AspNetCore.Errors.HttpMethodValidationError",
+      "targetAssembly": "GraphQL.Server.Transports.AspNetCore"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrorExtensions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Server.Transports.AspNetCore.Errors.HttpMethodValidationError",
+      "targetAssembly": "GraphQL.Server.Transports.AspNetCore"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.DocumentV5Struct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQLParser.AST.GraphQLDocumentWithLocation",
+      "targetAssembly": "GraphQLParser"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.GraphQLNameStructV5AndV7",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQLParser.AST.GraphQLNameWithLocation",
+      "targetAssembly": "GraphQLParser"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.OperationStructV5AndV7",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQLParser.AST.GraphQLOperationDefinitionWithLocation",
+      "targetAssembly": "GraphQLParser"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ErrorLocationStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQLParser.Location",
+      "targetAssembly": "GraphQLParser"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.HttpContextServerCallContextStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.AspNetCore.Server.Internal.HttpContextServerCallContext",
+      "targetAssembly": "Grpc.AspNetCore.Server"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes.IChannel",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Channel",
+      "targetAssembly": "Grpc.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes.ClientSideStatusStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Internal.ClientSideStatus",
+      "targetAssembly": "Grpc.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes.ClientSideStatusWithMetadataStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Internal.ClientSideStatus",
+      "targetAssembly": "Grpc.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.IServerRpcNew",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Internal.ServerRpcNew",
+      "targetAssembly": "Grpc.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.CallOptionsStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.CallOptions",
+      "targetAssembly": "Grpc.Core.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes.CallOptionsStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.CallOptions",
+      "targetAssembly": "Grpc.Core.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes.ICallOptions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.CallOptions",
+      "targetAssembly": "Grpc.Core.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.IMetadata",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Metadata",
+      "targetAssembly": "Grpc.Core.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.MetadataEntryStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Metadata+Entry",
+      "targetAssembly": "Grpc.Core.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.IStatus",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Status",
+      "targetAssembly": "Grpc.Core.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.StatusStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Core.Status",
+      "targetAssembly": "Grpc.Core.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.IChannel",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Grpc.Net.Client.GrpcChannel",
+      "targetAssembly": "Grpc.Net.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.IBackgroundJobProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Hangfire.BackgroundJob",
+      "targetAssembly": "Hangfire.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.IJobFilterCollectionProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Hangfire.Common.JobFilterCollection",
+      "targetAssembly": "Hangfire.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.IPerformedContextProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Hangfire.Server.PerformedContext",
+      "targetAssembly": "Hangfire.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.IPerformingContextProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Hangfire.Server.PerformingContext",
+      "targetAssembly": "Hangfire.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.IError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "HotChocolate.Error",
+      "targetAssembly": "HotChocolate.Execution.Abstractions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.IOperationRequest",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "HotChocolate.Execution.IOperationRequest",
+      "targetAssembly": "HotChocolate.Execution.Abstractions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.IQueryResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "HotChocolate.Execution.OperationResult",
+      "targetAssembly": "HotChocolate.Execution.Abstractions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ErrorLocationStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "HotChocolate.Location",
+      "targetAssembly": "HotChocolate.Execution.Abstractions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.IPath",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "HotChocolate.NamePathSegment",
+      "targetAssembly": "HotChocolate.Execution.Abstractions"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.OperationStructV16",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "HotChocolate.Execution.Processing.Operation",
+      "targetAssembly": "HotChocolate.Types"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.IOperationContextV16",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "HotChocolate.Execution.Processing.OperationContext",
+      "targetAssembly": "HotChocolate.Types"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+ControllerActionDescriptorStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor",
+      "targetAssembly": "Microsoft.AspNetCore.Mvc.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+BeforeActionStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Mvc.Diagnostics.BeforeActionEventData",
+      "targetAssembly": "Microsoft.AspNetCore.Mvc.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+RoutePatternContentPartStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.Patterns.RoutePatternParameterPart",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+RoutePatternParameterPartStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Routing.Patterns.RoutePatternParameterPart",
+      "targetAssembly": "Microsoft.AspNetCore.Routing"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.EndpointFeatureProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.Http1Connection`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60]]",
+      "targetAssembly": "Microsoft.AspNetCore.Server.Kestrel.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.EndpointFeatureProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2.Http2Stream`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60]]",
+      "targetAssembly": "Microsoft.AspNetCore.Server.Kestrel.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.DuckTypes.IDiagnosticListener",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Data.SqlClient.Diagnostics.SqlDiagnosticListener",
+      "targetAssembly": "Microsoft.Data.SqlClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.DuckTypes.IDiagnosticListener",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.Data.SqlClient.SqlDiagnosticListener",
+      "targetAssembly": "Microsoft.Data.SqlClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.IBsonBinaryDataProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.BsonBinaryData",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IBsonDocumentProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.BsonDocument",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonElementStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.BsonElement",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.IBsonWriterProxyV3",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.IO.JsonWriter",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.JsonWriterSettingsProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.IO.JsonWriterSettings",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.IBsonSerializationContextProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.Serialization.BsonSerializationContext",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.IBsonSerializerLookupProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.Serialization.BsonSerializer",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.IBsonSerializerProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.Serialization.Serializers.BsonDocumentSerializer",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization.IBsonSerializerProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Bson.Serialization.Serializers.StringSerializer",
+      "targetAssembly": "MongoDB.Bson"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IConnection",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.Connections.IConnection",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithCommandStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithDatabaseNamespaceStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithCommandStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithDatabaseNamespaceStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithCommandStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithDatabaseNamespaceStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithCommandStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Driver.Core.Operations.AggregateOperation`1+AggregateResult[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]], MongoDB.Driver, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocolWithDatabaseNamespaceStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Driver.Core.Operations.AggregateOperation`1+AggregateResult[[MongoDB.Bson.BsonDocument, MongoDB.Bson, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]], MongoDB.Driver, Version=3.12.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321]]",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.DatabaseNamespaceStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "MongoDB.Driver.DatabaseNamespace",
+      "targetAssembly": "MongoDB.Driver"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.IBasicLoggingConfigurationProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Config.XmlLoggingConfiguration",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ILoggingConfigurationProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Config.XmlLoggingConfiguration",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.IJson5LayoutProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Layouts.JsonLayout",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.IJsonLayoutProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Layouts.JsonLayout",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.IJson5LayoutProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Layouts.SimpleLayout",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.IJsonLayoutProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Layouts.SimpleLayout",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43.IJsonLayout4Proxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Layouts.SimpleLayout",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ILogEventInfoProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.LogEventInfo",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.LogLevelProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.LogLevel",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.IScopeContextSetterProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.ScopeContext",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ITargetWithLayoutProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Targets.FileTarget",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ITargetWithContextV5BaseProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.Targets.TargetWithContext",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.BulkAliasResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.BulkResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatAliasesRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatAllocationRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatCountRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatFielddataRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatHealthRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatHelpRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatIndicesRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatMasterRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatNodeAttributesRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatNodesRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatPendingTasksRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatPluginsRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatRecoveryRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatRepositoriesRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatSegmentsRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatShardsRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatTasksRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatTemplatesRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CatResponse`1[[Nest.CatThreadPoolRecord, Nest, Version=7.0.0.0, Culture=neutral, PublicKeyToken=96c599bbe3e70f5d]]",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ChangePasswordResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CloseIndexResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CloseJobResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterAllocationExplainResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterGetSettingsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterHealthResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterPendingTasksResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterPutSettingsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterRerouteResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterStateResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ClusterStatsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CountResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CreateIndexResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.CreateResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteAliasResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteByQueryResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteIndexResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteIndexTemplateResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteJobResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteRoleMappingResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteRoleResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DeleteUserResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.DisableUserResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ExistsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.FlushJobResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ForecastJobResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetAliasResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetAnomalyRecordsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetBucketsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetCategoriesResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetInfluencersResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetJobStatsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetJobsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetModelSnapshotsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetOverallBucketsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetRoleMappingResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetRoleResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.GetUserResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.IndicesShardStoresResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.IndicesStatsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.OpenIndexResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.OpenJobResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.PutAliasResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.PutIndexTemplateResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.PutJobResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.PutRoleMappingResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.PutRoleResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.PutUserResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.SplitIndexResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.UpdateIndexSettingsResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.IElasticsearchResponse",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Nest.ValidateJobResponse",
+      "targetAssembly": "Nest"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.IResource",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "OpenTelemetry.Resources.Resource",
+      "targetAssembly": "OpenTelemetry"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IAmqpTcpEndpoint",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.AmqpTcpEndpoint",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.AmqpTimestamp",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.AmqpTimestamp",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBasicGetResult",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.BasicGetResult",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBasicProperties",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.BasicProperties",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IReadOnlyBasicProperties",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.BasicProperties",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ICachedStringProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.CachedString",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IConnection",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.Framing.Connection",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IReadOnlyBasicProperties",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.IReadOnlyBasicProperties",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IModelBase",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.Impl.Channel",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IReadOnlyBasicProperties",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.Impl.EmptyBasicProperty",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ISession",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.Impl.Session",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IReadOnlyBasicProperties",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "RabbitMQ.Client.ReadOnlyBasicProperties",
+      "targetAssembly": "RabbitMQ.Client"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Core.Logger",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.AggregateSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Core.Sinks.FilteringSink",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Core.Sinks.FilteringSink",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.SecondaryLoggerSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Core.Sinks.FilteringSink",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.AggregateSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Core.Sinks.SafeAggregateSink",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.SecondaryLoggerSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Core.Sinks.SafeAggregateSink",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.SecondaryLoggerSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Core.Sinks.SecondaryLoggerSink",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.ILogEvent",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Events.LogEvent",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LogEventProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Events.LogEvent",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.MessageTemplateProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Events.MessageTemplate",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting.ScalarValueDuck",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Events.ScalarValue",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.ILoggerConfiguration",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.LoggerConfiguration",
+      "targetAssembly": "Serilog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.AggregateSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Sinks.File.FileSink",
+      "targetAssembly": "Serilog.Sinks.File"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.ConditionalSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Sinks.File.FileSink",
+      "targetAssembly": "Serilog.Sinks.File"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Sinks.File.FileSink",
+      "targetAssembly": "Serilog.Sinks.File"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.SecondaryLoggerSinkProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Serilog.Sinks.File.FileSink",
+      "targetAssembly": "Serilog.Sinks.File"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.IRedisNativeClient",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "ServiceStack.Redis.RedisNativeClient",
+      "targetAssembly": "ServiceStack.Redis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IConnectionMultiplexer",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.ConnectionMultiplexer",
+      "targetAssembly": "StackExchange.Redis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.MultiplexerData",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.ConnectionMultiplexer",
+      "targetAssembly": "StackExchange.Redis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IMessageData",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.Message",
+      "targetAssembly": "StackExchange.Redis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IRedisBase",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.RedisBase",
+      "targetAssembly": "StackExchange.Redis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IRedisBase",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.RedisBatch",
+      "targetAssembly": "StackExchange.Redis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IRedisBase",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.RedisTransaction",
+      "targetAssembly": "StackExchange.Redis"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivity",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.Activity",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivity6",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.Activity",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivityFormat",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.Activity",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IW3CActivity",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.Activity",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivityContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivityContext",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.ActivityEvent",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivityEvent",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivityLink",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivityLink",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivityListener",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivityListener",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.ActivitySource",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivitySource",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivitySource",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivitySource",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivitySpanId",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivitySpanId",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivityTraceId",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.ActivityTraceId",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.IDynamoDbKeysObject",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[Amazon.DynamoDBv2.Model.AttributeValue, AWSSDK.DynamoDBv2, Version=4.0.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604]]",
+      "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting.KeyValuePairStringStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Collections.Generic.KeyValuePair`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[Serilog.Events.LogEventPropertyValue, Serilog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10]]",
+      "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITopicPartitionOffsets",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Collections.Generic.List`1[[Confluent.Kafka.TopicPartitionOffsetError, Confluent.Kafka, Version=2.15.1.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e]]",
+      "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes.NullableClientSideStatusStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Nullable`1[[Grpc.Core.Internal.ClientSideStatus, Grpc.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=d754f35622e28bad]]",
+      "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBody",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.ReadOnlyMemory`1[[System.Byte, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.IDuckTypeAwaiter`1[[Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDescribeClusterResult, Datadog.Trace, Version=3.55.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb]]",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Runtime.CompilerServices.TaskAwaiter`1[[Confluent.Kafka.Admin.DescribeClusterResult, Confluent.Kafka, Version=2.15.1.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e]]",
+      "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.IDuckTypeTask`1[[Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDescribeClusterResult, Datadog.Trace, Version=3.55.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb]]",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Threading.Tasks.Task`1[[Confluent.Kafka.Admin.DescribeClusterResult, Confluent.Kafka, Version=2.15.1.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e]]",
+      "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission.LevelDuck",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "log4net.Core.Level",
+      "targetAssembly": "log4net"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.ILoggingEvent",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "log4net.Core.LoggingEvent",
+      "targetAssembly": "log4net"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission.ILoggingEventDuck",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "log4net.Core.LoggingEvent",
+      "targetAssembly": "log4net"
     }
   ]
 }
