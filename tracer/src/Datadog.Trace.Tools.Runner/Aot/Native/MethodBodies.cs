@@ -8,9 +8,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection.Metadata;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.MD;
+using dnlib.DotNet.Pdb;
 using dnlib.DotNet.Writer;
 using dnlib.IO;
 
@@ -175,15 +179,64 @@ internal static unsafe class MethodBodies
 
     public static void Save(ModuleState state, string outputPath)
     {
+        var logger = new WriterErrors();
         var options = new ModuleWriterOptions(state.Module)
         {
-            WritePdb = state.Module.PdbState != null,
-            Logger = DummyLogger.NoThrowInstance,
+            // Only portable PDBs: a Windows PDB needs the Windows symbol writer, and ILC only reads portable ones.
+            WritePdb = state.Module.PdbState?.PdbFileKind is PdbFileKind.PortablePDB or PdbFileKind.EmbeddedPortablePDB,
+            Logger = logger,
         };
 
         // The rewritten bodies keep the max stack the native rewriter computed; generated bodies set their own.
         options.MetadataOptions.Flags |= MetadataFlags.KeepOldMaxStack;
         state.Module.Write(outputPath, options);
+        foreach (var error in logger.Errors.Take(10))
+        {
+            // E.g. a type of another module that wasn't imported: dnlib writes a nil token, and the assembly is invalid.
+            AotLog.Error($"{state.Module.Assembly?.Name}: {error}");
+        }
+
+        // dnlib 3.3 writes some portable PDBs that can't be read (log4net 3.0.0), and ILC fails on them: the module goes
+        // without symbols instead.
+        var pdbPath = Path.ChangeExtension(outputPath, ".pdb");
+        if (options.WritePdb && state.Module.PdbState?.PdbFileKind == PdbFileKind.PortablePDB && File.Exists(pdbPath) && !IsReadablePortablePdb(pdbPath))
+        {
+            File.Delete(pdbPath);
+            AotLog.Warn($"{state.Module.Assembly?.Name}: the PDB written for the instrumented assembly can't be read; it is left out");
+        }
+    }
+
+    private static bool IsReadablePortablePdb(string path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            using var provider = MetadataReaderProvider.FromPortablePdbStream(stream);
+            provider.GetMetadataReader();
+            return true;
+        }
+        catch (BadImageFormatException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// The errors dnlib reports while writing a module (it writes the module anyway).
+    /// </summary>
+    private sealed class WriterErrors : ILogger
+    {
+        public List<string> Errors { get; } = new();
+
+        public void Log(object sender, LoggerEvent loggerEvent, string format, params object[] args)
+        {
+            if (loggerEvent == LoggerEvent.Error)
+            {
+                Errors.Add(string.Format(format, args));
+            }
+        }
+
+        public bool IgnoresEvent(LoggerEvent loggerEvent) => loggerEvent != LoggerEvent.Error;
     }
 
     private sealed class OperandResolver : IInstructionOperandResolver
