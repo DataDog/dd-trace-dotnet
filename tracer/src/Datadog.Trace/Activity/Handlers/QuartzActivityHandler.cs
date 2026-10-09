@@ -18,16 +18,17 @@ namespace Datadog.Trace.Activity.Handlers
 {
     /// <summary>
     /// Handles Quartz.NET activities for job scheduling and execution.
-    /// This handler captures Quartz diagnostic events to trace job execution,
-    /// scheduling, and other Quartz-related operations.
-    /// This handler is responsible for Quartz v4.x.
-    /// Earlier Quartz library versions are handled by:
-    /// - tracer/src/Datadog.Trace/DiagnosticListeners/QuartzDiagnosticObserver.cs
-    /// - tracer/src/Datadog.Trace/Activity/Handlers/DefaultActivityHandler.cs
+    /// This handler processes Quartz v4 activities by source name and Quartz v3 activities by operation name.
+    /// For Quartz v3, <see cref="DiagnosticListeners.QuartzDiagnosticObserver"/> also sets the activity kind
+    /// and records exceptions from the diagnostic events.
     /// </summary>
-    internal sealed class QuartzActivityHandler : IActivityHandler
+    internal sealed class QuartzActivityHandler : IActivityHandlerWithOperationName
     {
+        private const string ExecuteOperationName = "Quartz.Job.Execute";
+        private const string VetoOperationName = "Quartz.Job.Veto";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzActivityHandler>();
+        private static readonly DefaultActivityHandler DefaultHandler = new();
 
         public bool ShouldListenTo(string sourceName, string? version)
         {
@@ -35,15 +36,30 @@ namespace Datadog.Trace.Activity.Handlers
             return sourceName.StartsWith("Quartz");
         }
 
+        public bool ShouldListenToOperationName(string operationName)
+            => operationName is ExecuteOperationName or VetoOperationName;
+
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out var activityMapping);
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
+            {
+                DefaultHandler.ActivityStarted(sourceName, activity);
+                return;
+            }
+
+            ActivityHandlerCommon.ActivityStarted(IntegrationId.Quartz, sourceName, activity, tags: new OpenTelemetryTags(), out _);
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
+            {
+                DefaultHandler.ActivityStopped(sourceName, activity);
+                return;
+            }
+
             // Find the span and update it before the common handler processes it
             ActivityKey key = activity switch
             {
@@ -56,11 +72,7 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
 
                 // Finish the span manually
-                // Finish the span manually
-                if (activity is IActivity5 activity5)
-                {
-                    EnhanceActivityMetadata(activity5);
-                }
+                EnhanceActivityMetadata(activity);
 
                 OtlpHelpers.UpdateSpanFromActivity(activity, span, Tracer.Instance.Settings.OtelSemanticsEnabled);
 
