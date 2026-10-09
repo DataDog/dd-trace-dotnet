@@ -51,7 +51,18 @@ namespace Datadog.Trace
             NeverChecked,
             ReadyToStart,
             Faulted,
-            Healthy
+            Healthy,
+
+            /// <summary>
+            /// The process started by this keep-alive is still running but the health check fails.
+            /// </summary>
+            Unhealthy
+        }
+
+        internal enum KeepAliveAction
+        {
+            None,
+            Start
         }
 
         /// <summary>
@@ -215,15 +226,37 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.ReadyToStart;
                                     }
                                 }
-                                else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
+                                else
                                 {
                                     // This means we have tried to start from this domain before
-                                    var wasHealthy = metadata.ProcessState == ProcessState.Healthy;
+                                    var previousState = metadata.ProcessState;
                                     LogIfOwnProcessExited(metadata);
-                                    metadata.ProcessState = metadata.ProcessIsHealthy() ? ProcessState.Healthy : ProcessState.ReadyToStart;
-                                    if (wasHealthy && metadata.ProcessState == ProcessState.ReadyToStart)
+                                    var isHealthy = metadata.ProcessIsHealthy();
+                                    var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning());
+                                    if (isHealthy)
                                     {
-                                        Log.Information("{Process} is no longer available. Starting a new one.", path);
+                                        metadata.ProcessState = ProcessState.Healthy;
+                                        if (previousState == ProcessState.Unhealthy)
+                                        {
+                                            Log.Information("{Process} with pid {ChildPid} is now healthy.", path, GetProcessId(metadata.Process));
+                                        }
+                                    }
+                                    else if (action == KeepAliveAction.Start)
+                                    {
+                                        metadata.ProcessState = ProcessState.ReadyToStart;
+                                        if (previousState == ProcessState.Healthy)
+                                        {
+                                            Log.Information("{Process} is no longer available. Starting a new one.", path);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // The process we started is still running: never start a second copy
+                                        metadata.ProcessState = ProcessState.Unhealthy;
+                                        if (previousState != ProcessState.Unhealthy)
+                                        {
+                                            Log.Warning("{Process} with pid {ChildPid} started by this process is running but failed its health check.", path, GetProcessId(metadata.Process));
+                                        }
                                     }
                                 }
 
@@ -286,6 +319,7 @@ namespace Datadog.Trace
                                     if (timeout <= 0 && metadata.ProcessState == ProcessState.ReadyToStart)
                                     {
                                         Log.Warning<string, string, int>("{Process} with pid {ChildPid} is running but did not open its named pipe within {Timeout} ms.", path, childPid, startupTimeout);
+                                        metadata.ProcessState = ProcessState.Unhealthy;
                                     }
                                 }
                             }
@@ -320,6 +354,20 @@ namespace Datadog.Trace
                         metadata.IsBeingManaged = false;
                     }
                 });
+        }
+
+        /// <summary>
+        /// Decides what the keep-alive does after a health check. A new process is started only when
+        /// the agent is unhealthy and the process this keep-alive started is no longer running.
+        /// </summary>
+        internal static KeepAliveAction GetKeepAliveAction(bool isHealthy, bool ownProcessIsRunning)
+        {
+            if (isHealthy || ownProcessIsRunning)
+            {
+                return KeepAliveAction.None;
+            }
+
+            return KeepAliveAction.Start;
         }
 
         private static void LogIfOwnProcessExited(ProcessMetadata metadata)
@@ -412,6 +460,19 @@ namespace Datadog.Trace
             public string DirectoryPath { get; private set; }
 
             public string ProcessArguments { get; set; }
+
+            public bool OwnProcessIsRunning()
+            {
+                try
+                {
+                    return Process != null && !Process.HasExited;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Error when checking whether {Process} is running.", ProcessPath);
+                    return false;
+                }
+            }
 
             public bool ProcessIsHealthy()
             {
