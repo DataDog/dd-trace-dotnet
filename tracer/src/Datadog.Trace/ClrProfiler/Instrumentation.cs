@@ -333,6 +333,12 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         // Code Origin for spans (DebuggerManager leaves out the debugger products that need the native tracer).
                         InitializeDebugger(tracer.Settings);
+
+                        // The methods to trace were instrumented when publishing (InitializeTracer gives them to the native tracer).
+                        if (!StringUtil.IsNullOrEmpty(tracer.Settings.TraceMethods))
+                        {
+                            Log.Information("DD_TRACE_METHODS is applied when publishing NativeAOT applications (DatadogAotTraceMethods, or DD_TRACE_METHODS of the build): its runtime value doesn't change the instrumentation.");
+                        }
                     }
                 }
                 catch (Exception ex)

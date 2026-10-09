@@ -47,6 +47,12 @@ internal sealed class AotInstrumentOptions
     /// </summary>
     public IReadOnlyList<string> DuckTypeMaps { get; init; } = Array.Empty<string>();
 
+    /// <summary>
+    /// Gets the methods to trace (the <c>DD_TRACE_METHODS</c> syntax), which a NativeAOT application can only instrument at
+    /// build time.
+    /// </summary>
+    public string? TraceMethods { get; init; }
+
     /// <summary>Gets a value indicating whether the CallTarget registrations are generated (off only to compare the native rewrite alone).</summary>
     public bool GenerateCallTargetRegistry { get; init; } = true;
 

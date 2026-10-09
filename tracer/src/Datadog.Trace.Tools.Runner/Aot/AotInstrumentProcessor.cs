@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Datadog.InstrumentedAssemblyVerification;
 #if NET6_0_OR_GREATER
@@ -64,6 +65,12 @@ internal static class AotInstrumentProcessor
             var corlib = options.ReferenceDirectories.Select(d => Path.Combine(d, "System.Private.CoreLib.dll")).First(File.Exists);
             host.LoadModule(corlib, writable: false);
             host.LoadModule(options.DatadogTracePath, writable: false);
+            if (!StringUtil.IsNullOrEmpty(options.TraceMethods))
+            {
+                host.InitializeTraceMethods(AssemblyName.GetAssemblyName(options.DatadogTracePath).FullName, options.TraceMethods);
+                AotLog.Info($"Trace methods: {options.TraceMethods}");
+            }
+
             foreach (var assembly in options.Assemblies)
             {
                 host.LoadModule(Path.GetFullPath(assembly), writable: true);
