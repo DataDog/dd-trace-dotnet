@@ -534,11 +534,18 @@ namespace Datadog.Trace.DuckTyping.Tests
                 }
             }
 
+            var created = 0;
             for (var i = 0; i < 10_000; i++)
             {
-                Lookup((i & 1) == 0 ? firstTarget : secondTarget).CanCreate().Should().BeTrue();
+                created += Lookup((i & 1) == 0 ? firstTarget : secondTarget).CanCreate() ? 1 : 0;
             }
 
+            created.Should().Be(10_000);
+
+            // A background GC still running (after the allocations of the previous tests) retires the allocation context of
+            // this thread when it suspends the runtime: its unused part would count as allocated.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
             var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
             for (var i = 0; i < 10_000; i++)
             {
