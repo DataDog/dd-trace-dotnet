@@ -3205,6 +3205,230 @@
       "proxyAssembly": "Datadog.Trace",
       "targetType": "System.ValueTuple`2[[GraphQL.Validation.IValidationResult, GraphQL, Version=5.2.0.0, Culture=neutral, PublicKeyToken=null],[GraphQL.Validation.Variables, GraphQL, Version=5.2.0.0, Culture=neutral, PublicKeyToken=null]]",
       "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IHeader",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Confluent.Kafka.Header",
+      "targetAssembly": "Confluent.Kafka"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IClientConfiguration",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Configuration.Client.ClientConfiguration",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IPoolConfiguration",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.Configuration.Client.PoolConfiguration",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ConnectionStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.IO.MultiplexingConnection",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.OperationStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.IO.Operations.Config",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.OperationStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.IO.Operations.Delete",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.OperationStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.IO.Operations.Get`1[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IIOService",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.IO.Services.PooledIOService",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IIOService",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.IO.Services.SharedPooledIOService",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.IConnectionPool",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.IO.SharedConnectionPool`1[[Couchbase.IO.MultiplexingConnection, Couchbase.NetClient, Version=2.7.27.0, Culture=neutral, PublicKeyToken=05e9c6b5a9ec94c2]]",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ResultStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.OperationResult",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ResultStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.OperationResult`1[[Couchbase.Configuration.Server.Serialization.BucketConfig, Couchbase.NetClient, Version=2.7.27.0, Culture=neutral, PublicKeyToken=05e9c6b5a9ec94c2]]",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ResultStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Couchbase.OperationResult`1[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "targetAssembly": "Couchbase.NetClient"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ErrorLocationStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.ErrorLocation",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionContext",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Execution.ExecutionContext",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.ExecutionError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrorExtensions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.ExecutionError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IDocument",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Language.AST.Document",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IOperation",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Language.AST.Operation",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionError",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.ValidationError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.IExecutionErrorExtensions",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "GraphQL.Validation.ValidationError",
+      "targetAssembly": "GraphQL"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.ICreatingContextProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Hangfire.Client.CreatingContext",
+      "targetAssembly": "Hangfire.Core"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.ILogFactoryProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.LogFactory",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43.ILogFactoryPre43Proxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.LogFactory",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.MappedDiagnosticsLogicalContextSetterProxy",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "NLog.MappedDiagnosticsLogicalContext",
+      "targetAssembly": "NLog"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.IApiBaggage",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "OpenTelemetry.Baggage",
+      "targetAssembly": "OpenTelemetry.Api"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IConnectionMultiplexer",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.ConnectionMultiplexer",
+      "targetAssembly": "StackExchange.Redis.StrongName"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.MultiplexerData",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.ConnectionMultiplexer",
+      "targetAssembly": "StackExchange.Redis.StrongName"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IMessageData",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.Message",
+      "targetAssembly": "StackExchange.Redis.StrongName"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IRedisBase",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "StackExchange.Redis.RedisBase",
+      "targetAssembly": "StackExchange.Redis.StrongName"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.Activity.DuckTypes.IActivity5",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Diagnostics.Activity",
+      "targetAssembly": "System.Diagnostics.DiagnosticSource"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITopicPartitionOffsets",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.Collections.Generic.List`1[[Confluent.Kafka.TopicPartitionOffset, Confluent.Kafka, Version=1.9.2.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e]]",
+      "targetAssembly": "System.Private.CoreLib"
     }
   ]
 }
