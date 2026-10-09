@@ -12,6 +12,8 @@
     DatadogAotDuckTypeMaps     ducktype-aot map files recorded at runtime (DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH), ';'-separated,
                                in addition to the package's (DatadogAotBuiltInDuckTypeMaps=false to leave those out)
     DatadogAotCategories       instrumentation categories (default: tracing,appsec,rasp; add iast to opt in)
+    DatadogAotTraceMethods     methods to trace, with the DD_TRACE_METHODS syntax: instrumented at build time, as a NativeAOT
+                               application can't instrument them at runtime (default: DD_TRACE_METHODS of the build)
     DatadogAotArguments        extra arguments for `dd-trace aot instrument`
     DatadogAotFailOnError      true to fail the publish when the instrumentation fails (default: warning, publish uninstrumented)
     DatadogAotRunnerPath       dd-trace runner (default: the package's)
@@ -47,6 +49,10 @@
       <_DatadogAotRuntimeVersion>$(TargetFrameworkVersion.TrimStart('v')).0</_DatadogAotRuntimeVersion>
       <_DatadogAotCategories>$(DatadogAotCategories)</_DatadogAotCategories>
       <_DatadogAotCategories Condition="'$(_DatadogAotCategories)' == ''">tracing,appsec,rasp</_DatadogAotCategories>
+      <_DatadogAotTraceMethods>$(DatadogAotTraceMethods)</_DatadogAotTraceMethods>
+      <_DatadogAotTraceMethods Condition="'$(_DatadogAotTraceMethods)' == ''">$(DD_TRACE_METHODS)</_DatadogAotTraceMethods>
+      <!-- Escaped: its ';' separate methods, not lines of the response file. -->
+      <_DatadogAotTraceMethodsArgument Condition="'$(_DatadogAotTraceMethods)' != ''">--trace-methods=$([MSBuild]::Escape('$(_DatadogAotTraceMethods)'))</_DatadogAotTraceMethodsArgument>
       <_DatadogAotDotnet>$(DOTNET_HOST_PATH)</_DatadogAotDotnet>
       <_DatadogAotDotnet Condition="'$(_DatadogAotDotnet)' == ''">dotnet</_DatadogAotDotnet>
     </PropertyGroup>
@@ -93,7 +99,7 @@
     <!-- Written only when different: the arguments are an input of the instrumentation. -->
     <WriteLinesToFile Condition="'$(_DatadogAotReady)' == 'true'"
                       File="$(_DatadogAotOutput)arguments.rsp"
-                      Lines="--native-tracer=$(DatadogAotNativeTracerPath);--datadog-trace=$(_DatadogAotDatadogTracePath);@(_DatadogAotAssembly->'--assembly=%(FullPath)');@(_DatadogAotReferenceDirectories->'--reference-dir=%(Identity)');--runtime-version=$(_DatadogAotRuntimeVersion);--categories=$(_DatadogAotCategories);@(_DatadogAotDuckTypeMap->'--ducktype-map=%(FullPath)');--report=$(_DatadogAotOutput)report.json;--output=$(_DatadogAotOutput);$(DatadogAotArguments)"
+                      Lines="--native-tracer=$(DatadogAotNativeTracerPath);--datadog-trace=$(_DatadogAotDatadogTracePath);@(_DatadogAotAssembly->'--assembly=%(FullPath)');@(_DatadogAotReferenceDirectories->'--reference-dir=%(Identity)');--runtime-version=$(_DatadogAotRuntimeVersion);--categories=$(_DatadogAotCategories);@(_DatadogAotDuckTypeMap->'--ducktype-map=%(FullPath)');$(_DatadogAotTraceMethodsArgument);--report=$(_DatadogAotOutput)report.json;--output=$(_DatadogAotOutput);$(DatadogAotArguments)"
                       Overwrite="true"
                       WriteOnlyWhenDifferent="true" />
   </Target>

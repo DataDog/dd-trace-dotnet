@@ -54,7 +54,7 @@ public class AotInstrumentNativeHostIntegrationTests
         {
             // 1. The native rewrite alone: IntegrationMapper and dynamic duck typing run, and record the duck typing mappings the
             //    application creates at runtime, among them the ones looked up by the runtime type of a value (C6).
-            var (recordingApp, _) = Instrument(nativeTracer!, appDirectory!, workDirectory, "recording", "--no-calltarget-registry");
+            var (recordingApp, _) = Instrument(nativeTracer!, appDirectory!, workDirectory, "recording", verify: true, "--no-calltarget-registry");
             var map = Path.Combine(workDirectory, "ducktype-map.json");
             foreach (var mode in Modes)
             {
@@ -65,7 +65,7 @@ public class AotInstrumentNativeHostIntegrationTests
             // 2. With the registrations and the recorded mappings: every shape is bound (the generic ones through their closed
             //    instantiations) with the proxies of a DuckType AOT registry, which enables the AOT mode of duck typing: nothing
             //    falls back to IntegrationMapper or creates a proxy dynamically.
-            var (app, report) = Instrument(nativeTracer!, appDirectory!, workDirectory, "aot", "--ducktype-map", map);
+            var (app, report) = Instrument(nativeTracer!, appDirectory!, workDirectory, "aot", verify: true, "--ducktype-map", map);
             var callTarget = report["Assemblies"]![0]!["CallTarget"]!;
             callTarget.Value<int>("Failures").Should().Be(0, callTarget.ToString());
             callTarget.Value<int>("Bound").Should().BeGreaterThan(0, callTarget.ToString());
@@ -114,6 +114,32 @@ public class AotInstrumentNativeHostIntegrationTests
         }
     }
 
+    [SkippableFact]
+    public void TraceMethodsAreInstrumentedAtBuildTime()
+    {
+        var nativeTracer = Environment.GetEnvironmentVariable("DD_AOT_NATIVE_TRACER");
+        var appDirectory = Environment.GetEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_DIR");
+        Skip.If(string.IsNullOrEmpty(nativeTracer) || string.IsNullOrEmpty(appDirectory), "DD_AOT_NATIVE_TRACER and DD_AOT_CALLTARGET_NATIVE_TEST_DIR are required");
+
+        var workDirectory = Path.Combine(Path.GetTempPath(), "dd-aot-native-host", Guid.NewGuid().ToString("N"));
+        try
+        {
+            // DD_TRACE_METHODS at build time: the trace annotations integration instruments the method too. Not verified:
+            // ILSpy doesn't decompile the ldtoken of the method that integration passes (PrepareMethod and ILVerify accept it).
+            var (_, baseline) = Instrument(nativeTracer!, appDirectory!, workDirectory, "baseline", verify: false);
+            var (_, report) = Instrument(nativeTracer!, appDirectory!, workDirectory, "tracemethods", verify: false, "--trace-methods", "CallTargetNativeTest.Program[Main]");
+            var rewritten = report["Assemblies"]![0]!.Value<int>("RewrittenMethods");
+            rewritten.Should().Be(baseline["Assemblies"]![0]!.Value<int>("RewrittenMethods") + 1, report.ToString());
+        }
+        finally
+        {
+            if (Directory.Exists(workDirectory))
+            {
+                Directory.Delete(workDirectory, recursive: true);
+            }
+        }
+    }
+
     private static void CopyDirectory(string source, string destination)
     {
         foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
@@ -131,7 +157,7 @@ public class AotInstrumentNativeHostIntegrationTests
     /// <summary>
     /// Instruments CallTargetNativeTest into its own application folder.
     /// </summary>
-    private (string Application, JObject Report) Instrument(string nativeTracer, string appDirectory, string workDirectory, string name, params string[] extraArguments)
+    private (string Application, JObject Report) Instrument(string nativeTracer, string appDirectory, string workDirectory, string name, bool verify, params string[] extraArguments)
     {
         var instrumented = Path.Combine(workDirectory, name, "instrumented");
         var app = Path.Combine(workDirectory, name, "app");
@@ -159,12 +185,16 @@ public class AotInstrumentNativeHostIntegrationTests
             "CallTargetNativeTest.Program::InjectCallTargetDefinitions",
             "--neutralize",
             "CallTargetNativeTest.Program::InjectCallTargetDefinitions",
-            "--verify",
             "--report",
             reportPath,
             "--output",
             instrumented,
         };
+        if (verify)
+        {
+            arguments.Add("--verify");
+        }
+
         arguments.AddRange(extraArguments);
         var (exitCode, output) = RunProcess("dotnet", appDirectory, arguments, []);
         exitCode.Should().Be(0, output);

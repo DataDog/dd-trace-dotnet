@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Datadog.Trace.ClrProfiler;
 
 namespace Datadog.Trace.Tools.Runner.Aot.Native;
 
@@ -111,6 +112,29 @@ internal sealed unsafe class NativeTracerHost : IDisposable
     {
         var init = (delegate* unmanaged<uint, uint, int>)NativeLibrary.GetExport(_library, "InitEmbeddedCallTargetDefinitions");
         return init(categories, targetFramework);
+    }
+
+    /// <summary>
+    /// Instruments the methods of a <c>DD_TRACE_METHODS</c> configuration with the trace annotations integration, like
+    /// Instrumentation.InitializeTracer does at runtime: after Datadog.Trace is loaded (its load registers the integration).
+    /// </summary>
+    public void InitializeTraceMethods(string datadogTraceAssemblyName, string configuration)
+    {
+        var init = (delegate* unmanaged<char*, char*, char*, char*, void>)NativeLibrary.GetExport(_library, "InitializeTraceMethods");
+        var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
+        fixed (char* id = payload.DefinitionsId)
+        {
+            fixed (char* assembly = datadogTraceAssemblyName)
+            {
+                fixed (char* type = payload.TypeName)
+                {
+                    fixed (char* methods = configuration)
+                    {
+                        init(id, assembly, type, methods);
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
