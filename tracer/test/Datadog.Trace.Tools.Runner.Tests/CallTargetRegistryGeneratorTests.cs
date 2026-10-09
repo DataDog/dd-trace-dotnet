@@ -151,6 +151,33 @@ public class CallTargetRegistryGeneratorTests
         ((Delegate)arguments[0]!).Method.DeclaringType!.Name.Should().StartWith(RegistrationPrefix);
     }
 
+    /// <summary>
+    /// A generic return type (<c>T M&lt;T&gt;(T)</c>) that is a Task&lt;X&gt; at runtime: the open registration can't create the
+    /// continuation without MakeGenericType, the closed instantiation found in the module registers its factory (H-22).
+    /// </summary>
+    [Fact]
+    public async Task GenericReturnTypeContinuationComesFromItsInstantiation()
+    {
+        var probe = new ProbeModule(nameof(GenericReturnTypeContinuationComesFromItsInstantiation));
+        var target = probe.AddType("Target");
+        var genericMethod = probe.AddEchoMethod(target, "EchoGeneric", typeof(AsyncIntegration), null);
+        probe.AddCallerMethod(target, "CallEchoGeneric", genericMethod);
+
+        var (assembly, result) = probe.Generate(discoverInstantiations: true, genericMethod);
+        result.Instantiations.Should().Be(1);
+        result.InstantiationDeferred.Should().Be(0);
+        result.ContinuationFactories.Should().Be(1);
+
+        var targetType = assembly.GetType("Probe.Target")!;
+        var task = (Task<int>)targetType.GetMethod("CallEchoGeneric")!.Invoke(Activator.CreateInstance(targetType), new object[] { 41 })!;
+        (await task).Should().Be(42);
+
+        var holder = typeof(CallTargetAotContinuation<,,>).MakeGenericType(typeof(AsyncIntegration), targetType, typeof(Task<int>));
+        var arguments = new object?[] { null };
+        ((bool)holder.GetMethod("TryGet", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, arguments)!).Should().BeTrue();
+        ((Delegate)arguments[0]!).Method.DeclaringType!.Name.Should().StartWith(RegistrationPrefix);
+    }
+
     [Fact]
     public void InvalidIntegrationFailsLikeIntegrationMapper()
     {
@@ -365,7 +392,28 @@ public class CallTargetRegistryGeneratorTests
             return method;
         }
 
+        /// <summary>
+        /// <c>Task&lt;int&gt; Method(int value)</c> returning <c>this.Generic&lt;Task&lt;int&gt;&gt;(Task.FromResult(value))</c>: a closed
+        /// instantiation of the generic method for the discovery.
+        /// </summary>
+        public MethodDef AddCallerMethod(TypeDef type, string name, MethodDef genericMethod)
+        {
+            var taskType = _importer.ImportAsTypeSig(typeof(Task<int>));
+            var method = new MethodDefUser(name, MethodSig.CreateInstance(taskType, Module.CorLibTypes.Int32), MethodImplAttributes.IL | MethodImplAttributes.Managed, MethodAttributes.Public | MethodAttributes.HideBySig);
+            type.Methods.Add(method);
+            var body = method.Body = new CilBody();
+            body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+            body.Instructions.Add(OpCodes.Ldarg_1.ToInstruction());
+            body.Instructions.Add(OpCodes.Call.ToInstruction(_importer.Import(typeof(Task).GetMethod(nameof(Task.FromResult))!.MakeGenericMethod(typeof(int)))));
+            body.Instructions.Add(OpCodes.Call.ToInstruction(new MethodSpecUser(genericMethod, new GenericInstMethodSig(taskType))));
+            body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            return method;
+        }
+
         public (Assembly Assembly, CallTargetRegistryResult Result) Generate(params MethodDef[] rewritten)
+            => Generate(discoverInstantiations: false, rewritten);
+
+        public (Assembly Assembly, CallTargetRegistryResult Result) Generate(bool discoverInstantiations, params MethodDef[] rewritten)
         {
             var datadogTrace = ModuleDefMD.Load(typeof(Tracer).Assembly.Location);
             var modules = new ModuleDef[]
@@ -377,7 +425,8 @@ public class CallTargetRegistryGeneratorTests
                 ModuleDefMD.Load(Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "System.Runtime.dll")),
             };
             var resolver = new LoadedModulesTypeResolver(modules);
-            var result = CallTargetRegistryGenerator.Generate(Module, rewritten, datadogTrace, resolver.Resolve);
+            var instantiations = discoverInstantiations ? GenericInstantiationDiscovery.Discover([Module], rewritten.ToList(), resolver.Resolve) : null;
+            var result = CallTargetRegistryGenerator.Generate(Module, rewritten, datadogTrace, resolver.Resolve, instantiations: instantiations);
             using var stream = new MemoryStream();
             Module.Write(stream);
             return (Assembly.Load(stream.ToArray()), result);
