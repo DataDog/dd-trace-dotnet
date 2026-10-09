@@ -191,6 +191,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const int DuckKindPropertyOrField = 2;
 
         /// <summary>
+        /// The directory of the generator's runtime framework assemblies.
+        /// </summary>
+        private static readonly string? RuntimeFrameworkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
+
+        /// <summary>
         /// Stores runtime assembly paths used by metadata-to-runtime type resolution during emission.
         /// Thread-static like the other per-emission state, so concurrent Emit calls don't clear each other's map.
         /// </summary>
@@ -5367,8 +5372,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     // Continue with the safe fallback below.
                 }
 
-                _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, assembly: null);
-                return null;
+                var frameworkAssembly = TryLoadRuntimeFrameworkAssembly(normalizedAssemblyPath);
+                _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, frameworkAssembly);
+                return frameworkAssembly;
             }
 
             foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
@@ -5461,7 +5467,53 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true when the assembly location or MVID-backed identity matches the expected path; otherwise, false.</returns>
         private static bool AssemblyLocationOrIdentityMatchesPath(Assembly assembly, string assemblyPath)
         {
-            return AssemblyLocationMatchesPath(assembly, assemblyPath) || AssemblyIdentityMatchesPath(assembly, assemblyPath);
+            return AssemblyLocationMatchesPath(assembly, assemblyPath) || AssemblyIdentityMatchesPath(assembly, assemblyPath) || RuntimeFrameworkAssemblyStandsFor(assembly, assemblyPath);
+        }
+
+        /// <summary>
+        /// Determines whether an assembly is the generator's runtime framework assembly of the same file name as a path. The
+        /// runtime can't load other versions of its framework assemblies (the application's runtime pack, the NativeAOT
+        /// System.Private.CoreLib, a newer framework package): its own stands for them.
+        /// </summary>
+        /// <param name="assembly">The assembly value.</param>
+        /// <param name="assemblyPath">The expected assembly path.</param>
+        /// <returns>true when the assembly is the runtime's framework assembly for that file name; otherwise, false.</returns>
+        private static bool RuntimeFrameworkAssemblyStandsFor(Assembly assembly, string assemblyPath)
+        {
+            if (assembly.IsDynamic || StringUtil.IsNullOrWhiteSpace(assemblyPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var location = assembly.Location;
+                return !StringUtil.IsNullOrWhiteSpace(location) &&
+                       string.Equals(Path.GetDirectoryName(location), RuntimeFrameworkDirectory, GetRuntimeAssemblyPathComparison()) &&
+                       string.Equals(Path.GetFileName(location), Path.GetFileName(assemblyPath), StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Loads the generator's runtime framework assembly of the same file name as a path, if there is one.
+        /// </summary>
+        /// <param name="assemblyPath">The requested assembly path.</param>
+        /// <returns>The runtime framework assembly; otherwise, null.</returns>
+        private static Assembly? TryLoadRuntimeFrameworkAssembly(string assemblyPath)
+        {
+            try
+            {
+                var frameworkPath = RuntimeFrameworkDirectory is null ? null : Path.Combine(RuntimeFrameworkDirectory, Path.GetFileName(assemblyPath));
+                return frameworkPath is not null && File.Exists(frameworkPath) ? Assembly.Load(AssemblyName.GetAssemblyName(frameworkPath)) : null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
