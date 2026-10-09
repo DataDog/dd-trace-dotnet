@@ -3,10 +3,8 @@
 
 #include "ProfileExporter.h"
 
-#include "Exception.h"
-#include "Exporter.h"
-#include "ExporterBuilder.h"
-#include "FfiHelper.h"
+#include "AgentHttpExporter.h"
+#include "EncodedPprof.h"
 #include "FileHelper.h"
 #include "IAllocationsRecorder.h"
 #include "IApplicationStore.h"
@@ -20,7 +18,7 @@
 #include "Log.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
-#include "Profile.h"
+#include "PprofBuilder.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
@@ -124,45 +122,30 @@ ProfileExporter::~ProfileExporter()
     _perAppInfo.clear();
 }
 
-std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfiguration* configuration, libdatadog::Tags tags)
+std::unique_ptr<AgentHttpExporter> ProfileExporter::CreateExporter(IConfiguration* configuration, tags tags)
 {
-    try
+    auto url = BuildAgentEndpoint(configuration);
+
+    std::string host;
+    int port = 0;
+    std::string path;
+    if (!ParseHttpUrl(url, host, port, path))
     {
-        auto exporterBuilder = libdatadog::ExporterBuilder();
-
-        auto& outputDirectory = configuration->GetProfilesOutputDirectory();
-        if (!outputDirectory.empty())
-        {
-            exporterBuilder.SetOutputDirectory(outputDirectory);
-        }
-
-        exporterBuilder
-            .SetLibraryName(LibraryName)
-            .SetLibraryVersion(LibraryVersion)
-            .SetLanguageFamily(LanguageFamily)
-            .SetTags(std::move(tags));
-
-        if (configuration->IsAgentless())
-        {
-            exporterBuilder.WithoutAgent(configuration->GetSite(), configuration->GetApiKey());
-        }
-        else
-        {
-            exporterBuilder.WithAgent(BuildAgentEndpoint(configuration));
-        }
-
-        return exporterBuilder.Build();
-    }
-    catch (libdatadog::Exception const& e)
-    {
-        Log::Error("Failed to create the exporter: ", e.what());
+        Log::Error("Failed to create the exporter: unsupported agent endpoint '", url, "'. Only plain 'http://host:port' endpoints are supported.");
         return nullptr;
     }
+
+    auto const& outputDirectory = configuration->GetProfilesOutputDirectory();
+
+    return std::make_unique<AgentHttpExporter>(
+        std::move(host), port, std::move(path),
+        LibraryName, LibraryVersion, LanguageFamily,
+        std::move(tags), outputDirectory, RequestTimeOutMs);
 }
 
-std::unique_ptr<libdatadog::Profile> ProfileExporter::CreateProfile(std::string serviceName)
+std::unique_ptr<PprofBuilder> ProfileExporter::CreateProfile(std::string serviceName)
 {
-    return libdatadog::Profile::Create(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
+    return PprofBuilder::Create(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
 }
 
 void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
@@ -194,27 +177,27 @@ void ProfileExporter::RegisterGcSettingsProvider(IGcSettingsProvider* provider)
 }
 
 
-libdatadog::Tags ProfileExporter::CreateFixedTags(
+tags ProfileExporter::CreateFixedTags(
     IConfiguration* configuration,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers)
 {
-    auto tags = libdatadog::Tags();
+    tags result;
 
     for (auto const& [name, value] : CommonTags)
     {
-        tags.Add(name, value);
+        result.emplace_back(name, value);
     }
 
-    tags.Add("process_id", ProcessId);
-    tags.Add("host", configuration->GetHostname());
+    result.emplace_back("process_id", ProcessId);
+    result.emplace_back("host", configuration->GetHostname());
 
     for (auto const& [name, value] : configuration->GetUserTags())
     {
-        tags.Add(name, value);
+        result.emplace_back(name, value);
     }
 
-    return tags;
+    return result;
 }
 
 std::string ProfileExporter::GetEnabledProfilers(IEnabledProfilers* enabledProfilers)
@@ -331,41 +314,76 @@ std::string ProfileExporter::GetEnabledProfilers(IEnabledProfilers* enabledProfi
 
 std::string ProfileExporter::BuildAgentEndpoint(IConfiguration const* configuration)
 {
-    // handle "with agent" case
+    // This phase only supports plain TCP HTTP to the agent (no Unix domain
+    // socket, no Windows named pipe, no agentless HTTPS).
     auto url = configuration->GetAgentUrl(); // copy expected here
 
     if (url.empty())
     {
-        // Agent mode
-
-#if _WINDOWS
-        const std::string& namePipeName = configuration->GetNamedPipeName();
-        if (!namePipeName.empty())
-        {
-            url = R"(windows:\\.\pipe\)" + namePipeName;
-        }
-#else
-        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
-        const std::string socketPath = "/var/run/datadog/apm.socket";
-        if (fs::exists(socketPath, ec))
-        {
-            url = "unix://" + socketPath;
-        }
-
-#endif
-
-        if (url.empty())
-        {
-            // Use default HTTP endpoint
-            std::stringstream oss;
-            oss << "http://" << configuration->GetAgentHost() << ":" << configuration->GetAgentPort();
-            url = oss.str();
-        }
+        // Use default HTTP endpoint
+        std::stringstream oss;
+        oss << "http://" << configuration->GetAgentHost() << ":" << configuration->GetAgentPort();
+        url = oss.str();
     }
 
     Log::Info("Using agent endpoint ", url);
 
     return url;
+}
+
+// Parse "http://host:port[/optional-path-ignored]" into host and port. The
+// profiling intake path is fixed, so any path in the URL is ignored.
+bool ProfileExporter::ParseHttpUrl(std::string const& url, std::string& host, int& port, std::string& path)
+{
+    static const std::string HttpScheme = "http://";
+    static const std::string ProfilingPath = "/profiling/v1/input";
+
+    path = ProfilingPath;
+
+    if (url.rfind(HttpScheme, 0) != 0)
+    {
+        return false;
+    }
+
+    auto authority = url.substr(HttpScheme.size());
+
+    // strip any path component (we always POST to the fixed profiling path)
+    auto slashPos = authority.find('/');
+    if (slashPos != std::string::npos)
+    {
+        authority = authority.substr(0, slashPos);
+    }
+
+    if (authority.empty())
+    {
+        return false;
+    }
+
+    auto colonPos = authority.rfind(':');
+    if (colonPos == std::string::npos)
+    {
+        host = authority;
+        port = 80;
+        return !host.empty();
+    }
+
+    host = authority.substr(0, colonPos);
+    auto portStr = authority.substr(colonPos + 1);
+    if (host.empty() || portStr.empty())
+    {
+        return false;
+    }
+
+    try
+    {
+        port = std::stoi(portStr);
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return port > 0;
 }
 
 ProfileExporter::ProfileInfoScope ProfileExporter::GetOrCreateInfo(std::string_view runtimeId)
@@ -377,7 +395,7 @@ ProfileExporter::ProfileInfoScope ProfileExporter::GetOrCreateInfo(std::string_v
     return profileInfo;
 }
 
-void ProfileExporter::Add(libdatadog::Profile* profile, std::shared_ptr<Sample> const& sample)
+void ProfileExporter::Add(PprofBuilder* profile, std::shared_ptr<Sample> const& sample)
 {
     auto success = profile->Add(sample);
     if (!success)
@@ -492,7 +510,7 @@ std::vector<UpscalingPoissonInfo> ProfileExporter::GetUpscalingPoissonInfos()
     return samplingInfos;
 }
 
-void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
+void ProfileExporter::AddUpscalingRules(PprofBuilder* profile, std::vector<UpscalingInfo> const& upscalingInfos)
 {
     for (auto const& upscalingInfo : upscalingInfos)
     {
@@ -519,12 +537,10 @@ void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vecto
     }
 }
 
-void ProfileExporter::AddUpscalingPoissonRules(libdatadog::Profile* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos)
+void ProfileExporter::AddUpscalingPoissonRules(PprofBuilder* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos)
 {
     for (auto const& upscalingInfo : upscalingInfos)
     {
-        ddog_prof_Slice_Usize offsets_slice = { upscalingInfo.Offsets.data(), upscalingInfo.Offsets.size() };
-
         auto succeeded =
             profile->AddUpscalingRulePoisson(
                 upscalingInfo.Offsets,
@@ -558,7 +574,7 @@ std::list<std::shared_ptr<Sample>> ProfileExporter::GetProcessSamples()
     return samples;
 }
 
-void ProfileExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
+void ProfileExporter::AddProcessSamples(PprofBuilder* profile, std::list<std::shared_ptr<Sample>> const& samples)
 {
     for (auto const& sample : samples)
     {
@@ -622,7 +638,7 @@ bool ProfileExporter::Export(bool lastCall)
 
     for (auto& runtimeId : keys)
     {
-        std::unique_ptr<libdatadog::Profile> profile;
+        std::unique_ptr<PprofBuilder> profile;
         int32_t samplesCount;
         int32_t exportsCount;
 
@@ -668,21 +684,21 @@ bool ProfileExporter::Export(bool lastCall)
         AddUpscalingPoissonRules(profile.get(), upscalingPoissonInfos);
 
         std::string runtimeIdString = std::string(runtimeId);
-        auto additionalTags = libdatadog::Tags{{"env", applicationInfo.Environment},
-                                               {"version", applicationInfo.Version},
-                                               {"service", applicationInfo.ServiceName},
-                                               {"runtime-id", runtimeIdString},
-                                               {"profile_seq", std::to_string(exportsCount - 1)},
-                                               // Optim we can cache the number of cores in a string
-                                               {"number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount())}};
+        tags additionalTags{{"env", applicationInfo.Environment},
+                            {"version", applicationInfo.Version},
+                            {"service", applicationInfo.ServiceName},
+                            {"runtime-id", runtimeIdString},
+                            {"profile_seq", std::to_string(exportsCount - 1)},
+                            // Optim we can cache the number of cores in a string
+                            {"number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount())}};
 
         if (!applicationInfo.RepositoryUrl.empty())
         {
-            additionalTags.Add("git.repository_url", applicationInfo.RepositoryUrl);
+            additionalTags.emplace_back("git.repository_url", applicationInfo.RepositoryUrl);
         }
         if (!applicationInfo.CommitSha.empty())
         {
-            additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
+            additionalTags.emplace_back("git.commit.sha", applicationInfo.CommitSha);
         }
 
         auto filesToSend = std::vector<std::pair<std::string, std::vector<uint8_t>>>{};
@@ -699,21 +715,22 @@ bool ProfileExporter::Export(bool lastCall)
             Log::Debug("Attaching file: ", ClassHistogramFilename, " (", classHistogramContent.size(), " bytes)");
             filesToSend.emplace_back(ClassHistogramFilename,
                 std::vector<uint8_t>(classHistogramContent.begin(), classHistogramContent.end()));
-            additionalTags.Add("profile_has_class_histogram", "true");
+            additionalTags.emplace_back("profile_has_class_histogram", "true");
         }
 
         for (auto& [filename, content] : referenceTreeFiles)
         {
             Log::Debug("Attaching file: ", filename, " (", content.size(), " bytes)");
             filesToSend.emplace_back(filename, std::move(content));
-            additionalTags.Add("profile_has_reference_tree", "true");
+            additionalTags.emplace_back("profile_has_reference_tree", "true");
         }
 
         std::string metadataJson = GetMetadataJson();
         std::string infoJson = GetInfoJson(runtimeIdString);
         std::string processTags = applicationInfo.ProcessTags;
 
-        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson), std::move(processTags));
+        auto encodedProfile = profile->Serialize();
+        auto error_code = _exporter->Send(encodedProfile, applicationInfo.ServiceName, std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson), std::move(processTags));
         if (!error_code)
         {
             Log::Error(error_code.message());
