@@ -46,6 +46,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 }).ToArray();
         }
 
+        public static (string Type, string Unit)[] SampleTypesWithUnits(this Perftools.Profiles.Profile profile)
+        {
+            return profile.SampleType.Select(
+                sampleType =>
+                {
+                    return (
+                        profile.StringTable[(int)sampleType.Type],
+                        profile.StringTable[(int)sampleType.Unit]);
+                }).ToArray();
+        }
+
         public static StackTrace StackTrace(this Perftools.Profiles.Sample sample, Profile profile)
         {
             return new StackTrace(

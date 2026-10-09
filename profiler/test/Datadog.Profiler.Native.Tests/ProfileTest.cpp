@@ -39,6 +39,26 @@ TEST(ProfileTest, AddSample)
     ASSERT_TRUE(success) << success.message();
 }
 
+TEST(ProfileTest, AddSampleWithCustomMemoryType)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    auto p = Profile::Create(
+        configuration.get(),
+        {{"memory-breakdown", "bytes"}},
+        "RealTime",
+        "Nanoseconds",
+        "my app");
+    ASSERT_NE(p, nullptr);
+
+    Sample::ValuesCount = 1;
+    auto s = std::make_shared<Sample>(1ns, "1", 1);
+    s->AddFrame({"", "", "", 1});
+    s->AddValue(4096, 0);
+
+    auto success = p->Add(s);
+    ASSERT_TRUE(success) << success.message();
+}
+
 TEST(ProfileTest, AddUpscalingRule)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
@@ -100,6 +120,18 @@ TEST(ProfileTest, CreateProfileReturnsNullOnEmptyValueTypes)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     auto p = Profile::Create(configuration.get(), {}, "RealTime", "Nanoseconds", "my app");
+    ASSERT_EQ(p, nullptr);
+}
+
+TEST(ProfileTest, CreateProfileReturnsNullOnCustomPeriod)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    auto p = Profile::Create(
+        configuration.get(),
+        {{"memory-breakdown", "bytes"}},
+        "memory-breakdown",
+        "bytes",
+        "my app");
     ASSERT_EQ(p, nullptr);
 }
 
