@@ -3429,6 +3429,20 @@
       "proxyAssembly": "Datadog.Trace",
       "targetType": "System.Collections.Generic.List`1[[Confluent.Kafka.TopicPartitionOffset, Confluent.Kafka, Version=1.9.2.0, Culture=neutral, PublicKeyToken=12c514ca49093d1e]]",
       "targetAssembly": "System.Private.CoreLib"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+UnhandledExceptionStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "Microsoft.AspNetCore.Hosting.HostingApplicationDiagnostics+UnhandledExceptionData",
+      "targetAssembly": "Microsoft.AspNetCore.Hosting"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+BadHttpRequestExceptionStruct",
+      "proxyAssembly": "Datadog.Trace",
+      "targetType": "System.InvalidOperationException",
+      "targetAssembly": "System.Private.CoreLib"
     }
   ]
 }
