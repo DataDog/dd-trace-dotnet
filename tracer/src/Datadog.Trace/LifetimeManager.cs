@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 #if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 #endif
 using Datadog.Trace.Ci;
@@ -256,8 +257,9 @@ namespace Datadog.Trace
         {
             try
             {
-                // We only need this workaround on .NET 10+ runtimes.
-                if (FrameworkDescription.Instance.RuntimeVersion.Major < 10)
+                // We only need this workaround on .NET 10+ runtimes, and in NativeAOT applications: their runtime doesn't
+                // install the default termination handlers either (SIGTERM ends the process without AppDomain.ProcessExit).
+                if (FrameworkDescription.Instance.RuntimeVersion.Major < 10 && RuntimeFeature.IsDynamicCodeCompiled)
                 {
                     // On .NET <= 9, the runtime provided default termination handlers that result in graceful exit,
                     // so we do not install our own to avoid changing long-standing behavior.
