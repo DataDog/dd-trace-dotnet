@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -141,6 +142,11 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
+            if (details.ProcessTags?.TagsList is { Count: > 0 } processTags)
+            {
+                WriteStringArrayKvJson(writer, "datadog.process_tags", processTags);
+            }
+
             writer.WriteEndArray();
             writer.WriteEndObject();
         }
@@ -255,6 +261,16 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "datadog.svc_src", key.ServiceSource);
             }
 
+            if (bucket.Otlp.PeerTags.Count > 0)
+            {
+                WriteStringArrayKvJson(writer, "datadog.peer_tags", bucket.Otlp.PeerTags);
+            }
+
+            foreach (var tag in bucket.Otlp.AdditionalMetricTags)
+            {
+                WriteStringKvJson(writer, tag.Key, tag.Value);
+            }
+
             writer.WriteEndArray();
 
             // uint64 fields are encoded as strings in proto3 JSON
@@ -343,6 +359,31 @@ namespace Datadog.Trace.Agent
             writer.WriteEndObject();
         }
 
+        private static void WriteStringArrayKvJson(JsonTextWriter writer, string key, List<string> values)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("key");
+            writer.WriteValue(key);
+            writer.WritePropertyName("value");
+            writer.WriteStartObject();
+            writer.WritePropertyName("arrayValue");
+            writer.WriteStartObject();
+            writer.WritePropertyName("values");
+            writer.WriteStartArray();
+            foreach (var value in values)
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("stringValue");
+                writer.WriteValue(value);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        }
+
         private static byte[] SerializeResourceMetrics(StatsBuffer buffer, long bucketDurationNs)
         {
             using var stream = new MemoryStream(512);
@@ -386,6 +427,11 @@ namespace Datadog.Trace.Agent
             WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
 
             WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
+
+            if (details.ProcessTags?.TagsList is { Count: > 0 } processTags)
+            {
+                WriteStringArrayAttribute(writer, "datadog.process_tags", processTags);
+            }
 
             writer.Flush();
             return stream.ToArray();
@@ -507,6 +553,16 @@ namespace Datadog.Trace.Agent
             if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
             {
                 WriteAttribute(writer, "datadog.svc_src", key.ServiceSource, FieldNumbers.HistogramDataPointAttributes);
+            }
+
+            if (bucket.Otlp.PeerTags.Count > 0)
+            {
+                WriteStringArrayAttribute(writer, "datadog.peer_tags", bucket.Otlp.PeerTags, FieldNumbers.HistogramDataPointAttributes);
+            }
+
+            foreach (var tag in bucket.Otlp.AdditionalMetricTags)
+            {
+                WriteAttribute(writer, tag.Key, tag.Value, FieldNumbers.HistogramDataPointAttributes);
             }
 
             WriteTag(writer, FieldNumbers.HistogramDataPointStartTimeUnixNano, WireTypeFixed64);
@@ -759,6 +815,41 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
+        private static void WriteStringArrayAttribute(BinaryWriter writer, string key, List<string> values, int fieldNumber = FieldNumbers.Attributes)
+        {
+            var arraySize = 0;
+            foreach (var value in values)
+            {
+                var valueSize = GetUtf8StringFieldSize(AnyValueFieldNumbers.StringValue, EncodingHelpers.Utf8NoBom.GetByteCount(value));
+                arraySize += GetLengthDelimitedFieldSize(ArrayValueFieldNumbers.Values, valueSize);
+            }
+
+            WriteStringArrayAttributeHeader(writer, key, arraySize, fieldNumber);
+            foreach (var value in values)
+            {
+                var valueSize = GetUtf8StringFieldSize(AnyValueFieldNumbers.StringValue, EncodingHelpers.Utf8NoBom.GetByteCount(value));
+                WriteTag(writer, ArrayValueFieldNumbers.Values, WireTypeLengthDelimited);
+                WriteVarInt(writer, valueSize);
+                WriteStringField(writer, AnyValueFieldNumbers.StringValue, value);
+            }
+        }
+
+        private static void WriteStringArrayAttributeHeader(BinaryWriter writer, string key, int arraySize, int fieldNumber)
+        {
+            var anyValueSize = GetLengthDelimitedFieldSize(AnyValueFieldNumbers.ArrayValue, arraySize);
+            var keySize = EncodingHelpers.Utf8NoBom.GetByteCount(key);
+            var keyValueSize = GetUtf8StringFieldSize(FieldNumbers.Key, keySize)
+                             + GetLengthDelimitedFieldSize(FieldNumbers.Value, anyValueSize);
+
+            WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
+            WriteVarInt(writer, keyValueSize);
+            WriteStringField(writer, FieldNumbers.Key, key);
+            WriteTag(writer, FieldNumbers.Value, WireTypeLengthDelimited);
+            WriteVarInt(writer, anyValueSize);
+            WriteTag(writer, AnyValueFieldNumbers.ArrayValue, WireTypeLengthDelimited);
+            WriteVarInt(writer, arraySize);
+        }
+
         private static void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
         {
             if (!StringUtil.IsNullOrEmpty(value))
@@ -768,6 +859,23 @@ namespace Datadog.Trace.Agent
                 WriteVarInt(writer, bytes.Length);
                 writer.Write(bytes);
             }
+        }
+
+        private static int GetUtf8StringFieldSize(int fieldNumber, int valueLength)
+            => valueLength == 0 ? 0 : GetLengthDelimitedFieldSize(fieldNumber, valueLength);
+
+        private static int GetLengthDelimitedFieldSize(int fieldNumber, int valueLength)
+            => GetVarIntSize((fieldNumber << 3) | WireTypeLengthDelimited) + GetVarIntSize(valueLength) + valueLength;
+
+        private static int GetVarIntSize(int value)
+        {
+            var size = 1;
+            while ((value >>= 7) != 0)
+            {
+                size++;
+            }
+
+            return size;
         }
 
         private static void WriteTag(BinaryWriter writer, int fieldNumber, int wireType)
@@ -835,6 +943,12 @@ namespace Datadog.Trace.Agent
             public const int StringValue = 1;
             public const int BoolValue = 2;
             public const int IntValue = 3;
+            public const int ArrayValue = 5;
+        }
+
+        private static class ArrayValueFieldNumbers
+        {
+            public const int Values = 1;
         }
     }
 }
