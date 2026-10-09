@@ -56,16 +56,42 @@ internal sealed unsafe class NativeTracerHost : IDisposable
 
     public EmulatedRuntime Runtime => _runtime;
 
-    public static NativeTracerHost Create(string nativeTracerPath, Version runtimeVersion)
+    /// <summary>
+    /// Loads and initializes the native tracer.
+    /// </summary>
+    /// <param name="nativeTracerPath">The native tracer library.</param>
+    /// <param name="runtimeVersion">The version of the runtime the application targets.</param>
+    /// <param name="logDirectory">The directory of the native tracer's logs (default: the tracer's).</param>
+    /// <param name="debug">Whether the native tracer logs debug messages.</param>
+    public static NativeTracerHost Create(string nativeTracerPath, Version runtimeVersion, string? logDirectory = null, bool debug = false)
     {
         if (Interlocked.Exchange(ref _created, 1) != 0)
         {
             throw new InvalidOperationException("The native tracer can only be hosted once per process.");
         }
 
+        // The build environment doesn't change the instrumentation (DD_TRACE_ENABLED, DD_DISABLED_INTEGRATIONS... are the
+        // application's runtime settings): the native tracer, which reads its settings from the environment, only gets
+        // the ones of the offline instrumentation.
+        foreach (var name in Environment.GetEnvironmentVariables().Keys.OfType<string>().Where(n => n.StartsWith("DD_", StringComparison.OrdinalIgnoreCase)).ToList())
+        {
+            SetNativeEnvironmentVariable(name, null);
+        }
+
         foreach (var setting in NativeSettings)
         {
             SetNativeEnvironmentVariable(setting.Key, setting.Value);
+        }
+
+        if (logDirectory is not null)
+        {
+            Directory.CreateDirectory(logDirectory);
+            SetNativeEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
+        }
+
+        if (debug)
+        {
+            SetNativeEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         var library = NativeLibrary.Load(nativeTracerPath);
@@ -87,22 +113,26 @@ internal sealed unsafe class NativeTracerHost : IDisposable
     }
 
     /// <summary>
-    /// Sets an environment variable the native tracer reads (getenv): on Unix, .NET keeps its own copy of the environment.
+    /// Sets (or removes, with a null value) an environment variable the native tracer reads (getenv): on Unix, .NET keeps
+    /// its own copy of the environment.
     /// </summary>
-    private static void SetNativeEnvironmentVariable(string name, string value)
+    private static void SetNativeEnvironmentVariable(string name, string? value)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Environment.SetEnvironmentVariable(name, value);
         }
-        else if (SetEnv(name, value, 1) != 0)
+        else if ((value is null ? UnsetEnv(name) : SetEnv(name, value, 1)) != 0)
         {
-            AotLog.Warn($"setenv {name} failed: {Marshal.GetLastPInvokeError()}");
+            AotLog.Warn($"{(value is null ? "unsetenv" : "setenv")} {name} failed: {Marshal.GetLastPInvokeError()}");
         }
     }
 
     [DllImport("libc", EntryPoint = "setenv", SetLastError = true)]
     private static extern int SetEnv([MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string value, int overwrite);
+
+    [DllImport("libc", EntryPoint = "unsetenv", SetLastError = true)]
+    private static extern int UnsetEnv([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 
     /// <summary>
     /// Enables the CallTarget definitions embedded in the native tracer for the given categories and target framework,
