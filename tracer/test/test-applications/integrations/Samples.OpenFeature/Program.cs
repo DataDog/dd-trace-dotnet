@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,12 @@ class Program
 
     private async static Task Main(string[] args)
     {
+        if (args.Contains("evp-startup-gate"))
+        {
+            await EvaluationEventsSample.RunStartupGateAsync();
+            return;
+        }
+
         // When run with the "enrich" argument, the sample wraps flag evaluation in an APM root span
         // (plus a child span across an await) so the FFE span-enrichment integration test can assert
         // the ffe_* tags land on the root span and child spans across async continuations propagate
@@ -19,13 +26,43 @@ class Program
         int configUpdates = 0;
         Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
+        var initialization = Stopwatch.StartNew();
         if (!await Evaluator.Init())
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
+            if (args.Contains("evp-uninstrumented"))
+            {
+                await EvaluationEventsSample.RunWithoutTracerAsync();
+            }
+
             return;
         }
 
         Console.WriteLine($"<INSTRUMENTED>");
+
+        if (args.Contains("evp-perf"))
+        {
+            await EvaluationPerformanceSample.RunAsync(initialization.Elapsed.TotalMilliseconds);
+            return;
+        }
+
+        if (args.Contains("evp-sync"))
+        {
+            await EvaluationEventsSample.RunSynchronousAsync();
+            return;
+        }
+
+        if (args.Contains("evp-before-error") || args.Contains("evp-after-error"))
+        {
+            await EvaluationEventsSample.RunHookFailureAsync(args.Contains("evp-after-error"));
+            return;
+        }
+
+        if (args.Contains("evp"))
+        {
+            await EvaluationEventsSample.RunAsync();
+            return;
+        }
 
         // Init() has awaited InitializeAsync, so a known flag resolves now. If the CallTarget stops
         // substituting the real task, this prints NOT_READY.

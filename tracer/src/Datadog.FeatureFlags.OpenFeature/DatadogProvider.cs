@@ -41,8 +41,10 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     // Span-enrichment hook is constructed ONLY when the gate is on; null otherwise so
     // nothing is allocated/registered when the feature is disabled.
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
+    // Startup gate: enabling events later requires a new provider (or application restart).
+    private readonly FlagEvalEVPHook? _evpHook;
 
-    // Both hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
+    // Hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
     private readonly IImmutableList<Hook> _providerHooks;
 
     private int _status = StatusInitializing;
@@ -57,6 +59,11 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
         if (FeatureFlagsSdk.IsSpanEnrichmentEnabled())
         {
             _spanEnrichmentHook = new SpanEnrichmentHook();
+        }
+
+        if (FeatureFlagsSdk.IsEvaluationEventsEnabled())
+        {
+            _evpHook = new FlagEvalEVPHook();
         }
 
         _providerHooks = CreateProviderHooks();
@@ -226,7 +233,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate, _evpHook);
         return Task.FromResult(res);
     }
 
@@ -239,7 +246,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate, _evpHook);
         return Task.FromResult(res);
     }
 
@@ -252,7 +259,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate, _evpHook);
         return Task.FromResult(res);
     }
 
@@ -265,7 +272,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate, _evpHook);
         return Task.FromResult(res);
     }
 
@@ -278,7 +285,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate);
+        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate, _evpHook);
         return Task.FromResult(res);
     }
 
@@ -301,17 +308,17 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 #if NET6_0_OR_GREATER
         if (_spanEnrichmentHook is not null)
         {
-            return ImmutableList.Create<Hook>(_metricsHook, _spanEnrichmentHook);
+            return _evpHook is null ? ImmutableList.Create<Hook>(_metricsHook, _spanEnrichmentHook) : ImmutableList.Create<Hook>(_metricsHook, _spanEnrichmentHook, _evpHook);
         }
 
-        return ImmutableList.Create<Hook>(_metricsHook);
+        return _evpHook is null ? ImmutableList.Create<Hook>(_metricsHook) : ImmutableList.Create<Hook>(_metricsHook, _evpHook);
 #else
         if (_spanEnrichmentHook is not null)
         {
-            return ImmutableList.Create<Hook>(_spanEnrichmentHook);
+            return _evpHook is null ? ImmutableList.Create<Hook>(_spanEnrichmentHook) : ImmutableList.Create<Hook>(_spanEnrichmentHook, _evpHook);
         }
 
-        return ImmutableList<Hook>.Empty;
+        return _evpHook is null ? ImmutableList<Hook>.Empty : ImmutableList.Create<Hook>(_evpHook);
 #endif
     }
 }

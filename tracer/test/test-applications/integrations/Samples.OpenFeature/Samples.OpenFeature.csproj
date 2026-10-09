@@ -8,6 +8,10 @@
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.3.0</ApiVersion>
   </PropertyGroup>
 
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="OpenFeature" Version="$(ApiVersion)" />
   </ItemGroup>

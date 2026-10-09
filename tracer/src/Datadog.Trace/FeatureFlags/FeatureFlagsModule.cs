@@ -14,6 +14,7 @@ using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -53,6 +54,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -66,6 +68,9 @@ namespace Datadog.Trace.FeatureFlags
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
+        private FlagEvaluationAgentSender? _evaluationSender;
+        private FlagEvaluationWriter? _evaluationWriter;
+        private IDisposable? _evaluationSettingsSubscription;
         private FeatureFlagsEvpTransport? _evpTransport;
         private string? _deliveryUnavailableReason;
         private bool _activated;
@@ -104,6 +109,10 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal bool HasConfiguration => Volatile.Read(ref _evaluator) is not null;
 
+        internal FlagEvaluationWriter? EvaluationWriter => Volatile.Read(ref _evaluationWriter);
+
+        internal bool EvaluationEventsEnabled => _settings.EvaluationEventsEnabled;
+
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
@@ -126,18 +135,23 @@ namespace Datadog.Trace.FeatureFlags
             return module;
         }
 
-        public void Dispose()
+        public void Dispose() => _ = DisposeAsync();
+
+        internal Task DisposeAsync()
         {
             ISubscription? subscription;
             IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
+            FlagEvaluationWriter? writer;
+            FlagEvaluationAgentSender? sender;
+            IDisposable? settingsSubscription;
             FeatureFlagsEvpTransport? evpTransport;
 
             lock (_stateLock)
             {
                 if (_disposed)
                 {
-                    return;
+                    return _disposeCompletion.Task;
                 }
 
                 _disposed = true;
@@ -145,25 +159,27 @@ namespace Datadog.Trace.FeatureFlags
                 subscription = _rcmSubscription;
                 agentlessSource = _agentlessSource;
                 exposureApi = _exposureApi;
+                writer = _evaluationWriter;
+                sender = _evaluationSender;
+                settingsSubscription = _evaluationSettingsSubscription;
                 evpTransport = _evpTransport;
 
                 _rcmSubscription = null;
                 _agentlessSource = null;
                 Volatile.Write(ref _exposureApi, null);
+                Volatile.Write(ref _evaluationWriter, null);
+                _evaluationSender = null;
+                _evaluationSettingsSubscription = null;
                 _evpTransport = null;
             }
 
-            // Released the lock first: disposal is not state mutation, and holding it here would
-            // block an activation or an exposure for the duration.
-            if (subscription is not null)
-            {
-                _rcmSubscriptionManager.Unsubscribe(subscription);
-            }
-
-            agentlessSource?.Dispose();
-            exposureApi?.Dispose();
-            evpTransport?.Dispose();
+            // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
+            var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
+            _ = FinishDisposalAsync(close, sender, settingsSubscription, subscription, agentlessSource, exposureApi, evpTransport);
+            return _disposeCompletion.Task;
         }
+
+        internal Task FlushAsync() => EvaluationWriter?.FlushAsync() ?? Task.CompletedTask;
 
         /// <summary>
         /// Signals that application code initialized the provider. Idempotent.
@@ -193,7 +209,8 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _activated = true;
+                StartEvaluationWriter();
+                Volatile.Write(ref _activated, true);
 
                 switch (_settings.Source)
                 {
@@ -327,7 +344,15 @@ namespace Datadog.Trace.FeatureFlags
             if (evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(flagKey, defaultValue, EvaluationReason.Error, null, "PROVIDER_NOT_READY");
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "PROVIDER_NOT_READY",
+                    metadata: new Dictionary<string, string>
+                    {
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
+                    });
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
@@ -351,6 +376,107 @@ namespace Datadog.Trace.FeatureFlags
             NotifyNewConfiguration("ApplyConfiguration");
 
             return true;
+        }
+
+        private static Dictionary<string, string> CreateEvaluationContext(MutableSettings settings)
+        {
+            return new Dictionary<string, string>
+            {
+                ["service"] = settings.DefaultServiceName,
+                ["env"] = settings.Environment ?? "unknown",
+                ["version"] = settings.ServiceVersion ?? "unknown",
+            };
+        }
+
+        private void StartEvaluationWriter()
+        {
+            if (!_settings.EvaluationEventsEnabled)
+            {
+                return;
+            }
+
+            FlagEvaluationAgentSender? sender = null;
+            FlagEvaluationWriter? writer = null;
+            try
+            {
+                sender = new FlagEvaluationAgentSender(_settingsManager.InitialExporterSettings);
+                var context = CreateEvaluationContext(_settingsManager.InitialMutableSettings);
+                var currentSender = sender;
+                var firstSettingsUpdate = true;
+                _evaluationSettingsSubscription = _settingsManager.SubscribeToChanges(changes =>
+                {
+                    // Subscription replays only the latest change. Restore both current
+                    // settings on the first callback, including values unchanged in that change.
+                    if (firstSettingsUpdate || changes.UpdatedExporter is not null)
+                    {
+                        currentSender.UpdateExporterSettings(changes.UpdatedExporter ?? changes.PreviousExporter);
+                    }
+
+                    if (firstSettingsUpdate)
+                    {
+                        Volatile.Write(ref context, CreateEvaluationContext(changes.UpdatedMutable ?? changes.PreviousMutable));
+                    }
+
+                    firstSettingsUpdate = false;
+                });
+                // Capture tags after the synchronous settings replay. Like the other SDKs,
+                // keep them for this writer's lifetime so later updates cannot relabel events.
+                // Agent address changes still flow to the sender independently.
+                writer = new FlagEvaluationWriter(sender.SendCompressedAsync, Volatile.Read(ref context));
+                _evaluationSender = sender;
+                Volatile.Write(ref _evaluationWriter, writer);
+            }
+            catch (Exception)
+            {
+                // A telemetry setup failure must not prevent fetching flags or evaluating them.
+                _ = writer?.CloseAsync(TimeSpan.Zero);
+                sender?.Dispose();
+                Log.Debug("FeatureFlags flagevaluation writer could not be started.");
+            }
+        }
+
+        private async Task FinishDisposalAsync(
+            Task close,
+            FlagEvaluationAgentSender? sender,
+            IDisposable? settingsSubscription,
+            ISubscription? subscription,
+            IFeatureFlagsDeliverySource? agentlessSource,
+            ExposureApi? exposureApi,
+            FeatureFlagsEvpTransport? evpTransport)
+        {
+            try
+            {
+                settingsSubscription?.Dispose();
+                if (subscription is not null)
+                {
+                    _rcmSubscriptionManager.Unsubscribe(subscription);
+                }
+
+                agentlessSource?.Dispose();
+                exposureApi?.Dispose();
+            }
+            catch (Exception)
+            {
+                Log.Debug("FeatureFlags cleanup failed; continuing bounded flagevaluation shutdown.");
+            }
+            finally
+            {
+                try
+                {
+                    await close.ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    Log.Debug("FeatureFlags flagevaluation shutdown failed.");
+                }
+                finally
+                {
+                    // Dispose stops new sends but preserves any request still live after the deadline.
+                    sender?.Dispose();
+                    evpTransport?.Dispose();
+                    _disposeCompletion.TrySetResult(true);
+                }
+            }
         }
 
         /// <summary>
@@ -468,7 +594,9 @@ namespace Datadog.Trace.FeatureFlags
                     return list[0].Value;
                 }
 
-                var res = new ServerConfiguration();
+                // Recompute from the active files, not the previous merged result. Seeding
+                // from the first file keeps the configuration's default consent false.
+                var res = new ServerConfiguration { ObserveFullEvaluationData = list[0].Value.ObserveFullEvaluationData };
                 foreach (var conf in list)
                 {
                     res.Merge(conf.Value);

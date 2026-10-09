@@ -17,6 +17,14 @@ registered on the OpenFeature API or client. Callers supply the complete context
 The normal asynchronous client continues to own its hook lifecycle, avoiding
 duplicate metrics and span enrichment.
 
+EVP captures the targeting key and consented, bounded attributes in provider
+resolution, before customer After hooks run. OpenFeature 2.3.0 passes the original
+context to Finally even when Before hooks changed the evaluated context. A
+provider-hook-local weak association keyed by the result metadata carries the
+capture to Finally, which removes it even when delivery is rejected. If OpenFeature
+replaces the result after a hook failure, the weak association can be collected.
+No full evaluation context is retained or added to public flag metadata.
+
 ## Focused tests
 
 Use the SDK pinned in `global.json`:

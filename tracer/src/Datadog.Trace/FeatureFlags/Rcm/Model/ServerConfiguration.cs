@@ -5,13 +5,15 @@
 
 #nullable enable
 
-using System;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class ServerConfiguration
 {
+    [JsonConverter(typeof(StrictBooleanTrueJsonConverter))]
+    public bool ObserveFullEvaluationData { get; set; }
+
     public string? CreatedAt { get; set; }
 
     public string? Format { get; set; }
@@ -23,6 +25,9 @@ internal sealed class ServerConfiguration
 
     internal void Merge(ServerConfiguration other)
     {
+        // One nonconsenting file protects every flag retained in the merged configuration.
+        ObserveFullEvaluationData &= other.ObserveFullEvaluationData;
+
         if (other.CreatedAt is not null)
         {
             CreatedAt = other.CreatedAt;

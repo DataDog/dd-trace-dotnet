@@ -330,6 +330,9 @@ Directory.Build.props                     @DataDog/apm-dotnet
 
 ## Project-specific exceptions
 
+### Benchmarks.Trace
+/tracer/test/benchmarks/Benchmarks.Trace/Tracing/FlagEvaluationBenchmarks.cs @DataDog/feature-flagging-and-experimentation-sdk
+
 ### Datadog.Trace.Tests
 /tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/Azure/     @DataDog/apm-serverless
 /tracer/test/Datadog.Trace.Tests/Configuration/Debugger/                    @DataDog/apm-sdk-capabilities @DataDog/debugger-dotnet
