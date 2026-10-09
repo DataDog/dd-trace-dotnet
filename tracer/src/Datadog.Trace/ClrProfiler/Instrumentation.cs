@@ -58,6 +58,12 @@ namespace Datadog.Trace.ClrProfiler
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
 
         /// <summary>
+        /// Gets a value indicating whether the application was instrumented at build time (NativeAOT): there is no native
+        /// tracer, so the products that instrument methods at runtime aren't available.
+        /// </summary>
+        internal static bool IsBuildTimeInstrumented => _aot;
+
+        /// <summary>
         /// Gets a value indicating the version of the native Datadog profiler. This method
         /// is rewritten by the profiler.
         /// </summary>
@@ -319,6 +325,19 @@ namespace Datadog.Trace.ClrProfiler
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Error enabling the NativeAOT instrumentation categories");
+                }
+
+                try
+                {
+                    if (Tracer.Instance is { } tracer)
+                    {
+                        // Code Origin for spans (DebuggerManager leaves out the debugger products that need the native tracer).
+                        InitializeDebugger(tracer.Settings);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error initializing the debugger products in NativeAOT");
                 }
 
                 Log.Debug("NativeAOT initialization finished.");

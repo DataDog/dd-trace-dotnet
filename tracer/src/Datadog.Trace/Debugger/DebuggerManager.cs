@@ -56,6 +56,7 @@ namespace Datadog.Trace.Debugger
         private TracerSettings.SettingsManager? _subscribedSettingsManager;
         private IDisposable? _tracerSettingsSubscription;
         private SymDbRemoteConfig? _symDbRemoteConfig;
+        private int _buildTimeInstrumentationWarningLogged;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
@@ -230,7 +231,16 @@ namespace Datadog.Trace.Debugger
             OneTimeSetup(tracerSettings);
             EnsureTracerSettingsSubscription(tracerSettings);
 
-            SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(tracerSettings, newDebuggerSettings);
+            // Without the native tracer (applications instrumented at build time, NativeAOT), only Code Origin for spans works.
+            var buildTimeInstrumented = ClrProfiler.Instrumentation.IsBuildTimeInstrumented;
+            if (buildTimeInstrumented)
+            {
+                WarnUnavailableProducts(newDebuggerSettings);
+            }
+            else
+            {
+                SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(tracerSettings, newDebuggerSettings);
+            }
 
             lock (_syncLock)
             {
@@ -241,10 +251,27 @@ namespace Datadog.Trace.Debugger
 
                 DebuggerSettings = newDebuggerSettings;
                 SetCodeOriginState(newDebuggerSettings);
-                SetExceptionReplayState(newDebuggerSettings);
+                if (!buildTimeInstrumented)
+                {
+                    SetExceptionReplayState(newDebuggerSettings);
+                }
             }
 
-            return DebouncedUpdateDynamicInstrumentationAsync(tracerSettings, newDebuggerSettings);
+            return buildTimeInstrumented ? Task.CompletedTask : DebouncedUpdateDynamicInstrumentationAsync(tracerSettings, newDebuggerSettings);
+        }
+
+        // Dynamic Instrumentation and Exception Replay instrument methods at runtime (the native tracer's ReJIT), and the
+        // Symbol Database reads the assemblies' files: an application instrumented at build time has neither.
+        private void WarnUnavailableProducts(DebuggerSettings debuggerSettings)
+        {
+            var requested = debuggerSettings.DynamicInstrumentationEnabled
+                         || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true
+                         || ExceptionReplaySettings.Enabled
+                         || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true;
+            if (requested && Interlocked.Exchange(ref _buildTimeInstrumentationWarningLogged, 1) == 0)
+            {
+                Log.Warning("Dynamic Instrumentation and Exception Replay are not available in applications instrumented at build time (NativeAOT): they instrument methods at runtime.");
+            }
         }
 
         private void OneTimeSetup(TracerSettings tracerSettings)
