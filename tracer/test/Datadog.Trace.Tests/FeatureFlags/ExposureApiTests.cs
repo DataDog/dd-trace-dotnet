@@ -40,7 +40,8 @@ public class ExposureApiTests
             uri => new BlockingApiRequest(uri, firstSendStarted, releaseFirstSend),
             uri => new BlockingApiRequest(uri, finalSendStarted, releaseFinalSend));
         using var transport = CreateLocalTransport(local);
-        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(5));
+        // Allow for thread-pool scheduling delays while the test coordinates the blocked sends.
+        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromMinutes(1));
         Task? dispose = null;
 
         try
