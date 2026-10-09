@@ -4512,6 +4512,12 @@ stages:
             artifact: azurefunctions-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
+        # NativeAOT instrumentation (prerelease version)
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: aot-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
 #        Don't include the Datadog.Trace.BenchmarkDotNet package in the release artifacts
 #        as it currently doesn't work with v3.
 #        - task: DownloadPipelineArtifact@2
