@@ -91,6 +91,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="mode">The mode value.</param>
         /// <param name="source">The source value.</param>
         /// <param name="scenarioId">The scenario id value.</param>
+        /// <param name="includesDerivedTypes">Whether the proxy of the target type also serves the classes deriving from it.</param>
         public DuckTypeAotMapping(
             string proxyTypeName,
             string proxyAssemblyName,
@@ -98,8 +99,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string targetAssemblyName,
             DuckTypeAotMappingMode mode,
             DuckTypeAotMappingSource source,
-            string? scenarioId = null)
+            string? scenarioId = null,
+            bool includesDerivedTypes = false)
         {
+            IncludesDerivedTypes = includesDerivedTypes;
             // Canonical names make every spelling of a type pair (recorded, expanded from generic roots...) the same mapping.
             ProxyTypeName = DuckTypeAotNameHelpers.CanonicalizeTypeName(proxyTypeName);
             ProxyAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(proxyAssemblyName);
@@ -152,6 +155,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <value>The scenario id value.</value>
         public string? ScenarioId { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the proxy of the target type also serves the classes that derive from it (or implement
+        /// it) and have no mapping of their own (<c>[DuckType(IncludeDerivedTypes = true)]</c>).
+        /// </summary>
+        public bool IncludesDerivedTypes { get; }
+
         public string Key =>
             string.Concat(
                 Mode.ToString(),
@@ -178,8 +187,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 TargetAssemblyName,
                 Mode,
                 Source,
-                scenarioId);
+                scenarioId,
+                IncludesDerivedTypes);
         }
+
+        /// <summary>
+        /// Gets the mapping that also serves the classes deriving from the target type.
+        /// </summary>
+        /// <returns>The mapping.</returns>
+        public DuckTypeAotMapping WithDerivedTypes()
+            => IncludesDerivedTypes ? this : new DuckTypeAotMapping(ProxyTypeName, ProxyAssemblyName, TargetTypeName, TargetAssemblyName, Mode, Source, ScenarioId, includesDerivedTypes: true);
 
         /// <summary>
         /// Normalizes normalize scenario id.

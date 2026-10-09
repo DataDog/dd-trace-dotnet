@@ -130,7 +130,7 @@ namespace Datadog.Trace.DuckTyping
             // 5. Can't be a base type or an interface implemented by the targetType type.
             // 6. The proxy type can't be a CLR type
             // 7. The proxy type is Nullable<T> when T is an struct with the DuckCopy attribute
-            return proxyType.GetCustomAttribute<DuckCopyAttribute>() != null ||
+            return proxyType.IsDefined(typeof(DuckCopyAttribute), inherit: false) ||
                 (proxyType != targetType &&
                 !proxyType.IsValueType &&
                 !proxyType.IsGenericParameter &&
@@ -138,7 +138,7 @@ namespace Datadog.Trace.DuckTyping
                 proxyType.Module != typeof(string).Module) ||
                 (proxyType.IsGenericType &&
                  proxyType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
-                 proxyType.GenericTypeArguments[0].GetCustomAttribute<DuckCopyAttribute>() != null);
+                 proxyType.GenericTypeArguments[0].IsDefined(typeof(DuckCopyAttribute), inherit: false));
         }
 
         private static bool TryUnwrapValueWithType(Type type, out Type valueType)

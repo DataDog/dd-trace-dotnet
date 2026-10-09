@@ -39,6 +39,11 @@ internal sealed class AotInstrumentReport
 
     public int CompositeInterfaces { get; set; }
 
+    public int DeclaredDuckTypeMappings { get; set; }
+
+    /// <summary>Gets or sets the recorded mappings of Datadog's proxies that aren't declared (see CallTargetDuckTypeRegistry.FindUndeclared).</summary>
+    public List<string> UndeclaredDuckTypeMappings { get; set; } = new();
+
     public int UserStrings { get; set; }
 
     public int CodeOriginLocations { get; set; }

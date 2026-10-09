@@ -36,6 +36,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string DuckReverseAttributeFullName = "Datadog.Trace.DuckTyping.DuckReverseAttribute";
 
         /// <summary>
+        /// Defines the duck reverse delegation attribute full name constant: on the delegation type of the reverse proxies of a
+        /// library type, which it names.
+        /// </summary>
+        private const string DuckReverseDelegationAttributeFullName = "Datadog.Trace.DuckTyping.DuckReverseDelegationAttribute";
+
+        /// <summary>
+        /// Defines the assembly-level duck type mapping attribute full name constant: a forward mapping whose proxy type can't
+        /// declare it (a type of another assembly, a closed generic type).
+        /// </summary>
+        private const string DuckTypeMappingAttributeFullName = "Datadog.Trace.DuckTyping.DuckTypeMappingAttribute";
+
+        /// <summary>
         /// Defines the duck attribute namespace prefix constant.
         /// </summary>
         private const string DuckAttributeNamespacePrefix = "Datadog.Trace.DuckTyping.";
@@ -68,6 +80,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     using var module = ModuleDefMD.Load(proxyAssemblyPath);
                     var proxyAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(module.Assembly?.Name.String ?? Path.GetFileNameWithoutExtension(proxyAssemblyPath) ?? string.Empty);
 
+                    foreach (var attribute in module.Assembly?.CustomAttributes ?? Enumerable.Empty<CustomAttribute>())
+                    {
+                        if (!string.Equals(attribute.AttributeType?.FullName, DuckTypeMappingAttributeFullName, StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        var values = Enumerable.Range(0, 4).Select(i => TryReadStringValue(attribute, constructorArgumentIndex: i)).ToArray();
+                        if (values.Any(StringUtil.IsNullOrWhiteSpace))
+                        {
+                            warnings.Add($"Skipping '{DuckTypeMappingAttributeFullName}' in '{proxyAssemblyPath}' because a type or assembly is missing.");
+                            continue;
+                        }
+
+                        var declaredMapping = new DuckTypeAotMapping(values[0]!, values[1]!, values[2]!, values[3]!, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.Attribute);
+                        mappings[declaredMapping.Key] = declaredMapping;
+                    }
+
                     foreach (var type in module.GetTypes())
                     {
                         if (type.IsGlobalModuleType)
@@ -79,12 +109,42 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         foreach (var attribute in type.CustomAttributes)
                         {
                             var attributeFullName = attribute.AttributeType?.FullName;
+                            if (string.Equals(attributeFullName, DuckReverseDelegationAttributeFullName, StringComparison.Ordinal))
+                            {
+                                // The type is the delegation type (the target of the reverse mapping), the attribute names the type
+                                // the reverse proxy derives from (its proxy type).
+                                hasTypeLevelMappingAttribute = true;
+                                var typeToDeriveFrom = TryReadNamedStringValue(attribute, "TypeToDeriveFrom") ?? TryReadStringValue(attribute, constructorArgumentIndex: 0);
+                                var typeToDeriveFromAssembly = TryReadNamedStringValue(attribute, "TypeToDeriveFromAssembly") ?? TryReadStringValue(attribute, constructorArgumentIndex: 1);
+                                if (StringUtil.IsNullOrWhiteSpace(typeToDeriveFrom) || StringUtil.IsNullOrWhiteSpace(typeToDeriveFromAssembly))
+                                {
+                                    warnings.Add($"Skipping '{attributeFullName}' in '{proxyAssemblyPath}' for type '{type.ReflectionFullName}' because the type to derive from or its assembly is missing.");
+                                    continue;
+                                }
+
+                                var reverseMapping = new DuckTypeAotMapping(
+                                    typeToDeriveFrom!,
+                                    typeToDeriveFromAssembly!,
+                                    type.ReflectionFullName,
+                                    proxyAssemblyName,
+                                    DuckTypeAotMappingMode.Reverse,
+                                    DuckTypeAotMappingSource.Attribute);
+                                mappings[reverseMapping.Key] = reverseMapping;
+                                continue;
+                            }
+
                             if (!TryResolveMappingMode(attributeFullName, out var mappingMode))
                             {
                                 continue;
                             }
 
                             hasTypeLevelMappingAttribute = true;
+                            if (attribute.ConstructorArguments.Count == 0 && attribute.NamedArguments.Count == 0)
+                            {
+                                // [DuckCopy] alone marks the struct as a duck copy: it declares no mapping.
+                                continue;
+                            }
+
                             if (!TryReadTargetData(attribute, out var targetTypeName, out var targetAssemblyName))
                             {
                                 warnings.Add(
@@ -104,9 +164,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                 targetTypeName,
                                 targetAssemblyName,
                                 mappingMode,
-                                DuckTypeAotMappingSource.Attribute);
+                                DuckTypeAotMappingSource.Attribute,
+                                includesDerivedTypes: mappingMode == DuckTypeAotMappingMode.Forward && TryReadNamedBooleanValue(attribute, "IncludeDerivedTypes"));
 
-                            mappings[mapping.Key] = mapping;
+                            mappings[mapping.Key] = mappings.TryGetValue(mapping.Key, out var existing) && existing.IncludesDerivedTypes ? existing : mapping;
                         }
 
                         if (!hasTypeLevelMappingAttribute && HasDuckMemberAttributeUsage(type))
@@ -217,6 +278,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Reads a named boolean argument of an attribute.
+        /// </summary>
+        /// <param name="attribute">The attribute value.</param>
+        /// <param name="propertyName">The property name value.</param>
+        /// <returns>The value, or false when it isn't set.</returns>
+        private static bool TryReadNamedBooleanValue(CustomAttribute attribute, string propertyName)
+        {
+            foreach (var namedArgument in attribute.NamedArguments)
+            {
+                if (string.Equals(namedArgument.Name, propertyName, StringComparison.Ordinal) && namedArgument.Argument.Value is bool value)
+                {
+                    return value;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

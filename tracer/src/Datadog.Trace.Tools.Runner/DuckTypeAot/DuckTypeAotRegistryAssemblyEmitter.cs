@@ -3959,8 +3959,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // non-public types (see DuckTypeAotEngine.TryGetFallbackResult): it receives the runtime type, which it reports as
             // IDuckType.Type like the proxy dynamic duck typing creates for that type. A proxy of an array type binds the members
             // of System.Array, and stores the instance as one.
+            // A [DuckType(IncludeDerivedTypes = true)] declaration serves the classes deriving from its target type the same way.
             var isArrayTarget = !isReverseMapping && IsArrayTargetMapping(mapping);
-            var servesFallbackTypes = !isReverseMapping && (isArrayTarget ? !IsSystemArrayTargetMapping(mapping) : HasRuntimeInternalSubtypes(targetType));
+            var servesDerivedTypes = !isReverseMapping && !isArrayTarget && mapping.IncludesDerivedTypes && !targetType.IsValueType && !targetType.IsSealed;
+            var servesFallbackTypes = !isReverseMapping && (isArrayTarget ? !IsSystemArrayTargetMapping(mapping) : HasRuntimeInternalSubtypes(targetType) || servesDerivedTypes);
             var systemArrayType = moduleDef.CorLibTypes.GetTypeRef("System", "Array");
             var instanceSig = isArrayTarget ? new ClassSig(systemArrayType) : importedTargetTypeSig;
             var targetField = new FieldDefUser("_currentInstance", new FieldSig(instanceSig), FieldAttributes.Private | FieldAttributes.InitOnly);
@@ -4310,7 +4312,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 fallbackActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
                 bootstrapType.Methods.Add(fallbackActivatorMethod);
-                EmitFallbackRegistration(initializeMethod.Body, importedMembers, resolvedProxyContractType, importedTargetType, generatedType, fallbackActivatorMethod);
+                EmitFallbackRegistration(initializeMethod.Body, importedMembers, resolvedProxyContractType, importedTargetType, generatedType, fallbackActivatorMethod, servesDerivedTypes);
             }
 
             _currentExecutionContext?.GeneratedProxyTypes.Add(new KeyValuePair<string, string>(registrationKey, generatedType.ReflectionFullName));
@@ -4979,7 +4981,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetType">The target type.</param>
         /// <param name="generatedType">The generated proxy type.</param>
         /// <param name="fallbackActivatorMethod">The activator receiving the instance and the runtime type.</param>
-        private static void EmitFallbackRegistration(CilBody body, ImportedMembers importedMembers, ITypeDefOrRef proxyContractType, ITypeDefOrRef targetType, ITypeDefOrRef generatedType, MethodDef fallbackActivatorMethod)
+        /// <param name="derivedTypes">Whether the registration serves the classes deriving from the target type
+        /// (<c>DuckType.RegisterAotDerivedTypesProxy</c>).</param>
+        private static void EmitFallbackRegistration(CilBody body, ImportedMembers importedMembers, ITypeDefOrRef proxyContractType, ITypeDefOrRef targetType, ITypeDefOrRef generatedType, MethodDef fallbackActivatorMethod, bool derivedTypes = false)
         {
             body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(proxyContractType));
             body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
@@ -4990,7 +4994,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
             body.Instructions.Add(OpCodes.Ldftn.ToInstruction(fallbackActivatorMethod));
             body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectTypeObjectCtor));
-            body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.RegisterAotFallbackProxyMethod));
+            body.Instructions.Add(OpCodes.Call.ToInstruction(derivedTypes ? importedMembers.RegisterAotDerivedTypesProxyMethod : importedMembers.RegisterAotFallbackProxyMethod));
         }
 
         /// <summary>
@@ -15261,7 +15265,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 || string.Equals(fullName, DuckPropertyOrFieldAttributeTypeName, StringComparison.Ordinal)
                 || string.Equals(fullName, DuckIgnoreAttributeTypeName, StringComparison.Ordinal)
                 || string.Equals(fullName, DuckIncludeAttributeTypeName, StringComparison.Ordinal)
-                || string.Equals(fullName, DuckReverseMethodAttributeTypeName, StringComparison.Ordinal);
+                || string.Equals(fullName, DuckReverseMethodAttributeTypeName, StringComparison.Ordinal)
+                || fullName is "Datadog.Trace.DuckTyping.DuckTypeAttribute" or "Datadog.Trace.DuckTyping.DuckReverseAttribute" or "Datadog.Trace.DuckTyping.DuckReverseDelegationAttribute";
         }
 
         private static ReverseCustomAttributePlan GetOrCreateReverseCustomAttributePlan(ModuleDef moduleDef, TypeDef targetType)
@@ -17026,6 +17031,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 RegisterAotFallbackProxyMethod = importer.Import(
                     typeof(DuckTypeAotEngine).GetMethod(nameof(DuckTypeAotEngine.RegisterValidatedFallbackProxy), BindingFlags.NonPublic | BindingFlags.Static)
                     ?? throw new InvalidOperationException("Unable to resolve DuckTypeAotEngine.RegisterValidatedFallbackProxy(Type, Type, Type, Func<object?, Type, object?>)."));
+                RegisterAotDerivedTypesProxyMethod = importer.Import(
+                    typeof(DuckTypeAotEngine).GetMethod(nameof(DuckTypeAotEngine.RegisterValidatedDerivedTypesProxy), BindingFlags.NonPublic | BindingFlags.Static)
+                    ?? throw new InvalidOperationException("Unable to resolve DuckTypeAotEngine.RegisterValidatedDerivedTypesProxy(Type, Type, Type, Func<object?, Type, object?>)."));
                 SystemTypeSig = importer.ImportAsTypeSig(typeof(Type));
                 RegisterAotReverseProxyMethod = importer.Import(registerAotReverseProxyMethod);
                 RegisterAotProxyFailureMethod = importer.Import(
@@ -17080,6 +17088,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// Gets the method registering the activator of an array proxy for the array types assignable to its target.
             /// </summary>
             internal IMethod RegisterAotFallbackProxyMethod { get; }
+
+            /// <summary>
+            /// Gets the method registering the activator of a proxy for the classes deriving from its target.
+            /// </summary>
+            internal IMethod RegisterAotDerivedTypesProxyMethod { get; }
 
             /// <summary>
             /// Gets the System.Type signature.
