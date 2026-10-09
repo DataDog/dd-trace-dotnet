@@ -7,6 +7,9 @@
 
 using System;
 using System.Reflection;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Logging;
 
@@ -24,7 +27,7 @@ namespace Datadog.Trace.Debugger.Symbols
             // Code Origin can opt out for single-file assemblies and still emit reflection-derived tags.
             var shouldSkip = string.IsNullOrWhiteSpace(assemblyName) ||
                              assembly.IsDynamic ||
-                             assembly.ManifestModule.IsResource() ||
+                             IsResourceModule(assembly) ||
                              (requireAssemblyLocation && string.IsNullOrWhiteSpace(assembly.Location));
 
             if (shouldSkip)
@@ -43,6 +46,27 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName!);
+        }
+
+        private static bool IsResourceModule(Assembly assembly)
+        {
+#if NET6_0_OR_GREATER
+            // NativeAOT doesn't support Module.IsResource (and has no resource modules).
+            if (!RuntimeFeature.IsDynamicCodeCompiled)
+            {
+                return false;
+            }
+#endif
+            return assembly.ManifestModule.IsResource();
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the assembly is skipped without third-party detection settings: a Datadog assembly or
+        /// a known third-party one.
+        /// </summary>
+        internal static bool IsDatadogOrThirdPartyAssembly(string assemblyName)
+        {
+            return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName);
         }
 
         private static bool IsThirdPartyCode(string assemblyName)

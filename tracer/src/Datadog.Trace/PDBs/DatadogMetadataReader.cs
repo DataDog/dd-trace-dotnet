@@ -109,6 +109,22 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
+            return CreatePdbReader(assembly.Location, assembly.FullName, () => Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false }), metadataOnly);
+        }
+
+        /// <summary>
+        /// Opens a <see cref="DatadogMetadataReader"/> for an assembly file that isn't loaded, such as the assemblies a NativeAOT
+        /// build instruments (their PDBs aren't there at runtime).
+        /// </summary>
+        /// <param name="assemblyPath">The path of the assembly.</param>
+        /// <param name="metadataOnly">See <see cref="CreatePdbReader(Assembly?, bool)"/>.</param>
+        internal static DatadogMetadataReader? CreatePdbReader(string assemblyPath, bool metadataOnly = false)
+        {
+            return CreatePdbReader(assemblyPath, assemblyPath, () => Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assemblyPath, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false }), metadataOnly);
+        }
+
+        private static DatadogMetadataReader? CreatePdbReader(string location, string? name, Func<Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD> loadDnlibModule, bool metadataOnly)
+        {
             // We track each owned resource locally and only null it out when ownership is
             // transferred to a successfully constructed DatadogMetadataReader. The finally
             // block disposes anything still owned, which guarantees that the underlying
@@ -135,36 +151,36 @@ namespace Datadog.Trace.Pdb
                 var peOptions = metadataOnly
                                     ? PEStreamOptions.Default
                                     : PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage;
-                peReader = new PEReader(File.OpenRead(assembly.Location), peOptions);
+                peReader = new PEReader(File.OpenRead(location), peOptions);
                 MetadataReader metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
-                if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out pdbReaderProvider, out var pdbPath))
+                if (peReader.TryOpenAssociatedPortablePdb(location, File.OpenRead, out pdbReaderProvider, out var pdbPath))
                 {
                     // For sidecar portable PDBs, pdbReaderProvider owns a FileStream (opened by the File.OpenRead
                     // callback) that is only released when the provider is disposed. Transfer ownership to the
                     // DatadogMetadataReader so Dispose() releases the handle.
                     var pdbReader = pdbReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                    var portableResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider, pdbReader, pdbPath ?? assembly.Location, null, null);
+                    var portableResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider, pdbReader, pdbPath ?? location, null, null);
                     peReader = null;
                     pdbReaderProvider = null;
                     return portableResult;
                 }
 
-                Logger.Debug("No associated portable or embedded PDB was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                Logger.Debug("No associated portable or embedded PDB was found for {Assembly} in location: {AssemblyLocation}", name, location);
 
-                if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
+                if (!TryFindPdbFile(location, out var pdbFullPath))
                 {
-                    Logger.Debug("No standalone PDB file was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                    Logger.Debug("No standalone PDB file was found for {Assembly} in location: {AssemblyLocation}", name, location);
                     var noPdbResult = new DatadogMetadataReader(peReader, metadataReader, null, null, null, null, null);
                     peReader = null;
                     return noPdbResult;
                 }
 
-                dnlibModule = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
+                dnlibModule = loadDnlibModule();
                 var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
                 dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, dnlibModule.Metadata, pdbStream);
                 if (dnlibReader == null)
                 {
-                    Logger.Debug("A standalone PDB file was found for {Assembly} but a dnlib PDB reader could not be created. AssemblyLocation={AssemblyLocation}, PdbPath={PdbPath}", assembly.FullName, assembly.Location, pdbFullPath);
+                    Logger.Debug("A standalone PDB file was found for {Assembly} but a dnlib PDB reader could not be created. AssemblyLocation={AssemblyLocation}, PdbPath={PdbPath}", name, location, pdbFullPath);
                     var noDnlibReaderResult = new DatadogMetadataReader(peReader, metadataReader, null, null, null, null, null);
                     peReader = null; // ownership transferred; dnlibModule will be disposed in finally
                     return noDnlibReaderResult;
@@ -180,17 +196,17 @@ namespace Datadog.Trace.Pdb
             }
             catch (UnauthorizedAccessException e)
             {
-                Logger.Debug("Unable to access PDB for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
+                Logger.Debug("Unable to access PDB for {Assembly} in location: {AssemblyLocation}. Error: {Error}", name, location, e.Message);
                 return null;
             }
             catch (IOException e)
             {
-                Logger.Debug("Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
+                Logger.Debug("Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}. Error: {Error}", name, location, e.Message);
                 return null;
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                Logger.Error(e, "Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}", name, location);
                 return null;
             }
             finally
