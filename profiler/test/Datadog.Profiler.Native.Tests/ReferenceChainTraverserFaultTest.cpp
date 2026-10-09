@@ -8,7 +8,7 @@
 #include "ReferenceChainTraverser.h"
 #include "ReferenceChainTypes.h"
 #include "TypeReferenceTree.h"
-#include "VisitedObjectSet.h"
+#include "VisitedAddressBitmap.h"
 #include "IFrameStore.h"
 #include "GCDescReader.h"
 #include "MemoryFaultGuard.h"
@@ -90,6 +90,7 @@ public:
 
     HRESULT STDMETHODCALLTYPE GetClassFromObject(ObjectID objectId, ClassID* pClassId) override
     {
+        GetClassFromObjectCallCount++;
         auto it = _objects.find(static_cast<uintptr_t>(objectId));
         if (it == _objects.end())
         {
@@ -101,6 +102,8 @@ public:
         }
         return S_OK;
     }
+
+    size_t GetClassFromObjectCallCount = 0;
 
     HRESULT STDMETHODCALLTYPE GetObjectSize2(ObjectID objectId, SIZE_T* pcSize) override
     {
@@ -241,7 +244,7 @@ void UnmapPage(void* p)
 #endif
 
 // Build a fake MethodTable + GCDesc in storage describing one positive series of
-// `refCount` consecutive reference slots starting at object offset 0.
+// `refCount` consecutive reference slots immediately after the object header.
 ClassID BuildFakeMethodTableWithRefs(std::uint8_t* storage, size_t storageSize, ptrdiff_t refCount, SIZE_T objectSize)
 {
     std::memset(storage, 0, storageSize);
@@ -259,7 +262,7 @@ ClassID BuildFakeMethodTableWithRefs(std::uint8_t* storage, size_t storageSize, 
     GCDesc::GCDescSeries& s = seriesBase[-1];
     // rangeSize = encodedSize + objectSize = refCount * sizeof(void*)
     s.encodedSize = refCount * static_cast<ptrdiff_t>(sizeof(void*)) - static_cast<ptrdiff_t>(objectSize);
-    s.offset = 0;
+    s.offset = sizeof(void*);
 
     return reinterpret_cast<ClassID>(mtBase);
 }
@@ -290,24 +293,41 @@ TEST(ReferenceChainTraverserFaultTest, SehGuardCatchesAccessViolation)
 }
 #endif
 
-// Pure VisitedObjectSet behaviour: after a possibly-interrupted insert is flagged,
-// the next Clear() must wipe the whole table so no stale "visited" address leaks.
-TEST(ReferenceChainTraverserFaultTest, VisitedSetIsFullyClearedAfterFault)
+// Pure VisitedAddressBitmap behaviour: after a possibly-interrupted mark is flagged,
+// the next ClearForRoot() must fully reset the bitmap so no stale visited bit leaks.
+TEST(ReferenceChainTraverserFaultTest, VisitedBitmapIsFullyResetAfterFault)
 {
-    VisitedObjectSet visited(16);
-    visited.MarkVisited(0x123000);
-    ASSERT_TRUE(visited.IsVisited(0x123000));
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t address = VisitedAddressBitmap::HeapBytesPerPage * 2;
+
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
 
     visited.MarkPossiblyInconsistent();
-    visited.Clear();
+    visited.ClearForRoot();
 
-    ASSERT_FALSE(visited.IsVisited(0x123000));
     ASSERT_EQ(visited.Size(), 0u);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::AlreadyVisited);
 
-    // The set must remain fully usable after a full wipe.
-    visited.MarkVisited(0x456000);
-    ASSERT_TRUE(visited.IsVisited(0x456000));
-    ASSERT_FALSE(visited.IsVisited(0x123000));
+    // The bitmap remains fully usable after the reset.
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address + sizeof(void*)),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+}
+
+TEST(ReferenceChainTraverserFaultTest, RawClassReadMasksMethodTableTagBits)
+{
+    alignas(16) uintptr_t objectHeader = uintptr_t{0x12345678} | (sizeof(void*) == 8 ? 7 : 3);
+
+    EXPECT_EQ(
+        GCDesc::GetClassIDFromObject(reinterpret_cast<uintptr_t>(&objectHeader)),
+        static_cast<ClassID>(0x12345678));
 }
 
 namespace
@@ -329,7 +349,9 @@ struct TwoObjectGraph
         rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, 64);
         childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
 
-        *reinterpret_cast<uintptr_t*>(rootObj) = reinterpret_cast<uintptr_t>(childObj);
+        *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+        *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = reinterpret_cast<uintptr_t>(childObj);
+        *reinterpret_cast<ClassID*>(childObj) = childClass;
         profiler.AddObject(reinterpret_cast<uintptr_t>(childObj), childClass, 64);
     }
 
@@ -353,7 +375,12 @@ TEST(ReferenceChainTraverserFaultTest, ExceptionEscapingTheGuardAbortsTheDumpWit
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     EXPECT_NO_THROW(traverser.TraverseFromSingleRoot(graph.GetRoot()));
 
@@ -394,7 +421,12 @@ TEST(ReferenceChainTraverserFaultTest, UnavailableFaultGuardStopsWithoutExecutin
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     traverser.Test_FaultReadUnderGuard(nullptr);
 
@@ -410,14 +442,16 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     alignas(64) std::uint8_t rootMt[4096]{};
     alignas(64) std::uint8_t valueTypeMt[4096]{};
     alignas(64) std::uint8_t childMt[4096]{};
-    alignas(8) std::uint8_t rootObj[64]{};
-    alignas(8) std::uint8_t childObj[16]{};
+    alignas(16) std::uint8_t rootObj[64]{};
+    alignas(16) std::uint8_t childObj[16]{};
 
     ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, 64);
     ClassID valueTypeClass = BuildFakeMethodTableWithRefs(valueTypeMt, sizeof(valueTypeMt), 1, sizeof(void*));
     ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
     uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObj);
-    *reinterpret_cast<uintptr_t*>(rootObj) = childAddress;
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = childAddress;
+    *reinterpret_cast<ClassID*>(childObj) = childClass;
 
     LayoutCountingGraphMockProfiler profiler;
     profiler.AddObject(childAddress, childClass, sizeof(childObj));
@@ -427,10 +461,16 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
     InlineVTCache::InlineVTInfo valueTypes;
-    valueTypes.fields.push_back({0, valueTypeClass, static_cast<ULONG>(sizeof(void*))});
+    valueTypes.fields.push_back(
+        {static_cast<ULONG>(sizeof(void*)), valueTypeClass, static_cast<ULONG>(sizeof(void*))});
     vtCache.SetInlineVTInfoForTests(rootClass, std::move(valueTypes));
 
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
     RootInfo root(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, sizeof(rootObj));
     traverser.TraverseFromSingleRoot(root);
 
@@ -442,6 +482,127 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     const TypeTreeNode* valueTypeNode = rootIt->second->node.GetChild(valueTypeClass);
     ASSERT_NE(valueTypeNode, nullptr);
     ASSERT_NE(valueTypeNode->GetChild(childClass), nullptr);
+}
+
+TEST(ReferenceChainTraverserFaultTest, TrustedObjectHeaderAvoidsFurtherProfilerClassLookups)
+{
+    constexpr size_t ChildCount = 10;
+    constexpr SIZE_T RootSize = 128;
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(16) std::uint8_t rootObj[RootSize]{};
+    alignas(16) std::uint8_t childObjects[ChildCount][16]{};
+
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), ChildCount, RootSize);
+    ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+
+    GraphMockProfiler profiler;
+    for (size_t i = 0; i < ChildCount; i++)
+    {
+        uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObjects[i]);
+        *reinterpret_cast<ClassID*>(childObjects[i]) = childClass;
+        *reinterpret_cast<uintptr_t*>(rootObj + ((i + 1) * sizeof(void*))) = childAddress;
+        profiler.AddObject(childAddress, childClass, sizeof(childObjects[i]));
+    }
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
+
+    traverser.TraverseFromSingleRoot(
+        RootInfo(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, RootSize));
+
+    EXPECT_TRUE(traverser.IsGCDescTrusted());
+    EXPECT_EQ(profiler.GetClassFromObjectCallCount, 8u);
+
+    const TypeTreeNode* childNode = tree._roots.at({rootClass, RootCategory::Stack})->node.GetChild(childClass);
+    ASSERT_NE(childNode, nullptr);
+    EXPECT_EQ(childNode->instanceCount, ChildCount);
+}
+
+TEST(ReferenceChainTraverserFaultTest, InlineVTLookupCacheAvoidsPerObjectMapLookups)
+{
+    constexpr size_t ChildCount = 10;
+    constexpr SIZE_T RootSize = 128;
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(16) std::uint8_t rootObj[RootSize]{};
+    alignas(16) std::uint8_t childObjects[ChildCount][16]{};
+
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), ChildCount, RootSize);
+    ClassID childClass = BuildFakeMethodTableWithRefs(childMt, sizeof(childMt), 1, sizeof(childObjects[0]));
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+
+    GraphMockProfiler profiler;
+    for (size_t i = 0; i < ChildCount; i++)
+    {
+        uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObjects[i]);
+        *reinterpret_cast<ClassID*>(childObjects[i]) = childClass;
+        *reinterpret_cast<uintptr_t*>(rootObj + ((i + 1) * sizeof(void*))) = childAddress;
+        profiler.AddObject(childAddress, childClass, sizeof(childObjects[i]));
+    }
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
+
+    traverser.TraverseFromSingleRoot(
+        RootInfo(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, RootSize));
+
+    EXPECT_EQ(vtCache.GetLookupCountForTests(), 2u);
+}
+
+TEST(ReferenceChainTraverserFaultTest, ObjectHeaderMismatchDisablesTraversal)
+{
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(64) std::uint8_t wrongMt[4096]{};
+    alignas(16) std::uint8_t rootObj[64]{};
+    alignas(16) std::uint8_t childObj[16]{};
+
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, sizeof(rootObj));
+    ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
+    ClassID wrongClass = BuildFakeMethodTableNoPointers(wrongMt, sizeof(wrongMt));
+    uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObj);
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = childAddress;
+    *reinterpret_cast<ClassID*>(childObj) = wrongClass;
+
+    GraphMockProfiler profiler;
+    profiler.AddObject(childAddress, childClass, sizeof(childObj));
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
+
+    traverser.TraverseFromSingleRoot(
+        RootInfo(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, sizeof(rootObj)));
+
+    EXPECT_FALSE(traverser.IsGCDescTrusted());
+    EXPECT_EQ(traverser.GetFaultCount(), 0u);
+    EXPECT_EQ(profiler.GetClassFromObjectCallCount, 1u);
 }
 
 // The guard only recovers from memory access faults, so a C++ exception must pass straight
@@ -458,7 +619,12 @@ TEST(ReferenceChainTraverserFaultTest, ExceptionUnderGuardPropagatesAndLeavesThe
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     EXPECT_THROW(traverser.Test_ThrowUnderGuard(), std::runtime_error);
 
@@ -484,7 +650,12 @@ TEST(ReferenceChainTraverserFaultTest, TestFaultReadUnderGuardIncrementsFaultCou
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     ASSERT_TRUE(traverser.IsGCDescTrusted());
     ASSERT_EQ(traverser.GetFaultCount(), 0u);
@@ -512,7 +683,12 @@ TEST(ReferenceChainTraverserFaultTest, TraverseFromSingleRootFaultKeepsGCDescTru
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     RootInfo root(reinterpret_cast<uintptr_t>(badPage), RootCategory::Stack, fakeClass, 64);
     ASSERT_TRUE(traverser.IsGCDescTrusted());
@@ -541,25 +717,28 @@ TEST(ReferenceChainTraverserFaultTest, TraversalResumesAfterFault)
     alignas(64) std::uint8_t badMt[4096]{};
     alignas(64) std::uint8_t grandChildMt[4096]{};
 
-    // root has two ref slots (offset 0 -> childA, offset 8 -> B on the bad page);
-    // childA has one ref slot (offset 0 -> grandChild); B faults when scanned;
+    // root has two ref slots after its header (childA, then B on the bad page);
+    // childA has one ref slot after its header (grandChild); B faults when inspected;
     // grandChild has no pointers (leaf).
     ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 2, 64);
     ClassID childClass = BuildFakeMethodTableWithRefs(childMt, sizeof(childMt), 1, 64);
     ClassID badClass = BuildFakeMethodTableWithRefs(badMt, sizeof(badMt), 1, 64);
     ClassID grandChildClass = BuildFakeMethodTableNoPointers(grandChildMt, sizeof(grandChildMt));
 
-    alignas(8) std::uint8_t rootObj[64]{};
-    alignas(8) std::uint8_t childObj[64]{};
-    alignas(8) std::uint8_t grandChildObj[16]{};
+    alignas(16) std::uint8_t rootObj[64]{};
+    alignas(16) std::uint8_t childObj[64]{};
+    alignas(16) std::uint8_t grandChildObj[16]{};
 
     uintptr_t childAddr = reinterpret_cast<uintptr_t>(childObj);
     uintptr_t grandChildAddr = reinterpret_cast<uintptr_t>(grandChildObj);
     uintptr_t badAddr = reinterpret_cast<uintptr_t>(badPage);
 
-    *reinterpret_cast<uintptr_t*>(rootObj + 0) = childAddr;
-    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = badAddr;
-    *reinterpret_cast<uintptr_t*>(childObj + 0) = grandChildAddr;
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = childAddr;
+    *reinterpret_cast<uintptr_t*>(rootObj + (2 * sizeof(void*))) = badAddr;
+    *reinterpret_cast<ClassID*>(childObj) = childClass;
+    *reinterpret_cast<uintptr_t*>(childObj + sizeof(void*)) = grandChildAddr;
+    *reinterpret_cast<ClassID*>(grandChildObj) = grandChildClass;
 
     GraphMockProfiler profiler;
     profiler.AddObject(childAddr, childClass, 64);
@@ -570,7 +749,12 @@ TEST(ReferenceChainTraverserFaultTest, TraversalResumesAfterFault)
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     RootInfo root(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, 64);
     traverser.TraverseFromSingleRoot(root);
@@ -604,7 +788,12 @@ TEST(ReferenceChainTraverserFaultTest, FaultBudgetStopsDumpWithoutDistrustingGCD
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     // Drive enough faults to exhaust the per-dump budget (MaxFaultsPerDump == 16).
     for (int i = 0; i < 16; i++)
@@ -636,7 +825,12 @@ TEST(ReferenceChainTraverserFaultTest, SelfTestFailureStillDisablesPermanently)
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     ASSERT_TRUE(traverser.IsGCDescTrusted());
 

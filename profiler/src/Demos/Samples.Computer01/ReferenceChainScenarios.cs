@@ -246,6 +246,12 @@ namespace Samples.Computer01
         public byte[] NativeBuffer { get; } = new byte[2048];
     }
 
+    // Scenario 17: Weak GCHandle (not a retention root)
+    public class WeakHandleTarget
+    {
+        public InteropPayload Payload { get; } = new InteropPayload();
+    }
+
     // Scenario 19: Async state machine leak
     public class AsyncLeakSource
     {
@@ -407,6 +413,8 @@ namespace Samples.Computer01
         private ClosureHolder _closureHolder;
         private List<TimerOwner> _timerOwners;
         private List<GCHandle> _gcHandles;
+        private List<GCHandle> _weakHandles;
+        private List<WeakHandleTarget> _weakHandleTargets;
         private List<GCHandle> _pinnedHandles;
         private AsyncLeakSource _asyncLeakSource;
         private List<OuterHolder<InnerStruct>> _nestedVtHolders;
@@ -473,6 +481,9 @@ namespace Samples.Computer01
                     break;
                 case 16:
                     RunGCHandleLeak();
+                    break;
+                case 17:
+                    RunWeakGCHandle();
                     break;
                 case 18:
                     RunPinnedLeak();
@@ -1075,6 +1086,27 @@ namespace Samples.Computer01
             }
 
             _gcHandles = handles;
+        }
+
+        /// <summary>
+        /// Scenario 17: Weak GCHandle
+        /// The targets are also held strongly so the runtime reports non-null weak handles.
+        /// Weak handles must not appear as roots in a retention tree.
+        /// </summary>
+        private void RunWeakGCHandle()
+        {
+            Console.WriteLine("ReferenceChain Scenario 17: Weak GCHandle");
+            var handles = new List<GCHandle>();
+            var targets = new List<WeakHandleTarget>();
+            for (int i = 0; i < 20; i++)
+            {
+                var target = new WeakHandleTarget();
+                targets.Add(target);
+                handles.Add(GCHandle.Alloc(target, GCHandleType.Weak));
+            }
+
+            _weakHandles = handles;
+            _weakHandleTargets = targets;
         }
 
         /// <summary>

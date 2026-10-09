@@ -11,6 +11,9 @@ namespace ReferenceChainModel;
 /// </summary>
 public class ReverseChainNode
 {
+    private readonly Func<IReadOnlyList<ReverseChainNode>>? _parentsFactory;
+    private IReadOnlyList<ReverseChainNode>? _parents;
+
     public ReverseChainNode(
         int typeIndex,
         long instanceCount,
@@ -25,7 +28,25 @@ public class ReverseChainNode
         TotalSize = totalSize;
         IsRoot = isRoot;
         CategoryCode = categoryCode;
-        Parents = parents;
+        _parents = parents;
+        FieldName = fieldName;
+    }
+
+    internal ReverseChainNode(
+        int typeIndex,
+        long instanceCount,
+        long totalSize,
+        bool isRoot,
+        string? categoryCode,
+        Func<IReadOnlyList<ReverseChainNode>> parentsFactory,
+        string? fieldName = null)
+    {
+        TypeIndex = typeIndex;
+        InstanceCount = instanceCount;
+        TotalSize = totalSize;
+        IsRoot = isRoot;
+        CategoryCode = categoryCode;
+        _parentsFactory = parentsFactory;
         FieldName = fieldName;
     }
 
@@ -57,6 +78,7 @@ public class ReverseChainNode
 
     /// <summary>
     /// Parent nodes in the reverse chain (who references this type).
+    /// Created lazily when first accessed.
     /// </summary>
-    public IReadOnlyList<ReverseChainNode> Parents { get; }
+    public IReadOnlyList<ReverseChainNode> Parents => _parents ??= _parentsFactory?.Invoke() ?? Array.Empty<ReverseChainNode>();
 }

@@ -1,0 +1,102 @@
+{
+  "enableDatadog": true,
+  "warmUpCount": 2,
+  "count": 20,
+  "scenarios": [
+    {
+      "name": "Baseline_referencechain",
+      "isBaseline": true,
+      "environmentVariables": {
+        "CORECLR_ENABLE_PROFILING": "0",
+        "COR_ENABLE_PROFILING": "0"
+      }
+    },
+    {
+      "name": "Profiler_heapsnapshot",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
+        "DD_PROFILING_HEAP_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "1",
+        "DD_PROFILING_HEAPSNAPSHOT_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_SKIP_TRAVERSAL": "1",
+        "DD_TRACE_ENABLED": "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "0"
+      }
+    },
+    {
+      "name": "Profiler_referencechain",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
+        "DD_PROFILING_HEAP_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "1",
+        "DD_PROFILING_HEAPSNAPSHOT_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_SKIP_TRAVERSAL": "0",
+        "DD_TRACE_ENABLED": "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "0"
+      }
+    },
+    {
+      "name": "Profiler_referencechain_cpu_walltime",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1",
+
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "0",
+        "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+        "DD_THREAD_LIFETIME_ENABLED": "0",
+
+        "DD_PROFILING_HEAP_ENABLED": "0",
+        "DD_PROFILING_GC_ENABLED": "1",
+        "DD_PROFILING_HEAPSNAPSHOT_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_SKIP_TRAVERSAL": "0",
+        "DD_TRACE_ENABLED": "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "0"
+      }
+    }
+  ],
+  "processName": "Samples.Computer01.exe",
+  "processArguments": "--scenario 31 --param 7 --iterations 3",
+  "processTimeout": 120,
+  "workingDirectory": "$(CWD)\\..\\..\\artifacts\\profiler-build\\bin\\Release-$(arch)\\profiler\\src\\Demos\\Samples.Computer01\\net10.0",
+  "environmentVariables": {
+    "COR_ENABLE_PROFILING": "1",
+    "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "COR_PROFILER_PATH": "$(CWD)\\..\\..\\artifacts\\monitoring-home\\win-$(arch)\\Datadog.Profiler.Native.dll",
+    "CORECLR_ENABLE_PROFILING": "1",
+    "CORECLR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "CORECLR_PROFILER_PATH": "$(CWD)\\..\\..\\artifacts\\monitoring-home\\win-$(arch)\\Datadog.Profiler.Native.dll",
+    "DD_PROFILING_METRICS_FILEPATH": "metrics.json",
+    "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD": "0",
+    "DD_INTERNAL_PROFILING_TEST_HEAPSNAPSHOT_INTERVAL": "2",
+    "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_TREE_FORMAT": "1",
+    "DOTNET_ROOT": ""
+  },
+  "tags": {
+    "runtime.architecture": "$(arch)",
+    "runtime.name": ".NET Core",
+    "runtime.version": "10.0",
+    "benchmark.job.runtime.name": ".NET 10.0",
+    "benchmark.job.runtime.moniker": "net10.0"
+  },
+  "metricsFilePath": "*metrics.json",
+  "overheadThreshold": 100
+}
