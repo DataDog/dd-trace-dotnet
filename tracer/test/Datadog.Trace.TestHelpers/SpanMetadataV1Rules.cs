@@ -43,6 +43,27 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aerospike")
                 .Matches("span.kind", "client"));
 
+        public static Result IsDnsClientV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "dns.query")
+                .Matches(Type, "dns"))
+            .Tags(s => s
+                .IsPresent("dns.question.name")
+                .IsPresent("dns.question.type")
+                .IsOptional("dns.question.class")
+                .IsOptional("dns.response.code")
+                .IsOptional("dns.answer_count")
+                .IsOptional("out.host")
+                .IsOptional("network.destination.port")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
+                .IsOptional("peer.service.remapped_from")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
+                .Matches("component", "DnsClient")
+                .Matches("span.kind", "client"));
+
         public static Result IsAspNetV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet.request")

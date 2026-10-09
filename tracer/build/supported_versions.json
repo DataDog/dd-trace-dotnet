@@ -563,6 +563,23 @@
     "packages": []
   },
   {
+    "integrationName": "DnsClient",
+    "assemblyName": "DnsClient",
+    "minAssemblyVersionInclusive": "1.3.0",
+    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "packages": [
+      {
+        "name": "DnsClient",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "1.3.0",
+        "minVersionTestedInclusive": "1.3.0",
+        "maxVersionSupportedInclusive": "1.8.0",
+        "maxVersionAvailableInclusive": "1.8.0",
+        "maxVersionTestedInclusive": "1.8.0"
+      }
+    ]
+  },
+  {
     "integrationName": "DotnetTest",
     "assemblyName": "coverlet.core",
     "minAssemblyVersionInclusive": "3.0.0",

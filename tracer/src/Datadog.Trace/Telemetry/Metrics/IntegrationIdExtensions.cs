@@ -93,6 +93,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.DatadogTraceVersionConflict => MetricTags.IntegrationName.VersionConflict,
             IntegrationId.OpenFeature => MetricTags.IntegrationName.OpenFeature,
             IntegrationId.ServerlessCompat => MetricTags.IntegrationName.ServerlessCompat,
+            IntegrationId.DnsClient => MetricTags.IntegrationName.DnsClient,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

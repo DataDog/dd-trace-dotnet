@@ -128,6 +128,7 @@ namespace Honeypot
             NugetPackages.Add("MSTestAdapter.PlatformServices", new [] { "MSTest.TestAdapter" });
             NugetPackages.Add("RestSharp", Array.Empty<string>());
             NugetPackages.Add("Hangfire.Core", new [] { "Hangfire.Core" });
+            NugetPackages.Add("DnsClient", new [] { "DnsClient" });
 
             // Manual instrumentation
             NugetPackages.Add("Datadog.Trace", new string[] { });

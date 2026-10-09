@@ -153,6 +153,31 @@ namespace Datadog.Trace
         internal const string PeerServiceSource = "_dd.peer.service.source";
 
         /// <summary>
+        /// The DNS query name (the domain being looked up).
+        /// </summary>
+        internal const string DnsQuestionName = "dns.question.name";
+
+        /// <summary>
+        /// The DNS query record type (e.g. A, AAAA, MX).
+        /// </summary>
+        internal const string DnsQuestionType = "dns.question.type";
+
+        /// <summary>
+        /// The DNS query class (e.g. IN).
+        /// </summary>
+        internal const string DnsQuestionClass = "dns.question.class";
+
+        /// <summary>
+        /// The DNS response code (e.g. NoError, NXDomain).
+        /// </summary>
+        internal const string DnsResponseCode = "dns.response.code";
+
+        /// <summary>
+        /// The number of answer records returned by the DNS response.
+        /// </summary>
+        internal const string DnsAnswerCount = "dns.answer_count";
+
+        /// <summary>
         /// The hostname of a outgoing server connection.
         /// </summary>
         public const string OutHost = "out.host";

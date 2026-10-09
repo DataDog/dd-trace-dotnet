@@ -91,6 +91,7 @@ namespace Datadog.Trace.Configuration
         DatadogTraceVersionConflict,
         Hangfire,
         OpenFeature,
-        ServerlessCompat
+        ServerlessCompat,
+        DnsClient
     }
 }
