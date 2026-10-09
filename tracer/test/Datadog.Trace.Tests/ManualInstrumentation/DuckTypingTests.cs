@@ -15,6 +15,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
@@ -33,6 +34,7 @@ using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
 using ManualISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;
 using ManualITest = DatadogTraceManual::Datadog.Trace.Ci.ITest;
 using ManualITestSession = DatadogTraceManual::Datadog.Trace.Ci.ITestSession;
+using ManualTestExtensions = DatadogTraceManual::Datadog.Trace.Ci.TestExtensions;
 using ManualTestParameters = DatadogTraceManual::Datadog.Trace.Ci.TestParameters;
 using TestStatus = DatadogTraceManual::Datadog.Trace.Ci.TestStatus;
 
@@ -42,6 +44,24 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 [TracerRestorer]
 public class DuckTypingTests
 {
+    /// <summary>
+    /// The CallTarget delegates of the TestExtensions integrations can be created: a duck typing constraint can't be on a
+    /// by-ref parameter, so the integrations take the <c>in</c> arguments of the manual API by value.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(TestExtensionsSetParametersIntegration), nameof(ManualTestExtensions.SetParameters))]
+    [InlineData(typeof(TestExtensionsAddBenchmarkDataIntegration), nameof(ManualTestExtensions.AddBenchmarkData))]
+    [InlineData(typeof(TestExtensionsSetBenchmarkMetadataIntegration), nameof(ManualTestExtensions.SetBenchmarkMetadata))]
+    public void TestExtensionsIntegrationsCanBeMapped(Type integrationType, string methodName)
+    {
+        var method = typeof(ManualTestExtensions).GetMethod(methodName)!;
+        var argumentsTypes = method.GetParameters()
+                                   .Select(p => p.ParameterType.IsByRef ? p.ParameterType : p.ParameterType.MakeByRefType())
+                                   .ToArray();
+
+        IntegrationMapper.CreateBeginMethodDelegate(integrationType, typeof(ManualTestExtensions), argumentsTypes).Should().NotBeNull();
+    }
+
     [Fact]
     public async Task CanDuckTypeScopeAsManualIScope()
     {
@@ -113,7 +133,7 @@ public class DuckTypingTests
             var jobInfo = new ManualBenchmarkJobInfo { Description = "weeble" };
             var hostInfoDuckType = hostInfo.DuckCast<IBenchmarkHostInfo>();
             var jobInfoDuckType = jobInfo.DuckCast<IBenchmarkJobInfo>();
-            TestExtensionsSetBenchmarkMetadataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkHostInfo, IBenchmarkJobInfo>(test, in hostInfoDuckType, in jobInfoDuckType);
+            TestExtensionsSetBenchmarkMetadataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkHostInfo, IBenchmarkJobInfo>(test, hostInfoDuckType, jobInfoDuckType);
             // test.SetBenchmarkMetadata(new BenchmarkHostInfo() { RuntimeVersion = "123" }, new BenchmarkJobInfo() { Description = "weeble" });
 
             // basic check that things were pushed down correctly
