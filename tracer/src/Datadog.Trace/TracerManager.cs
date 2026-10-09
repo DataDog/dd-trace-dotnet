@@ -394,6 +394,12 @@ namespace Datadog.Trace
 
                     void WriteOtlpExporterSettings(string signal, Uri endpoint, OtlpProtocol protocol, IEnumerable<KeyValuePair<string, string>> headers)
                     {
+                        // The metrics and logs exporters do not implement HTTP/JSON and send HTTP/protobuf instead.
+                        if (protocol == OtlpProtocol.HttpJson && signal is "METRICS" or "LOGS")
+                        {
+                            protocol = OtlpProtocol.HttpProtobuf;
+                        }
+
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_ENDPOINT");
                         writer.WriteValue(UriHelpers.CleanUri(endpoint, removeScheme: false, tryRemoveIds: false));
 
@@ -643,11 +649,15 @@ namespace Datadog.Trace
 
                     // Custom samplers may ignore the configured global rate; an unset or invalid rate
                     // has no fixed-rate OTel sampler equivalent.
-                    // Registered local or remote custom rules take precedence over the global rate, so suppress
-                    // OTEL_TRACES_SAMPLER and OTEL_TRACES_SAMPLER_ARG when present: reporting only the global rate would misrepresent effective sampling.
+                    // Local or remote custom rules take precedence over the global rate, so report them instead.
                     if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler managedSampler
-                     && !managedSampler.GetRules().Any(static rule => rule is CustomSamplingRule)
-                     && mutableSettings.EffectiveGlobalSamplingRate is { } sampleRate)
+                     && managedSampler.GetRules().Any(static rule => rule is CustomSamplingRule))
+                    {
+                        writer.WritePropertyName("OTEL_TRACES_SAMPLER");
+                        writer.WriteValue("datadog_custom_rules");
+                    }
+                    else if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler
+                          && mutableSettings.EffectiveGlobalSamplingRate is { } sampleRate)
                     {
                         var sampler = sampleRate switch
                         {
