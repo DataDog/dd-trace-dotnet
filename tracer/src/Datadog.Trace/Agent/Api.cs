@@ -238,7 +238,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    var tag = ex is TimeoutException or OperationCanceledException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                     TelemetryFactory.Metrics.RecordCountStatsApiErrors(tag);
                     throw;
                 }
@@ -321,7 +321,7 @@ namespace Datadog.Trace.Agent
                 {
                     // count only network/infrastructure errors, not valid responses with error status codes
                     // (which are handled below)
-                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    var tag = ex is TimeoutException or OperationCanceledException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                     TelemetryFactory.Metrics.RecordCountTraceApiErrors(tag);
                     healthStats?.Increment(TracerMetricNames.Api.Errors);
                     throw;
