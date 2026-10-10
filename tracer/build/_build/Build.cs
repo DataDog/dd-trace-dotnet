@@ -79,6 +79,9 @@ partial class Build : NukeBuild
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;
 
+    [Parameter("Whether the DuckType AOT gates run with the managed unit tests. CI declares it in the Linux x64 unit test matrix; locally they only run when a RunDuckTypeAot* target is invoked")]
+    readonly bool? DuckTypeAotGates;
+
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
@@ -461,6 +464,14 @@ partial class Build : NukeBuild
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceToolsShared))
+                .EnableNoRestore()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
+
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .EnableNoRestore()

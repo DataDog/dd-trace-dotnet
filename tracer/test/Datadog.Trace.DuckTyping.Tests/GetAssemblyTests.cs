@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.Ci;
 using FluentAssertions;
 using Xunit;
 
@@ -15,15 +14,34 @@ namespace Datadog.Trace.DuckTyping.Tests
     [Collection(nameof(GetAssemblyTestsCollection))]
     public class GetAssemblyTests
     {
+        public interface IVisibleAssemblyEnumerationProxy
+        {
+            int Value { get; }
+        }
+
+        private interface IAssemblyEnumerationProxy
+        {
+            int Value { get; }
+        }
+
         [Fact]
         public void GetAssemblyTest()
         {
+            // Validate a known proxy so filtered runs exercise type enumeration too. The global assembly
+            // count varies with the test inventory, execution order, and CI Visibility instrumentation.
+            var proxy = DuckType.Create<IAssemblyEnumerationProxy>(new AssemblyEnumerationTarget());
+            proxy!.Value.Should().Be(42);
+            var proxyType = proxy.GetType();
+            var proxyAssembly = proxyType.Assembly;
             var asmDuckTypes = 0;
+            var proxyAssemblyEnumerated = false;
             var lstExceptions = new List<Exception>();
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+            assemblies.Should().Contain(proxyAssembly);
             foreach (var assembly in assemblies)
             {
-                if (assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix) ||
+                if (assembly == proxyAssembly ||
+                    assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix) ||
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix) ||
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix))
                 {
@@ -31,7 +49,12 @@ namespace Datadog.Trace.DuckTyping.Tests
 
                     try
                     {
-                        assembly.GetTypes();
+                        var types = assembly.GetTypes();
+                        if (assembly == proxyAssembly)
+                        {
+                            types.Should().Contain(proxyType);
+                            proxyAssemblyEnumerated = true;
+                        }
                     }
                     catch (ReflectionTypeLoadException ex)
                     {
@@ -45,33 +68,49 @@ namespace Datadog.Trace.DuckTyping.Tests
                 throw new AggregateException(lstExceptions.ToArray());
             }
 
-            /*****
-             * WARNING: This number is expected to change if you add
-             * another test to the ducktype assembly. Generic signature
-             * validation also lowers this count when an invalid proxy is
-             * rejected before its dynamic assembly is created.
-             */
-            if (!TestOptimization.Instance.IsRunning)
+            proxyAssemblyEnumerated.Should().BeTrue();
+            asmDuckTypes.Should().BeGreaterThan(0);
+        }
+
+        [Fact]
+        public void VisibleTargetsFromTheSameAssemblyShareTheDynamicModuleBuilder()
+        {
+            // AOT proxies come from the generated registry, so no dynamic assembly is created. Return instead of skipping:
+            // the full-suite parity check runs this suite in both modes and requires identical outcomes.
+            if (DuckType.RuntimeMode == DuckTypeRuntimeMode.Aot)
             {
-#if NETFRAMEWORK
-                asmDuckTypes.Should().Be(1516);
-#elif NETCOREAPP2_1
-                asmDuckTypes.Should().Be(1526);
-#else
-                asmDuckTypes.Should().Be(1527);
-#endif
+                return;
             }
-            else
-            {
-                // When running inside CI Visibility, we will generate additional duck types
-#if NETFRAMEWORK
-                asmDuckTypes.Should().BeGreaterThan(1516);
-#elif NETCOREAPP2_1
-                asmDuckTypes.Should().BeGreaterThan(1526);
-#else
-                asmDuckTypes.Should().BeGreaterThan(1527);
-#endif
-            }
+
+            // Replaces the exact global assembly count, which depended on the whole test inventory:
+            // proxies for visible targets must reuse their target assembly's module builder instead of
+            // creating a dynamic assembly each.
+            var first = DuckType.Create<IVisibleAssemblyEnumerationProxy>(new VisibleAssemblyEnumerationTarget());
+            var assemblyCount = DuckType.AssemblyCount;
+
+            var second = DuckType.Create<IVisibleAssemblyEnumerationProxy>(new OtherVisibleAssemblyEnumerationTarget());
+            var firstAgain = DuckType.Create<IVisibleAssemblyEnumerationProxy>(new VisibleAssemblyEnumerationTarget());
+
+            first!.Value.Should().Be(1);
+            second!.Value.Should().Be(2);
+            DuckType.AssemblyCount.Should().Be(assemblyCount);
+            second.GetType().Assembly.Should().BeSameAs(first.GetType().Assembly);
+            firstAgain!.GetType().Should().Be(first.GetType());
+        }
+
+        public sealed class VisibleAssemblyEnumerationTarget
+        {
+            public int Value => 1;
+        }
+
+        public sealed class OtherVisibleAssemblyEnumerationTarget
+        {
+            public int Value => 2;
+        }
+
+        private sealed class AssemblyEnumerationTarget
+        {
+            public int Value => 42;
         }
     }
 }

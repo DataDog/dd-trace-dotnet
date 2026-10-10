@@ -1500,7 +1500,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
+        command: "RunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled) --duck-type-aot-gates $(duckTypeAotGates)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/make-artifacts-uploadable.yml

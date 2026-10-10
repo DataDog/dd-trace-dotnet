@@ -685,6 +685,7 @@
       <type fullname="System.DateTime" />
       <type fullname="System.DateTimeKind" />
       <type fullname="System.DateTimeOffset" />
+      <type fullname="System.DBNull" />
       <type fullname="System.Decimal" />
       <type fullname="System.Delegate" />
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
@@ -724,6 +725,7 @@
       <type fullname="System.EventHandler" />
       <type fullname="System.EventHandler`1" />
       <type fullname="System.Exception" />
+      <type fullname="System.FieldAccessException" />
       <type fullname="System.FlagsAttribute" />
       <type fullname="System.FormatException" />
       <type fullname="System.FormattableString" />
@@ -773,6 +775,7 @@
       <type fullname="System.IO.File" />
       <type fullname="System.IO.FileAccess" />
       <type fullname="System.IO.FileInfo" />
+      <type fullname="System.IO.FileLoadException" />
       <type fullname="System.IO.FileMode" />
       <type fullname="System.IO.FileNotFoundException" />
       <type fullname="System.IO.FileOptions" />
@@ -801,7 +804,9 @@
       <type fullname="System.Memory`1" />
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
+      <type fullname="System.MissingFieldException" />
       <type fullname="System.MissingMemberException" />
+      <type fullname="System.MissingMethodException" />
       <type fullname="System.MulticastDelegate" />
       <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
@@ -862,6 +867,7 @@
       <type fullname="System.Reflection.MethodBody" />
       <type fullname="System.Reflection.MethodImplAttributes" />
       <type fullname="System.Reflection.MethodInfo" />
+      <type fullname="System.Reflection.Missing" />
       <type fullname="System.Reflection.Module" />
       <type fullname="System.Reflection.ParameterAttributes" />
       <type fullname="System.Reflection.ParameterInfo" />
@@ -968,6 +974,7 @@
       <type fullname="System.StringComparison" />
       <type fullname="System.StringSplitOptions" />
       <type fullname="System.Text.Decoder" />
+      <type fullname="System.Text.DecoderFallbackException" />
       <type fullname="System.Text.Encoder" />
       <type fullname="System.Text.EncoderFallbackException" />
       <type fullname="System.Text.Encoding" />
@@ -1084,6 +1091,7 @@
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
       <type fullname="System.Runtime.InteropServices.ComTypes.STATSTG" />
       <type fullname="System.Runtime.InteropServices.DefaultDllImportSearchPathsAttribute" />
+      <type fullname="System.Runtime.InteropServices.DispatchWrapper" />
       <type fullname="System.Runtime.InteropServices.DllImportSearchPath" />
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
@@ -1091,6 +1099,7 @@
       <type fullname="System.Runtime.InteropServices.PosixSignal" />
       <type fullname="System.Runtime.InteropServices.PosixSignalContext" />
       <type fullname="System.Runtime.InteropServices.PosixSignalRegistration" />
+      <type fullname="System.Runtime.InteropServices.UnknownWrapper" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
    </assembly>
@@ -1217,6 +1226,7 @@
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">
       <type fullname="System.Threading.ThreadPool" />
+      <type fullname="System.Threading.WaitCallback" />
    </assembly>
    <assembly fullname="System.Threading.Timer">
       <type fullname="System.Threading.Timer" />

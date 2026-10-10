@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -138,6 +139,64 @@ namespace Datadog.Trace.DuckTyping
                 (proxyType.IsGenericType &&
                  proxyType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
                  proxyType.GenericTypeArguments[0].GetCustomAttribute<DuckCopyAttribute>() != null);
+        }
+
+        private static bool TryUnwrapValueWithType(Type type, out Type valueType)
+        {
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValueWithType<>))
+            {
+                valueType = type.GenericTypeArguments[0];
+                return true;
+            }
+
+            valueType = type;
+            return false;
+        }
+
+        /// <summary>
+        /// Splits a duck attribute name into its comma-separated fallback names. The AOT registry generator uses it too.
+        /// </summary>
+        /// <param name="configuredName">The configured name.</param>
+        /// <returns>The candidate names, in order.</returns>
+        internal static IEnumerable<string> GetDuckAttributeCandidateNames(string configuredName)
+        {
+            if (configuredName.IndexOf(',') == -1)
+            {
+                var trimmedName = configuredName.Trim();
+                if (!StringUtil.IsNullOrEmpty(trimmedName))
+                {
+                    yield return trimmedName;
+                }
+
+                yield break;
+            }
+
+            // A comma inside generic arguments is part of the name, e.g. the explicit implementation
+            // "System.Collections.Generic.IDictionary<System.String,System.Object>.TryGetValue".
+            var depth = 0;
+            var start = 0;
+            for (var i = 0; i <= configuredName.Length; i++)
+            {
+                var current = i < configuredName.Length ? configuredName[i] : ',';
+                if (current is '<' or '[')
+                {
+                    depth++;
+                }
+                else if (current is '>' or ']')
+                {
+                    depth = Math.Max(0, depth - 1);
+                }
+                else if (current == ',' && (depth == 0 || i == configuredName.Length))
+                {
+                    var trimmedName = configuredName.Substring(start, i - start).Trim();
+                    if (!StringUtil.IsNullOrEmpty(trimmedName))
+                    {
+                        yield return trimmedName;
+                    }
+
+                    start = i + 1;
+                }
+            }
         }
 
         /// <summary>
