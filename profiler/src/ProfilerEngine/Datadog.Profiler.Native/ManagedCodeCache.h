@@ -3,76 +3,16 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
-#include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <optional>
-#include <shared_mutex>
 #include <mutex>
-#include <set>
-#include <algorithm>
-
+#include <optional>
+#include <vector>
 
 #include "cor.h"
 #include "corprof.h"
 
-#ifndef _WINDOWS
-#include "ReaderWriterSpinningMutex.hpp"
-#endif
-
-class CounterMetric;
-class MetricsRegistry;
-
-// The cache read paths can run inside the profiler's signal handlers (SIGPROF for
-// the timer_create CPU profiler, SIGUSR1 for wall-time stack collection). The timed
-// acquire of std::shared_timed_mutex lowers to pthread_rwlock_timedrdlock, which
-// POSIX does not list as async-signal-safe. ReaderWriterSpinningMutex implements the
-// same SharedTimedMutex requirements using only atomics, so it can be used with
-// std::shared_lock/std::unique_lock unchanged.
-// Windows has no signal-based sampling, so the standard type is used there.
-#ifdef _WINDOWS
-using CodeCacheMutex = std::shared_timed_mutex;
-#else
-using CodeCacheMutex = ReaderWriterSpinningMutex;
-#endif
-
-// Represents a single contiguous code range
-struct CodeRange {
-    UINT_PTR startAddress;
-    UINT_PTR endAddress;  // Inclusive
-    FunctionID functionId;
-    // true when the range was registered from DynamicMethodJITCompilationFinished
-    // (IL stubs, DynamicMethod/LCG)
-    bool isDynamic = false;
-
-    // For binary search
-    bool operator<(const CodeRange& other) const {
-        return startAddress < other.startAddress;
-    }
-
-    // Check if IP is within this range
-    bool contains(UINT_PTR ip) const {
-        return ip >= startAddress && ip <= endAddress;
-    }
-};
-
-
-struct ModuleCodeRange {
-    UINT_PTR startAddress;
-    UINT_PTR endAddress; // Inclusive
-    bool isRemoved = false;
-    // For binary search
-    bool operator<(const ModuleCodeRange& other) const {
-        return startAddress < other.startAddress;
-    }
-    
-    // Check if IP is within this range
-    bool contains(std::uintptr_t ip) const {
-        return ip >= startAddress && ip <= endAddress;
-    }
-};
+#include "CodeRangeTrie.h"
+#include "EpochReclaimer.h"
 
 class IConfiguration;
 
@@ -93,6 +33,14 @@ class IConfiguration;
 // - Is simpler than querying with Info9
 //
 // See: dotnet-runtime/docs/design/features/code-versioning-profiler-breaking-changes.md
+//
+// CONCURRENCY: lock-free readers
+// ==============================
+// IsManaged is called from the profiler signal handlers (stack walking). The code
+// ranges are stored in a CodeRangeTrie and the R2R module ranges in a ModuleRangeSet:
+// readers never take a lock (so they can neither block nor fail because a writer is
+// active), writers are serialized and retire the memory they replace to the
+// EpochReclaimer. See profiler/docs/ManagedCodeCache.md.
 class ManagedCodeCache {
 public:
     static constexpr FunctionID InvalidFunctionId = -1;
@@ -102,13 +50,42 @@ public:
         bool IsDynamic;
     };
 
-    ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry);
+    // Read-side critical section (signal-safe). Entering/leaving one costs two
+    // atomic increments: callers doing several lookups in a row (e.g. a stack walk)
+    // should hold one ReadScope for all of them instead of paying that cost for each
+    // IsManaged call. It only delays the reclamation of replaced memory: keep it short
+    // (no blocking call) and never jump over its destructor (siglongjmp), which would
+    // prevent memory from ever being reclaimed.
+    class ReadScope
+    {
+    public:
+        ReadScope(const ReadScope&) = delete;
+        ReadScope& operator=(const ReadScope&) = delete;
+
+    private:
+        friend class ManagedCodeCache;
+        explicit ReadScope(const EpochReclaimer& reclaimer) noexcept :
+            _guard(reclaimer)
+        {
+        }
+
+        EpochReclaimer::ReadGuard _guard;
+    };
+
+    explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo);
     ~ManagedCodeCache();
 
-    // Signal-safe lookup methods (no allocation)
-    [[nodiscard]] std::optional<bool> IsManaged(std::uintptr_t ip) const noexcept;
+    [[nodiscard]] ReadScope EnterReadScope() const noexcept
+    {
+        return ReadScope(_reclaimer);
+    }
 
-    // Not signal-safe
+    // Signal-safe lookup (lock-free, no allocation). The lookup never fails: the
+    // std::optional is kept so callers stay agnostic of the implementation.
+    [[nodiscard]] std::optional<bool> IsManaged(std::uintptr_t ip) const noexcept;
+    [[nodiscard]] std::optional<bool> IsManaged(std::uintptr_t ip, const ReadScope& scope) const noexcept;
+
+    // Not signal-safe (may call ICorProfilerInfo::GetFunctionFromIP)
     [[nodiscard]] std::optional<FunctionInfo> GetFunctionInfo(std::uintptr_t ip) noexcept;
 
     // isDynamic is true only when called from DynamicMethodJITCompilationFinished
@@ -119,95 +96,50 @@ public:
     bool Initialize();
 
 private:
-    // Each page has its own data + lock for fine-grained concurrency
-    struct PageEntry {
-        std::vector<CodeRange> ranges;  // Sorted by startAddress
-        mutable CodeCacheMutex lock;  // Reader-writer lock (timed for signal-handler reads)
-        
-        PageEntry() = default;
-        
-        // Needed for map operations (can't copy mutex)
-        PageEntry(PageEntry&& other) noexcept 
-            : ranges(std::move(other.ranges)) {}
-        
-        PageEntry& operator=(PageEntry&& other) noexcept {
-            ranges = std::move(other.ranges);
-            return *this;
-        }
-        
-        // Delete copy operations
-        PageEntry(const PageEntry&) = delete;
-        PageEntry& operator=(const PageEntry&) = delete;
-    };
-        
-    using PagesMap = std::unordered_map<uint64_t, PageEntry>;
-
-    // Partition address space into 64KB pages for faster lookup
-    static constexpr size_t PAGE_SHIFT = 16;  // 64KB pages (size = 1ULL << 16 = 65536)
-    
-    // Helper: Get page number for an address
-    static uint64_t GetPageNumber(UINT_PTR address) {
-        return address >> PAGE_SHIFT;
-    }
-    
     // Query the runtime for code ranges for a specific version
     // This is called when a new tier is compiled
     std::vector<CodeRange> GetCodeRanges(FunctionID functionId, bool isDynamic);
-    
-    // Append new ranges to the cache (accumulative - never removes old ranges)
-    // This preserves old tier code that might still be on the stack
-    void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
+    std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
 
-// Expose the helpers below to tests without duplicating the declarations.
+// Expose the helpers below to tests and benchmarks without duplicating the declarations.
 #ifdef DD_TEST
 public:
 #endif
+    // Append new ranges to the cache (accumulative - never removes old ranges)
+    // This preserves old tier code that might still be on the stack
+    void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
     void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
+    void RemoveModuleRangesFromCache(std::vector<ModuleCodeRange> moduleCodeRanges);
 #ifdef DD_TEST
-    // Test-only hooks to simulate signal-handler contention. IsManaged uses
-    // a time-based acquire on these two mutexes and returns std::nullopt when
-    // ownership cannot be acquired within the timeout. Holding an exclusive lock
-    // on either mutex from another thread deterministically reproduces that
-    // "contended" state.
-    std::unique_lock<CodeCacheMutex> LockPagesMutexExclusiveForTest()
+    // Test-only hooks: hold the writer locks to check that readers are never blocked.
+    std::unique_lock<std::mutex> LockCodeRangesWriterForTest()
     {
-        return std::unique_lock<CodeCacheMutex>(_pagesMutex);
+        return _codeRanges.LockWriterForTest();
     }
-    std::unique_lock<CodeCacheMutex> LockModulesMutexExclusiveForTest()
+    std::unique_lock<std::mutex> LockModulesWriterForTest()
     {
-        return std::unique_lock<CodeCacheMutex>(_modulesMutex);
+        return _modules.LockWriterForTest();
+    }
+    std::size_t PendingReclaimBytesForTest() const
+    {
+        return _reclaimer.PendingBytes();
+    }
+    std::size_t MemoryUsageForTest() const
+    {
+        return _codeRanges.MemoryUsage() + _modules.MemoryUsage() + _reclaimer.PendingBytes();
     }
 private:
 #endif
-    std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
-    void InsertCodeRangeIntoPage(PagesMap::iterator pageIt, const CodeRange& range);
-
-    std::optional<bool> IsManagedImpl(std::uintptr_t ip) const noexcept;
-
-    // Map from page number -> page entry (with its own lock)
-    PagesMap _pagesMap;
-    std::vector<ModuleCodeRange> _modulesCodeRanges;
-    mutable CodeCacheMutex _modulesMutex;
-    
-    // Coarse lock ONLY for modifying the map structure itself
-    // (adding/removing pages, not modifying page contents)
-    mutable CodeCacheMutex _pagesMutex;
-    
-    // Profiler interface (ICorProfilerInfo4 is available in .NET Framework 4.5+)
-    ICorProfilerInfo4* _profilerInfo;
-
-    // Counts how many times IsManaged failed to acquire a lock within the timeout
-    // (signal-handler read path backing off instead of blocking).
-    std::shared_ptr<CounterMetric> _lockFailureMetric;
-
     std::optional<FunctionInfo> GetFunctionInfoImpl(std::uintptr_t ip) const noexcept;
-    std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
+    bool IsCodeInR2RModule(std::uintptr_t ip) const noexcept;
     std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;
     void AddFunctionImpl(FunctionID functionId, bool isDynamic);
-};
 
-// Compile-time checks for signal-safety
-static_assert(std::is_trivially_copyable_v<CodeRange>,
-              "CodeRange must be trivially copyable for signal-safe access");
-static_assert(std::is_trivially_copyable_v<FunctionID>,
-              "FunctionID must be trivially copyable");
+    // Must be declared first: the trie and the module set retire memory to it.
+    EpochReclaimer _reclaimer;
+    CodeRangeTrie _codeRanges;
+    ModuleRangeSet _modules;
+
+    // Profiler interface (ICorProfilerInfo4 is available in .NET Framework 4.5+)
+    ICorProfilerInfo4* _profilerInfo;
+};
