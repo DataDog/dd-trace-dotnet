@@ -44,11 +44,17 @@ jobs:
 
       - name: Set SHA
         id: set_sha
+        env:
+          FORCED_COMMIT_ID: ${{ inputs.forced_commit_id }}
         run: |
-          if [ -z "${{ inputs.forced_commit_id }}" ]; then
+          if [ -z "$FORCED_COMMIT_ID" ]; then
               commitsha="${GITHUB_SHA}"
           else
-              commitsha="${{ inputs.forced_commit_id }}"
+              if [[ ! "$FORCED_COMMIT_ID" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+                echo "::error::Invalid forced_commit_id '$FORCED_COMMIT_ID'. Expected a git commit SHA (7-40 hex chars)"
+                exit 1
+              fi
+              commitsha="$FORCED_COMMIT_ID"
           fi
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
