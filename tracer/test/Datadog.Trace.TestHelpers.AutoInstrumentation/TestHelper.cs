@@ -78,7 +78,7 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool useDotnetExec = false)
+        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool useDotnetExec = false, bool useCoverageCompatibleVSTest = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
@@ -98,6 +98,26 @@ namespace Datadog.Trace.TestHelpers
                 _ => sampleAppPath,
             };
 
+            if (useCoverageCompatibleVSTest && usesVsTest && !useDotnetExec && !EnvironmentTools.IsWindows() && Environment.Version.Major < 11)
+            {
+                // .NET 11 RC1's Unix named mutex layout is incompatible with older runtimes, so its
+                // data collector cannot send coverage over IPC to an older testhost. Keep the runner
+                // on .NET 10 until our SDK includes https://github.com/dotnet/runtime/pull/134541.
+                // Remove this workaround (and the extra SDK in the test images) when updating the SDK.
+                var dotnetRoot = new DirectoryInfo(RuntimeEnvironment.GetRuntimeDirectory()).Parent.Parent.Parent.FullName;
+                var vstestConsole = Directory.GetDirectories(Path.Combine(dotnetRoot, "sdk"), "10.*")
+                                             .Where(path => Version.TryParse(Path.GetFileName(path), out _))
+                                             .OrderByDescending(path => Version.Parse(Path.GetFileName(path)))
+                                             .Select(path => Path.Combine(path, "vstest.console.dll"))
+                                             .FirstOrDefault(File.Exists);
+                if (vstestConsole is null)
+                {
+                    throw new InvalidOperationException($"Install the .NET 10 SDK in '{dotnetRoot}' to run CI Visibility samples on pre-.NET 11 runtimes.");
+                }
+
+                appPath = $"exec \"{vstestConsole}\" \"{sampleAppPath}\"";
+            }
+
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
             var process = await ProfilerHelper.StartProcessWithProfiler(
@@ -113,14 +133,14 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false, bool useCoverageCompatibleVSTest = false)
         {
             const int maxAttempts = 3;
             var attempt = 1;
 
             while (true)
             {
-                var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
+                var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec, useCoverageCompatibleVSTest);
                 using var processHelper = new ProcessHelper(process);
                 var result = WaitForProcessResultRaw(processHelper, dumpChildProcesses: true);
 
