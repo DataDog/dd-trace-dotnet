@@ -4894,7 +4894,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows]
+      jobs: [Windows, compare, create_github_token]
 
   - job: Windows
     strategy:
@@ -5073,42 +5073,60 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-  # - job: compare
-  #   timeoutInMinutes: 60 #default value
-  #   dependsOn: [Windows]
-  #   pool:
-  #     vmImage: windows-2025
+  # Create this token on the linux side (create_github_token doesn't work on Windows currently).
+  # Depend on the benchmark jobs so the token (1-hour lifetime) is minted just before compare consumes it.
+  - job: create_github_token
+    dependsOn: [Windows, Linux]
+    condition: succeededOrFailed()
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+    - template: steps/create-github-app-token.yml
 
-  #   steps:
-  #   - template: steps/clone-repo.yml
-  #     parameters:
-  #       targetShaId: $(targetShaId)
-  #       targetBranch: $(targetBranch)
+  # Compare against master even if some benchmarks failed: missing results are skipped in the report
+  - job: compare
+    timeoutInMinutes: 60 #default value
+    dependsOn: [Windows, Linux, create_github_token]
+    condition: succeededOrFailed()
+    variables:
+      GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
+    pool:
+      vmImage: windows-2025
 
-    # - template: steps/install-latest-dotnet-sdk.yml
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
-    # - task: DownloadPipelineArtifact@2
-    #   displayName: Download HttpMessageHandler
-    #   inputs:
-    #     artifact: profiler_execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
-    #     path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
+    - template: steps/install-latest-dotnet-sdk.yml
 
-    # - task: DownloadPipelineArtifact@2
-    #   displayName: Download FakeDbCommand
-    #   inputs:
-    #     artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
-    #     path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
+    # Downloads each matching artifact into its own sub-folder; only the first attempt (_1) is used, retries are ignored
+    - template: steps/download-artifact.yml
+      parameters:
+        patterns: 'profiler_execution_time_benchmarks_*_1/**'
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/profiler_execution_benchmarks/current
 
-    # - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
-    #   displayName: Compare execution-time results
-    #   env:
-    #     PR_NUMBER: $(System.PullRequest.PullRequestNumber)
-    #     AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-    #     GITHUB_TOKEN: $(GITHUB_TOKEN)
+    - script: tracer\build.cmd CompareProfilerExecutionTimeBenchmarkResults
+      displayName: Compare profiler execution-time results
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
 
-    # - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/execution_time_report.md
-    #   displayName: Upload report
-    #   artifact: execution_time_report
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/profiler_execution_benchmarks/profiler_execution_time_report.md
+      displayName: Upload report
+      artifact: profiler_execution_time_report
+
+    # Post the PR comment after the artifact is published so we can link directly to the file.
+    - script: tracer\build.cmd PostProfilerExecutionTimeBenchmarkResultsComment
+      displayName: Post PR comment with report link
+      continueOnError: true
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
+        AZURE_DEVOPS_BUILD_ID: $(Build.BuildId)
 
 - stage: system_tests
   dependsOn: [package_linux, merge_commit_id]

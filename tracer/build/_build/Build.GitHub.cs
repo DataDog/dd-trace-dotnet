@@ -980,86 +980,165 @@ partial class Build
         .Requires(() => AzureDevopsToken)
         .Requires(() => GitHubToken)
         .Requires(() => AzureDevopsBuildId)
-        .Executes(async () =>
+        .Executes(() => PostBenchmarkReportComment(
+                      summaryPath: BuildDataDirectory / "execution_benchmarks" / "execution_time_summary.md",
+                      reportArtifactName: "execution_time_report",
+                      reportFileName: "execution_time_report.md",
+                      commentTitle: "## Execution-Time Benchmarks Report"));
+
+    Target CompareProfilerExecutionTimeBenchmarkResults => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
+         .Executes(async () =>
+         {
+             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
+             var testedCommit = GetCommitDetails();
+
+             var executionDir = BuildDataDirectory / "profiler_execution_benchmarks";
+             var masterDir = executionDir / "master";
+             var commitDir = executionDir / "current";
+
+             FileSystemTasks.EnsureCleanDirectory(masterDir);
+
+             var connection = CreateAzureDevopsConnection();
+             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+             // find the latest master build with profiler execution benchmark results
+             var (masterBuild, _) = await FindAndDownloadAzureArtifact(
+                                        buildHttpClient,
+                                        "refs/heads/master",
+                                        build => CompareProfilerExecutionTime.ReferenceArtifactName,
+                                        masterDir,
+                                        buildReason: null);
+
+             // get all the other artifacts from the same build for consistency
+             foreach (var artifactName in CompareProfilerExecutionTime.ArtifactNames.Where(x => x != CompareProfilerExecutionTime.ReferenceArtifactName))
+             {
+                 try
+                 {
+                     var artifact = await buildHttpClient.GetArtifactAsync(
+                                        project: AzureDevopsProjectId,
+                                        buildId: masterBuild.Id,
+                                        artifactName: artifactName);
+                     await DownloadAzureArtifact(masterDir, artifact, AzureDevopsToken);
+                 }
+                 catch (ArtifactNotFoundException)
+                 {
+                     Console.WriteLine($"Could not find {artifactName} artifact for build {masterBuild.Id}. Skipping");
+                 }
+             }
+
+             var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
+             var sources = new List<ExecutionTimeResultSource>
+             {
+                 new(commitName, testedCommit, ExecutionTimeSourceType.CurrentCommit, commitDir),
+                 new("master", masterBuild.SourceVersion, ExecutionTimeSourceType.Master, masterDir),
+             };
+
+             var markdown = CompareProfilerExecutionTime.GetMarkdown(sources);
+             Logger.Information("Markdown build complete, writing report");
+             await File.WriteAllTextAsync(executionDir / "profiler_execution_time_report.md", markdown);
+
+             var summaryMarkdown = CompareProfilerExecutionTime.GetCommentSummary(sources);
+             Logger.Information("Summary build complete, writing comment summary");
+             await File.WriteAllTextAsync(executionDir / "profiler_execution_time_summary.md", summaryMarkdown);
+         });
+
+    /// <summary>
+    /// Posts the profiler execution-time benchmark comparison as a PR comment, with a direct link to
+    /// the full report artifact. Must run <i>after</i> the <c>profiler_execution_time_report</c>
+    /// artifact has been published so that the single-file download URL can be resolved.
+    /// </summary>
+    Target PostProfilerExecutionTimeBenchmarkResultsComment => _ => _
+        .Unlisted()
+        .Requires(() => AzureDevopsToken)
+        .Requires(() => GitHubToken)
+        .Requires(() => AzureDevopsBuildId)
+        .Executes(() => PostBenchmarkReportComment(
+                      summaryPath: BuildDataDirectory / "profiler_execution_benchmarks" / "profiler_execution_time_summary.md",
+                      reportArtifactName: "profiler_execution_time_report",
+                      reportFileName: "profiler_execution_time_report.md",
+                      commentTitle: CompareProfilerExecutionTime.CommentTitle));
+
+    async Task PostBenchmarkReportComment(AbsolutePath summaryPath, string reportArtifactName, string reportFileName, string commentTitle)
+    {
+        var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
+        if (!isPr)
         {
-            var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
-            if (!isPr)
+            Logger.Information("Not a PR build, skipping comment posting");
+            return;
+        }
+
+        if (!File.Exists(summaryPath))
+        {
+            throw new Exception($"No execution time summary found at {summaryPath}, skipping comment");
+        }
+
+        var summaryMarkdown = await File.ReadAllTextAsync(summaryPath);
+
+        // Resolve the single-file download URL for the report artifact.
+        // This requires the artifact to already be published (guaranteed by pipeline step ordering).
+        string reportUrl = null;
+        var connection = new VssConnection(
+            new Uri(AzureDevopsOrganisation),
+            new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+        using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+        // Retry a few times: artifact registration can lag the publish step by a moment.
+        for (var attempt = 0; attempt < 5 && reportUrl is null; attempt++)
+        {
+            if (attempt > 0)
             {
-                Logger.Information("Not a PR build, skipping comment posting");
-                return;
+                await Task.Delay(TimeSpan.FromSeconds(5 * attempt));
+                Logger.Information("Retrying artifact lookup (attempt {Attempt}/5)", attempt + 1);
             }
 
-            var executionDir = BuildDataDirectory / "execution_benchmarks";
-            var summaryPath = executionDir / "execution_time_summary.md";
-
-            if (!File.Exists(summaryPath))
+            try
             {
-                throw new Exception($"No execution time summary found at {summaryPath}, skipping comment");
+                var artifact = await buildHttpClient.GetArtifactAsync(
+                    project: AzureDevopsProjectId,
+                    buildId: AzureDevopsBuildId.Value,
+                    artifactName: reportArtifactName);
+
+                // Convert the zip downloadUrl to a single-file download URL.
+                reportUrl = artifact.Resource.DownloadUrl
+                    .Replace("?format=zip", $"?format=file&subPath=/{reportFileName}");
+
+                Logger.Information("Resolved report URL: {Url}", reportUrl);
             }
-
-            var summaryMarkdown = await File.ReadAllTextAsync(summaryPath);
-
-            // Resolve the single-file download URL for the execution_time_report artifact.
-            // This requires the artifact to already be published (guaranteed by pipeline step ordering).
-            string reportUrl = null;
-            var connection = new VssConnection(
-                new Uri(AzureDevopsOrganisation),
-                new VssBasicCredential(string.Empty, AzureDevopsToken));
-
-            using var buildHttpClient = connection.GetClient<BuildHttpClient>();
-
-            // Retry a few times: artifact registration can lag the publish step by a moment.
-            for (var attempt = 0; attempt < 5 && reportUrl is null; attempt++)
+            catch (ArtifactNotFoundException)
             {
-                if (attempt > 0)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(5 * attempt));
-                    Logger.Information("Retrying artifact lookup (attempt {Attempt}/5)", attempt + 1);
-                }
-
-                try
-                {
-                    var artifact = await buildHttpClient.GetArtifactAsync(
-                        project: AzureDevopsProjectId,
-                        buildId: AzureDevopsBuildId.Value,
-                        artifactName: "execution_time_report");
-
-                    // Convert the zip downloadUrl to a single-file download URL.
-                    reportUrl = artifact.Resource.DownloadUrl
-                        .Replace("?format=zip", "?format=file&subPath=/execution_time_report.md");
-
-                    Logger.Information("Resolved report URL: {Url}", reportUrl);
-                }
-                catch (ArtifactNotFoundException)
-                {
-                    Logger.Information("Artifact not yet available (attempt {Attempt}/5)", attempt + 1);
-                }
-                catch (VssServiceException ex)
-                {
-                    Logger.Information(ex, "Error looking up artifact (attempt {Attempt}/5)", attempt + 1);
-                }
+                Logger.Information("Artifact not yet available (attempt {Attempt}/5)", attempt + 1);
             }
-
-            string reportLink;
-            if (reportUrl is null)
+            catch (VssServiceException ex)
             {
-                // Fall back to the build's artifacts page: not a direct link to the report, but it's
-                // deterministic, so we can always give people _some_ way to get to the full report.
-                var artifactsPageUrl = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={AzureDevopsBuildId.Value}&view=artifacts&pathAsName=false&type=publishedArtifacts";
-                Logger.Warning("Could not resolve single-file report URL, linking to the build artifacts page instead");
-                reportLink = $"📄 **[Download the full report from the build artifacts →]({artifactsPageUrl})**";
+                Logger.Information(ex, "Error looking up artifact (attempt {Attempt}/5)", attempt + 1);
             }
-            else
-            {
-                var viewerUrl = $"https://andrewlock.github.io/merview/?zen=1&url={Uri.EscapeDataString(reportUrl)}";
-                reportLink = $"📄 **[View the full report (charts + all metrics) →]({viewerUrl})**";
-            }
+        }
 
-            var fullMarkdown = summaryMarkdown + "\n\n" + reportLink;
+        string reportLink;
+        if (reportUrl is null)
+        {
+            // Fall back to the build's artifacts page: not a direct link to the report, but it's
+            // deterministic, so we can always give people _some_ way to get to the full report.
+            var artifactsPageUrl = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={AzureDevopsBuildId.Value}&view=artifacts&pathAsName=false&type=publishedArtifacts";
+            Logger.Warning("Could not resolve single-file report URL, linking to the build artifacts page instead");
+            reportLink = $"📄 **[Download the full report from the build artifacts →]({artifactsPageUrl})**";
+        }
+        else
+        {
+            var viewerUrl = $"https://andrewlock.github.io/merview/?zen=1&url={Uri.EscapeDataString(reportUrl)}";
+            reportLink = $"📄 **[View the full report (charts + all metrics) →]({viewerUrl})**";
+        }
 
-            Logger.Information("Updating PR comment on GitHub");
-            await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", fullMarkdown);
-        });
+        var fullMarkdown = summaryMarkdown + "\n\n" + reportLink;
+
+        Logger.Information("Updating PR comment on GitHub");
+        await ReplaceCommentInPullRequest(prNumber, commentTitle, fullMarkdown);
+    }
 
     Target VerifyReleaseReadiness => _ => _
             .Unlisted()
