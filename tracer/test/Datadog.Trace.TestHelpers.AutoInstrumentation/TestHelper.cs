@@ -411,6 +411,31 @@ namespace Datadog.Trace.TestHelpers
 
         protected void ClearCIEnvironmentVariables()
         {
+            // Child samples must not treat the enclosing CI job's trace context as a test session.
+            // Override only the child environment, leaving the parent's telemetry untouched.
+            string[] sessionVariables =
+            [
+                "X_DATADOG_TRACE_ID",
+                "X_DATADOG_PARENT_ID",
+                "X_DATADOG_SAMPLING_PRIORITY",
+                "X_DATADOG_ORIGIN",
+                "X_DATADOG_TAGS",
+                "TRACEPARENT",
+                "TRACESTATE",
+                "BAGGAGE",
+                "B3",
+                "X_B3_TRACEID",
+                "X_B3_SPANID",
+                "X_B3_SAMPLED",
+                "X_B3_FLAGS",
+                ConfigurationKeys.CIVisibility.TestSessionCommand,
+                ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory,
+            ];
+            foreach (var key in sessionVariables)
+            {
+                SetEnvironmentVariable(key, string.Empty);
+            }
+
             // Clear provider variables only; keep shared HOME and USERPROFILE values.
             foreach (var provider in typeof(PlatformKeys.Ci).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
             {

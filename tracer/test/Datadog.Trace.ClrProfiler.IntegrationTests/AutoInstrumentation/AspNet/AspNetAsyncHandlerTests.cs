@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 #pragma warning disable SA1649 // File name must match first type name
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetAsyncHandlerTestsCallTarget : AspNetAsyncHandlerTests
     {
         public AspNetAsyncHandlerTestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)

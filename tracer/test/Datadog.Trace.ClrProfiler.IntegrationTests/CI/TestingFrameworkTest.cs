@@ -233,6 +233,11 @@ public abstract class TestingFrameworkTest : TestHelper
     {
         ClearCIEnvironmentVariables();
         var current = GitInfo.GetCurrent();
+
+        // These tests simulate Azure Pipelines. Do not let the outer GitLab job override
+        // the mocked provider in the sample process.
+        SetEnvironmentVariable(PlatformKeys.Ci.GitLab.Name, string.Empty);
+
         var ciDictionaryValues = DefineCIEnvironmentValues(
             new Dictionary<string, string>
             {
