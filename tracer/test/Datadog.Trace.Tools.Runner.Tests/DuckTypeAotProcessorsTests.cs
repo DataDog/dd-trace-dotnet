@@ -1032,7 +1032,8 @@ public class DuckTypeAotProcessorsTests
             var arguments = new object?[] { "System.Private.CoreLib", coreLibPath, "System.ReadOnlyMemory`1[[System.Byte, System.Private.CoreLib]]", null };
 
             ((bool)tryResolveRuntimeType!.Invoke(obj: null, parameters: arguments)!).Should().BeTrue();
-            arguments[3].Should().Be(typeof(ReadOnlyMemory<byte>));
+            // The core library's type (Datadog.Trace has its own ReadOnlyMemory<T> for older runtimes).
+            arguments[3].Should().Be(typeof(object).Assembly.GetType("System.ReadOnlyMemory`1", throwOnError: true)!.MakeGenericType(typeof(byte)));
         }
         finally
         {
