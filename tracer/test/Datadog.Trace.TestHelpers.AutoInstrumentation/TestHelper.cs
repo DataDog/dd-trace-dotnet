@@ -23,6 +23,7 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -87,6 +88,8 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
+            RecordDuckTypeMappings(sampleAppPath);
+
             Output.WriteLine($"Starting Application: {sampleAppPath} {arguments ?? string.Empty}");
             string testCli = forceVsTestParam || useDotnetExec ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
@@ -144,6 +147,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 throw new Exception($"application not found: {sampleAppPath}");
             }
+
+            RecordDuckTypeMappings(sampleAppPath);
 
             var runtimeArgs = string.Empty;
             if (!string.IsNullOrEmpty(dotnetRuntimeArgs))
@@ -722,6 +727,31 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+        }
+
+        /// <summary>
+        /// When CI asks for it (DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY, see the Nuke target CheckAotDuckTypeDeclarations), records
+        /// the duck typing mappings the sample creates into a map of that directory (DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH), with the
+        /// directory of the sample, whose assemblies the check of the NativeAOT declarations resolves the targets with.
+        /// </summary>
+        /// <param name="sampleAppPath">The path of the sample application.</param>
+        private void RecordDuckTypeMappings(string sampleAppPath)
+        {
+            var mapsDirectory = Environment.GetEnvironmentVariable("DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY");
+            if (string.IsNullOrEmpty(mapsDirectory))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(mapsDirectory);
+            var mapPath = Path.Combine(mapsDirectory, $"{EnvironmentHelper.SampleName}-{Guid.NewGuid():N}.json");
+            var map = new JObject
+            {
+                ["applicationDirectory"] = Path.GetDirectoryName(Path.GetFullPath(sampleAppPath)),
+                ["mappings"] = new JArray(),
+            };
+            File.WriteAllText(mapPath, map.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.DuckTypeAotDiscoveryOutputPath, mapPath);
         }
 
         private ProcessResult WaitForProcessResultRaw(ProcessHelper helper, bool dumpChildProcesses = false)
