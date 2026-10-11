@@ -79,6 +79,10 @@ partial class Build
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (BuildArtifactsDirectory / "monitoring-home");
 
+    // The duck typing mappings the Linux integration tests record (see CheckAotDuckTypeDeclarations). Not under build_data:
+    // they aren't published.
+    AbsolutePath DuckTypeAotMapsDirectory => BuildArtifactsDirectory / "ducktype-aot-maps";
+
     [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
@@ -2257,6 +2261,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
+                    .When(IsLinux, c => c.SetProcessEnvironmentVariable("DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY", DuckTypeAotMapsDirectory))
                     .SetLogsDirectory(TestLogsDirectory)
                     // Apply Docker and area restrictions without requiring the auto-instrumentation platform traits.
                     .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
@@ -2281,6 +2286,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
+                    .When(IsLinux, c => c.SetProcessEnvironmentVariable("DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY", DuckTypeAotMapsDirectory))
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
@@ -2939,6 +2945,31 @@ partial class Build
                 }
             }
         });
+
+    Target CheckAotDuckTypeDeclarations => _ => _
+       .Unlisted()
+       .Description("Checks that the duck typing mappings the integration tests recorded are declared, so NativeAOT builds generate them without a recorded map")
+       .Executes(() =>
+       {
+           if (!DuckTypeAotMapsDirectory.Exists() || !DuckTypeAotMapsDirectory.GlobFiles("*.json").Any())
+           {
+               Logger.Information("No recorded duck typing maps to check in {Directory}", DuckTypeAotMapsDirectory);
+               return;
+           }
+
+           var runnerProject = Solution.GetProject(Projects.DdTrace) ?? throw new Exception($"Could not resolve project '{Projects.DdTrace}'.");
+           DotnetBuild(runnerProject, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+           var runner = ResolveBuiltAssemblyPath(runnerProject, "Datadog.Trace.Tools.Runner.Tool", "Datadog.Trace.Tools.Runner.dll", new[] { "net8.0" });
+           var datadogTrace = MonitoringHomeDirectory / "net6.0" / "Datadog.Trace.dll";
+           EnsureFileExists(datadogTrace, "Datadog.Trace.dll of the monitoring home");
+
+           // Integrations NativeAOT applications don't use: test frameworks (CI Visibility) and Dynamic Instrumentation.
+           var excluded = new[] { "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.", "Datadog.Trace.Ci.", "Datadog.Trace.Debugger." };
+           var environment = new Dictionary<string, string>(EnvironmentInfo.Variables) { ["DOTNET_ROLL_FORWARD"] = "Major" };
+           DotNet(
+               $"{runner} aot check-declarations --datadog-trace {datadogTrace} --maps {DuckTypeAotMapsDirectory} --report {BuildDataDirectory / "ducktype-aot-declarations.json"} {string.Join(" ", excluded.Select(prefix => $"--exclude {prefix}"))}",
+               environmentVariables: environment);
+       });
 
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()

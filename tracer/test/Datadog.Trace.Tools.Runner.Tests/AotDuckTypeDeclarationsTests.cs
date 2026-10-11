@@ -7,9 +7,12 @@
 #nullable enable
 
 using System;
+using System.IO;
 using System.Linq;
+using Datadog.Trace.Tools.Runner.Aot;
 using Datadog.Trace.Tools.Runner.Aot.CallTarget;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using dnlib.DotNet;
 using FluentAssertions;
 using Xunit;
@@ -82,6 +85,60 @@ public class AotDuckTypeDeclarationsTests
 
         DuckTypeAotMapping Forward(Type proxy, Type target)
             => new(proxy.FullName!, assemblyName, target.FullName!, assemblyName, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile);
+    }
+
+    [Fact]
+    public void CheckOfRecordedMapsListsTheUndeclaredMappings()
+    {
+        // The map of an application (as the integration tests record them): the mappings of CallTarget's constraints, the ones
+        // dynamic duck typing doesn't create, and the excluded proxies are left out.
+        var directory = Path.Combine(Path.GetTempPath(), "dd-trace-aot-check-declarations", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var datadogTrace = typeof(Tracer).Assembly.Location;
+            var mapPath = Path.Combine(directory, "Samples.App-0123456789abcdef0123456789abcdef.json");
+            File.WriteAllText(mapPath, new JObject
+            {
+                ["applicationDirectory"] = Path.GetDirectoryName(datadogTrace),
+                ["mappings"] = new JArray(
+                    Entry("Datadog.Trace.Undeclared.IProxy", "Library.Target"),
+                    Entry("Datadog.Trace.Undeclared.IConstraintProxy", "Library.Target", callTarget: true),
+                    Entry("Datadog.Trace.Undeclared.IFailingProxy", "Library.Target", canCreate: false),
+                    Entry("Datadog.Trace.Excluded.IProxy", "Library.Target"),
+                    Entry("Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.IGrpcCall", "Grpc.Net.Client.Internal.GrpcCall`2[[App.Request, App],[App.Response, App]]", targetAssembly: "Grpc.Net.Client")),
+            }.ToString());
+            File.WriteAllText(Path.Combine(directory, "not-a-map.json"), "[]");
+            var reportPath = Path.Combine(directory, "report.txt");
+
+            AotDeclarationsCheck.Run(datadogTrace, [directory], ["Datadog.Trace.Excluded."], reportPath).Should().Be(1);
+
+            var undeclared = JObject.Parse(File.ReadAllText(reportPath))["undeclared"]!.Select(entry => ((string)entry["mapping"]!, ((JArray)entry["applications"]!).Select(application => (string)application!).Single())).ToList();
+            undeclared.Should().ContainSingle().Which.Should().Be((new DuckTypeAotMapping("Datadog.Trace.Undeclared.IProxy", "Datadog.Trace", "Library.Target", "Library", DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile).Key, "Samples.App"));
+
+            File.Delete(mapPath);
+            AotDeclarationsCheck.Run(datadogTrace, [directory], [], reportPath: null).Should().Be(0);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+
+        static JObject Entry(string proxyType, string targetType, bool callTarget = false, bool canCreate = true, string targetAssembly = "Library")
+        {
+            var entry = new JObject { ["mode"] = "forward", ["proxyType"] = proxyType, ["proxyAssembly"] = "Datadog.Trace", ["targetType"] = targetType, ["targetAssembly"] = targetAssembly };
+            if (callTarget)
+            {
+                entry["callTarget"] = true;
+            }
+
+            if (!canCreate)
+            {
+                entry["canCreate"] = false;
+            }
+
+            return entry;
+        }
     }
 
     public interface IDeclaredProxy
