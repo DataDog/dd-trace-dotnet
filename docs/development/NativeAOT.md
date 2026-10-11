@@ -103,6 +103,15 @@ references the target's assembly:
 When the publish has recorded maps, the report lists in `UndeclaredDuckTypeMappings` the recorded mappings of Datadog's
 proxies that aren't declared, so a mapping an integration creates under JIT and its declarations miss shows up there.
 
+CI checks the declarations against the integration tests: on Linux, `RunIntegrationTests` sets
+`DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY`, so each sample the tests start records its mappings (`DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH`)
+into a map of `artifacts/ducktype-aot-maps` naming its directory (`applicationDirectory`). Then `CheckAotDuckTypeDeclarations`
+runs `dd-trace aot check-declarations`, which fails when a recorded mapping of a Datadog proxy isn't declared (the report goes
+to `build_data/ducktype-aot-declarations.json`). The targets are resolved from the directory of the sample, for the derived
+types. Left out: the mappings of the duck typing constraints of CallTarget integrations, which the build generates from the
+instrumented methods (the recorder marks them `"callTarget": true`), the ones dynamic duck typing doesn't create, which fail
+without a declaration too (`"canCreate": false`), and the proxies of CI Visibility and Dynamic Instrumentation.
+
 The generator evaluates dynamic duck typing with the application's types in its own process, so the registry behaves like
 it (including its failures). The runtime of the generator's framework stands for the application's framework assemblies
 (the NativeAOT `System.Private.CoreLib` is never the generator's).
@@ -142,6 +151,7 @@ NativeAOT specifics in the tracer:
 | Native tracer hosted offline on `CallTargetNativeTest` (same output as the profiler, determinism, build environment) | `AotInstrumentNativeHostIntegrationTests` (`DD_AOT_NATIVE_TRACER`, `DD_AOT_CALLTARGET_NATIVE_TEST_DIR`) |
 | NativeAOT publish of an ASP.NET Core application | `AotInstrumentNativeAotPublishIntegrationTests.AspNetCoreSpansReachTheAgent` |
 | The package: manual API, AppSec, RASP, IAST, AOT analysis warnings of `Datadog.Trace` (Verify snapshot), binary size budget | `AotInstrumentNativeAotPublishIntegrationTests.ManualApiApplicationWithThePackage` (`DD_AOT_PACKAGE_FEED`) |
+| Duck typing declarations (attributes, derived types, generic proxies) and their check against recorded maps | `AotDuckTypeDeclarationsTests`, `DuckTypeAotAdditionalParityTests` (generic proxies, fallbacks), `CheckAotDuckTypeDeclarations` (Nuke, Linux integration tests) |
 
 CI runs the native host and ASP.NET Core tests with `RunNativeAotInstrumentationGate` (Nuke) in a unit test job of each
 build host: Linux x64 and arm64, macOS and Windows. Integration samples are compared between JIT and NativeAOT in
