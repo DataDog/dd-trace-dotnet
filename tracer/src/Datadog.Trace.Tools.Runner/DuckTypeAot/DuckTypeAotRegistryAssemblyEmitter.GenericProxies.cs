@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 #endif
 using System.IO;
@@ -377,7 +377,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 createActivator.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importer.Import(typeof(Type).GetMethod(nameof(Type.MakeGenericType), [typeof(Type[])])!)));
                 createActivator.Body.Instructions.Add(OpCodes.Call.ToInstruction(importer.Import(typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.GetUninitializedObject), [typeof(Type)])!)));
                 createActivator.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                 AddSuppressMessage(moduleDef, createActivator, "AOT", "IL3050");
                 AddSuppressMessage(moduleDef, createActivator, "Trimming", "IL2055");
                 AddSuppressMessage(moduleDef, createActivator, "Trimming", "IL2072");
@@ -507,7 +507,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         private static void AddSuppressMessage(ModuleDef module, MethodDef method, string category, string checkId)
         {
             var importer = RuntimeImporter(module);
