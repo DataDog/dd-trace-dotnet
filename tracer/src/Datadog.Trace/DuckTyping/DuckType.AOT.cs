@@ -667,14 +667,10 @@ namespace Datadog.Trace.DuckTyping
                 new TypesTuple(proxyType, targetType),
                 key => new Lazy<CreateTypeResult>(() =>
                 {
-                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: false);
                     var dryResult = CreateProxyType(key.ProxyDefinitionType, key.TargetType, true);
-                    if (dryResult.CanCreate())
-                    {
-                        return CreateProxyType(key.ProxyDefinitionType, key.TargetType, false);
-                    }
-
-                    return dryResult;
+                    var result = dryResult.CanCreate() ? CreateProxyType(key.ProxyDefinitionType, key.TargetType, false) : dryResult;
+                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: false, result.CanCreate());
+                    return result;
                 }))
                 .Value;
         }
@@ -727,14 +723,10 @@ namespace Datadog.Trace.DuckTyping
                 new TypesTuple(typeToDeriveFrom, delegationType),
                 key => new Lazy<CreateTypeResult>(() =>
                 {
-                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: true);
                     var dryResult = CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, true);
-                    if (dryResult.CanCreate())
-                    {
-                        return CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, false);
-                    }
-
-                    return dryResult;
+                    var result = dryResult.CanCreate() ? CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, false) : dryResult;
+                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: true, result.CanCreate());
+                    return result;
                 }))
                 .Value;
         }

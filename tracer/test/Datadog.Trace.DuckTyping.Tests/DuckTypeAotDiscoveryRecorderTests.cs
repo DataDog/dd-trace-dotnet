@@ -161,6 +161,27 @@ namespace Datadog.Trace.DuckTyping.Tests
             File.ReadAllText(outputPath).Should().Be(text);
         }
 
+        [Fact]
+        public void TryMergeIntoMapShouldWriteWhereTheMappingsComeFromAndTheirFailures()
+        {
+            // The mappings of CallTarget's integration constraints, which a NativeAOT build generates without a declaration, and
+            // the ones dynamic duck typing doesn't create: the check of the declarations leaves them out.
+            var outputPath = Path.Combine(_directory, "map.json");
+            var callTarget = RecordedEntry("Ns.ICallTarget");
+            callTarget.CallTarget = true;
+            var failed = RecordedEntry("Ns.IFailed");
+            failed.CanCreate = false;
+
+            DuckTypeAotDiscoveryRecorder.TryMergeIntoMap(outputPath, [callTarget, failed, RecordedEntry("Ns.IRecorded")]).Should().BeTrue();
+
+            var mappings = ((JArray)JObject.Parse(File.ReadAllText(outputPath))["mappings"]!).Cast<JObject>().ToDictionary(mapping => (string)mapping["proxyType"]!);
+            ((bool?)mappings["Ns.ICallTarget"]["callTarget"]).Should().BeTrue();
+            mappings["Ns.ICallTarget"]["canCreate"].Should().BeNull();
+            ((bool?)mappings["Ns.IFailed"]["canCreate"]).Should().BeFalse();
+            mappings["Ns.IFailed"]["callTarget"].Should().BeNull();
+            mappings["Ns.IRecorded"].Properties().Select(property => property.Name).Should().Equal("mode", "proxyType", "proxyAssembly", "targetType", "targetAssembly");
+        }
+
         [Theory]
         // ASCII text in UTF-16 or UTF-32 without a byte order mark (valid UTF-8 with NUL characters), and bytes that aren't UTF-8.
         [InlineData("utf16-without-bom")]

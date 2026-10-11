@@ -39,6 +39,8 @@ namespace Datadog.Trace.DuckTyping
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static readonly string? OutputPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DuckTypeAotDiscoveryOutputPath);
 
+        private static readonly bool Enabled = !StringUtil.IsNullOrWhiteSpace(OutputPath);
+
         /// <summary>
         /// How long an explicit flush waits for another process holding the output lock file.
         /// Periodic flushes don't wait: a later flush picks their mappings up.
@@ -57,21 +59,44 @@ namespace Datadog.Trace.DuckTyping
         private static int _pendingMappings;
 
         /// <summary>
-        /// Executes record.
+        /// The depth of the CallTarget scopes of the thread (see <see cref="EnterCallTarget"/>).
+        /// </summary>
+        [ThreadStatic]
+        private static int _callTargetDepth;
+
+        /// <summary>
+        /// Marks the mappings recorded on this thread, until the scope is disposed, as the ones of the duck typing constraints of
+        /// CallTarget integrations (IntegrationMapper): a NativeAOT build generates them from the instrumented methods, without a
+        /// declaration.
+        /// </summary>
+        /// <returns>The scope.</returns>
+        internal static CallTargetScope EnterCallTarget()
+        {
+            if (Enabled)
+            {
+                _callTargetDepth++;
+            }
+
+            return new CallTargetScope(Enabled);
+        }
+
+        /// <summary>
+        /// Records a mapping dynamic duck typing created.
         /// </summary>
         /// <param name="proxyType">The proxy type value.</param>
         /// <param name="targetType">The target type value.</param>
         /// <param name="reverse">The reverse value.</param>
-        internal static void Record(Type proxyType, Type targetType, bool reverse)
+        /// <param name="created">Whether dynamic duck typing created the proxy (else, the mapping fails).</param>
+        internal static void Record(Type proxyType, Type targetType, bool reverse, bool created = true)
         {
-            if (StringUtil.IsNullOrWhiteSpace(OutputPath))
+            if (!Enabled)
             {
                 return;
             }
 
             try
             {
-                RecordCore(proxyType, targetType, reverse);
+                RecordCore(proxyType, targetType, reverse, created);
             }
             catch
             {
@@ -79,7 +104,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static void RecordCore(Type proxyType, Type targetType, bool reverse)
+        private static void RecordCore(Type proxyType, Type targetType, bool reverse, bool created)
         {
             if (proxyType is null || targetType is null)
             {
@@ -88,6 +113,8 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (var mapEntry in GetMapEntries(proxyType, targetType, reverse))
             {
+                mapEntry.CallTarget = _callTargetDepth > 0 ? true : null;
+                mapEntry.CanCreate = created ? null : false;
                 EnsureProcessExitHook();
                 if (!RecorderState.Mappings.TryAdd(GetKey(mapEntry), mapEntry))
                 {
@@ -338,14 +365,25 @@ namespace Datadog.Trace.DuckTyping
                                    .ThenBy(mapping => mapping.TargetAssembly, StringComparer.Ordinal)
                                    .ThenBy(mapping => mapping.TargetType, StringComparer.Ordinal))
             {
-                mappingsArray.Add(new JObject
+                var entry = new JObject
                 {
                     ["mode"] = mapping.Mode,
                     ["proxyType"] = mapping.ProxyType,
                     ["proxyAssembly"] = mapping.ProxyAssembly,
                     ["targetType"] = mapping.TargetType,
                     ["targetAssembly"] = mapping.TargetAssembly,
-                });
+                };
+                if (mapping.CallTarget == true)
+                {
+                    entry["callTarget"] = true;
+                }
+
+                if (mapping.CanCreate == false)
+                {
+                    entry["canCreate"] = false;
+                }
+
+                mappingsArray.Add(entry);
             }
 
             WriteAtomically(outputPath, JsonHelper.TokenToString(document, Formatting.Indented));
@@ -560,6 +598,24 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// A CallTarget scope (see <see cref="EnterCallTarget"/>).
+        /// </summary>
+        internal readonly struct CallTargetScope : IDisposable
+        {
+            private readonly bool _entered;
+
+            internal CallTargetScope(bool entered) => _entered = entered;
+
+            public void Dispose()
+            {
+                if (_entered)
+                {
+                    _callTargetDepth--;
+                }
+            }
+        }
+
+        /// <summary>
         /// Represents map entry.
         /// </summary>
         internal sealed class MapEntry
@@ -598,6 +654,19 @@ namespace Datadog.Trace.DuckTyping
             /// <value>The target assembly value.</value>
             [JsonProperty("targetAssembly")]
             public string? TargetAssembly { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the mapping is the one of a duck typing constraint of a CallTarget
+            /// integration (see <see cref="EnterCallTarget"/>); null otherwise.
+            /// </summary>
+            [JsonProperty("callTarget", NullValueHandling = NullValueHandling.Ignore)]
+            public bool? CallTarget { get; set; }
+
+            /// <summary>
+            /// Gets or sets false when dynamic duck typing failed to create the proxy; null otherwise.
+            /// </summary>
+            [JsonProperty("canCreate", NullValueHandling = NullValueHandling.Ignore)]
+            public bool? CanCreate { get; set; }
         }
 
         /// <summary>

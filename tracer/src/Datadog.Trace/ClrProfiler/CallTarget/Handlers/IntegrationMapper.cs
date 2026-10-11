@@ -82,7 +82,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -138,7 +138,7 @@ internal static class IntegrationMapper
                 }
                 else
                 {
-                    var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterTypeElementType);
+                    var result = GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterTypeElementType);
                     parameterProxyType = result.ProxyType;
                     if (parameterProxyType is null)
                     {
@@ -252,7 +252,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -392,7 +392,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -510,7 +510,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -533,7 +533,7 @@ internal static class IntegrationMapper
             var returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
             if (returnValueGenericConstraint != null)
             {
-                var result = DuckType.GetOrCreateProxyType(returnValueGenericConstraint, returnType);
+                var result = GetOrCreateProxyType(returnValueGenericConstraint, returnType);
                 returnValueProxyType = result.ProxyType;
                 if (returnValueProxyType is null)
                 {
@@ -691,7 +691,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -714,7 +714,7 @@ internal static class IntegrationMapper
             var returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
             if (returnValueGenericConstraint != null)
             {
-                var result = DuckType.GetOrCreateProxyType(returnValueGenericConstraint, returnType);
+                var result = GetOrCreateProxyType(returnValueGenericConstraint, returnType);
                 returnValueProxyType = result.ProxyType;
                 if (returnValueProxyType is null)
                 {
@@ -966,6 +966,14 @@ internal static class IntegrationMapper
         }
 
         // Finally we try to duck type
+        using var scope = DuckTypeAotDiscoveryRecorder.EnterCallTarget();
         return DuckType.Create<T>(value);
+    }
+
+    private static DuckType.CreateTypeResult GetOrCreateProxyType(Type proxyDefinitionType, Type targetType)
+    {
+        // A NativeAOT build generates the proxies of the integration constraints from the instrumented methods.
+        using var scope = DuckTypeAotDiscoveryRecorder.EnterCallTarget();
+        return DuckType.GetOrCreateProxyType(proxyDefinitionType, targetType);
     }
 }
