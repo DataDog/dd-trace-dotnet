@@ -493,8 +493,6 @@ namespace Datadog.Trace.Tests.Configuration
             return new RemoteConfiguration(
                 path: path,
                 contents: bytes,
-                length: bytes.Length,
-                hashes: new Dictionary<string, string> { { "sha256", "dummy-hash" } },
                 version: 1);
         }
     }

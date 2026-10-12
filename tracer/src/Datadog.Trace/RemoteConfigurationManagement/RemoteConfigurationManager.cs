@@ -6,17 +6,17 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.LibDatadog;
+using Datadog.Trace.LibDatadog.RemoteConfig;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -28,28 +28,38 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
         private readonly IRcmSubscriptionManager _subscriptionManager;
+        private readonly Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient>? _clientFactory;
         private readonly IDisposable _settingSubscription;
-        private readonly TaskCompletionSource<bool> _processExit = new();
+        private readonly ManualResetEventSlim _processExit = new();
 
-        private IRemoteConfigurationApi _remoteConfigurationApi;
         private RcmClientTracer _rcmTracer;
+        private RemoteConfigEndpoint _endpoint;
         private int _isPollingStarted;
+        private int _isDisposed;
         private bool _isRcmEnabled;
+
+        // Only accessed by the polling thread, except for cancellation
+        private IRemoteConfigClient? _client;
+        private RcmClientTracer? _clientTracer;
+        private RemoteConfigEndpoint? _clientEndpoint;
+        private string[]? _clientExtraServices;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
             TracerSettings settings,
             TimeSpan pollInterval,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            IRcmSubscriptionManager subscriptionManager)
+            IRcmSubscriptionManager subscriptionManager,
+            Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient>? clientFactory)
         {
             _discoveryService = discoveryService;
             _pollInterval = pollInterval;
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
+            _clientFactory = clientFactory;
 
             _subscriptionManager = subscriptionManager;
             discoveryService.SubscribeToChanges(SetRcmEnabled);
-            UpdateRcmApi(settings.Manager.InitialExporterSettings);
+            UpdateEndpoint(settings.Manager.InitialExporterSettings);
             UpdateRcmClientTracer(settings.Manager.InitialMutableSettings);
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {
@@ -60,7 +70,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
                 if (changes.UpdatedExporter is { } exporter)
                 {
-                    UpdateRcmApi(exporter);
+                    UpdateEndpoint(exporter);
                 }
             });
 
@@ -79,12 +89,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 Interlocked.Exchange(ref _rcmTracer!, rcmTracer);
             }
 
-            [MemberNotNull(nameof(_remoteConfigurationApi))]
-            void UpdateRcmApi(ExporterSettings exporter)
+            [MemberNotNull(nameof(_endpoint))]
+            void UpdateEndpoint(ExporterSettings exporter)
             {
-                var rcmApi = RemoteConfigurationApiFactory.Create(exporter, discoveryService);
-
-                Interlocked.Exchange(ref _remoteConfigurationApi!, rcmApi);
+                Interlocked.Exchange(ref _endpoint!, RemoteConfigEndpoint.FromExporterSettings(exporter));
             }
         }
 
@@ -93,28 +101,40 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             RemoteConfigurationSettings settings,
             TracerSettings tracerSettings,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            IRcmSubscriptionManager subscriptionManager)
+            IRcmSubscriptionManager subscriptionManager,
+            Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient>? clientFactory = null)
         {
+            // The remote configuration client is part of libdatadog
+            if (clientFactory is null && LibDatadogAvailabilityHelper.IsLibDatadogAvailable.IsAvailable)
+            {
+                clientFactory = NativeRemoteConfigClient.Create;
+            }
+
             return new RemoteConfigurationManager(
                     discoveryService,
                     tracerSettings,
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
-                    subscriptionManager);
+                    subscriptionManager,
+                    clientFactory);
         }
 
         public void Start()
         {
-            _ = Task.Run(StartPollingAsync)
+            // The libdatadog client blocks while polling, so poll on a dedicated thread
+            _ = Task.Factory.StartNew(PollLoop, TaskCreationOptions.LongRunning)
                .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public void Dispose()
         {
-            if (_processExit.TrySetResult(true))
+            if (Interlocked.Exchange(ref _isDisposed, 1) == 0)
             {
+                _processExit.Set();
                 _discoveryService.RemoveSubscription(SetRcmEnabled);
                 _settingSubscription.Dispose();
+                // Don't wait for a pending request, e.g. when the AppDomain is unloaded
+                Volatile.Read(ref _client)?.Cancel();
             }
             else
             {
@@ -123,7 +143,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        private async Task StartPollingAsync()
+        private void PollLoop()
         {
             if (Interlocked.Exchange(ref _isPollingStarted, 1) != 0)
             {
@@ -131,58 +151,100 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 return;
             }
 
-            while (!_processExit.Task.IsCompleted)
+            if (_clientFactory is null)
             {
-                var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
+                Log.Information("Remote Configuration is unavailable, as libdatadog is not available.");
+                return;
+            }
 
-                if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
+            try
+            {
+                while (!_processExit.IsSet)
                 {
-                    try
-                    {
-                        await Poll().ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        // It shouldn't happen because the RcmSubscriptionManager swallows exceptions.
-                        // But hey, we all know what's going to happen sooner or later.
-                        Log.Error(ex, "Error while polling remote configuration management service");
-                    }
-                }
+                    var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
 
-                try
-                {
-                    await Task.WhenAny(_processExit.Task, Task.Delay(_pollInterval)).ConfigureAwait(false);
+                    if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
+                    {
+                        try
+                        {
+                            if (!Poll())
+                            {
+                                return;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error while polling remote configuration management service");
+                        }
+                    }
+
+                    _processExit.Wait(_pollInterval);
                 }
-                catch (OperationCanceledException)
-                {
-                    // We are shutting down, so don't do anything about it
-                }
+            }
+            finally
+            {
+                var client = Interlocked.Exchange(ref _client, null);
+                client?.Dispose();
             }
         }
 
-        private Task Poll()
+        /// <summary>
+        /// Returns false if remote configuration is unavailable.
+        /// </summary>
+        private bool Poll()
         {
-            var rcm = Volatile.Read(ref _rcmTracer);
-            return _subscriptionManager.SendRequest(rcm, request =>
-            {
-                EnrichTagsWithGitMetadata(request.Client.ClientTracer);
-                request.Client.ClientTracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
+            var tracer = Volatile.Read(ref _rcmTracer);
+            var endpoint = Volatile.Read(ref _endpoint);
+            var gitMetadataAdded = EnrichTagsWithGitMetadata(tracer);
 
-                return Volatile.Read(ref _remoteConfigurationApi).GetConfigs(request);
-            });
+            var client = _client;
+            if (client is null)
+            {
+                try
+                {
+                    client = _clientFactory!(_subscriptionManager.ClientId, tracer, endpoint);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Remote Configuration is unavailable: failed to create the remote configuration client");
+                    return false;
+                }
+
+                Volatile.Write(ref _client, client);
+            }
+            else if (gitMetadataAdded || !ReferenceEquals(tracer, _clientTracer) || !ReferenceEquals(endpoint, _clientEndpoint))
+            {
+                client.Rebind(tracer, ReferenceEquals(endpoint, _clientEndpoint) ? null : endpoint);
+            }
+
+            _clientTracer = tracer;
+            _clientEndpoint = endpoint;
+
+            var extraServices = ExtraServicesProvider.Instance.GetExtraServices();
+            if (!ReferenceEquals(extraServices, _clientExtraServices))
+            {
+                client.SetExtraServices(extraServices);
+                _clientExtraServices = extraServices;
+            }
+
+            _subscriptionManager.Poll(client);
+            return true;
         }
 
-        private void EnrichTagsWithGitMetadata(RcmClientTracer details)
+        /// <summary>
+        /// Adds the git metadata tags once available, returns whether they were just added.
+        /// </summary>
+        private bool EnrichTagsWithGitMetadata(RcmClientTracer details)
         {
             if (details.IsGitMetadataAddedToRequestTags)
             {
-                return;
+                return false;
             }
 
             if (!_gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata))
             {
                 // no git metadata found, we can try again later.
-                return;
+                return false;
             }
 
             if (gitMetadata != GitMetadata.Empty)
@@ -192,6 +254,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             details.IsGitMetadataAddedToRequestTags = true;
+            return gitMetadata != GitMetadata.Empty;
         }
 
         private void SetRcmEnabled(AgentConfiguration c)

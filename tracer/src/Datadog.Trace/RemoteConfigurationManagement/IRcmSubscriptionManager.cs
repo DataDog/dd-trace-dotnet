@@ -4,16 +4,18 @@
 // </copyright>
 
 #nullable enable
-using System;
 using System.Numerics;
-using System.Threading.Tasks;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal interface IRcmSubscriptionManager
 {
     bool HasAnySubscription { get; }
+
+    /// <summary>
+    /// Gets the id identifying this client to the agent.
+    /// </summary>
+    string ClientId { get; }
 
     void SubscribeToChanges(ISubscription subscription);
 
@@ -23,5 +25,8 @@ internal interface IRcmSubscriptionManager
 
     void SetCapability(BigInteger index, bool available);
 
-    Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback);
+    /// <summary>
+    /// Fetches the remote configurations once with <paramref name="client"/>, and dispatches the changes to the subscriptions.
+    /// </summary>
+    void Poll(IRemoteConfigClient client);
 }

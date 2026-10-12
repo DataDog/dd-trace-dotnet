@@ -5,12 +5,9 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.TestHelpers;
 
@@ -20,6 +17,8 @@ namespace Datadog.Trace.TestHelpers;
 internal class MockRcmSubscriptionManager : IRcmSubscriptionManager
 {
     public bool HasAnySubscription => LastSubscription != null;
+
+    public string ClientId => "client-id";
 
     public ICollection<string> ProductKeys { get; } = new List<string>();
 
@@ -51,8 +50,7 @@ internal class MockRcmSubscriptionManager : IRcmSubscriptionManager
     {
     }
 
-    public byte[] GetCapabilities() => [];
-
-    public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
-        => Task.CompletedTask;
+    public void Poll(IRemoteConfigClient client)
+    {
+    }
 }

@@ -460,9 +460,7 @@ public class DynamicConfigurationManagerTests
         path ??= $"datadog/{version}/product-{version}/id-{version}/path";
         return new RemoteConfiguration(
             RemoteConfigurationPath.FromPath(path),
-            contents: [],
-            length: 0,
-            hashes: new(),
+            contents: Array.Empty<byte>(),
             version: Interlocked.Increment(ref _version)); // use version to create unique config values
     }
 

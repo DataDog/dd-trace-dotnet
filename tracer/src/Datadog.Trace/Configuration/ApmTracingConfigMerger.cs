@@ -7,10 +7,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -39,8 +37,7 @@ namespace Datadog.Trace.Configuration
             {
                 try
                 {
-                    var jsonContent = Encoding.UTF8.GetString(config.Contents);
-                    var configData = ParseConfiguration(config.Path.Id, jsonContent);
+                    var configData = ParseConfiguration(config);
 
                     if (configData == null)
                     {
@@ -164,11 +161,12 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Parses a single APM_TRACING configuration JSON
         /// </summary>
-        private static ApmTracingConfig? ParseConfiguration(string configId, string jsonContent)
+        private static ApmTracingConfig? ParseConfiguration(RemoteConfiguration config)
         {
+            var configId = config.Path.Id;
             try
             {
-                var configDto = JsonHelper.DeserializeObject<ApmTracingConfigDto>(jsonContent);
+                var configDto = new NamedRawFile(config.Path, config.Contents).Deserialize<ApmTracingConfigDto>().TypedFile;
 
                 if (configDto?.LibConfig == null)
                 {
