@@ -591,16 +591,13 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
 
     if (_lastTimestamp == 0ns)
     {
-        if (_memPressureThreshold == 0)
-        {
-            _lastTimestamp = now;
+        _lastTimestamp = now;
 
-            if (!_delayFirstSnapshot)
-            {
-                _shouldStartHeapDump.store(true);
-            }
-            return;
+        if (!_delayFirstSnapshot)
+        {
+            _shouldStartHeapDump.store(true);
         }
+        return;
     }
     else
     {
