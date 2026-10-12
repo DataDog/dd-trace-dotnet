@@ -32,7 +32,6 @@ dirfd
 dl_iterate_phdr
 dladdr
 dlsym
-dup
 dup2
 environ
 epoll_create1
@@ -47,6 +46,7 @@ fork
 free
 freeaddrinfo
 fstat
+fstatfs
 fsync
 ftruncate
 gai_strerror
@@ -72,12 +72,15 @@ memcmp
 memcpy
 memmove
 memset
+mkdir
 mmap
 mprotect
 munmap
 nanosleep
 open
+openat
 opendir
+pipe
 pipe2
 poll
 posix_memalign
@@ -112,11 +115,13 @@ raise
 read
 readdir
 readlink
+readlinkat
 realloc
 realpath
 recv
 recvfrom
 recvmsg
+rename
 sched_getaffinity
 sched_yield
 send
@@ -138,6 +143,7 @@ sigprocmask
 socket
 socketpair
 stat
+statfs
 stpcpy
 strcmp
 strcpy
