@@ -129,7 +129,7 @@ internal static class OtlpLogsSerializer
 
         if (!StringUtil.IsNullOrEmpty(settings.Environment))
         {
-            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment", settings.Environment);
+            writePosition = WriteResourceAttribute(buffer, writePosition, "deployment.environment.name", settings.Environment);
         }
 
         // Write telemetry SDK attributes

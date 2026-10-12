@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
@@ -18,10 +19,15 @@ namespace Samples.Remoting
             string protocol = args.FirstOrDefault(arg => arg.StartsWith("Protocol="))?.Split('=')[1]?.ToLower() ?? "http";
             Console.WriteLine($"Protocol {protocol}");
 
+            // "single" declares an explicit server sink chain with only one formatter (BinaryServerFormatterSinkProvider),
+            // instead of the default chain that has both the SOAP and Binary formatters
+            bool singleFormatter = string.Equals(args.FirstOrDefault(arg => arg.StartsWith("Formatters="))?.Split('=')[1], "single", StringComparison.OrdinalIgnoreCase);
+            Console.WriteLine($"Single formatter {singleFormatter}");
+
             string url = protocol switch
             {
                 "http" => SetupHttpRemoting(port),
-                "tcp" => SetupTcpRemoting(port),
+                "tcp" => SetupTcpRemoting(port, singleFormatter),
                 "ipc" => SetupIpcRemoting(port),
                 _ => throw new ArgumentException($"Protocol '{protocol}' not recognized", "Protocol"),
             };
@@ -45,9 +51,11 @@ namespace Samples.Remoting
             return $"http://localhost:{port}/RemoteServer";
         }
 
-        private static string SetupTcpRemoting(string port)
+        private static string SetupTcpRemoting(string port, bool singleFormatter)
         {
-            TcpChannel tcpServer = new TcpChannel(int.Parse(port));
+            TcpChannel tcpServer = singleFormatter
+                                       ? new TcpChannel(new Hashtable { { "port", int.Parse(port) } }, clientSinkProvider: null, serverSinkProvider: new BinaryServerFormatterSinkProvider())
+                                       : new TcpChannel(int.Parse(port));
             ChannelServices.RegisterChannel(tcpServer, false);
 
             RemotingConfiguration.RegisterWellKnownServiceType(

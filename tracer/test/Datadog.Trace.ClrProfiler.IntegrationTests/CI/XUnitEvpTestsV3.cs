@@ -599,7 +599,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
         // Smoke check telemetry
         await agent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
-        var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
+        var allData = agent.Telemetry.ToArray().Cast<TelemetryData>().ToArray();
 
         // we will have multiple app closing events
         TelemetryHelper.GetMetricData(allData, "endpoint_payload.requests", "endpoint:test_cycle", singleAppClosing: false)

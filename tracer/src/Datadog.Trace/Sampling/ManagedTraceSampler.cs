@@ -142,7 +142,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
         // global sampling rate (remote value overrides local value)
         if (settings.GlobalSamplingRate is { } globalSamplingRate)
         {
-            if (globalSamplingRate is < 0f or > 1f)
+            if (settings.EffectiveGlobalSamplingRate is null)
             {
                 Log.Warning(
                     "{ConfigurationKey} configuration of {ConfigurationValue} is out of range",
