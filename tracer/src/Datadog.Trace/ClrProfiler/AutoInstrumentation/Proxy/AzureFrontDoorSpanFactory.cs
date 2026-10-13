@@ -30,7 +30,7 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
             // single-slashed ("/api/foo") even if Front Door starts sending an absolute path later.
             // https://learn.microsoft.com/en-us/azure/frontdoor/rule-set-server-variables
             var normalizedPath = data.Path?.TrimStart('/');
-            var resourceUrl = normalizedPath is null ? string.Empty : UriHelpers.GetCleanUriPath($"/{normalizedPath}").ToLowerInvariant();
+            var resourceUrl = normalizedPath is null ? string.Empty : UriHelpers.GetCleanUriPath(StringUtil.ToLowerInvariant($"/{normalizedPath}"));
 
             var tags = new InferredProxyTags
             {
