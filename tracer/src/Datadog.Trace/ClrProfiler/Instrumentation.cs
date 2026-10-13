@@ -589,7 +589,7 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
 #if !NETFRAMEWORK
-            if (!SkipAspNetCoreDiagnosticObserver())
+            if (AspNetCoreAvailabilityChecker.IsSupported && !SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }

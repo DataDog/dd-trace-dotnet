@@ -83,6 +83,14 @@
     </ItemGroup>
     <Message Importance="high" Condition="'@(_DatadogAotTrimmingDescriptor)' != ''" Text="Datadog NativeAOT instrumentation: the Datadog.Trace.Trimming descriptor isn't used with NativeAOT (the instrumentation generates the descriptors Datadog.Trace needs)." />
 
+    <!-- Without the ASP.NET Core assemblies, the code of Datadog.Trace that uses them can't run: ILC leaves it out
+         (AspNetCoreAvailabilityChecker.IsSupported) instead of compiling it to throw. -->
+    <ItemGroup>
+      <_DatadogAotAspNetCore Include="@(IlcReference);@(IlcCompileInput)" Condition="'%(Filename)' == 'Microsoft.AspNetCore.Http.Abstractions'" />
+      <_TrimmerFeatureSettings Include="Datadog.Trace.AspNetCore.IsSupported" Value="false" Condition="'@(_DatadogAotAspNetCore)' == ''" />
+      <RuntimeHostConfigurationOption Include="Datadog.Trace.AspNetCore.IsSupported" Value="false" Trim="true" Condition="'@(_DatadogAotAspNetCore)' == ''" />
+    </ItemGroup>
+
     <!-- The application only references the manual API: ILC compiles the package's Datadog.Trace.dll. -->
     <ItemGroup Condition="'@(_DatadogAotDatadogTrace)' == '' and '$(DatadogAotDatadogTracePath)' != ''">
       <IlcReference Include="$(DatadogAotDatadogTracePath)" />
