@@ -68,6 +68,8 @@ jobs:
         run: git add -u
 
       - name: "Push hotfix branch"
+        # commit-headless v3.4.0 still creates branches with --dry-run, so skip the action entirely.
+        if: ${{ !inputs.dry_run }}
         uses: DataDog/commit-headless@79367f840e221d63cb28a359de97833cdfde81dd # action/v3.4.0
         with:
           command: commit
@@ -77,4 +79,3 @@ jobs:
           author: "${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
           head-sha: ${{ steps.base.outputs.sha }}
           create-branch: true
-          dry-run: ${{ inputs.dry_run }}
