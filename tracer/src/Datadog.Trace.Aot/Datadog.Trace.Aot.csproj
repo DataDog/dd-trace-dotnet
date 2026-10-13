@@ -80,8 +80,10 @@
     <None Include="build\Datadog.Trace.Aot.targets" Pack="true" PackagePath="build\;buildTransitive\" />
     <None Include="README.md" Pack="true" PackagePath="\" />
     <!-- The duck typing mappings of Datadog.Trace looked up from runtime types (recorded, C6), served by default. -->
-    <None Include="$(DatadogAotRunnerDirectory)**\*" Exclude="$(DatadogAotRunnerDirectory)**\*.pdb" Pack="true" PackagePath="tools\runner\" Visible="false" />
-    <None Include="$(DatadogAotDatadogTrace)" Pack="true" PackagePath="tools\datadog-trace\" Visible="false" />
+    <None Include="$(DatadogAotRunnerDirectory)**\*" Exclude="$(DatadogAotRunnerDirectory)**\*.pdb;$(DatadogAotRunnerDirectory)Datadog.Trace.dll" Pack="true" PackagePath="tools\runner\" Visible="false" />
+    <!-- One build of Datadog.Trace for the runner and the application (builds of the same sources at different times differ):
+         the duck typing generator checks the application's mappings with dynamic duck typing, on the runner's. -->
+    <None Include="$(DatadogAotDatadogTrace)" Pack="true" PackagePath="tools\runner\;tools\datadog-trace\" Visible="false" />
   </ItemGroup>
 
   <!-- In a target: the package path of each native library comes from its own Rid (batching). -->
