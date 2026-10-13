@@ -282,7 +282,7 @@ public class DuckTypeAotGeneratedAssembliesTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            TryDeleteDirectory(directory);
         }
 
         static DuckTypeAotMapping IsolationMapping(string assemblyName, string targetTypeName)
@@ -305,7 +305,7 @@ public class DuckTypeAotGeneratedAssembliesTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            TryDeleteDirectory(directory);
         }
     }
 
@@ -332,7 +332,7 @@ public class DuckTypeAotGeneratedAssembliesTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            TryDeleteDirectory(directory);
         }
     }
 
@@ -400,7 +400,19 @@ public class DuckTypeAotGeneratedAssembliesTests
         }
         finally
         {
+            TryDeleteDirectory(directory);
+        }
+    }
+
+    // On Windows, the files of the assemblies the test loaded stay locked until the process exits.
+    private static void TryDeleteDirectory(string directory)
+    {
+        try
+        {
             Directory.Delete(directory, recursive: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
         }
     }
 
@@ -426,7 +438,7 @@ public class DuckTypeAotGeneratedAssembliesTests
         finally
         {
             DuckType.ResetRuntimeModeForTests();
-            Directory.Delete(directory, recursive: true);
+            TryDeleteDirectory(directory);
         }
     }
 
