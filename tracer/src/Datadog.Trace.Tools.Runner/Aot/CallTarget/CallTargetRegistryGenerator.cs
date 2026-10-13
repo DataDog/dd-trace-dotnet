@@ -315,6 +315,7 @@ internal sealed class CallTargetRegistryGenerator
     {
         var registration = builder.Registration;
         _module.Types.Add(registration);
+        _module.ResetTypeDefFindCache();
         _result.Registrations++;
         HideFromStackTraces(registration);
         EmitStaticConstructor(builder);
