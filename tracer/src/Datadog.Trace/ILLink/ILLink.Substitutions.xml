@@ -1,0 +1,9 @@
+<linker>
+  <!-- NativeAOT applications without the ASP.NET Core assemblies: the Datadog.Trace.Aot targets set the feature switch, so ILC
+       leaves out the code that uses them (see AspNetCoreAvailabilityChecker.IsSupported). -->
+  <assembly fullname="Datadog.Trace">
+    <type fullname="Datadog.Trace.AspNetCoreAvailabilityChecker" feature="Datadog.Trace.AspNetCore.IsSupported" featurevalue="false">
+      <method signature="System.Boolean get_IsSupported()" body="stub" value="false" />
+    </type>
+  </assembly>
+</linker>
