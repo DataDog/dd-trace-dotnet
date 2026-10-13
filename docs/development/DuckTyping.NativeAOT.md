@@ -329,7 +329,8 @@ Rules:
 
 ## Running the Generator
 
-The command is currently hidden from root help, but callable directly.
+The command is currently hidden from root help, but callable directly. The trimmed standalone `dd-trace` doesn't have it:
+the generator loads and reflects over the assemblies it processes, which trimming breaks.
 
 Runner assembly path (Release build):
 
