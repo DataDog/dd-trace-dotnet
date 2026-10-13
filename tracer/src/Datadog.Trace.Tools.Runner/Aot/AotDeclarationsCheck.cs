@@ -213,11 +213,12 @@ internal static class AotDeclarationsCheck
 
         public void Dispose()
         {
-            foreach (var assembly in _resolver.GetCachedAssemblies())
+            // The resolver caches the assemblies it didn't find as null.
+            foreach (var assembly in _resolver.GetCachedAssemblies().Where(assembly => assembly is not null))
             {
                 foreach (var module in assembly.Modules)
                 {
-                    module.Dispose();
+                    module?.Dispose();
                 }
             }
 
