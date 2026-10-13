@@ -6,15 +6,30 @@
 #include <atomic>
 #include <shared_mutex>
 
-// This class checks the engine state and make sure that services are not not access during teardown
-// or before the engine is initialized.
+// Checks the engine state and prevents callbacks from accessing engine-owned resources during
+// teardown or before the engine is initialized.
 class EngineActiveGuard
 {
 public:
     EngineActiveGuard(std::atomic<bool> const& isInitialized, std::shared_mutex& mutex, bool const& isServicesShutdown) :
-        _lock(mutex, std::try_to_lock),
-        _isActive(isInitialized.load() && _lock.owns_lock() && !isServicesShutdown)
+        _lock{mutex, std::defer_lock},
+        _isActive{false}
     {
+        // Avoid taking a shared lock after teardown has started. In particular, EventPipe can
+        // generate callbacks at a high rate until its session is stopped, which could otherwise
+        // starve the exclusive shutdown barrier with callbacks that already know they are inactive.
+        if (!isInitialized.load())
+        {
+            return;
+        }
+
+        if (!_lock.try_lock())
+        {
+            return;
+        }
+
+        // Recheck initialization after acquiring the lock to close the race with teardown.
+        _isActive = isInitialized.load() && !isServicesShutdown;
     }
 
     ~EngineActiveGuard() = default;
