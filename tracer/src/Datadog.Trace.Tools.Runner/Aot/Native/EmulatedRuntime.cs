@@ -97,7 +97,10 @@ internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo12, IDisposable
         lock (_sync)
         {
             var id = _modules.Count + 1;
+            // Without it, each lookup of a type by name enumerates all the types of the module (thousands of lookups over the
+            // framework). Adding a type resets it (see CallTargetRegistryGenerator).
             var module = ModuleDefMD.Load(path, new ModuleCreationOptions { TryToLoadPdbFromDisk = true });
+            module.EnableTypeDefFindCache = true;
             var state = new ModuleState(id, path, module, writable);
             _modules[id] = state;
             _metadata[id] = new ModuleMetadata(this, state);
