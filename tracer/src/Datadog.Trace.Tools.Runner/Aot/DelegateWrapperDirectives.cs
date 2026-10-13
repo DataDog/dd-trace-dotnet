@@ -32,6 +32,18 @@ internal static class DelegateWrapperDirectives
     /// <returns>The number of wrapper instantiations.</returns>
     public static int Write(ModuleDef datadogTrace, string runtimeDirectivesPath)
     {
+        var (count, document) = Create(datadogTrace);
+        document.Save(runtimeDirectivesPath);
+        return count;
+    }
+
+    /// <summary>
+    /// Creates the runtime directives (see <see cref="Write"/>).
+    /// </summary>
+    /// <param name="datadogTrace">The Datadog.Trace module.</param>
+    /// <returns>The number of wrapper instantiations and the runtime directives.</returns>
+    internal static (int Count, XDocument Directives) Create(ModuleDef datadogTrace)
+    {
         XNamespace directives = "http://schemas.microsoft.com/netfx/2013/01/metadata";
         var assembly = new XElement(directives + "Assembly", new XAttribute("Name", datadogTrace.Assembly.Name.String));
         var instantiations = Collect(datadogTrace);
@@ -68,8 +80,7 @@ internal static class DelegateWrapperDirectives
             }
         }
 
-        new XDocument(new XElement(directives + "Directives", new XElement(directives + "Application", assembly))).Save(runtimeDirectivesPath);
-        return instantiations.Count;
+        return (instantiations.Count, new XDocument(new XElement(directives + "Directives", new XElement(directives + "Application", assembly))));
     }
 
     /// <summary>
