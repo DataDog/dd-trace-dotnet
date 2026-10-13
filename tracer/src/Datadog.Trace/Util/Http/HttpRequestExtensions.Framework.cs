@@ -17,8 +17,11 @@ namespace Datadog.Trace.Util.Http
         internal static string GetUrlForSpan(this IHttpRequestMessage request, QueryStringManager queryStringManager)
             => HttpRequestUtils.GetUrl(request.RequestUri, queryStringManager);
 
-        internal static string GetUrlForSpan(this HttpRequestBase request, QueryStringManager queryStringManager)
-            => HttpRequestUtils.GetUrl(request.Url, queryStringManager);
+        internal static string? GetUrlForSpan(this HttpRequestBase request, QueryStringManager queryStringManager)
+        {
+            var url = RequestDataHelper.GetUrl(request);
+            return url is null ? null : HttpRequestUtils.GetUrl(url, queryStringManager);
+        }
 
         /// <summary>
         /// Gets the Url from the <paramref name="request"/>.

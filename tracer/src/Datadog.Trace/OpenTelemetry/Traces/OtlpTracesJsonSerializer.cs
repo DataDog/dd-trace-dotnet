@@ -33,17 +33,13 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     internal const int AttributePerEventCountLimit = 128;
     internal const int AttributePerLinkCountLimit = 128;
 
-    private readonly bool _openTelemetrySemanticsEnabled;
-
-    public OtlpTracesJsonSerializer(bool openTelemetrySemanticsEnabled)
-    {
-        _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
-    }
-
     // Cache several strings required for encoding OTLP JSON
     private static ReadOnlySpan<byte> ClosingTracesBytes => "]}]}]}"u8;
 
     public int HeaderSize => 0;
+
+    // FinishBody appends the closing brackets, so every write reserves room for them
+    public int TrailerSize => ClosingTracesBytes.Length;
 
     internal static void WriteSpanEvent(JsonTextWriter writer, Datadog.Trace.SpanEvent evt)
     {
@@ -442,6 +438,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
     internal void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma)
     {
+        var otelTraceStateHeader = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState?.ToHeaderString() : null;
+        var otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
+
         for (var i = 0; i < traceChunk.SpanCount; i++)
         {
             // If we are emitting a starting comma, then our JSON writer is re-entrant and the state is not
@@ -456,11 +455,11 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             // or if its parent can also be found in the same chunk, so we use SpanModel
             // to pass that information to the serializer
             var spanModel = traceChunk.GetSpanModel(i);
-            WriteSpan(writer, spanModel);
+            WriteSpan(writer, spanModel, otlpTraceState);
         }
     }
 
-    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel)
+    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel, string? otlpTraceState)
     {
         static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
             => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
@@ -476,11 +475,11 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteValue(spanModel.Span.Context.RawSpanId);
 
         // traceState (optional)
-        // if (!string.IsNullOrEmpty(spanModel.Span.TraceState))
-        // {
-        //     writer.WritePropertyName("traceState");
-        //     writer.WriteValue(spanModel.Span.TraceState);
-        // }
+        if (otlpTraceState is not null)
+        {
+            writer.WritePropertyName("traceState");
+            writer.WriteValue(otlpTraceState);
+        }
 
         // parentSpanId (optional) - encoded as hex string in JSON
         if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
@@ -525,7 +524,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         int droppedAttributesCount = 0;
         writer.WritePropertyName("attributes");
         writer.WriteStartArray();
-        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit, _openTelemetrySemanticsEnabled);
+        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit);
         writer.WriteEndArray();
 
         // droppedAttributesCount (optional)
@@ -602,7 +601,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         {
             "STATUS_CODE_OK" => StatusCode.Ok,
             "STATUS_CODE_ERROR" => StatusCode.Error,
-            _ => null,
+            _ => spanModel.Span.Error ? StatusCode.Error : null,
         };
         if (statusCode is not null)
         {

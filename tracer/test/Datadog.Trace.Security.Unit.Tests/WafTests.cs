@@ -149,7 +149,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             var initResult = CreateWaf(useUnsafeEncoder: newEncoder);
             using var waf = initResult.Waf;
-            using var context = waf.CreateContext();
+            using var context = waf.CreateContext(out _);
             var result = context.Run(args, TimeoutMicroSeconds);
             result.Timeout.Should().BeFalse("Timeout should be false");
             if (flow is not null)

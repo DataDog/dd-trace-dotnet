@@ -113,10 +113,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
+    <AdditionalFiles Include="..\..\..\BannedSymbols.NetFx.txt" Condition="'$(TargetFramework)' == 'net461'" />
     <AdditionalFiles Include="Configuration\supported-configurations.yaml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
-    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->

@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 57;
+    public const int Length = 63;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -64,13 +64,19 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureMemoryUsagePct => "memory_pressure.memory_usage_pct",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureGcActivity => "memory_pressure.gc_activity",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureDuration => "memory_pressure.duration",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsSkipped => "events.skipped",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsDropped => "events.dropped",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "capture.incomplete",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "waf.input_truncated",
+            Datadog.Trace.Telemetry.Metrics.Count.WafError => "waf.error",
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleEval => "rasp.rule.eval",
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "rasp.rule.match",
             Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "rasp.timeout",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspError => "rasp.error",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspRuleSkipped => "rasp.rule.skipped",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "instrum.user_auth.missing_user_id",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserLogin => "instrum.user_auth.missing_user_login",
             Datadog.Trace.Telemetry.Metrics.Count.UserEventSdk => "sdk.event",
@@ -122,13 +128,19 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureMemoryUsagePct => "live_debugger",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureGcActivity => "live_debugger",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureDuration => "live_debugger",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsSkipped => "live_debugger",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsDropped => "live_debugger",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "live_debugger",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.WafError => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleEval => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspError => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspRuleSkipped => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserLogin => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.UserEventSdk => "appsec",

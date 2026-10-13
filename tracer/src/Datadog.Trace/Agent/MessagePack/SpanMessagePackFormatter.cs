@@ -80,6 +80,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private static ReadOnlySpan<byte> LastParentIdBytes => "_dd.parent_id"u8; // Tags.LastParentId
         private static ReadOnlySpan<byte> BaseServiceNameBytes => "_dd.base_service"u8; // Tags.BaseService
         private static ReadOnlySpan<byte> ServiceNameSourceNameBytes => "_dd.svc_src"u8; // Tags.ServiceNameSource
+        private static ReadOnlySpan<byte> SdkOtlpExportNameBytes => "_dd.sdk.otlp_export"u8; // Tags.SdkOtlpExport
+        private static ReadOnlySpan<byte> SdkOtlpExportValueBytes => "false"u8;
 
         // numeric tags
         private static ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
@@ -510,7 +512,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            span.Tags.EnumerateTags(ref tagWriter);
+            span.Tags.EnumerateTags(ref tagWriter, span.OpenTelemetrySemanticsEnabled);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
@@ -623,16 +625,23 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
             }
 
-            // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
-            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ProcessTags is not null)
+            // Payload-scoped tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
+            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload)
             {
-                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportValueBytes);
 
-                if (processTagsRawBytes is not null)
+                if (model.TraceChunk.ProcessTags is not null)
                 {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
+                    var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+
+                    if (processTagsRawBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
+                    }
                 }
             }
 
@@ -1005,7 +1014,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
         {
             private readonly SpanMessagePackFormatter _formatter;
             private readonly ITagProcessor[] _tagProcessors;
@@ -1034,6 +1043,24 @@ namespace Datadog.Trace.Agent.MessagePack
                 else
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
+                }
+
+                Count++;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Process(TagItem<int> item)
+            {
+                // int-backed tags are serialized as strings; IntStringCache keeps this allocation-free
+                var value = IntStringCache.ToInvariantString(item.Value);
+
+                if (item.SerializedKey.IsEmpty)
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.Key, value, _tagProcessors);
+                }
+                else
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, value, _tagProcessors);
                 }
 
                 Count++;

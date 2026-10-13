@@ -79,6 +79,14 @@ namespace Datadog.Trace.Tests.Debugger
                     // Add to expected endpoints for the types and methods we expect to be detected
                     bool isExpectedEndpoint = false;
 
+#if NETFRAMEWORK
+                    // .NET Framework MVC/Web API controllers are convention-based.
+                    if (type.Name is "NetFxMvcController" or "NetFxMvcDerivedController" or "SystemWebHttpApiController" &&
+                        method.Name is "Index" or "Get" or "AsyncAction")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+#else
                     // Controllers with action attributes
                     if (type.Name is "ControllerAttributeController" or "ApiControllerAttributeController" or "RouteAttributeController" &&
                         method.Name == "Get")
@@ -102,6 +110,13 @@ namespace Datadog.Trace.Tests.Debugger
                     // Controller with HTTP methods
                     else if (type.Name == "HttpMethodController" &&
                             method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom" or "AcceptVerbs" or "RouteOnly")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+
+                    // WebApiCompatShim preserves the System.Web.Http.ApiController type name on ASP.NET Core.
+                    else if (type.Name == "SystemWebHttpApiController" &&
+                             method.Name is "Get" or "AsyncAction")
                     {
                         isExpectedEndpoint = true;
                     }
@@ -130,6 +145,7 @@ namespace Datadog.Trace.Tests.Debugger
                             isExpectedEndpoint = true;
                         }
                     }
+#endif
 
                     if (isExpectedEndpoint)
                     {
@@ -143,13 +159,57 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Each expected endpoint must be detected. We don't assert exact equality because the
             // intentionally-fuzzy minimal-API path can produce additional compiler-generated lambda hits.
-            endpointTokens.Should().Contain(expectedEndpoints, "The EndpointDetector should find every controller action, page handler, SignalR hub method, and inherited-attribute controller endpoint");
+            endpointTokens.Should().Contain(expectedEndpoints, "The EndpointDetector should find every endpoint for the current runtime");
 
             // Soft upper bound: the minimal-API fuzzy path is allowed to over-detect a handful of
             // compiler-generated lambdas, but a runaway result set (e.g. every public instance method
             // on a compiler-generated type) would indicate a regression in the classification logic.
             endpointTokens.Count.Should().BeLessThan(expectedEndpoints.Count + 25, "the minimal-API fuzzy detection must not blow up the result set");
         }
+
+        [Fact]
+        public void GetEndpointMethodTokens_DoesNotDetectEndpointsFromOtherRuntime()
+        {
+            // Arrange
+#if NETFRAMEWORK
+            const string TypeName = "EndpointDetectorTestNamespace.ControllerAttributeController";
+            const string MethodName = "Get";
+#else
+            const string TypeName = "EndpointDetectorTestNamespace.NetFxMvcController";
+            const string MethodName = "Index";
+#endif
+            var type = _assembly.GetType(TypeName);
+            type.Should().NotBeNull();
+            var method = type.GetMethod(MethodName);
+            method.Should().NotBeNull();
+
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert
+            endpointTokens.Should().NotContain(method.MetadataToken);
+        }
+
+#if !NETFRAMEWORK
+        [Fact]
+        public void GetEndpointMethodTokens_DetectsWebApiCompatShimController()
+        {
+            // Arrange
+            var type = _assembly.GetType("EndpointDetectorTestNamespace.SystemWebHttpApiController");
+            type.Should().NotBeNull();
+            var action = type.GetMethod("Get");
+            action.Should().NotBeNull();
+            var nonAction = type.GetMethod("CompatHelper");
+            nonAction.Should().NotBeNull();
+
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert
+            endpointTokens.Should().Contain(action.MetadataToken);
+            endpointTokens.Should().NotContain(nonAction.MetadataToken);
+        }
+#endif
 
         [Fact]
         public void GetEndpointMethodTokens_DoesNotDetectNonEndpoints()
@@ -199,6 +259,13 @@ namespace Datadog.Trace.Tests.Debugger
                         shouldNotBeEndpoint = true;
                     }
 
+                    // Convention-based MVC/Web API non-actions
+                    else if ((type.Name == "NetFxMvcController" && method.Name == "Helper") ||
+                             (type.Name == "SystemWebHttpApiController" && method.Name is "Helper" or "CompatHelper"))
+                    {
+                        shouldNotBeEndpoint = true;
+                    }
+
                     // PageModel methods with NonHandler attribute
                     else if (type.Name == "TestPageModel" && method.Name == "OnGetWithNonHandlerAttribute")
                     {
@@ -234,6 +301,7 @@ namespace Datadog.Trace.Tests.Debugger
             nonEndpointTokens.Should().NotContain(token => endpointTokens.Contains(token), "Non-endpoints should not be detected as endpoints");
         }
 
+#if !NETFRAMEWORK
         [Fact]
         public void GetEndpointMethodTokens_DetectsInheritedCustomControllerAttribute()
         {
@@ -305,6 +373,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             endpointTokens.Should().NotContain(notEndpointMethod.MetadataToken, "Hub appearing only as a nested generic argument must not promote the leaf type to an endpoint");
         }
+#endif
 
         [Fact]
         public void GetEndpointMethodTokens_ReturnsEmptyCollectionForAssemblyWithoutEndpoints()
@@ -470,6 +539,9 @@ namespace Microsoft.AspNetCore.Mvc
     [AttributeUsage(AttributeTargets.Class)]
     public class ApiControllerAttribute : Attribute { }
 
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class RouteAttribute : Attribute
     {
@@ -574,6 +646,24 @@ namespace Microsoft.AspNetCore.Builder
         public static void MapGet(this object app, string pattern, Delegate handler) { }
         public static void MapPost(this object app, string pattern, Delegate handler) { }
     }
+}
+
+namespace System.Web.Mvc
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ControllerBase { }
+
+    public class Controller : ControllerBase { }
+}
+
+namespace System.Web.Http
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ApiController { }
 }
 
 namespace EndpointDetectorTestNamespace
@@ -740,6 +830,46 @@ namespace EndpointDetectorTestNamespace
 
         // Regular method with no HTTP attribute - should be excluded
         public object RegularMethod() => null;
+    }
+
+    // .NET Framework MVC controller
+    public class NetFxMvcController : System.Web.Mvc.Controller
+    {
+        public object Index() => null;
+
+        public Task<object> AsyncAction() => Task.FromResult<object>(null);
+
+        [System.Web.Mvc.NonAction]
+        public object Helper() => null;
+
+        public string Name { get; set; }
+
+        private object PrivateMethod() => null;
+
+        public static object StaticMethod() => null;
+    }
+
+    public class NetFxMvcBaseController : System.Web.Mvc.Controller
+    {
+    }
+
+    public class NetFxMvcDerivedController : NetFxMvcBaseController
+    {
+        public object Index() => null;
+    }
+
+    // Classic Web API 2 on .NET Framework and WebApiCompatShim on ASP.NET Core share this base type name.
+    public class SystemWebHttpApiController : System.Web.Http.ApiController
+    {
+        public object Get() => null;
+
+        public Task<object> AsyncAction() => Task.FromResult<object>(null);
+
+        [System.Web.Http.NonAction]
+        public object Helper() => null;
+
+        [Microsoft.AspNetCore.Mvc.NonAction]
+        public object CompatHelper() => null;
     }
 
     // Minimal API setup to generate compiler-generated methods

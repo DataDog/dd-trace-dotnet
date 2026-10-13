@@ -14,7 +14,10 @@ public class ExitCodeException : Exception
                    $"Expected exit code: {expectedExitCode}, actual exit code: {actualExitCode}." :
                    $"Expected exit code: {expectedExitCode}, actual exit code: {actualExitCode}. Message: {message}")
     {
+        ActualExitCode = actualExitCode;
     }
+
+    public int ActualExitCode { get; }
 
     public static void ThrowIfNonZero(int actualExitCode, string message = null)
         => ThrowIfNonExpected(actualExitCode, expectedExitCode: 0, message);

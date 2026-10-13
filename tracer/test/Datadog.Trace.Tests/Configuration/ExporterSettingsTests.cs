@@ -342,6 +342,21 @@ namespace Datadog.Trace.Tests.Configuration
             settings.TraceAgentUriBase.Should().Be(@"\\.\pipe\" + pipeName);
         }
 
+        [Fact]
+        public void OtlpEndpointIsRecordedAsStringTelemetry()
+        {
+            const string endpoint = "http://example.com:4318/";
+            var source = BuildSource($"{ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint}:{endpoint}");
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ExporterSettings(source, NoFile(), telemetry);
+
+            telemetry.GetQueueForTesting()
+                   .Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
+                   .Should()
+                   .ContainSingle(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.String && x.StringValue == endpoint);
+        }
+
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)
         {
             return new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);

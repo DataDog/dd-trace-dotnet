@@ -32,6 +32,13 @@ internal sealed class ConditionConfiguration
                 throw new FormatException("Condition value can not be null nor empty");
             }
 
+            if (pattern.StartsWith("(?u)", StringComparison.Ordinal))
+            {
+                pattern = pattern.Substring(4);
+            }
+
+            pattern = pattern.Replace("[:alnum:]", @"\p{L}\p{N}");
+
             try
             {
                 _regex = new Regex(pattern, RegexOptions.Compiled);

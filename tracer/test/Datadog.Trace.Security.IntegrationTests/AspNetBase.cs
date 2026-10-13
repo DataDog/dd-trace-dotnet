@@ -449,7 +449,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
             }
 
-            var spans = await agent.WaitForSpansAsync(expectedSpans, minDateTime: minDateTime, assertExpectedCount: false);
+            var spans = await agent.WaitForSpansAsync(expectedSpans, minDateTime: minDateTime, failOnTimeout: false);
             if (spans.Count != expectedSpans)
             {
                 Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");

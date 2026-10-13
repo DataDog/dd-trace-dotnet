@@ -34,6 +34,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
+    [Trait("Area", "CIVisibility")]
     public class CiVisibilityProtocolWriterTests
     {
         [Fact]

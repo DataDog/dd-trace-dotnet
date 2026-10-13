@@ -28,6 +28,7 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
             // Azure Front Door currently sends the path relative, without a leading slash (e.g. "api/foo").
             // Trim any leading slash defensively before prepending our own, so the route/url stay
             // single-slashed ("/api/foo") even if Front Door starts sending an absolute path later.
+            // https://learn.microsoft.com/en-us/azure/frontdoor/rule-set-server-variables
             var normalizedPath = data.Path?.TrimStart('/');
             var resourceUrl = normalizedPath is null ? string.Empty : UriHelpers.GetCleanUriPath($"/{normalizedPath}").ToLowerInvariant();
 

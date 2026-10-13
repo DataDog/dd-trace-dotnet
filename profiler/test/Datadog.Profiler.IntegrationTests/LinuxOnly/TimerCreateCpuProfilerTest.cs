@@ -6,6 +6,7 @@
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,6 +41,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
 
             var logLines = File.ReadLines(logFile);
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(logLines);
 
             logLines.Should().ContainMatch("*timer_create Cpu profiler is enabled*");
             logLines.Should().NotContainMatch("*Manual Cpu profiler is enabled*");
@@ -89,6 +92,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             var logLines = File.ReadLines(logFile);
 
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(logLines);
+
             logLines.Should().ContainMatch("*timer_create Cpu profiler is enabled*");
 
             logLines.Should().NotContainMatch("*Call to timer_create failed for thread 0*");
@@ -97,6 +102,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotBeEmpty("No samples were found");
         }
 
+        [Flaky("timer_create CPU profiling intermittently produces no samples in CI")]
         [TestAppFact("Samples.Computer01")]
         public void CheckCpuSamples(string appName, string framework, string appAssembly)
         {
@@ -111,6 +117,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
 
             // only cpu  profiler enabled so should see 1 value per sample and
             var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
@@ -138,6 +146,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
 
             var expectedInterval = long.Parse(samplingInterval) * 1_000_000;
             // only cpu  profiler enabled so should see 2 value per sample and

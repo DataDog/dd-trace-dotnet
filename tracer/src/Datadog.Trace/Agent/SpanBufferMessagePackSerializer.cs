@@ -31,6 +31,8 @@ namespace Datadog.Trace.Agent
 
         public int HeaderSize => HeaderSizeConst;
 
+        public int TrailerSize => 0;
+
         public int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
         {
             if (_formatter is SpanMessagePackFormatter spanFormatter)

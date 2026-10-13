@@ -64,16 +64,53 @@ namespace Datadog.Trace.TestHelpers
                                                                        string.Empty;
         }
 
+#if NET6_0_OR_GREATER
+        [System.Runtime.Versioning.SupportedOSPlatformGuard("windows")]
+#endif
         public static bool IsWindows()
         {
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         }
 
+#if NET6_0_OR_GREATER
+        [System.Runtime.Versioning.SupportedOSPlatformGuard("linux")]
+#endif
         public static bool IsLinux()
         {
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
         }
 
+        /// <summary>
+        /// Attempts to determine the glibc version installed on the current host.
+        /// </summary>
+        /// <returns>The GLIBC version of the host, if running on a glibc-based Linux host and the version could be determined; otherwise <see langword="null"/> (e.g. on Windows, macOS, or musl-based distros like Alpine).</returns>
+        public static Version GetGlibcVersion()
+        {
+            if (!IsLinux())
+            {
+                return null;
+            }
+
+            try
+            {
+                var versionString = Marshal.PtrToStringAnsi(GnuGetLibcVersion());
+                if (versionString is null)
+                {
+                    return null;
+                }
+
+                return new Version(versionString);
+            }
+            catch (Exception)
+            {
+                // Not a glibc-based host (e.g. musl/Alpine)
+                return null;
+            }
+        }
+
+#if NET6_0_OR_GREATER
+        [System.Runtime.Versioning.SupportedOSPlatformGuard("macos")]
+#endif
         public static bool IsOsx()
         {
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX);
@@ -116,5 +153,8 @@ namespace Datadog.Trace.TestHelpers
 #error Unexpected TFM
 #endif
         }
+
+        [DllImport("libc", EntryPoint = "gnu_get_libc_version")]
+        private static extern IntPtr GnuGetLibcVersion();
     }
 }

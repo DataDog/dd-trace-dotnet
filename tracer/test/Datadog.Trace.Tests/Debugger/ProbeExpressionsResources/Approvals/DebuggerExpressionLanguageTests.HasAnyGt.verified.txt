@@ -47,7 +47,40 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = CollectionIntLocal.Any(@int => @int > 10);
+    var $dd_el_result =
+    {
+        int @int;
+        var enumerable = (IEnumerable<int>)CollectionIntLocal;
+        var enumerator = enumerable.GetEnumerator();
+        var anyResult = false;
+        try
+        {
+            while (true)
+            {
+                if (!enumerator.MoveNext())
+                {
+                    break;
+                }
+
+                @int = enumerator.Current;
+
+                if (@int > 10)
+                {
+                    anyResult = true;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            if (enumerator != null)
+            {
+                enumerator.Dispose();
+            }
+        }
+
+        return anyResult;
+    };
 
     return $dd_el_result;
 }

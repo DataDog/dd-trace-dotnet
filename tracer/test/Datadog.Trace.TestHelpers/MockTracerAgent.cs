@@ -142,12 +142,12 @@ namespace Datadog.Trace.TestHelpers
         /// <summary>
         /// Wait for the given number of spans to appear.
         /// </summary>
-        /// <param name="count">The expected number of spans.</param>
+        /// <param name="count">The minimum number of spans to wait for.</param>
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
-        /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
+        /// <param name="failOnTimeout">When true, fails if the requested number of spans is not received before the timeout.</param>
         /// <returns>The list of spans.</returns>
         public async Task<IImmutableList<MockSpan>> WaitForSpansAsync(
             int count,
@@ -155,7 +155,7 @@ namespace Datadog.Trace.TestHelpers
             string operationName = null,
             DateTimeOffset? minDateTime = null,
             bool returnAllOperations = false,
-            bool assertExpectedCount = true)
+            bool failOnTimeout = true)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
@@ -196,9 +196,11 @@ namespace Datadog.Trace.TestHelpers
                 await Task.Delay(250);
             }
 
-            if (assertExpectedCount)
+            if (failOnTimeout)
             {
-                relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
+                relevantSpans.Count(s => operationName is null || s.Name == operationName)
+                             .Should()
+                             .BeGreaterThanOrEqualTo(count, "because the requested spans should be received before the timeout");
             }
 
             foreach (var headers in TraceRequestHeaders)

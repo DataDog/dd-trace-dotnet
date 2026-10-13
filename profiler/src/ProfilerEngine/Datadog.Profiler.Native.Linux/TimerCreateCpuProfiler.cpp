@@ -22,7 +22,6 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-#include <fstream>
 #include <string>
 
 std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
@@ -94,15 +93,10 @@ bool TimerCreateCpuProfiler::StartImpl()
             Log::Info("RLIMIT_SIGPENDING: soft=", rl.rlim_cur, " hard=", rl.rlim_max);
         }
 
-        std::ifstream status("/proc/self/status");
-        std::string line;
-        while (std::getline(status, line))
+        auto availableSlots = OpSysTools::GetAvailableSignalQueueSlots();
+        if (availableSlots.has_value())
         {
-            if (line.rfind("SigQ:", 0) == 0)
-            {
-                Log::Info("Signal queue at startup: ", line);
-                break;
-            }
+            Log::Info("Available signal queue slots at startup: ", *availableSlots);
         }
     }
 
@@ -360,15 +354,10 @@ void TimerCreateCpuProfiler::RegisterThreadImpl(ManagedThreadInfo* threadInfo)
             Log::Error("RLIMIT_SIGPENDING: soft=", rl.rlim_cur, " hard=", rl.rlim_max);
         }
 
-        std::ifstream status("/proc/self/status");
-        std::string line;
-        while (std::getline(status, line))
+        auto availableSlots = OpSysTools::GetAvailableSignalQueueSlots();
+        if (availableSlots.has_value())
         {
-            if (line.rfind("SigQ:", 0) == 0)
-            {
-                Log::Error("Signal queue: ", line);
-                break;
-            }
+            Log::Error("Available signal queue slots: ", *availableSlots);
         }
         return;
     }

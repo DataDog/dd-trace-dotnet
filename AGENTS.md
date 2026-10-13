@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-> **For AI Agents**: This file provides a navigation hub and quick reference. Linked docs in each section can be loaded when their topic is relevant to your task.
+**For AI Agents**: This file provides a navigation hub and quick reference. Linked docs in each section can be loaded when their topic is relevant to your task.
 
 ## Project Structure & Module Organization
 
@@ -27,7 +27,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 ## Tracer Structure
 
-- `tracer/src/Datadog.Trace` — Core managed tracer library
+- `tracer/src/Datadog.Trace` — Core managed tracer library.
   - `Activity` — System.Diagnostics.Activity bridge/helpers.
   - `Agent` — Agent transport, payloads, health, serialization.
   - `AppSec` — Application Security (WAF/RASP) components.
@@ -122,12 +122,12 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
 - Prefer modern collection expressions (`[]`)
-- Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
-- StyleCop: see `tracer/stylecop.json`; address warnings before pushing
+- Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes.
+- StyleCop: see `tracer/stylecop.json`; address warnings before pushing.
 - Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
 
 **C/C++ style:**
-- See `.clang-format`; keep consistent naming
+- See `.clang-format`; keep consistent naming.
 
 ## Windows Command Line Best Practices
 
@@ -162,7 +162,7 @@ findstr /s /i "DD_TRACE" "*.cpp" 2>\\.\NUL
 
 ## Logging Guidelines
 
-Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous—it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
+Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous — it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
 
 **Customer-facing terminology (high-level logs):**
 - **Datadog SDK** — When disabling the entire product or referring to the whole monitoring solution
@@ -276,6 +276,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
+- `docs/development/FeatureFlagsOpenFeature.md` — OpenFeature provider sync APIs, provider hook rules, and focused tests
 
 **CI & Testing:**
 - `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps
@@ -291,6 +292,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
 - Use `global.json` SDK; confirm with `dotnet --version`.
+- Never mention a customer or user in a pull request. Do not include their name, any other identifying detail, PII, or their code in the diff, commit messages, or PR description.
 
 ## Glossary
 

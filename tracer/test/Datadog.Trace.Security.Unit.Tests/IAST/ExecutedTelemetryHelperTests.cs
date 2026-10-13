@@ -70,7 +70,7 @@ public class ExecutedTelemetryHelperTests
             throw new NotImplementedException();
         }
 
-        void ITags.EnumerateTags<TProcessor>(ref TProcessor processor)
+        void ITags.EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             throw new NotImplementedException();
         }

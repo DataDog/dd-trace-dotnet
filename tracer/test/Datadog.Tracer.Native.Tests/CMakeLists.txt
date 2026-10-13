@@ -11,6 +11,7 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extension
 
 if(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    find_package(Threads REQUIRED)
 endif()
 
 if (BIT64)
@@ -44,8 +45,15 @@ add_executable(${TEST_EXECUTABLE_NAME}
     version_struct_test.cpp
     iast_util_test.cpp
     il_rewriter_eh_sort_test.cpp
+    dataflow_test.cpp
     string_test.cpp
 	util_test.cpp
+    signature_builder_test.cpp
+    runtime_async_test.cpp
+    rejit_concurrency_test.cpp
+    test_link_stubs.cpp
+    otel_thread_ctx_test.cpp
+    ../../src/Datadog.Tracer.Native/otel_thread_ctx.cpp
 )
 
 # Define directories includes
@@ -64,5 +72,9 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   -lstdc++fs
   -Wc++20-extensions
 )
+
+if(ISLINUX)
+  target_link_libraries(${TEST_EXECUTABLE_NAME} Threads::Threads)
+endif()
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})

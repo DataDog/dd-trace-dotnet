@@ -38,6 +38,11 @@ namespace Datadog.Trace.Debugger
 
     internal sealed class DynamicInstrumentation : IDisposable
     {
+        private const string ProbeIdTag = "debugger.probeid";
+
+        // Legacy metric-only alias of ProbeIdTag, deprecated; remove once queries migrate to the canonical tag.
+        private const string LegacyProbeIdTag = "probe-id";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
         // Completed when this DI instance is being disposed (runtime disable via remote config, or process shutdown).
@@ -312,7 +317,7 @@ namespace Datadog.Trace.Debugger
                                             lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                             _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
-                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             SetRateLimit(addedProbe);
                                             break;
                                         case LiveProbeResolveStatus.Unbound:
@@ -351,7 +356,7 @@ namespace Datadog.Trace.Debugger
                                     {
                                         var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
                                         methodProbes.Add(nativeDefinition);
-                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                         SetRateLimit(addedProbe);
                                     }
 
@@ -692,7 +697,7 @@ namespace Datadog.Trace.Debugger
                     // configured rate would never take effect for that probe.
                     foreach (var boundProbe in boundProbes)
                     {
-                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe);
+                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                         SetRateLimit(boundProbe);
                     }
 
@@ -851,7 +856,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void AddSnapshot(ProbeInfo probe, string snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string snapshot, uint incompleteReasons)
         {
             if (IsDisposed)
             {
@@ -860,22 +865,22 @@ namespace Datadog.Trace.Debugger
 
             if (!probe.IsFullSnapshot)
             {
-                AddLog(probe, snapshot);
+                AddLog(probe, snapshot, incompleteReasons);
                 return;
             }
 
-            _snapshotUploader.Add(probe.ProbeId, snapshot);
+            _snapshotUploader.Add(probe.ProbeId, snapshot, incompleteReasons);
             SetProbeStatusToEmitting(probe);
         }
 
-        internal void AddLog(ProbeInfo probe, string log)
+        internal void AddLog(ProbeInfo probe, string log, uint incompleteReasons)
         {
             if (IsDisposed)
             {
                 return;
             }
 
-            _logUploader.Add(probe.ProbeId, log);
+            _logUploader.Add(probe.ProbeId, log, incompleteReasons);
             SetProbeStatusToEmitting(probe);
         }
 
@@ -917,16 +922,17 @@ namespace Datadog.Trace.Debugger
                 Log.Warning($"{nameof(SendMetrics)}: Metrics are not enabled");
             }
 
+            var tags = new[] { $"{LegacyProbeIdTag}:{probeId}", $"{ProbeIdTag}:{probeId}" };
             switch (metricKind)
             {
                 case MetricKind.COUNT:
-                    _dogStats.Counter(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
+                    _dogStats.Counter(statName: metricName, value: value, tags: tags);
                     break;
                 case MetricKind.GAUGE:
-                    _dogStats.Gauge(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
+                    _dogStats.Gauge(statName: metricName, value: value, tags: tags);
                     break;
                 case MetricKind.HISTOGRAM:
-                    _dogStats.Histogram(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
+                    _dogStats.Histogram(statName: metricName, value: value, tags: tags);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(

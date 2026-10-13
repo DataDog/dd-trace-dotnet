@@ -1,5 +1,5 @@
 Template:
-Segments: 
+Segments:
 
 {
   "eq": [
@@ -14,8 +14,7 @@ Segments:
     "Hello from child public static static member"
   ]
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,

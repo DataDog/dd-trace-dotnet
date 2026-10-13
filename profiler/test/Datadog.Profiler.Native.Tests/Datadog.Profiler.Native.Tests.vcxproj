@@ -23,7 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <ProjectName>Datadog.Profiler.Native.Tests</ProjectName>
   </PropertyGroup>
@@ -32,7 +32,7 @@
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets" Condition="Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" />
+    <Import Project="$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.8\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets" Condition="Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.8\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" />
     <Import Project="..\..\..\packages\gmock.1.11.0\build\native\gmock.targets" Condition="Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -63,6 +63,7 @@
     <ClCompile Include="CallstackTest.cpp" />
     <ClCompile Include="ClrEventsParserTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
+    <ClCompile Include="CoreLibModuleProviderTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="CpuSamplePRoviderTest.cpp" />
     <ClCompile Include="CrashReportingTest.cpp" />
@@ -75,6 +76,7 @@
     <ClCompile Include="FakeSamples.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
+    <ClCompile Include="InlineVTCacheTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />
     <ClCompile Include="ManagedThreadInfoTest.cpp" />
     <ClCompile Include="ProfileExporterTest.cpp" />
@@ -110,6 +112,7 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp" />
     <ClInclude Include="AppDomainStoreHelper.h" />
+    <ClInclude Include="CoreLibMockProfilerInfo.h" />
     <ClInclude Include="EnvironmentHelper.h" />
     <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />
@@ -229,7 +232,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
+    <Error Condition="!Exists('$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.8\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.8\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\gmock.1.11.0\build\native\gmock.targets'))" />
   </Target>
 </Project>

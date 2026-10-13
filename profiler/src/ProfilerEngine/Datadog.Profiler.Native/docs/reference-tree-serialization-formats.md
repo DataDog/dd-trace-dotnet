@@ -16,6 +16,27 @@ which format(s) are emitted. It is a **bitfield integer**:
 
 Setting `3` is useful for validation tests that compare the two outputs.
 
+## Type Names
+
+Both formats store each type name once in a string table and reference it by index.
+Names are **fully qualified**: `Namespace.Type` followed by the generic parameter or
+array suffix when there is one, for example
+`System.Collections.Generic.Dictionary<System.String, MyApp.Order>` or
+`MyApp.Order[]`. Generic arguments are themselves fully qualified and separated by a
+comma **and a space**, which is what `FrameStore` emits. A nested type keeps its
+enclosing types, joined with a dot: `MyApp.Outer.Inner`.
+
+Names come from `IFrameStore::GetTypeName(ClassID, std::string&)`, which is the same
+overload the class histogram uses, so a type name in a reference tree can be matched
+directly against the corresponding entry in the `histogram.json` of the same snapshot.
+
+Note that the `std::string_view` overload of `GetTypeName` drops only the namespace —
+it returns `Outer.Inner` for `MyApp.Outer.Inner` — and is reserved for the allocations
+recorder. Serializers must not use it, or the two artifacts would no longer be
+comparable.
+
+A type whose name cannot be resolved is stored as `?`.
+
 ---
 
 ## Format 1: JSON (v1)
@@ -44,7 +65,7 @@ Filename: `reference_tree.json`
 | Key   | Scope      | Type     | Description |
 |-------|------------|----------|-------------|
 | `v`   | top-level  | int      | Format version (currently `1`) |
-| `tt`  | top-level  | string[] | Type string table; nodes reference types by index |
+| `tt`  | top-level  | string[] | Type string table (see [Type Names](#type-names)); nodes reference types by index |
 | `r`   | top-level  | array    | Root nodes |
 | `t`   | node/root  | uint32   | Index into `tt` |
 | `c`   | root only  | string   | Root category code (see table below) |
@@ -88,7 +109,8 @@ platform.
 │   type_count   : varint                         │
 │   root_count   : varint                         │
 ├─────────────────────────────────────────────────┤
-│ String Table (one entry per type)               │
+│ String Table (one entry per type, see           │
+│                Type Names above)                │
 │   name_len     : varint (byte count)            │
 │   name_bytes   : uint8[name_len]  (UTF-8)       │
 ├─────────────────────────────────────────────────┤

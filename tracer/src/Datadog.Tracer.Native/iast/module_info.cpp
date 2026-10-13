@@ -21,7 +21,9 @@ ModuleInfo::ModuleInfo(Dataflow* pDataflow, AppDomainInfo* pAppDomain, ModuleID 
     this->_assemblyId = assemblyId;
     this->_name = name;
 
-    HRESULT hr = _dataflow->GetModuleInterfaces(_id, &_metadataImport, &_metadataEmit, &_assemblyImport, &_assemblyEmit);
+    // Read-only: the writable interfaces are acquired lazily, only if we end up emitting into this
+    // module. See EnsureEmitInterfaces.
+    HRESULT hr = _dataflow->GetModuleImportInterfaces(_id, &_metadataImport, &_assemblyImport);
 
     if (_appDomain.IsExcluded)
     {
@@ -47,6 +49,41 @@ ModuleInfo::~ModuleInfo()
 Dataflow* ModuleInfo::GetDataflow()
 {
     return _dataflow;
+}
+
+bool ModuleInfo::EnsureEmitInterfaces()
+{
+    if (_metadataEmit != nullptr && _assemblyEmit != nullptr)
+    {
+        return true;
+    }
+    if (_emitInterfacesRequested)
+    {
+        // Asking again would mean another GetModuleMetaData on every JIT of this module.
+        return false;
+    }
+
+    _emitInterfacesRequested = true;
+    HRESULT hr = _dataflow->GetModuleEmitInterfaces(_id, &_metadataEmit, &_assemblyEmit);
+    if (FAILED(hr))
+    {
+        trace::Logger::Error("ModuleInfo::EnsureEmitInterfaces -> Could not open the metadata of ",
+                             shared::ToString(_name), " for writing, so it will not be instrumented. hr:", Hex(hr));
+        return false;
+    }
+
+    DBG("ModuleInfo::EnsureEmitInterfaces -> Opened ", shared::ToString(_name), " metadata for writing");
+    return true;
+}
+
+IMetaDataEmit2* ModuleInfo::GetMetaDataEmit()
+{
+    return EnsureEmitInterfaces() ? _metadataEmit : nullptr;
+}
+
+IMetaDataAssemblyEmit* ModuleInfo::GetAssemblyEmit()
+{
+    return EnsureEmitInterfaces() ? _assemblyEmit : nullptr;
 }
 IMetaDataImport2* ModuleInfo::GetMetaDataImport()
 {
@@ -241,13 +278,13 @@ bool ModuleInfo::AreSameTypes(mdTypeRef typeRef1, mdTypeRef typeRef2)
     return false;
 }
 
-HRESULT ModuleInfo::GetAssemblyTypeRef(const WSTRING& assemblyName, const WSTRING& typeName, mdTypeRef* typeRef)
+HRESULT ModuleInfo::GetAssemblyTypeRef(const WSTRING& assemblyName, const WSTRING& typeName, mdTypeRef* typeRef, bool create)
 {
     HRESULT hr = S_OK;
 
     mdAssemblyRef assemblyRef;
-    IfFailRet(GetAssemblyRef(assemblyName, &assemblyRef));
-    IfFailRet(GetTypeRef(assemblyRef, typeName, typeRef));
+    IfFailRet(GetAssemblyRef(assemblyName, &assemblyRef, create));
+    IfFailRet(GetTypeRef(assemblyRef, typeName, typeRef, create));
     return hr;
 }
 
@@ -543,10 +580,18 @@ HRESULT ModuleInfo::GetAssemblyRef(const WSTRING& assemblyName, const ASSEMBLYME
     if (create)
     {
         // If not found, we define the reference
-        hr = _assemblyEmit->DefineAssemblyRef(pPublicKeyToken, nPublicKeyToken, assemblyName.c_str(), assemblyMetadata,
+        auto assemblyEmit = GetAssemblyEmit();
+        if (assemblyEmit == nullptr)
+        {
+            return E_FAIL;
+        }
+
+        hr = assemblyEmit->DefineAssemblyRef(pPublicKeyToken, nPublicKeyToken, assemblyName.c_str(), assemblyMetadata,
                                              nullptr, 0, 0, assemblyRef);
+        return hr;
     }
-    return hr;
+    // Not found and not creating: *assemblyRef is left unset, so this must fail rather than return S_OK.
+    return E_FAIL;
 }
 HRESULT ModuleInfo::GetSystemCoreAssemblyRef(mdAssemblyRef* assemblyRef)
 {
@@ -574,7 +619,13 @@ HRESULT ModuleInfo::GetTypeRef(mdToken tkResolutionScope, const WSTRING& name, m
     hr = _metadataImport->FindTypeRef(tkResolutionScope, name.c_str(), typeRef);
     if (FAILED(hr) && create)
     {
-        hr = _metadataEmit->DefineTypeRefByName(tkResolutionScope, name.c_str(), typeRef);
+        auto metadataEmit = GetMetaDataEmit();
+        if (metadataEmit == nullptr)
+        {
+            return E_FAIL;
+        }
+
+        hr = metadataEmit->DefineTypeRefByName(tkResolutionScope, name.c_str(), typeRef);
     }
     return hr;
 }
@@ -589,7 +640,13 @@ HRESULT ModuleInfo::GetMemberRefInfo(mdTypeRef typeRef, const WSTRING& memberNam
     hr = _metadataImport->FindMemberRef(typeRef, memberName.c_str(), pSignature, nSignature, memberRef);
     if (FAILED(hr) && create)
     {
-        hr = _metadataEmit->DefineMemberRef(typeRef, memberName.c_str(), pSignature, nSignature, memberRef);
+        auto metadataEmit = GetMetaDataEmit();
+        if (metadataEmit == nullptr)
+        {
+            return E_FAIL;
+        }
+
+        hr = metadataEmit->DefineMemberRef(typeRef, memberName.c_str(), pSignature, nSignature, memberRef);
     }
     return hr;
 }
@@ -682,7 +739,13 @@ HRESULT ModuleInfo::FindMemberRefsByName(mdTypeRef typeRef, const WSTRING& membe
 mdString ModuleInfo::DefineUserString(const WSTRING& string)
 {
     mdString res = 0;
-    _metadataEmit->DefineUserString(string.c_str(), (ULONG)string.length(), &res);
+    auto metadataEmit = GetMetaDataEmit();
+    if (metadataEmit == nullptr)
+    {
+        return 0;
+    }
+
+    metadataEmit->DefineUserString(string.c_str(), (ULONG)string.length(), &res);
     return res;
 }
 WSTRING ModuleInfo::GetUserString(mdString token)
@@ -779,9 +842,20 @@ mdToken ModuleInfo::DefineAspectMemberRef(const WSTRING& typeName, const WSTRING
     {
         return memberValue->second;
     }
+
+    // We are about to emit into this module, so this is the point where it needs writable metadata.
+    // Note this is *this* module (the one being instrumented), never the aspects module below: from
+    // that one we only ever read.
+    auto metadataEmit = GetMetaDataEmit();
+    auto assemblyEmit = GetAssemblyEmit();
+    if (metadataEmit == nullptr || assemblyEmit == nullptr)
+    {
+        return 0;
+    }
+
     if (_aspectsAssemblyRef == 0)
     {
-        hr = _assemblyEmit->DefineAssemblyRef((void*) Constants::DDAssemblyPublicKeyToken,
+        hr = assemblyEmit->DefineAssemblyRef((void*) Constants::DDAssemblyPublicKeyToken,
                                               sizeof(Constants::DDAssemblyPublicKeyToken),
                                               Constants::AspectsAssemblyName.c_str(),
                                              GetDatadogAssemblyMetadata(),
@@ -811,16 +885,16 @@ mdToken ModuleInfo::DefineAspectMemberRef(const WSTRING& typeName, const WSTRING
     }
 
     mdTypeRef typeRef;
-    hr = _metadataEmit->DefineTypeRefByName(_aspectsAssemblyRef, typeName.c_str(), &typeRef);
+    hr = metadataEmit->DefineTypeRefByName(_aspectsAssemblyRef, typeName.c_str(), &typeRef);
     if (FAILED(hr))
     {
         trace::Logger::Warn("ModuleInfo::DefineMemberRef -> DefineTypeRefByName failed with code ", hr , " for typeName:" , typeName);
         return 0;
 
     }
-    hr = _metadataEmit->DefineImportMember(aspectsModuleInfo->_assemblyImport, nullptr, 0,
-                                            aspectsModuleInfo->_metadataImport, aspectMethodInfo->_id, _assemblyEmit,
-                                            typeRef, &methodRef);
+    hr = metadataEmit->DefineImportMember(aspectsModuleInfo->_assemblyImport, nullptr, 0,
+                                          aspectsModuleInfo->_metadataImport, aspectMethodInfo->_id, assemblyEmit,
+                                          typeRef, &methodRef);
     if (FAILED(hr))
     {
         trace::Logger::Warn("ModuleInfo::DefineMemberRef -> DefineImportMember failed with code ", hr , " typeName:" , typeName ,
@@ -837,8 +911,14 @@ mdToken ModuleInfo::DefineAspectMemberRef(const WSTRING& typeName, const WSTRING
 
 mdMethodSpec ModuleInfo::DefineMethodSpec(mdMemberRef targetMethod, SignatureInfo* sig)
 {
-    mdMethodSpec methodSpec = 0; 
-    HRESULT hr = _metadataEmit->DefineMethodSpec(targetMethod, sig->_pSig, sig->_nSig, &methodSpec);
+    mdMethodSpec methodSpec = 0;
+    auto metadataEmit = GetMetaDataEmit();
+    if (metadataEmit == nullptr)
+    {
+        return 0;
+    }
+
+    HRESULT hr = metadataEmit->DefineMethodSpec(targetMethod, sig->_pSig, sig->_nSig, &methodSpec);
     if (FAILED(hr))
     {
         trace::Logger::Warn("DefineMethodSpec failed with code ", hr);

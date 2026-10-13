@@ -108,10 +108,13 @@ internal sealed class ExposureCache
         {
             Variant = exposureEvent.Variant.Key;
             Allocation = exposureEvent.Allocation.Key;
+            SerialId = exposureEvent.SerialId;
         }
 
         public string Variant { get; }
 
         public string Allocation { get; }
+
+        public long? SerialId { get; }
     }
 }

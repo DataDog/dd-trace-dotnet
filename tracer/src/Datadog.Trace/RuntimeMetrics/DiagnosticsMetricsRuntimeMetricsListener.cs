@@ -120,25 +120,12 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             }
 
             // memory load
-            // This is attempting to emulate the GcGlobalHeapHistory.MemoryLoad event details
-            // That value is calculated using
-            // - `current_gc_data_global->mem_pressure` (src/coreclr/gc/gc.cpp#L3288)
-            // - which fetches the value set via `history->mem_pressure = entry_memory_load` (src/coreclr/gc/gc.cpp#L7912)
-            // - which is set by calling `gc_heap::get_memory_info()` (src/coreclr/gc/gc.cpp#L29438)
-            // - which then calls GCToOSInterface::GetMemoryStatus(...) which has platform-specific implementations
-            // - On linux, memory_load is calculated differently depending if there's a restriction (src/coreclr/gc/unix/gcenv.unix.cpp#L1191)
-            //   - Physical Memory Used / Limit
-            //   - (g_totalPhysicalMemSize - GetAvailablePhysicalMemory()) / total
-            // - On Windows, memory_load is calculated differently depending if there's a restriction (src/coreclr/gc/unix/gcenv.windows.cpp#L1000)
-            //   - Working Set Size / Limit
-            //   - GlobalMemoryStatusEx -> (ullTotalVirtual - ullAvailVirtual) * 100.0 / (float)ms.ullTotalVirtual
-            //
-            // We try to roughly emulate that using the info in gcInfo:
-            var availableBytes = gcInfo.TotalAvailableMemoryBytes;
-
-            if (availableBytes > 0)
+            // GCMemoryInfo.MemoryLoadBytes and GCMemoryInfo.HighMemoryLoadThresholdBytes are both scaled by the
+            // GC's total_physical_mem, but TotalAvailableMemoryBytes switches to heap_hard_limit whenever a GC
+            // hard limit is in play, so getting the memory load is not simple
+            if (GcMemoryLoadCalculator.TryGetMemoryLoadPercentage(gcInfo) is { } memoryLoad)
             {
-                statsd.Gauge(MetricsNames.GcMemoryLoad, (double)gcInfo.MemoryLoadBytes * 100.0 / availableBytes);
+                statsd.Gauge(MetricsNames.GcMemoryLoad, memoryLoad);
             }
         }
         else

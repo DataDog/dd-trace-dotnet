@@ -3,8 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -85,6 +91,162 @@ public class OtlpTracesJsonSerializerTests
         var values = json["arrayValue"]!["values"]!;
         values.Should().HaveCount(1);
         values[0]!["stringValue"]!.Value<string>().Should().Be(nestedBytes.ToString());
+    }
+
+    [Theory]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666")]
+    [InlineData("rv:ef284ace7a91e1")]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666;future:value")]
+    public void WriteSpan_WithOtelTraceState_EmitsTraceState(string otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"]!.Value<string>().Should().Be($"ot={otelTraceState}");
+    }
+
+    [Fact]
+    public void WriteSpan_WithDerivedOtelTraceState_EmitsTraceState()
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = new OtelTraceState(headerString: null)
+        {
+            IsModified = true,
+            RandomValue = 0xef284ace7a91e1UL,
+            Threshold = 0xe6666666666666UL,
+        };
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"]!.Value<string>().Should().Be("ot=rv:ef284ace7a91e1;th:e6666666666666");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void WriteSpan_WithoutOtelTraceState_OmitsTraceState(string? otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"].Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WriteSpan_ErrorSpanWithoutOtelStatusCodeTag_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
+    {
+        // Our own instrumentation marks spans as errors via span.Error and never sets "otel.status_code"
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.Error = true;
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var json = WriteSpan(ddSpan);
+
+        var actualStatusCode = json["status"]?["code"]?.Value<int>();
+        actualStatusCode.Should().Be((int)StatusCode.Error);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WriteSpan_NonErrorSpanWithoutOtelStatusCodeTag_OmitsStatus(bool openTelemetrySemanticsEnabled)
+    {
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.Error.Should().BeFalse();
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var json = WriteSpan(ddSpan);
+
+        json["status"].Should().BeNull();
+    }
+
+    [Fact]
+    public void WriteSpan_ErrorSpanWithoutOtelStatusCodeTag_UsesErrorMsgAsStatusMessage()
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Error = true;
+        ddSpan.SetTag(Tags.ErrorMsg, "oops");
+
+        var json = WriteSpan(ddSpan);
+
+        json["status"]!["code"]!.Value<int>().Should().Be((int)StatusCode.Error);
+        json["status"]!["message"]!.Value<string>().Should().Be("oops");
+    }
+
+    [Theory]
+    [InlineData("STATUS_CODE_OK", 1)]
+    [InlineData("STATUS_CODE_ERROR", 2)]
+    public void WriteSpan_ErrorSpanWithExplicitOtelStatusCodeTag_KeepsTheTagValue(string otelStatusCode, int expectedStatusCode)
+    {
+        // A status set through the OTel API wins over span.Error
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: true);
+        ddSpan.Error = true;
+        ddSpan.SetTag("otel.status_code", otelStatusCode);
+
+        var json = WriteSpan(ddSpan);
+
+        json["status"]!["code"]!.Value<int>().Should().Be(expectedStatusCode);
+    }
+
+    // Under OTel semantics SetHttpStatusCode sets error.type instead of error.msg, and per the
+    // HTTP semantic conventions the status description is left unset, so no message is written.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WriteSpan_HttpSpanWithErrorStatusCode_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
+    {
+        string? expectedMessage = openTelemetrySemanticsEnabled ? null : "The HTTP response has status code 500.";
+
+        // Regression test for HTTP spans marked as errors by SetHttpStatusCode, which sets
+        // span.Error but no "otel.status_code" tag.
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.SetHttpStatusCode(500, isServer: true, new TracerSettings().Manager.InitialMutableSettings);
+        ddSpan.Error.Should().BeTrue();
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var json = WriteSpan(ddSpan);
+
+        json["status"]!["code"]!.Value<int>().Should().Be((int)StatusCode.Error);
+
+        // Assign first: "json["status"]!["message"]?.Value<string>().Should()" would short-circuit
+        // to a no-op when the message is omitted, making the assertion vacuous.
+        var actualMessage = json["status"]!["message"]?.Value<string>();
+        actualMessage.Should().Be(expectedMessage);
+    }
+
+    private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)
+    {
+        var context = new SpanContext(parent: null, new TraceContext(new StubDatadogTracer()), serviceName: "service_name");
+        var span = new Span(context, DateTimeOffset.UtcNow, tags: null, links: null, openTelemetrySemanticsEnabled)
+        {
+            OperationName = "operation_name",
+            ResourceName = "resource_name",
+        };
+        span.SetDuration(TimeSpan.FromMilliseconds(1));
+        return span;
+    }
+
+    private static JObject WriteSpan(Span span)
+    {
+        var serializer = new OtlpTracesJsonSerializer();
+        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { span }));
+
+        using var stringWriter = new StringWriter();
+        using (var writer = new VendorJsonTextWriter(stringWriter))
+        {
+            writer.WriteStartArray();
+            serializer.WriteSpans(writer, traceChunk, emitStartingComma: false);
+            writer.WriteEndArray();
+        }
+
+        var spans = JArray.Parse(stringWriter.ToString());
+        return (JObject)spans[0]!;
     }
 
     private static JObject WriteAnyValue(object? value)

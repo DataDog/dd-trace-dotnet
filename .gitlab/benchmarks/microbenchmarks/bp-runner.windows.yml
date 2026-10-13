@@ -7,10 +7,9 @@
 #   - cpus: CPU affinity mask for NUMA node isolation
 #   - parallelize.items: benchmark filters, each run in parallel within the batch
 #
-# Three experiments run in parallel:
-#   - trace-0: Benchmarks.Trace (9 benchmarks) on NUMA node 0, cores 0-17
-#   - trace-1: Benchmarks.Trace (11 benchmarks) on NUMA node 1, cores 0-21
-#   - otel:    OpenTelemetry benchmarks on NUMA node 0, cores 18-23
+# Two experiments run in parallel on NUMA node 0 (processor group 0 on the benchmark hosts):
+#   - trace-0: Benchmarks.Trace (20 filters, 9 concurrent) on CPUs 0-17
+#   - otel:    OpenTelemetry benchmarks on CPUs 18-23
 #     - This experiment has two experiment steps that run sequentially (because we don't have enough CPUs): 
 #         - Step 1: InstrumentedApi (always);
 #         - Step 2: Api (master only, after InstrumentedApi finishes)
@@ -45,6 +44,7 @@
   git checkout $env:COMMIT_SHA
 
   # Add dotnet to PATH (installed at C:\dotnet on the AMI)
+  [Environment]::SetEnvironmentVariable("DOTNET_ROOT", "C:\dotnet", [EnvironmentVariableTarget]::Process)
   [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
   # Build the tracer and benchmarks using Nuke targets
@@ -119,6 +119,7 @@
   Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
 
   # Add dotnet to PATH
+  [Environment]::SetEnvironmentVariable("DOTNET_ROOT", "C:\dotnet", [EnvironmentVariableTarget]::Process)
   [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
   # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
@@ -141,9 +142,12 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
+        # Temporary workaround for suspected .NET 11 RC1 GC heap corruption in processor group 1.
+        # Queue all Trace filters on node 0, which maps to processor group 0 on the benchmark hosts.
+        # Revisit after validating an SDK containing https://github.com/dotnet/runtime/pull/134216.
         cpus: "0,0x3FFFF"
         parallelize:
-          # 9 Benchmarks.Trace benchmarks on NUMA node 0, cores 0-17 (9 × 2 = 18 CPUs)
+          # 20 filters share 9 two-CPU slots, separate from OpenTelemetry's CPUs 18-23.
           items: >-
             *ActivityBenchmark*
             *AppSecBodyBenchmark*
@@ -154,25 +158,6 @@ experiments:
             *NLogBenchmark*
             *RedisBenchmark*
             *SpanBenchmark*
-          cpus_per_item: 2
-
-        env:
-          BATCH_PREFIX: "trace-0"
-          BENCHMARK_PROJECT: "Benchmarks.Trace"
-        how_to_fetch_release: *how_to_fetch_release_build
-        how_to_run_benchmarks: *how_to_run_benchmarks
-
-  - name: trace-1
-    steps:
-      - name: trace-1
-        run: run_microbenchmarks
-        repo: DataDog/dd-trace-dotnet
-        baseline_branch: ""
-
-        cpus: "1,0x3FFFFF"
-        parallelize:
-          # 11 Benchmarks.Trace benchmarks on NUMA node 1, cores 0-21 (11 × 2 = 22 CPUs)
-          items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
             *AspNetCoreBenchmark*
@@ -187,9 +172,9 @@ experiments:
           cpus_per_item: 2
 
         env:
-          BATCH_PREFIX: "trace-1"
+          BATCH_PREFIX: "trace-0"
           BENCHMARK_PROJECT: "Benchmarks.Trace"
-        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_fetch_release: *how_to_fetch_release_build
         how_to_run_benchmarks: *how_to_run_benchmarks
 
   - name: otel

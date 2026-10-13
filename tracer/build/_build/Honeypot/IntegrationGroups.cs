@@ -89,6 +89,7 @@ namespace Honeypot
             NugetPackages.Add("log4net", new [] { "log4net" });
             NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { "Microsoft.Azure.Functions.Worker.Core" });
             NugetPackages.Add("Microsoft.Azure.Functions.Worker", new string[] { "Microsoft.Azure.Functions.Worker" });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Extensions.DurableTask", new string[] { "Microsoft.Azure.Functions.Worker.Extensions.DurableTask" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.Grpc", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
@@ -118,7 +119,7 @@ namespace Honeypot
             NugetPackages.Add("vstest.console.arm64", Array.Empty<string>());
             NugetPackages.Add("WebDriver", new[] { "Selenium.WebDriver" });
             NugetPackages.Add("Microsoft.AspNetCore.StaticFiles", new [] { "Microsoft.AspNetCore.StaticFiles" });
-            NugetPackages.Add("coverlet.core", Array.Empty<string>());
+            NugetPackages.Add("coverlet.core", new[] { "coverlet.collector" });
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());

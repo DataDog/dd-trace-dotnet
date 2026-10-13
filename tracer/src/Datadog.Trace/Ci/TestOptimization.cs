@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -547,6 +548,15 @@ internal sealed class TestOptimization : ITestOptimization
             }
 
             await testModule.CloseAsync().ConfigureAwait(false);
+        }
+
+        try
+        {
+            CoverageReporter.FinalizeGlobalCoverage();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "TestOptimization: Error finalizing global code coverage during shutdown.");
         }
 
         foreach (var testSession in TestSession.ActiveTestSessions)

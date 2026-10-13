@@ -784,6 +784,21 @@ bool ILRewriter::IsLoadLocalDirectInstruction(unsigned opcode)
     }
 }
 
+bool ILRewriter::IsStoreLocalDirectInstruction(unsigned opcode)
+{
+    switch (opcode)
+    {
+        case CEE_STLOC:
+        case CEE_STLOC_0:
+        case CEE_STLOC_1:
+        case CEE_STLOC_2:
+        case CEE_STLOC_3:
+        case CEE_STLOC_S:
+        return true;
+        default:return false;
+    }
+}
+
 uint32_t ILRewriter::GetLocalIndexFromOpcode(const ILInstr* pInstr)
 {
     // get the index of the local that represent by the opcode or the operand of the instruction
@@ -819,6 +834,58 @@ bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
         return true;
         default:return false;
     }
+}
+
+bool ILRewriter::IsCloneableStandaloneValueLoad(unsigned opcode)
+{
+    if (IsLoadLocalDirectInstruction(opcode) || IsLoadConstantInstruction(opcode))
+    {
+        return true;
+    }
+
+    switch (opcode)
+    {
+        case CEE_LDNULL:
+        case CEE_LDSTR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+ILInstr* ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(const EHClause& clause, const ILInstr* sentinel)
+{
+    if (clause.m_pHandlerBegin == nullptr || clause.m_pHandlerEnd == nullptr || sentinel == nullptr)
+    {
+        return nullptr;
+    }
+
+    for (auto instruction = clause.m_pHandlerBegin; instruction != sentinel; instruction = instruction->m_pNext)
+    {
+        if (instruction->m_opcode == CEE_NOP)
+        {
+            if (instruction == clause.m_pHandlerEnd)
+            {
+                return nullptr;
+            }
+
+            continue;
+        }
+
+        if (instruction->m_opcode != CEE_POP && !IsStoreLocalDirectInstruction(instruction->m_opcode))
+        {
+            return nullptr;
+        }
+
+        if (instruction == clause.m_pHandlerEnd)
+        {
+            return nullptr;
+        }
+
+        return instruction->m_pNext;
+    }
+
+    return nullptr;
 }
 
 // Checks whether the range [innerBegin, innerEnd) is a proper subset of [outerBegin, outerEnd).

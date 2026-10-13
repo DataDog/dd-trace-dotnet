@@ -21,15 +21,19 @@ namespace BuggyBits
         private readonly Scenario _scenario;
         private readonly int _nbIdleThreads;
         private readonly int _nbNewsThreads;
+        private readonly int _allocationCount;
+        private readonly int _allocationSize;
         private readonly bool _disableLogs;
 
-        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreads, bool disableLogs)
+        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreads, int allocationCount, int allocationSize, bool disableLogs)
         {
             _exitToken = token;
             _httpClient = new HttpClient();
             _scenario = scenario;
             _nbIdleThreads = nbIdleThreads;
             _nbNewsThreads = 6;
+            _allocationCount = allocationCount;
+            _allocationSize = allocationSize;
             _disableLogs = disableLogs;
         }
 
@@ -210,6 +214,11 @@ namespace BuggyBits
                 if ((_scenario & Scenario.EndpointProfiling) == Scenario.EndpointProfiling)
                 {
                     urls.Add($"{rootUrl}/Products/EndpointProfiling");
+                }
+
+                if ((_scenario & Scenario.Allocations) == Scenario.Allocations)
+                {
+                    urls.Add($"{rootUrl}/Products/Allocations?count={_allocationCount}&size={_allocationSize}");
                 }
             }
 

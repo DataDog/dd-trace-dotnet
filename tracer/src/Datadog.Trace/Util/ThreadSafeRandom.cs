@@ -14,7 +14,9 @@ internal static class ThreadSafeRandom
 #if NET6_0_OR_GREATER
     public static Random Shared => Random.Shared;
 #else
+#pragma warning disable RS0030 // ThreadSafeRandom is the sanctioned wrapper for Random
     private static readonly Random Global = new();
+#pragma warning restore RS0030
 
     [ThreadStatic]
     private static Random? _local;
@@ -32,7 +34,9 @@ internal static class ThreadSafeRandom
                     seed = Global.Next();
                 }
 
+#pragma warning disable RS0030 // ThreadSafeRandom is the sanctioned wrapper for Random
                 _local = new Random(seed);
+#pragma warning restore RS0030
             }
 
             return _local;

@@ -56,6 +56,7 @@ public:
     inline static const shared::WSTRING CoreMinimumOverride             = WStr("DD_PROFILING_MIN_CORES_THRESHOLD");
     inline static const shared::WSTRING AllocationRecorderEnabled       = WStr("DD_INTERNAL_PROFILING_ALLOCATION_RECORDER_ENABLED");
     inline static const shared::WSTRING DebugInfoEnabled                = WStr("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
+    inline static const shared::WSTRING GcLifecycleEventsSkipProcessing = WStr("DD_INTERNAL_PROFILING_GC_LIFECYCLE_EVENTS_SKIP_PROCESSING");
     inline static const shared::WSTRING GcThreadsCpuTimeInternalEnabled = WStr("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
     inline static const shared::WSTRING GcThreadsCpuTimeEnabled         = WStr("DD_GC_THREADS_CPUTIME_ENABLED");
     inline static const shared::WSTRING InternalMetricsEnabled          = WStr("DD_INTERNAL_METRICS_ENABLED");
@@ -85,6 +86,7 @@ public:
     // used for tests only
     inline static const shared::WSTRING ForceHttpSampling           = WStr("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");
     inline static const shared::WSTRING TestHeapSnapshotInterval    = WStr("DD_INTERNAL_PROFILING_TEST_HEAPSNAPSHOT_INTERVAL");
+    inline static const shared::WSTRING LibrariesInfoCacheStartTimeout = WStr("DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT");
 
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");

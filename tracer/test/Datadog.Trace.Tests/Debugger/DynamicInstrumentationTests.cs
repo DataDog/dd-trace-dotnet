@@ -99,7 +99,7 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
-    public void DynamicInstrumentation_RefreshesMemoryPressure_OnlyThroughDedicatedHook()
+    public void DynamicInstrumentation_EmitPaths_PreserveIncompleteReasonsWithoutRefreshingMemoryPressure()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
@@ -108,13 +108,15 @@ public class DynamicInstrumentationTests
         var memSource = new CountingMemorySource();
         var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default, memSource.TryGetMemoryUsageRatio, memSource.TryGetGen2CollectionCount, null);
         var globalRateLimiter = new GlobalRateLimiterMock();
+        var snapshotUploader = new SnapshotUploaderMock();
+        var logUploader = new LogUploaderMock();
         var debugger = new DynamicInstrumentation(
             settings,
             new DiscoveryServiceMock(),
             new RcmSubscriptionManagerMock(),
             new LineProbeResolverMock(),
-            new SnapshotUploaderMock(),
-            new LogUploaderMock(),
+            snapshotUploader,
+            logUploader,
             new UploaderMock(),
             new ProbeStatusPollerMock(),
             ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
@@ -128,10 +130,12 @@ public class DynamicInstrumentationTests
 
         // Emit paths must not sample memory pressure. Sampling is driven once per probe activity
         // from ProbeProcessor via RefreshMemoryPressureIfStale(), not from each snapshot/log/metric.
-        debugger.AddSnapshot(fullSnapshotProbe, "{}");
-        debugger.AddLog(logProbe, "{}");
+        debugger.AddSnapshot(fullSnapshotProbe, "{}", incompleteReasons: 42);
+        debugger.AddLog(logProbe, "{}", incompleteReasons: 43);
         debugger.SendMetrics(metricProbe, MetricKind.COUNT, "metric", 1, "metric-probe");
         memSource.SampleCount.Should().Be(0);
+        snapshotUploader.IncompleteReasons.Should().Be(42);
+        logUploader.IncompleteReasons.Should().Be(43);
 
         debugger.RefreshMemoryPressureIfStale();
         memSource.SampleCount.Should().Be(1);
@@ -1420,15 +1424,21 @@ public class DynamicInstrumentationTests
 
     private class SnapshotUploaderMock : UploaderMock, ISnapshotUploader
     {
-        public void Add(string probeId, string snapshot)
+        public uint IncompleteReasons { get; private set; }
+
+        public void Add(string probeId, string snapshot, uint incompleteReasons)
         {
+            IncompleteReasons = incompleteReasons;
         }
     }
 
     private class LogUploaderMock : UploaderMock, ISnapshotUploader
     {
-        public void Add(string probeId, string snapshot)
+        public uint IncompleteReasons { get; private set; }
+
+        public void Add(string probeId, string snapshot, uint incompleteReasons)
         {
+            IncompleteReasons = incompleteReasons;
         }
     }
 

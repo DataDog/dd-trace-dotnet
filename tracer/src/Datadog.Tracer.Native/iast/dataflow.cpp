@@ -181,9 +181,15 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. "
                              "Disabling Dataflow. HRESULT : ",
                              Hex(hr));
+        return;
     }
 
-    _preLoadedModuleIds = moduleIds;
+    // Modules already loaded when Dataflow is created never get another ModuleLoadFinished, so
+    // remember them here and resolve them from the next ModuleLoaded. They cannot be resolved
+    // now: this constructor runs on a managed thread (the RegisterIastAspects P/Invoke), outside
+    // any profiler callback, where GetAssemblyInfo fails with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
+    // If no further module ever loads, they are resolved on demand from the JIT callbacks.
+    _preLoadedModuleIds = std::move(moduleIds);
 }
 
 Dataflow::~Dataflow()
@@ -375,7 +381,16 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
+        // The entry is null when resolution failed and the failure was cached; don't dereference it.
+        if (it->second != nullptr)
+        {
+            DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name,
+                " ] ");
+        }
+        else
+        {
+            DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " (Not resolved)");
+        }
         DEL(it->second);
         _appDomains.erase(appDomainId);
         return S_OK;
@@ -383,10 +398,19 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
     return S_FALSE;
 }
 
-HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
+HRESULT Dataflow::ModuleLoaded(const trace::ModuleIDWithLifetime& module, ModuleInfo** pModuleInfo)
 {
+    auto moduleLifetime = module.TryAcquire();
+    if (!moduleLifetime.has_value())
+    {
+        return S_FALSE;
+    }
+
+    const auto moduleId = module.id;
     CSGUARD(_cs);
-    // Retrieve all already modules at once to mimic initialization from creation behavior
+    // Resolve the modules that were already loaded when Dataflow was created. This is the first
+    // safe opportunity to do so: we are inside ModuleLoadFinished, the profiler-callback context
+    // the profiling API requires for these calls.
     if (_preLoadedModuleIds.size() > 0)
     {
         for (auto const& id : _preLoadedModuleIds)
@@ -416,7 +440,16 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
+            // The entry is null when resolution failed and the failure was cached; don't dereference it.
+            if (it->second != nullptr)
+            {
+                DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ",
+                    it->second->_appDomain.Name, " ] ", it->second->_name);
+            }
+            else
+            {
+                DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " (Not resolved)");
+            }
             DEL(it->second);
         }
         else
@@ -425,19 +458,34 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         }
         _modules.erase(moduleId);
     }
+    // Drop it from the pending preload list too. Otherwise the drain would later call
+    // GetModuleInfo2 on a ModuleID the runtime has already torn down.
+    if (!_preLoadedModuleIds.empty())
+    {
+        _preLoadedModuleIds.erase(std::remove(_preLoadedModuleIds.begin(), _preLoadedModuleIds.end(), moduleId),
+                                  _preLoadedModuleIds.end());
+    }
 
     return S_OK;
 }
 
-HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport,
-                                      IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
-                                      IMetaDataAssemblyEmit** ppAssemblyEmit)
+// Read-only metadata, for every module we resolve.
+//
+// Deliberately ofRead and not ofRead|ofWrite: asking for write access forces the runtime to
+// materialize a writable copy of that module's metadata, swapping out the PEImage the running code
+// was built against. Doing that to a module we only ever read is at best wasted work -- most modules
+// we resolve are excluded from instrumentation -- and at worst fatal: we read Datadog.Trace.dll's
+// metadata to resolve aspects while its own code is running, and making it writable faulted the
+// runtime in PEAssembly::HasPEImage (APPSEC-69538). Write access is acquired separately, and only
+// for the modules we actually rewrite. See GetModuleEmitInterfaces.
+HRESULT Dataflow::GetModuleImportInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport,
+                                            IMetaDataAssemblyImport** ppAssemblyImport)
 {
     HRESULT hr = S_OK;
     if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
-        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk);
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, &piUnk);
         if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
@@ -447,20 +495,30 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
     if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataAssemblyImport, &piUnk);
+        if (hr == S_OK)
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
+            REL(piUnk);
+        }
+    }
+    return hr;
+}
+
+// Writable metadata, acquired lazily by ModuleInfo::EnsureEmitInterfaces the first time we emit into
+// a module. Callers reach this from the JIT/ReJIT callbacks, which is where the rest of the tracer
+// asks for write access too, and only for modules being instrumented.
+HRESULT Dataflow::GetModuleEmitInterfaces(ModuleID moduleId, IMetaDataEmit2** ppMetadataEmit,
+                                          IMetaDataAssemblyEmit** ppAssemblyEmit)
+{
+    HRESULT hr = S_OK;
+    if (hr == S_OK)
+    {
+        IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, &piUnk);
         if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataEmit2, (void**) ppMetadataEmit);
-            REL(piUnk);
-        }
-    }
-    if (hr == S_OK)
-    {
-        IUnknown* piUnk = nullptr;
-        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, &piUnk);
-        if (hr == S_OK)
-        {
-            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
             REL(piUnk);
         }
     }
@@ -524,7 +582,7 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
     if (FAILED(hr))
     {
         trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
-        _appDomains[id] = nullptr; // Cache the failure
+        _appDomains[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
 
@@ -533,9 +591,17 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 
     return info;
 }
+// Resolves a module through the profiling API on a cache miss. Every caller is either a profiler
+// callback (ModuleLoaded) or reached from one (the JIT callbacks), which is the context the
+// profiling API requires: GetAssemblyInfo is synchronous-only and fails outside a callback.
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 {
     CSGUARD(_cs);
+    if (_profiler == nullptr)
+    {
+        return nullptr;
+    }
+
     auto found = _modules.find(id);
     if (found != _modules.end())
     {
@@ -558,7 +624,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     if (FAILED(hr))
     {
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id, " hr:", Hex(hr));
-        _modules[id] = nullptr; 
+        _modules[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
@@ -573,7 +639,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
                              assemblyId, " hr:", Hex(hr));
-        _modules[id] = nullptr;
+        _modules[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
 
@@ -581,7 +647,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     if (appDomain == nullptr)
     {
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
-        _modules[id] = nullptr;
+        _modules[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
 
@@ -620,19 +686,37 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
-    auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
+    std::vector<RejitRequest> rejitRequests;
+    const auto module = m_rejitHandler->GetModuleWithLifetime(calleeModuleId);
+    auto method = JITProcessMethod(calleeModuleId, calleeMethodId, nullptr, &module, &rejitRequests);
+    m_rejitHandler->RequestRejit(rejitRequests);
     if (method)
     {
         return method->IsInlineEnabled();
     }
     return true;
 }
-bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
+bool Dataflow::JITCompilationStarted(const trace::ModuleIDWithLifetime& module, mdToken methodId)
 {
-    auto method = JITProcessMethod(moduleId, methodId);
+    std::vector<RejitRequest> rejitRequests;
+    MethodInfo* method;
+    {
+        auto moduleLifetime = module.TryAcquire();
+        if (!moduleLifetime.has_value())
+        {
+            return false;
+        }
+
+        method = JITProcessMethod(module.id, methodId, nullptr, &module, &rejitRequests);
+    }
+
+    m_rejitHandler->RequestRejit(rejitRequests);
     return method != nullptr;
 }
-MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
+MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId,
+                                      trace::FunctionControlWrapper* pFunctionControl,
+                                      const trace::ModuleIDWithLifetime* moduleWithLifetime,
+                                      std::vector<RejitRequest>* deferredRejitRequests)
 {
     CSGUARD(_cs);
     MethodInfo* method = nullptr;
@@ -645,7 +729,7 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trac
             if (pFunctionControl || !method->IsProcessed())
             {
                 method->SetProcessed();
-                RewriteMethod(method, pFunctionControl);
+                RewriteMethod(method, pFunctionControl, moduleWithLifetime, deferredRejitRequests);
             }
         }
     }
@@ -661,7 +745,9 @@ HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunc
 {
     return method->SetMethodIL(size, pBody, pFunctionControl);
 }
-HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl)
+HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl,
+                                const trace::ModuleIDWithLifetime* moduleWithLifetime,
+                                std::vector<RejitRequest>* deferredRejitRequests)
 {
     HRESULT hr = S_OK;
 
@@ -716,10 +802,8 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             }
             else
             {
-                std::vector<ModuleID> modulesVector = {module->_id};
-                std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
                 DBG("Dataflow::RewriteMethod -> REJIT requested for ", method->GetKey());
-                m_rejitHandler->RequestRejit(modulesVector, methodsVector);
+                deferredRejitRequests->emplace_back(*moduleWithLifetime, method->GetMemberId());
             }
         }
     }

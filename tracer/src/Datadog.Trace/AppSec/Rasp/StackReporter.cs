@@ -17,6 +17,13 @@ internal static class StackReporter
 
     public static Dictionary<string, object>? GetStack(int maxStackTraceDepth, int topPercent, string id, StackFrame[]? stackFrames = null)
     {
+        // Walking the stack runs on this very thread, so a stack that is already nearly exhausted
+        // would be pushed over the guard page by the walk itself.
+        if (stackFrames is null && !ExecutionStackGuard.HasSufficientStack())
+        {
+            return null;
+        }
+
         var frames = GetFrames(maxStackTraceDepth, topPercent, stackFrames ?? new StackTrace(true).GetFrames());
 
         if (frames is null || frames.Count == 0)

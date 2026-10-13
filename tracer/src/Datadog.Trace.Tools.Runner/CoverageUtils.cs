@@ -4,11 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Global;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner;
@@ -33,23 +31,27 @@ internal static class CoverageUtils
             return false;
         }
 
-        if (!TryCombineAndGetTotalCoverage(inputFolder, out globalCoverageInfo, useStdOut))
+        if (!TryLoadAndCombine(inputFolder, outputFile, out globalCoverageInfo, useStdOut))
         {
             return false;
         }
 
-        using var fStream = File.OpenWrite(outputFile);
-        using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
         if (useStdOut)
         {
             Utils.WriteSuccess($"Writing {outputFile}");
         }
 
-        new JsonSerializer().Serialize(sWriter, globalCoverageInfo);
+        var writer = new GlobalCoverageArtifactWriter();
+        using var stagedOutput = writer.StageReplace(outputFile, globalCoverageInfo);
+        stagedOutput.Commit();
         return true;
     }
 
-    private static bool TryCombineAndGetTotalCoverage(string inputFolder, out GlobalCoverageInfo globalCoverageInfo, bool useStdOut = true)
+    private static bool TryLoadAndCombine(
+        string inputFolder,
+        string outputFile,
+        out GlobalCoverageInfo globalCoverageInfo,
+        bool useStdOut)
     {
         globalCoverageInfo = default;
 
@@ -76,7 +78,11 @@ internal static class CoverageUtils
         var jsonFiles = Array.Empty<string>();
         try
         {
-            jsonFiles = Directory.GetFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly);
+            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder, expectedRunToken: null, out jsonFiles))
+            {
+                return false;
+            }
+
             if (jsonFiles.Length == 0)
             {
                 if (useStdOut)
@@ -93,34 +99,23 @@ internal static class CoverageUtils
             AnsiConsole.WriteException(ex);
         }
 
-        List<GlobalCoverageInfo> globalCoverages = new();
-        foreach (var file in jsonFiles)
+        Action<string> onFileProcessed = useStdOut ? file => Utils.WriteSuccess($"Processing: {file}") : null;
+        if (!GlobalCoverageFileCombiner.TryCombine(
+                jsonFiles,
+                outputFile,
+                requireAllInputs: false,
+                onFileProcessed: onFileProcessed,
+                out globalCoverageInfo,
+                out var rejectedInput))
         {
-            var fileContent = File.ReadAllText(file);
-            try
+            if (useStdOut && rejectedInput is not null)
             {
-                if (JsonConvert.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
-                {
-                    if (useStdOut)
-                    {
-                        Utils.WriteSuccess($"Processing: {file}");
-                    }
+                Utils.WriteError($"Error processing {rejectedInput}");
+            }
 
-                    globalCoverages.Add(gCoverageInfo);
-                }
-                else if (useStdOut)
-                {
-                    Utils.WriteSuccess($"Ignored: {file}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Utils.WriteError($"Error processing {file}");
-                AnsiConsole.WriteException(ex);
-            }
+            return false;
         }
 
-        globalCoverageInfo = GlobalCoverageInfo.Combine(globalCoverages.ToArray());
         return true;
     }
 }

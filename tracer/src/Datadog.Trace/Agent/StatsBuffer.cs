@@ -12,17 +12,18 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Agent
 {
-    internal sealed class StatsBuffer
+    internal abstract class StatsBuffer
     {
         private readonly List<StatsAggregationKey> _keysToRemove;
 
-        public StatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter)
+        protected StatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter, long start)
         {
             Header = header;
             CardinalityLimiter = cardinalityLimiter;
             _keysToRemove = new();
             Buckets = new();
             CardinalityReporter = cardinalityReporter;
+            Start = start;
             Reset();
         }
 
@@ -141,10 +142,6 @@ namespace Datadog.Trace.Agent
             // Reset the per-field admission sets so each flush window admits a fresh set of distinct values.
             CardinalityLimiter.Reset();
             CardinalityReporter.Reset();
-
-            // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
-            var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-            Start = nowNs - (nowNs % 10_000_000_000);
         }
 
         public void Serialize(Stream stream, long bucketDuration)
@@ -222,6 +219,12 @@ namespace Datadog.Trace.Agent
                 MessagePackBinary.WriteString(stream, details.GitCommitSha);
             }
         }
+
+        internal abstract long GetNextStart(long boundaryNs);
+
+        internal abstract long GetDuration(long endNs, long configuredDurationNs);
+
+        internal void SetStart(long start) => Start = start;
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
@@ -353,6 +356,34 @@ namespace Datadog.Trace.Agent
                     SerializeBucket(stream, bucket);
                 }
             }
+        }
+
+        internal sealed class DatadogStatsBuffer : StatsBuffer
+        {
+            private const long AlignmentNs = 10_000_000_000;
+
+            public DatadogStatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter, long initialTimestampNs)
+                : base(header, cardinalityLimiter, cardinalityReporter, Align(initialTimestampNs))
+            {
+            }
+
+            internal override long GetNextStart(long boundaryNs) => Align(boundaryNs);
+
+            internal override long GetDuration(long endNs, long configuredDurationNs) => configuredDurationNs;
+
+            private static long Align(long timestampNs) => timestampNs - (timestampNs % AlignmentNs);
+        }
+
+        internal sealed class OtlpStatsBuffer : StatsBuffer
+        {
+            public OtlpStatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter, long initialTimestampNs)
+                : base(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs)
+            {
+            }
+
+            internal override long GetNextStart(long boundaryNs) => Math.Max(Start + 1, boundaryNs);
+
+            internal override long GetDuration(long endNs, long configuredDurationNs) => endNs - Start;
         }
     }
 }

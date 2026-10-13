@@ -237,6 +237,21 @@ internal enum Count
     /// Count of Dynamic Instrumentation high-memory-pressure periods, incremented once on exit and tagged by duration bucket.
     /// </summary>
     [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDuration,
+
+    /// <summary>
+    /// The number of debugger events skipped before capture, tagged by reason and event type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerEventsSkippedReason, MetricTags.DebuggerEventType>("events.skipped", isCommon: true, NS.LiveDebugger)] DebuggerEventsSkipped,
+
+    /// <summary>
+    /// The number of debugger events dropped after capture, tagged by reason and event type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerEventsDroppedReason, MetricTags.DebuggerCaptureEventType>("events.dropped", isCommon: true, NS.LiveDebugger)] DebuggerEventsDropped,
+
+    /// <summary>
+    /// The number of incomplete debugger captures, tagged by event type and reason.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerCaptureEventType, MetricTags.DebuggerCaptureIncompleteReason>("capture.incomplete", isCommon: true, NS.LiveDebugger)] DebuggerCaptureIncomplete,
 #endregion
 #region AppSec Namespace
 
@@ -261,6 +276,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.TruncationReason>("waf.input_truncated", isCommon: true, NS.ASM)] InputTruncated,
 
     /// <summary>
+    /// Number of errors returned by a call to ddwaf_run, tagged by the ddwaf_run return code
+    /// </summary>
+    [TelemetryMetric<MetricTags.WafError>("waf.error", isCommon: true, NS.ASM)] WafError,
+
+    /// <summary>
     /// Counts the number of times a rule type is evaluated.
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.rule.eval", isCommon: true, NS.ASM)] RaspRuleEval,
@@ -274,6 +294,17 @@ internal enum Count
     /// Counts the number of times a timeout was hit when evaluating a specific rule type.
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
+
+    /// <summary>
+    /// Counts the number of times the WAF returned an error when evaluating a specific rule type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.RaspError>("rasp.error", isCommon: true, NS.ASM)] RaspError,
+
+    /// <summary>
+    /// Counts the number of times the evaluation of a RASP instrumentation had to be skipped
+    /// because of the request lifecycle, tagged by the rule type and the reason.
+    /// </summary>
+    [TelemetryMetric<RaspRuleTypeSkipped>("rasp.rule.skipped", isCommon: true, NS.ASM)] RaspRuleSkipped,
 
     /// <summary>
     /// Counts the number of times a user id hasn't been found  as part of the login success, login failure or signup event

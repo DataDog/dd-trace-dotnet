@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 #include "cor.h"
@@ -49,6 +50,11 @@ private:
     size_t _count = 0;
     size_t _peakCount = 0;
     size_t _growCount = 0;
+    // Set when an insertion may have been interrupted (e.g. by a fault recovered
+    // via siglongjmp/SEH) after writing an address but before recording its bucket
+    // in _dirtyIndices. The next Clear() then wipes the whole table instead of only
+    // the tracked buckets, so no stale "visited" address leaks into the next root.
+    bool _needsFullClear = false;
 #ifdef DD_HEAPSNAPSHOT_VISITED_STATS
     size_t _tryInsertCalls = 0;
     size_t _tryInsertInserted = 0;
@@ -281,17 +287,36 @@ public:
         }
     }
 
+    // Call after recovering from a fault: the interrupted insert may have written
+    // an address without recording its bucket in _dirtyIndices, so the next Clear()
+    // must wipe the whole table instead of only the tracked buckets.
+    void MarkPossiblyInconsistent()
+    {
+        _needsFullClear = true;
+    }
+
     // O(dirty-count) clear: only zero the address slots that were written.
     // Metadata is not cleared — TryInsert zero-initialises it on insertion.
+    //
+    // After a recovered fault (_needsFullClear) the dirty-index list may be missing
+    // an entry, so fall back to a full O(capacity) wipe for that one Clear().
     void Clear()
     {
         if (_count > _peakCount)
         {
             _peakCount = _count;
         }
-        for (uint32_t idx : _dirtyIndices)
+        if (_needsFullClear)
         {
-            _addresses[idx] = 0;
+            std::fill(_addresses.begin(), _addresses.end(), static_cast<uintptr_t>(0));
+            _needsFullClear = false;
+        }
+        else
+        {
+            for (uint32_t idx : _dirtyIndices)
+            {
+                _addresses[idx] = 0;
+            }
         }
         _dirtyIndices.clear();
         _count = 0;

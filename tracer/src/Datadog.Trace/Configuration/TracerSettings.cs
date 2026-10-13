@@ -15,6 +15,7 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
@@ -282,13 +283,6 @@ namespace Datadog.Trace.Configuration
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
-            OtlpMetricsHeaders = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders)
-                            .AsDictionaryResult(separator: '=')
-                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
-                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
-
             OtlpMetricsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
@@ -334,7 +328,7 @@ namespace Datadog.Trace.Configuration
 
             OtlpLogsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
-                            .AsDictionaryResult(separator: '=')
+                            .AsRedactedDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
@@ -418,6 +412,11 @@ namespace Datadog.Trace.Configuration
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
                                 .AsInt32(defaultTraceBatchInterval);
 
+            // Parse the OpenTelemetry semantics mode early because it affects the RouteTemplateResourceNamesEnabled and SingleSpanAspNetCoreEnabled settings.
+            OtelSemanticsEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
+                .AsBool(defaultValue: false);
+
             RouteTemplateResourceNamesEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                .AsBool(defaultValue: true);
@@ -425,7 +424,25 @@ namespace Datadog.Trace.Configuration
             SingleSpanAspNetCoreEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled)
                                          .AsBool(defaultValue: false);
-#if !NET6_0_OR_GREATER
+
+            if (OtelSemanticsEnabled && !RouteTemplateResourceNamesEnabled)
+            {
+                // OpenTelemetry semantics require that the server span has a low-cardinality name based only
+                // on HTTP request method and the route/template, so ensure resource names are based on the route template
+                RouteTemplateResourceNamesEnabled = true;
+                telemetry.Record(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, true, ConfigurationOrigins.Calculated);
+            }
+
+#if NET6_0_OR_GREATER
+            if (OtelSemanticsEnabled && !SingleSpanAspNetCoreEnabled)
+            {
+                // OpenTelemetry semantics require emitting only a single web server span per request,
+                // in line with the single-span ASP.NET Core observer logic we've previously written
+                // which emits a single root span per request with no aspnet_core_mvc.request child span.
+                SingleSpanAspNetCoreEnabled = true;
+                telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, true, ConfigurationOrigins.Calculated);
+            }
+#else
             // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
             if (SingleSpanAspNetCoreEnabled)
             {
@@ -439,6 +456,13 @@ namespace Datadog.Trace.Configuration
             ExpandRouteTemplatesEnabled = config
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
                                          .AsBool(defaultValue: !(RouteTemplateResourceNamesEnabled || SingleSpanAspNetCoreEnabled)); // disabled by default if route template resource names or single-span enabled
+            if (OtelSemanticsEnabled && ExpandRouteTemplatesEnabled)
+            {
+                // OpenTelemetry semantics require that the server span has a low-cardinality name based only
+                // on HTTP request method and the route/template, so force-disable the expansion of route template variables
+                ExpandRouteTemplatesEnabled = false;
+                telemetry.Record(ConfigurationKeys.ExpandRouteTemplatesEnabled, false, ConfigurationOrigins.Calculated);
+            }
 
             AzureServiceBusBatchLinksEnabled = config
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)
@@ -468,9 +492,11 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
                                       .AsBool(defaultValue: false);
 
-            ObfuscationQueryStringRegex = config
-                                         .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+            var obfuscationRegexResult = config
+                                        .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
+                                        .AsStringResult();
+            ObfuscationQueryStringRegex = obfuscationRegexResult.WithDefault(new DefaultResult<string>(TracerSettingsConstants.DefaultObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex));
+            ObfuscationQueryStringRegexWasConfigured = obfuscationRegexResult.ConfigurationResult.IsPresent;
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -526,7 +552,7 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
                                              defaultValue: new(ExtractBehavior.Continue, "continue"),
-                                             converter: x => x.ToLowerInvariant() switch
+                                             converter: x => StringUtil.ToLowerInvariant(x) switch
                                              {
                                                  "continue" => ExtractBehavior.Continue,
                                                  "restart" => ExtractBehavior.Restart,
@@ -717,7 +743,7 @@ namespace Datadog.Trace.Configuration
             }
 
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
-                                                  ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
+                                                  ? TrimSplitString(StringUtil.ToUpperInvariant(urlSubstringSkips), commaSeparator)
                                                   : [];
 
             var dbmPropagationMode = config
@@ -769,9 +795,6 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-            IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
-                                                       .AsBool(false);
-
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
                                                        .AsBool(false);
 
@@ -800,12 +823,7 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit)
                                     .AsInt32(2000, value => value > 0).Value;
 
-#if NET6_0_OR_GREATER
-            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
-#else
-            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
-            OtlpRuntimeMetricsEnabled = false;
-#endif
+            OtlpRuntimeMetricsEnabled = OtlpMetricsExportEnabled && RuntimeMetricsEnabled;
 
             // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
@@ -814,9 +832,30 @@ namespace Datadog.Trace.Configuration
             OtelTracesSpanMetricsEnabled = explicitSpanMetrics
                 ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
 
-            OtelSemanticsEnabled = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
+            OtelThreadContextEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
                 .AsBool(defaultValue: false);
+
+            if (OtelSemanticsEnabled)
+            {
+                // OpenTelemetry semantics mode already fully replaces Datadog attribute naming and values,
+                // so the V1 schema's Datadog-only attributes (e.g. peer.service) must not be layered on top.
+                if (MetadataSchemaVersion != SchemaVersion.V0)
+                {
+                    Log.Warning(
+                        $"{ConfigurationKeys.MetadataSchemaVersion} is set to a version other than v0, but {ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled} is enabled. Using v0 instead.");
+                    MetadataSchemaVersion = SchemaVersion.V0;
+                    telemetry.Record(ConfigurationKeys.MetadataSchemaVersion, "v0", recordValue: true, ConfigurationOrigins.Calculated);
+                }
+
+                if (PeerServiceTagsEnabled)
+                {
+                    Log.Warning(
+                        $"{ConfigurationKeys.PeerServiceDefaultsEnabled} is set to true, but {ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled} is enabled. Using false instead.");
+                    PeerServiceTagsEnabled = false;
+                    telemetry.Record(ConfigurationKeys.PeerServiceDefaultsEnabled, false, ConfigurationOrigins.Calculated);
+                }
+            }
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
@@ -874,6 +913,11 @@ namespace Datadog.Trace.Configuration
 
             Manager = new(source, this, telemetry, errorLog);
 
+            // The environment is deliberately not passed in: it can be changed in code after
+            // startup, so the delivery source subscribes to the manager and applies the current
+            // value per request instead of capturing one here.
+            FeatureFlags = new FeatureFlagsSettings(source, telemetry);
+
             // OTLP span metrics require OTLP trace export (see TracerManagerFactory.GetAgentWriter).
             // Force to false otherwise, even if explicitly requested.
             if (OtelTracesSpanMetricsEnabled && !Manager.InitialExporterSettings.IsOtlpTraceExport)
@@ -921,6 +965,16 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
         internal bool OpenTelemetryMetricsEnabled { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the OTLP metrics pipeline is enabled on this target framework.
+        /// </summary>
+        internal bool OtlpMetricsExportEnabled =>
+#if NET6_0_OR_GREATER
+            OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled;
+#else
+            false;
+#endif
+
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
         internal HashSet<string> OpenTelemetryMeterNames { get; }
@@ -959,14 +1013,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
         internal Uri OtlpEndpoint { get; }
-
-        /// <summary>
-        /// Gets the OTLP headers for metrics export with fallback behavior.
-        /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders"/>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
-        internal IReadOnlyDictionary<string, string> OtlpMetricsHeaders { get; }
 
         /// <summary>
         /// Gets the OpenTelemetry metric export interval (in milliseconds) between export attempts.
@@ -1012,6 +1058,16 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/>
         internal bool OpenTelemetryLogsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the OTLP logs pipeline is enabled on this target framework.
+        /// </summary>
+        internal bool OtlpLogsExportEnabled =>
+#if NETCOREAPP3_1_OR_GREATER
+            OpenTelemetryLogsEnabled;
+#else
+            false;
+#endif
 
         /// <summary>
         /// Gets the OTLP protocol for logs export with fallback behavior.
@@ -1181,6 +1237,11 @@ namespace Datadog.Trace.Configuration
         internal string ObfuscationQueryStringRegex { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the query string obfuscation regex was explicitly configured, including an empty value.
+        /// </summary>
+        internal bool ObfuscationQueryStringRegexWasConfigured { get; }
+
+        /// <summary>
         /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
         /// </summary>
         internal bool QueryStringReportingEnabled { get; }
@@ -1295,6 +1356,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
         internal bool OtelSemanticsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the active trace and span identifiers of each thread are published
+        /// using the OpenTelemetry thread context protocol (OTEP 4947).
+        /// Only supported on Linux x64 and arm64. Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled"/>
+        internal bool OtelThreadContextEnabled { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
@@ -1485,14 +1554,14 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         /// <summary>
-        /// Gets a value indicating whether remote Feature Flags Provider is enabled
-        /// </summary>
-        internal bool IsFlaggingProviderEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="IsFlaggingProviderEnabled"/>.
+        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="FeatureFlags"/>.
         /// </summary>
         internal bool IsSpanEnrichmentEnabled { get; }
+
+        /// <summary>
+        /// Gets the Feature Flags settings, which select where flag configuration is delivered from.
+        /// </summary>
+        internal FeatureFlagsSettings FeatureFlags { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled

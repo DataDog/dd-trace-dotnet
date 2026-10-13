@@ -115,6 +115,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 10.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 ARG AZURE_FUNCTIONS_CORE_TOOLS_VERSION=4.11.0

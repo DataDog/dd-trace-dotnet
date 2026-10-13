@@ -47,6 +47,11 @@ Add support for the new .NET version across projects:
 - **Smoke Tests**:
   - Add additional smoke tests for the new .NET release
   - This may involve pushing new versions of our dedicated smoke test dockerfiles for distros that don't have official Microsoft
+  - **Confirm every new `mcr.microsoft.com/dotnet/*` tag actually exists** (e.g. via the registry's `tags/list` API or `docker buildx imagetools inspect`) before adding a scenario for it — don't assume tag names carry over from the previous major version. In particular:
+    - The Ubuntu-based tag's codename can change release to release, and a new LTS codename (e.g. `noble`) may not exist yet if the corresponding Ubuntu LTS hasn't shipped — only the interim-release codename (e.g. `resolute`) may be published until then.
+    - The Windows base image's `windowsservercore-ltscXXXX` suffix can bump to a newer Windows Server LTSC release and drop support for the previous one.
+    - `mcr.microsoft.com/dotnet/sdk` only publishes prerelease tags trimmed to `<major>.<minor>.<patch>-<label>.<n>` (e.g. `11.0.100-rc.1`), never the full 4-segment `global.json` SDK version (e.g. `11.0.100-rc.1.26425.128`). Any code that builds a Docker tag from the raw `global.json` version (e.g. the smoke tests' `DOTNETSDK_VERSION` build-arg) needs to trim it down first.
+  - After adding/changing scenarios, pin the new image digests with the `UpdateSmokeTestImageDigests` Nuke target rather than hand-writing `@sha256:` values.
 
 ### 3. Integration Support Updates *(Major versions only)*
 Update automatic instrumentation to support the new runtime:

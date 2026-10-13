@@ -6,6 +6,8 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native/AutoResetEvent.h"
 
 #include <future>
+#include <thread>
+#include <time.h>
 
 #include "gtest/gtest.h"
 
@@ -128,6 +130,23 @@ TEST(AutoResetEventTest, EnsureEventIsSignaledIfSetIsCalledWhileWaitingWithTimeo
 
     ASSERT_DURATION_GE(100ms, event->Wait(10s));
     ASSERT_DURATION_LE(50ms, event->Set());
+}
+
+TEST(AutoResetEventTest, EnsureTimeoutExpiresWhenSubSecondTimeoutOverflowsCurrentSecond)
+{
+    // The timeout is added to the current wall clock, so the sub-second part of that sum
+    // only overflows into the next second when the clock is already late enough in the
+    // current one. Wait for that window, keeping enough margin to still be in it below.
+    struct timespec now;
+    do
+    {
+        std::this_thread::sleep_for(1ms);
+        clock_gettime(CLOCK_REALTIME, &now);
+    } while (now.tv_nsec < 900'000'000 || now.tv_nsec > 980'000'000);
+
+    auto event = CreateEvent(false);
+    ASSERT_DURATION_LE(500ms, event->Wait(200ms));
+    ASSERT_FALSE(event->IsSet());
 }
 
 TEST(AutoResetEventTest, CheckCaseWhenEventHasTimeOutButSignaledLater)

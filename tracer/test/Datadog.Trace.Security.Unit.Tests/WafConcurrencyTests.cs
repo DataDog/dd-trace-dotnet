@@ -7,8 +7,10 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 #if NETFRAMEWORK
 using System.Web.Routing;
@@ -19,6 +21,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using FluentAssertions;
 using Xunit;
@@ -159,7 +162,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                     for (var i = 0; i < 100; i++)
                     {
                         var next = r.Next();
-                        using var context = waf.CreateContext();
+                        using var context = waf.CreateContext(out _);
                         if (context == null)
                         {
                             i--;
@@ -259,7 +262,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
 
         var threads = new Thread[20];
 
-        var context = waf.CreateContext();
+        var context = waf.CreateContext(out _);
 
         for (var t = 0; t < threads.Length; t++)
         {
@@ -297,6 +300,71 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
         foreach (var thread in threads)
         {
             thread.Join();
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ReaderLockFailureReportsTheGenericBindingErrorOnlyOutsideRasp(bool isRasp)
+    {
+        // a RASP run reports this failure as rasp.error, from GetOrCreateAdditiveContext, so emitting
+        // waf.error here too would count the same failure twice and break the !isRasp convention
+        var initResult = CreateWaf();
+        var waf = initResult.Waf;
+        waf.Should().NotBeNull();
+
+        var locker = (AppSec.Concurrency.ReaderWriterLock)typeof(Waf).GetField("_wafLocker", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(waf)!;
+
+        // hold the write lock so that CreateContext cannot take its read lock
+        using var writeLockTaken = new ManualResetEventSlim(false);
+        using var releaseWriteLock = new ManualResetEventSlim(false);
+        var writer = new Thread(
+            () =>
+            {
+                locker.EnterWriteLock();
+                writeLockTaken.Set();
+                releaseWriteLock.Wait();
+                locker.ExitWriteLock();
+            })
+        {
+            IsBackground = true
+        };
+
+        writer.Start();
+        writeLockTaken.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previousMetrics = TelemetryFactory.SetMetricsForTesting(collector);
+
+        try
+        {
+            waf!.CreateContext(out var outcome, isRasp).Should().BeNull();
+            outcome.Should().Be(WafOutcome.BindingFailed);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previousMetrics);
+            releaseWriteLock.Set();
+            writer.Join(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            waf!.Dispose();
+        }
+
+        await collector.DisposeAsync();
+
+        var metrics = collector.GetMetrics().Metrics?.Select(m => (Name: m.Metric, Tags: m.Tags ?? [], Values: m.Points.Select(p => p.Value).ToArray())).ToList() ?? [];
+
+        if (isRasp)
+        {
+            metrics.Should().NotContain(m => m.Name == "waf.error");
+        }
+        else
+        {
+            var metric = metrics.Should().ContainSingle(m => m.Name == "waf.error").Which;
+            metric.Tags.Should().Contain("waf_error:-127");
+
+            // one failed creation, one increment: a double count aggregates into a single point of value 2
+            metric.Values.Should().Equal(1);
         }
     }
 

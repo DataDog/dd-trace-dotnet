@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using System.Collections.Specialized;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
@@ -34,6 +36,70 @@ namespace Datadog.Trace.Tests.Debugger
 
             uploader.Disposed.Should().BeTrue();
             manager.SymbolsUploader.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task InitializationFailureDoesNotPublishExceptionReplayOrAllowRemoteReenablement(bool enabledLocally)
+        {
+            // Agentless uploads without an API key fail Exception Replay initialization.
+            var exceptionReplayConfig = new NameValueCollection { { ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled, "true" } };
+            if (enabledLocally)
+            {
+                exceptionReplayConfig.Add(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
+            }
+
+            var manager = CreateDebuggerManager(
+                new ExceptionReplaySettings(new NameValueConfigurationSource(exceptionReplayConfig), NullConfigurationTelemetry.Instance));
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
+            });
+            var debuggerSettings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            manager.ExceptionReplaySettings.CanBeEnabled.Should().BeTrue();
+
+            try
+            {
+                manager.SetExceptionReplayState(
+                    debuggerSettings with
+                    {
+                        DynamicSettings = new ImmutableDynamicDebuggerSettings { ExceptionReplayEnabled = enabledLocally ? null : true },
+                    });
+
+                // A failed instance must never be published, even if no remote-config update follows.
+                manager.ExceptionReplay.Should().BeNull();
+                manager.HasActiveDynamicDebuggerProduct.Should().BeFalse();
+                manager.ExceptionReplaySettings.CanBeEnabled.Should().BeFalse();
+
+                // Cover an enable request immediately after failure and another after an explicit disable.
+                foreach (var enabled in new[] { true, false, true })
+                {
+                    await manager.UpdateConfiguration(
+                        tracerSettings,
+                        debuggerSettings with
+                        {
+                            DynamicSettings = new ImmutableDynamicDebuggerSettings { ExceptionReplayEnabled = enabled },
+                        });
+
+                    manager.ExceptionReplay.Should().BeNull();
+                    manager.HasActiveDynamicDebuggerProduct.Should().BeFalse();
+                    manager.ExceptionReplaySettings.CanBeEnabled.Should().BeFalse();
+                }
+            }
+            finally
+            {
+                InvokeShutdownTasks(manager);
+                Redaction.Instance.ResetInstance();
+            }
         }
 
         [Fact]
@@ -222,7 +288,7 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
-        private static DebuggerManager CreateDebuggerManager()
+        private static DebuggerManager CreateDebuggerManager(ExceptionReplaySettings? exceptionReplaySettings = null)
         {
             var constructor = typeof(DebuggerManager).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
@@ -232,7 +298,7 @@ namespace Datadog.Trace.Tests.Debugger
             constructor.Should().NotBeNull();
 
             var debuggerSettings = new DebuggerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
-            var exceptionReplaySettings = new ExceptionReplaySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+            exceptionReplaySettings ??= new ExceptionReplaySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             return (DebuggerManager)constructor!.Invoke([debuggerSettings, exceptionReplaySettings]);
         }
 

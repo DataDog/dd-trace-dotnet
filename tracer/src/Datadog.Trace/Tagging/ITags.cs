@@ -11,8 +11,8 @@ namespace Datadog.Trace.Tagging
 
         void SetTag(string key, string value);
 
-        void EnumerateTags<TProcessor>(ref TProcessor processor)
-            where TProcessor : struct, IItemProcessor<string>;
+        void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
+            where TProcessor : struct, IItemProcessor<string>, IItemProcessor<int>;
 
         double? GetMetric(string key);
 

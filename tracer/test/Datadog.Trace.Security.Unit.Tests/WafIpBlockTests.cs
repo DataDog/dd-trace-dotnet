@@ -41,7 +41,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var updateRes1 = UpdateWaf(configurationState, waf);
             updateRes1.Success.Should().BeTrue();
             updateRes1.HasRuleErrors.Should().BeFalse();
-            using var context = waf.CreateContext();
+            using var context = waf.CreateContext(out _);
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");
             result.Should().NotBeNull();

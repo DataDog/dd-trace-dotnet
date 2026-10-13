@@ -47,6 +47,10 @@ namespace Datadog.Trace.Propagators
             _extractors = extractors?.ToArray() ?? [];
         }
 
+        internal IEnumerable<string> InjectorNames => _injectors.Select(static injector => injector.DisplayName);
+
+        internal IEnumerable<string> ExtractorNames => _extractors.Select(static extractor => extractor.DisplayName);
+
         /// <summary>
         /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
         /// This locks the sampling priority for <paramref name="context"/>.
@@ -228,6 +232,7 @@ namespace Datadog.Trace.Propagators
             if (cumulativeSpanContext.RawTraceId == extractedSpanContext.RawTraceId)
             {
                 cumulativeSpanContext.AdditionalW3CTraceState += extractedSpanContext.AdditionalW3CTraceState;
+                cumulativeSpanContext.OtelTraceState = extractedSpanContext.OtelTraceState;
 
                 if (cumulativeSpanContext.RawSpanId != extractedSpanContext.RawSpanId)
                 {

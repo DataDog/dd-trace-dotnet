@@ -109,6 +109,59 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("v1", true, SchemaVersion.V0)]
+        [InlineData("V1", true, SchemaVersion.V0)]
+        [InlineData("v0", true, SchemaVersion.V0)]
+        [InlineData(null, true, SchemaVersion.V0)]
+        [InlineData("v1", false, SchemaVersion.V1)]
+        [InlineData(null, false, SchemaVersion.V0)]
+        public void MetadataSchemaVersion_IsForcedToV0WhenOtelSemanticsEnabled(string schemaVersion, bool otelSemanticsEnabled, object expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.MetadataSchemaVersion, schemaVersion),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
+        }
+
+#if NET6_0_OR_GREATER
+        [Theory]
+        [InlineData(null, true, true)]
+        [InlineData("false", true, true)]
+        [InlineData("true", true, true)]
+        [InlineData(null, false, false)]
+        [InlineData("true", false, true)]
+        [InlineData("false", false, false)]
+        public void SingleSpanAspNetCoreEnabled_IsForcedToTrueWhenOtelSemanticsEnabled(string singleSpanAspNetCoreEnabled, bool otelSemanticsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, singleSpanAspNetCoreEnabled),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.SingleSpanAspNetCoreEnabled.Should().Be(expected);
+        }
+#endif
+
+        [Theory]
+        [InlineData(null, true, true)]
+        [InlineData("false", true, true)]
+        [InlineData("true", true, true)]
+        [InlineData(null, false, true)]
+        [InlineData("true", false, true)]
+        [InlineData("false", false, false)]
+        public void RouteTemplateResourceNamesEnabled_IsForcedToTrueWhenOtelSemanticsEnabled(string routeTemplateResourceNamesEnabled, bool otelSemanticsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, routeTemplateResourceNamesEnabled),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.RouteTemplateResourceNamesEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("key1 :value1,invalid,key2: value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("invalid", new string[0])]
@@ -518,6 +571,16 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.ObfuscationQueryStringRegex.Should().Be(expected);
+            settings.ObfuscationQueryStringRegexWasConfigured.Should().Be(value is not null);
+        }
+
+        [Fact]
+        public void CopiedDefaultObfuscationQueryStringRegexWasConfigured()
+        {
+            var settings = new TracerSettings(CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex)));
+
+            settings.ObfuscationQueryStringRegex.Should().Be(TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+            settings.ObfuscationQueryStringRegexWasConfigured.Should().BeTrue();
         }
 
         [Theory]
@@ -1177,20 +1240,6 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporalityPreference)expected);
-        }
-
-        [Theory]
-        [InlineData("api-key=secret,auth=token", null, new[] { "api-key=secret", "auth=token" })]
-        [InlineData(null, "key1 = value1 , key2 = value2 ", new[] { "key1=value1", "key2=value2" })]
-        [InlineData("valid=value,invalid-no-equals,another=valid", "fallback-key=fallback-value", new[] { "valid=value", "another=valid" })]
-        public void OtlpHeadersParsing(string primaryValue, string fallbackValue, string[] expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, primaryValue),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, fallbackValue));
-            var settings = new TracerSettings(source);
-
-            settings.OtlpMetricsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
         }
 
         [Theory]

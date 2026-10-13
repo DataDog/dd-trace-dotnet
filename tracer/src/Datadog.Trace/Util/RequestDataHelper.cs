@@ -150,6 +150,36 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
+    // Get the protocol from a HttpRequest, e.g. "HTTP/1.1".
+    internal static string? GetServerProtocol(HttpRequest request)
+    {
+        try
+        {
+            return request.ServerVariables["SERVER_PROTOCOL"];
+        }
+        catch (Exception ex) when (ex is HttpRequestValidationException or PlatformNotSupportedException)
+        {
+            Log.Debug("Error reading SERVER_PROTOCOL from the request.");
+            return null;
+        }
+    }
+
+    // Get the protocol from a HttpRequestBase, e.g. "HTTP/1.1", for the abstraction ASP.NET MVC hands its filters.
+    internal static string? GetServerProtocol(HttpRequestBase request)
+    {
+        try
+        {
+            return request.ServerVariables["SERVER_PROTOCOL"];
+        }
+        catch (Exception ex) when (ex is HttpRequestValidationException or PlatformNotSupportedException or NotImplementedException)
+        {
+            Log.Debug("Error reading SERVER_PROTOCOL from the request.");
+            return null;
+        }
+    }
+#endif
+
+#if NETFRAMEWORK
     /// <summary>
     /// Gets the Uri from the <paramref name="request"/>.
     /// <para>
@@ -169,6 +199,30 @@ internal static class RequestDataHelper
         catch (Exception ex) when (ex is HttpRequestValidationException || ex is UriFormatException)
         {
             Log.Debug("Error reading request.Url from the request.");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets the Uri from the <paramref name="request"/>.
+    /// <para>
+    /// Note that this will <em>CACHE</em> the <c>Uri</c> of the underlying <see cref="HttpRequest"/>
+    /// for all future callers (example the customer's application) if the <paramref name="request"/>
+    /// is an <see cref="HttpRequestWrapper"/> and we are the first to call <see cref="HttpRequest.Url"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="request">The <see cref="HttpRequestBase"/> to get the <c>Uri</c> of.</param>
+    /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
+    internal static Uri? GetUrl(HttpRequestBase request)
+    {
+        // UriFormatException can happen if, for example, the request contains the variable "SERVER_NAME" with an invalid value.
+        try
+        {
+            return request.Url;
+        }
+        catch (Exception ex) when (ex is HttpRequestValidationException || ex is UriFormatException)
+        {
+            Log.Debug(ex, "Error reading request.Url from the request.");
             return null;
         }
     }

@@ -115,6 +115,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return new ProcessHelper(process);
         }
 
+        private static string ParseListeningUrl(string output)
+        {
+            if (output is null)
+            {
+                return null;
+            }
+
+            var match = Regex.Match(output, @"##LISTENING_URL:(.+?)##");
+            return match.Success ? match.Groups[1].Value : null;
+        }
+
         private void PrintTestInfo()
         {
             _output.WriteLine("Test information:");
@@ -244,17 +255,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     false,
                     $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode:X})");
             }
-        }
-
-        private static string ParseListeningUrl(string output)
-        {
-            if (output is null)
-            {
-                return null;
-            }
-
-            var match = Regex.Match(output, @"##LISTENING_URL:(.+?)##");
-            return match.Success ? match.Groups[1].Value : null;
         }
 
         private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)

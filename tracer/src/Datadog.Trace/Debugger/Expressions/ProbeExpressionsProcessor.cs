@@ -36,7 +36,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        internal void AddProbeProcessor(ProbeDefinition probe)
+        internal void AddProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
         {
             if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
             {
@@ -47,8 +47,8 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 _processors.AddOrUpdate(
                     probe.Id,
-                    _ => new ProbeProcessor(probe),
-                    (s, processor) => processor.UpdateProbeProcessor(probe));
+                    _ => new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds),
+                    (s, processor) => processor.UpdateProbeProcessor(probe, maxEvaluationTimeInMilliseconds));
             }
             catch (Exception e)
             {

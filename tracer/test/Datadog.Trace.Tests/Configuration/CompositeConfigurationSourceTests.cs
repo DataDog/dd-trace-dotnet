@@ -315,6 +315,29 @@ public class CompositeConfigurationSourceTests
     }
 
     [Fact]
+    public void GetAs_WhenRestoringLowerPriorityResultUsesRecordValue()
+    {
+        const string key = "some_value";
+        const string secret = "secret";
+        var telemetry = new ConfigurationTelemetry();
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new() { { key, "invalid" } }, ConfigurationOrigins.EnvVars),
+            new NameValueConfigurationSource(new() { { key, secret } }, ConfigurationOrigins.AppConfig),
+        };
+
+        var result = new ConfigurationBuilder(source, telemetry)
+                    .WithKeys(key)
+                    .AsRedactedStringResult(value => value == secret ? value : ParsingResult<string>.Failure());
+
+        result.ConfigurationResult.Result.Should().Be(secret);
+        telemetry.GetQueueForTesting()
+                 .Last()
+                 .Type.Should()
+                 .Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted);
+    }
+
+    [Fact]
     public void Telemetry_RecordsDictionary()
     {
         var telemetry = new StubTelemetry();

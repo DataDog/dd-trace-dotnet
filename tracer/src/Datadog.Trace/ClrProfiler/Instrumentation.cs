@@ -80,6 +80,11 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            if (profilerSettings.WasDisabledByArm64Gate)
+            {
+                Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);
+            }
+
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
             var tracer = Tracer.Instance;
             var tracerSettings = tracer.Settings;
@@ -403,7 +408,7 @@ namespace Datadog.Trace.ClrProfiler
 #if NET6_0_OR_GREATER
             try
             {
-                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
+                if (Tracer.Instance.Settings.OtlpMetricsExportEnabled)
                 {
                     Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
                     OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);

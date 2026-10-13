@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
     public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre224TestCount: 19, post224TestCount: 21);
 
+    [Trait("Area", "CIVisibility")]
     [Collection("MsTestV2Tests")]
     [UsesVerify]
     public abstract class MsTestV2TestsBase : TestingFrameworkTest
@@ -102,6 +103,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // Remove process tags that get added to the first span of a payload
                             targetSpan.Tags.Remove(Tags.ProcessTags);
+
+                            // Remove the otlp export marker that gets added to the first span of a payload
+                            targetSpan.Tags.Remove(Tags.SdkOtlpExport);
 
                             // Remove EFD tags
                             targetSpan.Tags.Remove(TestTags.TestIsNew);

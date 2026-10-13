@@ -126,8 +126,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             response = httpContext.Response;
-            scope = SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey)
-                 ?? SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
+            scope = SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey, fallbackToActiveOtelHttpServerScope: false)
+                 ?? SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey, fallbackToActiveOtelHttpServerScope: true); // Explicitly use the fallback on the last lookup to use the root HTTP span for the OTel use-case
             return scope is not null;
         }
 

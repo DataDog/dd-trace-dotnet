@@ -73,24 +73,31 @@ namespace iast
         std::vector<DataflowAspect*> _aspects;
         std::map<ModuleID, ModuleAspects*> _moduleAspects;
 
-        HRESULT RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl = nullptr);
-        MethodInfo* JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl = nullptr);
+        HRESULT RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl = nullptr,
+                              const trace::ModuleIDWithLifetime* module = nullptr,
+                              std::vector<trace::RejitRequest>* deferredRejitRequests = nullptr);
+        MethodInfo* JITProcessMethod(ModuleID moduleId, mdToken methodId,
+                                     trace::FunctionControlWrapper* pFunctionControl = nullptr,
+                                     const trace::ModuleIDWithLifetime* module = nullptr,
+                                     std::vector<trace::RejitRequest>* deferredRejitRequests = nullptr);
 
         std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
         static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
 
     public:
         HRESULT AppDomainShutdown(AppDomainID appDomainId);
-        HRESULT ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo = nullptr);
+        HRESULT ModuleLoaded(const trace::ModuleIDWithLifetime& module, ModuleInfo** pModuleInfo = nullptr);
         HRESULT ModuleUnloaded(ModuleID moduleId);
 
         void LoadAspects(WCHAR** aspects, size_t aspectsLength, UINT32 enabledCategories, UINT32 platform);
 
         ICorProfilerInfo* GetCorProfilerInfo();
 
-        HRESULT GetModuleInterfaces(ModuleID moduleID, IMetaDataImport2** ppMetadataImport,
-                                    IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
-                                    IMetaDataAssemblyEmit** ppAssemblyEmit);
+        // Split in two on purpose: only the modules we rewrite get their metadata opened for writing.
+        HRESULT GetModuleImportInterfaces(ModuleID moduleID, IMetaDataImport2** ppMetadataImport,
+                                         IMetaDataAssemblyImport** ppAssemblyImport);
+        HRESULT GetModuleEmitInterfaces(ModuleID moduleID, IMetaDataEmit2** ppMetadataEmit,
+                                        IMetaDataAssemblyEmit** ppAssemblyEmit);
 
         bool IsAppDomainExcluded(const WSTRING& appDomainName, MatchResult* includedMatch = nullptr,
                                  MatchResult* excludedMatch = nullptr);
@@ -108,7 +115,7 @@ namespace iast
         MethodInfo* GetMethodInfo(ModuleID moduleId, mdMethodDef methodId);
 
         bool IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId);
-        bool JITCompilationStarted(ModuleID moduleId, mdToken methodId);
+        bool JITCompilationStarted(const trace::ModuleIDWithLifetime& module, mdToken methodId);
 
     public:
         void Shutdown() override;

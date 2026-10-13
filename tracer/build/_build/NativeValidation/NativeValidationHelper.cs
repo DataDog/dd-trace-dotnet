@@ -165,7 +165,7 @@ public class NativeValidationHelper
             var received = string.Join(Environment.NewLine, symbols);
             var verifiedPath = BuildProjectDirectory / nameof(NativeValidation) / $"{snapshotNamePrefix}.verified.txt";
             var verified = File.Exists(verifiedPath)
-                               ? File.ReadAllText(verifiedPath)
+                               ? File.ReadAllText(verifiedPath).TrimEnd()
                                : string.Empty;
 
             Logger.Information("Comparing snapshot of Undefined symbols in the {LibraryName} using {Path}...", libraryName, verifiedPath);
@@ -199,7 +199,7 @@ public class NativeValidationHelper
                                 "If the new symbols are safe to add, update the snapshot file at {VerifiedPath} with the " +
                                 "new values", libraryName, verifiedPath);
 
-            return true;
+            return false;
         }
     }
 }

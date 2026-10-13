@@ -51,6 +51,7 @@ ClrEventsParser::ClrEventsParser(
     _pGCDumpListener{pGCDumpListener}
 {
     _skipReferenceChain = pConfiguration->IsHeapSnapshotSkipTraversal();
+    _skipGcLifecycleEvents = pConfiguration->IsGcLifecycleEventsProcessingSkipped();
 
     ResetGC(_gcInProgress);
     ResetGC(_currentBGC);
@@ -371,6 +372,11 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f
     // for more details about the state machine
     //
+    if (_skipGcLifecycleEvents)
+    {
+        return;
+    }
+
     if (id == EVENT_GC_TRIGGERED)
     {
         //LogGcEvent("OnGCTriggered");

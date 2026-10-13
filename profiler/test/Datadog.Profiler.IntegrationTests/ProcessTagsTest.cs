@@ -144,4 +144,3 @@ namespace Datadog.Profiler.IntegrationTests.ProcessTags
         }
     }
 }
-

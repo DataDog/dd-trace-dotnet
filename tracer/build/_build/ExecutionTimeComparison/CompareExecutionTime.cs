@@ -21,38 +21,54 @@ public class CompareExecutionTime
         Logger.Information("Reading execution benchmarkResults results");
         var results = sources.SelectMany(ReadJsonResults).ToList();
 
-        // Group execution time benchmarks by Sample Name, Framework
+        // Group execution time benchmarks by Sample Name; show all frameworks inline within each group
         Logger.Information($"Found {results.Count} results: building markdown");
         var charts = results
-                    .GroupBy(x => (x.TestSample, x.Framework))
-                    .Select(group =>
+                    .GroupBy(x => x.TestSample)
+                    .OrderBy(g => g.Key)
+                    .Select(sampleGroup =>
                      {
-                         var scenarios = group
-                                        .Select(x => x)
-                                        .OrderBy(x => x.Scenario == "Baseline" ? 0 : 1 )
-                                        .ThenBy(x => x.Scenario)
-                                        .GroupBy(x => x.Scenario)
-                                        .Select((scenarioResults, i) => GetMermaidSection(scenarioResults.Key, scenarioResults));
-                         var chartTitle = $"{group.Key.TestSample} ({GetName(group.Key.Framework)})";
+                         var sampleName = sampleGroup.Key.ToString();
+                         var frameworkCharts = sampleGroup
+                             .GroupBy(x => x.Framework)
+                             .OrderBy(g => g.Key)
+                             .Select(frameworkGroup =>
+                              {
+                                  var frameworkName = GetName(frameworkGroup.Key);
+                                  var scenarios = frameworkGroup
+                                      .OrderBy(x => x.Scenario == "Baseline" ? 0 : 1)
+                                      .ThenBy(x => x.Scenario)
+                                      .GroupBy(x => x.Scenario)
+                                      .Select((scenarioResults, i) => GetMermaidSection(scenarioResults.Key, scenarioResults));
+                                  return $"""
+                                 ```mermaid
+                                 gantt
+                                     title Execution time (ms) {sampleName} ({frameworkName})
+                                     dateFormat  x
+                                     axisFormat %Q
+                                     todayMarker off
+                                 {string.Join(Environment.NewLine, scenarios)}
+                                 ```
+                                 """;
+                              });
                          return $"""
-                        <details>
-                          <summary>{chartTitle}</summary>
+                        <details open>
+                          <summary><h4 id="{sampleName.ToLower()}-charts" style="display:inline-block">{sampleName}</h4></summary>
 
-                        ```mermaid
-                        gantt
-                            title Execution time (ms) {chartTitle}
-                            dateFormat  x
-                            axisFormat %Q
-                            todayMarker off
-                        {string.Join(Environment.NewLine, scenarios)}
-                        ```
+                        {string.Join(Environment.NewLine + Environment.NewLine, frameworkCharts)}
                         </details>
                         """;
                      });
 
+        var sampleNames = results
+            .Select(x => x.TestSample.ToString())
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         var comparisonTable = GetComparisonTable(results);
 
-        return GetCommentMarkdown(sources, charts, comparisonTable);
+        return GetCommentMarkdown(sources, charts, comparisonTable, sampleNames);
     }
  
     static EquivalenceTestConclusion CalculateSignificance(double[] masterValues, double[] currentValues)
@@ -193,7 +209,72 @@ public class CompareExecutionTime
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Returns a concise summary of the comparison results for use in a PR comment.
+    /// Contains only the regressions table (no Mermaid charts, no full metrics details),
+    /// so that the comment remain small. The caller is expected to append a direct 
+    /// link to the full report artifact.
+    /// </summary>
+    public static string GetCommentSummary(List<ExecutionTimeResultSource> sources)
+    {
+        Logger.Information("Reading execution benchmark results for comment summary");
+        var results = sources.SelectMany(ReadJsonResults).ToList();
+
+        Logger.Information($"Found {results.Count} results: building comment summary");
+        var (regressionsMarkdown, _, hasRegressions) = BuildComparisonSections(results);
+
+        var regressionsSummary = hasRegressions
+            ? "### ⚠️ Potential regressions detected\n\n" + regressionsMarkdown
+            : "✅ No regressions detected";
+
+        return $$"""
+            ## Execution-Time Benchmarks Report ⏱️
+
+            Execution-time results for samples comparing {{string.Join(" and ", sources.Select(x => x.Markdown))}}.
+
+            {{regressionsSummary}}
+            """;
+    }
+
     static string GetComparisonTable(List<ExecutionTimeResult> results)
+    {
+        var (regressionsMarkdown, detailsMarkdown, hasRegressions) = BuildComparisonSections(results);
+
+        var finalOutput = new StringBuilder();
+
+        finalOutput.AppendLine("<h2 id=\"comparison-results\">Comparison Results</h2>");
+        finalOutput.AppendLine();
+
+        if (hasRegressions)
+        {
+            finalOutput.AppendLine("⚠️ Potential regressions detected");
+            finalOutput.AppendLine();
+            finalOutput.Append(regressionsMarkdown);
+        }
+        else
+        {
+            finalOutput.AppendLine("✅ No regressions detected");
+            finalOutput.AppendLine();
+        }
+
+        finalOutput.AppendLine("<details open>");
+        finalOutput.AppendLine("  <summary><h3 id=\"full-metrics-comparison\" style=\"display:inline-block\">Full Metrics Comparison</h3></summary>");
+        finalOutput.AppendLine();
+        finalOutput.Append(detailsMarkdown);
+        finalOutput.AppendLine("</details>");
+
+        return finalOutput.ToString();
+    }
+
+    /// <summary>
+    /// Builds both the regressions-only and full-details comparison sections from the given results.
+    /// </summary>
+    /// <returns>
+    /// <c>regressionsMarkdown</c>: HTML table rows for regressions only (no surrounding header).
+    /// <c>detailsMarkdown</c>: HTML table rows for all metrics (no surrounding <c>&lt;details&gt;</c>).
+    /// <c>hasRegressions</c>: whether any statistically-significant regressions were found.
+    /// </returns>
+    static (string regressionsMarkdown, string detailsMarkdown, bool hasRegressions) BuildComparisonSections(List<ExecutionTimeResult> results)
     {
         // Key metrics to compare
         var keyMetrics = new[]
@@ -337,7 +418,7 @@ public class CompareExecutionTime
             // Build table for this sample in details
             if (detailsTableRows.Length > 0)
             {
-                detailsOutput.AppendLine($"<h4>{sampleName}</h4>");
+                detailsOutput.AppendLine($"<h4 id=\"{sampleName.ToLower()}-metrics\">{sampleName}</h4>");
                 detailsOutput.AppendLine("<table>");
                 detailsOutput.AppendLine("  <thead>");
                 detailsOutput.AppendLine("    <tr>");
@@ -378,28 +459,7 @@ public class CompareExecutionTime
             }
         }
 
-        var finalOutput = new StringBuilder();
-
-        if (hasRegressions)
-        {
-            finalOutput.AppendLine("### ⚠️ Potential regressions detected");
-            finalOutput.AppendLine();
-            finalOutput.Append(regressionsOutput);
-        }
-        else
-        {
-            finalOutput.AppendLine("✅ No regressions detected - check the details below");
-            finalOutput.AppendLine();
-
-        }
-
-        finalOutput.AppendLine("<details>");
-        finalOutput.AppendLine("  <summary>Full Metrics Comparison</summary>");
-        finalOutput.AppendLine();
-        finalOutput.Append(detailsOutput);
-        finalOutput.AppendLine("</details>");
-
-        return finalOutput.ToString();
+        return (regressionsOutput.ToString(), detailsOutput.ToString(), hasRegressions);
     }
 
     static (string html, bool isRegression) FormatMetricRowFromStats(
@@ -470,17 +530,29 @@ public class CompareExecutionTime
             : ("✅", false); // Improvement (faster/lower is better)
     }
 
-    static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable)
+    static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable, IReadOnlyList<string> sampleNames)
     {
+        var subLinks = (string section) =>
+            string.Join(" · ", sampleNames.Select(n => $"[{n}](#{n.ToLower()}-{section})"));
+
+        var toc = $"""
+            - [Comparison Results](#comparison-results)
+            - [Full Metrics Comparison](#full-metrics-comparison) — {subLinks("metrics")}
+            - [Comparison Explanation](#comparison-explanation)
+            - [Duration Charts](#duration-charts) — {subLinks("charts")}
+            """;
+
         return $$"""
-            ## Execution-Time Benchmarks Report :stopwatch:
+            <h1>Execution-Time Benchmarks Report ⏱️</h1>
 
             Execution-time results for samples comparing {{string.Join(" and ", sources.Select(x => x.Markdown))}}.
+
+            {{toc}}
 
             {{comparisonTable}}
 
             <details>
-              <summary>Comparison explanation</summary>
+              <summary><span id="comparison-explanation">Comparison Explanation</span></summary>
               <p>
               Execution-time benchmarks measure the whole time it takes to execute a program, and are intended to measure the one-off costs.
               Cases where the execution time results for the PR are worse than latest master results are highlighted in **red**.
@@ -498,8 +570,10 @@ public class CompareExecutionTime
               </p>
             </details>
 
-            <details>
-            <summary>Duration charts</summary>
+            ---
+
+            <details open>
+            <summary><h3 id="duration-charts" style="display:inline-block">Duration Charts</h3></summary>
             {{string.Join('\n', charts)}}
             </details>
             """;

@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
-    public class SpanTagTests
+    public class SpanTagTests : IAsyncLifetime
     {
         private readonly AgentWriter _writer;
         private readonly MockApi _testApi;
@@ -27,6 +27,12 @@ namespace Datadog.Trace.IntegrationTests
             _testApi = new MockApi();
             _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         }
+
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        // Most tests dispose the writer via the tracer that wraps it, but not all of them create
+        // one. FlushAndCloseAsync is idempotent, so closing it again here is harmless.
+        public Task DisposeAsync() => _writer.FlushAndCloseAsync();
 
         [Fact]
         public async Task SpanSampler_ShouldNotAddTags_OnSpanClose_ForKeptTrace()

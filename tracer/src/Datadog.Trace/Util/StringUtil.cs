@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 // ReSharper disable once CheckNamespace - Putting this in system so we can do simple drop-in replacement
@@ -38,4 +39,64 @@ internal static class StringUtil
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsNullOrWhiteSpace([NotNullWhen(false)] string? value)
         => string.IsNullOrWhiteSpace(value);
+
+#if NETFRAMEWORK
+    /// <summary>
+    /// Non-allocating alternative to <paramref name="value"/>.ToUpperInvariant(). May return the same
+    /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
+    /// </summary>
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToUpperInvariant(string? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        foreach (var digit in value)
+        {
+            if (digit > '\x7F' || char.IsBetween(digit, 'a', 'z'))
+            {
+                // Note: we don't call string.ToUpperInvariant() here to avoid potential accidental recursion
+                return CultureInfo.InvariantCulture.TextInfo.ToUpper(value);
+            }
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// Non-allocating alternative to <paramref name="value"/>.ToLowerInvariant(). May return the same
+    /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
+    /// </summary>
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToLowerInvariant(string? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        foreach (var digit in value)
+        {
+            if (digit > '\x7F' || char.IsBetween(digit, 'A', 'Z'))
+            {
+                // Note: we don't call string.ToLowerInvariant() here to avoid potential accidental recursion
+                return CultureInfo.InvariantCulture.TextInfo.ToLower(value);
+            }
+        }
+
+        return value;
+    }
+#else
+    [return: NotNullIfNotNull(nameof(value))]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string? ToUpperInvariant(string? value)
+        => value?.ToUpperInvariant();
+
+    [return: NotNullIfNotNull(nameof(value))]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string? ToLowerInvariant(string? value)
+        => value?.ToLowerInvariant();
+#endif
 }

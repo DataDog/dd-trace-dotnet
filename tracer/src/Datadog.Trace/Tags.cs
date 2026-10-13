@@ -57,9 +57,26 @@ namespace Datadog.Trace
         public const string HttpUrl = "http.url";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention absolute URL of an HTTP request
+        /// </summary>
+        public const string UrlFull = "url.full";
+
+        /// <summary>
         /// The method of an HTTP request
         /// </summary>
         public const string HttpMethod = "http.method";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention method of an HTTP request. The method is reported in its canonical uppercase form.
+        /// Unrecognized methods are reported as <c>_OTHER</c>.
+        /// </summary>
+        public const string HttpRequestMethod = "http.request.method";
+
+        /// <summary>
+        /// The original method of an HTTP request. Only set when it differs (case-sensitive) from
+        /// the value reported in <see cref="HttpRequestMethod"/>.
+        /// </summary>
+        public const string HttpRequestMethodOriginal = "http.request.method_original";
 
         /// <summary>
         /// The host of an HTTP request
@@ -70,6 +87,11 @@ namespace Datadog.Trace
         /// The status code of an HTTP response
         /// </summary>
         public const string HttpStatusCode = "http.status_code";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention status code of an HTTP response
+        /// </summary>
+        public const string HttpResponseStatusCode = "http.response.status_code";
 
         /// <summary>
         /// The error message of an exception
@@ -151,6 +173,16 @@ namespace Datadog.Trace
         public const string ServerAddress = "server.address";
 
         /// <summary>
+        /// The server port for the remote service.
+        /// </summary>
+        public const string ServerPort = "server.port";
+
+        /// <summary>
+        /// The version of the protocol used for the exchange, e.g. "1.1" or "2".
+        /// </summary>
+        public const string NetworkProtocolVersion = "network.protocol.version";
+
+        /// <summary>
         /// The size of the message.
         /// </summary>
         public const string MessageSize = "message.size";
@@ -215,6 +247,37 @@ namespace Datadog.Trace
         /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
         /// </summary>
         internal const string HttpClientIp = "http.client_ip";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention URI scheme.
+        /// </summary>
+        internal const string UrlScheme = "url.scheme";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention URI path component.
+        /// </summary>
+        internal const string UrlPath = "url.path";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention URI query component, without the leading '?'.
+        /// </summary>
+        internal const string UrlQuery = "url.query";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention User-Agent header value.
+        /// </summary>
+        internal const string UserAgentOriginal = "user_agent.original";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention client address: the IP address of the original
+        /// client behind all proxies, if known, otherwise the immediate client peer address.
+        /// </summary>
+        internal const string ClientAddress = "client.address";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention peer address of the network connection.
+        /// </summary>
+        internal const string NetworkPeerAddress = "network.peer.address";
 
         /// <summary>
         /// The ASP.NET routing template.
@@ -819,6 +882,21 @@ namespace Datadog.Trace
         /// was set by an integration, or null when the default service name is used.
         /// </summary>
         internal const string ServiceNameSource = "_dd.svc_src";
+
+        /// <summary>
+        /// Declares the export mode the tracer used for the payload: "true" when the payload is
+        /// exported with OTLP encoding, "false" when it is exported with the native Datadog
+        /// encoding. Written by the serializer for the encoding in use, so it cannot disagree with
+        /// how the spans actually left the process. Payload-scoped: written once per payload, not
+        /// on every span.
+        /// </summary>
+        internal const string SdkOtlpExport = "_dd.sdk.otlp_export";
+
+        /// <summary>
+        /// OTLP resource attribute declaring which semantic conventions the SDK applied:
+        /// "otel" when OTel semantics are enabled, "datadog" otherwise.
+        /// </summary>
+        internal const string SdkSemantics = "datadog.sdk.semantics";
 
         /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id

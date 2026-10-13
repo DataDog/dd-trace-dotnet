@@ -93,7 +93,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
     {
         var res = UpdateWaf(configurationState, waf);
         context?.Dispose();
-        context = waf.CreateContext();
+        context = waf.CreateContext(out _);
         return res;
     }
 

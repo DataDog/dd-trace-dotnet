@@ -5,15 +5,20 @@
 
 #nullable enable
 
+#if !NETFRAMEWORK
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.DiagnosticListeners;
 
 internal static class AspNetCoreEndpointCodeOrigin
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetCoreEndpointCodeOrigin));
+
     internal static bool TryGetTypeAndMethod(RouteEndpoint routeEndpoint, [NotNullWhen(true)] out Type? type, [NotNullWhen(true)] out MethodInfo? method)
     {
         type = null;
@@ -53,4 +58,47 @@ internal static class AspNetCoreEndpointCodeOrigin
 
         return false;
     }
+
+    internal static bool TryGetTypeAndMethod(AspNetCoreDiagnosticObserver.BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type? type, [NotNullWhen(true)] out MethodInfo? method)
+    {
+        try
+        {
+            if (beforeAction.ActionDescriptor.TryDuckCast<AspNetCoreDiagnosticObserver.ControllerActionDescriptorStruct>(out var controllerActionDescriptor))
+            {
+                type = controllerActionDescriptor.ControllerTypeInfo;
+                method = controllerActionDescriptor.MethodInfo;
+                return true;
+            }
+
+            if (beforeAction.ActionDescriptor.TryDuckCast<AspNetCoreDiagnosticObserver.CompiledPageActionDescriptorStruct>(out var compiledPageActionDescriptor))
+            {
+                foreach (var part in compiledPageActionDescriptor.HandlerMethods)
+                {
+                    if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.HandlerMethodDescriptorStruct methodDesc))
+                    {
+                        if (string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                        {
+                            type = compiledPageActionDescriptor.HandlerTypeInfo;
+                            method = methodDesc.MethodInfo;
+                            return true;
+                        }
+
+                        Log.Debug("Ignoring handler method {Method} for HTTP method {HttpMethod}", methodDesc.MethodInfo.Name, methodDesc.HttpMethod);
+                    }
+                }
+
+                Log.Debug("No matching handler method found for HTTP method {HttpMethod}", beforeAction.HttpContext.Request.Method);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Failed to extract type and method from ActionDescriptor");
+        }
+
+        type = null;
+        method = null;
+        return false;
+    }
 }
+
+#endif

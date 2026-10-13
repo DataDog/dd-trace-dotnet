@@ -46,8 +46,6 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     // by the 7th doubling to maintain efficient allocation without frequent resizing.
     private const int InitialBufferSize = 750000;
 
-    private readonly bool _openTelemetrySemanticsEnabled;
-
     // Absolute positions of the length placeholders. INVARIANT: these are offsets
     // into the caller's eventual `_buffer` (the destination), NOT into the temporary
     // serialization buffer (`bytes` in SerializeSpans). This works because
@@ -58,12 +56,9 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     private int _resourceSpansLengthPos = -1;
     private int _scopeSpansLengthPos = -1;
 
-    public OtlpTracesProtobufSerializer(bool openTelemetrySemanticsEnabled)
-    {
-        _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
-    }
-
     public int HeaderSize => 0;
+
+    public int TrailerSize => 0;
 
     public void WriteHeader(ref byte[] bytes, int offset, int traceCount)
     {
@@ -74,6 +69,9 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     {
         // Initialize the temporary buffer to the initial size deemed best by the OpenTelemetry .NET SDK
         MessagePackBinary.EnsureCapacity(ref bytes, temporaryBufferOffset, Math.Min(InitialBufferSize, maxSize));
+
+        var otelTraceStateHeader = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState?.ToHeaderString() : null;
+        var otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
 
         // Snapshot length-position fields before mutating them, so we can roll back on overflow.
         int savedResourceSpansLengthPos = _resourceSpansLengthPos;
@@ -116,7 +114,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
                 for (var i = 0; i < traceChunk.SpanCount; i++)
                 {
                     var spanModel = traceChunk.GetSpanModel(i);
-                    writePosition = WriteSpan(bytes, writePosition, in spanModel);
+                    writePosition = WriteSpan(bytes, writePosition, in spanModel, otlpTraceState);
                 }
 
                 var bytesWritten = writePosition - temporaryBufferOffset;
@@ -436,7 +434,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         return writePosition + SpanIdSize;
     }
 
-    private int WriteSpan(byte[] bytes, int writePosition, in SpanModel spanModel)
+    private int WriteSpan(byte[] bytes, int writePosition, in SpanModel spanModel, string? otlpTraceState)
     {
         writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ScopeSpans_Span, ProtobufWireType.LEN);
         int spanLengthPos = writePosition;
@@ -447,6 +445,12 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
         // span_id (field 2, LEN, 8 bytes)
         writePosition = WriteSpanIdField(bytes, writePosition, Span_Span_Id, spanModel.Span.SpanId);
+
+        // trace_state (field 3, string)
+        if (otlpTraceState is not null)
+        {
+            writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Span_Trace_State, otlpTraceState);
+        }
 
         // parent_span_id (field 4, LEN, 8 bytes) — only if parent exists and is non-zero
         if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
@@ -481,7 +485,6 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         int droppedAttributes = OtlpMapper.EmitAttributesFromSpan(
             in spanModel,
             SpanAttributeCountLimit,
-            _openTelemetrySemanticsEnabled,
             ref attributesState,
             static (ref WriteAttributesState s, KeyValue kv) =>
                 s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Span_Attributes, kv));
@@ -545,7 +548,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         {
             "STATUS_CODE_OK" => StatusCode_Ok,
             "STATUS_CODE_ERROR" => StatusCode_Error,
-            _ => null,
+            _ => spanModel.Span.Error ? StatusCode_Error : null,
         };
         if (statusCode is not null)
         {

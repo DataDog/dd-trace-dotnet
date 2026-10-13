@@ -94,6 +94,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> NUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnit : PackageVersionsLatestSpecific.NUnit;
 
+        public static IEnumerable<object[]> NUnitGlobalCoverageMemoryCoverlet => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnitGlobalCoverageMemoryCoverlet : PackageVersionsLatestSpecific.NUnitGlobalCoverageMemoryCoverlet;
+
         public static IEnumerable<object[]> NUnitRetries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnitRetries : PackageVersionsLatestSpecific.NUnitRetries;
 
         public static IEnumerable<object[]> MSTest => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest : PackageVersionsLatestSpecific.MSTest;
@@ -129,6 +131,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> OpenTelemetry => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.OpenTelemetry : PackageVersionsLatestSpecific.OpenTelemetry;
 
         public static IEnumerable<object[]> Yarp => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Yarp : PackageVersionsLatestSpecific.Yarp;
+
+        public static IEnumerable<object[]> AzureFunctionsDurable => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureFunctionsDurable : PackageVersionsLatestSpecific.AzureFunctionsDurable;
 
         public static IEnumerable<object[]> AzureServiceBus => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBus : PackageVersionsLatestSpecific.AzureServiceBus;
 

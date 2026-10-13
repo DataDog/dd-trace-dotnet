@@ -68,6 +68,12 @@ public:
     MOCK_METHOD(int32_t, CpuThreadsThreshold, (), (const override));
     MOCK_METHOD(int32_t, CodeHotspotsThreadsThreshold, (), (const override));
     MOCK_METHOD(bool, IsGarbageCollectionProfilingEnabled, (), (const override));
+    bool IsGcLifecycleEventsProcessingSkipped() const override
+    {
+        return GcLifecycleEventsProcessingSkipped;
+    }
+
+    bool GcLifecycleEventsProcessingSkipped = false;
     MOCK_METHOD(bool, IsHeapProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
     MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
@@ -101,6 +107,15 @@ public:
     MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
     MOCK_METHOD(std::chrono::seconds, GetTestHeapSnapshotInterval, (), (const override));
+    // Deliberately not mocked: the gmock default of zero would make the services that wait
+    // on it fail to start, and stubbing it with ON_CALL would register every instance with
+    // the leak detector, which breaks the fixtures that exit() out of a death test.
+    // Generous value on purpose, as these tests also run under ASAN/UBSAN/TSAN.
+    std::chrono::milliseconds GetLibrariesInfoCacheStartTimeout() const override
+    {
+        return std::chrono::seconds(10);
+    }
+
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
     MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));

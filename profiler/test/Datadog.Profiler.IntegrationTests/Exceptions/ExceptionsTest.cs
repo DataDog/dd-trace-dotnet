@@ -71,7 +71,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
-            else if (framework =="net10.0")
+            else if (framework == "net10.0")
             {
                 if (IntPtr.Size == 4)
                 {
@@ -85,6 +85,26 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     // 64 bit
                     expectedStack = new StackTrace(
                         new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                }
+            }
+            else if (framework == "net11.0")
+            {
+                // .NET 11 changed the signature of Thread.StartCallback, and reintroduced the
+                // EH.RhThrowEx frame that .NET 10 elided (with a different signature to .NET 9)
+                if (IntPtr.Size == 4)
+                {
+                    // 32-bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:(System.Threading.Thread* pThread)"));
+                }
+                else
+                {
+                    // 64 bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object* pExceptionObj, ExInfo* pExInfo)"),
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
@@ -146,7 +166,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total.Should().Be(expectedExceptionCount);
             }
         }
-    
+
         [Flaky("Flaky on ARM64")]
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
@@ -202,6 +222,26 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     // 64 bit
                     expectedStack = new StackTrace(
                         new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                }
+            }
+            else if (framework == "net11.0")
+            {
+                // .NET 11 changed the signature of Thread.StartCallback, and reintroduced the
+                // EH.RhThrowEx frame that .NET 10 elided (with a different signature to .NET 9)
+                if (IntPtr.Size == 4)
+                {
+                    // 32-bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:(System.Threading.Thread* pThread)"));
+                }
+                else
+                {
+                    // 64 bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object* pExceptionObj, ExInfo* pExInfo)"),
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
@@ -306,6 +346,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -698,6 +740,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         break;
                     }
                 }
+
                 if (matched)
                 {
                     break;
@@ -739,10 +782,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 var idx = pending.FindIndex(
                     s => s.Type == exp.Type && s.Message == exp.Message && s.Count == exp.Count &&
                          AssertExpectedStack(s.Stacktrace, exp.ExpectedStack).Matched);
+#pragma warning disable SA1118 // Parameter should not span multiple lines
                 idx.Should().BeGreaterThanOrEqualTo(
                     0,
                     $"Expected a sample for {exp.Type} / {exp.Message} / count {exp.Count} with matching stack. " +
                     $"Remaining: {FormatExceptionSamplesSummary(pending)}");
+#pragma warning restore SA1118 // Parameter should not span multiple lines
                 pending.RemoveAt(idx);
             }
 

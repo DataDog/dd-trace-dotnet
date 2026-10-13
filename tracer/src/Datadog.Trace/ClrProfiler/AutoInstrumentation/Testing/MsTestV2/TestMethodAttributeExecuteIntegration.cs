@@ -119,7 +119,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
     {
-        if (!MsTestIntegration.IsEnabled || instance is SkipTestMethodExecutor)
+        if (!MsTestIntegration.IsEnabled || SkipTestMethodExecutor.IsReplacement(instance))
         {
             return CallTargetState.GetDefault();
         }

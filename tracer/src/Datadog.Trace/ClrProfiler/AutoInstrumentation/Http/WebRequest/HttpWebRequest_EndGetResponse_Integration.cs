@@ -10,6 +10,7 @@ using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -109,6 +110,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         if (returnValue is HttpWebResponse response)
                         {
                             scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
+                            HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, response.ProtocolVersion);
                             scope.Dispose();
                         }
                         else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
@@ -118,6 +120,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                             scope.Span.SetException(exception, markAsError: false);
 
                             scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
+                            HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, exceptionResponse.ProtocolVersion);
                             scope.Dispose();
                         }
                         else

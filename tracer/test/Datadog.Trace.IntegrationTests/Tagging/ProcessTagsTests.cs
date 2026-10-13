@@ -31,7 +31,7 @@ public class ProcessTagsTests
     public async Task ProcessTags_Only_In_First_Span(bool enabled)
     {
         var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.PropagateProcessTags, enabled ? "true" : "false" } }));
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(_testApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter);
 
         using (tracer.StartActiveInternal("A"))

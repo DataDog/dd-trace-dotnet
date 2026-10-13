@@ -37,6 +37,16 @@ namespace Datadog.Trace.Processors
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go#L45-L53
+        public void ProcessMeta(ref string key, ref int value)
+        {
+            if (TraceUtil.TruncateUTF8(ref key, MaxMetaKeyLen))
+            {
+                key += "...";
+                Log.Debug<int, string>("span.truncate: truncating `Meta` key (max {MaxMetaKeyLen} chars): {Key}", MaxMetaKeyLen, key);
+            }
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go#L45-L53
         public void ProcessMetric(ref string key, ref double value)
         {
             if (TraceUtil.TruncateUTF8(ref key, MaxMetricsKeyLen))

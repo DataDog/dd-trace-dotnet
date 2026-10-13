@@ -157,9 +157,14 @@ namespace Datadog.Trace.Agent
                 }
             });
 
+            var initialTimestampNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             for (int i = 0; i < _buffers.Length; i++)
             {
-                _buffers[i] = new(header, new(settings), new(TelemetryFactory.Metrics));
+                var cardinalityLimiter = new StatsCardinalityLimiter(settings);
+                var cardinalityReporter = new StatsCardinalityReporter(TelemetryFactory.Metrics);
+                _buffers[i] = _isOtlp
+                                  ? new StatsBuffer.OtlpStatsBuffer(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs)
+                                  : new StatsBuffer.DatadogStatsBuffer(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs);
             }
 
             _flushTask = Task.Run(Flush);
@@ -361,13 +366,6 @@ namespace Datadog.Trace.Agent
         [TestingAndPrivateOnly]
         internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults, out AdditionalTagResults additionalTagResults)
         {
-            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
-
-            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
-            {
-                httpStatusCode = 0;
-            }
-
             // Check gRPC status code tags in priority order per CSS v1.2.0 spec.
             // Stored as string to match the Go agent's wire format (GRPCStatusCode is a string field).
             // This preserves the distinction between "0" (gRPC OK) and "" (no gRPC status).
@@ -380,7 +378,7 @@ namespace Datadog.Trace.Agent
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/aggregation.go
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind)) ?? string.Empty;
             var isTraceRoot = span.Context.ParentId is null or 0;
-            var httpMethod = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var httpMethod = span.GetHttpMethod() ?? string.Empty;
             var httpEndpoint = span.GetTag(Tags.HttpRoute) ?? string.Empty;
 
             // Normalize service source to match trace serialization behavior:
@@ -459,7 +457,7 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                httpStatusCode,
+                span.GetHttpStatusCode() ?? 0,
                 span.Context.Origin?.StartsWith("synthetics") == true,
                 spanKind,
                 _isOtlp ? span.Error : false,
@@ -658,6 +656,8 @@ namespace Datadog.Trace.Agent
 
         internal async Task Flush()
         {
+            var bucketDurationNs = _bucketDuration.ToNanoseconds();
+
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
@@ -671,10 +671,16 @@ namespace Datadog.Trace.Agent
                 await Task.WhenAny(_processExit.Task, Task.Delay(_bucketDuration)).ConfigureAwait(false);
 
                 var buffer = CurrentBuffer;
+                var nextBufferIndex = (_currentBuffer + 1) % BufferCount;
+                long statsDurationNs;
 
                 lock (_buffers)
                 {
-                    _currentBuffer = (_currentBuffer + 1) % BufferCount;
+                    var boundaryNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+                    var nextStartNs = buffer.GetNextStart(boundaryNs);
+                    statsDurationNs = buffer.GetDuration(nextStartNs, bucketDurationNs);
+                    _buffers[nextBufferIndex].SetStart(nextStartNs);
+                    _currentBuffer = nextBufferIndex;
                 }
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
@@ -689,11 +695,9 @@ namespace Datadog.Trace.Agent
 
                 if (buffer.HasHits() && CanComputeStats == true)
                 {
-                    await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds(), Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
+                    await _api.SendStatsAsync(buffer, statsDurationNs, Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                 }
 
-                // Always reset the buffer so Start is re-aligned and stale keys are pruned,
-                // even when no hits were recorded this interval.
                 buffer.Reset();
             }
             while (!_processExit.Task.IsCompleted);

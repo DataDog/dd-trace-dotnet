@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -406,7 +407,7 @@ internal partial class ProbeExpressionParser<T>
         var value = ParseTree(reader, parameters, itParameter);
         var instanceOf = (ConstantExpression)ParseTree(reader, parameters, itParameter);
         var typeName = instanceOf.Value?.ToString();
-        if (string.IsNullOrEmpty(typeName))
+        if (StringUtil.IsNullOrEmpty(typeName))
         {
             AddError($"{value} is ?", "failed to parse type name");
             return Expression.Constant(false);
@@ -415,13 +416,14 @@ internal partial class ProbeExpressionParser<T>
         var instanceOfMethod = ProbeExpressionParserHelper.GetMethodByReflection(
             typeof(InstanceOfHelper),
             nameof(InstanceOfHelper.IsInstanceOf),
-            [value.Type, typeof(string)],
+            [value.Type, typeof(string), typeof(EvaluationBudget).MakeByRefType()],
             [value.Type]);
         var isInstanceOfExpression = Expression.Call(
             null,
             instanceOfMethod,
             value,
-            Expression.Constant(typeName));
+            Expression.Constant(typeName),
+            _evaluationBudgetParameterExpression);
 
         return RedactDictionaryOperation(value, isInstanceOfExpression);
     }
@@ -497,7 +499,7 @@ internal partial class ProbeExpressionParser<T>
     private Expression MemberPathExpression(Expression expression, ConstantExpression propertyOrField)
     {
         var propertyOrFieldValue = propertyOrField.Value?.ToString();
-        if (string.IsNullOrEmpty(propertyOrFieldValue))
+        if (StringUtil.IsNullOrEmpty(propertyOrFieldValue))
         {
             AddError($"{expression}.{propertyOrFieldValue}", "Property or field name is empty.");
             return UndefinedValue();

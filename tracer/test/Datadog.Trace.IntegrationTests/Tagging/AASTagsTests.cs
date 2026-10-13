@@ -33,7 +33,7 @@ public class AASTagsTests
     {
         var source = GetMockVariables();
         var settings = new TracerSettings(source);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(_testApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
@@ -50,7 +50,7 @@ public class AASTagsTests
     public async Task NoAasTagsIfNotInAASContext()
     {
         var settings = new TracerSettings(null);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(_testApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
@@ -74,7 +74,7 @@ public class AASTagsTests
 
         var source = GetMockVariables();
         var settings = new TracerSettings(source);
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(_testApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         ISpan span1;

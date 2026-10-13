@@ -35,6 +35,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
         private const string SupportedEventPlatformProxyEndpointV2 = "evp_proxy/v2";
         private const string SupportedEventPlatformProxyEndpointV4 = "evp_proxy/v4";
+        private const string EvpOriginHeader = "DD-EVP-ORIGIN";
+        private const string EvpOriginVersionHeader = "DD-EVP-ORIGIN-VERSION";
         private const string SupportedTelemetryProxyEndpoint = "telemetry/proxy";
         private const string SupportedTracerFlareEndpoint = "tracer_flare/v1";
 
@@ -62,7 +64,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
-            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), serviceRemappingHash, initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
+            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), serviceRemappingHash, initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs, exporterSettings: settings.InitialExporterSettings)
         {
             // Create as a "managed" service that can update the request factory
             _settingSubscription = settings.SubscribeToChanges(changes =>
@@ -70,7 +72,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 if (changes.UpdatedExporter is { } exporter)
                 {
                     var newFactory = CreateApiRequestFactory(exporter, containerMetadata.ContainerId, tcpTimeout);
-                    Interlocked.Exchange(ref _apiRequestFactory!, new(newFactory));
+                    UpdateRequestFactory(newFactory, exporter);
                 }
             });
         }
@@ -82,9 +84,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs,
-            bool autoStartLoop = true)
+            bool autoStartLoop = true,
+            ExporterSettings? exporterSettings = null)
         {
-            _apiRequestFactory = new(apiRequestFactory);
+            _apiRequestFactory = new(apiRequestFactory, exporterSettings);
             _serviceRemappingHash = serviceRemappingHash;
             _initialRetryDelayMs = initialRetryDelayMs;
             _maxRetryDelayMs = maxRetryDelayMs;
@@ -165,7 +168,21 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 serviceRemappingHash,
                 initialRetryDelayMs,
                 maxRetryDelayMs,
-                recheckIntervalMs);
+                recheckIntervalMs,
+                exporterSettings: exporterSettings);
+
+        [TestingAndPrivateOnly]
+        internal void UpdateRequestFactory(IApiRequestFactory factory, ExporterSettings exporterSettings)
+        {
+            lock (_lock)
+            {
+                _apiRequestFactory = new(factory, exporterSettings);
+                // A different Agent must be polled even if it returns the same body/hash. Never
+                // replay the previous Agent's cached capabilities to a new subscriber.
+                _configuration = null;
+                _configurationHash = null;
+            }
+        }
 
         /// <inheritdoc cref="IDiscoveryService.SubscribeToChanges"/>
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
@@ -211,11 +228,29 @@ namespace Datadog.Trace.Agent.DiscoveryService
             Interlocked.Exchange(ref _agentConfigStateHashUnixTime, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         }
 
-        private void NotifySubscribers(AgentConfiguration newConfig)
+        private void NotifySubscribers(AgentConfiguration newConfig, ApiFactoryHolder requestFactory, string configurationHash, string? containerTagsHash)
         {
             List<Action<AgentConfiguration>> subscribers;
             lock (_lock)
             {
+                if (!ReferenceEquals(requestFactory, _apiRequestFactory))
+                {
+                    // A response that started before an endpoint change cannot validate the new Agent.
+                    return;
+                }
+
+                if (containerTagsHash is not null)
+                {
+                    _serviceRemappingHash.UpdateContainerTagsHash(containerTagsHash);
+                }
+
+                _configurationHash = configurationHash;
+                if (newConfig.Equals(_configuration))
+                {
+                    return;
+                }
+
+                Log.Debug("Discovery configuration updated, notifying subscribers: {Configuration}", newConfig);
                 subscribers = _agentChangeCallbacks.ToList();
                 // Setting the configuration immediately after grabbing
                 // the subscribers ensures subscribers receive the
@@ -262,7 +297,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 using var response = await api.GetAsync().ConfigureAwait(false);
                 if (response.StatusCode is >= 200 and < 300)
                 {
-                    await ProcessDiscoveryResponse(response).ConfigureAwait(false);
+                    await ProcessDiscoveryResponse(response, requestFactory).ConfigureAwait(false);
                     return null;
                 }
 
@@ -313,14 +348,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
             return Volatile.Read(ref _agentConfigStateHashUnixTime) + _recheckIntervalMs < utcNow.ToUnixTimeMilliseconds();
         }
 
-        private async Task ProcessDiscoveryResponse(IApiResponse response)
+        private async Task ProcessDiscoveryResponse(IApiResponse response, ApiFactoryHolder requestFactory)
         {
             // Extract and store container tags hash from response headers
             var containerTagsHash = response.GetHeader(AgentHttpHeaderNames.ContainerTagsHash);
-            if (containerTagsHash != null)
-            {
-                _serviceRemappingHash.UpdateContainerTagsHash(containerTagsHash);
-            }
 
             // Grab the original stream
             var stream = await response.GetStreamAsync().ConfigureAwait(false);
@@ -373,6 +404,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
 
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
+            var evpProxyAllowedHeaders = (jObject["evp_proxy_allowed_headers"] as JArray)?.Values<string>().ToArray();
+            var eventPlatformProxySupportsEvpOriginHeaders =
+                evpProxyAllowedHeaders?.Any(header => string.Equals(header?.Trim(), EvpOriginHeader, StringComparison.OrdinalIgnoreCase)) == true
+             && evpProxyAllowedHeaders.Any(header => string.Equals(header?.Trim(), EvpOriginVersionHeader, StringComparison.OrdinalIgnoreCase));
             string? configurationEndpoint = null;
             string? debuggerEndpoint = null;
             string? debuggerV2Endpoint = null;
@@ -442,8 +477,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 }
             }
 
-            var existingConfiguration = _configuration;
-
             var newConfig = new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
@@ -456,24 +489,18 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,
-                containerTagsHash: _serviceRemappingHash.ContainerTagsHash, // either the value just received, or the one we stored before (prevents overriding with null)
+                containerTagsHash: containerTagsHash ?? _serviceRemappingHash.ContainerTagsHash,
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents,
                 peerTags: peerTags!,
                 obfuscationVersion: obfuscationVersion,
                 traceFilterConfig: traceFilterConfig,
-                featureFlags: featureFlags!);
+                featureFlags: featureFlags!,
+                eventPlatformProxySupportsEvpOriginHeaders: eventPlatformProxySupportsEvpOriginHeaders,
+                discoverySettings: requestFactory.ExporterSettings);
 
-            // Save the hash, whether the details we care about changed or not
-            _configurationHash = HexString.ToHexString(sha256.Hash);
-
-            // AgentConfiguration is a record, so this compares by value
-            if (existingConfiguration is null || !newConfig.Equals(existingConfiguration))
-            {
-                Log.Debug("Discovery configuration updated, notifying subscribers: {Configuration}", newConfig);
-                NotifySubscribers(newConfig);
-            }
+            NotifySubscribers(newConfig, requestFactory, HexString.ToHexString(sha256.Hash), containerTagsHash);
         }
 
         public Task DisposeAsync()
@@ -497,8 +524,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 httpHeaderHelper: containerId is null ? MinimalAgentHeaderHelper.Instance : new MinimalWithContainerIdAgentHeaderHelper(containerId));
         }
 
-        private sealed class ApiFactoryHolder(IApiRequestFactory apiFactory)
+        private sealed class ApiFactoryHolder(IApiRequestFactory apiFactory, ExporterSettings? exporterSettings)
         {
+            public ExporterSettings? ExporterSettings { get; } = exporterSettings;
+
             public IApiRequestFactory ApiFactory { get; } = apiFactory;
 
             public Uri Uri { get; } = apiFactory.GetEndpoint("info");

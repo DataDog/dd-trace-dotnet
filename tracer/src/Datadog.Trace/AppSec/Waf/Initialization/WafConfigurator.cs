@@ -251,10 +251,15 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                             {
                                 var configObj = encoded.ResultDdwafObject;
                                 var path = config.Key;
-                                if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, path, ref configObj, ref diagnostics))
+
+                                var configDiagnostics = default(DdwafObjectStruct);
+                                if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, path, ref configObj, ref configDiagnostics))
                                 {
                                     Log.Debug("WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
                                 }
+
+                                _wafLibraryInvoker.ObjectDestroy(ref diagnostics);
+                                diagnostics = configDiagnostics;
                             }
                         }
                     }

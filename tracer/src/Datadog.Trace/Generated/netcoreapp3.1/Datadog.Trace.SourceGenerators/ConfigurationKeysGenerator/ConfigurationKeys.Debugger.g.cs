@@ -42,6 +42,12 @@ internal static partial class ConfigurationKeys
         public const string DynamicInstrumentationEnabled = "DD_DYNAMIC_INSTRUMENTATION_ENABLED";
 
         /// <summary>
+        /// Configuration key for the maximum elapsed time, in milliseconds, allowed for evaluating probe expressions.
+        /// Values from <c>10</c> to <c>1000</c> are accepted. Default value is <c>50</c>.
+        /// </summary>
+        public const string EvaluationTimeoutMs = "DD_DYNAMIC_INSTRUMENTATION_EVALUATION_TIMEOUT_MS";
+
+        /// <summary>
         /// Configuration key for the max object depth to serialize for probe snapshots.
         /// Default value is 1.
         /// </summary>

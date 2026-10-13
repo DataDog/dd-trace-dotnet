@@ -52,3 +52,7 @@ M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JToken.ToString(Datadog.Trace.Vendo
 # Ban JsonSerializer.Serialize(TextWriter) - use JsonTextWriter with ArrayPool instead
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializer.Serialize(System.IO.TextWriter,System.Object);Use JsonTextWriter with ArrayPool = JsonArrayPool.Shared instead
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializer.Serialize(System.IO.TextWriter,System.Object,System.Type);Use JsonTextWriter with ArrayPool = JsonArrayPool.Shared instead
+
+# Ban System.Random constructors - use ThreadSafeRandom instead
+M:System.Random.#ctor;Use Datadog.Trace.Util.ThreadSafeRandom.Shared instead - Random instances are not thread-safe, and before .NET 6 instances created in quick succession are seeded from the tick count and produce identical sequences
+M:System.Random.#ctor(System.Int32);Use Datadog.Trace.Util.ThreadSafeRandom.Shared instead - Random instances are not thread-safe. If you genuinely need a deterministic seeded sequence, suppress RS0030 with a comment explaining why

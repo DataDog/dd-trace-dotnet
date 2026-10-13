@@ -27,6 +27,7 @@ using Xunit;
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
+    [Trait("Area", "CIVisibility")]
     [EnvironmentVariablesCleaner(
         Configuration.ConfigurationKeys.DebugEnabled,
         Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
@@ -563,7 +564,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             using var responseDirectory = new TemporaryDirectory("dd-ci-response-file-double-dash-");
             var responseFilePath = Path.Combine(responseDirectory.RootPath, "test.rsp");
-            var longRunSettings = "RunConfiguration.TargetFrameworkVersion=net10.0;" + new string('x', 4096);
+            var longRunSettings = "RunConfiguration.TargetFrameworkVersion=net11.0;" + new string('x', 4096);
             var responseFileContents = string.Join(
                 Environment.NewLine,
                 "test",
@@ -702,7 +703,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             using var responseDirectory = new TemporaryDirectory("dd-ci-response-file-special-args-");
             var responseFilePath = Path.Combine(responseDirectory.RootPath, "test.rsp");
-            var longRunSettings = "RunConfiguration.TargetFrameworkVersion=net10.0;" + new string('x', 4096);
+            var longRunSettings = "RunConfiguration.TargetFrameworkVersion=net11.0;" + new string('x', 4096);
             var responseFileContents = string.Join(
                 Environment.NewLine,
                 "test",
@@ -2472,8 +2473,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             CoverageBackfillCapability.ResetCommandLineCacheForTests();
             TestOptimization.Instance.InitializeFromRunner(TestOptimization.Instance.Settings, NullDiscoveryService.Instance, eventPlatformProxyEnabled: true);
 
+            // Run-scoped consumers deliberately ignore unrelated JSON files, so publish the fixture using the production artifact naming protocol.
+            var runToken = GlobalCoverageProtocol.GetRunToken(TestOptimization.Instance.RunId);
+            var processIdentity = GlobalCoverageProtocol.GetProcessIdentity(runToken, processId: 1, nonce: "fixture");
             File.WriteAllText(
-                Path.Combine(coverageDirectory.RootPath, "coverage-input.json"),
+                Path.Combine(coverageDirectory.RootPath, GlobalCoverageProtocol.GetCoverageFileName(processIdentity)),
                 JsonHelper.SerializeObject(CreateGlobalCoverage("src/Calculator.cs")));
             CoverageBackfillDataStore.Persist(TestOptimization.Instance, CreateCoverageBackfillData("src/Other.cs", SimplePassTestCoveredLine));
             CoverageBackfillDataStore.RecordActualItrSkip();

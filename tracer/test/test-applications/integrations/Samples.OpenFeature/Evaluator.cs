@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using OpenFeature.Constant;
 using OpenFeature.Model;
 
 namespace Samples.FeatureFlags;
@@ -7,22 +9,24 @@ namespace Samples.FeatureFlags;
 class Evaluator
 {
     static global::OpenFeature.FeatureClient client = null!; // assigned by Init()
+    static Datadog.FeatureFlags.OpenFeature.DatadogProvider provider = null!; // assigned by Init()
     static Action? _onNewConfig = null;
 
-    public static bool Init()
+    public static async Task<bool> Init()
     {
         Console.WriteLine("OpenFeature FeatureFlags SDK Sample");
-        if (Datadog.FeatureFlags.OpenFeature.DatadogProvider.IsAvailable)
+        if (!Datadog.FeatureFlags.OpenFeature.DatadogProvider.IsAvailable)
         {
-
-            global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
-            client = global::OpenFeature.Api.Instance.GetClient();
-            Datadog.FeatureFlags.OpenFeature.DatadogProvider.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
-            return true;
+            return false;
         }
 
-        return false;
-
+        // SetProviderAsync awaits the provider's InitializeAsync, which starts agentless delivery
+        // and waits for the first configuration.
+        provider = new Datadog.FeatureFlags.OpenFeature.DatadogProvider();
+        await global::OpenFeature.Api.Instance.SetProviderAsync(provider);
+        client = global::OpenFeature.Api.Instance.GetClient();
+        Datadog.FeatureFlags.OpenFeature.DatadogProvider.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
+        return true;
     }
 
     public static void RegisterOnNewConfigEventHandler(Action onNewConfig)
@@ -53,6 +57,20 @@ class Evaluator
         return (evaluation.Value, evaluation.ErrorMessage);
     }
 
+    public static void EvaluateSync(string key)
+    {
+        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+#pragma warning disable DDFF001 // Exercises the experimental synchronous provider API.
+        var evaluation = provider.ResolveStringValue(key, "Not found", context);
+#pragma warning restore DDFF001
+        if (evaluation.ErrorType != ErrorType.None)
+        {
+            throw new InvalidOperationException($"Sync evaluation failed: {evaluation.ErrorMessage}");
+        }
+
+        Console.WriteLine($"EvalSync ({key}) : <OK: {evaluation.Value}>");
+    }
+
     public static void ExtraChecks()
     {
         var key = "simple-json";
@@ -67,6 +85,20 @@ class Evaluator
         Assert(evaluation.Value.IsStructure, "No structure value");
         Assert(evaluation.Value.AsStructure!.ContainsKey("integer"), "Integer value not found");
         Assert(evaluation.Value.AsStructure!.GetValue("integer").AsInteger == 1, "Wrong Integer value");
+
+        // Exercise synchronous resolution through native instrumentation and remote configuration.
+        var stringContext = EvaluationContext.Builder().SetTargetingKey("simple-string").Build();
+        var asyncString = client.GetStringDetailsAsync("simple-string", "Not found", stringContext).Result;
+#pragma warning disable DDFF001 // Exercises the experimental synchronous provider API.
+        var syncString = provider.ResolveStringValue("simple-string", "Not found", stringContext);
+        var syncJson = provider.ResolveStructureValue(key, defaultValue, context);
+#pragma warning restore DDFF001
+        Assert(syncString.ErrorType == ErrorType.None, $"Sync string error ({syncString.ErrorType})");
+        Assert(syncString.Value == asyncString.Value, $"Sync string value ({syncString.Value} != {asyncString.Value})");
+        Assert(syncString.Reason == asyncString.Reason, "Wrong sync string reason");
+        Assert(syncString.Variant == asyncString.Variant, "Wrong sync string variant");
+        Assert(syncJson.ErrorType == ErrorType.None, $"Sync json error ({syncJson.ErrorType})");
+        Assert(syncJson.Value.AsStructure?.GetValue("integer").AsInteger == 1, "Wrong sync Integer value");
 
         static void Assert(bool condition, string message = "")
         {

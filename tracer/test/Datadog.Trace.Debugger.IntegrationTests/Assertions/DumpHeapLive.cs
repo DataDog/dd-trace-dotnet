@@ -38,6 +38,9 @@ internal static class DumpHeapLive
 
         output?.WriteLine($"Creating snapshot of process ID {process.Id}");
         using var target = DataTarget.CreateSnapshotAndAttach(process.Id);
+        // ClrMD 3.2 resolves field types while caching field names. On .NET 7, this can try to
+        // calculate the size of a void placeholder and throw "Unexpected element type."
+        target.CacheOptions.CacheFieldNames = StringCaching.None;
         if (ct.IsCancellationRequested)
         {
             throw new OperationCanceledException();
@@ -45,7 +48,7 @@ internal static class DumpHeapLive
 
         output?.WriteLine("Snapshot complete, analyzing heap...");
         var heap = target.ClrVersions[0].CreateRuntime().Heap;
-        var considered = new ObjectSet(heap);
+        var considered = new HashSet<ulong>();
         var eval = new Stack<ulong>();
 
         var rootCount = 0;

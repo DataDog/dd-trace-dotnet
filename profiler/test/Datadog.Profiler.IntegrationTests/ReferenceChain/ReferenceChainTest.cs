@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSimpleChainScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 1: Simple Chain (~1K objects)
@@ -70,7 +70,56 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
+        public void CheckReferenceTreeProducedAcrossConsecutiveSnapshots(string appName, string framework, string appAssembly)
+        {
+            // Regression guard for fault handling: a memory access fault during one
+            // snapshot's traversal must not disable reference chains for the following
+            // snapshots. We run long enough for several snapshots and assert that a
+            // valid reference tree is produced by each consecutive snapshot, not just
+            // the first one.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            runner.TestDurationInSeconds = 50;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "10");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated");
+
+            // Group the emitted files by the export (snapshot) they belong to. Each
+            // snapshot that ran the traversal and found a root emits exactly one tree.
+            var snapshotIds = referenceTreeFiles
+                .Select(f => GetSnapshotId(f, "reference_tree_"))
+                .Distinct()
+                .ToList();
+
+            _output.WriteLine($"Reference trees were produced for {snapshotIds.Count} distinct snapshot(s).");
+
+            // "A bad dump does not kill the next one": we must see trees from multiple
+            // consecutive snapshots, not a single one followed by silence.
+            Assert.True(
+                snapshotIds.Count >= 2,
+                $"Expected reference trees from at least 2 consecutive snapshots, got {snapshotIds.Count}");
+
+            // Every emitted tree must be structurally valid and contain the scenario chain,
+            // proving traversal kept working snapshot after snapshot.
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+            Assert.Equal(referenceTreeFiles.Length, trees.Count);
+
+            Assert.True(
+                trees.Any(tree =>
+                    HasRootOfCategory(tree, "K") &&
+                    HasAncestorDescendantChain(tree, "Order", "Customer") &&
+                    HasAncestorDescendantChain(tree, "Customer", "Address")),
+                "Expected at least one snapshot to still contain the Order->Customer->Address chain");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSimpleChainBinaryFormat(string appName, string framework, string appAssembly)
         {
             // Same as CheckSimpleChainScenario but with binary serialization (format=1, the default).
@@ -106,7 +155,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one binary snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSimpleChainBothFormats(string appName, string framework, string appAssembly)
         {
             // Format=3 emits both JSON and binary files for the same tree — useful for validation.
@@ -155,7 +204,8 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var binByStem = binFiles.ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
             var commonStems = jsonByStem.Keys.Intersect(binByStem.Keys).ToList();
 
-            Assert.True(commonStems.Count > 0,
+            Assert.True(
+                commonStems.Count > 0,
                 "No matching JSON/binary file pairs found (expected same filename stem for both formats)");
 
             foreach (var stem in commonStems)
@@ -184,7 +234,21 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
+        public void CheckReferenceTreeTypesAreInClassHistogramBinary(string appName, string framework, string appAssembly)
+        {
+            CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "1", treeFileName: "reference_tree.bin", treeExtension: "bin");
+        }
+
+        // Run against JSON as well: the two serializers build their type table independently,
+        // so a type/index mismatch in one of them would not show up in the other.
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
+        public void CheckReferenceTreeTypesAreInClassHistogramJson(string appName, string framework, string appAssembly)
+        {
+            CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "2", treeFileName: "reference_tree.json", treeExtension: "json");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSkipTraversalProducesNoReferenceTree(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
@@ -207,7 +271,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             Assert.False(hasReferenceTree, "No reference tree should be sent when skip-traversal is enabled");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckCyclesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 3: Cycles - Parent -> Child -> Parent (bidirectional tree)
@@ -235,7 +299,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain TreeNode self-referencing chain with finite depth");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckDeepHierarchyScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 4: Deep Hierarchy - Root -> Level0 -> Level1 -> ... -> Level9
@@ -262,7 +326,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain the full Level0->Level1->...->Level9 chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckMultipleRootsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 2: Multiple Roots
@@ -290,7 +354,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Order->Customer chain and Product type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckWideTreeScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 5: Wide Tree - 100 branches x 50 leaves
@@ -315,7 +379,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain WideBranch->Leaf chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckMixedStructuresScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 6: Mixed Structures - arrays of arrays, dictionaries, byte[] (value-type arrays skipped)
@@ -343,7 +407,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Container->Payload->Metadata and Container->Leaf chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSharedReferencesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 8: Shared References - multiple holders reference the same payload
@@ -370,7 +434,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain SharedHolder->SharedPayload chain with InstanceCount > 0");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckLinkedListScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 9: Linked List - self-referencing type chain (LinkedNode -> LinkedNode -> ...)
@@ -397,7 +461,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain LinkedNode self-referencing chain with depth >= 2");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckNullFieldsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 10: Null Fields - objects with most reference fields intentionally null
@@ -437,7 +501,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain SparseObject->Customer without Product/Order as direct children");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckStructWithReferencesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 11: Value type array with embedded reference fields
@@ -467,7 +531,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain StructWithReferences[]->Customer->Address and StructWithReferences[]->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckStaticRootScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 12: Same simple chain as Scenario 1 but held by a static field.
@@ -500,7 +564,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain StaticVariable root with field name and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckEventHandlerLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 13: Event handler leak - publisher holds subscribers via event delegate
@@ -526,7 +590,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain EventSubscriber->LeakedPayload chain and EventPublisher type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckClosureLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 14: Closure / captured variable leak - lambdas capturing expensive objects
@@ -550,7 +614,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain ClosureHolder->ExpensiveResource chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckTimerLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 15: Timer callback leak - Timer keeping callback targets alive
@@ -576,7 +640,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain MonitoredService->ServiceMetrics chain and TimerOwner type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckGCHandleLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 16: Strong GCHandle leak - tests Handle root category
@@ -602,7 +666,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Handle root and HandleTarget->InteropPayload chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckPinnedLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 18: Pinned handle - tests Pinning root category
@@ -626,7 +690,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Pinning root");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckAsyncLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 19: Async state machine leak - never-completing Task capturing HeavyContext
@@ -652,7 +716,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain AsyncLeakSource and HeavyContext types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckNestedValueTypeScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 20: Nested inline value types - OuterHolder<InnerStruct> where InnerStruct
@@ -684,7 +748,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain OuterHolder, NestedVtTarget, and DeepVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckInheritanceMultiSeriesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 21: Inheritance with mixed ref/non-ref fields.
@@ -715,7 +779,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain DerivedAfterGap and RefTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckVtArrayWithRefsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 22: Value type array with reference fields.
@@ -742,7 +806,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain VtArrayTarget type (reachable via VT array element refs)");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckInlineVtNonGenericScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 23: Non-generic inline VT with reference field.
@@ -770,7 +834,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain HolderWithInlineVt and InlineVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckInlineVtGenericWithPrimitivesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 24: Generic inline VT with primitive type arguments.
@@ -826,30 +890,84 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         /// <summary>
-        /// Load all reference tree files (JSON or binary), validate their structure, and return the parsed trees.
-        /// Structural validation runs on JSON files; chain validation is left to the caller.
+        /// Get the generated suffix identifying the export a file belongs to: every file
+        /// attached to a profile is named &lt;stem&gt;_&lt;service&gt;_&lt;pid&gt;_&lt;profile id&gt;.
         /// </summary>
-        private List<ReferenceTree> LoadAndValidateAllTrees(string[] referenceTreeFiles)
+        private static string GetSnapshotId(string filePath, string stem)
         {
-            var trees = new List<ReferenceTree>();
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                if (referenceTreeFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                {
-                    var jsonContent = File.ReadAllText(referenceTreeFile);
-                    _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, Math.Min(2000, jsonContent.Length))}...");
+            return Path.GetFileNameWithoutExtension(filePath).Substring(stem.Length);
+        }
 
-                    ValidateReferenceTreeJsonStructure(jsonContent);
-                    trees.Add(ReferenceTreeLoader.Load(jsonContent));
-                }
-                else
-                {
-                    _output.WriteLine($"Reference tree binary ({referenceTreeFile}): {new FileInfo(referenceTreeFile).Length} bytes");
-                    trees.Add(ReferenceTreeLoader.LoadFromFile(referenceTreeFile));
-                }
+        /// <summary>
+        /// Read the type names of a class histogram, an array of ["TypeName", count, size].
+        /// </summary>
+        private static HashSet<string> ReadHistogramTypeNames(string histogramFile)
+        {
+            var types = new HashSet<string>();
+
+            using var doc = JsonDocument.Parse(File.ReadAllText(histogramFile));
+            foreach (var entry in doc.RootElement.EnumerateArray())
+            {
+                types.Add(entry[0].GetString());
             }
 
-            return trees;
+            return types;
+        }
+
+        /// <summary>
+        /// Collect the names of the tree types that correspond to real heap objects.
+        /// Nodes without any size are inline value types: they live inside their containing
+        /// object so the GC never reports them as heap objects in the class histogram.
+        /// </summary>
+        private static HashSet<string> CollectHeapObjectTypeNames(ReferenceTree tree)
+        {
+            var types = new HashSet<string>();
+            foreach (var root in tree.Roots)
+            {
+                CollectHeapObjectTypeNamesRecursive(root, tree, types);
+            }
+
+            return types;
+        }
+
+        private static void CollectHeapObjectTypeNamesRecursive(ReferenceNode node, ReferenceTree tree, HashSet<string> types)
+        {
+            // AssertTypeIndicesResolve has already ruled out an out-of-range index, so "?" here
+            // can only be a name the profiler failed to resolve. Such a type cannot be matched
+            // against the histogram, so it is left out rather than reported as a mismatch.
+            var typeName = tree.GetTypeName(node.TypeIndex);
+            if (node.TotalSize > 0 && typeName != "?")
+            {
+                types.Add(typeName);
+            }
+
+            foreach (var child in node.Children)
+            {
+                CollectHeapObjectTypeNamesRecursive(child, tree, types);
+            }
+        }
+
+         /// <summary>
+        /// Every node must point at a real type table slot. Without this check an out-of-range
+        /// index would be indistinguishable from a name the profiler could not resolve:
+        /// <see cref="ReferenceTree.GetTypeName"/> returns "?" for both.
+        /// </summary>
+        private static void AssertTypeIndicesResolve(ReferenceTree tree)
+        {
+            foreach (var root in tree.Roots)
+            {
+                AssertTypeIndicesResolveRecursive(root, tree);
+            }
+        }
+
+        private static void AssertTypeIndicesResolveRecursive(ReferenceNode node, ReferenceTree tree)
+        {
+            Assert.InRange(node.TypeIndex, 0, tree.TypeTable.Count - 1);
+
+            foreach (var child in node.Children)
+            {
+                AssertTypeIndicesResolveRecursive(child, tree);
+            }
         }
 
         /// <summary>
@@ -861,7 +979,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             Assert.False(string.IsNullOrEmpty(jsonContent), "Reference tree JSON is empty");
             Assert.NotEqual("{}", jsonContent);
 
-            var doc = JsonDocument.Parse(jsonContent, new JsonDocumentOptions { MaxDepth = 256 });
+            using var doc = JsonDocument.Parse(jsonContent, new JsonDocumentOptions { MaxDepth = 256 });
 
             // Check required top-level fields
             Assert.True(doc.RootElement.TryGetProperty("v", out var version), "Missing 'v' (version) field");
@@ -1130,6 +1248,130 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 edges.Add($"{parentName}->{childName}");
                 CollectTypeEdgesRecursive(child, tree, edges);
             }
+        }
+
+        /// <summary>
+        /// Load all reference tree files (JSON or binary), validate their structure, and return the parsed trees.
+        /// Structural validation runs on JSON files; chain validation is left to the caller.
+        /// </summary>
+        private List<ReferenceTree> LoadAndValidateAllTrees(string[] referenceTreeFiles)
+        {
+            var trees = new List<ReferenceTree>();
+            foreach (var referenceTreeFile in referenceTreeFiles)
+            {
+                if (referenceTreeFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var jsonContent = File.ReadAllText(referenceTreeFile);
+                    _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, Math.Min(2000, jsonContent.Length))}...");
+
+                    ValidateReferenceTreeJsonStructure(jsonContent);
+                    trees.Add(ReferenceTreeLoader.Load(jsonContent));
+                }
+                else
+                {
+                    _output.WriteLine($"Reference tree binary ({referenceTreeFile}): {new FileInfo(referenceTreeFile).Length} bytes");
+                    trees.Add(ReferenceTreeLoader.LoadFromFile(referenceTreeFile));
+                }
+            }
+
+            foreach (var tree in trees)
+            {
+                AssertTypeIndicesResolve(tree);
+            }
+
+            return trees;
+        }
+
+        private void CheckReferenceTreeTypesAreInClassHistogram(
+            string appName,
+            string framework,
+            string appAssembly,
+            string referenceTreeFormat,
+            string treeFileName,
+            string treeExtension)
+        {
+            // The class histogram and the reference tree are built from the same heap snapshot
+            // and use the same type names, so every heap object type listed in the tree is
+            // expected to appear in the histogram of that snapshot.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, referenceTreeFormat);
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            bool hasBothFiles = false;
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                var request = ctx.Value.Request;
+                if (!request.ContentType.StartsWith("multipart/form-data"))
+                {
+                    return;
+                }
+
+                var mpReader = new MultiPartReader(request);
+                if (!mpReader.Parse())
+                {
+                    return;
+                }
+
+                hasBothFiles |= mpReader.Files.Any(f => f.FileName == "histogram.json")
+                             && mpReader.Files.Any(f => f.FileName == treeFileName);
+            };
+
+            runner.Run(agent);
+
+            Assert.True(hasBothFiles, $"No profile was sent with both a class histogram and a {treeFileName}");
+
+            var histogramFiles = Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, $"reference_tree_*.{treeExtension}");
+            Assert.True(histogramFiles.Length > 0, "No class histogram files were generated");
+            Assert.True(referenceTreeFiles.Length > 0, $"No reference tree .{treeExtension} files were generated");
+
+            // Pair the files coming from the same export: they share the generated
+            // <service>_<pid>_<uid> suffix built from the id of the profile they belong to.
+            var histogramsById = histogramFiles.ToDictionary(f => GetSnapshotId(f, "histogram_"), f => f);
+            var treesById = referenceTreeFiles.ToDictionary(f => GetSnapshotId(f, "reference_tree_"), f => f);
+
+            // A histogram without a reference tree is expected: no tree file is emitted when
+            // the traversal did not find any root.
+            var snapshotIds = histogramsById.Keys.Intersect(treesById.Keys).ToList();
+            Assert.True(snapshotIds.Count > 0, "No histogram/reference tree pair from the same export was found");
+
+            var typesPerSnapshot = new List<(HashSet<string> HistogramTypes, HashSet<string> TreeTypes)>();
+
+            foreach (var snapshotId in snapshotIds)
+            {
+                var histogramTypes = ReadHistogramTypeNames(histogramsById[snapshotId]);
+                var tree = LoadAndValidateAllTrees(new[] { treesById[snapshotId] }).Single();
+                var treeTypes = CollectHeapObjectTypeNames(tree);
+
+                // The histogram is a superset by design: the tree only contains what the
+                // traversal reached (interior pointer roots are skipped, depth is capped...).
+                var onlyInTree = treeTypes.Except(histogramTypes).OrderBy(t => t).ToList();
+                _output.WriteLine(
+                    $"{snapshotId}: {treeTypes.Count} heap object types in the tree, {histogramTypes.Count} in the histogram, " +
+                    $"{histogramTypes.Except(treeTypes).Count()} only in the histogram, " +
+                    $"{onlyInTree.Count} only in the tree [{string.Join(", ", onlyInTree)}]");
+
+                typesPerSnapshot.Add((histogramTypes, treeTypes));
+            }
+
+            // Both files must name the scenario types identically. Checked on at least one
+            // snapshot because the first one can be taken before they are allocated.
+            var scenarioTypes = new[]
+            {
+                "Samples.Computer01.Order",
+                "Samples.Computer01.Customer",
+                "Samples.Computer01.Address",
+                "Samples.Computer01.Product",
+            };
+
+            Assert.True(
+                typesPerSnapshot.Any(snapshot => scenarioTypes.All(
+                    typeName => snapshot.TreeTypes.Contains(typeName) && snapshot.HistogramTypes.Contains(typeName))),
+                $"Expected at least one snapshot where both files report [{string.Join(", ", scenarioTypes)}]");
         }
     }
 }

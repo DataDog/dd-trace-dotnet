@@ -47,6 +47,32 @@ Dependabot preserves the SHA-pin + `# vX.Y.Z` comment format when bumping. Revie
 
 ---
 
+## Signed commits
+
+Commits reaching `master` must be signed, and `repository.datadog.yml` grants no exceptions. A workflow therefore must never create a commit with `git push` — git-created commits are unsigned and will block the PR on the `commit-signatures` merge gate.
+
+Instead, push through the GitHub API, which signs the commit server-side. Two options:
+
+- **Creating or updating a pull request** — use the local composite action:
+  ```yaml
+  - uses: ./.github/actions/create-signed-pull-request
+    with:
+      token: ${{ steps.octo-sts.outputs.token }}
+      branch: bot/my-branch
+      commit-message: "[My Bot] Update things"
+      title: "[My Bot] Update things"
+      base: master
+  ```
+  It wraps `peter-evans/create-pull-request` with `sign-commits: true` always set, so the commit is created through the GitHub API and signed. Use the action rather than calling `peter-evans/create-pull-request` directly — that way the signing cannot be left off by mistake.
+
+- **Pushing to a branch without a pull request** — stage the changes with `git add`, then use [`DataDog/commit-headless`](https://github.com/DataDog/commit-headless) directly with `command: commit`. It builds the commit from the index, so no local `git commit` is needed. See `create_hotfix_branch.yml` and `generate_package_versions.yml`.
+
+Any installation token works, including the default `GITHUB_TOKEN`, so a job that only needs to push a commit does not need dd-octo-sts — just `permissions: contents: write`. Use dd-octo-sts where the existing reason for it still applies, such as needing a PR to trigger other workflows.
+
+Background: [Commit Headless (sign bot commits)](https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/5580588264) and the [Commit Signing Enforcement FAQ](https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/5105058311).
+
+---
+
 ## Reviewer checklist
 
 When reviewing a PR that touches `.github/workflows/` or `.github/actions/`:
@@ -55,4 +81,5 @@ When reviewing a PR that touches `.github/workflows/` or `.github/actions/`:
 - [ ] Every new action is on the allowlist (or the allowlist has been updated in the same/accompanying change).
 - [ ] Local `./` refs (`uses: ./.github/actions/...`, `uses: ./.github/workflows/...`) are **not** version-pinned — leave them as-is.
 - [ ] The `# vX.Y.Z` comment reflects the actual version the SHA resolves to.
+- [ ] No step creates a commit with `git push` — see [Signed commits](#signed-commits).
 

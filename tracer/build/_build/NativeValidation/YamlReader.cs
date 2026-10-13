@@ -32,6 +32,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
             string? currentConstName = null;
             string[]? currentScope = null;
             var currentAliases = new List<string>();
+            var currentSensitive = false;
             var inDocumentation = false;
             var inAliases = false;
             var documentationBuilder = new StringBuilder();
@@ -65,7 +66,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                     if (currentConfigKey != null)
                     {
                         var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                        configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                        configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null, currentSensitive);
                     }
 
                     inSupportedConfigurations = false;
@@ -118,7 +119,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                             if (currentConfigKey != null)
                             {
                                 var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null, currentSensitive);
                             }
 
                             currentConfigKey = potentialKey;
@@ -127,6 +128,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                             currentConstName = null;
                             currentScope = null;
                             currentAliases.Clear();
+                            currentSensitive = false;
                             inDocumentation = false;
                             inAliases = false;
                             documentationBuilder.Clear();
@@ -144,7 +146,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                             if (propColonIdx > 0)
                             {
                                 var propName = trimmedLine.Substring(0, propColonIdx);
-                                if (propName is "const_name" or "product" or "implementation" or "type" or "default" or "aliases" or "deprecation_message" or "scope")
+                                if (propName is "const_name" or "product" or "implementation" or "type" or "default" or "aliases" or "deprecation_message" or "scope" or "sensitive")
                                 {
                                     // End of documentation, process this property
                                     inDocumentation = false;
@@ -260,6 +262,21 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                                 case "aliases":
                                     inAliases = true;
                                     break;
+                                case "sensitive":
+                                    if (propValue.Equals("true", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        currentSensitive = true;
+                                    }
+                                    else if (propValue.Equals("false", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        currentSensitive = false;
+                                    }
+                                    else
+                                    {
+                                        throw new InvalidOperationException($"Invalid sensitive value on line {lineNumber}: '{propValue}'. Expected true or false.");
+                                    }
+
+                                    break;
                                 case "documentation":
                                     if (propValue == "|-" || propValue == "|")
                                     {
@@ -303,7 +320,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
             if (currentConfigKey != null)
             {
                 var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null, currentSensitive);
             }
 
             return new ParsedConfigurationData(configurations, deprecations);
@@ -371,7 +388,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
         /// </summary>
         internal readonly struct ConfigurationEntry : IEquatable<ConfigurationEntry>
         {
-            public ConfigurationEntry(string key, string? product, string? documentation, string? constName, string[]? scope, string[]? aliases = null)
+            public ConfigurationEntry(string key, string? product, string? documentation, string? constName, string[]? scope, string[]? aliases = null, bool sensitive = false)
             {
                 Key = key;
                 Product = product;
@@ -379,6 +396,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                 ConstName = constName;
                 Scope = scope is null ? default : new EquatableArray<string>(scope);
                 Aliases = aliases is null ? default : new EquatableArray<string>(aliases);
+                Sensitive = sensitive;
             }
 
             public string Key { get; }
@@ -393,17 +411,20 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
             public EquatableArray<string> Aliases { get; }
 
+            public bool Sensitive { get; }
+
             public bool Equals(ConfigurationEntry other)
                 => Key == other.Key
                 && Product == other.Product
                 && Documentation == other.Documentation
                 && ConstName == other.ConstName
                 && Scope == other.Scope
-                && Aliases == other.Aliases;
+                && Aliases == other.Aliases
+                && Sensitive == other.Sensitive;
 
             public override bool Equals(object? obj) => obj is ConfigurationEntry other && Equals(other);
 
-            public override int GetHashCode() => HashCode.Combine(Key, Product, Documentation, ConstName, Scope, Aliases);
+            public override int GetHashCode() => HashCode.Combine(Key, Product, Documentation, ConstName, Scope, Aliases, Sensitive);
         }
 
         /// <summary>

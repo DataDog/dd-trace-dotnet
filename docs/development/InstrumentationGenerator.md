@@ -46,7 +46,7 @@ The GUI provides an interactive tree view for browsing assemblies and a live cod
 ./tracer/build.sh RunInstrumentationGenerator      # Linux/macOS
 
 # Via dotnet directly
-dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator/ --framework net10.0
+dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator/ --framework net11.0
 ```
 
 #### GUI Workflow
@@ -65,7 +65,7 @@ The CLI exposes the same generation logic as a command-line tool, suitable for s
 
 ```bash
 # Via dotnet run
-dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net10.0 -- \
+dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- \
   generate <assembly-path> --type <type> --method <method> [options]
 
 # Or install as a global tool

@@ -1,0 +1,31 @@
+model: claude-opus-4-8
+runs: 3
+
+instruction_files:
+  - AGENTS.md
+  - .claude/skills/bump-libdatadog/SKILL.md
+  - .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh
+
+default_level: gate
+presets:
+  gate:
+    cases:
+      - dotnet-tracer-logging-terminology-004
+      - dotnet-tracer-nuget-scope-hallucination-008
+      - dotnet-tracer-repo-nav-integration-001
+      - dotnet-tracer-confirm-instrumentation-011
+      - dotnet-tracer-bump-libdatadog-013
+      - dotnet-tracer-control-context-propagation-016
+    runs: 8
+  minimum:
+    cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
+    runs: 4
+  full:
+    runs: 3
+
+# These thresholds decide when a *blocking* case's pairwise regression actually FAILs:
+policy:
+  noise_threshold: 1.0
+  pairwise_win_floor: 0.45
+  blocking_fail_floor: 0.45
+  blocking_fail_ci_upper: 0.55

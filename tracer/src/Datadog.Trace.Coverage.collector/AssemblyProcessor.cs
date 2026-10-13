@@ -29,6 +29,8 @@ namespace Datadog.Trace.Coverage.Collector
 {
     internal class AssemblyProcessor
     {
+        internal const string StagingDirectoryPrefix = ".ddc-";
+
         private static readonly string? ExcludeFromCodeCoverageAttributeFullName = typeof(ExcludeFromCodeCoverageAttribute).FullName;
         private static readonly string? AvoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
         private static readonly string? CoveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
@@ -744,7 +746,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var tracerAssemblyLocation = CopyRequiredAssemblies(assemblyDefinition, tracerTarget);
                     assemblyResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
-                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob);
+                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob, _logger);
                 }
 
                 _logger.Debug($"Done: {_assemblyFilePath} [Modified:{isDirty}]");
@@ -783,13 +785,163 @@ namespace Datadog.Trace.Coverage.Collector
         /// <param name="assemblyFilePath">The assembly path to overwrite.</param>
         /// <param name="strongNameKeyBlob">The optional strong-name key used when rewriting signed assemblies.</param>
         internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
+
+        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, ICollectorLogger logger)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger);
+
+        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, replaceFile, logger: null);
+
+        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile, ICollectorLogger? logger)
         {
             using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(assemblyFilePath);
-            assemblyDefinition.Write(assemblyFilePath, new WriterParameters
+            var targetDirectory = Path.GetDirectoryName(assemblyFilePath) ?? string.Empty;
+            var stagingDirectory = Path.Combine(targetDirectory, StagingDirectoryPrefix + Path.GetRandomFileName());
+            // File.Replace requires the same volume, and Cecil writes the PDB basename into the assembly.
+            Directory.CreateDirectory(stagingDirectory);
+            var stagedAssemblyPath = Path.Combine(stagingDirectory, Path.GetFileName(assemblyFilePath));
+            var stagedSymbolsPath = Path.ChangeExtension(stagedAssemblyPath, ".pdb");
+            var assemblyBackupPath = Path.Combine(stagingDirectory, ".assembly.backup");
+            var symbolsBackupPath = Path.Combine(stagingDirectory, ".symbols.backup");
+            var symbolsPath = Path.ChangeExtension(assemblyFilePath, ".pdb");
+            var published = false;
+
+            try
             {
-                WriteSymbols = true,
-                StrongNameKeyBlob = strongNameKeyBlob
-            });
+                // Cecil truncates this copy when writing, preserving the original Unix mode bits for publication.
+                File.Copy(assemblyFilePath, stagedAssemblyPath);
+                assemblyDefinition.Write(stagedAssemblyPath, new WriterParameters
+                {
+                    WriteSymbols = true,
+                    StrongNameKeyBlob = strongNameKeyBlob
+                });
+
+                ValidateStagedAssemblyAndSymbols(stagedAssemblyPath);
+
+                ReplaceTargetFiles(stagedAssemblyPath, stagedSymbolsPath, assemblyFilePath, symbolsPath, assemblyBackupPath, symbolsBackupPath, replaceFile);
+                published = true;
+            }
+            finally
+            {
+                TryDeleteStagedFile(stagedAssemblyPath, logger);
+                TryDeleteStagedFile(stagedSymbolsPath, logger);
+                if (published)
+                {
+                    TryDeleteStagedFile(assemblyBackupPath, logger);
+                    TryDeleteStagedFile(symbolsBackupPath, logger);
+                }
+
+                TryDeleteStagingDirectory(stagingDirectory, logger);
+            }
+        }
+
+        private static void ValidateStagedAssemblyAndSymbols(string stagedAssemblyPath)
+        {
+            using var stagedAssembly = AssemblyDefinition.ReadAssembly(stagedAssemblyPath, new ReaderParameters { ReadSymbols = true, InMemory = true });
+            if (!stagedAssembly.MainModule.HasSymbols)
+            {
+                throw new InvalidOperationException($"Rewritten symbols could not be read from '{Path.ChangeExtension(stagedAssemblyPath, ".pdb")}'.");
+            }
+        }
+
+        private static void ReplaceTargetFiles(
+            string stagedAssemblyPath,
+            string stagedSymbolsPath,
+            string assemblyFilePath,
+            string symbolsPath,
+            string assemblyBackupPath,
+            string symbolsBackupPath,
+            Action<string, string, string?> replaceFile)
+        {
+            if (!File.Exists(stagedSymbolsPath))
+            {
+                throw new InvalidOperationException($"Rewritten symbols were not created at '{stagedSymbolsPath}'.");
+            }
+
+            try
+            {
+                replaceFile(stagedSymbolsPath, symbolsPath, symbolsBackupPath);
+                replaceFile(stagedAssemblyPath, assemblyFilePath, assemblyBackupPath);
+            }
+            catch (Exception publicationException)
+            {
+                var assemblyRollbackException = TryRestoreBackup(assemblyBackupPath, assemblyFilePath, replaceFile);
+                var symbolsRollbackException = TryRestoreBackup(symbolsBackupPath, symbolsPath, replaceFile);
+                if (assemblyRollbackException is not null || symbolsRollbackException is not null)
+                {
+                    var exceptions = new List<Exception> { publicationException };
+                    if (assemblyRollbackException is not null)
+                    {
+                        exceptions.Add(assemblyRollbackException);
+                    }
+
+                    if (symbolsRollbackException is not null)
+                    {
+                        exceptions.Add(symbolsRollbackException);
+                    }
+
+                    throw new AggregateException("Failed to publish the rewritten assembly and to restore its original files.", exceptions);
+                }
+
+                throw;
+            }
+        }
+
+        private static Exception? TryRestoreBackup(string backupPath, string targetPath, Action<string, string, string?> replaceFile)
+        {
+            if (!File.Exists(backupPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                if (File.Exists(targetPath))
+                {
+                    replaceFile(backupPath, targetPath, null);
+                }
+                else
+                {
+                    File.Move(backupPath, targetPath);
+                }
+
+                return null;
+            }
+            catch (Exception exception)
+            {
+                return exception;
+            }
+        }
+
+        private static void TryDeleteStagedFile(string filePath, ICollectorLogger? logger)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.Warning($"Failed to remove coverage rewrite staging file '{filePath}': {ex}");
+            }
+        }
+
+        private static void TryDeleteStagingDirectory(string directoryPath, ICollectorLogger? logger)
+        {
+            try
+            {
+                if (Directory.Exists(directoryPath) && !Directory.EnumerateFileSystemEntries(directoryPath).Any())
+                {
+                    Directory.Delete(directoryPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.Warning($"Failed to remove coverage rewrite staging directory '{directoryPath}': {ex}");
+            }
         }
 
         internal static bool IsIgnoredAssembly(string? assemblyFileName)

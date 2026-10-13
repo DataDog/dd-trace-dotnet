@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using FluentAssertions;
 using Xunit;
@@ -84,6 +86,32 @@ public class StackReporterTests
         StackFrame[] mockFrames = [];
         var result = StackReporter.GetStack(5, 100, "test", mockFrames);
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void GivenANormalStack_WhenGetStackIsCalledWithoutFrames_ThenTheStackIsCaptured()
+    {
+        var result = StackReporter.GetStack(32, 75, "test");
+
+        result.Should().NotBeNull();
+        (result["frames"] as List<Dictionary<string, object>>).Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void GivenANearlyExhaustedStack_WhenGetStackIsCalledWithoutFrames_ThenReturnsNullWithoutWalking()
+    {
+        RecurseUntilTheStackIsNearlyExhausted().Should().BeNull();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static Dictionary<string, object> RecurseUntilTheStackIsNearlyExhausted()
+    {
+        if (ExecutionStackGuard.HasSufficientStack())
+        {
+            return RecurseUntilTheStackIsNearlyExhausted();
+        }
+
+        return StackReporter.GetStack(32, 75, "test");
     }
 
     private StackFrame[] CreateStackForTests(int numberOfElements)

@@ -1,11 +1,10 @@
 Template:
-Segments: 
+Segments:
 
 {
     "ref": "@duration"
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,

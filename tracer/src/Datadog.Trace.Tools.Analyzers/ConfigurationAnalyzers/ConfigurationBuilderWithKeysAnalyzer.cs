@@ -4,12 +4,20 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.SourceGenerators.Helpers;
 using Datadog.Trace.Tools.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 {
@@ -44,11 +52,22 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             isEnabledByDefault: true,
             description: "ConfigurationBuilder.WithKeys method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes, not variables or computed values.");
 
+        private static readonly DiagnosticDescriptor RedactSensitiveConfigurationRule = new(
+            id: "DD0015",
+            title: "Redact sensitive configuration values",
+            messageFormat: "Sensitive configuration key '{0}' must be read with AsRedactedString, AsRedactedStringResult, AsRedactedDictionaryResult, or AsStringResult with compile-time recordValue: false",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Sensitive configuration values must not be recorded in configuration telemetry.");
+
+        private static SensitiveKeysCache? _sensitiveKeysCache;
+
         /// <summary>
         /// Gets the supported diagnostics
         /// </summary>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, Diagnostics.MissingRequiredType];
+            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, RedactSensitiveConfigurationRule, Diagnostics.MissingRequiredType];
 
         /// <summary>
         /// Initialize the analyzer
@@ -80,15 +99,17 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                     return;
                 }
 
+                TryGetSensitiveKeys(compilationContext.Options, compilationContext.CancellationToken, out var sensitiveKeys);
+
                 var targetTypes = new TargetTypeSymbols(configurationBuilder, configurationKeys, platformKeys);
 
                 compilationContext.RegisterSyntaxNodeAction(
-                    c => AnalyzeInvocationExpression(c, in targetTypes),
+                    c => AnalyzeInvocationExpression(c, in targetTypes, sensitiveKeys),
                     SyntaxKind.InvocationExpression);
             });
         }
 
-        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, in TargetTypeSymbols targetTypes)
+        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, in TargetTypeSymbols targetTypes, ImmutableHashSet<string> sensitiveKeys)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -118,11 +139,17 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             if (argumentList?.Arguments.Count > 0)
             {
                 var argument = argumentList.Arguments[0];
-                AnalyzeConfigurationArgument(context, argument, WellKnownTypeNames.WithKeysMethodName, targetTypes);
+                AnalyzeConfigurationArgument(context, invocation, argument, WellKnownTypeNames.WithKeysMethodName, targetTypes, sensitiveKeys);
             }
         }
 
-        private static void AnalyzeConfigurationArgument(SyntaxNodeAnalysisContext context, ArgumentSyntax argument, string methodName, TargetTypeSymbols targetTypes)
+        private static void AnalyzeConfigurationArgument(
+            SyntaxNodeAnalysisContext context,
+            InvocationExpressionSyntax invocation,
+            ArgumentSyntax argument,
+            string methodName,
+            TargetTypeSymbols targetTypes,
+            ImmutableHashSet<string> sensitiveKeys)
         {
             var expression = argument.Expression;
 
@@ -141,7 +168,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 
                 case MemberAccessExpressionSyntax memberAccess:
                     // Check if this is accessing a constant from PlatformKeys or ConfigurationKeys
-                    if (!IsValidConfigurationConstant(memberAccess, context.SemanticModel, targetTypes))
+                    if (!TryGetValidConfigurationConstant(memberAccess, context.SemanticModel, targetTypes, out var field))
                     {
                         // This is accessing something else - report diagnostic
                         var memberName = memberAccess.ToString();
@@ -151,6 +178,13 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                             methodName,
                             memberName);
                         context.ReportDiagnostic(memberDiagnostic);
+                    }
+                    else if (field?.ConstantValue is string key
+                          && sensitiveKeys.Contains(key)
+                          && !IsRedactedRead(invocation, context.SemanticModel, context.CancellationToken, out var accessorInvocation))
+                    {
+                        var location = accessorInvocation is null ? invocation.GetLocation() : GetInvocationLocation(accessorInvocation);
+                        context.ReportDiagnostic(Diagnostic.Create(RedactSensitiveConfigurationRule, location, key));
                     }
 
                     break;
@@ -179,24 +213,153 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             }
         }
 
-        private static bool IsValidConfigurationConstant(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel, TargetTypeSymbols targetTypes)
+        private static bool TryGetValidConfigurationConstant(
+            MemberAccessExpressionSyntax memberAccess,
+            SemanticModel semanticModel,
+            TargetTypeSymbols targetTypes,
+            out IFieldSymbol? field)
         {
             var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
-            if (symbolInfo.Symbol is IFieldSymbol field)
+            if (symbolInfo.Symbol is IFieldSymbol fieldSymbol)
             {
                 // Check if this is a const string field
-                if (field.IsConst && field.Type?.SpecialType == SpecialType.System_String)
+                if (fieldSymbol.IsConst && fieldSymbol.Type?.SpecialType == SpecialType.System_String)
                 {
-                    var containingType = field.ContainingType;
+                    var containingType = fieldSymbol.ContainingType;
                     if (containingType != null)
                     {
                         // Check if the containing type is PlatformKeys or ConfigurationKeys (or their nested classes)
-                        return IsValidConfigurationClass(containingType, targetTypes);
+                        if (IsValidConfigurationClass(containingType, targetTypes))
+                        {
+                            field = fieldSymbol;
+                            return true;
+                        }
                     }
                 }
             }
 
+            field = null;
             return false;
+        }
+
+        private static bool IsRedactedRead(
+            InvocationExpressionSyntax withKeysInvocation,
+            SemanticModel semanticModel,
+            CancellationToken cancellationToken,
+            out InvocationExpressionSyntax? accessorInvocation)
+        {
+            if (semanticModel.GetOperation(withKeysInvocation, cancellationToken) is not IInvocationOperation withKeysOperation)
+            {
+                accessorInvocation = null;
+                return false;
+            }
+
+            IOperation current = withKeysOperation;
+            while (current.Parent is IParenthesizedOperation or IConversionOperation)
+            {
+                current = current.Parent;
+            }
+
+            IInvocationOperation? accessorOperation = current.Parent as IInvocationOperation;
+            if (accessorOperation is null
+             && current.Parent is IArgumentOperation argumentOperation
+             && argumentOperation.Parent is IInvocationOperation extensionAccessorOperation)
+            {
+                accessorOperation = extensionAccessorOperation;
+            }
+
+            if (accessorOperation is null)
+            {
+                accessorInvocation = null;
+                return false;
+            }
+
+            accessorInvocation = accessorOperation.Syntax as InvocationExpressionSyntax;
+            if (accessorOperation.TargetMethod.IsStatic
+             || !SymbolEqualityComparer.Default.Equals(accessorOperation.TargetMethod.ContainingType, withKeysOperation.TargetMethod.ReturnType))
+            {
+                return false;
+            }
+
+            if (accessorOperation.TargetMethod.Name is "AsRedactedString" or "AsRedactedStringResult" or "AsRedactedDictionaryResult")
+            {
+                return true;
+            }
+
+            if (accessorOperation.TargetMethod.Name != "AsStringResult")
+            {
+                return false;
+            }
+
+            var recordValueArgument = accessorOperation.Arguments.FirstOrDefault(x => x.Parameter?.Name == "recordValue");
+            return recordValueArgument?.Value.ConstantValue is { HasValue: true, Value: false };
+        }
+
+        private static Location GetInvocationLocation(InvocationExpressionSyntax invocation)
+        {
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                return Location.Create(invocation.SyntaxTree, TextSpan.FromBounds(memberAccess.Name.SpanStart, invocation.Span.End));
+            }
+
+            return invocation.GetLocation();
+        }
+
+        private static bool TryGetSensitiveKeys(AnalyzerOptions options, CancellationToken cancellationToken, out ImmutableHashSet<string> sensitiveKeys)
+        {
+            var file = options.AdditionalFiles.FirstOrDefault(
+                x => Path.GetFileName(x.Path).Equals(Constants.SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase));
+            if (file is null)
+            {
+                sensitiveKeys = ImmutableHashSet<string>.Empty;
+                return false;
+            }
+
+            try
+            {
+                var content = file.GetText(cancellationToken)?.ToString();
+                if (string.IsNullOrEmpty(content))
+                {
+                    sensitiveKeys = ImmutableHashSet<string>.Empty;
+                    return false;
+                }
+
+                var cached = Volatile.Read(ref _sensitiveKeysCache);
+                if (cached is not null && cached.Content == content)
+                {
+                    sensitiveKeys = cached.Keys;
+                    return true;
+                }
+
+                var configurations = YamlReader.ParseSupportedConfigurations(content!).Configurations;
+                if (configurations.Count == 0)
+                {
+                    sensitiveKeys = ImmutableHashSet<string>.Empty;
+                    return false;
+                }
+
+                var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+                foreach (var configuration in configurations)
+                {
+                    if (configuration.Value.Sensitive)
+                    {
+                        builder.Add(configuration.Key);
+                    }
+                }
+
+                sensitiveKeys = builder.ToImmutable();
+                Interlocked.Exchange(ref _sensitiveKeysCache, new SensitiveKeysCache(content!, sensitiveKeys));
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                sensitiveKeys = ImmutableHashSet<string>.Empty;
+                return false;
+            }
         }
 
         private static bool IsValidConfigurationClass(INamedTypeSymbol typeSymbol, TargetTypeSymbols targetTypes)
@@ -233,6 +396,19 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 ConfigurationKeys = configurationKeys;
                 PlatformKeys = platformKeys;
             }
+        }
+
+        private sealed class SensitiveKeysCache
+        {
+            public SensitiveKeysCache(string content, ImmutableHashSet<string> keys)
+            {
+                Content = content;
+                Keys = keys;
+            }
+
+            public string Content { get; }
+
+            public ImmutableHashSet<string> Keys { get; }
         }
     }
 }

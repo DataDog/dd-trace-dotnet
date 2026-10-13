@@ -31,6 +31,8 @@
 #include "ScopeFinalizer.h"
 
 #include <chrono>
+#include <fstream>
+#include <sstream>
 #include <thread>
 
 #include "shared/src/native-src/dd_filesystem.hpp"
@@ -564,6 +566,60 @@ std::string OpSysTools::GetProcessName()
     return name;
 #endif
 }
+
+#ifdef LINUX
+std::optional<std::uint64_t> OpSysTools::ParseAvailableSignalQueueSlots(std::istream& status)
+{
+    const std::string prefix = "SigQ:";
+
+    std::string line;
+    while (std::getline(status, line))
+    {
+        if (line.rfind(prefix, 0) != 0)
+        {
+            continue;
+        }
+
+        auto separator = line.find('/', prefix.size());
+        if (separator == std::string::npos)
+        {
+            return std::nullopt;
+        }
+
+        std::uint64_t queued = 0;
+        std::uint64_t limit = 0;
+
+        std::istringstream queuedField(line.substr(prefix.size(), separator - prefix.size()));
+        std::istringstream limitField(line.substr(separator + 1));
+        if (!(queuedField >> queued) || !(limitField >> limit))
+        {
+            return std::nullopt;
+        }
+
+        // An unlimited RLIMIT_SIGPENDING is reported as RLIM_INFINITY, which needs no special case:
+        // it dwarfs any plausible queued count and yields a headroom large enough for any caller.
+        return (limit > queued) ? limit - queued : std::uint64_t{0};
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::uint64_t> OpSysTools::GetAvailableSignalQueueSlots()
+{
+    std::ifstream status("/proc/self/status");
+    if (!status.is_open())
+    {
+        return std::nullopt;
+    }
+
+    return ParseAvailableSignalQueueSlots(status);
+}
+#else
+std::optional<std::uint64_t> OpSysTools::GetAvailableSignalQueueSlots()
+{
+    return std::nullopt;
+}
+#endif
 
 bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
 {

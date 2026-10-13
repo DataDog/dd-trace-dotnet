@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     ReturnTypeName = "Coverlet.Core.CoverageResult",
     ParameterTypeNames = [],
     MinimumVersion = "3.0.0",
-    MaximumVersion = "6.*.*",
+    MaximumVersion = "10.*.*",
     IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
