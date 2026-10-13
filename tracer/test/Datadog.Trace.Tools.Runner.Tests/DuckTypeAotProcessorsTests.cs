@@ -1529,7 +1529,7 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void GenerateProcessorShouldUseResolvedDatadogTraceAssemblyForContractMetadata()
     {
         var tempDirectory = CreateTempDirectory();
@@ -1546,9 +1546,9 @@ public class DuckTypeAotProcessorsTests
             var expectedDatadogTraceVersion = AssemblyName.GetAssemblyName(datadogTraceNetStandardPath).Version?.ToString() ?? "0.0.0.0";
             var expectedDatadogTraceMvid = ResolveAssemblyMvidForTest(datadogTraceNetStandardPath);
             var runtimeDatadogTraceMvid = ResolveAssemblyMvidForTest(typeof(Datadog.Trace.Tracer).Assembly.Location);
-            expectedDatadogTraceMvid.Should().NotBe(
-                runtimeDatadogTraceMvid,
-                "this test must use a Datadog.Trace assembly artifact that differs from the runner runtime assembly");
+
+            // The test needs a Datadog.Trace build other than the runner's: the runners of netcoreapp2.1/3.0 run the netstandard2.0 one.
+            Skip.If(string.Equals(expectedDatadogTraceMvid, runtimeDatadogTraceMvid, StringComparison.Ordinal), "The runner runs on the netstandard2.0 build of Datadog.Trace.");
 
             var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ContractMetadataSelection.dll");
             var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-contract-metadata-selection.json");

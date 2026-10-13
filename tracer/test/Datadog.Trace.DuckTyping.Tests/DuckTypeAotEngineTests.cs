@@ -916,6 +916,8 @@ namespace Datadog.Trace.DuckTyping.Tests
             ((IDuckType)proxy).Type.Should().Be(voidTaskResultTaskType);
         }
 
+#if !NETFRAMEWORK
+        // .NET Framework's async methods return a Task<VoidTaskResult>, not a box deriving from it.
         [Fact]
         public async Task FallbackServesTheClosestRegisteredBaseClassBeforeInterfaces()
         {
@@ -951,6 +953,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             static async Task DelayedAsync() => await Task.Delay(1).ConfigureAwait(false);
         }
+#endif
 
         [Fact]
         public void FallbackDoesNotServeTypesARegistryCanName()
