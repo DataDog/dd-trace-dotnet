@@ -66,6 +66,8 @@ internal sealed class AotInstrumentReport
 
         public int Compatible { get; set; }
 
+        public int ReplayedFailures { get; set; }
+
         public List<string> Warnings { get; set; } = new();
     }
 

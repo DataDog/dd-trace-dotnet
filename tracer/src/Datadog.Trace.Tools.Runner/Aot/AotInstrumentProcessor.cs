@@ -211,7 +211,7 @@ internal static class AotInstrumentProcessor
                     duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
                     if (duckTypeRegistry is not null)
                     {
-                        report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, Warnings = duckTypeRegistry.Warnings.ToList() };
+                        report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, ReplayedFailures = duckTypeRegistry.ReplayedFailures, Warnings = duckTypeRegistry.Warnings.ToList() };
                         AotLog.Info($"DuckType AOT registry: {duckTypeRegistry.Compatible}/{duckTypeRegistry.Mappings} proxies -> {duckTypeRegistry.AssemblyPath}");
                     }
                 }
