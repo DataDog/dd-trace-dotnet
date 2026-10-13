@@ -659,13 +659,11 @@ namespace Datadog.Trace.DuckTyping
             /// Gets or sets a value indicating whether the mapping is the one of a duck typing constraint of a CallTarget
             /// integration (see <see cref="EnterCallTarget"/>); null otherwise.
             /// </summary>
-            [JsonProperty("callTarget", NullValueHandling = NullValueHandling.Ignore)]
             public bool? CallTarget { get; set; }
 
             /// <summary>
             /// Gets or sets false when dynamic duck typing failed to create the proxy; null otherwise.
             /// </summary>
-            [JsonProperty("canCreate", NullValueHandling = NullValueHandling.Ignore)]
             public bool? CanCreate { get; set; }
         }
 
