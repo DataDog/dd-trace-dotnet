@@ -25,6 +25,20 @@ capture to Finally, which removes it even when delivery is rejected. If OpenFeat
 replaces the result after a hook failure, the weak association can be collected.
 No full evaluation context is retained or added to public flag metadata.
 
+## Agent-only evaluation events
+
+Provider activation subscribes to the tracer's shared Agent discovery service.
+The `flagevaluation` writer starts only after discovery confirms EVP support at
+the configured Agent address. Until then, evaluations still work, but the EVP
+hook skips context capture and queueing; there is no startup buffer. A later
+successful discovery enables future observations. Agent-address changes close
+admission until that address is discovered, without replacing the writer or its
+service tags. Flush and shutdown still drain observations already accepted.
+
+Discovery reports capabilities, not continuous health: a later Agent outage
+retains the existing bounded, best-effort sends. This does not add direct-intake
+fallback or change the separate exposure transport.
+
 ## Focused tests
 
 Use the SDK pinned in `global.json`:

@@ -36,7 +36,8 @@ public class FlagEvaluationTracerLifecycleTests(ITestOutputHelper output)
         var traceWriter = new Mock<IAgentWriter>();
         traceWriter.Setup(writer => writer.FlushTracesAsync()).Returns(Task.CompletedTask);
         traceWriter.Setup(writer => writer.FlushAndCloseAsync()).Returns(Task.CompletedTask);
-        await using var tracer = TracerHelper.Create(Settings(agent.Port), agentWriter: traceWriter.Object);
+        var settings = Settings(agent.Port);
+        await using var tracer = TracerHelper.Create(settings, agentWriter: traceWriter.Object, discoveryService: FlagEvaluationTestDiscovery.Available(settings));
         var module = tracer.TracerManager.FeatureFlags!;
         module.Activate();
         module.EvaluationWriter!.TryEnqueue(Observation()).Should().BeTrue();
@@ -62,7 +63,8 @@ public class FlagEvaluationTracerLifecycleTests(ITestOutputHelper output)
         traceWriter.Setup(writer => writer.FlushAndCloseAsync()).Returns(Task.CompletedTask);
         var telemetry = new Mock<ITelemetryController>();
         telemetry.Setup(controller => controller.DisposeAsync()).Returns(Task.CompletedTask);
-        var tracer = TracerHelper.Create(Settings(agent.Port), agentWriter: traceWriter.Object, telemetryController: telemetry.Object);
+        var settings = Settings(agent.Port);
+        var tracer = TracerHelper.Create(settings, agentWriter: traceWriter.Object, telemetryController: telemetry.Object, discoveryService: FlagEvaluationTestDiscovery.Available(settings));
         try
         {
             var module = tracer.TracerManager.FeatureFlags!;

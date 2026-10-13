@@ -79,7 +79,7 @@ public class FeatureFlagsModuleTests
                                      .GetField("_subscribers", BindingFlags.Instance | BindingFlags.NonPublic)!
                                      .GetValue(settings.Manager)!;
         var initialSubscriptions = subscribers.Count;
-        using var module = CreateModule(settings, new MockRcmSubscriptionManager());
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), discoveryService: FlagEvaluationTestDiscovery.Available(settings))!;
         if (activateEvaluationWriter)
         {
             module.Activate();
