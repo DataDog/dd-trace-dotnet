@@ -115,6 +115,37 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             return sequencePoints;
         }
 
+        /// <summary>
+        /// Gets the sequence points of the endpoint methods from the PDB of an assembly. NativeAOT applications have no assembly
+        /// or PDB files: their locations come from the build (see <see cref="AddBuildTimeLocations"/>).
+        /// </summary>
+        private static Dictionary<int, CachedSequencePoint>? GetPdbEndpointSequencePoints(Assembly assembly)
+        {
+#if NET6_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                return null;
+            }
+#endif
+
+            try
+            {
+                // metadataOnly: true avoids PrefetchEntireImage, which would otherwise read the full DLL into memory.
+                // We only need MetadataReader (for type/method enumeration) and the PDB reader (for sequence points).
+                using var reader = DatadogMetadataReader.CreatePdbReader(assembly, metadataOnly: true);
+                if (reader is { IsPdbExist: true })
+                {
+                    return GetEndpointSequencePoints(reader, assembly.FullName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error while getting endpoints for {AssemblyName} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+            }
+
+            return null;
+        }
+
         internal void SetCodeOriginForExitSpan(Span? span)
         {
             if (span?.Tags is WebTags { SpanKind: SpanKinds.Server })
@@ -329,23 +360,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     return AssemblyAnalysis.Skipped;
                 }
 
-                Dictionary<int, CachedSequencePoint>? sequencePoints = null;
-                try
-                {
-                    // metadataOnly: true avoids PrefetchEntireImage, which would otherwise read the full DLL into memory.
-                    // We only need MetadataReader (for type/method enumeration) and the PDB reader (for sequence points).
-                    using var reader = DatadogMetadataReader.CreatePdbReader(assembly, metadataOnly: true);
-                    if (reader is { IsPdbExist: true })
-                    {
-                        sequencePoints = GetEndpointSequencePoints(reader, assembly.FullName);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "Error while getting endpoints for {AssemblyName} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
-                    sequencePoints = null;
-                }
-
+                var sequencePoints = GetPdbEndpointSequencePoints(assembly);
                 Dictionary<string, CachedSequencePoint>? buildTimeLocations = null;
                 if (sequencePoints is null)
                 {

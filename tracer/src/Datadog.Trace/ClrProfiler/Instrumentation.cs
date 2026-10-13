@@ -384,8 +384,10 @@ namespace Datadog.Trace.ClrProfiler
                 // intentionally using string interpolation, as this is only called once, and avoids array allocation
 #pragma warning disable DDLOG004 // Message templates should be constant
 #if NET5_0_OR_GREATER
-                // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
-                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+                // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+. NativeAOT applications have no assembly files:
+                // the tracer is in the executable.
+                var location = RuntimeFeature.IsDynamicCodeSupported ? asm.Location : Environment.ProcessPath;
+                Log.Information($"[Assembly metadata] Location: {location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #else
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #endif
