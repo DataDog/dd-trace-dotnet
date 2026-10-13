@@ -72,7 +72,8 @@ public class AotInstrumentNativeHostIntegrationTests
             callTarget.Value<int>("Bound").Should().BeGreaterThan(0, callTarget.ToString());
             callTarget.Value<int>("InstantiationDeferred").Should().Be(0, callTarget.ToString());
             var duckTypeRegistry = report["DuckTypeRegistry"]!;
-            duckTypeRegistry.Value<int>("Compatible").Should().Be(duckTypeRegistry.Value<int>("Mappings"), duckTypeRegistry.ToString());
+            // Every mapping is created, or fails like with dynamic duck typing (the declared mappings of Datadog's proxies include failures).
+            (duckTypeRegistry.Value<int>("Compatible") + duckTypeRegistry.Value<int>("ReplayedFailures")).Should().Be(duckTypeRegistry.Value<int>("Mappings"), duckTypeRegistry.ToString());
 
             for (var arguments = 0; arguments < 10; arguments++)
             {

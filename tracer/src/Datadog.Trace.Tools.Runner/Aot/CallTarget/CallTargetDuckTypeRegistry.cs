@@ -38,6 +38,7 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
         _resolveType = resolveType;
         Mappings = _results.Count;
         Compatible = _results.Values.Count(r => r.Status == DuckTypeAotCompatibilityStatuses.Compatible && !r.ReplaysDynamicFailure);
+        ReplayedFailures = _results.Values.Count(r => r.ReplaysDynamicFailure);
         Warnings = emission.Warnings;
     }
 
@@ -50,6 +51,8 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
     public int Mappings { get; }
 
     public int Compatible { get; }
+
+    public int ReplayedFailures { get; }
 
     public IReadOnlyList<string> Warnings { get; }
 
