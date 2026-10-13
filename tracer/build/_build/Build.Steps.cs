@@ -83,6 +83,10 @@ partial class Build
     // they aren't published.
     AbsolutePath DuckTypeAotMapsDirectory => BuildArtifactsDirectory / "ducktype-aot-maps";
 
+    // NativeAOT applications use the net6.0 build of Datadog.Trace: the tests of older runtimes run other builds, whose code
+    // paths create other mappings.
+    bool RecordsDuckTypeAotMaps => IsLinux && Framework is not null && Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0);
+
     [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
@@ -2262,7 +2266,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
-                    .When(IsLinux, c => c.SetProcessEnvironmentVariable("DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY", DuckTypeAotMapsDirectory))
+                    .When(RecordsDuckTypeAotMaps, c => c.SetProcessEnvironmentVariable("DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY", DuckTypeAotMapsDirectory))
                     .SetLogsDirectory(TestLogsDirectory)
                     // Apply Docker and area restrictions without requiring the auto-instrumentation platform traits.
                     .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
@@ -2287,7 +2291,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
-                    .When(IsLinux, c => c.SetProcessEnvironmentVariable("DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY", DuckTypeAotMapsDirectory))
+                    .When(RecordsDuckTypeAotMaps, c => c.SetProcessEnvironmentVariable("DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY", DuckTypeAotMapsDirectory))
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
