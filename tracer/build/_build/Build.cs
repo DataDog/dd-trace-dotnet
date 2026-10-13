@@ -472,17 +472,20 @@ partial class Build : NukeBuild
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
 
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DdTrace))
-                .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetNoWarnDotNetCore3()
-                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
-                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
-                .SetProperty("BuildStandalone", "false")
-                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
+            BuildRunnerToolProject();
         });
+
+    void BuildRunnerToolProject()
+        => DotNetBuild(x => x
+            .SetProjectFile(Solution.GetProject(Projects.DdTrace))
+            .EnableNoRestore()
+            .EnableNoDependencies()
+            .SetConfiguration(BuildConfiguration)
+            .SetNoWarnDotNetCore3()
+            .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+            .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
+            .SetProperty("BuildStandalone", "false")
+            .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
 
     Target PackRunnerToolNuget => _ => _
         .Unlisted()

@@ -1750,6 +1750,9 @@ partial class Build
             DotnetBuild(duckTypingTestsProject, framework: null, noRestore: false, noDependencies: false);
             DotnetBuild(new[] { parityTestsProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
 
+            // Building the duck typing tests can rebuild Datadog.Trace: the runner must copy the same build (the lanes check it).
+            BuildRunnerToolProject();
+
             const string paritySeed = "20260301";
             var parityFilter = "FullyQualifiedName~DuckTypeAotFullSuiteParityIntegrationTests";
 
