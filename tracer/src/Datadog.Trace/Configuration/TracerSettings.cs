@@ -492,9 +492,11 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
                                       .AsBool(defaultValue: false);
 
-            ObfuscationQueryStringRegex = config
-                                         .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+            var obfuscationRegexResult = config
+                                        .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
+                                        .AsStringResult();
+            ObfuscationQueryStringRegex = obfuscationRegexResult.WithDefault(new DefaultResult<string>(TracerSettingsConstants.DefaultObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex));
+            ObfuscationQueryStringRegexWasConfigured = obfuscationRegexResult.ConfigurationResult.IsPresent;
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -550,7 +552,7 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
                                              defaultValue: new(ExtractBehavior.Continue, "continue"),
-                                             converter: x => x.ToLowerInvariant() switch
+                                             converter: x => StringUtil.ToLowerInvariant(x) switch
                                              {
                                                  "continue" => ExtractBehavior.Continue,
                                                  "restart" => ExtractBehavior.Restart,
@@ -741,7 +743,7 @@ namespace Datadog.Trace.Configuration
             }
 
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
-                                                  ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
+                                                  ? TrimSplitString(StringUtil.ToUpperInvariant(urlSubstringSkips), commaSeparator)
                                                   : [];
 
             var dbmPropagationMode = config
@@ -821,12 +823,7 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit)
                                     .AsInt32(2000, value => value > 0).Value;
 
-#if NET6_0_OR_GREATER
-            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
-#else
-            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
-            OtlpRuntimeMetricsEnabled = false;
-#endif
+            OtlpRuntimeMetricsEnabled = OtlpMetricsExportEnabled && RuntimeMetricsEnabled;
 
             // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
@@ -834,6 +831,10 @@ namespace Datadog.Trace.Configuration
             var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
             OtelTracesSpanMetricsEnabled = explicitSpanMetrics
                 ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
+
+            OtelThreadContextEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
+                .AsBool(defaultValue: false);
 
             if (OtelSemanticsEnabled)
             {
@@ -964,6 +965,16 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
         internal bool OpenTelemetryMetricsEnabled { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the OTLP metrics pipeline is enabled on this target framework.
+        /// </summary>
+        internal bool OtlpMetricsExportEnabled =>
+#if NET6_0_OR_GREATER
+            OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled;
+#else
+            false;
+#endif
+
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
         internal HashSet<string> OpenTelemetryMeterNames { get; }
@@ -1047,6 +1058,16 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/>
         internal bool OpenTelemetryLogsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the OTLP logs pipeline is enabled on this target framework.
+        /// </summary>
+        internal bool OtlpLogsExportEnabled =>
+#if NETCOREAPP3_1_OR_GREATER
+            OpenTelemetryLogsEnabled;
+#else
+            false;
+#endif
 
         /// <summary>
         /// Gets the OTLP protocol for logs export with fallback behavior.
@@ -1216,6 +1237,11 @@ namespace Datadog.Trace.Configuration
         internal string ObfuscationQueryStringRegex { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the query string obfuscation regex was explicitly configured, including an empty value.
+        /// </summary>
+        internal bool ObfuscationQueryStringRegexWasConfigured { get; }
+
+        /// <summary>
         /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
         /// </summary>
         internal bool QueryStringReportingEnabled { get; }
@@ -1330,6 +1356,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
         internal bool OtelSemanticsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the active trace and span identifiers of each thread are published
+        /// using the OpenTelemetry thread context protocol (OTEP 4947).
+        /// Only supported on Linux x64 and arm64. Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled"/>
+        internal bool OtelThreadContextEnabled { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.

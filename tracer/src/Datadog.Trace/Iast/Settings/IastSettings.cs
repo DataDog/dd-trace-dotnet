@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
@@ -82,7 +83,7 @@ internal sealed class IastSettings
             .WithKeys(ConfigurationKeys.Iast.TelemetryVerbosity)
             .GetAs(
                 defaultValue: new(IastMetricsVerbosityLevel.Information, "information"),
-                converter: value => value.ToLowerInvariant() switch
+                converter: value => StringUtil.ToLowerInvariant(value) switch
                 {
                     "off" => IastMetricsVerbosityLevel.Off,
                     "debug" => IastMetricsVerbosityLevel.Debug,

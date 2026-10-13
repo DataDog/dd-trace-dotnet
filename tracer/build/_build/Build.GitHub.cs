@@ -1343,12 +1343,12 @@ partial class Build
             await DownloadArtifact(client, destination, fileToDownload);
         }
 
-        // Ensure that the fleet-installer artifact is available for download, for later in the release
-        // We don't actually need the file now, we just need to make sure it's available, so that we can
-        // use it in GitLab later to build the OCI image.
+        // Ensure that the artifacts used by GitLab to build the OCI images are available for download.
+        // We don't actually need the files now, we just need to make sure they're available for later in the release.
         var tempDir = TempDirectory / Path.GetRandomFileName();
         Directory.CreateDirectory(tempDir);
         await DownloadArtifact(client, tempDir, $"{awsUri}fleet-installer.zip");
+        await DownloadArtifact(client, tempDir, $"{awsUri}otel-operator-startup-hook/OpenTelemetry.AutoInstrumentation.StartupHook.dll");
 
         // Overwrite the NuGet packages Azure DevOps built (in `artifactsPath`, what we actually push
         // to nuget.org) with the copies GitLab built and Authenticode-signed - see SignDlls and

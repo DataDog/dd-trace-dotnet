@@ -77,9 +77,10 @@ class Program
         // span and across the await below) must aggregate its ffe_* metadata onto THIS root span.
         using (SampleHelpers.CreateScope("ffe.root"))
         {
-            // Evaluated directly in the root span.
+            // simple-string uses the sync provider API, so the root-span assertion on its serial id
+            // also covers sync-path span enrichment.
             Evaluator.Evaluate("exposure-flag");
-            Evaluator.Evaluate("simple-string");
+            Evaluator.EvaluateSync("simple-string");
 
             // Child span on the same trace: the enrichment must still target the LOCAL ROOT, not the
             // child. The child span itself must NOT receive the ffe_* tags.

@@ -55,6 +55,7 @@ public class AppTrimmingTests : TestHelper
 
         await agent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
         var allLogs = agent.Telemetry
+                           .ToArray()
                            .Cast<TelemetryData>()
                            .OrderBy(x => x.SeqId)
                            .Select(x => x.TryGetPayload<LogsPayload>(TelemetryRequestTypes.RedactedErrorLogs))

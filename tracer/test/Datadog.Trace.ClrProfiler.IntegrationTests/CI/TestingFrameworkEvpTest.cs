@@ -345,6 +345,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
     protected void SetCIEnvironmentValues()
     {
+        ClearCIEnvironmentVariables();
         var current = GitInfo.GetCurrent();
         var ciDictionaryValues = new Dictionary<string, string>
         {

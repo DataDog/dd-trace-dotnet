@@ -10,6 +10,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
@@ -24,6 +25,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -392,6 +394,72 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             {
                 Directory.Delete(workspacePath, recursive: true);
             }
+        }
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("{}", true)]
+    [InlineData(null, false)]
+    public async Task CoverageBackfillSkipGateAllowsConfigurationsRemovedByBackend(string responseConfigurations, bool selectsTargetFramework)
+    {
+        ClearCoverageBackfillEnvironment();
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        try
+        {
+            var frameworkOption = selectsTargetFramework ? " --framework net10.0" : string.Empty;
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, $"dotnet test{frameworkOption} --collect \"Code Coverage;Format=Xml\"");
+            var settings = CreateSettings();
+            var testOptimization = CreateTestOptimization(settings, workspacePath, runId: "injected-run");
+            var configurationAttribute = responseConfigurations is null ? string.Empty : $", \"configurations\": {responseConfigurations}";
+            var responseJson = $$$"""
+                                 {
+                                   "data": [{"id": "test-id", "type": "test", "attributes": {
+                                     "name": "SimplePassTest", "suite": "Samples.XUnitTests.TestSuite"{{{configurationAttribute}}}
+                                   }}],
+                                   "meta": {"correlation_id": "correlation-id", "coverage": {"src/Calculator.cs": "wA=="}}
+                                 }
+                                 """;
+            var apiResponse = new Mock<IApiResponse>();
+            apiResponse.Setup(x => x.StatusCode).Returns(200);
+            apiResponse.Setup(x => x.GetStreamAsync()).ReturnsAsync(() => new MemoryStream(Encoding.UTF8.GetBytes(responseJson)));
+            var requestJson = string.Empty;
+            var apiRequest = new Mock<IApiRequest>();
+            apiRequest.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>()))
+                      .Callback<ArraySegment<byte>, string>((body, _) => requestJson = Encoding.UTF8.GetString(body.Array, body.Offset, body.Count))
+                      .ReturnsAsync(apiResponse.Object);
+            var requestFactory = new Mock<IApiRequestFactory>();
+            requestFactory.Setup(x => x.GetEndpoint(It.IsAny<string>())).Returns<string>(path => new Uri("http://localhost/" + path));
+            requestFactory.Setup(x => x.Create(It.IsAny<Uri>())).Returns(apiRequest.Object);
+            var tracerManagement = new Mock<ITestOptimizationTracerManagement>();
+            tracerManagement.Setup(x => x.EventPlatformProxySupport).Returns(EventPlatformProxySupport.V4);
+            tracerManagement.Setup(x => x.GetRequestFactory(It.IsAny<TracerSettings>(), It.IsAny<TimeSpan>())).Returns(requestFactory.Object);
+            testOptimization.Setup(x => x.TracerManagement).Returns(tracerManagement.Object);
+
+            var scope = SkippableTestsRequestScope.Create(testOptimization.Object, "Samples.XUnitTests");
+            var response = await TestOptimizationClient.Create(workspacePath, testOptimization.Object).GetSkippableTestsAsync(scope);
+            var requestConfigurations = JObject.Parse(requestJson)["data"]["attributes"]["configurations"].ToObject<TestsConfigurations>();
+            var client = new TestOptimizationClientStub(skippableTestsResponse: response);
+            var skippableFeature = TestOptimizationSkippableFeature.Create(settings, CreateRemoteSettingsResponse(testsSkippingEnabled: true), client, testOptimization.Object);
+            var candidate = skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests").Should().ContainSingle().Which;
+
+            skippableFeature.CanSkipWithCoverageBackfill(candidate, "Samples.XUnitTests", out var reason).Should().BeTrue();
+            reason.Should().BeEmpty();
+            if (selectsTargetFramework)
+            {
+                candidate.Configurations.Should().BeEquivalentTo(requestConfigurations);
+            }
+
+            requestConfigurations.TestBundle.Should().Be("Samples.XUnitTests");
+            skippableFeature.RecordTestSkipCoverageBackfill(candidate, "Samples.XUnitTests");
+            skippableFeature.IsCoverageBackfillSafe().Should().BeTrue();
+            CoverageBackfillDataStore.HasActualItrSkip(testOptimization.Object).Should().BeTrue();
+        }
+        finally
+        {
+            ClearCoverageBackfillEnvironment();
+            Directory.Delete(workspacePath, recursive: true);
         }
     }
 

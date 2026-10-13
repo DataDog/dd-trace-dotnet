@@ -345,14 +345,21 @@ namespace Datadog.Trace.Propagators
                 out var precedingMembers,
                 out var succeedingMembers,
                 out _);
+            var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+
             ExtractMember(
-                traceState,
+                additionalValues.AsSpan(),
                 "ot=",
                 out var otTraceState,
-                out _,
-                out _,
+                out var precedingOtMembers,
+                out var succeedingOtMembers,
                 out var hasOtTraceState);
-            var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+
+            if (otTraceState.Length > OtelTraceStateHelpers.MaxValueLength)
+            {
+                additionalValues = GetAdditionalValues(precedingOtMembers, succeedingOtMembers);
+                hasOtTraceState = false;
+            }
 
             return ParseDdMember(ddValues, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
         }

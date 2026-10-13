@@ -46,7 +46,16 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
 
 bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    // Enumerate all inliners and request rejit
+    std::vector<RejitRequest> requests;
+    const auto processed = GetRejitRequestsForInlinersInModule(moduleId, requests);
+    m_module->GetHandler()->EnqueueForRejit(std::move(requests));
+    return processed;
+}
+
+bool RejitHandlerModuleMethod::GetRejitRequestsForInlinersInModule(ModuleID moduleId,
+                                                                   std::vector<RejitRequest>& rejitRequests)
+{
+    // Enumerate all inliners
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
 
@@ -83,19 +92,18 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
         {
             COR_PRF_METHOD method;
             unsigned int total = 0;
-            std::vector<ModuleID> modules;
-            std::vector<mdMethodDef> methods;
+            std::vector<MethodIdentifier> methods;
             while (methodEnum->Next(1, &method, nullptr) == S_OK)
             {
                 DBG("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId, ",MethodDef=", method.methodId, "]");
-                modules.push_back(method.moduleId);
-                methods.push_back(method.methodId);
+                methods.emplace_back(method.moduleId, method.methodId);
                 total++;
             }
 
             if (total > 0)
             {
-                handler->EnqueueForRejit(modules, methods);
+                const auto requests = handler->GetRejitRequests(methods);
+                rejitRequests.insert(rejitRequests.end(), requests.begin(), requests.end());
                 Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
                               ",MethodDef=", currentMethodDef, "]");
             }
@@ -162,12 +170,25 @@ RejitHandler* RejitHandlerModule::GetHandler()
 
 ModuleMetadata* RejitHandlerModule::GetModuleMetadata()
 {
+    std::lock_guard<std::mutex> guard(m_metadata_lock);
     return m_metadata.get();
 }
 
-void RejitHandlerModule::SetModuleMetadata(ModuleMetadata* metadata)
+// A module lifetime is a shared lease, so several preprocessors can reach the same module at once. Creating
+// the metadata has to be a single atomic create-if-absent: a plain set would let the loser of the race delete
+// the object that a concurrent rewrite is already working through. Once published the pointer is never
+// replaced, so it stays valid for as long as the caller holds the lease.
+bool RejitHandlerModule::CreateModuleMetadataIfNotExists(RejitHandlerModuleMetadataCreatorFunc creator)
 {
-    m_metadata = std::unique_ptr<ModuleMetadata>(metadata);
+    std::lock_guard<std::mutex> guard(m_metadata_lock);
+
+    if (m_metadata != nullptr)
+    {
+        return false;
+    }
+
+    m_metadata = creator();
+    return true;
 }
 
 bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
@@ -185,6 +206,7 @@ bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
 
     auto newModuleInfo = creator(methodDef, this);
     updater(newModuleInfo.get());
+    m_newMethods.push_back(newModuleInfo.get());
     m_methods[methodDef] = std::move(newModuleInfo);
     return true;
 }
@@ -207,6 +229,14 @@ bool RejitHandlerModule::ContainsMethod(mdMethodDef methodDef)
 {
     std::lock_guard<std::mutex> guard(m_methods_lock);
     return m_methods.find(methodDef) != m_methods.end();
+}
+
+std::vector<RejitHandlerModuleMethod*> RejitHandlerModule::TakeNewMethods()
+{
+    std::vector<RejitHandlerModuleMethod*> newMethods;
+    std::lock_guard<std::mutex> guard(m_methods_lock);
+    newMethods.swap(m_newMethods);
+    return newMethods;
 }
 
 void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
@@ -239,15 +269,63 @@ void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
     }
 }
 
+void RejitHandlerModule::RemoveProcessedInlinerModule(ModuleID moduleId)
+{
+    std::lock_guard<std::mutex> moduleGuard(m_ngenProcessedInlinerModulesLock);
+    m_ngenProcessedInlinerModules.erase(moduleId);
+}
+
 //
 // RejitHandler
 //
 
-void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, bool callRevertExplicitly)
+void RejitHandler::RequestRejit(const std::vector<RejitRequest>& rejitRequests, bool callRevertExplicitly)
 {
-    if (IsShutdownRequested())
+    if (IsShutdownRequested() || rejitRequests.empty())
     {
         return;
+    }
+
+    std::vector<ModuleID> modulesVector;
+    std::vector<mdMethodDef> modulesMethodDef;
+    std::vector<ReadLock> lifetimeLocks;
+    std::unordered_map<ModuleLifetime*, bool> lifetimeStates;
+
+    modulesVector.reserve(rejitRequests.size());
+    modulesMethodDef.reserve(rejitRequests.size());
+    lifetimeLocks.reserve(rejitRequests.size());
+
+    // A ModuleID is invalid after ModuleUnloadStarted returns, and Desktop CLR's RequestReJIT path can
+    // dereference it directly. Keep every captured module generation alive through the CLR call. Acquire each
+    // generation once so a batch containing several methods from one module never recursively locks its
+    // shared_mutex. Teardown holds at most one lifetime write lock at a time (under m_module_cleanup_lock), so
+    // the batch's read leases cannot form a cycle among themselves. A read lease can still wait behind a queued
+    // writer (SRWLOCK blocks new readers), and that writer waits for every current lease holder. Callers must
+    // therefore not hold a lock that a lease holder can wait on, such as Dataflow::_cs, which rejitters take
+    // under the NotifyReJITParameters lease.
+    for (const auto& request : rejitRequests)
+    {
+        if (request.lifetime == nullptr)
+        {
+            continue;
+        }
+
+        const auto [lifetimeState, inserted] = lifetimeStates.emplace(request.lifetime.get(), false);
+        if (inserted)
+        {
+            auto lifetimeLock = request.TryAcquire();
+            lifetimeState->second = lifetimeLock.has_value();
+            if (lifetimeLock.has_value())
+            {
+                lifetimeLocks.push_back(std::move(lifetimeLock.value()));
+            }
+        }
+
+        if (lifetimeState->second)
+        {
+            modulesVector.push_back(request.moduleId);
+            modulesMethodDef.push_back(request.methodToken);
+        }
     }
 
     // Request the ReJIT for all integrations found in the module.
@@ -286,6 +364,11 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         {
             hr = m_profilerInfo->RequestReJIT((ULONG) modulesVector.size(), &modulesVector[0], &modulesMethodDef[0]);
         }
+
+        // ModuleID validity is only required through the CLR calls. Do not make unload wait for logging or
+        // history bookkeeping.
+        lifetimeLocks.clear();
+
         if (SUCCEEDED(hr))
         {
             Logger::Debug("Request ReJIT done for ", modulesVector.size(), " methods");
@@ -306,20 +389,11 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
     }
 }
 
-void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
+void RejitHandler::EnqueueRequestRejit(std::vector<RejitRequest> rejitRequests,
                                        std::shared_ptr<std::promise<void>> promise, 
                                        bool callRevertExplicitly)
 {
-    std::vector<ModuleID> modulesVector;
-    std::vector<mdMethodDef> methodsVector;
-
-    for (const auto& request : rejitRequests)
-    {
-        modulesVector.push_back(request.moduleId);
-        methodsVector.push_back(request.methodToken);
-    }
-
-    EnqueueForRejit(modulesVector, methodsVector, promise, callRevertExplicitly);
+    EnqueueForRejit(std::move(rejitRequests), promise, callRevertExplicitly);
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
@@ -332,10 +406,27 @@ RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkO
 {
 }
 
-void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
+bool RejitHandler::Enqueue(std::unique_ptr<RejitWorkItem>&& item)
+{
+    ReadLock lock(m_shutdown_lock);
+    if (m_shutdown)
+    {
+        if (item->abandon != nullptr)
+        {
+            item->abandon();
+        }
+
+        return false;
+    }
+
+    m_work_offloader->Enqueue(std::move(item));
+    return true;
+}
+
+void RejitHandler::EnqueueForRejit(std::vector<RejitRequest> rejitRequests,
                                    std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly)
 {
-    if (IsShutdownRequested() || modulesVector.size() == 0 || modulesMethodDef.size() == 0)
+    if (IsShutdownRequested() || rejitRequests.empty())
     {
         if (promise != nullptr)
         {
@@ -347,10 +438,10 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
 
     DBG("RejitHandler::EnqueueForRejit");
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
-                                    localPromise = promise, callRevertExplicitly = callRevertExplicitly]() mutable {
+    std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise,
+                                    callRevertExplicitly = callRevertExplicitly]() mutable {
         // Request ReJIT
-        RequestRejit(modules, methods, callRevertExplicitly);
+        RequestRejit(requests, callRevertExplicitly);
 
         // Resolve promise
         if (localPromise != nullptr)
@@ -359,33 +450,73 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
         }
     };
 
+    std::function<void()> abandon = [localPromise = promise]() {
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
+    };
+
     // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon)));
 }
 
 void RejitHandler::Shutdown()
 {
     DBG("RejitHandler::Shutdown");
 
+    // Mark shutdown before draining the queue so queued work can short-circuit. The exchange also makes this
+    // idempotent, so only one caller ever enqueues the terminator and joins the worker.
+    // Release the write lock before joining because the worker reads this state.
+    {
+        WriteLock w_lock(m_shutdown_lock);
+        if (m_shutdown.exchange(true))
+        {
+            return;
+        }
+
+        m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
+    }
+
     // Wait for exiting the thread
-    m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
     m_work_offloader->WaitForTermination();
 
-    WriteLock w_lock(m_shutdown_lock);
-    m_shutdown.store(true);
+    std::lock_guard<std::mutex> cleanupLock(m_module_cleanup_lock);
+
+    std::vector<std::shared_ptr<ModuleLifetime>> moduleLifetimes;
+    {
+        WriteLock lock(m_module_lifetimes_lock);
+        moduleLifetimes.reserve(m_module_lifetimes.size());
+        for (const auto& moduleLifetime : m_module_lifetimes)
+        {
+            moduleLifetimes.push_back(moduleLifetime.second);
+        }
+
+        m_module_lifetimes.clear();
+    }
+
+    for (const auto& moduleLifetime : moduleLifetimes)
+    {
+        WriteLock lifetimeLock(moduleLifetime->m_lock);
+        moduleLifetime->m_unloading = true;
+    }
 
     for (size_t x = 0; x < m_rejittersCount; x++)
     {
         m_rejitters[x]->Shutdown();
     }
 
-    m_profilerInfo = nullptr;
-    m_profilerInfo10 = nullptr;
+    // m_profilerInfo / m_profilerInfo10 are deliberately left alone. They are owned by the CLR and stay valid
+    // for the life of the profiler, so clearing them bought nothing: callers that reach RequestRejit without a
+    // module lifetime (iast::Dataflow, JITInlining, the NGEN inliner enumeration) raced this and would null
+    // deref instead of simply receiving a failure HRESULT from the runtime.
 }
 
 bool RejitHandler::IsShutdownRequested()
 {
-    ReadLock r_lock(m_shutdown_lock);
+    // m_shutdown is atomic, and the value can go stale the moment a lock would be released anyway. The
+    // shutdown lock is only needed where it orders an enqueue against the terminator, not for advisory reads
+    // like this one, which sit on the JIT callback path.
     return m_shutdown;
 }
 
@@ -415,6 +546,17 @@ void RejitHandler::RegisterRejitter(Rejitter* rejitter)
 HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId, ICorProfilerFunctionControl* pFunctionControl)
 {
     if (IsShutdownRequested())
+    {
+        return S_FALSE;
+    }
+
+    // Hold the module's lifetime for the whole rewrite: the rejitters read this module's metadata and
+    // per-module state, both of which a concurrent unload or Shutdown would tear down underneath us.
+    // Nothing below this point may wait on the ReJIT worker, because the worker can be blocked behind an
+    // unload that is waiting for this very lifetime (APMS-20456).
+    auto module = GetModuleWithLifetime(moduleId);
+    auto moduleLifetime = module.TryAcquire();
+    if (!moduleLifetime.has_value())
     {
         return S_FALSE;
     }
@@ -453,6 +595,68 @@ void RejitHandler::SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler
 AssemblyProperty* RejitHandler::GetCorAssemblyProperty()
 {
     return m_pCorAssemblyProperty;
+}
+
+ModuleIDWithLifetime RejitHandler::RegisterModule(ModuleID moduleId)
+{
+    ReadLock shutdownLock(m_shutdown_lock);
+    if (m_shutdown)
+    {
+        return {moduleId, nullptr};
+    }
+
+    WriteLock lock(m_module_lifetimes_lock);
+    auto module = m_module_lifetimes.find(moduleId);
+    if (module == m_module_lifetimes.end())
+    {
+        module = m_module_lifetimes.emplace(moduleId, std::make_shared<ModuleLifetime>()).first;
+    }
+
+    return {moduleId, module->second};
+}
+
+ModuleIDWithLifetime RejitHandler::GetModuleWithLifetime(ModuleID moduleId)
+{
+    ReadLock lock(m_module_lifetimes_lock);
+    const auto module = m_module_lifetimes.find(moduleId);
+    return module == m_module_lifetimes.end() ? ModuleIDWithLifetime{moduleId, nullptr}
+                                              : ModuleIDWithLifetime{moduleId, module->second};
+}
+
+std::vector<ModuleIDWithLifetime> RejitHandler::GetModulesWithLifetime(const std::vector<ModuleID>& moduleIds)
+{
+    std::vector<ModuleIDWithLifetime> modules;
+    modules.reserve(moduleIds.size());
+
+    ReadLock lock(m_module_lifetimes_lock);
+    for (const auto moduleId : moduleIds)
+    {
+        const auto module = m_module_lifetimes.find(moduleId);
+        if (module != m_module_lifetimes.end())
+        {
+            modules.push_back({moduleId, module->second});
+        }
+    }
+
+    return modules;
+}
+
+std::vector<RejitRequest> RejitHandler::GetRejitRequests(const std::vector<MethodIdentifier>& methods)
+{
+    std::vector<RejitRequest> requests;
+    requests.reserve(methods.size());
+
+    ReadLock lock(m_module_lifetimes_lock);
+    for (const auto& method : methods)
+    {
+        const auto module = m_module_lifetimes.find(method.moduleId);
+        if (module != m_module_lifetimes.end())
+        {
+            requests.emplace_back(ModuleIDWithLifetime{method.moduleId, module->second}, method.methodToken);
+        }
+    }
+
+    return requests;
 }
 
 void RejitHandler::SetEnableByRefInstrumentation(bool enableByRefInstrumentation)
@@ -497,12 +701,34 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 
 void RejitHandler::RemoveModule(ModuleID moduleId)
 {
-    if (IsShutdownRequested())
+    // This cleanup must run even after shutdown is published. Shutdown joins the worker before invalidating
+    // all remaining lifetimes, but ModuleUnloadStarted can return during that join and invalidate the CLR's
+    // ModuleID first. Removing and marking this generation here makes the worker either finish before unload
+    // returns or reject the request.
+    // Serialized against Shutdown, which marks every remaining lifetime as unloading.
+    std::lock_guard<std::mutex> cleanupLock(m_module_cleanup_lock);
+
+    std::shared_ptr<ModuleLifetime> moduleLifetime;
     {
-        return;
+        WriteLock lock(m_module_lifetimes_lock);
+        const auto module = m_module_lifetimes.find(moduleId);
+        if (module != m_module_lifetimes.end())
+        {
+            moduleLifetime = module->second;
+            m_module_lifetimes.erase(module);
+        }
     }
 
+    std::optional<WriteLock> lifetimeLock;
+    if (moduleLifetime != nullptr)
+    {
+        lifetimeLock.emplace(moduleLifetime->m_lock);
+        moduleLifetime->m_unloading = true;
+    }
 
+    // Also required after shutdown is published: an NGen inliner replay that passed its shutdown check can still
+    // be passing this ModuleID to the CLR under the rejitter's module locks. Only the rejitter's RemoveModule
+    // blocks on those locks, which keeps ModuleUnloadStarted from returning until the replay is done.
     Rejitter* prev = nullptr;
     for (size_t x = 0; x < m_rejittersCount; x++)
     {

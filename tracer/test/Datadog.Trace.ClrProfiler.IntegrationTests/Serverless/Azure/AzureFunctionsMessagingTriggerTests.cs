@@ -86,7 +86,8 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         using (await RunAzureFunctionAndWaitForExit(
                    agent,
                    seedAsync: () => SeedViaHttpAsync("seed/servicebus"),
-                   expectedExitCode: ExpectedFuncKillExitCode))
+                   expectedExitCode: ExpectedFuncKillExitCode,
+                   workerSpanPredicate: s => s.Name == "azure_functions.invoke" && s.Resource == "ServiceBus ServiceBusTrigger"))
         {
             // 7 spans total: 1 health-check ping + 6 meaningful spans
             var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);
@@ -123,7 +124,8 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         using (await RunAzureFunctionAndWaitForExit(
                    agent,
                    seedAsync: () => SeedViaHttpAsync("seed/eventhub"),
-                   expectedExitCode: ExpectedFuncKillExitCode))
+                   expectedExitCode: ExpectedFuncKillExitCode,
+                   workerSpanPredicate: s => s.Name == "azure_functions.invoke" && s.Resource == "EventHub EventHubTrigger"))
         {
             // Wait for at least 7 spans (1 health-check ping + 6 meaningful).
             var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);

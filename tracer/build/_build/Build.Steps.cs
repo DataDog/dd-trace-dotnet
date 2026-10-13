@@ -62,6 +62,7 @@ partial class Build
     AbsolutePath ReleaseArtifactsDirectory => BuildArtifactsDirectory / "release-artifacts";
     AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "native-symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "output");
+    AbsolutePath OpenTelemetryStartupHookDirectory => ArtifactsDirectory / "otel-operator-startup-hook";
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
@@ -124,6 +125,7 @@ partial class Build
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
     [LazyPathExecutable(name: "patchelf")] readonly Lazy<Tool> PatchElf;
     [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
+    [LazyPathExecutable(name: "readelf")] readonly Lazy<Tool> ReadElf;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
@@ -365,7 +367,43 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+
+            VerifyOtelThreadContextSymbolIsExported();
         });
+
+    /// <summary>
+    /// OTEP 4947 requires `otel_thread_ctx_v1` to be an exported ELF TLS symbol in the dynamic symbol
+    /// table: it is how out-of-process readers locate the thread context. Nothing at runtime would tell
+    /// us if it went missing - readers would simply never find any context - so a change to the compiler,
+    /// the linker or the project's visibility settings could silently break the feature. Assert it here,
+    /// right where the symbol is produced. See docs/OTelContextPropagation.md.
+    /// </summary>
+    private void VerifyOtelThreadContextSymbolIsExported()
+    {
+        const string symbol = "otel_thread_ctx_v1";
+
+        var (_, extension) = GetUnixArchitectureAndExtension();
+        var nativeTracer = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.{extension}";
+
+        var symbols = ReadElf.Value(arguments: $"--dyn-syms --wide \"{nativeTracer}\"", logOutput: false);
+        var expectedSymbol = new Regex(
+            $@"^\s*\d+:\s+[0-9a-fA-F]+\s+8\s+TLS\s+GLOBAL\s+DEFAULT\s+\d+\s+{Regex.Escape(symbol)}\s*$",
+            RegexOptions.CultureInvariant);
+
+        if (!symbols.Any(line => expectedSymbol.IsMatch(line.Text)))
+        {
+            throw new Exception(
+                $"{symbol} is not exported from {nativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol. " +
+                "The OpenTelemetry thread context cannot be discovered by external readers without it. " +
+                "Check that otel_thread_ctx.cpp is part of the " +
+                $"{NativeTracerProject.Name} shared target and that the symbol still has default visibility.");
+        }
+
+        Logger.Information(
+            "{Symbol} is exported from {NativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol",
+            symbol,
+            nativeTracer);
+    }
 
     Target CompileTracerNativeTestsLinux => _ => _
         .Unlisted()
@@ -484,6 +522,16 @@ partial class Build
             DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
         });
 
+    Target CompileOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .Description("Compiles the OpenTelemetry auto-instrumentation startup hook (stub)")
+        .After(CreateRequiredDirectories)
+        .After(Restore)
+        .Executes(() =>
+        {
+            DotnetBuild(new[] { Solution.GetProject(Projects.OpenTelemetryAutoInstrumentationStartupHook).Path }, noRestore: false, noDependencies: false);
+        });
+
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
@@ -509,6 +557,7 @@ partial class Build
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
+                "src/OpenTelemetry.AutoInstrumentation.StartupHook/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
             );
 
@@ -910,6 +959,20 @@ partial class Build
                 .SetFramework(targetFramework)
                 .SetOutput(MonitoringHomeDirectory / targetFramework)
             );
+        });
+
+    Target PublishOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .DependsOn(CompileOpenTelemetryStartupHook)
+        .Executes(() =>
+        {
+            const string startupHookFileName = "OpenTelemetry.AutoInstrumentation.StartupHook.dll";
+            var source = GetProjectBinDirectory(Projects.OpenTelemetryAutoInstrumentationStartupHook, TargetFramework.NETCOREAPP3_1)
+                       / startupHookFileName;
+            var destination = OpenTelemetryStartupHookDirectory / startupHookFileName;
+
+            EnsureCleanDirectory(OpenTelemetryStartupHookDirectory);
+            CopyFile(source, destination);
         });
 
     Target PublishNativeSymbolsWindows => _ => _
@@ -1916,6 +1979,7 @@ partial class Build
         .After(CompileTrimmingSamples)
         .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
+        .DependsOn(PublishOpenTelemetryStartupHook)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
@@ -1946,6 +2010,7 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     // Apply Docker and area restrictions without requiring the auto-instrumentation platform traits.
@@ -1969,6 +2034,7 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
