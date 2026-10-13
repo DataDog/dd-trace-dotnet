@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 /// </summary>
 [DuckCopy]
 [DuckCopy("RabbitMQ.Client.Framing.Connection", "RabbitMQ.Client")]
+[DuckCopy("RabbitMQ.Client.Framing.Impl.Connection", "RabbitMQ.Client")]
 internal struct IConnection
 {
     /// <summary>

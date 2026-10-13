@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// </summary>
     [DuckCopy]
     [DuckCopy("MongoDB.Driver.DatabaseNamespace", "MongoDB.Driver")]
+    [DuckCopy("MongoDB.Driver.DatabaseNamespace", "MongoDB.Driver.Core")]
     internal struct DatabaseNamespaceStruct
     {
         /// <summary>

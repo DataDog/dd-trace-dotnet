@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// DefaultModelBindingContext
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext", "Microsoft.AspNetCore.Mvc.Core")]
     internal struct DefaultModelBindingContext
     {
         /// <summary>

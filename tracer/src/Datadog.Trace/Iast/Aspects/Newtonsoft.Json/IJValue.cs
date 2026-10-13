@@ -5,8 +5,11 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
+[DuckType("Newtonsoft.Json.Linq.JValue", "Newtonsoft.Json", IncludeDerivedTypes = true)]
 internal interface IJValue
 {
     object Value { get; } // as an interface because in a struct it would fail with an AmbiguousMatchException
