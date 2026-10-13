@@ -658,7 +658,7 @@ public class DuckTypeAotMetadataOnlyParityTests
             {
                 Directory.Delete(directory, recursive: true);
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
             }
         }
