@@ -11975,7 +11975,13 @@ public class DuckTypeAotProcessorsTests
                 usesNullableCtor.Should().BeTrue();
             }
 
+#if NET6_0_OR_GREATER
             var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-DuckChain-Nullable", isCollectible: true);
+#else
+            // Before .NET 6, dynamic duck typing (which creates the inner proxy here) can't create proxies for the types of a
+            // collectible load context.
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-DuckChain-Nullable", isCollectible: false);
+#endif
             try
             {
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
@@ -12009,7 +12015,9 @@ public class DuckTypeAotProcessorsTests
             }
             finally
             {
+#if NET6_0_OR_GREATER
                 loadContext.Unload();
+#endif
             }
         }
         finally
@@ -13436,7 +13444,15 @@ public class DuckTypeAotProcessorsTests
             DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out var addedMappings, out var error).Should().BeTrue(error);
             addedMappings.Should().Be(1);
             DuckTypeAotMapFileParser.Parse(mapFilePath).Mappings.Select(mapping => mapping.ProxyTypeName).Should().Equal("Ns.IDiscovered");
+#if NET7_0_OR_GREATER
             File.GetAttributes(mapFilePath).Should().HaveFlag(FileAttributes.ReadOnly, "the map keeps its permissions");
+#else
+            // Before .NET 7, the ReadOnly attribute of a file on Unix is whether the process can't write it: never for root.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                File.GetAttributes(mapFilePath).Should().HaveFlag(FileAttributes.ReadOnly, "the map keeps its permissions");
+            }
+#endif
         }
         finally
         {
