@@ -245,9 +245,11 @@ public class CallTargetAotHolderTests
     {
         var state = CallTargetInvoker.BeginMethod<TIntegration, TTarget>(target);
         var result = CallTargetInvoker.EndMethod<TIntegration, TTarget, Task<int>>(target, task, null, in state);
-        Release();
         var returned = result.GetReturnValue();
         Recorder.Add($"returned task is null: {returned is null}");
+
+        // Released after recording: the continuation of the target's task runs on another thread, which would race with it.
+        Release();
         if (returned is null)
         {
             return;
