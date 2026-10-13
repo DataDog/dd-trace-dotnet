@@ -55,11 +55,13 @@ build-windows-ci-image:
   timeout: 2h
   tags: ["windows-v2:2022"]
   rules:
-    - changes: &windows-ci-image-inputs
-        - tracer/build/_build/docker/gitlab/**/*
-      when: on_success
-    - when: manual
-      allow_failure: true
+    # Check availability whenever build or sign-nuget-packages can run, even if
+    # this push did not change image inputs. Existing images skip the rebuild.
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: '$DEPLOY_TO_REL_ENV == "true" && $DOTNET_PACKAGE_VERSION'
+      when: never
+    - when: on_success
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -123,7 +125,7 @@ build:
       if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
         Write-Host "The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed."
-        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
+        Write-Host "Check or retry 'build-windows-ci-image' in this pipeline, then retry this job after the image is published."
         exit 1
       }
     - |
@@ -326,18 +328,10 @@ sign-nuget-packages:
       when: never
     - if: $CI_COMMIT_TAG
       when: never      # We don't need to build/publish when building a release tag
-    # Wait for automatic image builds, but not the optional manual fallback.
-    - changes: *windows-ci-image-inputs
-      needs:
-        - job: build-windows-ci-image
-          artifacts: false
-        - job: build
-          optional: true
-          artifacts: false
-        - job: download-nuget-packages-to-sign
-          artifacts: true
     - when: on_success
   needs:
+    - job: build-windows-ci-image
+      artifacts: false
     - job: build
       optional: true
       artifacts: false # only needed for timing reasons
