@@ -35,6 +35,19 @@ internal static class JsonModelDescriptor
     /// <returns>The number of types preserved.</returns>
     public static int Write(ModuleDef datadogTrace, string descriptorPath, string runtimeDirectivesPath)
     {
+        var (count, descriptor, directives) = Create(datadogTrace);
+        descriptor.Save(descriptorPath);
+        directives.Save(runtimeDirectivesPath);
+        return count;
+    }
+
+    /// <summary>
+    /// Creates the descriptor and the runtime directives (see <see cref="Write"/>).
+    /// </summary>
+    /// <param name="datadogTrace">The Datadog.Trace module.</param>
+    /// <returns>The number of types preserved, the descriptor and the runtime directives.</returns>
+    internal static (int Count, XDocument Descriptor, XDocument Directives) Create(ModuleDef datadogTrace)
+    {
         var (types, instantiations) = Collect(datadogTrace);
         var assembly = new XElement("assembly", new XAttribute("fullname", datadogTrace.Assembly.Name.String));
         foreach (var type in types.OrderBy(t => t.FullName, StringComparer.Ordinal))
@@ -58,7 +71,7 @@ internal static class JsonModelDescriptor
             assembly.Add(element);
         }
 
-        new XDocument(new XElement("linker", assembly)).Save(descriptorPath);
+        var descriptor = new XDocument(new XElement("linker", assembly));
 
         XNamespace directives = "http://schemas.microsoft.com/netfx/2013/01/metadata";
         var directivesAssembly = new XElement(directives + "Assembly", new XAttribute("Name", datadogTrace.Assembly.Name.String));
@@ -72,8 +85,7 @@ internal static class JsonModelDescriptor
                     : new XElement(directives + "Type", new XAttribute("Name", instantiation), new XElement(directives + "Method", new XAttribute("Name", ".ctor"), new XAttribute("Dynamic", "Required"))));
         }
 
-        new XDocument(new XElement(directives + "Directives", new XElement(directives + "Application", directivesAssembly))).Save(runtimeDirectivesPath);
-        return types.Count;
+        return (types.Count, descriptor, new XDocument(new XElement(directives + "Directives", new XElement(directives + "Application", directivesAssembly))));
     }
 
     internal static (HashSet<TypeDef> Types, SortedSet<string> Instantiations) Collect(ModuleDef datadogTrace)

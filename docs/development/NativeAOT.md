@@ -129,6 +129,13 @@ it (including its failures). The runtime of the generator's framework stands for
 - for the application's module initializer: the IAST hardcoded secrets (user strings), the Code Origin locations of
   endpoints and the SourceLink of the PDB, which the tracer reads from files at runtime under JIT.
 
+What doesn't depend on the application (the JSON models, the delegate wrappers, the type names Datadog.Trace looks up and
+its duck typing declarations) is computed once per build of Datadog.Trace: `dd-trace aot prepare` writes it to
+`Datadog.Trace.aot.json` next to `Datadog.Trace.dll` (`DatadogTraceAnalysis`), which the package ships. The
+instrumentation uses it when it's the analysis of the same builds of Datadog.Trace and of the runner, else analyzes
+Datadog.Trace again (several seconds of each publish). The runner and the application use the same build of Datadog.Trace
+(the package ships one): the generator checks the application's duck typing with dynamic duck typing on the runner's.
+
 ## Runtime
 
 The application's module initializer registers the DuckType AOT registry (duck typing then runs in AOT mode) and the

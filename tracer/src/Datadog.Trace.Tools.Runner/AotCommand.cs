@@ -21,6 +21,7 @@ internal class AotCommand : CommandWithExamples
         AddExample("dd-trace aot instrument --native-tracer Datadog.Tracer.Native.so --datadog-trace Datadog.Trace.dll --assembly ./obj/MyApp.dll --reference-dir ./runtime --output ./obj/datadog-aot");
 
         AddCommand(new AotInstrumentCommand());
+        AddCommand(new AotPrepareCommand());
         AddCommand(new AotCheckDeclarationsCommand());
     }
 }

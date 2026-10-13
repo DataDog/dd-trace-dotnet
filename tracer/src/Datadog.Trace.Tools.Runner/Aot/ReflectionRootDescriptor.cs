@@ -27,8 +27,18 @@ internal static class ReflectionRootDescriptor
 
     /// <returns>The number of types preserved.</returns>
     public static int Write(ModuleDef datadogTrace, IEnumerable<ModuleDef> modules, string descriptorPath)
+        => Write(CollectTypeNames(datadogTrace), datadogTrace, modules, descriptorPath);
+
+    /// <summary>
+    /// Writes the descriptor of the types of the modules named by <paramref name="names"/> (see <see cref="CollectTypeNames"/>).
+    /// </summary>
+    /// <param name="names">The type names Datadog.Trace looks up.</param>
+    /// <param name="datadogTrace">The Datadog.Trace module.</param>
+    /// <param name="modules">The modules of the application.</param>
+    /// <param name="descriptorPath">The descriptor path.</param>
+    /// <returns>The number of types preserved.</returns>
+    public static int Write(IReadOnlyCollection<(string TypeName, string? AssemblyName)> names, ModuleDef datadogTrace, IEnumerable<ModuleDef> modules, string descriptorPath)
     {
-        var names = CollectTypeNames(datadogTrace);
         var linker = new XElement("linker");
         var count = 0;
         foreach (var module in modules.Where(m => m != datadogTrace && m.Assembly is not null).OrderBy(m => m.Assembly.Name.String, StringComparer.Ordinal))

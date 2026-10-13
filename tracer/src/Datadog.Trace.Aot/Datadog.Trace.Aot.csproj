@@ -86,6 +86,21 @@
     <None Include="$(DatadogAotDatadogTrace)" Pack="true" PackagePath="tools\runner\;tools\datadog-trace\" Visible="false" />
   </ItemGroup>
 
+  <!-- The analyses of Datadog.Trace that don't depend on the application (dd-trace aot prepare), packed next to it: the
+       instrumentation of each application reads them instead of scanning the IL of Datadog.Trace again. -->
+  <Target Name="_DatadogAotPrepareAnalysis" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <_DatadogAotAnalysis>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'datadog-trace', 'Datadog.Trace.aot.json'))</_DatadogAotAnalysis>
+      <_DatadogAotDotnet>$(DOTNET_HOST_PATH)</_DatadogAotDotnet>
+      <_DatadogAotDotnet Condition="'$(_DatadogAotDotnet)' == ''">dotnet</_DatadogAotDotnet>
+    </PropertyGroup>
+    <Exec Command="&quot;$(_DatadogAotDotnet)&quot; &quot;$(DatadogAotRunnerDirectory)Datadog.Trace.Tools.Runner.dll&quot; aot prepare --datadog-trace &quot;$(DatadogAotDatadogTrace)&quot; --output &quot;$(_DatadogAotAnalysis)&quot;"
+          EnvironmentVariables="DOTNET_ROLL_FORWARD=LatestMajor;DOTNET_ROLL_FORWARD_TO_PRERELEASE=1" />
+    <ItemGroup>
+      <None Include="$(_DatadogAotAnalysis)" Pack="true" PackagePath="tools\datadog-trace" Visible="false" />
+    </ItemGroup>
+  </Target>
+
   <!-- In a target: the package path of each native library comes from its own Rid (batching). -->
   <Target Name="_DatadogAotPackNativeTracers" BeforeTargets="_GetPackageFiles">
     <ItemGroup>

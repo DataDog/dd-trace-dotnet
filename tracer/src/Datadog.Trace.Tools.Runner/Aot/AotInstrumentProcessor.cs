@@ -124,16 +124,19 @@ internal static class AotInstrumentProcessor
             var datadogTrace = modules.First(m => !m.Writable && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.DatadogTracePath), StringComparison.Ordinal)).Module;
             var typeResolver = new LoadedModulesTypeResolver(modules.Select(m => m.Module));
 
+            // What doesn't depend on the application: computed once per build of Datadog.Trace (dd-trace aot prepare).
+            var analysis = DatadogTraceAnalysis.Get(datadogTrace, options.DatadogTracePath);
+
             // The models Datadog.Trace (de)serializes with Newtonsoft by reflection, which ILC must keep.
-            report.JsonModels = JsonModelDescriptor.Write(datadogTrace, Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.linker.xml"), Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.rd.xml"));
+            report.JsonModels = analysis.WriteJsonModels(Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.linker.xml"), Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.rd.xml"));
             AotLog.Info($"JSON models of Datadog.Trace preserved: {report.JsonModels}");
 
             // The types of the application its integrations find by name, then use by reflection.
-            report.ReflectionRoots = ReflectionRootDescriptor.Write(datadogTrace, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Reflection.linker.xml"));
+            report.ReflectionRoots = ReflectionRootDescriptor.Write(analysis.ReflectionTypeNames.Select(n => (n.Name, n.Assembly)).ToList(), datadogTrace, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Reflection.linker.xml"));
             AotLog.Info($"Types of the application Datadog.Trace finds by name preserved: {report.ReflectionRoots}");
 
             // The delegate wrappers DelegateInstrumentation instantiates at runtime with MakeGenericType.
-            report.DelegateWrappers = DelegateWrapperDirectives.Write(datadogTrace, Path.Combine(options.OutputDirectory, "Datadog.Trace.Delegates.rd.xml"));
+            report.DelegateWrappers = analysis.WriteDelegateWrappers(Path.Combine(options.OutputDirectory, "Datadog.Trace.Delegates.rd.xml"));
             AotLog.Info($"Delegate instrumentation wrappers preserved: {report.DelegateWrappers}");
 
             // The facades the libraries resolve the type names they store through.
@@ -182,7 +185,7 @@ internal static class AotInstrumentProcessor
 
                 AotLog.Info($"Duck typing proxies needed by the CallTarget adapters: {collector.Requests.Count} (+{collector.RuntimeRequests.Count} looked up at runtime)");
                 // The mappings Datadog's assemblies declare ([DuckType], [DuckReverseDelegation]...), then the recorded ones.
-                var declaredMappings = ReadDeclaredDuckTypeMappings(options.DatadogTracePath, modules.Select(m => (m.AssemblyName, m.Path)), report);
+                var declaredMappings = ReadDeclaredDuckTypeMappings(analysis, options.DatadogTracePath, modules.Select(m => (m.AssemblyName, m.Path)), report);
                 var mapFileMappings = ReadDuckTypeMaps(options.DuckTypeMaps, report);
                 var recordedMappings = declaredMappings.Concat(mapFileMappings).ToList();
                 var undeclaredMappings = new List<string>();
@@ -293,7 +296,7 @@ internal static class AotInstrumentProcessor
     /// The duck typing mappings Datadog's assemblies declare with attributes: the proxies of the library types integrations
     /// only know at runtime, which travel with the proxies (see docs/development/NativeAOT.md).
     /// </summary>
-    private static List<DuckTypeAot.DuckTypeAotMapping> ReadDeclaredDuckTypeMappings(string datadogTracePath, IEnumerable<(string AssemblyName, string Path)> modules, AotInstrumentReport report)
+    private static List<DuckTypeAot.DuckTypeAotMapping> ReadDeclaredDuckTypeMappings(DatadogTraceAnalysis analysis, string datadogTracePath, IEnumerable<(string AssemblyName, string Path)> modules, AotInstrumentReport report)
     {
         var paths = new List<string> { Path.GetFullPath(datadogTracePath) };
         foreach (var (assemblyName, path) in modules)
@@ -308,11 +311,27 @@ internal static class AotInstrumentProcessor
             }
         }
 
-        var result = DuckTypeAot.DuckTypeAotAttributeDiscovery.Discover(paths);
-        report.Errors.AddRange(result.Errors);
-        report.DeclaredDuckTypeMappings = result.Mappings.Count;
-        AotLog.Info($"Duck typing mappings declared by Datadog's assemblies: {result.Mappings.Count} ({result.Mappings.Count(m => m.IncludesDerivedTypes)} for derived types too)");
-        return result.Mappings.ToList();
+        // Datadog.Trace's from its analysis, then the other assemblies' like DuckTypeAotAttributeDiscovery merges them.
+        var mappings = new Dictionary<string, DuckTypeAot.DuckTypeAotMapping>(StringComparer.Ordinal);
+        foreach (var mapping in analysis.DuckTypeMappings.Select(m => m.ToMapping()))
+        {
+            mappings[mapping.Key] = mapping;
+        }
+
+        report.Errors.AddRange(analysis.DuckTypeErrors);
+        if (paths.Count > 1)
+        {
+            var result = DuckTypeAot.DuckTypeAotAttributeDiscovery.Discover(paths.Skip(1).ToList());
+            report.Errors.AddRange(result.Errors);
+            foreach (var mapping in result.Mappings)
+            {
+                mappings[mapping.Key] = mappings.TryGetValue(mapping.Key, out var existing) && existing.IncludesDerivedTypes ? existing : mapping;
+            }
+        }
+
+        report.DeclaredDuckTypeMappings = mappings.Count;
+        AotLog.Info($"Duck typing mappings declared by Datadog's assemblies: {mappings.Count} ({mappings.Values.Count(m => m.IncludesDerivedTypes)} for derived types too)");
+        return mappings.Values.ToList();
     }
 
     /// <summary>
