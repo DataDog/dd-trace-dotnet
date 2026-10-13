@@ -190,6 +190,13 @@ internal sealed unsafe class NativeTracerHost : IDisposable
             throw new InvalidOperationException("The native tracer can't instrument call sites offline (no ProcessCallSites export): use a matching Datadog.Tracer.Native.");
         }
 
+        // Visiting the methods of an excluded module (most are the framework's) loads all its metadata for nothing.
+        if (NativeLibrary.TryGetExport(_library, "IsCallSiteModuleExcluded", out var isExcludedExport) &&
+            ((delegate* unmanaged<nint, int>)isExcludedExport)(module.Id) != 0)
+        {
+            return 0;
+        }
+
         var process = (delegate* unmanaged<nint, uint, int>)export;
         var processed = 0;
         foreach (var type in module.Module.GetTypes())
