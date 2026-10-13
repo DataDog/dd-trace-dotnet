@@ -178,14 +178,14 @@
     <Compile Include="WindowsDirectoryAccess.NonWindows.cs" />
   </ItemGroup>
 
-  <!-- The NativeAOT duck typing commands (ducktype-aot) load and reflect over the assemblies they process, which trimming
-       breaks: the trimmed standalone dd-trace doesn't include them. -->
+  <!-- The NativeAOT build-time commands (aot, ducktype-aot) load and reflect over the assemblies they process, which trimming
+       breaks: the trimmed standalone dd-trace doesn't include them (Datadog.Trace.Aot ships the tool build of the runner). -->
   <PropertyGroup Condition="'$(BuildStandalone)' == 'true'">
     <DefineConstants>$(DefineConstants);DD_TRACE_STANDALONE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(BuildStandalone)' == 'true'">
-    <Compile Remove="DuckTypeAot\**;DuckTypeAotCommand.cs" />
+    <Compile Remove="Aot\**;DuckTypeAot\**;AotCommand.cs;DuckTypeAotCommand.cs" />
   </ItemGroup>
 
   <ItemGroup>
