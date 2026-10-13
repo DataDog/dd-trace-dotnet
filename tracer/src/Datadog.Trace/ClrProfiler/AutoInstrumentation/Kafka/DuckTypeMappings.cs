@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 [assembly: DuckTypeMapping("Datadog.Trace.DuckTyping.IDuckTypeAwaiter`1[[Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDescribeClusterResult, Datadog.Trace]]", "Datadog.Trace", "System.Runtime.CompilerServices.TaskAwaiter`1[[Confluent.Kafka.Admin.DescribeClusterResult, Confluent.Kafka]]", "System.Private.CoreLib")]

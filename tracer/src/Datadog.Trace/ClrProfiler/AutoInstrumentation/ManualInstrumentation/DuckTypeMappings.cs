@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 [assembly: DuckTypeMapping("Datadog.Trace.IScope", "Datadog.Trace.Manual", "Datadog.Trace.Scope", "Datadog.Trace")]
