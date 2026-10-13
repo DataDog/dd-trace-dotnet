@@ -9,12 +9,14 @@ fail() {
 
 [[ $# -eq 0 ]] || fail "this script does not accept arguments"
 
-has_codex=false
-has_claude=false
-command -v codex >/dev/null 2>&1 && has_codex=true
-command -v claude >/dev/null 2>&1 && has_claude=true
+tool="${REVIEWER_TOOL:-}"
 
-if [[ "$has_codex" == true && "$has_claude" == true ]]; then
+if [[ -n "$tool" ]]; then
+    case "$tool" in
+        codex|claude) command -v "$tool" >/dev/null 2>&1 || fail "$tool was not found in PATH" ;;
+        *) fail "REVIEWER_TOOL must be 'codex' or 'claude'" ;;
+    esac
+elif command -v codex >/dev/null 2>&1 && command -v claude >/dev/null 2>&1; then
     printf 'Choose a reviewer:\n  1) Codex\n  2) Claude Code\n'
     read -r -p "Selection [1-2]: " selection ||
         fail "could not read reviewer selection"
@@ -23,9 +25,9 @@ if [[ "$has_codex" == true && "$has_claude" == true ]]; then
         2) tool="claude" ;;
         *) fail "invalid selection" ;;
     esac
-elif [[ "$has_codex" == true ]]; then
+elif command -v codex >/dev/null 2>&1; then
     tool="codex"
-elif [[ "$has_claude" == true ]]; then
+elif command -v claude >/dev/null 2>&1; then
     tool="claude"
 else
     fail "install Codex CLI or Claude Code before running a review"

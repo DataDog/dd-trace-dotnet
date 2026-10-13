@@ -11,10 +11,22 @@ if ($args.Count -ne 0) {
     Fail "This script does not accept arguments."
 }
 
-$hasCodex = $null -ne (Get-Command codex -ErrorAction SilentlyContinue)
-$hasClaude = $null -ne (Get-Command claude -ErrorAction SilentlyContinue)
+$codex = Get-Command codex -ErrorAction SilentlyContinue
+$claude = Get-Command claude -ErrorAction SilentlyContinue
+$tool = $env:REVIEWER_TOOL
 
-if ($hasCodex -and $hasClaude) {
+if (-not [string]::IsNullOrEmpty($tool)) {
+    switch -CaseSensitive ($tool) {
+        "codex" {
+            if ($null -eq $codex) { Fail "Codex CLI was not found in PATH." }
+        }
+        "claude" {
+            if ($null -eq $claude) { Fail "Claude Code was not found in PATH." }
+        }
+        default { Fail "REVIEWER_TOOL must be 'codex' or 'claude'." }
+    }
+}
+elseif ($null -ne $codex -and $null -ne $claude) {
     Write-Host "Choose a reviewer:"
     Write-Host "  1) Codex"
     Write-Host "  2) Claude Code"
@@ -26,10 +38,10 @@ if ($hasCodex -and $hasClaude) {
         default { Fail "Invalid selection." }
     }
 }
-elseif ($hasCodex) {
+elseif ($null -ne $codex) {
     $tool = "codex"
 }
-elseif ($hasClaude) {
+elseif ($null -ne $claude) {
     $tool = "claude"
 }
 else {
