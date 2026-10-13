@@ -5472,6 +5472,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true when the assembly identity and MVID match; otherwise, false.</returns>
         private static bool AssemblyIdentityMatchesPath(Assembly assembly, string assemblyPath)
         {
+            // Reading the identity of the file loads its metadata: the type resolution of the aliases checks the same few
+            // assemblies for thousands of types (the framework assemblies of NativeAOT applications never match by location).
+            var context = _currentExecutionContext;
+            if (context is not null && context.TryGetAssemblyIdentityMatch(assembly, assemblyPath, out var cachedMatch))
+            {
+                return cachedMatch;
+            }
+
+            var match = ReadAssemblyIdentityMatchesPath(assembly, assemblyPath);
+            context?.CacheAssemblyIdentityMatch(assembly, assemblyPath, match);
+            return match;
+        }
+
+        private static bool ReadAssemblyIdentityMatchesPath(Assembly assembly, string assemblyPath)
+        {
             if (StringUtil.IsNullOrWhiteSpace(assemblyPath) || !File.Exists(assemblyPath))
             {
                 return false;
@@ -5546,11 +5561,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="runtimeTypeAssembly">The assembly defining the resolved runtime type.</param>
         /// <returns>true when the requested assembly forwards the type to the resolved runtime assembly; otherwise, false.</returns>
         private static bool AssemblyPathForwardsRuntimeType(string assemblyPath, Type runtimeType, Assembly runtimeTypeAssembly)
-            => AssemblyPathForwardsRuntimeType(
+        {
+            // Each check loads the module of the path (see AssemblyIdentityMatchesPath).
+            var context = _currentExecutionContext;
+            if (context is not null && context.TryGetForwardedRuntimeType(assemblyPath, runtimeType, out var cachedForwards))
+            {
+                return cachedForwards;
+            }
+
+            var forwards = AssemblyPathForwardsRuntimeType(
                 NormalizeRuntimeAssemblyPathForCache(assemblyPath),
                 runtimeType,
                 runtimeTypeAssembly,
                 new HashSet<string>(StringComparer.Ordinal));
+            context?.CacheForwardedRuntimeType(assemblyPath, runtimeType, forwards);
+            return forwards;
+        }
 
         /// <summary>
         /// Determines whether the requested assembly path transitively forwards the runtime type to the resolved runtime assembly.
@@ -17091,6 +17117,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly Dictionary<string, AssemblyResolutionCacheEntry> _preferredRuntimeAssembliesByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<string, AssemblyResolutionCacheEntry> _resolvedRuntimeAssembliesByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<string, RuntimeTypeResolutionCacheEntry> _typesByName = new(StringComparer.Ordinal);
+            private readonly Dictionary<(Assembly Assembly, string Path), bool> _assemblyIdentityMatches = new();
+            private readonly Dictionary<(string Path, Type RuntimeType), bool> _forwardedRuntimeTypes = new();
             private readonly HashSet<string> _dynamicFailureReplayKeys = new(StringComparer.Ordinal);
             private readonly Dictionary<string, IReadOnlyList<KeyValuePair<MethodInfo, MethodInfo>>?> _dynamicReverseSelections = new(StringComparer.Ordinal);
             private readonly DynamicOracleCache _dynamicOracleCache;
@@ -17236,6 +17264,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 _runtimeTypesByKey[key] = new RuntimeTypeResolutionCacheEntry(runtimeType);
             }
+
+            internal bool TryGetAssemblyIdentityMatch(Assembly assembly, string path, out bool match)
+                => _assemblyIdentityMatches.TryGetValue((assembly, path), out match);
+
+            internal void CacheAssemblyIdentityMatch(Assembly assembly, string path, bool match)
+                => _assemblyIdentityMatches[(assembly, path)] = match;
+
+            internal bool TryGetForwardedRuntimeType(string path, Type runtimeType, out bool forwards)
+                => _forwardedRuntimeTypes.TryGetValue((path, runtimeType), out forwards);
+
+            internal void CacheForwardedRuntimeType(string path, Type runtimeType, bool forwards)
+                => _forwardedRuntimeTypes[(path, runtimeType)] = forwards;
 
             internal bool TryGetPreferredRuntimeAssembly(string key, out Assembly? assembly)
             {
