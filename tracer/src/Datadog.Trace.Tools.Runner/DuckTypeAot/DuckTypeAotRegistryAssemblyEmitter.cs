@@ -68,6 +68,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const int MaxEmissionPasses = 3;
 
         /// <summary>
+        /// The HRESULT of the FileLoadException an invalid assembly name throws (FUSION_E_INVALID_NAME).
+        /// </summary>
+        private const int InvalidAssemblyNameHResult = unchecked((int)0x80131047);
+
+        /// <summary>
         /// Defines datadog trace assembly name constant.
         /// </summary>
         private const string DatadogTraceAssemblyName = "Datadog.Trace";
@@ -3300,8 +3305,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     case ArgumentException { InnerException: TypeLoadException }:
                         return false;
                     // The name of the dynamic assembly dynamic duck typing creates for a type that isn't visible is made of the
-                    // type's name: one AssemblyName rejects (e.g. "__StaticArrayInitTypeSize=3") fails in every process.
-                    case FileLoadException fileLoadException when fileLoadException.FileName?.StartsWith("Datadog.DuckType", StringComparison.Ordinal) == true:
+                    // type's name: one AssemblyName rejects (e.g. "__StaticArrayInitTypeSize=3") fails in every process. Before
+                    // .NET 7, the exception doesn't name the file.
+                    case FileLoadException fileLoadException when fileLoadException.FileName?.StartsWith("Datadog.DuckType", StringComparison.Ordinal) == true ||
+                                                                 (fileLoadException.FileName is null && fileLoadException.HResult == InvalidAssemblyNameHResult):
                         return false;
                     case FileNotFoundException:
                     case FileLoadException:
