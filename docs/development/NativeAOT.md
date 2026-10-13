@@ -44,7 +44,9 @@ inputs. On failure, the application is published without the instrumentation, wi
 The runner starts with `DOTNET_ROLL_FORWARD=LatestMajor` (it may be the only runtime), then `AotRuntimeSelector` runs it
 again with `dotnet exec --fx-version` on the latest runtime of the application's major version: the DuckType generator
 loads the application's assemblies, which an older runtime can't load and a newer one replaces with its own versions
-(.NET 11 has `Microsoft.Extensions.*.Abstractions` in the shared framework).
+(.NET 11 has `Microsoft.Extensions.*.Abstractions` in the shared framework). The package ships the tool build of the runner:
+the trimmed standalone `dd-trace` doesn't have the `aot` and `ducktype-aot` commands, which load and reflect over the
+assemblies they process.
 
 ### The native tracer hosted offline
 
@@ -103,7 +105,8 @@ references the target's assembly:
 When the publish has recorded maps, the report lists in `UndeclaredDuckTypeMappings` the recorded mappings of Datadog's
 proxies that aren't declared, so a mapping an integration creates under JIT and its declarations miss shows up there.
 
-CI checks the declarations against the integration tests: on Linux, `RunIntegrationTests` sets
+CI checks the declarations against the integration tests: on Linux, for .NET 6+ (NativeAOT applications use the net6.0
+build of Datadog.Trace, and the builds of older runtimes have code paths of their own), `RunIntegrationTests` sets
 `DD_TEST_DUCKTYPE_AOT_MAPS_DIRECTORY`, so each sample the tests start records its mappings (`DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH`)
 into a map of `artifacts/ducktype-aot-maps` naming its directory (`applicationDirectory`). Then `CheckAotDuckTypeDeclarations`
 runs `dd-trace aot check-declarations`, which fails when a recorded mapping of a Datadog proxy isn't declared (the report goes
