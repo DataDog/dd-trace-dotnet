@@ -9,7 +9,9 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+#if !NET5_0_OR_GREATER
 using System.Text.RegularExpressions;
+#endif
 
 namespace Datadog.Trace
 {
@@ -103,15 +105,13 @@ namespace Datadog.Trace
             }
 
             string? foundVersion = null;
+#if !NET5_0_OR_GREATER
+            // Only .NET Core 2.x gets here, with the builds for older runtimes: the path isn't needed by the builds for .NET 5+,
+            // and NativeAOT and single-file applications don't have one.
             try
             {
                 // try to get product version from assembly path
-#if NET5_0_OR_GREATER
-                // Can't use RootAssembly.CodeBase in .NET 5+
-                var location = RootAssembly.Location;
-#else
                 var location = RootAssembly.CodeBase;
-#endif
                 Match match = Regex.Match(
                     location,
                     @"[\\/][^\\/]*microsoft\.netcore\.app[\\/](\d+\.\d+\.\d+[^/]*)[\\/]",
@@ -126,6 +126,7 @@ namespace Datadog.Trace
             {
                 Log.Error(e, "Error getting .NET Core version from assembly path");
             }
+#endif
 
             // if we fail to extract version from assembly path,
             // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]

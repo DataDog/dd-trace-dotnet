@@ -8,6 +8,9 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb.SourceLink;
 using Datadog.Trace.Util.Json;
@@ -58,6 +61,13 @@ internal static class SourceLinkInformationExtractor
     {
         commitSha = null;
         repositoryUrl = null;
+#if NET6_0_OR_GREATER
+        // NativeAOT applications have no assembly or PDB files: their SourceLink comes from the build (TryExtractFromBuildTimeSourceLink).
+        if (!RuntimeFeature.IsDynamicCodeSupported)
+        {
+            return false;
+        }
+#endif
 
         try
         {

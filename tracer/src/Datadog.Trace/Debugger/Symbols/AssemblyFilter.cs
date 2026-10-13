@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var shouldSkip = string.IsNullOrWhiteSpace(assemblyName) ||
                              assembly.IsDynamic ||
                              IsResourceModule(assembly) ||
-                             (requireAssemblyLocation && string.IsNullOrWhiteSpace(assembly.Location));
+                             (requireAssemblyLocation && !HasAssemblyFile(assembly));
 
             if (shouldSkip)
             {
@@ -46,6 +46,18 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName!);
+        }
+
+        private static bool HasAssemblyFile(Assembly assembly)
+        {
+#if NET6_0_OR_GREATER
+            // NativeAOT applications have no assembly files.
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                return false;
+            }
+#endif
+            return !string.IsNullOrWhiteSpace(assembly.Location);
         }
 
         private static bool IsResourceModule(Assembly assembly)
