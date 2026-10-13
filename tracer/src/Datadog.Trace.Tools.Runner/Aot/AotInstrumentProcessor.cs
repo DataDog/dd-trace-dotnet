@@ -18,6 +18,7 @@ using dnlib.DotNet.Pdb;
 #endif
 using Datadog.Trace.Tools.Runner.Aot.Native;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using dnlib.DotNet;
 
 namespace Datadog.Trace.Tools.Runner.Aot;
 
@@ -355,6 +356,27 @@ internal static class AotInstrumentProcessor
         {
             throw new InvalidOperationException(
                 $"The application references Datadog.Trace {version.ToString(3)} ({options.DatadogTracePath}), but a NativeAOT application can only contain one Datadog.Trace, the version of the instrumentation ({expected.ToString(3)}). Reference the Datadog.Trace {expected.ToString(3)} package (the manual instrumentation API) instead.");
+        }
+
+        // The duck typing generator checks the mappings of the application's Datadog.Trace with dynamic duck typing, which runs on
+        // the runner's: another build of the same version is only checked against its metadata, which is much slower and may
+        // differ from dynamic duck typing.
+        if (ReadModuleVersionId(options.DatadogTracePath) is { } mvid && mvid != typeof(Tracer).Assembly.ManifestModule.ModuleVersionId)
+        {
+            AotLog.Warn($"'{options.DatadogTracePath}' isn't the build of Datadog.Trace the runner runs on: the duck typing mappings are checked against its metadata only (slower, and they may differ from dynamic duck typing). Use the runner of the same build.");
+        }
+    }
+
+    private static Guid? ReadModuleVersionId(string path)
+    {
+        try
+        {
+            using var module = ModuleDefMD.Load(path);
+            return module.Mvid;
+        }
+        catch (Exception ex) when (ex is IOException or BadImageFormatException)
+        {
+            return null;
         }
     }
 }
