@@ -33,8 +33,8 @@ fi
 
 if [[ "$tool" == "codex" ]]; then
     printf 'Running Codex review...\n'
-    codex review
+    codex /review
 else
     printf 'Running Claude Code review...\n'
-    claude --permission-mode plan -p "/code-review"
+    claude /code-review
 fi

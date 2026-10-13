@@ -1,10 +1,9 @@
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
 
 function Fail {
     param([string]$Message)
 
-    Write-Error $Message
+    [Console]::Error.WriteLine("Error: $Message")
     exit 1
 }
 
@@ -39,10 +38,10 @@ else {
 
 if ($tool -eq "codex") {
     Write-Host "Running Codex review..."
-    & codex review
+    & codex /review
     exit $LASTEXITCODE
 }
 
 Write-Host "Running Claude Code review..."
-& claude --permission-mode plan -p "/code-review"
+& claude /code-review
 exit $LASTEXITCODE
