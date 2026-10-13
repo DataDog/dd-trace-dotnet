@@ -103,6 +103,8 @@ public class AotDuckTypeDeclarationsTests
                 ["applicationDirectory"] = Path.GetDirectoryName(datadogTrace),
                 ["mappings"] = new JArray(
                     Entry("Datadog.Trace.Undeclared.IProxy", "Library.Target"),
+                    // A proxy declared for the types deriving from a base type, with a target whose assembly isn't found.
+                    Entry("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.ObjectResult", "Library.Result"),
                     Entry("Datadog.Trace.Undeclared.IConstraintProxy", "Library.Target", callTarget: true),
                     Entry("Datadog.Trace.Undeclared.IFailingProxy", "Library.Target", canCreate: false),
                     Entry("Datadog.Trace.Excluded.IProxy", "Library.Target"),
@@ -114,7 +116,12 @@ public class AotDuckTypeDeclarationsTests
             AotDeclarationsCheck.Run(datadogTrace, [directory], ["Datadog.Trace.Excluded."], reportPath).Should().Be(1);
 
             var undeclared = JObject.Parse(File.ReadAllText(reportPath))["undeclared"]!.Select(entry => ((string)entry["mapping"]!, ((JArray)entry["applications"]!).Select(application => (string)application!).Single())).ToList();
-            undeclared.Should().ContainSingle().Which.Should().Be((new DuckTypeAotMapping("Datadog.Trace.Undeclared.IProxy", "Datadog.Trace", "Library.Target", "Library", DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile).Key, "Samples.App"));
+            undeclared.Should().Equal(
+                new[]
+                {
+                    (new DuckTypeAotMapping("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.ObjectResult", "Datadog.Trace", "Library.Result", "Library", DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile).Key, "Samples.App"),
+                    (new DuckTypeAotMapping("Datadog.Trace.Undeclared.IProxy", "Datadog.Trace", "Library.Target", "Library", DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile).Key, "Samples.App"),
+                });
 
             File.Delete(mapPath);
             AotDeclarationsCheck.Run(datadogTrace, [directory], [], reportPath: null).Should().Be(0);
