@@ -12,6 +12,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.TestHelpers;
