@@ -285,8 +285,9 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             bool success1 = ContainerMetadata.TryGetInodeUsingStat(currentDirectory, out long inode1);
             bool success2 = ContainerMetadata.TryGetInodeUsingStatx(currentDirectory, out long inode2);
 
+            // statx needs glibc 2.28+ or musl 1.2.5+, and a seccomp profile that allows it (TryGetInode falls back to stat).
+            Skip.IfNot(success2, "statx isn't available");
             success1.Should().BeTrue();
-            success2.Should().BeTrue();
             inode1.Should().BeGreaterThan(0);
             inode2.Should().Be(inode1);
         }
