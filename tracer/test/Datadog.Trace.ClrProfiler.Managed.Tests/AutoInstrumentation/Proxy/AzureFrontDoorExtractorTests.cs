@@ -37,7 +37,7 @@ public class AzureFrontDoorExtractorTests
         data.StartTime.Should().Be(start);
         data.DomainName.Should().Be("myapp.azurefd.net");
         data.HttpMethod.Should().Be("GET");
-        data.Path.Should().Be("/api/test");
+        data.Path.Should().Be("api/test");
         data.Stage.Should().Be("prod");
         data.Region.Should().Be("canada central");
     }

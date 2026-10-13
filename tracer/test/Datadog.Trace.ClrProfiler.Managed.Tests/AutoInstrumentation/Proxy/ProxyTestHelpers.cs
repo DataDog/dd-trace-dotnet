@@ -61,16 +61,22 @@ internal static class ProxyTestHelpers
     {
         var headers = new NameValueHeadersCollection([]);
         headers.Set(InferredProxyHeaders.Name, "azure-fd");
+        headers.Set(InferredProxyHeaders.Domain, "myapp.azurefd.net");
+        headers.Set(InferredProxyHeaders.HttpMethod, "GET");
+
+        // Front Door's {url_path} server variable omits the leading slash.
+        // https://learn.microsoft.com/en-us/azure/frontdoor/rule-set-server-variables
+        headers.Set(InferredProxyHeaders.Path, "api/test");
+        headers.Set(InferredProxyHeaders.Stage, "prod");
+        headers.Set(InferredProxyHeaders.Region, "canada central");
+
+        // Unlike APIM and API Gateway, Front Door injects no timestamp header,
+        // so tests that need a start time must supply one explicitly.
         if (start is not null)
         {
             headers.Set(InferredProxyHeaders.StartTime, start);
         }
 
-        headers.Set(InferredProxyHeaders.Domain, "myapp.azurefd.net");
-        headers.Set(InferredProxyHeaders.HttpMethod, "GET");
-        headers.Set(InferredProxyHeaders.Path, "/api/test");
-        headers.Set(InferredProxyHeaders.Stage, "prod");
-        headers.Set(InferredProxyHeaders.Region, "canada central");
         return headers;
     }
 }
