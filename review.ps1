@@ -18,7 +18,7 @@ if ($hasCodex -and $hasClaude) {
     Write-Host "Choose a reviewer:"
     Write-Host "  1) Codex"
     Write-Host "  2) Claude Code"
-    $selection = Read-Host "Selection [1-2]"
+    $selection = (Read-Host "Selection [1-2]").Trim()
 
     switch ($selection) {
         "1" { $tool = "codex" }
