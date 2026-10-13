@@ -17,6 +17,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     [DuckCopy("MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson]]", "MongoDB.Driver")]
     [DuckCopy("MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson]]", "MongoDB.Driver")]
     [DuckCopy("MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Driver.Core.Operations.AggregateOperation`1+AggregateResult[[MongoDB.Bson.BsonDocument, MongoDB.Bson]], MongoDB.Driver]]", "MongoDB.Driver")]
+    [DuckCopy("MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson]]", "MongoDB.Driver.Core")]
+    [DuckCopy("MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson]]", "MongoDB.Driver.Core")]
+    [DuckCopy("MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Bson.BsonDocument, MongoDB.Bson]]", "MongoDB.Driver.Core")]
+    [DuckCopy("MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1[[MongoDB.Driver.Core.Operations.AggregateOperation`1+AggregateResult[[MongoDB.Bson.BsonDocument, MongoDB.Bson]], MongoDB.Driver.Core]]", "MongoDB.Driver.Core")]
     internal struct IWireProtocolWithDatabaseNamespaceStruct
     {
         /// <summary>

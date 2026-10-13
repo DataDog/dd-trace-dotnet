@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
 [DuckCopy]
+[DuckCopy("Newtonsoft.Json.Linq.JProperty", "Newtonsoft.Json")]
 internal struct JPropertyStruct
 {
     public object Value;

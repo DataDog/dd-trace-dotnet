@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 [DuckType("RabbitMQ.Client.IReadOnlyBasicProperties", "RabbitMQ.Client")]
 [DuckType("RabbitMQ.Client.Impl.EmptyBasicProperty", "RabbitMQ.Client")]
 [DuckType("RabbitMQ.Client.ReadOnlyBasicProperties", "RabbitMQ.Client")]
+[DuckType("RabbitMQ.Client.Framing.BasicProperties", "RabbitMQ.Client")]
 internal interface IReadOnlyBasicProperties
 {
     /// <summary>

@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     [DuckCopy("Couchbase.Core.IO.Operations.Errors.GetErrorMap", "Couchbase.NetClient")]
     [DuckCopy("Couchbase.Core.IO.Operations.Hello", "Couchbase.NetClient")]
     [DuckCopy("Couchbase.Core.IO.Operations.Noop", "Couchbase.NetClient")]
+    [DuckCopy("Couchbase.Core.IO.Operations.OperationBase", "Couchbase.NetClient", IncludeDerivedTypes = true)]
     internal struct OperationStructV3
     {
         /// <summary>

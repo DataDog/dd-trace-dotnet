@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 
+[DuckType("NLog.Config.LoggingRule", "NLog")]
 internal interface ILoggingRuleProxy : IDuckType
 {
     public IList Targets { get; }

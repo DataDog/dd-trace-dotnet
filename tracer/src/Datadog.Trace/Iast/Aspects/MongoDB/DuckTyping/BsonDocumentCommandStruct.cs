@@ -14,6 +14,8 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
 /// https://github.com/mongodb/mongo-csharp-driver/blob/7be56f72ff484ffdeb9f021a8d582b4b6d62eeb8/src/MongoDB.Driver/Command.cs#L102
 /// </summary>
 [DuckCopy]
+[DuckCopy("MongoDB.Driver.BsonDocumentCommand`1", "MongoDB.Driver")]
+[DuckCopy("MongoDB.Driver.BsonDocumentFilterDefinition`1", "MongoDB.Driver")]
 internal struct BsonDocumentCommandStruct
 {
     /// <summary>

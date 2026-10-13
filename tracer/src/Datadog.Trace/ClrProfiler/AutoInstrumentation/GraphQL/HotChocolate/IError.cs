@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// HotChocolate.IError interface for ducktyping
     /// </summary>
     [DuckType("HotChocolate.Error", "HotChocolate.Execution.Abstractions")]
+    [DuckType("HotChocolate.Error", "HotChocolate.Abstractions")]
     internal interface IError
     {
         /// <summary>

@@ -9,6 +9,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
     [DuckType("NLog.Config.XmlLoggingConfiguration", "NLog")]
+    [DuckType("NLog.Config.LoggingConfiguration", "NLog", IncludeDerivedTypes = true)]
     internal interface IBasicLoggingConfigurationProxy : IDuckType
     {
         /// <summary>

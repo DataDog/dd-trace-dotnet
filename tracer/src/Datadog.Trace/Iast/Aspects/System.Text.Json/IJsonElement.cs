@@ -9,6 +9,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
 
+[DuckType("System.Text.Json.JsonElement", "System.Text.Json")]
 internal interface IJsonElement
 {
     [DuckField(Name = "_parent")]

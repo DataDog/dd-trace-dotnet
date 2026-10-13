@@ -763,6 +763,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         [DuckCopy]
         [DuckCopy("Microsoft.AspNetCore.Hosting.HostingApplicationDiagnostics+UnhandledExceptionData", "Microsoft.AspNetCore.Hosting")]
+        [DuckCopy("<>f__AnonymousType0`2[[Microsoft.AspNetCore.Http.HttpContext, Microsoft.AspNetCore.Http.Abstractions],[System.Exception, System.Private.CoreLib]]", "Microsoft.AspNetCore.Diagnostics")]
+        [DuckCopy("<>f__AnonymousType1`3[[Microsoft.AspNetCore.Http.HttpContext, Microsoft.AspNetCore.Http.Abstractions],[System.Int64, System.Private.CoreLib],[System.Exception, System.Private.CoreLib]]", "Microsoft.AspNetCore.Hosting")]
         internal struct UnhandledExceptionStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
@@ -804,6 +806,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/CompiledPageActionDescriptor.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Mvc.RazorPages.CompiledPageActionDescriptor", "Microsoft.AspNetCore.Mvc.RazorPages")]
         internal struct CompiledPageActionDescriptorStruct
         {
             [Duck]
@@ -817,6 +820,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/Infrastructure/HandlerMethodDescriptor.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.HandlerMethodDescriptor", "Microsoft.AspNetCore.Mvc.RazorPages")]
         internal struct HandlerMethodDescriptorStruct
         {
             [Duck]
