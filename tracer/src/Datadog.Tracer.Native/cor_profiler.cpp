@@ -1457,6 +1457,18 @@ bool CorProfiler::ProcessCallSites(ModuleID moduleId, mdToken methodToken)
     return dataflow->JITCompilationStarted(module, methodToken);
 }
 
+bool CorProfiler::IsCallSiteModuleExcluded(ModuleID moduleId)
+{
+    // The modules the dataflow doesn't rewrite (excluded assemblies): the host doesn't need to visit their methods.
+    auto dataflow = _dataflow;
+    if (dataflow == nullptr)
+    {
+        return true;
+    }
+
+    return dataflow->IsModuleExcluded(moduleId);
+}
+
 void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");

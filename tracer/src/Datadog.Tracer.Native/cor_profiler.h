@@ -255,6 +255,7 @@ public:
 
     // Offline instrumentation (dd-trace aot instrument): the call site (IAST/RASP) rewriting of a method.
     bool ProcessCallSites(ModuleID moduleId, mdToken methodToken);
+    bool IsCallSiteModuleExcluded(ModuleID moduleId);
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;

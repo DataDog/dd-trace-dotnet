@@ -29,4 +29,5 @@ EXPORTS
     InitEmbeddedCallTargetDefinitions
     WaitForPendingRejitWork
     ProcessCallSites
+    IsCallSiteModuleExcluded
     GetFileMetadataForPath

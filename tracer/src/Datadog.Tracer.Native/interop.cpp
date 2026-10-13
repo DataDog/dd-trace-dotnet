@@ -266,6 +266,18 @@ EXTERN_C BOOL STDAPICALLTYPE ProcessCallSites(ModuleID moduleId, UINT32 methodTo
     return trace::profiler->ProcessCallSites(moduleId, static_cast<mdToken>(methodToken)) ? TRUE : FALSE;
 }
 
+// dd-trace aot instrument: whether the call site (IAST/RASP) rewriting skips the methods of a module (excluded assemblies),
+// so the host doesn't call ProcessCallSites for each of them.
+EXTERN_C BOOL STDAPICALLTYPE IsCallSiteModuleExcluded(ModuleID moduleId)
+{
+    if (trace::profiler == nullptr)
+    {
+        return TRUE;
+    }
+
+    return trace::profiler->IsCallSiteModuleExcluded(moduleId) ? TRUE : FALSE;
+}
+
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     return trace::profiler->UpdateSettings(keys, values, length);
