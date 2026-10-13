@@ -1075,9 +1075,14 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             }
         }
 
-        var unresolvedAttributeTargetAssemblies = requiredAttributeTargetAssemblies
-                                                 .Where(name => !assemblyPathIndex.ContainsKey(name))
-                                                 .ToList();
+        // Datadog.Trace declares the mappings of its integrations, whose libraries the suite doesn't have: the generator leaves
+        // out the ones whose target assembly isn't there, like in an application that doesn't use the library.
+        var unresolvedAttributeTargetAssemblies = attributeDiscoveryResult.Mappings
+                                                                         .Where(mapping => !IsDeclaredByDatadogTrace(mapping))
+                                                                         .Select(mapping => mapping.TargetAssemblyName)
+                                                                         .Where(name => !string.IsNullOrWhiteSpace(name) && !assemblyPathIndex.ContainsKey(name))
+                                                                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                                                                         .ToList();
         unresolvedAttributeTargetAssemblies.Should().BeEmpty(
             "attribute-discovered mappings should have their target assemblies resolved for parity generation." +
             Environment.NewLine +
@@ -1142,6 +1147,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
         return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetFolders, targetFilters, excludedMappings);
     }
+
+    private static bool IsDeclaredByDatadogTrace(DuckTypeAotMapping mapping)
+        => string.Equals(mapping.Mode == DuckTypeAotMappingMode.Forward ? mapping.ProxyAssemblyName : mapping.TargetAssemblyName, "Datadog.Trace", StringComparison.OrdinalIgnoreCase);
 
     private static Guid ReadModuleVersionId(string assemblyPath)
     {
