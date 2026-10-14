@@ -573,7 +573,7 @@ partial class Build
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
             CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
-            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, BuildDirectory);
         });
 
     Target CompileTracerNativeTestsWindows => _ => _
@@ -1268,7 +1268,6 @@ partial class Build
         .After(BuildTracerHome, BuildManagedTracerHome, BuildNativeTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
-        .Requires(() => Version)
         .Executes(() =>
         {
             var tar = Tar.Value;

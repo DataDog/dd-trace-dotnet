@@ -276,6 +276,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
+- `docs/development/Versioning.md` — Where the SDK version lives, the version shapes, and dev versions
 - `docs/development/FeatureFlagsOpenFeature.md` — OpenFeature provider sync APIs, provider hook rules, and focused tests
 
 **CI & Testing:**
@@ -287,6 +288,12 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, product categorization, key aliases, deprecations, and default values for all `DD_*` and `OTEL_*` environment variables (also consumed by source generators).
 
 - **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
+
+## Versioning
+
+The SDK version lives in **`version.props`** at the repo root — the only committed version literal. Everything else (managed assembly versions, native headers, `.rc` resources, CMake project versions, MSI, NuGet, Linux packages) derives from it at build time. Non-release branches and local builds automatically get a unique `3.56.0-dev.g<sha>` version.
+
+- **`docs/development/Versioning.md`** — Version shapes and which to use, build channels, changing the version without a commit, and how the generated files fit together
 
 ## Security & Configuration
 

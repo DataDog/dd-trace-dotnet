@@ -10,8 +10,10 @@ namespace trace
 {
 int GeneratedDefinitions::InitCallTargets(UINT32 enabledCategories, UINT32 platform)
 {
-std::string version = PROFILER_VERSION;
-std::string name = "Datadog.Trace, Version=" + version + ".0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+// Built from DD_FOUR_PART_VERSION_STR rather than PROFILER_VERSION + ".0": the 4th
+// field is the commit height on a dev build, not always zero. Adjacent string
+// literals concatenate at compile time.
+std::string name = "Datadog.Trace, Version=" DD_FOUR_PART_VERSION_STR ", Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
 shared::WSTRING nameW = ToWSTRING(name);
 WCHAR* assemblyName = (WCHAR*) (nameW.c_str());
 

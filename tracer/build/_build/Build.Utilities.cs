@@ -8,7 +8,9 @@ using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
 using DiffMatchPatch;
@@ -640,7 +642,6 @@ partial class Build
        .Description("Update the version number for the tracer")
        .Before(Clean, BuildTracerHome)
        .Before(Clean, BuildProfilerHome)
-       .Requires(() => Version)
        .Requires(() => NewVersion)
        .Requires(() => NewIsPrerelease)
        .Executes(() =>
@@ -650,11 +651,52 @@ partial class Build
                 throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version} and {IsPrerelease} == {NewIsPrerelease}");
             }
 
-            // Samples need to use the latest version (i.e. the _current_ build version, before updating)
+            // The samples reference the version that is published on nuget.org, which is the one we
+            // are bumping *away* from, so they lag the source by one release. Everything else in the
+            // repository derives its version from version.props at build time.
             new SetAllVersions.Samples(TracerDirectory, Version, IsPrerelease).Run();
-            // Source needs to use the _actual_ version
-            new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
+
+            UpdateVersionProps(NewVersion, NewIsPrerelease!.Value, latestReleasedVersion: Version);
         });
+
+    /// <summary>
+    /// Rewrites the three values in version.props. This replaces the regex rewriter that used to
+    /// have to visit nineteen files to change the version.
+    /// </summary>
+    private void UpdateVersionProps(string newVersion, bool newIsPrerelease, string latestReleasedVersion)
+    {
+        var path = RootDirectory / "version.props";
+        var content = File.ReadAllText(path);
+
+        content = ReplaceElement(content, "DD_VersionPrefix", newVersion);
+        content = ReplaceElement(content, "DD_IsPrerelease", newIsPrerelease ? "true" : "false");
+        content = ReplaceElement(content, "DD_LatestReleasedVersion", latestReleasedVersion);
+
+        File.WriteAllText(path, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        Logger.Information(
+            "Updated {Path} to {Version} (prerelease: {IsPrerelease}, latest released: {Released})",
+            path,
+            newVersion,
+            newIsPrerelease,
+            latestReleasedVersion);
+
+        return;
+
+        static string ReplaceElement(string content, string element, string value)
+        {
+            var pattern = $"<{element}>[^<]*</{element}>";
+            var replacement = $"<{element}>{value}</{element}>";
+
+            var updated = Regex.Replace(content, pattern, replacement);
+            if (updated == content && !content.Contains(replacement, StringComparison.Ordinal))
+            {
+                throw new Exception($"Could not find <{element}> in version.props");
+            }
+
+            return updated;
+        }
+    }
 
     Target AnalyzePipelineCriticalPath => _ => _
        .Description("Perform critical path analysis on the consolidated pipeline stages")

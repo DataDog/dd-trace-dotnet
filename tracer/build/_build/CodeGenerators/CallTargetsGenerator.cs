@@ -15,7 +15,7 @@ namespace CodeGenerators
     {
         private const string NullLiteral = "null";
 
-        public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, string version, AbsolutePath dependabotPath) 
+        public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, AbsolutePath dependabotPath)
         {
             Logger.Debug("Generating CallTarget definitions file ...");
 
@@ -39,7 +39,7 @@ namespace CodeGenerators
             }
 
 
-            GenerateNativeFile(callTargets, outputPath, version);
+            GenerateNativeFile(callTargets, outputPath);
             GenerateJsonFile(callTargets, dependabotPath);
         }
 
@@ -506,7 +506,7 @@ namespace CodeGenerators
             }
         }
 
-        internal static void GenerateNativeFile(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, AbsolutePath outputPath, string version)
+        internal static void GenerateNativeFile(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, AbsolutePath outputPath)
         {
             var sb = new StringBuilder();
             sb.AppendLine("""
@@ -522,8 +522,10 @@ namespace CodeGenerators
                 {
                 int GeneratedDefinitions::InitCallTargets(UINT32 enabledCategories, UINT32 platform)
                 {
-                std::string version = PROFILER_VERSION;
-                std::string name = "Datadog.Trace, Version=" + version + ".0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+                // Built from DD_FOUR_PART_VERSION_STR rather than PROFILER_VERSION + ".0": the 4th
+                // field is the commit height on a dev build, not always zero. Adjacent string
+                // literals concatenate at compile time.
+                std::string name = "Datadog.Trace, Version=" DD_FOUR_PART_VERSION_STR ", Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
                 shared::WSTRING nameW = ToWSTRING(name);
                 WCHAR* assemblyName = (WCHAR*) (nameW.c_str());
                 """);

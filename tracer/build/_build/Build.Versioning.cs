@@ -14,7 +14,6 @@ using Logger = Serilog.Log;
 partial class Build
 {
     AbsolutePath VersionPropsFile => RootDirectory / "version.props";
-    AbsolutePath GeneratedVersionDirectory => RootDirectory / "artifacts" / "version";
     AbsolutePath VersionProjectFile => RootDirectory / "build" / "Version.proj";
 
     Target GenerateVersionFiles => _ => _

@@ -324,7 +324,6 @@ partial class Build
     Target CloseMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
        .Executes(async() =>
        {
             var client = GetGitHubClient();
@@ -359,7 +358,6 @@ partial class Build
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
        .Executes(async() =>
         {
             var client = GetGitHubClient();
@@ -390,7 +388,6 @@ partial class Build
     Target OutputCurrentVersionToGitHub => _ => _
        .Unlisted()
        .After(UpdateVersion)
-       .Requires(() => Version)
        .Executes(async () =>
         {
             Console.WriteLine("Using version to " + FullVersion);
@@ -413,7 +410,6 @@ partial class Build
 
     Target CalculateNextVersion => _ => _
        .Unlisted()
-       .Requires(() => Version)
        .Executes(() =>
         {
             Console.WriteLine("Current version is " + Version);
@@ -450,20 +446,12 @@ partial class Build
        .After(UpdateVersion, UpdateChangeLog)
        .Executes(() =>
         {
+            // Everything except the samples derives its version from version.props at build time -
+            // see build/Version.props. The samples reference the version that is published on
+            // nuget.org and dl.datadoghq.com, so they still have to be rewritten.
             var expectedFileChanges = new List<string>
             {
-                ".azure-pipelines/ultimate-pipeline.yml",
-                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
-                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
-                "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
-                "profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
-                "profiler/src/ProfilerEngine/ProductVersion.props",
-                "shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
-                "shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
-                "shared/src/msi-installer/WindowsInstaller.wixproj",
-                "shared/src/native-src/version.h",
-                "tracer/build/artifacts/dd-dotnet.sh",
-                "tracer/build/_build/Build.cs",
+                "version.props",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
@@ -475,12 +463,6 @@ partial class Build
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
-                "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
-                "tracer/src/Datadog.Tracer.Native/Resource.rc",
-                "tracer/src/Directory.Build.props",
-                "tracer/src/Datadog.Trace/TracerConstants.cs",
             };
 
             if (ExpectChangelogUpdate)
@@ -551,7 +533,6 @@ partial class Build
 
     Target UpdateChangeLog => _ => _
        .Unlisted()
-       .Requires(() => Version)
        .Executes(() =>
         {
             var releaseNotes = Environment.GetEnvironmentVariable("RELEASE_NOTES");
@@ -592,7 +573,6 @@ partial class Build
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
        .Executes(async () =>
         {
             const string fixes = "Fixes";
@@ -751,7 +731,6 @@ partial class Build
         .Unlisted()
         .Description("Downloads the release artifacts from the specified Azure DevOps BuildId")
         .DependsOn(CreateRequiredDirectories)
-        .Requires(() => Version)
         .Requires(() => AzureDevopsBuildId)
         .Executes(async () =>
         {
@@ -773,7 +752,6 @@ partial class Build
        .Description("Downloads the latest artifacts from Azure Devops and Gitlab that has the provided version")
        .DependsOn(CreateRequiredDirectories)
        .Requires(() => AzureDevopsToken)
-       .Requires(() => Version)
        .Requires(() => TargetBranch)
        .Executes(async () =>
        {
