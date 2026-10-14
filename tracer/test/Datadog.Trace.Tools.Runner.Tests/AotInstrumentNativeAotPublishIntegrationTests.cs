@@ -224,10 +224,14 @@ public class AotInstrumentNativeAotPublishIntegrationTests
     /// </summary>
     /// <remarks>
     /// Opt-in: DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH=1, DD_AOT_PACKAGE_FEED (folder with the Datadog.Trace.Aot package) and
-    /// DD_AOT_MANUAL_API (Datadog.Trace.Manual.dll).
+    /// DD_AOT_MANUAL_API (Datadog.Trace.Manual.dll). CI runs it after packing (RunNativeAotPackageTests). .NET 8 and .NET 10
+    /// compile with different versions of ILC, whose analysis differs.
     /// </remarks>
-    [SkippableFact]
-    public async Task ManualApiApplicationWithThePackage()
+    /// <param name="targetFramework">The target framework of the application.</param>
+    [SkippableTheory]
+    [InlineData("net8.0")]
+    [InlineData("net10.0")]
+    public async Task ManualApiApplicationWithThePackage(string targetFramework)
     {
         var feed = Environment.GetEnvironmentVariable("DD_AOT_PACKAGE_FEED");
         var manualApi = Environment.GetEnvironmentVariable("DD_AOT_MANUAL_API");
@@ -240,7 +244,7 @@ public class AotInstrumentNativeAotPublishIntegrationTests
         Directory.CreateDirectory(project);
         try
         {
-            File.WriteAllText(Path.Combine(project, "PkgAot.csproj"), PackageProjectFile(manualApi!, feed!, version));
+            File.WriteAllText(Path.Combine(project, "PkgAot.csproj"), PackageProjectFile(targetFramework, manualApi!, feed!, version));
             File.WriteAllText(Path.Combine(project, "Program.cs"), ManualApiProgramFile);
             var published = Path.Combine(workDirectory, "nativeaot");
             // IAST is opt-in at build time.
@@ -310,7 +314,7 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             // doesn't keep). Once it's handled (guarded, preserved by the instrumentation...), accept it in the snapshot.
             var settings = new VerifySettings();
             settings.DisableRequireUniquePrefix();
-            settings.UseFileName($"{nameof(AotInstrumentNativeAotPublishIntegrationTests)}.DatadogTraceAotWarnings");
+            settings.UseFileName($"{nameof(AotInstrumentNativeAotPublishIntegrationTests)}.DatadogTraceAotWarnings_{targetFramework}");
             await Verifier.Verify(string.Join("\n", DatadogTraceAotWarnings(publishOutput)), settings);
         }
         finally
@@ -351,11 +355,11 @@ public class AotInstrumentNativeAotPublishIntegrationTests
                ? RuntimeInformation.RuntimeIdentifier
                : $"{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" : "linux")}-{RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant()}";
 
-    private static string PackageProjectFile(string manualApi, string feed, string version)
+    private static string PackageProjectFile(string targetFramework, string manualApi, string feed, string version)
         => $"""
             <Project Sdk="Microsoft.NET.Sdk.Web">
               <PropertyGroup>
-                <TargetFramework>net8.0</TargetFramework>
+                <TargetFramework>{targetFramework}</TargetFramework>
                 <Nullable>enable</Nullable>
                 <ImplicitUsings>enable</ImplicitUsings>
                 <PublishAot>true</PublishAot>
