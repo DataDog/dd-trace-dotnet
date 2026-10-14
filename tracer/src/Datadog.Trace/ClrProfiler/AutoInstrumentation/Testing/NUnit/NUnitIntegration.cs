@@ -27,6 +27,7 @@ internal static class NUnitIntegration
     private static readonly ConditionalWeakTable<object, object> ModulesItems = new();
     private static readonly ConditionalWeakTable<object, object> SuiteItems = new();
     private static readonly ConditionalWeakTable<object, HashSet<object>> Prerequisites = new();
+    private static readonly ConditionalWeakTable<object, object> PrerequisitesWithHiddenFailures = new();
     private static readonly Dictionary<string, WeakReference<Test>> Tests = new();
 
     internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
@@ -65,6 +66,7 @@ internal static class NUnitIntegration
         switch (testResult.ResultState.Status)
         {
             case TestStatus.Skipped or TestStatus.Inconclusive:
+                ClearErrorInfo(test);
                 test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, resultMessage);
                 break;
             case TestStatus.Failed:
@@ -72,13 +74,7 @@ internal static class NUnitIntegration
                 test.Close(Ci.TestStatus.Fail);
                 break;
             default:
-                // Native Repeat/Retry commands can succeed after an exception captured by Reflect.InvokeMethod.
-                // The completed NUnit result determines the outcome of the whole command.
-                var span = test.GetInternalSpan();
-                span.Error = false;
-                span.SetTag(Tags.ErrorType, null);
-                span.SetTag(Tags.ErrorMsg, null);
-                span.SetTag(Tags.ErrorStack, null);
+                ClearErrorInfo(test);
                 if (!string.IsNullOrEmpty(resultMessage))
                 {
                     test.SetTag(TestTags.Message, resultMessage);
@@ -87,6 +83,17 @@ internal static class NUnitIntegration
                 test.Close(Ci.TestStatus.Pass);
                 break;
         }
+    }
+
+    private static void ClearErrorInfo(Test test)
+    {
+        // Native Repeat/Retry commands can end without failing after an exception captured by Reflect.InvokeMethod.
+        // The completed NUnit result determines the outcome of the whole command.
+        var span = test.GetInternalSpan();
+        span.Error = false;
+        span.SetTag(Tags.ErrorType, null);
+        span.SetTag(Tags.ErrorMsg, null);
+        span.SetTag(Tags.ErrorStack, null);
     }
 
     internal static TTestCommand CreateTestOptimizationTestCommand<TTestCommand>(TTestCommand testCommand)
@@ -212,21 +219,75 @@ internal static class NUnitIntegration
             return false;
         }
 
-        for (var test = currentTest; test is not null; test = test.Parent)
+        var test = currentTest;
+        while (test?.Instance is { } instance)
         {
-            if (test.Instance.TryDuckCast<ITestWithDependency>(out var dependency) && dependency.DependantTest?.Instance is not null)
+            if (instance.TryDuckCast<ITestWithDependency>(out var dependency) && dependency.DependantTest?.Instance is not null)
             {
                 return true;
             }
 
-            if (test.Parent is { Instance: { } parent } && Prerequisites.GetValue(parent, GetPrerequisites).Contains(test.Instance!))
+            var parent = test.Parent;
+            if (parent?.Instance is { } parentInstance && IsPrerequisite(parentInstance, instance))
             {
                 return true;
             }
+
+            test = parent;
         }
 
         return false;
     }
+
+    // NUnit 5 runs dependents only when their prerequisite, or the prerequisite suite containing it, passes or ends with
+    // a warning. Inside a dependency chain only failures are hidden from NUnit, so it schedules dependents from the real
+    // outcomes. A hidden failure still blocks the dependents of every prerequisite suite containing it.
+    internal static bool CanHideResult(ITestResult result)
+    {
+        var currentTest = result.Test;
+
+        // Older NUnit versions do not expose a dependency graph.
+        if (currentTest.Instance is not { } currentInstance || !currentInstance.TryDuckCast<ITestWithDependency>(out _))
+        {
+            return true;
+        }
+
+        var isFailure = result.ResultState.Status == TestStatus.Failed;
+        var test = currentTest;
+        while (test?.Instance is { } instance)
+        {
+            var parent = test.Parent;
+            if (parent?.Instance is { } parentInstance && IsPrerequisite(parentInstance, instance))
+            {
+                if (!isFailure)
+                {
+                    return false;
+                }
+
+                if (!ReferenceEquals(instance, currentInstance))
+                {
+                    PrerequisitesWithHiddenFailures.GetValue(instance, static _ => new object());
+                }
+            }
+
+            test = parent;
+        }
+
+        return true;
+    }
+
+    // Runs before a suite completes, while NUnit has not read its result to decide whether the dependents run.
+    internal static void BlockDependentsOfHiddenFailures(ITest suite, ITestResult result)
+    {
+        if (suite.Instance is { } instance &&
+            PrerequisitesWithHiddenFailures.Remove(instance) &&
+            result.ResultState.Status is TestStatus.Passed or TestStatus.Warning)
+        {
+            result.SetResult(result.ResultState.StaticIgnored, "Flaky test failures in this prerequisite are hidden by Datadog.", string.Empty);
+        }
+    }
+
+    private static bool IsPrerequisite(object parent, object test) => Prerequisites.GetValue(parent, GetPrerequisites).Contains(test);
 
     private static HashSet<object> GetPrerequisites(object parent)
     {
@@ -445,13 +506,21 @@ internal static class NUnitIntegration
 
     internal static void ReportDependencySkip(ICompositeWorkItem parent, ITestResult result)
     {
+        var skipReason = result.Message ?? string.Empty;
+        if (!result.Test.IsSuite)
+        {
+            // Test cases have no selected descendants, so the result already identifies the skipped test.
+            GetOrCreateTest(result.Test, skipReasonOverride: skipReason);
+            return;
+        }
+
         if (parent.Children is { } children)
         {
             foreach (var child in children)
             {
                 if (child.TryDuckCast<IWorkItem>(out var workItem) && ReferenceEquals(workItem.Result.Instance, result.Instance))
                 {
-                    ReportDependencySkip(workItem, result.Message ?? string.Empty);
+                    ReportDependencySkip(workItem, skipReason);
                     return;
                 }
             }

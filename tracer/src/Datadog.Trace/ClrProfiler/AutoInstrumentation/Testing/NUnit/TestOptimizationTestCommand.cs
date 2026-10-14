@@ -101,10 +101,18 @@ internal sealed class TestOptimizationTestCommand
         }
 
         // Keep the actual outcomes for retry decisions and aggregation, then hide the final result from NUnit.
+        // NUnit 5 dependency chains only hide failures, so NUnit keeps deciding which dependents run.
         if (testManagementProperties is { Quarantined: true, AttemptToFix: false })
         {
-            Common.Log.Debug("TestOptimizationTestCommand: Test is quarantined by Datadog.");
-            SetSkippedResult(result, "Flaky test is quarantined by Datadog.");
+            if (NUnitIntegration.CanHideResult(result))
+            {
+                Common.Log.Debug("TestOptimizationTestCommand: Test is quarantined by Datadog.");
+                SetSkippedResult(result, "Flaky test is quarantined by Datadog.");
+            }
+            else
+            {
+                Common.Log.Debug("TestOptimizationTestCommand: Quarantined test did not fail and is a prerequisite, keeping its result for the dependent tests.");
+            }
         }
 
         context.CurrentResult = result;

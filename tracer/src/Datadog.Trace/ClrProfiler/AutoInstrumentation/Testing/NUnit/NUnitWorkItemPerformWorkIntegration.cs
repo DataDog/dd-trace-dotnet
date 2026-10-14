@@ -84,8 +84,10 @@ public static class NUnitWorkItemPerformWorkIntegration
                     }
                 }
 
+                // Inspect the NUnit 5 dependency graph only for tests ITR would otherwise skip.
                 if (CanApplyItrSkip(item, testManagementProperties) &&
-                    NUnitIntegration.ShouldSkip(item, out _, out _, out var skippableTest))
+                    NUnitIntegration.ShouldSkip(item, out _, out _, out var skippableTest) &&
+                    !NUnitIntegration.HasDependencies(item))
                 {
                     var testMethod = item.Method?.MethodInfo;
                     Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
@@ -117,8 +119,7 @@ public static class NUnitWorkItemPerformWorkIntegration
     internal static bool CanApplyItrSkip(ITest item, TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
     {
         return item.RunState == RunState.Runnable &&
-               Common.CanApplyItrSkip(testManagementProperties) &&
-               !NUnitIntegration.HasDependencies(item);
+               Common.CanApplyItrSkip(testManagementProperties);
     }
 
     private static void WriteDebugInfo(IWorkItem workItem)

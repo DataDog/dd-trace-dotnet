@@ -42,60 +42,22 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
     [Trait("Category", "TestIntegrations")]
     public async Task ReportsSkippedFixtureAndPreservesPrerequisites(string packageVersion, string endpointToRemove)
     {
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-        InjectSession(out _, out _, out _, out _, out _, out _, out _);
-        using var agent = EnvironmentHelper.GetMockAgent();
-        agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(endpointToRemove)).ToArray();
-        var tests = new List<MockCIVisibilityTest>();
-        var suites = new List<MockCIVisibilityTestSuite>();
-        var modules = new List<MockCIVisibilityTestModule>();
-        agent.EventPlatformProxyPayloadReceived += (_, e) =>
-        {
-            if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
-            {
-                e.Value.Response = new MockTracerResponse(
-                    """
-                    {"data":{"type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}
-                    """,
-                    200);
-            }
-            else if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
-            {
-                e.Value.Response = new MockTracerResponse(
-                    """
-                    {"data":[
-                      {"type":"test","attributes":{"name":"PassedPrerequisite","suite":"Samples.NUnit5Tests.DependenciesFixture"}},
-                      {"type":"test","attributes":{"name":"PassedDependent","suite":"Samples.NUnit5Tests.DependenciesFixture"}},
-                      {"type":"test","attributes":{"name":"Independent","suite":"Samples.NUnit5Tests.DependenciesFixture"}}
-                    ],"meta":{"correlation_id":"nunit5-dependencies"}}
-                    """,
-                    200);
-            }
-            else if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
-            {
-                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
-                foreach (var item in payload.Events)
-                {
-                    var json = item.Content.ToString();
-                    if (item.Type == SpanTypes.Test)
-                    {
-                        tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(json));
-                    }
-                    else if (item.Type == SpanTypes.TestSuite)
-                    {
-                        suites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(json));
-                    }
-                    else if (item.Type == SpanTypes.TestModule)
-                    {
-                        modules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(json));
-                    }
-                }
-            }
-        };
+        const string SettingsJson = """
+                                    {"data":{"type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}
+                                    """;
+        const string SkippableTestsJson = """
+                                          {"data":[
+                                            {"type":"test","attributes":{"name":"PassedPrerequisite","suite":"Samples.NUnit5Tests.DependenciesFixture"}},
+                                            {"type":"test","attributes":{"name":"PassedDependent","suite":"Samples.NUnit5Tests.DependenciesFixture"}},
+                                            {"type":"test","attributes":{"name":"Independent","suite":"Samples.NUnit5Tests.DependenciesFixture"}}
+                                          ],"meta":{"correlation_id":"nunit5-dependencies"}}
+                                          """;
+        var events = await RunSampleAsync(packageVersion, endpointToRemove, SettingsJson, SkippableTestsJson, testManagementJson: null, "/TestCaseFilter:FullyQualifiedName~Samples.NUnit5Tests -- NUnit.PreFilter=false", expectedExitCode: 1);
+        var tests = events.Tests;
+        var suites = events.Suites;
+        var modules = events.Modules;
 
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName~Samples.NUnit5Tests -- NUnit.PreFilter=false", packageVersion: packageVersion, expectedExitCode: 1);
-
-        tests.Should().HaveCount(18);
+        tests.Should().HaveCount(19);
         suites.Should().HaveCount(4);
         modules.Should().ContainSingle();
         tests.Select(t => t.SpanId).Should().OnlyHaveUniqueItems();
@@ -115,6 +77,103 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
         independent.Meta[TestTags.Status].Should().Be(TestTags.StatusSkip);
         independent.Meta[IntelligentTestRunnerTags.SkippedBy].Should().Be("true");
         modules.Single().Metrics[IntelligentTestRunnerTags.SkippingCount].Should().Be(1);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    public async Task QuarantineHidesOnlyFailuresFromNUnitDependencies(string packageVersion, string endpointToRemove)
+    {
+        const string SettingsJson = """
+                                    {"data":{"type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":false,"require_git":false,"tests_skipping":false,"test_management":{"enabled":true,"attempt_to_fix_retries":0}}}}
+                                    """;
+        const string TestManagementJson = """
+                                          {"data":{"id":"nunit5-quarantine","type":"ci_app_libraries_tests","attributes":{"modules":{"Samples.NUnitTests":{"suites":{
+                                            "Samples.NUnit5Tests.DependenciesFixture":{"tests":{"PassedPrerequisite":{"properties":{"quarantined":true}}}},
+                                            "Samples.NUnit5Tests.FailingFixture":{"tests":{"WarningBeforeFailure":{"properties":{"quarantined":true}},"Failed":{"properties":{"quarantined":true}}}}
+                                          }}}}}}
+                                          """;
+        // With parallel workers NUnit evaluates a fixture dependency before the queued prerequisite fixture completes.
+        // Running without workers makes NUnit decide from the completed prerequisite fixture result.
+        const string Arguments = "/TestCaseFilter:FullyQualifiedName=Samples.NUnit5Tests.DependenciesFixture.PassedDependent|FullyQualifiedName~Samples.NUnit5Tests.DependentFixture.SkippedFixtureCase -- NUnit.PreFilter=false NUnit.NumberOfTestWorkers=0";
+
+        // The adapter receives no individual results from the blocked fixture or from quarantined prerequisites, so it reports exit code zero.
+        var events = await RunSampleAsync(packageVersion, endpointToRemove, SettingsJson, skippableTestsJson: null, TestManagementJson, Arguments, expectedExitCode: 0);
+        var tests = events.Tests;
+
+        tests.Should().HaveCount(6);
+        foreach (var name in new[] { "PassedPrerequisite", "WarningBeforeFailure", "Failed" })
+        {
+            tests.Single(t => t.Meta[TestTags.Name] == name).Meta[TestTags.TestIsQuarantined].Should().Be("true");
+        }
+
+        tests.Single(t => t.Meta[TestTags.Name] == "PassedPrerequisite").Meta[TestTags.Status].Should().Be(TestTags.StatusPass);
+        tests.Single(t => t.Meta[TestTags.Name] == "PassedDependent").Meta[TestTags.Status].Should().Be(TestTags.StatusPass);
+
+        // NUnit keeps the warning, but the hidden failure after it must still block the dependents of its fixture.
+        tests.Single(t => t.Meta[TestTags.Name] == "WarningBeforeFailure").Meta[TestTags.Status].Should().Be(TestTags.StatusPass);
+        tests.Single(t => t.Meta[TestTags.Name] == "Failed").Meta[TestTags.Status].Should().Be(TestTags.StatusFail);
+        var skippedCases = tests.Where(t => t.Meta[TestTags.Name] == "SkippedFixtureCase").ToArray();
+        skippedCases.Should().HaveCount(2);
+        skippedCases.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusSkip && t.Meta[TestTags.SkipReason].StartsWith("Dependency on "));
+    }
+
+    private async Task<CapturedEvents> RunSampleAsync(string packageVersion, string endpointToRemove, string settingsJson, string skippableTestsJson, string testManagementJson, string arguments, int expectedExitCode)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+        InjectSession(out _, out _, out _, out _, out _, out _, out _);
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(endpointToRemove)).ToArray();
+        var events = new CapturedEvents();
+        agent.EventPlatformProxyPayloadReceived += (_, e) =>
+        {
+            if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+            {
+                e.Value.Response = new MockTracerResponse(settingsJson, 200);
+            }
+            else if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable") && skippableTestsJson is not null)
+            {
+                e.Value.Response = new MockTracerResponse(skippableTestsJson, 200);
+            }
+            else if (e.Value.PathAndQuery.EndsWith("api/v2/test/libraries/test-management/tests") && testManagementJson is not null)
+            {
+                e.Value.Response = new MockTracerResponse(testManagementJson, 200);
+            }
+            else if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+            {
+                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                foreach (var item in payload.Events)
+                {
+                    var json = item.Content.ToString();
+                    if (item.Type == SpanTypes.Test)
+                    {
+                        events.Tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(json));
+                    }
+                    else if (item.Type == SpanTypes.TestSuite)
+                    {
+                        events.Suites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(json));
+                    }
+                    else if (item.Type == SpanTypes.TestModule)
+                    {
+                        events.Modules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(json));
+                    }
+                }
+            }
+        };
+
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: packageVersion, expectedExitCode: expectedExitCode);
+        return events;
+    }
+
+    private sealed class CapturedEvents
+    {
+        public List<MockCIVisibilityTest> Tests { get; } = [];
+
+        public List<MockCIVisibilityTestSuite> Suites { get; } = [];
+
+        public List<MockCIVisibilityTestModule> Modules { get; } = [];
     }
 }
 

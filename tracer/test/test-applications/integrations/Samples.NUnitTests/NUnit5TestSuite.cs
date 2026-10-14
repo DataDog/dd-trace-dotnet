@@ -96,7 +96,11 @@ public class DependenciesFixture
 
 public class FailingFixture
 {
-    [Test]
+    // A warning before the failure leaves the fixture as ChildWarning if the failure is hidden from NUnit.
+    [Test, Order(1)]
+    public void WarningBeforeFailure() => Assert.Warn("The prerequisite fixture warned before failing");
+
+    [Test, Order(2)]
     public void Failed() => Assert.Fail("The prerequisite fixture failed");
 }
 

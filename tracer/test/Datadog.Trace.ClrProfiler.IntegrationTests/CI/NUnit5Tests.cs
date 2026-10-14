@@ -47,11 +47,11 @@ public class NUnit5Tests : TestingFrameworkTest
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
         using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName~Samples.NUnit5Tests -- NUnit.PreFilter=false", packageVersion: packageVersion, expectedExitCode: 1);
-        var spans = (await agent.WaitForSpansAsync(18)).Where(s => s.Name == "nunit.test").ToArray();
+        var spans = (await agent.WaitForSpansAsync(19)).Where(s => s.Name == "nunit.test").ToArray();
 
-        spans.Should().HaveCount(18);
+        spans.Should().HaveCount(19);
         spans.Should().OnlyContain(s => s.Tags[TestTags.FrameworkVersion] == packageVersion);
-        spans.Count(s => s.Tags[TestTags.Status] == TestTags.StatusPass).Should().Be(9);
+        spans.Count(s => s.Tags[TestTags.Status] == TestTags.StatusPass).Should().Be(10);
         spans.Count(s => s.Tags[TestTags.Status] == TestTags.StatusFail).Should().Be(3);
         spans.Count(s => s.Tags[TestTags.Status] == TestTags.StatusSkip).Should().Be(6);
         spans.Should().OnlyContain(s => s.Tags[TestTags.Status] != TestTags.StatusPass || s.Error == 0);
@@ -96,10 +96,11 @@ public class NUnit5Tests : TestingFrameworkTest
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
         // The adapter receives no individual results from the blocked fixture and reports exit code zero.
+        // NUnit adds the whole prerequisite fixture to the run: WarningBeforeFailure and Failed.
         using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: $"/TestCaseFilter:{filter} -- NUnit.PreFilter=false", packageVersion: packageVersion);
-        var spans = (await agent.WaitForSpansAsync(selectedCount + 1)).Where(s => s.Name == "nunit.test").ToArray();
+        var spans = (await agent.WaitForSpansAsync(selectedCount + 2)).Where(s => s.Name == "nunit.test").ToArray();
 
-        spans.Should().HaveCount(selectedCount + 1);
+        spans.Should().HaveCount(selectedCount + 2);
         spans.Count(s => s.Tags[TestTags.Name] == "Failed" && s.Tags[TestTags.Status] == TestTags.StatusFail).Should().Be(1);
         spans.Count(s => s.Tags[TestTags.Name] == selectedName && s.Tags[TestTags.Status] == TestTags.StatusSkip).Should().Be(selectedCount);
     }
