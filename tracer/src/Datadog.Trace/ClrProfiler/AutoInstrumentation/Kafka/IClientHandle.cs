@@ -10,9 +10,11 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
-/// Duck Type for Confluent.Kafka.IClient
+/// Duck Type for Confluent.Kafka.IClient: the producers and consumers of any key and value types, whose handle gives the
+/// cluster id.
 /// </summary>
-[DuckType("Confluent.Kafka.Producer`2[[Confluent.Kafka.Null, Confluent.Kafka],[Confluent.Kafka.Null, Confluent.Kafka]]", "Confluent.Kafka")]
+[DuckType("Confluent.Kafka.Producer`2", "Confluent.Kafka")]
+[DuckType("Confluent.Kafka.Consumer`2", "Confluent.Kafka")]
 internal interface IClientHandle
 {
     object? Handle { get; }
