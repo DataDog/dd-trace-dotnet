@@ -4,8 +4,7 @@
 // </copyright>
 
 // The trimming and AOT analysis warnings of the vendored libraries in the code NativeAOT applications keep, and why
-// their
-// reflection works there (the vendored files are generated: the suppressions live here).
+// their reflection works there or isn't used (the vendored files are generated: the suppressions live here).
 
 using System.Diagnostics.CodeAnalysis;
 
@@ -58,6 +57,27 @@ using System.Diagnostics.CodeAnalysis;
 
 // Datadog.Trace doesn't use JObject through System.ComponentModel type descriptors.
 [assembly: UnconditionalSuppressMessage("Trimming", "IL2046", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject", Justification = "Datadog.Trace doesn't use JObject through System.ComponentModel type descriptors.")]
+
+// Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).
+[assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Serialization.JsonDynamicContract", Justification = "Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).")]
+[assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.DynamicProxyMetaObject`1", Justification = "Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).")]
+[assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.DynamicProxyMetaObject`1.GetBinderAdapter", Justification = "Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).")]
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2026", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.DynamicUtils.BinderWrapper", Justification = "Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).")]
+[assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.DynamicUtils.BinderWrapper", Justification = "Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).")]
+[assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.NoThrowGetBinderMember", Justification = "Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).")]
+[assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.NoThrowSetBinderMember", Justification = "Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).")]
+
+// Datadog.Trace doesn't serialize F# types.
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2026", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.FSharpUtils", Justification = "Datadog.Trace doesn't serialize F# types.")]
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2055", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.FSharpUtils", Justification = "Datadog.Trace doesn't serialize F# types.")]
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2060", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.FSharpUtils", Justification = "Datadog.Trace doesn't serialize F# types.")]
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2070", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.FSharpUtils", Justification = "Datadog.Trace doesn't serialize F# types.")]
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2075", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.FSharpUtils", Justification = "Datadog.Trace doesn't serialize F# types.")]
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2080", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.FSharpUtils", Justification = "Datadog.Trace doesn't serialize F# types.")]
+[assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.FSharpUtils", Justification = "Datadog.Trace doesn't serialize F# types.")]
+
+// Datadog.Trace doesn't serialize Entity Framework keys.
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2057", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Converters.EntityKeyMemberConverter", Justification = "Datadog.Trace doesn't serialize Entity Framework keys.")]
 
 // Datadog.Trace doesn't use MessagePackFormatterAttribute.
 [assembly: UnconditionalSuppressMessage("Trimming", "IL2072", Scope = "type", Target = "T:Datadog.Trace.Vendors.MessagePack.Resolvers.AttributeFormatterResolver.FormatterCache`1", Justification = "Datadog.Trace doesn't use MessagePackFormatterAttribute.")]
