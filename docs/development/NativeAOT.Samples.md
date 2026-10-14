@@ -39,8 +39,8 @@ de ellos (H-62).
 
 | Estado | Aplicaciones |
 |---|---|
-| Paridad | 56 |
-| Parcial | 14 |
+| Paridad | 58 |
+| Parcial | 12 |
 | Incompatible (la librería, el sample o el framework; igual sin Datadog) | 23 |
 | Por diseño (`Datadog.Trace` 1.x/2.x por NuGet) | 11 |
 | No evaluable (el sample falla también bajo JIT o no publica) | 3 |
@@ -49,8 +49,7 @@ de ellos (H-62).
 - Ninguna diferencia atribuible al tracer queda abierta. Las que salieron en el inventario están corregidas: Hangfire con
   OTel tumbaba la aplicación (H-61), y con la configuración de los tests Quartz pasa a paridad (H-62).
 - En los parciales, lo que la aplicación consigue ejecutar en NativeAOT tiene paridad. El resto lo impide la librería o
-  el propio sample: fases con `Assembly.LoadFile` de los samples de ADO.NET y de ServiceStack.Redis, los consumidores de
-  Confluent.Kafka, los serializadores de MongoDB, el plan de consulta de Cosmos, los resolvers de GraphQL.NET y la
+  el propio sample: fases con `Assembly.LoadFile` de los samples de ADO.NET y de ServiceStack.Redis, los serializadores de MongoDB, el plan de consulta de Cosmos, los resolvers de GraphQL.NET y la
   serialización por reflexión del sample de Lambda.
 - Los incompatibles fallan igual sin Datadog (`plain`): MVC/Razor, `Reflection.Emit` (Dapper, NEST 7), DI por reflexión
   (HotChocolate, YARP, Ocelot, MassTransit, Rebus, Couchbase 3), `MakeGenericType` sobre tipos valor (GraphQL 4,
@@ -147,7 +146,7 @@ Versión probada entre paréntesis (la de los integration tests en net8.0 o la �
 | Samples.Dapper | Incompatible | 20 / 2 | Dapper emite IL (`Reflection.Emit`); igual en `plain` |
 | Samples.DataStreams.AzureServiceBus | No aplica en local | — | Igual que Samples.AzureServiceBus |
 | Samples.DataStreams.HttpClient | Paridad | 3 / 3 | También los checkpoints DSM |
-| Samples.DataStreams.Kafka (Confluent.Kafka 1.9.2) | Parcial | 48 / 6 | Producción con spans y checkpoints DSM; como en Samples.Kafka, los consumidores de Confluent.Kafka no reciben en NativeAOT y el sample espera hasta el timeout. Descriptor de test: librdkafka enlazada por reflexión |
+| Samples.DataStreams.Kafka (Confluent.Kafka 1.9.2) | Paridad | 48 / 48 | Spans de producción y consumo, spans manuales, 10 checkpoints y 18 backlogs de DSM (los nombres de los topics llevan un GUID por ejecución). Descriptor de test: el `SampleMessage` que el sample deserializa con Newtonsoft (como en Samples.Kafka) |
 | Samples.DataStreams.ManualAPI | Paridad | 2 / 2 | Checkpoints DSM |
 | Samples.DataStreams.RabbitMQ | Paridad | 31 / 31 | 12 checkpoints DSM (colas `amq.gen-*` normalizadas) |
 | Samples.Deduplication (IAST) | Paridad | 2 / 2 | También las vulnerabilidades (categoría `iast`) |
@@ -167,7 +166,7 @@ Versión probada entre paréntesis (la de los integration tests en net8.0 o la �
 | Samples.HttpMessageHandler | Paridad | 222 / 222 | **Con la configuración de su test (OTel): 222 / 222, también con el esquema v1.** |
 | Samples.InstrumentedTests, Samples.MSTestTests, Samples.MSTestTests2, Samples.MSTestTestsRetries, Samples.NUnitGlobalCoverageMemory, Samples.NUnitTests, Samples.NUnitTestsRetries, Samples.Selenium, Samples.XUnitTests, Samples.XUnitTestsRetries | No aplica | — | CI Visibility: proyectos de tests que ejecuta un runner (`dotnet test`) |
 | Samples.XUnitTestsV3, Samples.XUnitTestsRetriesV3 | No aplica | — | CI Visibility: aunque xUnit v3 genera un ejecutable, sus tests lo lanzan con `dotnet test` (`RunDotnetTestSampleAndWaitForExit`) |
-| Samples.Kafka (Confluent.Kafka 2.15.1) | Parcial | 183 / 63 | Productor con paridad (62 spans, con y sin handler de entrega) y el span de error del consumidor; los consumidores de Confluent.Kafka no reciben mensajes en NativeAOT, tampoco sin Datadog |
+| Samples.Kafka (Confluent.Kafka 2.15.1) | Paridad | 183 / 183 | Productor (62 spans, con y sin handler de entrega), consumidores (121 spans, con el de error), 7 checkpoints y 10 backlogs de DSM y los mismos tags. Descriptor de test: el sample deserializa sus mensajes con Newtonsoft (`SampleMessage`, constructor y propiedades por reflexión); sin él, el consumidor moría en el primer mensaje, también sin Datadog, y parecía que los consumidores no recibían |
 | Samples.LargePayload | Paridad | 10 000 / 10 000 | |
 | Samples.LifetimeManager.TerminationSignals | Paridad | — | Dos SIGTERM: salida 143 y una sola ejecución de las tareas de cierre (H-55) |
 | Samples.ManualInstrumentation | Paridad | 47 / 47 | Incluido `_dd.git.*` (H-45) |
