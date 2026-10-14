@@ -488,28 +488,37 @@ namespace Datadog.Trace.DuckTyping
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
 
             // First we try with the current proxy parameter types
-            foreach (var methodName in proxyMethodDuckAttributeNames)
+            MethodInfo? exactMethod = null;
+            var exactMethodNameIndex = proxyMethodDuckAttributeNames.Length;
+            for (var i = 0; i < proxyMethodDuckAttributeNames.Length; i++)
             {
-                targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
-                if (targetMethod is not null)
+                exactMethod = targetType.GetMethod(proxyMethodDuckAttributeNames[i], proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
+                if (exactMethod is not null)
                 {
-                    selectedMethod = targetMethod;
-                    return null;
+                    exactMethodNameIndex = i;
+                    break;
                 }
+            }
+
+            if (exactMethodNameIndex == 0)
+            {
+                selectedMethod = exactMethod;
+                return null;
             }
 
             // If the method wasn't found could be because a DuckType interface is being use in the parameters or in the return value.
             // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
             // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
 
-            // With fallback names, a method of the first name that has one wins (like for properties and fields).
+            // With fallback names, a method of the first name that has one wins (like for properties and fields): a method of
+            // a later name with the proxy parameter types only wins when no earlier name has one.
             var targetMethodNameIndex = int.MaxValue;
             MethodInfo? ambiguousMethod = null;
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
                 // We omit target methods with different names.
                 var candidateNameIndex = GetCandidateMethodNameIndex(candidateMethod, proxyMethodDuckAttributeNames, proxyMethodDuckAttribute.ExplicitInterfaceTypeName);
-                if (candidateNameIndex < 0 || candidateNameIndex > targetMethodNameIndex)
+                if (candidateNameIndex < 0 || candidateNameIndex > targetMethodNameIndex || candidateNameIndex >= exactMethodNameIndex)
                 {
                     continue;
                 }
@@ -723,7 +732,7 @@ namespace Datadog.Trace.DuckTyping
                 return DuckTypeTargetMethodAmbiguousMatchException.Create(proxyMethod, targetMethod!, ambiguousMethod);
             }
 
-            selectedMethod = targetMethod;
+            selectedMethod = targetMethod ?? exactMethod;
             return null;
         }
 
