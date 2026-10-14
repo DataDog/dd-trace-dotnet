@@ -29,9 +29,12 @@ ENV \
     # Replace the old buster repositories with archived versions so that we can see pull
     # It would be better to update the base image, but that would mean a new glibc version,
     # which would break some users. We will likely need to do this at some point.
+    # archive.debian.org's CDN returns 404 for a number of arm64 packages, so prefer the
+    # ftp.de.debian.org copy of the archive, falling back to archive.debian.org if a file is missing
     # Add nfpm source
 RUN sed -i '/buster\/updates/d; /buster-updates/d' /etc/apt/sources.list \
-    && sed -i 's|http://[^ ]*debian\.org[^ ]*|http://archive.debian.org/debian|g' /etc/apt/sources.list \
+    && printf 'http://ftp.de.debian.org/debian-archive/debian\nhttp://archive.debian.org/debian\n' > /etc/apt/mirrors.txt \
+    && sed -i 's|http://[^ ]*debian\.org[^ ]*|mirror+file:/etc/apt/mirrors.txt|g' /etc/apt/sources.list \
     && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
     && echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
     && apt-get update \
