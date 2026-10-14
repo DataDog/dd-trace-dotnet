@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 // The trimming and AOT analysis warnings of the vendored libraries in the code NativeAOT applications keep, and why
 // their reflection works there or isn't used (the vendored files are generated: the suppressions live here).
 
