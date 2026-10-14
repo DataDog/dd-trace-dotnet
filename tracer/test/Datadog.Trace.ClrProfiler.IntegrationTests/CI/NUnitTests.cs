@@ -85,6 +85,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check the span count
                         spans.Should().HaveCount(ExpectedSpanCount);
 
+                        // NUnit 3 reports AssemblyVersion (3.14.0.0); later versions report the package version.
+                        spans.Where(s => s.Tags.ContainsKey(TestTags.FrameworkVersion))
+                             .Should()
+                             .OnlyContain(s => s.Tags[TestTags.FrameworkVersion].StartsWith(packageVersion, StringComparison.Ordinal));
+
                         foreach (var targetSpan in spans.ToArray())
                         {
                             // Remove decision maker tag (not used by the backend for civisibility)

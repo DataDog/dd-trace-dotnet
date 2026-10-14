@@ -496,15 +496,15 @@ internal static class NUnitIntegration
 
     internal static string GetFrameworkVersion(Assembly assembly)
     {
-        var version = assembly.GetName().Version;
-        if (version?.Major >= 5 && assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion is { } informationalVersion)
+        // AssemblyVersion can lag the package version: NUnit 4.6.1 ships 4.6.0.0 and every NUnit 5 release ships 5.0.0.0.
+        // The informational version carries the package version. NUnit 3 does not define one.
+        if (assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion is { Length: > 0 } informationalVersion)
         {
-            // NUnit 5 fixes AssemblyVersion at 5.0.0.0 for the whole major version.
             var metadataIndex = informationalVersion.IndexOf('+');
             return metadataIndex < 0 ? informationalVersion : informationalVersion.Substring(0, metadataIndex);
         }
 
-        return version?.ToString() ?? string.Empty;
+        return assembly.GetName().Version?.ToString() ?? string.Empty;
     }
 
     internal static void ReportDependencySkip(ICompositeWorkItem parent, ITestResult result)
