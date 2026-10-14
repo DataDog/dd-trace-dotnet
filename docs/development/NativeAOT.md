@@ -158,8 +158,14 @@ A NativeAOT publish of an application with Datadog shows no trimming or AOT warn
   (`Datadog.Trace.RuntimeMetrics.rd.xml`, `RuntimeMetricsDirectives`);
 - a suppression that says why the reflection works: the build keeps what it needs (JSON models, delegate wrappers, the
   types looked up by name, composite interfaces), or the code isn't used by Datadog.Trace. The vendored libraries' are in
-  `VendorsTrimming.cs` (their files are generated), and Newtonsoft.Json is compiled without the features Datadog.Trace
-  doesn't use (`dynamic`, F#, Entity Framework), which also keeps Microsoft.CSharp's binder out of the applications.
+  `VendorsTrimming.cs` (their files are generated);
+- Newtonsoft.Json's support of dynamic objects (C# `dynamic` needs dynamic code): substitutions that only apply without
+  dynamic code replace the creation of its binder and call sites, which kept Microsoft.CSharp and the call sites of
+  System.Linq.Expressions (ILC 8 warns in them), and the descriptor of the types looked up by name leaves the binder out.
+  The JIT builds keep every feature.
+
+CI checks it with the package's application, published for .NET 8 and .NET 10 (`RunNativeAotPackageTests`, the
+`native_aot_package_tests` job once the package is built): its Verify snapshots of the warnings of Datadog.Trace are empty.
 
 ## Runtime
 
@@ -185,7 +191,7 @@ NativeAOT specifics in the tracer:
 | CallTarget holders and continuations | `tracer/test/Datadog.Trace.Tests/CallTarget/CallTargetAotHolderTests.cs` |
 | Native tracer hosted offline on `CallTargetNativeTest` (same output as the profiler, determinism, build environment) | `AotInstrumentNativeHostIntegrationTests` (`DD_AOT_NATIVE_TRACER`, `DD_AOT_CALLTARGET_NATIVE_TEST_DIR`) |
 | NativeAOT publish of an ASP.NET Core application | `AotInstrumentNativeAotPublishIntegrationTests.AspNetCoreSpansReachTheAgent` |
-| The package: manual API, AppSec, RASP, IAST, AOT analysis warnings of `Datadog.Trace` (Verify snapshot), binary size budget | `AotInstrumentNativeAotPublishIntegrationTests.ManualApiApplicationWithThePackage` (`DD_AOT_PACKAGE_FEED`) |
+| The package (.NET 8 and .NET 10): manual API, AppSec, RASP, IAST, AOT analysis warnings of `Datadog.Trace` (Verify snapshots), binary size budget | `AotInstrumentNativeAotPublishIntegrationTests.ManualApiApplicationWithThePackage` (`DD_AOT_PACKAGE_FEED`; CI: `RunNativeAotPackageTests`) |
 | Duck typing declarations (attributes, derived types, generic proxies) and their check against recorded maps | `AotDuckTypeDeclarationsTests`, `DuckTypeAotAdditionalParityTests` (generic proxies, fallbacks), `CheckAotDuckTypeDeclarations` (Nuke, Linux integration tests) |
 
 CI runs the native host and ASP.NET Core tests with `RunNativeAotInstrumentationGate` (Nuke) in a unit test job of each
