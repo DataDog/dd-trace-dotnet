@@ -67,6 +67,8 @@ public partial class DuckTypeAotAdditionalParityTests
     // Fallback method names, with a duck chained argument: the first name that has a method wins.
     [InlineData("fallback-names-in-order", "primary:chained")]
     [InlineData("fallback-names-first-name-before-exact-match", "primary:chained")]
+    [InlineData("fallback-names-first-name-before-parameter-type-names-match", "primary:chained")]
+    [InlineData("fallback-names-first-name-before-ambiguous-later-name", "primary:chained")]
     // Controls: the binder selects the method, but dynamic duck typing can't convert the argument, or selects none.
     [InlineData("int-to-long", "throws:DuckTypeInvalidTypeConversionException")]
     [InlineData("int-to-enum-without-parameter-type-names", "throws:DuckTypeTargetMethodNotFoundException")]
@@ -176,6 +178,12 @@ public partial class DuckTypeAotAdditionalParityTests
             "fallback-names-first-name-before-exact-match" => (
                 Run(() => DuckType.Create<IArgFallbackDescribeProxy>(new ArgFallbackExactSecondTarget())!.Describe(DuckType.Create<ICallNameView>(new CallChainValue())!)),
                 new[] { Mapping(typeof(IArgFallbackDescribeProxy), typeof(ArgFallbackExactSecondTarget)), Mapping(typeof(ICallNameView), typeof(CallChainValue)) }),
+            "fallback-names-first-name-before-parameter-type-names-match" => (
+                Run(() => DuckType.Create<IArgFallbackDescribeByTypeNameProxy>(new ArgFallbackDescribeTarget())!.Describe(DuckType.Create<ICallNameView>(new CallChainValue())!)),
+                new[] { Mapping(typeof(IArgFallbackDescribeByTypeNameProxy), typeof(ArgFallbackDescribeTarget)), Mapping(typeof(ICallNameView), typeof(CallChainValue)) }),
+            "fallback-names-first-name-before-ambiguous-later-name" => (
+                Run(() => DuckType.Create<IArgFallbackDescribeProxy>(new ArgFallbackAmbiguousSecondTarget())!.Describe(DuckType.Create<ICallNameView>(new CallChainValue())!)),
+                new[] { Mapping(typeof(IArgFallbackDescribeProxy), typeof(ArgFallbackAmbiguousSecondTarget)), Mapping(typeof(ICallNameView), typeof(CallChainValue)) }),
             "nullable-native-integer-defaults" => (Run(() => DuckType.Create<IArgShowProxy>(new ArgNullableNativeIntegerTarget())!.Show(1)), new[] { Mapping(typeof(IArgShowProxy), typeof(ArgNullableNativeIntegerTarget)) }),
             "int-to-long" => (Run(() => DuckType.Create<IArgLongProxy>(target)!.TakeLong(18)), new[] { Mapping(typeof(IArgLongProxy), typeof(ArgTarget)) }),
             _ => (Run(() => DuckType.Create<IArgEnumProxy>(target)!.TakeEnum(19)), new[] { Mapping(typeof(IArgEnumProxy), typeof(ArgTarget)) }),
@@ -607,6 +615,22 @@ public partial class DuckTypeAotAdditionalParityTests
     public class ArgFallbackDescribeTarget
     {
         public string Secondary(CallChainValue value) => "secondary:" + value.Name;
+
+        public string Primary(CallChainValue value) => "primary:" + value.Name;
+    }
+
+    public interface IArgFallbackDescribeByTypeNameProxy
+    {
+        // A partial type name that isn't loaded: the target method is selected by the names of its parameter types.
+        [Duck(Name = "Primary,Secondary", ParameterTypeNames = new[] { "CallChainValue" })]
+        string Describe(ICallNameView value);
+    }
+
+    public class ArgFallbackAmbiguousSecondTarget
+    {
+        public string Secondary(ICallNameView value) => "secondary:" + value.Name;
+
+        public string Secondary<T>(ICallNameView value) => "secondary-generic:" + value.Name;
 
         public string Primary(CallChainValue value) => "primary:" + value.Name;
     }

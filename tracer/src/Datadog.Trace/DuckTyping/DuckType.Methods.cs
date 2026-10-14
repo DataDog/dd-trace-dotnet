@@ -435,11 +435,40 @@ namespace Datadog.Trace.DuckTyping
             out MethodInfo? selectedMethod)
             where T : DuckAttributeBase, new()
         {
-            selectedMethod = null;
-
             T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
             var proxyMethodDuckAttributeName = proxyMethodDuckAttribute.Name ?? proxyMethod.Name;
-            var proxyMethodDuckAttributeNames = GetDuckAttributeCandidateNames(proxyMethodDuckAttributeName).ToArray();
+
+            // With fallback names, a method of the first name that has one wins (like for properties and fields): each name
+            // is selected like the only name of the proxy method, also when the arguments are duck chained.
+            selectedMethod = null;
+            foreach (var methodName in GetDuckAttributeCandidateNames(proxyMethodDuckAttributeName))
+            {
+                if (SelectTargetMethod(targetType, proxyMethod, proxyMethodDuckAttribute, methodName, proxyMethodParameters, proxyMethodParametersTypes, allTargetMethods, out selectedMethod) is { } error)
+                {
+                    return error;
+                }
+
+                if (selectedMethod is not null)
+                {
+                    return null;
+                }
+            }
+
+            return null;
+        }
+
+        private static DuckTypeException? SelectTargetMethod<T>(
+            Type targetType,
+            MethodInfo proxyMethod,
+            T proxyMethodDuckAttribute,
+            string methodName,
+            ParameterInfo[] proxyMethodParameters,
+            Type[] proxyMethodParametersTypes,
+            IEnumerable<MethodInfo> allTargetMethods,
+            out MethodInfo? selectedMethod)
+            where T : DuckAttributeBase
+        {
+            selectedMethod = null;
 
             // A non-generic proxy method can select a generic target method and provide every generic argument
             // explicitly through DuckAttribute.GenericParameterTypeNames. The candidate is still an open generic
@@ -473,14 +502,11 @@ namespace Datadog.Trace.DuckTyping
                 if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)
                 {
                     // all types were loaded
-                    foreach (var methodName in proxyMethodDuckAttributeNames)
+                    targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
+                    if (targetMethod is not null)
                     {
-                        targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
-                        if (targetMethod is not null)
-                        {
-                            selectedMethod = targetMethod;
-                            return null;
-                        }
+                        selectedMethod = targetMethod;
+                        return null;
                     }
                 }
             }
@@ -488,21 +514,10 @@ namespace Datadog.Trace.DuckTyping
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
 
             // First we try with the current proxy parameter types
-            MethodInfo? exactMethod = null;
-            var exactMethodNameIndex = proxyMethodDuckAttributeNames.Length;
-            for (var i = 0; i < proxyMethodDuckAttributeNames.Length; i++)
+            targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
+            if (targetMethod is not null)
             {
-                exactMethod = targetType.GetMethod(proxyMethodDuckAttributeNames[i], proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
-                if (exactMethod is not null)
-                {
-                    exactMethodNameIndex = i;
-                    break;
-                }
-            }
-
-            if (exactMethodNameIndex == 0)
-            {
-                selectedMethod = exactMethod;
+                selectedMethod = targetMethod;
                 return null;
             }
 
@@ -510,15 +525,10 @@ namespace Datadog.Trace.DuckTyping
             // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
             // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
 
-            // With fallback names, a method of the first name that has one wins (like for properties and fields): a method of
-            // a later name with the proxy parameter types only wins when no earlier name has one.
-            var targetMethodNameIndex = int.MaxValue;
-            MethodInfo? ambiguousMethod = null;
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
                 // We omit target methods with different names.
-                var candidateNameIndex = GetCandidateMethodNameIndex(candidateMethod, proxyMethodDuckAttributeNames, proxyMethodDuckAttribute.ExplicitInterfaceTypeName);
-                if (candidateNameIndex < 0 || candidateNameIndex > targetMethodNameIndex || candidateNameIndex >= exactMethodNameIndex)
+                if (!IsCandidateMethodName(candidateMethod, methodName, proxyMethodDuckAttribute.ExplicitInterfaceTypeName))
                 {
                     continue;
                 }
@@ -711,28 +721,17 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                if (targetMethod is null || candidateNameIndex < targetMethodNameIndex)
+                if (targetMethod is null)
                 {
                     targetMethod = candidateMethod;
-                    targetMethodNameIndex = candidateNameIndex;
-                    ambiguousMethod = null;
-                }
-                else if (proxyMethodDuckAttributeNames.Length == 1)
-                {
-                    return DuckTypeTargetMethodAmbiguousMatchException.Create(proxyMethod, targetMethod, candidateMethod);
                 }
                 else
                 {
-                    ambiguousMethod ??= candidateMethod;
+                    return DuckTypeTargetMethodAmbiguousMatchException.Create(proxyMethod, targetMethod, candidateMethod);
                 }
             }
 
-            if (ambiguousMethod is not null)
-            {
-                return DuckTypeTargetMethodAmbiguousMatchException.Create(proxyMethod, targetMethod!, ambiguousMethod);
-            }
-
-            selectedMethod = targetMethod ?? exactMethod;
+            selectedMethod = targetMethod;
             return null;
         }
 
@@ -762,26 +761,6 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Another value the runtime doesn't store as a constant (e.g. a custom constant attribute's).
             }
-        }
-
-        /// <summary>
-        /// Gets the index of the first name a candidate method has, among the names of a proxy method (its fallback names).
-        /// </summary>
-        /// <param name="candidateMethod">The candidate method.</param>
-        /// <param name="methodNames">The names, in order.</param>
-        /// <param name="explicitInterfaceTypeName">The explicit interface type name of the proxy method, if any.</param>
-        /// <returns>The index of the name, or -1 when the method has none of them.</returns>
-        private static int GetCandidateMethodNameIndex(MethodInfo candidateMethod, string[] methodNames, string? explicitInterfaceTypeName)
-        {
-            for (var i = 0; i < methodNames.Length; i++)
-            {
-                if (IsCandidateMethodName(candidateMethod, methodNames[i], explicitInterfaceTypeName))
-                {
-                    return i;
-                }
-            }
-
-            return -1;
         }
 
         private static bool IsCandidateMethodName(MethodInfo candidateMethod, string methodName, string? explicitInterfaceTypeName)
