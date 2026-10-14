@@ -1,4 +1,8 @@
 services:
+  # This gets pre-pulled into CI VM images
+  testcontainers-ryuk:
+    image: testcontainers/ryuk:0.14.0@sha256:7c1a8a9a47c780ed0f983770a662f80deb115d95cce3e2daa3d12115b8cd28f0
+
   # ARM64 dependencies
   localstack_arm64:
     image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
