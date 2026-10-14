@@ -64,6 +64,9 @@
       <_DatadogAotTraceMethods Condition="'$(_DatadogAotTraceMethods)' == ''">$(DD_TRACE_METHODS)</_DatadogAotTraceMethods>
       <!-- Escaped: its ';' separate methods, not lines of the response file. -->
       <_DatadogAotTraceMethodsArgument Condition="'$(_DatadogAotTraceMethods)' != ''">--trace-methods=&quot;$([MSBuild]::Escape('$(_DatadogAotTraceMethods)'))&quot;</_DatadogAotTraceMethodsArgument>
+      <!-- With DatadogAotFailOnError, an incomplete search of generic instantiations fails too (instrumented generic methods
+           whose calls some types wouldn't trace). -->
+      <_DatadogAotStrictArgument Condition="'$(DatadogAotFailOnError)' == 'true'">--fail-on-incomplete-generic-instantiations</_DatadogAotStrictArgument>
       <_DatadogAotDotnet>$(DOTNET_HOST_PATH)</_DatadogAotDotnet>
       <_DatadogAotDotnet Condition="'$(_DatadogAotDotnet)' == ''">dotnet</_DatadogAotDotnet>
       <!-- The runner starts on the latest runtime (it may be the only one, a preview with a preview SDK), then runs again on
@@ -124,7 +127,7 @@
          of a response file at spaces (paths with spaces). -->
     <WriteLinesToFile Condition="'$(_DatadogAotReady)' == 'true'"
                       File="$(_DatadogAotOutput)arguments.rsp"
-                      Lines="--native-tracer=&quot;$(DatadogAotNativeTracerPath)&quot;;--datadog-trace=&quot;$(_DatadogAotDatadogTracePath)&quot;;@(_DatadogAotAssembly->'--assembly=&quot;%(FullPath)&quot;');@(_DatadogAotReferenceDirectories->'--reference-dir=&quot;%(Identity)&quot;');--runtime-version=$(_DatadogAotRuntimeVersion);--categories=$(_DatadogAotCategories);@(_DatadogAotDuckTypeMap->'--ducktype-map=&quot;%(FullPath)&quot;');$(_DatadogAotTraceMethodsArgument);--report=&quot;$(_DatadogAotOutput)report.json&quot;;--output=&quot;$(_DatadogAotOutput)&quot;;$(DatadogAotArguments)"
+                      Lines="--native-tracer=&quot;$(DatadogAotNativeTracerPath)&quot;;--datadog-trace=&quot;$(_DatadogAotDatadogTracePath)&quot;;@(_DatadogAotAssembly->'--assembly=&quot;%(FullPath)&quot;');@(_DatadogAotReferenceDirectories->'--reference-dir=&quot;%(Identity)&quot;');--runtime-version=$(_DatadogAotRuntimeVersion);--categories=$(_DatadogAotCategories);@(_DatadogAotDuckTypeMap->'--ducktype-map=&quot;%(FullPath)&quot;');$(_DatadogAotTraceMethodsArgument);--report=&quot;$(_DatadogAotOutput)report.json&quot;;--output=&quot;$(_DatadogAotOutput)&quot;;$(_DatadogAotStrictArgument);$(DatadogAotArguments)"
                       Overwrite="true"
                       WriteOnlyWhenDifferent="true" />
   </Target>
