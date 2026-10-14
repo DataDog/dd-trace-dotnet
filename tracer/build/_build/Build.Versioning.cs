@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
@@ -47,16 +48,19 @@ partial class Build
 
     Target VerifyVersionConsistency => _ => _
        .Description("Verifies that every committed version literal matches version.props")
+       // Generate first, so the check compares the generated state against the *same* resolution
+       // rather than against whatever an earlier build on a different channel happened to leave.
+       .DependsOn(GenerateVersionFiles)
        .Executes(() =>
         {
-            // Resolved on the release channel so the expected values are the plain ones, whatever
-            // channel the caller happens to be on.
-            var version = DdVersion.Resolve(RootDirectory, buildChannelOverride: "release");
+            // Committed literals are always the plain release values, whatever channel the caller
+            // happens to be on. Generated files, on the other hand, have to match *this* build -
+            // the assembly version revision is the commit height on a dev build.
+            var release = DdVersion.Resolve(RootDirectory, buildChannelOverride: "release");
+            var released = release.LatestReleasedVersion;
 
-            var three = version.ThreePartVersion;
-            var four = version.FourPartVersion;
-            var semver = version.SemVer;
-            var released = version.LatestReleasedVersion;
+            var three = Ver.ThreePartVersion;
+            var four = Ver.FourPartVersion;
             var assemblyName = $"Datadog.Trace, Version={four}, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
 
             var checks = new List<(string File, string Expected)>();
@@ -68,23 +72,7 @@ partial class Build
             {
                 checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_THREE_PART_VERSION_STR \"{three}\""));
                 checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_FOUR_PART_VERSION_STR \"{four}\""));
-                checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_VERSION_REVISION {version.Revision}"));
-            }
-
-            // Same for the managed constants. The native tracer resolves Datadog.Trace by this
-            // exact strong name, so the loader's copy has to agree with the real assembly version.
-            foreach (var generated in RootDirectory.GlobFiles("artifacts/obj/*/*/DatadogVersion.g.cs"))
-            {
-                var content = File.ReadAllText(generated);
-                if (content.Contains("class Startup", StringComparison.Ordinal))
-                {
-                    checks.Add((RootDirectory.GetRelativePathTo(generated), assemblyName));
-                }
-                else
-                {
-                    checks.Add((RootDirectory.GetRelativePathTo(generated), $"AssemblyVersion = \"{four}\""));
-                    checks.Add((RootDirectory.GetRelativePathTo(generated), $"ThreePartVersion = \"{three}\""));
-                }
+                checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_VERSION_REVISION {Ver.Revision}"));
             }
 
             // The samples deliberately reference the *previously released* version, because they
@@ -117,6 +105,28 @@ partial class Build
                 }
             }
 
+            // The most important invariant of the lot: MSBuild derives the version shapes
+            // independently of DdVersion (build/Version.props does the arithmetic, DdVersion only
+            // hands it the resolved suffix and revision). If the two ever disagree, the managed
+            // assembly version and the version Nuke puts in artifact names would silently diverge.
+            // Checked by evaluating the properties rather than by reading artifacts/obj, which can
+            // hold stale output from an earlier build on a different channel.
+            foreach (var (property, expected) in new[]
+                     {
+                         ("DD_ThreePartVersion", three),
+                         ("DD_FourPartVersion", four),
+                         ("DD_SemVer", Ver.SemVer),
+                         ("DD_RpmVersion", Ver.RpmVersion),
+                         ("DD_VersionRevision", Ver.Revision.ToString(CultureInfo.InvariantCulture)),
+                     })
+            {
+                var actual = EvaluateMsBuildProperty(property);
+                if (actual != expected)
+                {
+                    failures.Add($"MSBuild $({property}) is '{actual}' but DdVersion resolved '{expected}'");
+                }
+            }
+
             if (failures.Count > 0)
             {
                 foreach (var failure in failures)
@@ -129,6 +139,20 @@ partial class Build
                     "Either the literal is stale, or it is no longer committed and should be removed from VerifyVersionConsistency.");
             }
 
-            Logger.Information("All {Count} version literals match version.props ({Version})", checks.Count, semver);
+            Logger.Information("Version is consistent across MSBuild and the build ({Version})", Ver.SemVer);
         });
+
+    /// <summary>
+    /// Evaluates a single property from build/Version.proj, so the check sees exactly what every
+    /// other project in the repository sees.
+    /// </summary>
+    private string EvaluateMsBuildProperty(string property)
+    {
+        var output = DotNet($"msbuild \"{VersionProjectFile}\" -getProperty:{property}", logOutput: false)
+                    .Where(x => x.Type == OutputType.Std)
+                    .Select(x => x.Text.Trim())
+                    .LastOrDefault(x => !string.IsNullOrEmpty(x));
+
+        return output ?? string.Empty;
+    }
 }

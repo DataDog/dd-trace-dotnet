@@ -98,12 +98,6 @@ namespace PrepareRelease
 
             string suffix;
 
-            // The assembly-identity revision stays 0 for now. It only becomes build-specific once
-            // the native AssemblyRef, the managed loader's assembly name and the managed
-            // AssemblyVersion are all generated from the same place - until then they would
-            // disagree and the loader would fail to find Datadog.Trace.
-            var revision = 0;
-
             if (!string.IsNullOrEmpty(versionSuffixOverride))
             {
                 suffix = NormalizeSuffix(versionSuffixOverride);
@@ -116,6 +110,12 @@ namespace PrepareRelease
             {
                 suffix = $"-dev.{GetDevToken(repoRoot)}";
             }
+
+            // Keyed on the channel rather than on whether a suffix was supplied, so that a
+            // release - including an X.Y.Z-prerelease one - always keeps the .0 revision it has
+            // always had, and so that a caller who overrides only the suffix still gets a
+            // revision consistent with the channel.
+            var revision = isReleaseChannel ? 0 : GetCommitHeight(repoRoot);
 
             return new DdVersion(prefix, isPrerelease, latestReleased, suffix, revision, isReleaseChannel);
         }
@@ -138,6 +138,11 @@ namespace PrepareRelease
             props.AppendLine("    tracer/build/_build/DdVersion.cs and build/Version.props.");
             props.AppendLine("  -->");
             props.AppendLine("  <PropertyGroup>");
+
+            // Written unconditionally, not just when --Version was passed: build/Version.props
+            // imports this file after version.props, so repeating the prefix here is what makes
+            // `--Version 3.57.0` change the whole build rather than only Nuke's own view of it.
+            props.AppendLine($"    <DD_VersionPrefix>{VersionPrefix}</DD_VersionPrefix>");
             props.AppendLine($"    <DD_VersionSuffix>{VersionSuffix}</DD_VersionSuffix>");
             props.AppendLine($"    <DD_VersionRevision>{Revision.ToString(CultureInfo.InvariantCulture)}</DD_VersionRevision>");
             props.AppendLine($"    <DD_BuildChannel>{(IsReleaseChannel ? "release" : "dev")}</DD_BuildChannel>");
@@ -314,6 +319,42 @@ namespace PrepareRelease
             }
 
             return "g" + sha.Trim().Substring(0, 8);
+        }
+
+        /// <summary>
+        /// Gets the 4th field of the assembly version for a dev build, so that two dev builds have
+        /// distinct assembly identities and can, for example, coexist in the GAC.
+        /// <para>
+        /// Commit height rather than a CI build id, for two reasons. The field is a
+        /// <see cref="ushort"/> (<c>AssemblyProperty::WithVersion</c> in <c>clr_helpers.h</c> takes
+        /// four of them), and Azure DevOps build ids for this repository are long past 65535.
+        /// And the GitLab pipeline builds the same commit independently of Azure DevOps, so a
+        /// per-pipeline number would give the same commit two different assembly versions.
+        /// </para>
+        /// <para>
+        /// Note what this does and does not buy: ~7,100 today leaves decades of headroom, but two
+        /// branches at the same height collide, and the number carries no commit traceability. The
+        /// semver suffix is what actually identifies the build.
+        /// </para>
+        /// </summary>
+        private static int GetCommitHeight(string repoRoot)
+        {
+            var output = RunGit(repoRoot, "rev-list --count HEAD");
+            if (!int.TryParse(output?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var height))
+            {
+                // A shallow clone can't count commits. Falling back to 0 keeps the assembly version
+                // well-formed, and the semver still carries the sha.
+                return 0;
+            }
+
+            if (height > ushort.MaxValue)
+            {
+                throw new Exception(
+                    $"The commit height ({height}) no longer fits in the 16-bit assembly version revision field. " +
+                    "Pick a different revision scheme - see DdVersion.GetCommitHeight.");
+            }
+
+            return height;
         }
 
         private static string GetEnv(string name)

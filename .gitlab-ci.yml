@@ -141,16 +141,21 @@ build:
       # Resolved here rather than with `git` inside the container because a GitLab clone may be
       # shallow, which would make the commit SHA and height unreliable.
       # This job never runs for a tag or for DOTNET_PACKAGE_VERSION (see the `except` above), so
-      # the branch is the only thing that decides the channel. 'none' means an empty suffix.
+      # the branch is the only thing that decides the channel. The channel has to be passed
+      # explicitly as well as the suffix: without it the build inside the container sees no CI
+      # variables at all and would assume 'dev', which would give a master build a non-zero
+      # assembly version revision.
       if ($env:CI_COMMIT_REF_NAME -in @('master', 'main') -or
           $env:CI_COMMIT_REF_NAME -like 'release/*' -or
           $env:CI_COMMIT_REF_NAME -like 'hotfix/*') {
+        $buildChannel = 'release'
         $versionSuffix = 'none'
       } else {
+        $buildChannel = 'dev'
         $versionSuffix = "-dev.g$($env:CI_COMMIT_SHA.Substring(0, 8))"
       }
 
-      Write-Output "Version suffix for this build: '$versionSuffix'"
+      Write-Output "Build channel '$buildChannel', version suffix '$versionSuffix'"
 
       $containerName = "dd-trace-build-$env:CI_JOB_ID"
       $containerMemoryLimit = 20GB
@@ -216,6 +221,7 @@ build:
         -e CI_IDENTITIES_GITLAB_ID_TOKEN `
         -e CI_PROJECT_NAME `
         -e CI_JOB_NAME_SLUG `
+        -e "BuildChannel=$buildChannel" `
         -e "VersionSuffix=$versionSuffix" `
         $env:WINDOWS_BUILD_IMAGE `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PublishOpenTelemetryStartupHook PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
