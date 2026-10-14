@@ -3,7 +3,7 @@
 Todos los proyectos de samples del repositorio (`tracer/test/test-applications`, `tracer/samples`, `tracer/tools`,
 `profiler/src/Demos`, `shared/samples`), con su resultado de paridad entre JIT (con el profiler) y NativeAOT (con
 `Datadog.Trace.Aot`). Complementa el e2e de samples del [tracker](NativeAOT.Tracker.md), donde están los hallazgos (H-n) que
-se citan aquí.
+se citan aquí; la vista por integración está en [`NativeAOT.Integrations.md`](NativeAOT.Integrations.md).
 
 **Cómo se mide.** El harness `.nativeaot-scratch/e2e-samples` (sin commit) publica cada sample para net8.0 dos veces:
 self-contained con el profiler (oráculo JIT, que además graba los mapeos DuckType) y con `PublishAot` y los targets del

@@ -196,7 +196,8 @@ NativeAOT specifics in the tracer:
 
 CI runs the native host and ASP.NET Core tests with `RunNativeAotInstrumentationGate` (Nuke) in a unit test job of each
 build host: Linux x64 and arm64, macOS and Windows. Integration samples are compared between JIT and NativeAOT in
-[`NativeAOT.Samples.md`](./NativeAOT.Samples.md).
+[`NativeAOT.Samples.md`](./NativeAOT.Samples.md), and what each integration supports is in
+[`NativeAOT.Integrations.md`](./NativeAOT.Integrations.md).
 
 To try it locally: build the tracer (`./tracer/build.sh BuildTracerHome`), pack the package with
 `./tracer/build.sh BuildNativeAotNuget --MonitoringHome <home with every platform>`, or point an application to the
