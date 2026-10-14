@@ -31,6 +31,7 @@ partial class Build
 
     Target CompileNativeLoaderWindows => _ => _
         .Unlisted()
+        .DependsOn(GenerateVersionFiles)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -90,6 +91,7 @@ partial class Build
 
     Target CompileNativeLoaderLinux => _ => _
         .Unlisted()
+        .DependsOn(GenerateVersionFiles)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -157,6 +159,7 @@ partial class Build
 
     Target CompileNativeLoaderOsx => _ => _
         .Unlisted()
+        .DependsOn(GenerateVersionFiles)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {

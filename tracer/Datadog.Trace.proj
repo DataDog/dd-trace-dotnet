@@ -1,4 +1,11 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    Generates shared/src/native-src/dd_version.g.h once, serially, so the parallel C++ fan-out
+    below never races on writing it. See build/Version.targets.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)..\build\Version.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\build\Version.targets" />
+
   <PropertyGroup>
     <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
@@ -10,14 +17,14 @@
   </ItemGroup>
 
   <!--  Used by CompileNativeSrcWindows-->
-  <Target Name="BuildCppSrc">
+  <Target Name="BuildCppSrc" DependsOnTargets="DD_GenerateVersionFiles">
     <MSBuild Targets="Build" Projects="@(CppProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
   <!--  Used by CompileNativeTestsWindows-->
-  <Target Name="BuildCppTests">
+  <Target Name="BuildCppTests" DependsOnTargets="DD_GenerateVersionFiles">
     <MSBuild Targets="Build" Projects="@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

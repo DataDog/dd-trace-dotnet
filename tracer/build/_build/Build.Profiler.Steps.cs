@@ -48,6 +48,7 @@ partial class Build
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
+        .DependsOn(GenerateVersionFiles)
         .DependsOn(SetupVcpkg)
         .Executes(() =>
         {
@@ -104,6 +105,7 @@ partial class Build
     Target CompileProfilerNativeSrcLinux => _ => _
         .Unlisted()
         .Description("Compile Profiler native code")
+        .DependsOn(GenerateVersionFiles)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {

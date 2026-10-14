@@ -12,7 +12,8 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 3.56.0)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../build/cmake/DdVersion.cmake")
+project("Datadog.Tracer.Native" VERSION ${DD_VERSION})
 
 # ******************************************************
 # Environment detection

@@ -58,11 +58,9 @@ partial class Build
 
             var three = version.ThreePartVersion;
             var four = version.FourPartVersion;
-            var comma = four.Replace('.', ',');
             var semver = version.SemVer;
             var released = version.LatestReleasedVersion;
             var assemblyName = $"Datadog.Trace, Version={four}, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-            var (major, minor, patch) = SplitVersion(three);
 
             var checks = new List<(string File, string Expected)>
             {
@@ -71,23 +69,18 @@ partial class Build
                 ("tracer/src/Datadog.Trace/TracerConstants.cs", $"ThreePartVersion = \"{three}\""),
                 ("tracer/src/Datadog.Trace/TracerConstants.cs", $"\"{four}\"u8"),
                 ("tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs", assemblyName),
-                ("tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h", assemblyName),
-                ("tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h", $".WithVersion({major}, {minor}, {patch}, {version.Revision})"),
-                ("tracer/src/Datadog.Tracer.Native/CMakeLists.txt", $"\"Datadog.Tracer.Native\" VERSION {three}"),
-                ("tracer/src/Datadog.Tracer.Native/Resource.rc", $"FILEVERSION {comma}"),
-                ("tracer/src/Datadog.Tracer.Native/Resource.rc", $"\"FileVersion\", \"{four}\""),
-                ("tracer/src/Datadog.Tracer.Native/Resource.rc", $"\"ProductVersion\", \"{three}\""),
-                ("shared/src/native-src/version.h", $"PROFILER_VERSION = \"{three}\""),
-                ("shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt", $"\"Datadog.Trace.ClrProfiler.Native\" VERSION {three}"),
-                ("shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc", $"FILEVERSION             {comma}"),
-                ("shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc", $"\"FileVersion\", \"{four}\""),
-                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h", $"PROFILER_VERSION = \"{three}\""),
-                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt", $"\"Datadog.Profiler.Native.Linux\" VERSION {three}"),
-                ("profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt", $"\"Datadog.Linux.ApiWrapper\" VERSION {three}"),
-                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc", $"FILEVERSION             {comma}"),
-                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc", $"\"FileVersion\", \"{four}\""),
                 ("tracer/build/artifacts/dd-dotnet.sh", $"TRACER_VERSION=\"{three}\""),
             };
+
+            // The native version header is generated rather than committed, so check the generated
+            // content instead - it is what the .rc files, the CMake projects and the C++ sources
+            // all read.
+            if (File.Exists(RootDirectory / "shared" / "src" / "native-src" / "dd_version.g.h"))
+            {
+                checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_THREE_PART_VERSION_STR \"{three}\""));
+                checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_FOUR_PART_VERSION_STR \"{four}\""));
+                checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_VERSION_REVISION {version.Revision}"));
+            }
 
             // The samples deliberately reference the *previously released* version, because they
             // have to restore a package that actually exists on nuget.org.
@@ -131,12 +124,6 @@ partial class Build
                     "Either the literal is stale, or it is no longer committed and should be removed from VerifyVersionConsistency.");
             }
 
-            Logger.Information("All {Count} committed version literals match version.props ({Version})", checks.Count, semver);
+            Logger.Information("All {Count} version literals match version.props ({Version})", checks.Count, semver);
         });
-
-    private static (int Major, int Minor, int Patch) SplitVersion(string threePartVersion)
-    {
-        var parts = threePartVersion.Split('.');
-        return (int.Parse(parts[0]), int.Parse(parts[1]), int.Parse(parts[2]));
-    }
 }

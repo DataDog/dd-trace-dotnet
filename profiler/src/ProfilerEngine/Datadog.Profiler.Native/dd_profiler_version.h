@@ -3,4 +3,6 @@
 
 #pragma once
 
-constexpr auto PROFILER_VERSION = "3.56.0";
+// Previously declared its own copy of PROFILER_VERSION, which had to be kept in lock-step with the
+// tracer's by the version-bump tooling. Both now come from the same generated header.
+#include "../../../../shared/src/native-src/version.h"

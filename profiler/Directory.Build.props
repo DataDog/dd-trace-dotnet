@@ -213,12 +213,7 @@
         <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
 	      <BuildStlModules>false</BuildStlModules>
 	      <EnableModules>false</EnableModules>
-        <!-- So that #include "dd_version.g.h" resolves - see build/Version.props -->
-        <AdditionalIncludeDirectories>$(DD_RepoRoot)shared\src\native-src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       </ClCompile>
-      <ResourceCompile>
-        <AdditionalIncludeDirectories>$(DD_RepoRoot)shared\src\native-src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      </ResourceCompile>
     </ItemDefinitionGroup>
 
 

@@ -332,6 +332,7 @@ partial class Build
 
     Target CompileTracerNativeSrcWindows => _ => _
         .Unlisted()
+        .DependsOn(GenerateVersionFiles)
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
@@ -357,6 +358,7 @@ partial class Build
 
     Target CompileTracerNativeSrcLinux => _ => _
         .Unlisted()
+        .DependsOn(GenerateVersionFiles)
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
@@ -421,6 +423,7 @@ partial class Build
 
     Target CompileNativeSrcMacOs => _ => _
         .Unlisted()
+        .DependsOn(GenerateVersionFiles)
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
@@ -535,6 +538,9 @@ partial class Build
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
+        // Resolve the version before anything is compiled, so that the assembly versions and the
+        // artifact names Nuke generates later cannot disagree about the build channel.
+        .DependsOn(GenerateVersionFiles)
         .After(CreateRequiredDirectories)
         .After(Restore)
         .After(CompileManagedLoader)

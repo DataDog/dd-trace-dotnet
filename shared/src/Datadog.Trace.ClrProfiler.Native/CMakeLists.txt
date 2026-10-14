@@ -12,7 +12,8 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 3.56.0)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../build/cmake/DdVersion.cmake")
+project("Datadog.Trace.ClrProfiler.Native" VERSION ${DD_VERSION})
 
 if (UNIVERSAL)
    find_package(GlibcCompat REQUIRED)
