@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -53,6 +54,18 @@ public class FlagEvaluationIntegrationTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         var configuration = CreateConfiguration(consent);
         using var cdn = agentless ? new FlagEvaluationConfigurationServer(Envelope(configuration)) : null;
+        if (agentless && enabled && consent && synchronous)
+        {
+            // Exercise configuration arriving before Agent discovery in the existing matrix.
+            agent.RequestReceived += (_, args) =>
+            {
+                if (args.Value.PathAndQuery == "/info")
+                {
+                    Thread.Sleep(2_000);
+                }
+            };
+        }
+
         if (cdn is null)
         {
             agent.SetupRcm(Output, [((object)configuration, RcmProducts.FfeFlags, nameof(FlagEvaluationIntegrationTests))]);
@@ -75,7 +88,13 @@ public class FlagEvaluationIntegrationTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, enabled ? "true" : "false");
         SetEnvironmentVariable(ConfigurationKeys.ApiKey, "not-an-event-credential");
         using var telemetry = this.ConfigureTelemetry();
-        using var process = await RunSampleAndWaitForExit(agent, arguments: synchronous ? "evp-sync" : "evp");
+        var arguments = synchronous ? "evp-sync" : "evp";
+        if (enabled)
+        {
+            arguments += " evp-wait-for-delivery";
+        }
+
+        using var process = await RunSampleAndWaitForExit(agent, arguments: arguments);
         process.StandardOutput.Should().Contain("<EVP: VALUES AND DEFAULTS OK>");
         process.StandardOutput.Should().Contain($"<EVP: HOOK BEFORE INITIALIZE {enabled}>");
         process.StandardOutput.Should().Contain("<EVP: FLUSHED>");
@@ -157,7 +176,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, "true");
         using var telemetry = this.ConfigureTelemetry();
-        using var process = await RunSampleAndWaitForExit(agent, arguments: after ? "evp-after-error" : "evp-before-error");
+        using var process = await RunSampleAndWaitForExit(agent, arguments: after ? "evp-after-error evp-wait-for-delivery" : "evp-before-error evp-wait-for-delivery");
         process.StandardOutput.Should().Contain("<EVP: HOOK DEFAULT FLUSHED>");
         foreach (var payload in payloads)
         {
@@ -201,7 +220,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds, "1");
         SetEnvironmentVariable("FFE_TEST_ADVANCE_URL", cdn.Url + "advance");
         using var telemetry = this.ConfigureTelemetry();
-        using var process = await RunSampleAndWaitForExit(agent, arguments: "evp");
+        using var process = await RunSampleAndWaitForExit(agent, arguments: "evp evp-wait-for-delivery");
         process.StandardOutput.Should().Contain("<EVP: CONFIGURATION CHANGED>");
         process.StandardOutput.Should().Contain("<EVP: FLUSHED>");
         flushedBeforeSwap.Should().BeFalse("this test must replace configuration before the pending events are flushed");

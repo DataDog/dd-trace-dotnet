@@ -40,6 +40,12 @@ class Program
 
         Console.WriteLine($"<INSTRUMENTED>");
 
+        // Only delivery assertions opt in; no-Agent, disabled, startup, and perf tests do not.
+        if (args.Contains("evp-wait-for-delivery"))
+        {
+            await EvaluationEventsSample.WaitForDeliveryAsync();
+        }
+
         if (args.Contains("evp-perf"))
         {
             await EvaluationPerformanceSample.RunAsync(initialization.Elapsed.TotalMilliseconds);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
@@ -13,6 +14,24 @@ namespace Samples.FeatureFlags;
 
 internal static class EvaluationEventsSample
 {
+    internal static async Task WaitForDeliveryAsync()
+    {
+        // Configuration can arrive from the CDN before Agent discovery enables EVP delivery.
+        // Probe without evaluating a flag so the test's expected event counts stay unchanged.
+        var sdk = typeof(Datadog.FeatureFlags.OpenFeature.DatadogProvider).Assembly.GetType("Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk", throwOnError: true)!;
+        var canEnqueue = sdk.GetMethod("CanEnqueueEVP", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var elapsed = Stopwatch.StartNew();
+        while (!(bool)canEnqueue.Invoke(null, null)!)
+        {
+            if (elapsed.Elapsed >= TimeSpan.FromSeconds(10))
+            {
+                throw new TimeoutException("EVP delivery did not become ready within 10 seconds after provider initialization.");
+            }
+
+            await Task.Delay(100);
+        }
+    }
+
     internal static async Task RunHookFailureAsync(bool after)
     {
         var client = global::OpenFeature.Api.Instance.GetClient();
