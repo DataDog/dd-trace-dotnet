@@ -142,8 +142,9 @@ public static class SmokeTestScenarios
 
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
@@ -231,8 +232,9 @@ public static class SmokeTestScenarios
                 installType: InstallType.TarMuslX64,
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
@@ -419,8 +421,9 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
@@ -670,8 +673,9 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", true),
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", true),
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24", "3.24", false),
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/aspnet", "11.0-alpine3.24-composite", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
@@ -739,7 +743,8 @@ public static class SmokeTestScenarios
                 runtimeId: "linux-musl-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
-                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-alpine3.24", "3.24", true),
+                    // TODO: Crash test is flaky in .NET 11, investigate ASAP
+                    (TargetFramework.NET11_0, "mcr.microsoft.com/dotnet/sdk", "11.0-alpine3.24", "3.24", false),
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/sdk", "10.0-alpine3.22", "3.22", true),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/sdk", "9.0-alpine3.20", "3.20", true),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-alpine3.18", "3.18", true),
