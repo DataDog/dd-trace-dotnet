@@ -35,7 +35,7 @@ internal class AotInstrumentCommand : CommandWithExamples
     private readonly Option<bool> _verifyOption = new("--verify", "Verify the rewritten methods (ILSpy, JIT preparation, ILVerify) against the original assemblies.");
     private readonly Option<bool> _verboseOption = new("--verbose", "Verbose output.");
     private readonly Option<bool> _failOnIncompleteGenericsOption = new("--fail-on-incomplete-generic-instantiations", "Fail when instrumented generic methods may miss closed instantiations (the search was cut).");
-    private readonly Option<int> _maxGenericContextsOption = new("--max-generic-contexts", getDefaultValue: () => CallTarget.GenericInstantiationDiscovery.DefaultMaxContexts, "Limit of the search of generic instantiations (tests).") { IsHidden = true };
+    private readonly Option<int> _maxGenericContextsOption = new("--max-generic-contexts", getDefaultValue: () => AotInstrumentOptions.DefaultMaxGenericContexts, "Limit of the search of generic instantiations (tests).") { IsHidden = true };
 
     public AotInstrumentCommand()
         : base("instrument", "Instrument assemblies at build time with the native tracer")
