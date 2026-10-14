@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET8_0_OR_GREATER || NETFRAMEWORK
+#if (NET8_0_OR_GREATER || NETFRAMEWORK) && !DEFAULT_SAMPLES
 
 using System.Collections.Generic;
 using System.Linq;
@@ -23,16 +23,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 public class NUnit5EvpTests : TestingFrameworkEvpTest
 {
     public NUnit5EvpTests(ITestOutputHelper output)
-        : base("NUnit5Tests", output)
+        : base("NUnitTests", output)
     {
     }
 
+    public static IEnumerable<object[]> GetData()
+    {
+        foreach (var version in NUnit5Tests.GetVersions())
+        {
+            yield return [version[0], "evp_proxy/v2"];
+            yield return [version[0], "evp_proxy/v4"];
+        }
+    }
+
     [SkippableTheory]
-    [InlineData("evp_proxy/v2")]
-    [InlineData("evp_proxy/v4")]
+    [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task ReportsSkippedFixtureAndPreservesPrerequisites(string endpointToRemove)
+    public async Task ReportsSkippedFixtureAndPreservesPrerequisites(string packageVersion, string endpointToRemove)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         InjectSession(out _, out _, out _, out _, out _, out _, out _);
@@ -85,7 +93,7 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
             }
         };
 
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, expectedExitCode: 1);
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName~Samples.NUnit5Tests -- NUnit.PreFilter=false", packageVersion: packageVersion, expectedExitCode: 1);
 
         tests.Should().HaveCount(18);
         suites.Should().HaveCount(4);

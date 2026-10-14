@@ -3,8 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET8_0_OR_GREATER || NETFRAMEWORK
+#if (NET8_0_OR_GREATER || NETFRAMEWORK) && !DEFAULT_SAMPLES
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
@@ -20,23 +22,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 public class NUnit5Tests : TestingFrameworkTest
 {
     public NUnit5Tests(ITestOutputHelper output)
-        : base("NUnit5Tests", output)
+        : base("NUnitTests", output)
     {
     }
 
-    [SkippableFact]
+    public static IEnumerable<object[]> GetVersions() => PackageVersions.NUnit.Where(v => ((string)v[0]).StartsWith("5.", StringComparison.Ordinal));
+
+    public static IEnumerable<object[]> GetFilteredSkipData()
+    {
+        foreach (var version in GetVersions())
+        {
+            yield return [version[0], "FullyQualifiedName~Samples.NUnit5Tests.DependentFixture.SkippedFixtureCase", "SkippedFixtureCase", 2];
+            yield return [version[0], "FullyQualifiedName=Samples.NUnit5Tests.DependentFixture.IgnoredFixtureCase", "IgnoredFixtureCase", 1];
+        }
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetVersions))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task ReportsDependencySkipsAndAggregatedResults()
+    public async Task ReportsDependencySkipsAndAggregatedResults(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, expectedExitCode: 1);
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName~Samples.NUnit5Tests -- NUnit.PreFilter=false", packageVersion: packageVersion, expectedExitCode: 1);
         var spans = (await agent.WaitForSpansAsync(18)).Where(s => s.Name == "nunit.test").ToArray();
 
         spans.Should().HaveCount(18);
-        spans.Should().OnlyContain(s => s.Tags[TestTags.FrameworkVersion] == "5.0.0");
+        spans.Should().OnlyContain(s => s.Tags[TestTags.FrameworkVersion] == packageVersion);
         spans.Count(s => s.Tags[TestTags.Status] == TestTags.StatusPass).Should().Be(9);
         spans.Count(s => s.Tags[TestTags.Status] == TestTags.StatusFail).Should().Be(3);
         spans.Count(s => s.Tags[TestTags.Status] == TestTags.StatusSkip).Should().Be(6);
@@ -54,16 +68,17 @@ public class NUnit5Tests : TestingFrameworkTest
         spans.Where(s => s.Tags[TestTags.Name] == "GenericData").Should().OnlyContain(s => s.Tags.ContainsKey(TestTags.Parameters));
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [MemberData(nameof(GetVersions))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task FilterIncludesPrerequisite()
+    public async Task FilterIncludesPrerequisite(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
         // The adapter's prefilter removes prerequisites before NUnit can expand its dependency graph.
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName=Samples.NUnit5Tests.DependenciesFixture.PassedDependent -- NUnit.PreFilter=false");
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName=Samples.NUnit5Tests.DependenciesFixture.PassedDependent -- NUnit.PreFilter=false", packageVersion: packageVersion);
         var spans = (await agent.WaitForSpansAsync(2)).Where(s => s.Name == "nunit.test").ToArray();
 
         spans.Should().HaveCount(2);
@@ -72,17 +87,16 @@ public class NUnit5Tests : TestingFrameworkTest
     }
 
     [SkippableTheory]
-    [InlineData("FullyQualifiedName~Samples.NUnit5Tests.DependentFixture.SkippedFixtureCase", "SkippedFixtureCase", 2)]
-    [InlineData("FullyQualifiedName=Samples.NUnit5Tests.DependentFixture.IgnoredFixtureCase", "IgnoredFixtureCase", 1)]
+    [MemberData(nameof(GetFilteredSkipData))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task FilterExcludesUnselectedDependencySkippedCases(string filter, string selectedName, int selectedCount)
+    public async Task FilterExcludesUnselectedDependencySkippedCases(string packageVersion, string filter, string selectedName, int selectedCount)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
         // The adapter receives no individual results from the blocked fixture and reports exit code zero.
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: $"/TestCaseFilter:{filter} -- NUnit.PreFilter=false");
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: $"/TestCaseFilter:{filter} -- NUnit.PreFilter=false", packageVersion: packageVersion);
         var spans = (await agent.WaitForSpansAsync(selectedCount + 1)).Where(s => s.Name == "nunit.test").ToArray();
 
         spans.Should().HaveCount(selectedCount + 1);

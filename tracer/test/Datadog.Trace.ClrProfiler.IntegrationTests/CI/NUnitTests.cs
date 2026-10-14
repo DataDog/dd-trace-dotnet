@@ -72,7 +72,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     // We remove the evp_proxy endpoint to force the APM protocol compatibility
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
+                    var arguments = packageVersion.StartsWith("5.", StringComparison.Ordinal) ? "/TestCaseFilter:FullyQualifiedName!~Samples.NUnit5Tests -- NUnit.PreFilter=false" : null;
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         spans = (await agent.WaitForSpansAsync(ExpectedSpanCount))
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))

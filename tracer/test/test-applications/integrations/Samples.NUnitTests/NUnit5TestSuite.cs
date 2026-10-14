@@ -1,3 +1,5 @@
+#if NUNIT_5_0
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -109,3 +111,5 @@ public class DependentFixture
     {
     }
 }
+
+#endif
