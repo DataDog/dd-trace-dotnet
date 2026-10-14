@@ -27,10 +27,11 @@ internal static class OtlpMapper
 
     public static void EmitResourceAttributesFromTraceChunk(in TraceChunkModel traceChunk, Action<KeyValue> writeKeyValue)
     {
+        var state = new ActionState(writeKeyValue);
         EmitResourceAttributesFromTraceChunk(
             in traceChunk,
-            ref writeKeyValue,
-            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
+            ref state,
+            static (ref ActionState state, KeyValue keyValue) => state.WriteKeyValue(keyValue));
     }
 
     public static void EmitResourceAttributesFromTraceChunk<TState>(in TraceChunkModel traceChunk, ref TState state, KeyValueWriter<TState> writeKeyValue)
@@ -92,11 +93,12 @@ internal static class OtlpMapper
 
     public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
     {
+        var state = new ActionState(writeKeyValue);
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
-            ref writeKeyValue,
-            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
+            ref state,
+            static (ref ActionState state, KeyValue keyValue) => state.WriteKeyValue(keyValue));
     }
 
     public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
@@ -274,6 +276,16 @@ internal static class OtlpMapper
         // add "_dd.top_level" to top-level spans (aka service-entry spans)
 
         return droppedAttributesCount;
+    }
+
+    // The state of the overloads that take an Action: a struct, so TagWriter<TState> isn't instantiated over a reference type,
+    // whose shared code ILC 8 (NativeAOT on .NET 8) can't compile in the EnumerateTags implementations (it throws
+    // InvalidProgramException instead).
+    private readonly struct ActionState
+    {
+        public readonly Action<KeyValue> WriteKeyValue;
+
+        public ActionState(Action<KeyValue> writeKeyValue) => WriteKeyValue = writeKeyValue;
     }
 
     internal struct TagWriter<TState> : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
