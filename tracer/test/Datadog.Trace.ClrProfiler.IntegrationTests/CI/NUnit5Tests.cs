@@ -70,6 +70,25 @@ public class NUnit5Tests : TestingFrameworkTest
         spans.Select(s => s.Tags[TestTags.Name]).Should().BeEquivalentTo("PassedPrerequisite", "PassedDependent");
         spans.Should().OnlyContain(s => s.Tags[TestTags.Status] == TestTags.StatusPass && s.Error == 0);
     }
+
+    [SkippableTheory]
+    [InlineData("FullyQualifiedName~Samples.NUnit5Tests.DependentFixture.SkippedFixtureCase", "SkippedFixtureCase", 2)]
+    [InlineData("FullyQualifiedName=Samples.NUnit5Tests.DependentFixture.IgnoredFixtureCase", "IgnoredFixtureCase", 1)]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    public async Task FilterExcludesUnselectedDependencySkippedCases(string filter, string selectedName, int selectedCount)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
+        // The adapter receives no individual results from the blocked fixture and reports exit code zero.
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: $"/TestCaseFilter:{filter} -- NUnit.PreFilter=false");
+        var spans = (await agent.WaitForSpansAsync(selectedCount + 1)).Where(s => s.Name == "nunit.test").ToArray();
+
+        spans.Should().HaveCount(selectedCount + 1);
+        spans.Count(s => s.Tags[TestTags.Name] == "Failed" && s.Tags[TestTags.Status] == TestTags.StatusFail).Should().Be(1);
+        spans.Count(s => s.Tags[TestTags.Name] == selectedName && s.Tags[TestTags.Status] == TestTags.StatusSkip).Should().Be(selectedCount);
+    }
 }
 
 #endif

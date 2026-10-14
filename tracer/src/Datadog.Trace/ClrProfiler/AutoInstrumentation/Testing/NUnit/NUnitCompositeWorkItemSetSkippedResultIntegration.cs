@@ -29,19 +29,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 public static class NUnitCompositeWorkItemSetSkippedResultIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TResult, TResultState>(TTarget instance, TResult result, TResultState resultState, string message, string? stackTrace)
+        where TTarget : ICompositeWorkItem, IDuckType
         where TResult : ITestResult, IDuckType
     {
         return NUnitIntegration.IsEnabled ? new CallTargetState(null, result) : CallTargetState.GetDefault();
     }
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
+        where TTarget : ICompositeWorkItem, IDuckType
     {
         if (exception is null && state.State is ITestResult result &&
             result.ResultState.Status == TestStatus.Skipped && result.ResultState.Site == FailureSite.Test &&
             result.Test.Instance.TryDuckCast<ITestWithDependency>(out var dependency) && dependency.DependantTest?.Instance is not null)
         {
             // Parent/setup skips use FailureSite.Parent and are handled by the existing completion hook.
-            NUnitIntegration.ReportDependencySkip(result);
+            NUnitIntegration.ReportDependencySkip(instance, result);
         }
 
         return CallTargetReturn.GetDefault();

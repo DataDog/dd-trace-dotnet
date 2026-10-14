@@ -443,13 +443,24 @@ internal static class NUnitIntegration
         return version?.ToString() ?? string.Empty;
     }
 
-    internal static void ReportDependencySkip(ITestResult result)
+    internal static void ReportDependencySkip(ICompositeWorkItem parent, ITestResult result)
     {
-        ReportDependencySkip(result.Test, result.Message ?? string.Empty);
+        if (parent.Children is { } children)
+        {
+            foreach (var child in children)
+            {
+                if (child.TryDuckCast<IWorkItem>(out var workItem) && ReferenceEquals(workItem.Result.Instance, result.Instance))
+                {
+                    ReportDependencySkip(workItem, result.Message ?? string.Empty);
+                    return;
+                }
+            }
+        }
     }
 
-    private static void ReportDependencySkip(ITest currentTest, string skipReason)
+    private static void ReportDependencySkip(IWorkItem workItem, string skipReason)
     {
+        var currentTest = workItem.Test;
         TestSuite? skippedSuite = null;
         if (currentTest.TestType == TestSuiteConst && GetTestSuiteFrom(currentTest) is null && GetTestModuleFrom(currentTest) is { } module)
         {
@@ -459,14 +470,15 @@ internal static class NUnitIntegration
 
         if (currentTest.IsSuite)
         {
-            // NUnit does not create individual results when an entire dependent fixture is skipped.
-            if (currentTest.Tests is { } children)
+            // WorkItems contain the effective selection, including prerequisites forced into the run.
+            // The discovered Test.Tests tree also contains cases excluded by the execution filter.
+            if (workItem.Instance.TryDuckCast<ICompositeWorkItem>(out var composite) && composite.Children is { } children)
             {
                 foreach (var child in children)
                 {
-                    if (child.TryDuckCast<ITest>(out var childTest))
+                    if (child.TryDuckCast<IWorkItem>(out var childWorkItem))
                     {
-                        ReportDependencySkip(childTest, skipReason);
+                        ReportDependencySkip(childWorkItem, skipReason);
                     }
                 }
             }
