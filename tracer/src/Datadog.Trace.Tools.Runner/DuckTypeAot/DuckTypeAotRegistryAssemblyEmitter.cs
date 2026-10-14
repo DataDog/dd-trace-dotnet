@@ -6673,6 +6673,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             throw new InvalidOperationException($"Unable to import generic parameter constraint '(null)' for '{sourceMethod.FullName}'.");
                         }
 
+                        // Like dynamic duck typing, a constraint built on a generic parameter of a type isn't copied: the
+                        // generated type has none (e.g. the proxy of a closed generic interface).
+                        if (constraint.Constraint is TypeSpec { TypeSig: { } constraintSig } && ContainsTypeGenericParameter(constraintSig))
+                        {
+                            continue;
+                        }
+
                         var importedConstraint = ImportTypeDefOrRefCached(moduleDef, constraint.Constraint, $"generic parameter constraint '{constraint.Constraint.FullName}' for '{sourceMethod.FullName}'");
                         copiedGenericParameter.GenericParamConstraints.Add(new GenericParamConstraintUser(importedConstraint));
                     }
@@ -6684,6 +6691,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.CopyMethodGenericParametersSeconds += seconds);
             }
+
+            static bool ContainsTypeGenericParameter(TypeSig? candidate)
+                => candidate switch
+                {
+                    GenericVar => true,
+                    GenericInstSig genericInstSig => genericInstSig.GenericArguments.Any(ContainsTypeGenericParameter),
+                    NonLeafSig nonLeafSig => ContainsTypeGenericParameter(nonLeafSig.Next),
+                    _ => false,
+                };
         }
 
         /// <summary>
