@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Agent.DiscoveryService;
 
@@ -30,7 +31,9 @@ internal sealed record AgentConfiguration
         List<string>? peerTags = null,
         int obfuscationVersion = 0,
         AgentTraceFilterConfig? traceFilterConfig = null,
-        List<string>? featureFlags = null)
+        List<string>? featureFlags = null,
+        bool eventPlatformProxySupportsEvpOriginHeaders = false,
+        ExporterSettings? discoverySettings = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -51,6 +54,8 @@ internal sealed record AgentConfiguration
         ObfuscationVersion = obfuscationVersion;
         TraceFilterConfig = traceFilterConfig ?? AgentTraceFilterConfig.Empty;
         FeatureFlags = featureFlags;
+        EventPlatformProxySupportsEvpOriginHeaders = eventPlatformProxySupportsEvpOriginHeaders;
+        DiscoverySettings = discoverySettings;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -83,6 +88,8 @@ internal sealed record AgentConfiguration
 
     public string? EventPlatformProxyEndpoint { get; }
 
+    public bool EventPlatformProxySupportsEvpOriginHeaders { get; }
+
     public string? TelemetryProxyEndpoint { get; }
 
     public string? TracerFlareEndpoint { get; }
@@ -102,4 +109,8 @@ internal sealed record AgentConfiguration
     public AgentTraceFilterConfig TraceFilterConfig { get; }
 
     public List<string>? FeatureFlags { get; }
+
+    // Bind capabilities to the immutable exporter snapshot used for discovery, including UDS
+    // and named pipes. Internal so record diagnostics do not print endpoint configuration.
+    internal ExporterSettings? DiscoverySettings { get; }
 }

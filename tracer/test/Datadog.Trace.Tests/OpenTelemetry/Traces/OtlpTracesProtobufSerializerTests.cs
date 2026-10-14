@@ -138,6 +138,49 @@ public class OtlpTracesProtobufSerializerTests
         span.ParentSpanId.ToByteArray().Should().Equal(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 });
     }
 
+    [Theory]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666")]
+    [InlineData("rv:ef284ace7a91e1")]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666;future:value")]
+    public void SerializeSpans_WithOtelTraceState_EmitsTraceState(string otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var span = SerializeAndParse(CreateChunk(ddSpan));
+
+        span.TraceState.Should().Be($"ot={otelTraceState}");
+    }
+
+    [Fact]
+    public void SerializeSpans_WithDerivedOtelTraceState_EmitsTraceState()
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = new OtelTraceState(headerString: null)
+        {
+            IsModified = true,
+            RandomValue = 0xef284ace7a91e1UL,
+            Threshold = 0xe6666666666666UL,
+        };
+
+        var span = SerializeAndParse(CreateChunk(ddSpan));
+
+        span.TraceState.Should().Be("ot=rv:ef284ace7a91e1;th:e6666666666666");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void SerializeSpans_WithoutOtelTraceState_OmitsTraceState(string? otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var span = SerializeAndParse(CreateChunk(ddSpan));
+
+        span.TraceState.Should().BeEmpty();
+    }
+
     [Fact]
     public void SerializeSpans_PopulatesEventsLinksAndStatus()
     {

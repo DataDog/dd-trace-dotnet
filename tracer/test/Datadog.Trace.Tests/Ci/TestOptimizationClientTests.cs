@@ -92,6 +92,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
 
         response.CorrelationId.Should().Be("2e8a36bda770b683345957cc6c15baf9");
         response.Tests.Should().ContainSingle(test => test.Name == "SimplePassTest" && test.MissingLineCodeCoverage == false);
+        response.Tests.Should().ContainSingle().Which.Configurations.Should().BeNull();
         response.Coverage.IsPresent.Should().BeTrue();
         response.Coverage.IsValid.Should().BeTrue();
         response.Coverage.ExecutedLinesByRelativePath.Should().ContainKey("src/Calculator.cs");
@@ -102,6 +103,48 @@ public class TestOptimizationClientTests : SettingsTestsBase
         var serializedResponse = JsonHelper.SerializeObject(response);
         serializedResponse.Should().Contain("\"coverage\"");
         serializedResponse.Should().Contain("\"coverage_backfill_safe\":true");
+    }
+
+    [Theory]
+    [InlineData("8.0.8")]
+    [InlineData("9.0.0")]
+    public void ParseSkippableTestsResponseCombinesRequestAndBackendConfigurations(string backendRuntimeVersion)
+    {
+        var requestCustom = new Dictionary<string, string> { ["pipeline"] = "nightly", ["queue"] = "request" };
+        var requestConfigurations = new TestsConfigurations("Windows", "Windows 10", "x64", ".NET", "10.0.6", "x64", requestCustom, "Samples.XUnitTests");
+        var response = TestOptimizationClient.ParseSkippableTestsResponse(
+            $$$"""
+            {
+              "data": [
+                {
+                  "id": "test-id",
+                  "type": "test",
+                  "attributes": {
+                    "suite": "Samples.XUnitTests.TestSuite",
+                    "name": "SimplePassTest",
+                    "parameters": "test-parameters",
+                    "configurations": {
+                      "runtime.version": "{{{backendRuntimeVersion}}}",
+                      "custom": {"queue": "backend", "shard": "1"}
+                    },
+                    "_is_missing_line_code_coverage": true
+                  }
+                }
+              ],
+              "meta": {"coverage": {"src/Calculator.cs": "wA=="}}
+            }
+            """,
+            scope: new SkippableTestsRequestScope("Samples.XUnitTests", "scope-a"),
+            requestConfigurations: requestConfigurations);
+
+        var candidate = response.Tests.Should().ContainSingle().Which;
+        candidate.Configurations.Should().BeEquivalentTo(
+            new TestsConfigurations("Windows", "Windows 10", "x64", ".NET", backendRuntimeVersion, "x64", new Dictionary<string, string> { ["pipeline"] = "nightly", ["queue"] = "backend", ["shard"] = "1" }, "Samples.XUnitTests"),
+            options => options.ComparingByMembers<TestsConfigurations>());
+        candidate.RawParameters.Should().Be("test-parameters");
+        candidate.MissingLineCodeCoverage.Should().BeTrue();
+        requestCustom.Should().BeEquivalentTo(new Dictionary<string, string> { ["pipeline"] = "nightly", ["queue"] = "request" });
+        response.Coverage.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -377,8 +420,10 @@ public class TestOptimizationClientTests : SettingsTestsBase
         response.IsCoverageBackfillSafe.Should().BeTrue();
     }
 
-    [Fact]
-    public void ParseSkippableTestsResponseFiltersMismatchedTopLevelBundle()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ParseSkippableTestsResponseFiltersMismatchedTopLevelBundle(bool hasRequestConfigurations)
     {
         var response = TestOptimizationClient.ParseSkippableTestsResponse(
             """
@@ -405,7 +450,8 @@ public class TestOptimizationClientTests : SettingsTestsBase
               }
             }
             """,
-            scope: new SkippableTestsRequestScope("Samples.XUnitTests", "scope-a"));
+            scope: new SkippableTestsRequestScope("Samples.XUnitTests", "scope-a"),
+            requestConfigurations: hasRequestConfigurations ? new TestsConfigurations("Windows", "Windows 10", "x64", ".NET", "10.0.6", "x64", custom: null, "Samples.XUnitTests") : null);
 
         response.Tests.Should().BeEmpty();
         response.Coverage.IsPresent.Should().BeTrue();

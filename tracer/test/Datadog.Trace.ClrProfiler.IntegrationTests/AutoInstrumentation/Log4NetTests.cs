@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -87,26 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                IImmutableList<MockSpan> spans = null;
-                if (EnvironmentTools.IsWindows())
-                {
-                    spans = await agent.WaitForSpansAsync(1, 2500);
-                }
-                else if (!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("3.1.0"))
-                {
-                    // if we are not on Windows and we are above 3.1.0, an additional span is made
-                    // from log4net to determine if we are on Android.
-                    // This is a Process span, we can ultimately just ignore it
-                    spans = await agent.WaitForSpansAsync(2, 2500);
-                }
-                else
-                {
-                    spans = await agent.WaitForSpansAsync(1, 2500);
-                }
-
-                Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
-                // remove the Process span if it exists
-                spans = spans.Where(s => s.Name != "command_execution").ToImmutableList();
+                // log4net 3.1-3.4 also emits a process span on Unix when checking for Android.
+                var spans = await agent.WaitForSpansAsync(1, 2500, operationName: "transaction");
 
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
@@ -147,26 +128,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                IImmutableList<MockSpan> spans = null;
-                if (EnvironmentTools.IsWindows())
-                {
-                    spans = await agent.WaitForSpansAsync(1, 2500);
-                }
-                else if (!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("3.1.0"))
-                {
-                    // if we are not on Windows and we are above 3.1.0, an additional span is made
-                    // from log4net to determine if we are on Android.
-                    // This is a Process span, we can ultimately just ignore it
-                    spans = await agent.WaitForSpansAsync(2, 2500);
-                }
-                else
-                {
-                    spans = await agent.WaitForSpansAsync(1, 2500);
-                }
-
-                Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
-                // remove the Process span if it exists
-                spans = spans.Where(s => s.Name != "command_execution").ToImmutableList();
+                // log4net 3.1-3.4 also emits a process span on Unix when checking for Android.
+                var spans = await agent.WaitForSpansAsync(1, 2500, operationName: "transaction");
 
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))

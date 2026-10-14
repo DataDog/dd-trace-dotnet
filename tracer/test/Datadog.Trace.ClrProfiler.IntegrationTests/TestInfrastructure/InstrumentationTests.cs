@@ -428,10 +428,26 @@ namespace Foo
 
 #endif
 #if NETCOREAPP3_1_OR_GREATER
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenOpenTelemetryOperatorStartupHookIsConfigured_InstrumentsApp()
+        {
+            var startupHookPath = EnvironmentHelper.GetOpenTelemetryStartupHookPath();
+
+            SetEnvironmentVariable("DOTNET_STARTUP_HOOKS", startupHookPath);
+            SetEnvironmentVariable("DOTNET_ADDITIONAL_DEPS", Path.Combine(EnvironmentHelper.MonitoringHome, "AdditionalDeps")); // Set by the OpenTelemetry Operator, ignored when not present
+            SetEnvironmentVariable("DOTNET_SHARED_STORE", Path.Combine(EnvironmentHelper.MonitoringHome, "store")); // Set by the OpenTelemetry Operator, ignored when not present
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
         // We have different behaviour depending on whether the framework is in preview
         // This condition should always point to the "next" version of .NET
-        // e.g. if .NET 10 is in preview, use NET10_0_OR_GREATER.
-        // Once .NET 10 goes GA, update this to NET11_0_OR_GREATER
+        // e.g. if .NET 11 is in preview, use NET11_0_OR_GREATER.
+        // Once .NET 11 goes GA, update this to NET12_0_OR_GREATER
 #if NET11_0_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
@@ -462,7 +478,7 @@ namespace Foo
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 10 or higher", "success_forced");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "success", "Force instrumentation enabled, incompatible runtime, .NET 11 or higher", "success_forced");
         }
 
         [SkippableFact]
@@ -495,7 +511,7 @@ namespace Foo
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 10 or higher", "incompatible_runtime");
+            await AssertHasExpectedTelemetry(logFileName, processResult, pointsJson, "abort", ".NET 11 or higher", "incompatible_runtime");
         }
 
         [SkippableFact]

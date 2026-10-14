@@ -502,13 +502,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var formattedJson = new JArray(collapsed).ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                // Single snapshot for all TFMs: the OTel SDK sample transitively references
+                // One snapshot covers .NET 6-10: the OTel SDK sample transitively references
                 // System.Diagnostics.DiagnosticSource 9.0+, which gets loaded into the host process
                 // even on .NET 6. Reflection in MeterObservableUpDownCounterReflection then resolves
                 // CreateObservableUpDownCounter on every TFM, so the polyfill produces identical wire
-                // output across .NET 6/7/8/9/10+.
+                // output across .NET 6/7/8/9/10.
+                // .NET 11 changed dotnet.thread_pool.thread.count and dotnet.thread_pool.queue.length
+                // in the runtime's own System.Runtime meter from ObservableCounter to
+                // ObservableUpDownCounter, so net11 needs its own snapshot.
                 await Verifier.Verify(formattedJson, settings)
-                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.{nameof(SubmitsOtlpRuntimeMetrics)}")
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.{nameof(SubmitsOtlpRuntimeMetrics)}{VerifyHelper.Net11SnapshotSuffix}")
                               .DisableRequireUniquePrefix();
 
                 agent.StatsdRequests.Should().BeEmpty(
@@ -540,7 +543,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_ENV", "testing");
             SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
-            SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=OtlpLogsService,deployment.environment=testing");
+            SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=OtlpLogsService,deployment.environment.name=testing");
             SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", datadogLogsEnabled);
             SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);

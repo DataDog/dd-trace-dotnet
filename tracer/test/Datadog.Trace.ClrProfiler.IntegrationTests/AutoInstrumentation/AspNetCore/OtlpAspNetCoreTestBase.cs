@@ -233,6 +233,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                           .DisableRequireUniquePrefix();
         }
 
+        // No .NET 11 suffix here: these suites don't enable our activity listener, so we never
+        // copy the OpenTelemetry attributes that ASP.NET Core adds to the HttpRequestIn activity
+        // and the spans are identical on every target framework.
         protected virtual string GetTestName(string testName)
         {
             if (OpenTelemetrySemanticsEnabled)

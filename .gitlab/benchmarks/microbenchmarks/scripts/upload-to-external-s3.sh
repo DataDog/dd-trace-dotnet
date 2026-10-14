@@ -11,6 +11,15 @@ ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 # BP_EXTERNAL_S3_URL overrides the default destination prefix (must stay within
 # relenv-benchmarking-data) so an external orchestrator can collect results
 # under a prefix it controls.
+#
+# The benchmark trigger job forwards this explicitly as
+# `BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL`. When it is unset upstream, GitLab
+# forwards the unexpanded literal "$BP_EXTERNAL_S3_URL" rather than an empty
+# value, so treat that as unset.
+if [[ "$BP_EXTERNAL_S3_URL" == '$BP_EXTERNAL_S3_URL' ]]; then
+    BP_EXTERNAL_S3_URL=""
+fi
+
 S3_URL="${BP_EXTERNAL_S3_URL:-s3://relenv-benchmarking-data/${PROJECT}/${BRANCH}/${CI_JOB_ID}/}"
 [[ "$S3_URL" == s3://relenv-benchmarking-data/* ]] || { echo "BP_EXTERNAL_S3_URL must stay within relenv-benchmarking-data" >&2; exit 1; }
 

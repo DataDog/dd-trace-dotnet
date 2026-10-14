@@ -6,13 +6,21 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Evp;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -27,6 +35,85 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    [Fact]
+    public void DefaultModuleDoesNotCreateExposureTransportUntilFirstUse()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+        var transportField = typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        settings.FeatureFlags.Enabled.Should().BeTrue();
+        module.Should().NotBeNull();
+        transportField.GetValue(module).Should().BeNull("applications that never use exposures need no HTTP client or settings subscription");
+
+        var exposureApi = module!.GetExposureApi();
+        exposureApi.Should().NotBeNull();
+        transportField.GetValue(module).Should().NotBeNull();
+        module.GetExposureApi().Should().BeSameAs(exposureApi);
+
+        module.Dispose();
+        transportField.GetValue(module).Should().BeNull();
+        module.GetExposureApi().Should().BeNull();
+    }
+
+    [Fact]
+    public void DisposingUnusedModuleDoesNotCreateExposureTransport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        module!.Dispose();
+
+        module.GetExposureApi().Should().BeNull();
+        typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                  .GetValue(module).Should().BeNull();
+    }
+
+    [Fact]
+    public void ExposureSettingsUpdateUntilModuleDisposalRemovesBothSubscriptions()
+    {
+        var settings = CreateSettings();
+        var subscribers = (ICollection)typeof(TracerSettings.SettingsManager)
+                                     .GetField("_subscribers", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                     .GetValue(settings.Manager)!;
+        var initialSubscriptions = subscribers.Count;
+        using var module = CreateModule(settings, new MockRcmSubscriptionManager());
+        var api = module.GetExposureApi()!;
+        var transport = (FeatureFlagsEvpTransport)typeof(FeatureFlagsModule)
+                                                .GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                                .GetValue(module)!;
+        var factoryField = typeof(FeatureFlagsEvpTransport).GetField("_localRequestFactory", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var contextField = typeof(ExposureApi).GetField("_context", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        subscribers.Count.Should().Be(initialSubscriptions + 2, "both the sender and exposure context subscribe to settings");
+        UpdateSettings("before-disposal", new Uri("http://127.0.0.1:18126/updated/"));
+
+        var factory = (IApiRequestFactory)factoryField.GetValue(transport)!;
+        factory.GetEndpoint("evp_proxy/v2/api/v2/exposures").Should().Be(new Uri("http://127.0.0.1:18126/updated/evp_proxy/v2/api/v2/exposures"));
+        var context = (Dictionary<string, string>)contextField.GetValue(api)!;
+        context["service"].Should().Be("before-disposal");
+
+        module.Dispose();
+
+        subscribers.Count.Should().Be(initialSubscriptions, "module disposal must remove both settings subscriptions");
+        UpdateSettings("after-disposal", new Uri("http://127.0.0.1:28126/ignored/"));
+        factoryField.GetValue(transport).Should().BeSameAs(factory);
+        contextField.GetValue(api).Should().BeSameAs(context);
+
+        void UpdateSettings(string service, Uri agentUri)
+        {
+            settings.Manager.UpdateManualConfigurationSettings(
+                new ManualInstrumentationConfigurationSource(
+                    new Dictionary<string, object?>
+                    {
+                        { TracerSettingKeyConstants.ServiceNameKey, service },
+                        { TracerSettingKeyConstants.AgentUriKey, agentUri },
+                    },
+                    useDefaultSources: false),
+                NullConfigurationTelemetry.Instance).Should().BeTrue();
+        }
+    }
+
     [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {
@@ -82,6 +169,43 @@ public class FeatureFlagsModuleTests
         var result = module.Evaluate("test-flag", FeatureFlagsValueType.Boolean, false, "user-1", null);
         result.Error.Should().Be("PROVIDER_NOT_READY");
         result.Reason.Should().Be(EvaluationReason.Error);
+    }
+
+    [Fact]
+    public void UpdateRemoteConfig_WhenAModifiedFileDropsAFlag_TheFlagIsNoLongerFound()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager);
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+
+        subscription.Invoke(ConfigUpdate(configPath, "kept-flag", "dropped-flag"), null);
+        module.Evaluate("dropped-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().NotBe("FLAG_NOT_FOUND");
+
+        // A modified file keeps its path and never appears in the removed set.
+        subscription.Invoke(ConfigUpdate(configPath, "kept-flag"), null);
+
+        module.Evaluate("dropped-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().Be("FLAG_NOT_FOUND");
+        module.Evaluate("kept-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().NotBe("FLAG_NOT_FOUND");
+
+        static Dictionary<string, List<RemoteConfiguration>> ConfigUpdate(RemoteConfigurationPath path, params string[] flagKeys)
+        {
+            var flags = new FlagCollection();
+            foreach (var key in flagKeys)
+            {
+                flags[key] = new Flag { Key = key, Enabled = true, VariationType = FeatureFlagsValueType.Boolean };
+            }
+
+            var json = JsonConvert.SerializeObject(new ServerConfiguration { Flags = flags });
+            return new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+            };
+        }
     }
 
     [Fact]
@@ -303,6 +427,21 @@ public class FeatureFlagsModuleTests
 
             invocations.Should().BeLessOrEqualTo(1, "iteration {0} delivered one configuration more than once", i);
         }
+    }
+
+    [Theory]
+    [InlineData(FeatureFlagsValueType.String, "fallback")]
+    [InlineData(FeatureFlagsValueType.Boolean, true)]
+    [InlineData(FeatureFlagsValueType.Integer, 42)]
+    [InlineData(FeatureFlagsValueType.Numeric, 1.5)]
+    public void Evaluate_WhenNoConfigurationYet_ReturnsTheDefaultValue(FeatureFlagsValueType type, object defaultValue)
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var result = module.Evaluate("test-flag", type, defaultValue, "user-1", null);
+
+        result.Error.Should().Be("PROVIDER_NOT_READY");
+        result.Value.Should().Be(defaultValue);
     }
 
     [Fact]

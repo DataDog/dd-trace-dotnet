@@ -6,7 +6,7 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFrameworks>net10.0</TargetFrameworks>
+        <TargetFrameworks>net11.0</TargetFrameworks>
         <SignAssembly>false</SignAssembly>
         <Nullable>enable</Nullable>
         <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->

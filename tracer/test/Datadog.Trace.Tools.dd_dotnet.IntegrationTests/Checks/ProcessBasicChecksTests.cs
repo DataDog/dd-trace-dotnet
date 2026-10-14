@@ -375,8 +375,8 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             ({ } prof, { } ssi) => [("DD_PROFILING_ENABLED", prof), ("DD_INJECTION_ENABLED", ssi)],
         };
 
-#if NET10_0
-        // TODO: Remove this after .NET 10 is officially released
+#if NET11_0
+        // TODO: Remove this after .NET 11 is officially released
         if (!string.IsNullOrEmpty(ssiInjection))
         {
             envVars = envVars.Append(("DD_INJECT_FORCE", "1")).ToArray();

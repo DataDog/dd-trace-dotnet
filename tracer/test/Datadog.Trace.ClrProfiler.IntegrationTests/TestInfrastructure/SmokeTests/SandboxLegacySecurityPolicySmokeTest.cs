@@ -20,6 +20,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         public SandboxLegacySecurityPolicySmokeTest(ITestOutputHelper output)
             : base(output, "Sandbox.LegacySecurityPolicy")
         {
+            // The managed tracer is intentionally not loaded in this test, so the Continuous Profiler
+            // cannot receive its managed activation configuration.
+            SetEnvironmentVariable("DD_PROFILING_ENABLED", "0");
+            SetEnvironmentVariable("DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0");
         }
 
         [SkippableFact]

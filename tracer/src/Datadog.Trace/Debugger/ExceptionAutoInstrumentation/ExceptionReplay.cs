@@ -36,28 +36,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return new ExceptionReplay(settings);
         }
 
-        public bool Initialize(Action? md5Probe = null)
+        public bool Initialize()
         {
             Log.Information("Initializing Exception Replay");
-
-            try
-            {
-                if (md5Probe is null)
-                {
-                    _ = string.Empty.ToUUID();
-                }
-                else
-                {
-                    md5Probe();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Exception Replay has been disabled because MD5 hashing is unavailable.");
-                _isDisabled = true;
-                Settings.Disable();
-                return false;
-            }
 
             InitSnapshotsSink();
             if (_isDisabled)

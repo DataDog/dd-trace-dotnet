@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Specialized;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,14 +41,17 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task Md5FailureDoesNotPublishExceptionReplayOrAllowRemoteReenablement(bool enabledLocally)
+        public async Task InitializationFailureDoesNotPublishExceptionReplayOrAllowRemoteReenablement(bool enabledLocally)
         {
+            // Agentless uploads without an API key fail Exception Replay initialization.
+            var exceptionReplayConfig = new NameValueCollection { { ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled, "true" } };
+            if (enabledLocally)
+            {
+                exceptionReplayConfig.Add(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
+            }
+
             var manager = CreateDebuggerManager(
-                enabledLocally
-                    ? new ExceptionReplaySettings(
-                        new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true" } }),
-                        NullConfigurationTelemetry.Instance)
-                    : null);
+                new ExceptionReplaySettings(new NameValueConfigurationSource(exceptionReplayConfig), NullConfigurationTelemetry.Instance));
             var tracerSettings = TracerSettings.Create(new()
             {
                 { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
@@ -65,20 +69,13 @@ namespace Datadog.Trace.Tests.Debugger
 
             try
             {
-                var probeCalls = 0;
                 manager.SetExceptionReplayState(
                     debuggerSettings with
                     {
                         DynamicSettings = new ImmutableDynamicDebuggerSettings { ExceptionReplayEnabled = enabledLocally ? null : true },
-                    },
-                    md5Probe: () =>
-                    {
-                        probeCalls++;
-                        throw new InvalidOperationException("MD5 is unavailable");
                     });
 
                 // A failed instance must never be published, even if no remote-config update follows.
-                probeCalls.Should().Be(1);
                 manager.ExceptionReplay.Should().BeNull();
                 manager.HasActiveDynamicDebuggerProduct.Should().BeFalse();
                 manager.ExceptionReplaySettings.CanBeEnabled.Should().BeFalse();

@@ -9,6 +9,7 @@
 #include "environment_variables_util.h"
 #include "debugger_probes_tracker.h"
 #include "instrumenting_product.h"
+#include "runtime_async.h"
 
 namespace debugger
 {
@@ -271,7 +272,11 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
 
-    if (debuggerMethodHandler->GetProbes().empty())
+    // Snapshot the probes once: they can be added during preprocessing and removed from the managed thread
+    // while this method is being rewritten.
+    const auto probes = debuggerMethodHandler->GetProbes();
+
+    if (probes.empty())
     {
         Logger::Warn("NotifyReJITCompilationStarted: Probes are missing for "
                      "MethodDef: ",
@@ -285,14 +290,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     MethodProbeDefinitions methodProbes;
     LineProbeDefinitions lineProbes;
     SpanProbeOnMethodDefinitions spanOnMethodProbes;
-
-    const auto& probes = debuggerMethodHandler->GetProbes();
-
-    if (probes.empty())
-    {
-        Logger::Debug("There are no probes for methodDef: ", methodHandler->GetMethodDef());
-        return S_OK;
-    }
 
     Logger::Info("About to apply debugger instrumentation on ", probes.size(),
                  " probes for methodDef: ", methodHandler->GetMethodDef());
@@ -362,7 +359,7 @@ WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleH
         return EmptyWStr;
     }
 
-    const auto& probes = debuggerMethodHandler->GetProbes();
+    const auto probes = debuggerMethodHandler->GetProbes();
 
     if (probes.empty())
     {
@@ -2371,6 +2368,21 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                        ? invalid_probe_probe_cctor_ctor_not_supported
                                        : invalid_probe_probe_byreflike_return_not_supported;
         MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, reasoning);
+        return E_NOTIMPL;
+    }
+
+    // .NET 11 runtime-async methods do not return their declared Task from the method body: at `ret`
+    // the stack holds the unwrapped value (or nothing, for a non-generic Task/ValueTask). The return
+    // handling below derives everything from the declared return type, so rewriting one of these
+    // emits a `stloc` against the wrong type - or against an empty stack - and the JIT raises
+    // InvalidProgramException when the method is first called. Probes can target arbitrary customer
+    // code, so fail the probe rather than the process until this is properly supported.
+    if (trace::IsMiAsync(caller->method_impl_flags))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Placing probes on a .NET 11 runtime-async method "
+                     "(MethodImplAttributes.Async) is not supported. token=",
+                     function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_runtime_async_not_supported);
         return E_NOTIMPL;
     }
 

@@ -17,6 +17,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -42,6 +43,7 @@ namespace Datadog.Trace
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
         private OtelTraceState? _otelTraceState;
+        private DebuggerSamplingCoordinator? _debuggerSamplingCoordinator;
 
         // Lazily created on the first feature-flag evaluation for this trace; null until then, so
         // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
@@ -190,6 +192,18 @@ namespace Datadog.Trace
             }
 
             return _featureFlagEnrichment;
+        }
+
+        /// <summary> Gets the Live Debugger sampling coordinator for this trace, creating it on first use. </summary>
+        internal DebuggerSamplingCoordinator GetOrCreateDebuggerSamplingCoordinator()
+        {
+            if (Volatile.Read(ref _debuggerSamplingCoordinator) is { } coordinator)
+            {
+                return coordinator;
+            }
+
+            var created = new DebuggerSamplingCoordinator();
+            return Interlocked.CompareExchange(ref _debuggerSamplingCoordinator, created, null) ?? created;
         }
 
         internal void EnableIastInRequest()
@@ -410,9 +424,11 @@ namespace Datadog.Trace
                     Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
                 }
 
-                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys for W3C injection on every root
+                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys for W3C injection or OTLP trace export on every root
                 // probability decision, including the "Default" mechanism fallback rate.
-                if (isLocalRoot && IsW3CTraceContextInjectionEnabled() && sample is { } didSample && RootSpan is { } rootSpan
+                if (isLocalRoot &&
+                    (IsW3CTraceContextInjectionEnabled() || Tracer.Settings.Manager.InitialExporterSettings.IsOtlpTraceExport) &&
+                    sample is { } didSample && RootSpan is { } rootSpan
                                 && mechanism is Sampling.SamplingMechanism.AgentRate
                                              or Sampling.SamplingMechanism.LocalTraceSamplingRule
                                              or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule

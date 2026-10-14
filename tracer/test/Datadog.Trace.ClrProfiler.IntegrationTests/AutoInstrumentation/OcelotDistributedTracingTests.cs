@@ -51,6 +51,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddSimpleScrubber("aspnet_core.endpoint: / HTTP: GET", "aspnet_core.endpoint: HTTP: GET /");
 
                 await VerifyHelper.VerifySpans(spans, settings)
+                                  // No .NET 11 suffix: the sample registers AddAspNetCoreInstrumentation(),
+                                  // so the activity already carries the OpenTelemetry attributes on every
+                                  // target framework and the spans are identical on .NET 11
                                   .UseFileName(nameof(OcelotDistributedTracingTests))
                                   .DisableRequireUniquePrefix();
             }

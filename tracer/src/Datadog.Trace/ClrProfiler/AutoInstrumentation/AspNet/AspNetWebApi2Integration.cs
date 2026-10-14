@@ -207,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
 
-                string method = request.Method.Method?.ToUpperInvariant() ?? "GET";
+                string method = StringUtil.ToUpperInvariant(request.Method.Method) ?? "GET";
                 string route = GetRouteTemplate(controllerContext);
 
                 IDictionary<string, object> routeValues = null;
@@ -253,9 +253,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // get the route values. Not sure how this is possible, but is preexisting behaviour
                     try
                     {
-                        area = (routeValues.GetValueOrDefault("area") as string)?.ToLowerInvariant();
-                        controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                        action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                        area = StringUtil.ToLowerInvariant(routeValues.GetValueOrDefault("area") as string);
+                        controller = StringUtil.ToLowerInvariant(routeValues.GetValueOrDefault("controller") as string);
+                        action = StringUtil.ToLowerInvariant(routeValues.GetValueOrDefault("action") as string);
                     }
                     catch
                     {

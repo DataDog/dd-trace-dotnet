@@ -21,6 +21,11 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   done
 
   if [ -n "$CI_COMMIT_SHA" ]; then
+    echo "Downloading OpenTelemetry Operator startup hook from S3"
+    curl --location --fail \
+        --output $target_dir/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
+        "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/otel-operator-startup-hook/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+
     # Put this in the same place the "build" stage does
     win_target_dir=artifacts-out
     mkdir -p $win_target_dir

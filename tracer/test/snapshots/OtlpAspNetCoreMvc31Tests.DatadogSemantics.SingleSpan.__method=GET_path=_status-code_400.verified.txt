@@ -56,6 +56,18 @@
             "value": {
               "stringValue": "Guid_1"
             }
+          },
+          {
+            "key": "_dd.sdk.otlp_export",
+            "value": {
+              "stringValue": "true"
+            }
+          },
+          {
+            "key": "datadog.sdk.semantics",
+            "value": {
+              "stringValue": "datadog"
+            }
           }
         ]
       },
@@ -65,6 +77,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "GET /status-code/{statuscode}",
               "kind": 2,
               "startTimeUnixNano": "0",

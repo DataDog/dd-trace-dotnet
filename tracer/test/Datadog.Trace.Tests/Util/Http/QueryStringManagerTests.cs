@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util.Http;
 using FluentAssertions;
 using Moq;
@@ -29,6 +31,19 @@ namespace Datadog.Trace.Tests.Util.Http
 
             var result = queryStringManager.TruncateAndObfuscate(queryString);
             result.Should().Be(expectedResult);
+        }
+
+        [SkippableTheory]
+        [InlineData(true, "?jwt=<redacted>")]
+        [InlineData(false, "?jwt<redacted>")]
+        public void DefaultPatternReplacementDependsOnWhetherPatternIsDefault(bool isDefaultPattern, string expected)
+        {
+#if NETCOREAPP2_1
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
+            var queryStringManager = new QueryStringManager(true, 20_000, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, isDefaultPattern: isDefaultPattern);
+
+            queryStringManager.TruncateAndObfuscate("?jwt=eyJabc.eyJdef").Should().Be(expected);
         }
     }
 }

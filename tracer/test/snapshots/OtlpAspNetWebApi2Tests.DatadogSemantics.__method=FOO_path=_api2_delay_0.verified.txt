@@ -65,6 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "FOO /api2/delay/{value}",
               "kind": 2,
               "startTimeUnixNano": "0",
@@ -153,6 +154,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "FOO /api2/delay/{value}",
               "kind": 2,
