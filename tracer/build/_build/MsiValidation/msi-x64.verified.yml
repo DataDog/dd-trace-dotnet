@@ -708,6 +708,7 @@ Property:
   ARPNOMODIFY: 1
   ARPPRODUCTICON: datadog.ico
   ARPURLINFOABOUT: https://datadoghq.com/
+  DDBUILDVERSION: FULL_VERSION
   DD_DOTNET_LINK: https://docs.datadoghq.com/tracing/troubleshooting/dotnet_diagnostic_tool/
   DefaultUIFont: WixUI_Font_Normal
   ErrorDialog: ErrorDlg

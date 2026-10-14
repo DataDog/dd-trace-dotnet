@@ -67,7 +67,6 @@ partial class Build
             var checks = new List<(string File, string Expected)>
             {
                 (".azure-pipelines/ultimate-pipeline.yml", $"ToolVersion: {semver}"),
-                ("tracer/src/Directory.Build.props", $"<Version>{semver}</Version>"),
                 ("tracer/src/Datadog.Trace/TracerConstants.cs", $"AssemblyVersion = \"{four}\""),
                 ("tracer/src/Datadog.Trace/TracerConstants.cs", $"ThreePartVersion = \"{three}\""),
                 ("tracer/src/Datadog.Trace/TracerConstants.cs", $"\"{four}\"u8"),
@@ -82,14 +81,11 @@ partial class Build
                 ("shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt", $"\"Datadog.Trace.ClrProfiler.Native\" VERSION {three}"),
                 ("shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc", $"FILEVERSION             {comma}"),
                 ("shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc", $"\"FileVersion\", \"{four}\""),
-                ("shared/src/msi-installer/WindowsInstaller.wixproj", $"datadog-dotnet-apm-{semver}-$(Platform)"),
-                ("shared/src/msi-installer/WindowsInstaller.wixproj", $"InstallerVersion={three}"),
                 ("profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h", $"PROFILER_VERSION = \"{three}\""),
                 ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt", $"\"Datadog.Profiler.Native.Linux\" VERSION {three}"),
                 ("profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt", $"\"Datadog.Linux.ApiWrapper\" VERSION {three}"),
                 ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc", $"FILEVERSION             {comma}"),
                 ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc", $"\"FileVersion\", \"{four}\""),
-                ("profiler/src/ProfilerEngine/ProductVersion.props", $"<ProductVersion>{three}</ProductVersion>"),
                 ("tracer/build/artifacts/dd-dotnet.sh", $"TRACER_VERSION=\"{three}\""),
             };
 

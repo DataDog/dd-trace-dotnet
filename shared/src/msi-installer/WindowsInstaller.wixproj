@@ -7,9 +7,17 @@
     <MsiOutputPath Condition="'$(MsiOutputPath)' == ''">bin\$(Configuration)\$(Platform)\</MsiOutputPath>
     <OutputPath>$(MsiOutputPath)</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
-    <OutputName>datadog-dotnet-apm-3.56.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
+    <!-- The file name carries the full semver, so a dev MSI is identifiable before it's installed. -->
+    <OutputName>datadog-dotnet-apm-$(DD_SemVer)-$(Platform)</OutputName>
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
-    <DefineConstants>InstallerVersion=3.56.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
+    <!--
+      InstallerVersion becomes the Windows Installer ProductVersion, which has to be numeric
+      major.minor.build (major and minor <= 255, build <= 65535) with no suffix, and which
+      MajorUpgrade needs to increase monotonically. So the dev marker cannot go there - it is
+      exposed as the DDBUILDVERSION property in Product.wxs instead, which is recoverable from an
+      installed package or from an msiexec /l*v log.
+    -->
+    <DefineConstants>InstallerVersion=$(DD_ThreePartVersion);FullVersion=$(DD_SemVer);MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>

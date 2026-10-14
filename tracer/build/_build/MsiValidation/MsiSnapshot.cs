@@ -98,6 +98,15 @@ static class MsiSnapshot
                             value = "PRODUCT_CODE";
                         }
 
+                        // DDBUILDVERSION is the full semantic version, so it is deliberately
+                        // build-specific: 3.56.0 on a release build but 3.56.0-dev.<sha> on a
+                        // branch build. Scrub it unconditionally rather than letting the version
+                        // sanitizer pick a different placeholder depending on the build channel.
+                        if (key == "DDBUILDVERSION")
+                        {
+                            value = "FULL_VERSION";
+                        }
+
                         entries[key] = value;
                     }
                     else

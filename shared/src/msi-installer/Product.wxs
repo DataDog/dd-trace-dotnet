@@ -20,6 +20,12 @@
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
     <Property Id="PATHSHORTCUT" Value="1" />
     <Property Id="DD_DOTNET_LINK" Value="https://docs.datadoghq.com/tracing/troubleshooting/dotnet_diagnostic_tool/" />
+    <!--
+      The full semantic version, e.g. 3.56.0 or 3.56.0-dev.g1a2b3c4d. The Package Version above
+      has to stay numeric for Windows Installer, so this is how a dev build stays identifiable
+      from an installed package or from an msiexec /l*v log.
+    -->
+    <Property Id="DDBUILDVERSION" Value="$(var.FullVersion)" />
       
       <Property Id="INSTALLFOLDER">
       <RegistrySearch Id="RegistrySearch" Type="raw" Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)" Name="InstallPath"/>

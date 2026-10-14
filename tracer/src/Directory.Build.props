@@ -4,7 +4,18 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1;net6.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>3.56.0</Version>
+
+    <!--
+      The NuGet package version and the InformationalVersion, carrying any -dev suffix. The SDK
+      strips the suffix when it derives AssemblyVersion/FileVersion, so the assembly identity stays
+      the numeric $(DD_VersionPrefix).0. See build/Version.props.
+
+      Note this is deliberately a normal property rather than a global /p: one: projects that are
+      versioned independently - Datadog.Trace.Annotations (1.0.0) and
+      Datadog.FeatureFlags.OpenFeature (2.3.2) - set their own <Version> and must keep winning.
+      That is also why tracer/build/_build/BannedSymbols.txt forbids SetVersion on the Nuke side.
+    -->
+    <Version>$(DD_SemVer)</Version>
 
     <!-- Code analysis -->
     <AnalysisLevel>latest</AnalysisLevel>

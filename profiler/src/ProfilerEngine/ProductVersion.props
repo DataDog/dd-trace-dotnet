@@ -3,11 +3,10 @@
   <!-- Follow the instructions in the comments to set the version and the version-date.                                                     -->
   <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
 
-  <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
+  <!-- The version comes from version.props at the repo root - see build/Version.props.           -->
   <PropertyGroup>
-    <ProductVersion>3.56.0</ProductVersion>
+    <ProductVersion>$(DD_VersionPrefix)</ProductVersion>
   </PropertyGroup>
-  <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
 
   <PropertyGroup>
     <ProductSuffix>+$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))</ProductSuffix>
@@ -16,7 +15,8 @@
   <PropertyGroup>
     <AssemblyVersion>$(ProductVersion)</AssemblyVersion>
     <FileVersion>$(ProductVersion)</FileVersion>
-    <InformationalVersion>$(ProductVersion)$(ProductSuffix)</InformationalVersion>
+    <!-- The full semver, carrying any -dev suffix.                                              -->
+    <InformationalVersion>$(DD_SemVer)$(ProductSuffix)</InformationalVersion>
 
     <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->
   </PropertyGroup>

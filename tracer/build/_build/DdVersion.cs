@@ -25,14 +25,6 @@ namespace PrepareRelease
     /// </summary>
     public class DdVersion
     {
-        /// <summary>
-        /// The 4th field of the assembly version is a <see cref="ushort"/> (see
-        /// <c>AssemblyProperty::WithVersion</c> in <c>clr_helpers.h</c>), so the revision has to fit
-        /// in 16 bits. Commit height is ~7,100 today, which leaves decades of headroom, but assert
-        /// it rather than silently wrapping.
-        /// </summary>
-        private const int MaxRevision = ushort.MaxValue;
-
         private DdVersion(
             string versionPrefix,
             bool isPrerelease,
@@ -105,6 +97,11 @@ namespace PrepareRelease
             var isReleaseChannel = ResolveIsReleaseChannel(buildChannelOverride);
 
             string suffix;
+
+            // The assembly-identity revision stays 0 for now. It only becomes build-specific once
+            // the native AssemblyRef, the managed loader's assembly name and the managed
+            // AssemblyVersion are all generated from the same place - until then they would
+            // disagree and the loader would fail to find Datadog.Trace.
             var revision = 0;
 
             if (!string.IsNullOrEmpty(versionSuffixOverride))
@@ -118,7 +115,6 @@ namespace PrepareRelease
             else
             {
                 suffix = $"-dev.{GetDevToken(repoRoot)}";
-                revision = GetCommitHeight(repoRoot);
             }
 
             return new DdVersion(prefix, isPrerelease, latestReleased, suffix, revision, isReleaseChannel);
@@ -318,26 +314,6 @@ namespace PrepareRelease
             }
 
             return "g" + sha.Trim().Substring(0, 8);
-        }
-
-        private static int GetCommitHeight(string repoRoot)
-        {
-            var output = RunGit(repoRoot, "rev-list --count HEAD");
-            if (!int.TryParse(output?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var height))
-            {
-                // A shallow clone can't count commits. Falling back to 0 keeps the assembly version
-                // well-formed; the SemVer still carries the sha, which is what identifies the build.
-                return 0;
-            }
-
-            if (height > MaxRevision)
-            {
-                throw new Exception(
-                    $"The commit height ({height}) no longer fits in the 16-bit assembly version revision field. " +
-                    "Pick a different revision scheme - see build/Version.props.");
-            }
-
-            return height;
         }
 
         private static string GetEnv(string name)

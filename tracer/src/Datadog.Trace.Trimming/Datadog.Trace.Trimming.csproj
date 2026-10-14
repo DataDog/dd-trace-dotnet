@@ -1,8 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Unconditionally add a prerelease suffix to the package, but keep the rest of the name so we can associate it with the rest of the release -->
-    <Version Condition="!$(Version.EndsWith('-prerelease'))">$(Version)-prerelease</Version>
+    <!--
+      Always ship this package as a prerelease so it stays out of default NuGet listings, but keep
+      the version number so it can still be associated with the rest of the release. A dev build's
+      version is already a semver prerelease, so it needs no further suffix - and appending one
+      would produce the nonsense 3.56.0-dev.gX-prerelease.
+    -->
+    <Version Condition="'$(DD_VersionSuffix)' == ''">$(DD_VersionPrefix)-prerelease</Version>
+    <Version Condition="'$(DD_VersionSuffix)' != ''">$(DD_SemVer)</Version>
   </PropertyGroup>
 
   <PropertyGroup>
