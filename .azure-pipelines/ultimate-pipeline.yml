@@ -80,6 +80,8 @@ variables:
   linuxX64Pool: azure-managed-linux-x64-1
   linuxArm64Pool: azure-managed-linux-arm64-1
   windowsX64Pool: azure-managed-windows-x64-1
+  # Keep the RC1 image until the .NET 11 RC2 update (#9404) is merged.
+  windowsX64ImageVersion: 1.16.0
 
   relativeArtifacts: /artifacts/output
   monitoringHome: $(System.DefaultWorkingDirectory)/artifacts/monitoring-home
@@ -159,7 +161,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.55.1
+  ToolVersion: 3.55.2
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -248,6 +250,8 @@ stages:
     dependsOn: []
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
@@ -274,6 +278,8 @@ stages:
     timeoutInMinutes: 90 # Build can take up to 30 minutes, so make sure we have headroom on failure+retry
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -320,6 +326,8 @@ stages:
   - job: build
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1059,6 +1067,8 @@ stages:
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
     name: $(windowsX64Pool)
+    demands:
+    - ImageVersionOverride -equals $(windowsX64ImageVersion)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1123,6 +1133,8 @@ stages:
 
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
@@ -1304,6 +1316,8 @@ stages:
     dependsOn: []
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1360,6 +1374,8 @@ stages:
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
     name: $(windowsX64Pool)
+    demands:
+    - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1589,6 +1605,8 @@ stages:
       timeoutInMinutes: 60 #default value
       pool:
         name: $(windowsX64Pool)
+        demands:
+        - ImageVersionOverride -equals $(windowsX64ImageVersion)
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1641,6 +1659,8 @@ stages:
             framework: net11.0
       pool:
         name: $(windowsX64Pool)
+        demands:
+        - ImageVersionOverride -equals $(windowsX64ImageVersion)
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1715,6 +1735,8 @@ stages:
   - job: Win
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1831,6 +1853,8 @@ stages:
   - job: Win
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1897,6 +1921,8 @@ stages:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1974,6 +2000,8 @@ stages:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
@@ -2102,6 +2130,8 @@ stages:
   - job: Win
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     timeoutInMinutes: 60 #default value
 
     steps:
@@ -2177,6 +2207,8 @@ stages:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     variables:
       relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
@@ -2260,6 +2292,8 @@ stages:
     timeoutInMinutes: 60 #default value
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
     variables:
       framework: net48
 
@@ -2823,6 +2857,8 @@ stages:
 
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3182,6 +3218,8 @@ stages:
     timeoutInMinutes: 60 #default value
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3715,6 +3753,8 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
@@ -3886,6 +3926,8 @@ stages:
 
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
@@ -4102,6 +4144,8 @@ stages:
 
     pool:
       name: $(windowsX64Pool)
+      demands:
+      - ImageVersionOverride -equals $(windowsX64ImageVersion)
 
     steps:
     - template: steps/clone-repo.yml
