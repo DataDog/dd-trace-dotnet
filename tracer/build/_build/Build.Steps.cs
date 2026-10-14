@@ -1745,11 +1745,13 @@ partial class Build
     /// <summary>
     /// The application of the Datadog.Trace.Aot package (BuildNativeAotNuget, in artifacts/nuget/aot) published with NativeAOT
     /// for .NET 8 and .NET 10: the manual API, AppSec, RASP and IAST work, its binary stays in its budget, and Datadog.Trace
-    /// has no trimming or AOT analysis warning (Verify snapshots). CI runs it on Linux x64 once the package is built.
+    /// has no trimming or AOT analysis warning (Verify snapshots). Then the parity check: an application published with
+    /// NativeAOT sends the spans it sends published for JIT with the tracer home (artifacts/monitoring-home). CI runs them on
+    /// Linux x64 once the package is built.
     /// </summary>
     Target RunNativeAotPackageTests => _ => _
         .Unlisted()
-        .Description("Publishes the NativeAOT application of the Datadog.Trace.Aot package and checks it")
+        .Description("Publishes the NativeAOT application of the Datadog.Trace.Aot package and checks it, and compares the spans of NativeAOT and JIT applications (the JIT one with the tracer home)")
         .Executes(() =>
         {
             var feed = ArtifactsDirectory / "nuget" / "aot";
@@ -1771,10 +1773,11 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetProjectFile(runnerTestsProjectPath)
                 .SetFramework("net8.0")
-                .SetFilter("FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.ManualApiApplicationWithThePackage")
+                .SetFilter("FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.ManualApiApplicationWithThePackage|FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.NativeAotSpansMatchTheJitOnes")
                 .SetProcessEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH", "1")
                 .SetProcessEnvironmentVariable("DD_AOT_PACKAGE_FEED", feed)
                 .SetProcessEnvironmentVariable("DD_AOT_MANUAL_API", manualApi)
+                .SetProcessEnvironmentVariable("DD_AOT_MONITORING_HOME", MonitoringHomeDirectory)
                 .WithDatadogLogger());
         });
 
