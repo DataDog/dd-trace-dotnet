@@ -122,7 +122,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public void Start()
         {
             // The libdatadog client blocks while polling, so poll on a dedicated thread
-            _ = Task.Factory.StartNew(PollLoop, TaskCreationOptions.LongRunning)
+            _ = Task.Factory.StartNew(PollLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
