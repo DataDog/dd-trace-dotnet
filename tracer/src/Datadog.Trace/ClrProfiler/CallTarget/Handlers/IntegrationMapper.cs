@@ -9,6 +9,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -27,8 +30,25 @@ internal static class IntegrationMapper
     private static readonly MethodInfo UnwrapTaskReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapTaskReturnValue), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo ConvertTypeMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.ConvertType), BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    /// <summary>
+    /// Gets a value indicating whether the integration methods can be bound at runtime: they're bound with IL emitted at
+    /// runtime, which NativeAOT applications don't support (their instrumentation binds them at build time). A constant for
+    /// ILC, which leaves the IL emission out of the application.
+    /// </summary>
+    internal static bool IsSupported
+#if NETCOREAPP3_0_OR_GREATER
+        => RuntimeFeature.IsDynamicCodeSupported;
+#else
+        => true;
+#endif
+
     internal static DynamicMethod? CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
          *      - CallTargetState OnMethodBegin<TTarget>(TTarget instance);
@@ -210,6 +230,11 @@ internal static class IntegrationMapper
 
     internal static DynamicMethod? CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
          *      - CallTargetState OnMethodBegin<TTarget>(TTarget instance);
@@ -333,6 +358,11 @@ internal static class IntegrationMapper
 
     internal static DynamicMethod? CreateEndMethodDelegate(Type integrationType, Type targetType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
          *      - CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state);
@@ -448,6 +478,11 @@ internal static class IntegrationMapper
 
     internal static DynamicMethod? CreateEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
          *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
@@ -608,6 +643,11 @@ internal static class IntegrationMapper
 
     internal static CreateAsyncEndMethodResult CreateAsyncEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
          *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
