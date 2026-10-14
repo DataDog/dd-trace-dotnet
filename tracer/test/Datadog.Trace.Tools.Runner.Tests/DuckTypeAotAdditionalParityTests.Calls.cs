@@ -59,6 +59,10 @@ public partial class DuckTypeAotAdditionalParityTests
     // Generic methods with constraints (the proxy's generic parameters have them, so the target method can too), and proxy
     // methods with default parameter values.
     [InlineData("generic-method-constraints", "ArgNameHolder|ArgNameHolder|struct:4")]
+    // A closed generic proxy: a constraint built on its generic parameter isn't copied (reflection gives it unsubstituted), so
+    // a target method with that constraint can't be called.
+    [InlineData("generic-method-constraints-of-closed-generic-proxy", "describe:ArgConstraintDerived")]
+    [InlineData("generic-method-constraints-of-closed-generic-proxy-constrained-target", "throws:DuckTypeException>ArgumentException>VerificationException")]
     [InlineData("proxy-default-parameter-values", "3:x")]
     // Fallback method names, with a duck chained argument: the first name that has a method wins.
     [InlineData("fallback-names-in-order", "primary:chained")]
@@ -158,6 +162,12 @@ public partial class DuckTypeAotAdditionalParityTests
                     Mapping(typeof(IArgConstrainedFactoryProxy), typeof(ArgConstrainedFactory), reverse: true),
                     Mapping(typeof(IArgStructDescriberProxy), typeof(ArgStructDescriber), reverse: true),
                 }),
+            "generic-method-constraints-of-closed-generic-proxy" => (
+                Run(() => DuckType.Create<IArgClosedConstrainedProxy<ArgConstraintBase>>(new ArgClosedConstrainedTarget())!.Describe(new ArgConstraintDerived())),
+                new[] { Mapping(typeof(IArgClosedConstrainedProxy<ArgConstraintBase>), typeof(ArgClosedConstrainedTarget)) }),
+            "generic-method-constraints-of-closed-generic-proxy-constrained-target" => (
+                Run(() => DuckType.Create<IArgClosedConstrainedProxy<ArgConstraintBase>>(new ArgClosedConstrainedBaseTarget())!.Describe(new ArgConstraintDerived())),
+                new[] { Mapping(typeof(IArgClosedConstrainedProxy<ArgConstraintBase>), typeof(ArgClosedConstrainedBaseTarget)) }),
             "proxy-default-parameter-values" => (Run(() => DuckType.Create<IArgDefaultValuesProxy>(new ArgDefaultValuesTarget())!.Format(3)), new[] { Mapping(typeof(IArgDefaultValuesProxy), typeof(ArgDefaultValuesTarget)) }),
             "fallback-names-in-order" => (
                 Run(() => DuckType.Create<IArgFallbackDescribeProxy>(new ArgFallbackDescribeTarget())!.Describe(DuckType.Create<ICallNameView>(new CallChainValue())!)),
@@ -519,6 +529,32 @@ public partial class DuckTypeAotAdditionalParityTests
         public string Describe<T>(T value)
             where T : struct
             => "struct:" + value;
+    }
+
+    public interface IArgClosedConstrainedProxy<TBase>
+    {
+        string Describe<T>(T value)
+            where T : TBase;
+    }
+
+    public class ArgConstraintBase
+    {
+    }
+
+    public class ArgConstraintDerived : ArgConstraintBase
+    {
+    }
+
+    public class ArgClosedConstrainedTarget
+    {
+        public string Describe<T>(T value) => "describe:" + value!.GetType().Name;
+    }
+
+    public class ArgClosedConstrainedBaseTarget
+    {
+        public string Describe<T>(T value)
+            where T : ArgConstraintBase
+            => "constrained:" + value.GetType().Name;
     }
 
     public interface IArgDefaultValuesProxy

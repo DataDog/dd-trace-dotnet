@@ -99,7 +99,8 @@ compared to the previous release apply in both modes:
      like before.
    - A proxy method parameter of type `ValueWithType<T>` passes its `Value` to the target.
    - The generic parameters of a generic proxy method have the constraints of the method it implements (before, they had
-     none, and calling a target method with constraints failed verification).
+     none, and calling a target method with constraints failed verification), except the ones built on a generic parameter
+     of a type (e.g. `where T : TBase` in a generic proxy interface): reflection gives them unsubstituted.
    - A proxy definition method with default parameter values can be implemented (before, each parameter of the proxy method
      dynamic duck typing generated got the name, the attributes and the default value of the next one, and a default value of
      another type than its parameter's failed the creation of the proxy). The parameters of the generated method have the
