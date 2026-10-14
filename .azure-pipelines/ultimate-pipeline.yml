@@ -72,7 +72,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 11.0.100-rc.1.26425.128
+  dotnetCoreSdkLatestVersion: 11.0.100-rc.2.26504.105
   nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
