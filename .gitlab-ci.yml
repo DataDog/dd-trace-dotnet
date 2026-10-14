@@ -51,17 +51,10 @@ variables:
     LLMVAL_PLATFORM_REF: "4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3"   # v0.1.4 (must match include ref above)
 
 build-windows-ci-image:
-  stage: .pre
+  stage: build
   timeout: 2h
   tags: ["windows-v2:2022"]
-  rules:
-    # Check availability whenever build or sign-nuget-packages can run, even if
-    # this push did not change image inputs. Existing images skip the rebuild.
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: '$DEPLOY_TO_REL_ENV == "true" && $DOTNET_PACKAGE_VERSION'
-      when: never
-    - when: on_success
+  when: manual
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -113,7 +106,7 @@ build:
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
-    - &check-windows-build-image |
+    - |
       $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
       if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
         throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
@@ -125,7 +118,7 @@ build:
       if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
         Write-Host "The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed."
-        Write-Host "Check or retry 'build-windows-ci-image' in this pipeline, then retry this job after the image is published."
+        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
         exit 1
       }
     - |
@@ -330,8 +323,6 @@ sign-nuget-packages:
       when: never      # We don't need to build/publish when building a release tag
     - when: on_success
   needs:
-    - job: build-windows-ci-image
-      artifacts: false
     - job: build
       optional: true
       artifacts: false # only needed for timing reasons
@@ -342,7 +333,12 @@ sign-nuget-packages:
       - git config --system core.longpaths true
   script:
     - if (Test-Path signed-out) { remove-item -recurse -force signed-out }
-    - *check-windows-build-image
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
     - |
       New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\nuget" | Out-Null
       New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\packages-to-sign" | Out-Null
