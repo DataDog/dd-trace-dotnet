@@ -11,14 +11,12 @@
       component: aspnet_core,
       env: integration_tests,
       error.msg: The HTTP response has status code 402.,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 402,
       http.url: http://localhost:00000/status-code/402,
       http.useragent: testhelper,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       network.protocol.version: 1.1,
       runtime-id: Guid_1,
       server.address: localhost,
@@ -35,7 +33,6 @@
       _dd.code_origin.type: entry
     },
     Metrics: {
-      network.peer.port: 00000,
       process_id: 0,
       server.port: 00000,
       _dd.top_level: 1.0,
