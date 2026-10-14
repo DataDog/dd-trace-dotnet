@@ -1,4 +1,5 @@
 #include "rejit_preprocessor.h"
+#include "clr_helpers.h"
 #include "debugger_members.h"
 #include "fault_tolerant_tracker.h"
 #include "function_control_wrapper.h"
@@ -30,7 +31,8 @@ RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corPro
                                                              RejitterPriority priority) :
     Rejitter(rejit_handler, priority),
     m_corProfiler(corProfiler),
-    m_rejit_handler(std::move(rejit_handler))
+    m_rejit_handler(std::move(rejit_handler)),
+    m_isDesktopClr(GetRuntimeInformation(m_rejit_handler->GetCorProfilerInfo()).is_desktop())
 {
 }
 
@@ -149,8 +151,8 @@ void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID mo
 }
 
 // The AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so it never
-// sees methods created afterwards. Their inliners are added to the caller's batch instead, so a method and its
-// precompiled callers are rejitted together.
+// sees methods created afterwards. On CoreCLR, add their inliners to the caller's batch so a method and its
+// precompiled callers are rejitted together. Desktop CLR defers enumeration to the next replay.
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNewMethods(
     ModuleID moduleId, std::vector<RejitRequest>& rejitRequests)
@@ -173,8 +175,23 @@ void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNe
         return;
     }
 
-    // RemoveModule erases an unloading ModuleID under this lock, so it has to be held across the CLR calls.
+    // AddNGenInlinerModule and RemoveModule change the NGen module list under this lock, so it has to be held while
+    // iterating it. RemoveModule erases an unloading ModuleID, so it also has to be held across the CLR calls.
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
+    if (m_isDesktopClr)
+    {
+        // Desktop CLR's NGen dependency lookup uses the current AppDomain. The native ReJIT worker has none,
+        // even after InitializeCurrentThread, and can crash in Module::FindDomainFile. Defer enumeration to
+        // AddNGenInlinerModule in ModuleLoadFinished/JITCachedFunctionSearchStarted. Clear the processed markers
+        // so those callbacks also discover the newly registered methods.
+        for (const auto& inlinerModule : m_ngenInlinersModules)
+        {
+            moduleHandler->RemoveProcessedInlinerModule(inlinerModule);
+        }
+
+        return;
+    }
+
     for (const auto method : newMethods)
     {
         for (const auto& inlinerModule : m_ngenInlinersModules)
