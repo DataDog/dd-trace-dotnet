@@ -7,6 +7,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.DuckTyping;
@@ -22,7 +23,7 @@ internal static class SecurityCoordinatorHelpers
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SecurityCoordinatorHelpers));
 
-    internal static readonly Type? SessionFeature = Assembly.GetAssembly(typeof(IHeaderDictionary))?.GetType("Microsoft.AspNetCore.Http.Features.ISessionFeature", throwOnError: false);
+    internal static readonly Type? SessionFeature = GetSessionFeatureType();
 
     internal static void CheckAndBlock(this Security security, HttpContext context, Span span)
     {
@@ -107,6 +108,10 @@ internal static class SecurityCoordinatorHelpers
     // risking that this runs before a hook that would have been able to block.
     internal static bool HasNoResponseStartHook(string? responseFeatureTypeName) =>
         responseFeatureTypeName?.StartsWith("Microsoft.AspNetCore.Server.HttpSys.", StringComparison.Ordinal) == true;
+
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types Datadog.Trace looks up by name (ReflectionRootDescriptor).")]
+    private static Type? GetSessionFeatureType()
+        => Assembly.GetAssembly(typeof(IHeaderDictionary))?.GetType("Microsoft.AspNetCore.Http.Features.ISessionFeature", throwOnError: false);
 
     private static Dictionary<string, object> BuildResponseArgs(int statusCode, IHeaderDictionary headers)
     {

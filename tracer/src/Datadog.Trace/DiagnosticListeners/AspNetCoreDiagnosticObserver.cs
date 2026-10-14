@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -55,9 +56,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 #endif
 
-        private static readonly Type EndpointFeatureType =
-            Assembly.GetAssembly(typeof(RouteValueDictionary))
-                   ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
+        private static readonly Type EndpointFeatureType = GetEndpointFeatureType();
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
@@ -278,6 +277,10 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 #endif
+
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types Datadog.Trace looks up by name (ReflectionRootDescriptor).")]
+        private static Type GetEndpointFeatureType()
+            => Assembly.GetAssembly(typeof(RouteValueDictionary))?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private static string GetLegacyResourceName(BeforeActionStruct typedArg)
         {

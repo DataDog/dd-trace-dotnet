@@ -560,7 +560,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             Log.Debug("GetDelegateForNativeFunction {FunctionName} -  {FuncPtr}: ", functionName, funcPtr);
-            return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
+            return Marshal.GetDelegateForFunctionPointer<T>(funcPtr);
         }
 
         private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
