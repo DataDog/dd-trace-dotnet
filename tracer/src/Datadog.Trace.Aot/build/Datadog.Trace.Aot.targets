@@ -15,7 +15,8 @@
     DatadogAotTraceMethods     methods to trace, with the DD_TRACE_METHODS syntax: instrumented at build time, as a NativeAOT
                                application can't instrument them at runtime (default: DD_TRACE_METHODS of the build)
     DatadogAotArguments        extra arguments for `dd-trace aot instrument`
-    DatadogAotFailOnError      true to fail the publish when the instrumentation fails (default: warning, publish uninstrumented)
+    DatadogAotFailOnError      true to fail the publish when the instrumentation fails or can't run (default: warning, publish
+                               uninstrumented)
     DatadogAotRunnerPath       dd-trace runner (default: the package's)
     DatadogAotNativeTracerPath Datadog.Tracer.Native library for the build host (default: the package's for the SDK's RID)
     DatadogAotDatadogTracePath Datadog.Trace.dll ILC compiles when the application doesn't reference it (default: the package's)
@@ -62,7 +63,7 @@
       <_DatadogAotTraceMethods>$(DatadogAotTraceMethods)</_DatadogAotTraceMethods>
       <_DatadogAotTraceMethods Condition="'$(_DatadogAotTraceMethods)' == ''">$(DD_TRACE_METHODS)</_DatadogAotTraceMethods>
       <!-- Escaped: its ';' separate methods, not lines of the response file. -->
-      <_DatadogAotTraceMethodsArgument Condition="'$(_DatadogAotTraceMethods)' != ''">--trace-methods=$([MSBuild]::Escape('$(_DatadogAotTraceMethods)'))</_DatadogAotTraceMethodsArgument>
+      <_DatadogAotTraceMethodsArgument Condition="'$(_DatadogAotTraceMethods)' != ''">--trace-methods=&quot;$([MSBuild]::Escape('$(_DatadogAotTraceMethods)'))&quot;</_DatadogAotTraceMethodsArgument>
       <_DatadogAotDotnet>$(DOTNET_HOST_PATH)</_DatadogAotDotnet>
       <_DatadogAotDotnet Condition="'$(_DatadogAotDotnet)' == ''">dotnet</_DatadogAotDotnet>
       <!-- The runner starts on the latest runtime (it may be the only one, a preview with a preview SDK), then runs again on
@@ -104,7 +105,8 @@
       <_DatadogAotSkipReason Condition="'$(_DatadogAotSkipReason)' == '' and ('$(DatadogAotNativeTracerPath)' == '' or !Exists('$(DatadogAotNativeTracerPath)'))">no native tracer for the build host $(NETCoreSdkRuntimeIdentifier) (set DatadogAotNativeTracerPath)</_DatadogAotSkipReason>
       <_DatadogAotReady Condition="'$(_DatadogAotSkipReason)' == ''">true</_DatadogAotReady>
     </PropertyGroup>
-    <Warning Condition="'$(_DatadogAotReady)' != 'true'" Text="Datadog NativeAOT instrumentation skipped: $(_DatadogAotSkipReason)." />
+    <Error Condition="'$(_DatadogAotReady)' != 'true' and '$(DatadogAotFailOnError)' == 'true'" Text="Datadog NativeAOT instrumentation can't run: $(_DatadogAotSkipReason)." />
+    <Warning Condition="'$(_DatadogAotReady)' != 'true' and '$(DatadogAotFailOnError)' != 'true'" Text="Datadog NativeAOT instrumentation skipped: $(_DatadogAotSkipReason)." />
 
     <ItemGroup Condition="'$(_DatadogAotReady)' == 'true'">
       <_DatadogAotReferenceDirectory Include="@(IlcReference->'%(RootDir)%(Directory)')" />
@@ -118,10 +120,11 @@
       <Output TaskParameter="Filtered" ItemName="_DatadogAotReferenceDirectories" />
     </RemoveDuplicates>
 
-    <!-- Written only when different: the arguments are an input of the instrumentation. -->
+    <!-- Written only when different: the arguments are an input of the instrumentation. Quoted: the runner splits the lines
+         of a response file at spaces (paths with spaces). -->
     <WriteLinesToFile Condition="'$(_DatadogAotReady)' == 'true'"
                       File="$(_DatadogAotOutput)arguments.rsp"
-                      Lines="--native-tracer=$(DatadogAotNativeTracerPath);--datadog-trace=$(_DatadogAotDatadogTracePath);@(_DatadogAotAssembly->'--assembly=%(FullPath)');@(_DatadogAotReferenceDirectories->'--reference-dir=%(Identity)');--runtime-version=$(_DatadogAotRuntimeVersion);--categories=$(_DatadogAotCategories);@(_DatadogAotDuckTypeMap->'--ducktype-map=%(FullPath)');$(_DatadogAotTraceMethodsArgument);--report=$(_DatadogAotOutput)report.json;--output=$(_DatadogAotOutput);$(DatadogAotArguments)"
+                      Lines="--native-tracer=&quot;$(DatadogAotNativeTracerPath)&quot;;--datadog-trace=&quot;$(_DatadogAotDatadogTracePath)&quot;;@(_DatadogAotAssembly->'--assembly=&quot;%(FullPath)&quot;');@(_DatadogAotReferenceDirectories->'--reference-dir=&quot;%(Identity)&quot;');--runtime-version=$(_DatadogAotRuntimeVersion);--categories=$(_DatadogAotCategories);@(_DatadogAotDuckTypeMap->'--ducktype-map=&quot;%(FullPath)&quot;');$(_DatadogAotTraceMethodsArgument);--report=&quot;$(_DatadogAotOutput)report.json&quot;;--output=&quot;$(_DatadogAotOutput)&quot;;$(DatadogAotArguments)"
                       Overwrite="true"
                       WriteOnlyWhenDifferent="true" />
   </Target>
@@ -131,7 +134,12 @@
           Condition="'$(_DatadogAotReady)' == 'true'"
           Inputs="@(_DatadogAotInput);$(_DatadogAotOutput)arguments.rsp"
           Outputs="$(_DatadogAotStamp)">
-    <Delete Files="$(_DatadogAotStamp)" />
+    <!-- The outputs of the previous instrumentation: an assembly it doesn't rewrite now (e.g. another version of a package)
+         would replace ILC's input otherwise. -->
+    <ItemGroup>
+      <_DatadogAotPreviousOutput Include="$(_DatadogAotOutput)*" Exclude="$(_DatadogAotOutput)arguments.rsp" />
+    </ItemGroup>
+    <Delete Files="@(_DatadogAotPreviousOutput)" />
     <Exec Command="&quot;$(_DatadogAotDotnet)&quot; &quot;$(DatadogAotRunnerPath)&quot; aot instrument @&quot;$(_DatadogAotOutput)arguments.rsp&quot;"
           EnvironmentVariables="$(_DatadogAotRunnerEnvironment)"
           ContinueOnError="true">

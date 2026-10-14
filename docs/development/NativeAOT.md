@@ -39,7 +39,8 @@ incremental (inputs: ILC's inputs, the maps, the tools). It passes the applicati
 the tracer), then every `IlcReference` but `System.Private.CoreLib` and `Datadog.Trace`. When the application only
 references the manual API (the `Datadog.Trace` NuGet package), the package's full `Datadog.Trace.dll` is added to ILC's
 inputs. On failure, the application is published without the instrumentation, with a warning
-(`DatadogAotFailOnError=true` fails the publish).
+(`DatadogAotFailOnError=true` fails the publish, also when the tools aren't found). Each instrumentation deletes the
+outputs of the previous one first: an assembly it doesn't rewrite anymore isn't compiled in its previous version.
 
 The runner starts with `DOTNET_ROLL_FORWARD=LatestMajor` (it may be the only runtime), then `AotRuntimeSelector` runs it
 again with `dotnet exec --fx-version` on the latest runtime of the application's major version: the DuckType generator
