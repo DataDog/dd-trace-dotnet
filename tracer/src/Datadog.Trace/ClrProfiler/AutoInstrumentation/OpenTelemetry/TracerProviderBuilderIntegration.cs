@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 #if NETCOREAPP3_0_OR_GREATER
@@ -66,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             return CallTargetState.GetDefault();
         }
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The generic arguments are reference types: the instantiation runs the shared code.")]
         private static Func<object, object, object> CreateAddProcessorDelegate()
         {
             Type builderExtensionsType = Type.GetType("OpenTelemetry.Trace.TracerProviderBuilderExtensions, OpenTelemetry", throwOnError: false);
@@ -113,6 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             return (Func<object, object, object>)dynMethod.CreateDelegate(typeof(Func<object, object, object>));
         }
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The generic arguments are reference types: the instantiation runs the shared code.")]
         private static Func<object> CreateCreateProcessorDelegate()
         {
             Type activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
@@ -12,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
     {
         private static readonly ActivatorHelper MetadataActivator;
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         static CachedMetadataHelper()
         {
             MetadataActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("Grpc.Core.Metadata"));

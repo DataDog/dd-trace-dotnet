@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Emit;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.CompilerServices;
@@ -40,6 +41,7 @@ internal sealed class ActivatorHelper
 
     public object CreateInstance() => _activator();
 
+    [UnconditionalSuppressMessage("Trimming", "IL2077", Justification = "The types it creates are looked up by constant names, which the NativeAOT build keeps with their constructors (ReflectionRootDescriptor).")]
     private object DefaultActivator()
     {
         return Activator.CreateInstance(_type)!;

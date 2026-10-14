@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Util.Delegates;
 
@@ -39,6 +40,9 @@ internal static class ProducerCache
 #endif
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "DeliveryReport<TKey, TValue> is a class, and the producer's own Produce method, whose parameters use it and its handler type, makes the application have the instantiation.")]
+    [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "DeliveryReport<TKey, TValue> is a class, and the producer's own Produce method, whose parameters use it and its handler type, makes the application have the instantiation.")]
     private static Delegate? CreateDefaultDeliveryHandler(Type producerType)
     {
         var deliveryReportType = producerType.Assembly.GetType("Confluent.Kafka.DeliveryReport`2");
