@@ -756,7 +756,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
-            => packageVersion.StartsWith("5.", StringComparison.Ordinal) ? "/TestCaseFilter:FullyQualifiedName!~Samples.NUnit5Tests -- NUnit.PreFilter=false" : base.GetTestRunnerArguments(packageVersion, useDotnetExec);
+            => NUnitTests.GetSharedSampleArguments(packageVersion) ?? base.GetTestRunnerArguments(packageVersion, useDotnetExec);
 
         protected override void CheckSimpleTestSpan(MockCIVisibilityTest targetTest)
         {

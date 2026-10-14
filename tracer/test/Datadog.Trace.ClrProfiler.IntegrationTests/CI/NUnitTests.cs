@@ -72,8 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     // We remove the evp_proxy endpoint to force the APM protocol compatibility
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
-                    var arguments = packageVersion.StartsWith("5.", StringComparison.Ordinal) ? "/TestCaseFilter:FullyQualifiedName!~Samples.NUnit5Tests -- NUnit.PreFilter=false" : null;
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: packageVersion, expectedExitCode: 1))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: GetSharedSampleArguments(packageVersion), packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         spans = (await agent.WaitForSpansAsync(ExpectedSpanCount))
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
@@ -298,6 +297,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 throw;
             }
         }
+
+        // NUnit 5 builds of this sample also contain the fixtures exercised by NUnit5Tests.
+        internal static string GetSharedSampleArguments(string packageVersion)
+            => packageVersion.StartsWith("5.", StringComparison.Ordinal) ? "/TestCaseFilter:FullyQualifiedName!~Samples.NUnit5Tests -- NUnit.PreFilter=false" : null;
 
         protected override void CheckSimpleTestSpan(MockSpan targetSpan)
         {
