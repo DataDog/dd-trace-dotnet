@@ -438,13 +438,36 @@ namespace Datadog.Trace.TestHelpers
         {
             if (EnvironmentTools.IsWindows() && !IsCoreClr())
             {
-                // Use Visual Studio's .NET Framework testhost; recent dotnet SDKs no longer ship it.
-                var consolePath = GetVsTestConsolePath(
-                    Environment.GetEnvironmentVariable("ProgramW6432") ?? Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86));
-                if (consolePath is not null)
+                string filePattern32 = @"C:\Program Files (x86)\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
+                string filePattern64 = @"C:\Program Files\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
+                List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
                 {
-                    return consolePath;
+                    // Windows CI installs Visual Studio 2026 Build Tools under "18".
+                    Tuple.Create("18", "BuildTools"),
+                    Tuple.Create("2022", "Enterprise"),
+                    Tuple.Create("2022", "Professional"),
+                    Tuple.Create("2022", "Community"),
+                    Tuple.Create("2019", "Enterprise"),
+                    Tuple.Create("2019", "Professional"),
+                    Tuple.Create("2019", "Community"),
+                    Tuple.Create("2017", "Enterprise"),
+                    Tuple.Create("2017", "Professional"),
+                    Tuple.Create("2017", "Community"),
+                };
+
+                foreach (Tuple<string, string> tuple in lstTuple)
+                {
+                    var tryPath = string.Format(filePattern32, tuple.Item1, tuple.Item2);
+                    if (File.Exists(tryPath))
+                    {
+                        return tryPath;
+                    }
+
+                    tryPath = string.Format(filePattern64, tuple.Item1, tuple.Item2);
+                    if (File.Exists(tryPath))
+                    {
+                        return tryPath;
+                    }
                 }
             }
 
@@ -626,33 +649,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return Path.Combine(GetMonitoringHomePath(), archFolder, "Datadog.Linux.ApiWrapper.x64.so");
-        }
-
-        /// <summary>
-        /// Finds the newest installed Visual Studio test runner, checking both installation roots.
-        /// </summary>
-        internal static string GetVsTestConsolePath(string programFiles, string programFilesX86)
-        {
-            // VS 2026 installs under "18"; the current Windows CI image uses its BuildTools edition.
-            string[] versions = ["18", "2022", "2019", "2017"];
-            string[] editions = ["Enterprise", "Professional", "Community", "BuildTools"];
-            string[] roots = [programFilesX86, programFiles];
-            foreach (var version in versions)
-            {
-                foreach (var edition in editions)
-                {
-                    foreach (var root in roots)
-                    {
-                        var path = Path.Combine(root, "Microsoft Visual Studio", version, edition, "Common7", "IDE", "CommonExtensions", "Microsoft", "TestWindow", "vstest.console.exe");
-                        if (File.Exists(path))
-                        {
-                            return path;
-                        }
-                    }
-                }
-            }
-
-            return null;
         }
 
         private static string GetTestArtifactPath(string environmentVariable, string relativeDefaultPath)
