@@ -60,7 +60,31 @@ internal sealed class AotInstrumentReport
 
     public DuckTypeRegistryResult? DuckTypeRegistry { get; set; }
 
+    public GenericInstantiationsResult? GenericInstantiations { get; set; }
+
     public List<string> Errors { get; } = new();
+
+    /// <summary>
+    /// The search of the closed instantiations of the instrumented generic methods (C3, H-76).
+    /// </summary>
+    internal sealed class GenericInstantiationsResult
+    {
+        public int RelevantMembers { get; set; }
+
+        public int ClosedReferences { get; set; }
+
+        public int Contexts { get; set; }
+
+        public int DepthCuts { get; set; }
+
+        public bool LimitReached { get; set; }
+
+        /// <summary>Gets or sets the instrumented methods with generic shapes left for their instantiations.</summary>
+        public List<string> DeferredMethods { get; set; } = new();
+
+        /// <summary>Gets or sets the methods of <see cref="DeferredMethods"/> without any instantiation found.</summary>
+        public List<string> UninstantiatedMethods { get; set; } = new();
+    }
 
     internal sealed class DuckTypeRegistryResult
     {

@@ -34,6 +34,8 @@ internal class AotInstrumentCommand : CommandWithExamples
     private readonly Option<string?> _reportOption = new("--report", "Optional JSON report path.");
     private readonly Option<bool> _verifyOption = new("--verify", "Verify the rewritten methods (ILSpy, JIT preparation, ILVerify) against the original assemblies.");
     private readonly Option<bool> _verboseOption = new("--verbose", "Verbose output.");
+    private readonly Option<bool> _failOnIncompleteGenericsOption = new("--fail-on-incomplete-generic-instantiations", "Fail when instrumented generic methods may miss closed instantiations (the search was cut).");
+    private readonly Option<int> _maxGenericContextsOption = new("--max-generic-contexts", getDefaultValue: () => CallTarget.GenericInstantiationDiscovery.DefaultMaxContexts, "Limit of the search of generic instantiations (tests).") { IsHidden = true };
 
     public AotInstrumentCommand()
         : base("instrument", "Instrument assemblies at build time with the native tracer")
@@ -55,6 +57,8 @@ internal class AotInstrumentCommand : CommandWithExamples
         AddOption(_reportOption);
         AddOption(_verifyOption);
         AddOption(_verboseOption);
+        AddOption(_failOnIncompleteGenericsOption);
+        AddOption(_maxGenericContextsOption);
 
         this.SetHandler(Execute);
     }
@@ -98,6 +102,8 @@ internal class AotInstrumentCommand : CommandWithExamples
             ReportPath = _reportOption.GetValue(context),
             Verify = _verifyOption.GetValue(context),
             Verbose = _verboseOption.GetValue(context),
+            FailOnIncompleteGenericInstantiations = _failOnIncompleteGenericsOption.GetValue(context),
+            MaxGenericContexts = _maxGenericContextsOption.GetValue(context),
         };
 
 #if NET6_0_OR_GREATER

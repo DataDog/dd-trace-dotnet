@@ -177,13 +177,22 @@ internal static class AotInstrumentProcessor
             // create them directly.
             CallTargetDuckTypeRegistry? duckTypeRegistry = null;
             Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null;
+            GenericInstantiationDiscovery.Statistics? discovery = null;
             if (options.GenerateCallTargetRegistry)
             {
                 // The instantiations come from all the given assemblies (the application creates the framework's generic types).
                 var genericRewritten = rewrittenByModule.Values.SelectMany(m => m).Where(m => m.HasGenericParameters || m.DeclaringType.HasGenericParameters).ToList();
-                instantiations = genericRewritten.Count == 0
-                                     ? new Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>()
-                                     : GenericInstantiationDiscovery.Discover(modules.Where(m => m.Writable).Select(m => (dnlib.DotNet.ModuleDef)m.Module), genericRewritten, typeResolver.Resolve);
+                if (genericRewritten.Count == 0)
+                {
+                    instantiations = new Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>();
+                }
+                else
+                {
+                    instantiations = GenericInstantiationDiscovery.Discover(modules.Where(m => m.Writable).Select(m => (dnlib.DotNet.ModuleDef)m.Module), genericRewritten, typeResolver.Resolve, out var statistics, options.MaxGenericContexts);
+                    discovery = statistics;
+                    AotLog.Info($"Search of generic instantiations: {statistics.RelevantMembers} generic types and methods lead to instrumented ones, {statistics.ClosedReferences} closed references, {statistics.Contexts} generic contexts followed");
+                }
+
                 AotLog.Info($"Closed instantiations of generic instrumented methods: {instantiations.Values.Sum(i => i.Count)} for {instantiations.Count} methods");
                 var collector = new DuckProxyRequestCollector();
                 foreach (var rewritten in rewrittenByModule.Values)
@@ -272,6 +281,11 @@ internal static class AotInstrumentProcessor
                 report.Assemblies.Add(new AotInstrumentReport.AssemblyResult { Name = module.AssemblyName, Path = output, RewrittenMethods = module.NewBodies.Count, CallTarget = registry });
                 AotLog.Info($"{module.AssemblyName}: {module.NewBodies.Count} methods instrumented -> {output}");
             }
+
+            if (discovery is not null)
+            {
+                ReportGenericInstantiations(report, discovery, options);
+            }
         }
         catch (Exception ex)
         {
@@ -298,6 +312,48 @@ internal static class AotInstrumentProcessor
     }
 
 #if NET6_0_OR_GREATER
+    /// <summary>
+    /// The instrumented generic methods whose integrations need the closed instantiations of their generic context: when the
+    /// search of instantiations was cut, some may be missing, and the integrations wouldn't trace those calls (H-76).
+    /// </summary>
+    private static void ReportGenericInstantiations(AotInstrumentReport report, GenericInstantiationDiscovery.Statistics discovery, AotInstrumentOptions options)
+    {
+        var results = report.Assemblies.Select(a => a.CallTarget).OfType<CallTargetRegistryResult>().ToList();
+        var deferred = results.SelectMany(r => r.DeferredGenericMethods).ToList();
+        var uninstantiated = results.SelectMany(r => r.UninstantiatedGenericMethods).ToList();
+        report.GenericInstantiations = new AotInstrumentReport.GenericInstantiationsResult
+        {
+            RelevantMembers = discovery.RelevantMembers,
+            ClosedReferences = discovery.ClosedReferences,
+            Contexts = discovery.Contexts,
+            DepthCuts = discovery.DepthCuts,
+            LimitReached = discovery.LimitReached,
+            DeferredMethods = deferred,
+            UninstantiatedMethods = uninstantiated,
+        };
+
+        if (!discovery.Truncated || deferred.Count == 0)
+        {
+            if (uninstantiated.Count > 0)
+            {
+                // The application doesn't instantiate them (e.g. the ASP.NET Core Identity user events of an application without Identity).
+                AotLog.Info($"Instrumented generic methods the application doesn't instantiate: {string.Join(", ", uninstantiated)}");
+            }
+
+            return;
+        }
+
+        var reason = discovery.LimitReached
+                         ? $"limit of {options.MaxGenericContexts} generic contexts reached"
+                         : $"{discovery.DepthCuts} instantiations nested deeper than {GenericInstantiationDiscovery.MaxGenericDepth} generic arguments left out";
+        var message = $"The search of generic instantiations was cut ({reason}): {deferred.Count} instrumented generic methods may miss some, and their integrations wouldn't trace those calls: {string.Join(", ", deferred.Take(5))}{(deferred.Count > 5 ? ", ..." : string.Empty)}. See the report ({nameof(AotInstrumentReport.GenericInstantiations)}).";
+        AotLog.BuildWarning("DDAOT001", message);
+        if (options.FailOnIncompleteGenericInstantiations)
+        {
+            report.Errors.Add(message);
+        }
+    }
+
     private static (string Type, string Method) DescribeForVerification(dnlib.DotNet.MethodDef method)
         => (method.DeclaringType.ReflectionFullName, $"{method.Name}({string.Join(",", method.Parameters.Where(p => !p.IsHiddenThisParameter).Select(p => p.Type.FullName))})");
 

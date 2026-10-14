@@ -37,6 +37,13 @@ internal sealed class CallTargetRegistryResult
     /// <summary>Gets the shapes that aren't bound, with the reason.</summary>
     public List<string> Details { get; } = new();
 
+    /// <summary>Gets the methods with shapes left for the closed instantiations of their generic context (C3).</summary>
+    public List<string> DeferredGenericMethods { get; } = new();
+
+    /// <summary>Gets the methods of <see cref="DeferredGenericMethods"/> without any instantiation found: their integrations
+    /// don't trace them, unless the application never instantiates them.</summary>
+    public List<string> UninstantiatedGenericMethods { get; } = new();
+
     internal void Record(AdapterBindingStatus status, string method, CallTargetInvocation invocation, string? message, bool instantiation)
     {
         if (instantiation)

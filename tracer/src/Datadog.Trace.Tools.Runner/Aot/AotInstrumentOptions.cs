@@ -62,4 +62,11 @@ internal sealed class AotInstrumentOptions
     public bool Verify { get; init; }
 
     public bool Verbose { get; init; }
+
+    /// <summary>Gets a value indicating whether the instrumentation fails when the search of generic instantiations is cut and
+    /// instrumented generic methods may miss some (DatadogAotFailOnError).</summary>
+    public bool FailOnIncompleteGenericInstantiations { get; init; }
+
+    /// <summary>Gets the limit of generic contexts the search of generic instantiations follows (tests).</summary>
+    public int MaxGenericContexts { get; init; } = CallTarget.GenericInstantiationDiscovery.DefaultMaxContexts;
 }

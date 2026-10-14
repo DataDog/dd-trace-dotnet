@@ -342,6 +342,15 @@ internal sealed class CallTargetRegistryGenerator
             }
         }
 
+        if (builder.HasDeferred && _instantiations is not null)
+        {
+            _result.DeferredGenericMethods.Add(method.FullName);
+            if (!_instantiations.TryGetValue(method, out var found) || found.Count == 0)
+            {
+                _result.UninstantiatedGenericMethods.Add(method.FullName);
+            }
+        }
+
         // First instructions: branches and protected regions keep pointing at the original first instruction.
         for (var i = ensureCalls.Count - 1; i >= 0; i--)
         {

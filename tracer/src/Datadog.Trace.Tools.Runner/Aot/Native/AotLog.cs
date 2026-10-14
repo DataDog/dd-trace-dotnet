@@ -28,6 +28,25 @@ internal static class AotLog
 
     public static void Error(string message) => Write("ERR", message, force: true);
 
+    /// <summary>
+    /// A warning in MSBuild's canonical format: the Exec task of the targets shows it as a warning of the build (the output of
+    /// the runner isn't shown with the default verbosity).
+    /// </summary>
+    public static void BuildWarning(string code, string message)
+    {
+        lock (Sync)
+        {
+            if (Sink is { } sink)
+            {
+                sink("WRN", message);
+            }
+            else
+            {
+                Console.Error.WriteLine($"Datadog.Trace.Aot : warning {code}: {message}");
+            }
+        }
+    }
+
     private static void Write(string level, string message, bool force)
     {
         if (!force && !Verbose)
