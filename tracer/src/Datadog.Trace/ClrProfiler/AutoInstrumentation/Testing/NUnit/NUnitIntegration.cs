@@ -277,9 +277,12 @@ internal static class NUnitIntegration
     }
 
     // Runs before a suite completes, while NUnit has not read its result to decide whether the dependents run.
+    // Test cases are never marked, and only marked suites reach the lock taken by Remove.
     internal static void BlockDependentsOfHiddenFailures(ITest suite, ITestResult result)
     {
-        if (suite.Instance is { } instance &&
+        if (suite.IsSuite &&
+            suite.Instance is { } instance &&
+            PrerequisitesWithHiddenFailures.TryGetValue(instance, out _) &&
             PrerequisitesWithHiddenFailures.Remove(instance) &&
             result.ResultState.Status is TestStatus.Passed or TestStatus.Warning)
         {

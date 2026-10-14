@@ -2740,7 +2740,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public NUnitPropertyBag Properties { get; } = new NUnitPropertyBagStub();
 
-        public bool IsSuite => false;
+        public bool IsSuite => _testType != "TestMethod";
 
         public bool HasChildren => false;
 

@@ -30,19 +30,20 @@ public static class NUnitCompositeWorkItemSetSkippedResultIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TResult, TResultState>(TTarget instance, TResult result, TResultState resultState, string message, string? stackTrace)
         where TTarget : ICompositeWorkItem, IDuckType
-        where TResult : ITestResult, IDuckType
+        where TResultState : IResultState, IDuckType
     {
-        return NUnitIntegration.IsEnabled ? new CallTargetState(null, result) : CallTargetState.GetDefault();
+        // Dependency skips use FailureSite.Test. Parent and setup skips use FailureSite.Parent and are handled by the existing completion hook.
+        return NUnitIntegration.IsEnabled && resultState.Status == TestStatus.Skipped && resultState.Site == FailureSite.Test
+                   ? new CallTargetState(null, result)
+                   : CallTargetState.GetDefault();
     }
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : ICompositeWorkItem, IDuckType
     {
-        if (exception is null && state.State is ITestResult result &&
-            result.ResultState.Status == TestStatus.Skipped && result.ResultState.Site == FailureSite.Test &&
+        if (exception is null && state.State.TryDuckCast<ITestResult>(out var result) &&
             result.Test.Instance.TryDuckCast<ITestWithDependency>(out var dependency) && dependency.DependantTest?.Instance is not null)
         {
-            // Parent/setup skips use FailureSite.Parent and are handled by the existing completion hook.
             NUnitIntegration.ReportDependencySkip(instance, result);
         }
 
