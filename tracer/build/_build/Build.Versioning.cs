@@ -1,0 +1,146 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Nuke.Common;
+using Nuke.Common.IO;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DotNet;
+using PrepareRelease;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using Logger = Serilog.Log;
+
+partial class Build
+{
+    AbsolutePath VersionPropsFile => RootDirectory / "version.props";
+    AbsolutePath GeneratedVersionDirectory => RootDirectory / "artifacts" / "version";
+    AbsolutePath VersionProjectFile => RootDirectory / "build" / "Version.proj";
+
+    Target GenerateVersionFiles => _ => _
+       .Unlisted()
+       .Description("Resolves the version for this build and writes the generated version files")
+       .Executes(() =>
+        {
+            Ver.WriteGeneratedFiles(RootDirectory);
+
+            Logger.Information("Resolved version {SemVer} (channel: {Channel})", Ver.SemVer, Ver.IsReleaseChannel ? "release" : "dev");
+
+            // build/Version.targets owns the format of dd_version.g.h, so materialise it through
+            // MSBuild rather than writing it here - that keeps a single generator. It has to exist
+            // before CMake configures, and doing it once here means the parallel C++ fan-out in
+            // tracer/Datadog.Trace.proj never races on the write.
+            DotNetMSBuild(x => x
+                .SetTargetPath(VersionProjectFile)
+                .SetTargets("DD_GenerateVersionFiles")
+                .SetVerbosity(DotNetVerbosity.Minimal));
+        });
+
+    Target PrintVersion => _ => _
+       .Description("Prints every version shape used by the build")
+       .Executes(() =>
+        {
+            foreach (var (name, value) in Ver.GetAllShapes())
+            {
+                Logger.Information("{Name,-22} {Value}", name, value);
+            }
+        });
+
+    Target VerifyVersionConsistency => _ => _
+       .Description("Verifies that every committed version literal matches version.props")
+       .Executes(() =>
+        {
+            // While the migration to build-time generation is in progress, the version is still
+            // committed in a number of files. This target is what proves the derived shapes in
+            // build/Version.props agree with those literals, so that each step of the migration
+            // can be validated against a known-good baseline. Entries are removed from this list
+            // as the corresponding literal stops being committed.
+            var version = DdVersion.Resolve(RootDirectory, buildChannelOverride: "release");
+
+            var three = version.ThreePartVersion;
+            var four = version.FourPartVersion;
+            var comma = four.Replace('.', ',');
+            var semver = version.SemVer;
+            var released = version.LatestReleasedVersion;
+            var assemblyName = $"Datadog.Trace, Version={four}, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+            var (major, minor, patch) = SplitVersion(three);
+
+            var checks = new List<(string File, string Expected)>
+            {
+                (".azure-pipelines/ultimate-pipeline.yml", $"ToolVersion: {semver}"),
+                ("tracer/src/Directory.Build.props", $"<Version>{semver}</Version>"),
+                ("tracer/src/Datadog.Trace/TracerConstants.cs", $"AssemblyVersion = \"{four}\""),
+                ("tracer/src/Datadog.Trace/TracerConstants.cs", $"ThreePartVersion = \"{three}\""),
+                ("tracer/src/Datadog.Trace/TracerConstants.cs", $"\"{four}\"u8"),
+                ("tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs", assemblyName),
+                ("tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h", assemblyName),
+                ("tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h", $".WithVersion({major}, {minor}, {patch}, {version.Revision})"),
+                ("tracer/src/Datadog.Tracer.Native/CMakeLists.txt", $"\"Datadog.Tracer.Native\" VERSION {three}"),
+                ("tracer/src/Datadog.Tracer.Native/Resource.rc", $"FILEVERSION {comma}"),
+                ("tracer/src/Datadog.Tracer.Native/Resource.rc", $"\"FileVersion\", \"{four}\""),
+                ("tracer/src/Datadog.Tracer.Native/Resource.rc", $"\"ProductVersion\", \"{three}\""),
+                ("shared/src/native-src/version.h", $"PROFILER_VERSION = \"{three}\""),
+                ("shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt", $"\"Datadog.Trace.ClrProfiler.Native\" VERSION {three}"),
+                ("shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc", $"FILEVERSION             {comma}"),
+                ("shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc", $"\"FileVersion\", \"{four}\""),
+                ("shared/src/msi-installer/WindowsInstaller.wixproj", $"datadog-dotnet-apm-{semver}-$(Platform)"),
+                ("shared/src/msi-installer/WindowsInstaller.wixproj", $"InstallerVersion={three}"),
+                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h", $"PROFILER_VERSION = \"{three}\""),
+                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt", $"\"Datadog.Profiler.Native.Linux\" VERSION {three}"),
+                ("profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt", $"\"Datadog.Linux.ApiWrapper\" VERSION {three}"),
+                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc", $"FILEVERSION             {comma}"),
+                ("profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc", $"\"FileVersion\", \"{four}\""),
+                ("profiler/src/ProfilerEngine/ProductVersion.props", $"<ProductVersion>{three}</ProductVersion>"),
+                ("tracer/build/artifacts/dd-dotnet.sh", $"TRACER_VERSION=\"{three}\""),
+            };
+
+            // The samples deliberately reference the *previously released* version, because they
+            // have to restore a package that actually exists on nuget.org.
+            foreach (var sample in new[] { "MicrosoftExtensionsExample", "Log4NetExample", "NLog40Example", "NLog45Example", "NLog46Example", "SerilogExample" })
+            {
+                checks.Add(($"tracer/samples/AutomaticTraceIdInjection/{sample}/{sample}.csproj",
+                            $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{released}\" />"));
+            }
+
+            foreach (var dockerfile in new[] { "ConsoleApp/Alpine3.9.dockerfile", "ConsoleApp/Alpine3.10.dockerfile", "ConsoleApp/Debian.dockerfile", "OpenTelemetry/Debian.dockerfile", "WindowsContainer/Dockerfile" })
+            {
+                checks.Add(($"tracer/samples/{dockerfile}", $"ARG TRACER_VERSION={released}"));
+            }
+
+            var failures = new List<string>();
+
+            foreach (var (file, expected) in checks)
+            {
+                var path = RootDirectory / file;
+                if (!File.Exists(path))
+                {
+                    failures.Add($"{file}: file not found");
+                    continue;
+                }
+
+                if (!File.ReadAllText(path).Contains(expected, StringComparison.Ordinal))
+                {
+                    failures.Add($"{file}: expected to contain '{expected}'");
+                }
+            }
+
+            if (failures.Count > 0)
+            {
+                foreach (var failure in failures)
+                {
+                    Logger.Error("::error::{Failure}", failure);
+                }
+
+                throw new Exception(
+                    $"{failures.Count} version literal(s) are out of sync with {VersionPropsFile}. " +
+                    "Either the literal is stale, or it is no longer committed and should be removed from VerifyVersionConsistency.");
+            }
+
+            Logger.Information("All {Count} committed version literals match version.props ({Version})", checks.Count, semver);
+        });
+
+    private static (int Major, int Minor, int Patch) SplitVersion(string threePartVersion)
+    {
+        var parts = threePartVersion.Split('.');
+        return (int.Parse(parts[0]), int.Parse(parts[1]), int.Parse(parts[2]));
+    }
+}

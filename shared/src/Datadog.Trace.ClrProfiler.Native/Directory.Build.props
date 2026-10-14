@@ -1,2 +1,17 @@
 <Project>
+  <!--
+    This file deliberately does not import the Directory.Build.props above it - the native loader
+    opts out of the shared build configuration. It does need the version properties though, and
+    the resource compiler needs to be able to find the generated dd_version.g.h.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\build\Version.props" />
+
+  <ItemDefinitionGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(DD_RepoRoot)shared\src\native-src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(DD_RepoRoot)shared\src\native-src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
 </Project>

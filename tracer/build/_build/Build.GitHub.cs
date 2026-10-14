@@ -71,7 +71,11 @@ partial class Build
     const string GitHubRepositoryOwner = "DataDog";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
 
-    string FullVersion => IsPrerelease ? $"{Version}-prerelease" : Version;
+    /// <summary>
+    /// Gets the full semantic version, e.g. 3.56.0, 3.56.0-prerelease or 3.56.0-dev.g1a2b3c4d.
+    /// This is the shape that identifies a specific build - see <see cref="DdVersion"/>.
+    /// </summary>
+    string FullVersion => Ver.SemVer;
 
     Target AssignPullRequestToMilestone => _ => _
        .Unlisted()

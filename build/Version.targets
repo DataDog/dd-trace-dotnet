@@ -1,0 +1,74 @@
+<Project>
+
+  <!--
+    The single generator for shared/src/native-src/dd_version.g.h.
+
+    The values it writes come from build/Version.props, which in turn picks up the resolved build
+    channel / dev token from artifacts/version/Version.g.props when the Nuke build has produced
+    one. Keeping the *writing* here and the *resolving* in Nuke means there is exactly one place
+    that knows the header's format.
+
+    The target is hooked into every project that compiles, so an IDE or bare `dotnet build` works
+    on a fresh clone. The Nuke `GenerateVersionFiles` target runs it once up front, which matters
+    for two reasons: CMake needs the header to exist before it configures, and it means the
+    parallel C++ fan-out in tracer/Datadog.Trace.proj finds the content already correct, so
+    WriteOnlyWhenDifferent turns every subsequent invocation into a read with no write to race on.
+
+    One item per output line. MSBuild rejects an empty Include, so comment lines are used as
+    separators instead of blank lines.
+  -->
+
+  <Target Name="DD_GenerateVersionFiles"
+          BeforeTargets="BeforeBuild;BeforeClCompile;BeforeResourceCompile;CoreCompile"
+          Condition="'$(DD_VersionPrefix)' != ''">
+
+    <ItemGroup>
+      <DD_VersionHeaderLine Include="#ifndef DD_VERSION_G_H" />
+      <DD_VersionHeaderLine Include="#define DD_VERSION_G_H" />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="// &lt;auto-generated/&gt; Generated from version.props by build/Version.targets." />
+      <DD_VersionHeaderLine Include="// Do not edit, and do not commit - this file is gitignored." />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="// Deliberately #define-only, with classic include guards rather than constexpr and" />
+      <DD_VersionHeaderLine Include="// #pragma once: the Windows resource compiler (rc.exe) preprocesses this file too, and" />
+      <DD_VersionHeaderLine Include="// understands neither." />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="// DD_SEMVER_STR and DD_VERSION_REVISION change whenever HEAD moves, so every translation" />
+      <DD_VersionHeaderLine Include="// unit that includes this header is recompiled on a commit, amend, checkout or rebase." />
+      <DD_VersionHeaderLine Include="// That is currently ~14 of 58 TUs in the native tracer, 3 of 93 in the profiler and 1 of" />
+      <DD_VersionHeaderLine Include="// 10 in the native loader, which we accept. If it ever becomes painful, move those two" />
+      <DD_VersionHeaderLine Include="// macros into a separate header included only by a single .cpp plus the .rc files. If" />
+      <DD_VersionHeaderLine Include="// native compile caching is ever introduced, exclude this file from the cache key." />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="// Numeric shapes. These never carry the -dev suffix: Win32 FILEVERSION fields are four" />
+      <DD_VersionHeaderLine Include="// 16-bit integers, AssemblyProperty::WithVersion takes four USHORTs, and the managed" />
+      <DD_VersionHeaderLine Include="// assembly identity has to stay a well-formed four-part version." />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="#define DD_VERSION_MAJOR $(DD_VersionPrefix.Split('.')[0])" />
+      <DD_VersionHeaderLine Include="#define DD_VERSION_MINOR $(DD_VersionPrefix.Split('.')[1])" />
+      <DD_VersionHeaderLine Include="#define DD_VERSION_PATCH $(DD_VersionPrefix.Split('.')[2])" />
+      <DD_VersionHeaderLine Include="#define DD_VERSION_REVISION $(DD_VersionRevision)" />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="#define DD_THREE_PART_VERSION_STR &quot;$(DD_ThreePartVersion)&quot;" />
+      <DD_VersionHeaderLine Include="#define DD_FOUR_PART_VERSION_STR &quot;$(DD_FourPartVersion)&quot;" />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="// The full semantic version, e.g. 3.56.0 or 3.56.0-dev.g1a2b3c4d. This is the one that" />
+      <DD_VersionHeaderLine Include="// identifies a specific build, and the only one that may contain a suffix." />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="#define DD_SEMVER_STR &quot;$(DD_SemVer)&quot;" />
+      <DD_VersionHeaderLine Include="//" />
+      <DD_VersionHeaderLine Include="#endif // DD_VERSION_G_H" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(DD_GeneratedVersionHeader)"
+                      Lines="@(DD_VersionHeaderLine)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <!-- Don't leak the lines into any other target that runs in the same project. -->
+      <DD_VersionHeaderLine Remove="@(DD_VersionHeaderLine)" />
+    </ItemGroup>
+  </Target>
+
+</Project>

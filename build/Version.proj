@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+    Standalone entry point for the version-file generator, so the Nuke build can materialise
+    shared/src/native-src/dd_version.g.h once, up front, before anything compiles:
+
+      dotnet msbuild build/Version.proj -t:DD_GenerateVersionFiles
+
+    CMake needs the header to exist before it configures, and generating it here means the
+    parallel C++ fan-out never has to.
+  -->
+
+  <Import Project="$(MSBuildThisFileDirectory)Version.props" />
+  <Import Project="$(MSBuildThisFileDirectory)Version.targets" />
+
+  <Target Name="Build" DependsOnTargets="DD_GenerateVersionFiles" />
+
+</Project>

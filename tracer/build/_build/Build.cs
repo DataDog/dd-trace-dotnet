@@ -14,6 +14,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Utilities.Collections;
+using PrepareRelease;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -64,17 +65,37 @@ partial class Build : NukeBuild
     [Parameter("The current latest tracer version")]
     const int LatestMajorVersion = 3;
 
-    [Parameter("The current version of the source and build")]
-    readonly string Version = "3.56.0";
+    [Parameter("Override the version being built, e.g. 3.57.0. Defaults to DD_VersionPrefix in version.props.", Name = "Version")]
+    readonly string VersionOverride;
 
-    [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
-    readonly bool IsPrerelease = false;
+    [Parameter("Override the version suffix, e.g. -rc1. Pass 'none' to force an empty suffix.", Name = "VersionSuffix")]
+    readonly string VersionSuffixOverride;
+
+    [Parameter("Force the build channel - 'release' (plain version) or 'dev' (unique -dev.<sha> version).", Name = "BuildChannel")]
+    readonly string BuildChannelOverride;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
 
     [Parameter("Whether the new build version is a prerelease(for packaging purposes)")]
     readonly bool? NewIsPrerelease;
+
+    private DdVersion _version;
+
+    /// <summary>
+    /// Gets every version shape for this build, resolved from version.props plus the build channel.
+    /// See <see cref="DdVersion"/> and build/Version.props.
+    /// </summary>
+    DdVersion Ver => _version ??= DdVersion.Resolve(RootDirectory, VersionOverride, VersionSuffixOverride, BuildChannelOverride);
+
+    /// <summary>
+    /// Gets the three-part numeric version. Never carries a suffix - use <see cref="FullVersion"/>
+    /// for anything that needs to identify a specific build.
+    /// </summary>
+    string Version => Ver.ThreePartVersion;
+
+    /// <summary>Gets a value indicating whether this version publishes as X.Y.Z-prerelease.</summary>
+    bool IsPrerelease => Ver.IsPrerelease;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;

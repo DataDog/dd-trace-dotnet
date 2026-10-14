@@ -1,4 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)..\build\Version.targets" />
+
   <PropertyGroup>
     <LibDatadogDependencies>PowrProf.lib;NtDll.lib;UserEnv.lib;Bcrypt.lib;crypt32.lib;wsock32.lib;ws2_32.lib;shlwapi.lib;Secur32.lib;Ncrypt.lib</LibDatadogDependencies>
     <VcpkgIntermediateFolder>$(VcpkgManifestRoot)\artifacts\obj\vcpkg</VcpkgIntermediateFolder>

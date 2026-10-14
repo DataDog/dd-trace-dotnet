@@ -1,0 +1,32 @@
+<Project>
+
+  <!--
+    THE version number for the Datadog .NET SDK.
+
+    This is the only committed version literal in the repository. Everything else - managed
+    assembly versions, native version headers, Windows resource scripts, CMake project versions,
+    the MSI, NuGet package versions and the Linux packages - is derived from it at build time.
+
+    To bump the version, change DD_VersionPrefix here (the `UpdateVersion` Nuke target does this
+    for you) and nothing else. Do NOT add logic to this file: it is parsed by CMake with a
+    regular expression as well as imported by MSBuild, so it must stay simple, literal data.
+
+    See build/Version.props for the derived version shapes, and
+    docs/development/Versioning.md for the full picture.
+  -->
+  <PropertyGroup>
+    <!-- The version currently under development on this branch. Three parts, numeric only. -->
+    <DD_VersionPrefix>3.56.0</DD_VersionPrefix>
+
+    <!-- true if this version should publish as X.Y.Z-prerelease. Almost always false. -->
+    <DD_IsPrerelease>false</DD_IsPrerelease>
+
+    <!--
+      The most recent version actually published to nuget.org and dl.datadoghq.com. This is
+      deliberately *behind* DD_VersionPrefix: it is only used by the sample projects under
+      tracer/samples, which have to reference a package that really exists.
+    -->
+    <DD_LatestReleasedVersion>3.55.0</DD_LatestReleasedVersion>
+  </PropertyGroup>
+
+</Project>

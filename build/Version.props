@@ -1,0 +1,90 @@
+<Project>
+
+  <!--
+    Derives every version "shape" used across the repository from the single literal in
+    version.props. Imported by tracer/, profiler/ and shared/Directory.Build.props, and by the
+    native stopper Directory.Build.props files, so every MSBuild project in the repo sees these
+    properties at *evaluation* time (which is what lets $(Version) flow into NuGet packaging and
+    GenerateAssemblyInfo).
+
+    The build channel and the dev token are resolved by the Nuke build (see
+    tracer/build/_build/DdVersion.cs), which has proper access to git and to the CI environment,
+    and are handed to MSBuild through the generated Version.g.props below. A bare `dotnet build`
+    or a Visual Studio build on a tree where Nuke has never run falls back to the plain release
+    shape - identical to what the repo produced before this mechanism existed.
+  -->
+
+  <PropertyGroup>
+    <DD_RepoRoot Condition="'$(DD_RepoRoot)' == ''">$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))))</DD_RepoRoot>
+    <DD_VersionDirectory>$(DD_RepoRoot)artifacts\version\</DD_VersionDirectory>
+    <DD_GeneratedVersionProps>$(DD_VersionDirectory)Version.g.props</DD_GeneratedVersionProps>
+    <DD_GeneratedVersionHeader>$(DD_RepoRoot)shared\src\native-src\dd_version.g.h</DD_GeneratedVersionHeader>
+  </PropertyGroup>
+
+  <!-- The committed input. -->
+  <Import Project="$(DD_RepoRoot)version.props" />
+
+  <!--
+    The resolved channel, suffix and revision, written by the Nuke `GenerateVersionFiles` target.
+    Absent on a fresh clone, in which case the defaults below apply.
+  -->
+  <Import Project="$(DD_GeneratedVersionProps)" Condition="Exists('$(DD_GeneratedVersionProps)')" />
+
+  <!--
+    Allow a one-off override without going through Nuke, e.g.
+      dotnet build /p:DD_VersionSuffixOverride=rc1
+    Also picked up from the DD_VersionSuffixOverride environment variable. The leading dash is
+    optional and 'none' forces an empty suffix, matching the VersionSuffix Nuke parameter (which
+    cannot take a value starting with a dash - Nuke parses it as the next switch).
+
+    Note the separate DD_VersionSuffixWasOverridden flag: DD_VersionSuffixOverride may arrive as
+    an MSBuild *global* property, which a PropertyGroup cannot reassign, so 'none' has to be
+    translated rather than cleared in place.
+  -->
+  <PropertyGroup Condition="'$(DD_VersionSuffixOverride)' != ''">
+    <DD_VersionSuffixWasOverridden>true</DD_VersionSuffixWasOverridden>
+    <DD_VersionSuffix Condition="'$(DD_VersionSuffixOverride)' == 'none'"></DD_VersionSuffix>
+    <DD_VersionSuffix Condition="'$(DD_VersionSuffixOverride)' != 'none' AND $(DD_VersionSuffixOverride.StartsWith('-'))">$(DD_VersionSuffixOverride)</DD_VersionSuffix>
+    <DD_VersionSuffix Condition="'$(DD_VersionSuffixOverride)' != 'none' AND !$(DD_VersionSuffixOverride.StartsWith('-'))">-$(DD_VersionSuffixOverride)</DD_VersionSuffix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DD_VersionRevision Condition="'$(DD_VersionRevisionOverride)' != ''">$(DD_VersionRevisionOverride)</DD_VersionRevision>
+
+    <!-- Fresh-clone defaults: the plain release shape. -->
+    <DD_VersionSuffix Condition="'$(DD_VersionSuffix)' == '' AND '$(DD_VersionSuffixWasOverridden)' != 'true' AND '$(DD_IsPrerelease)' == 'true'">-prerelease</DD_VersionSuffix>
+    <DD_VersionRevision Condition="'$(DD_VersionRevision)' == ''">0</DD_VersionRevision>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Numeric shapes. These can NEVER carry the suffix - see the invariant note below. -->
+    <DD_ThreePartVersion>$(DD_VersionPrefix)</DD_ThreePartVersion>
+    <DD_FourPartVersion>$(DD_VersionPrefix).$(DD_VersionRevision)</DD_FourPartVersion>
+    <DD_FourPartVersionComma>$(DD_FourPartVersion.Replace('.', ','))</DD_FourPartVersionComma>
+
+    <!-- The full semantic version. This is what identifies a build. -->
+    <DD_SemVer>$(DD_VersionPrefix)$(DD_VersionSuffix)</DD_SemVer>
+
+    <!--
+      RPM refuses a '-' in the Version field, and both RPM and dpkg sort '~' *before* the
+      unsuffixed version, which is the correct ordering for a prerelease.
+    -->
+    <DD_RpmVersion>$(DD_VersionPrefix)$(DD_VersionSuffix.Replace('-', '~'))</DD_RpmVersion>
+  </PropertyGroup>
+
+  <!--
+    INVARIANT, enforced by VerifyVersionConsistency and by unit tests on both the managed and the
+    native side: anything that is an assembly identity, a Win32 numeric resource field, a CMake
+    project() version or an MSI ProductVersion uses DD_ThreePartVersion or DD_FourPartVersion and
+    therefore can never see the suffix. Only DD_SemVer / DD_RpmVersion carry it.
+
+    Concretely this is what keeps the following correct without any per-site special casing:
+      - Windows Installer requires ProductVersion to be numeric major.minor.build
+      - CMake project(VERSION) is numeric only
+      - Win32 FILEVERSION/PRODUCTVERSION are four 16-bit integers
+      - AssemblyProperty::WithVersion takes four USHORTs
+      - the native profiler builds "Datadog.Trace, Version=" + PROFILER_VERSION + ".0" by hand
+      - Instrumentation.cs compares the native and managed versions for an exact string match
+  -->
+
+</Project>
