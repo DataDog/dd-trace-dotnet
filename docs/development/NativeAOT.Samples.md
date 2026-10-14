@@ -51,7 +51,7 @@ de ellos (H-62).
 - En los parciales, lo que la aplicación consigue ejecutar en NativeAOT tiene paridad. El resto lo impide la librería o
   el propio sample: fases con `Assembly.LoadFile` de los samples de ADO.NET y de ServiceStack.Redis, los serializadores de MongoDB, el plan de consulta de Cosmos, los resolvers de GraphQL.NET y la
   serialización por reflexión del sample de Lambda.
-- Los incompatibles fallan igual sin Datadog (`plain`): MVC/Razor, `Reflection.Emit` (Dapper, NEST 7), DI por reflexión
+- Los incompatibles fallan igual sin Datadog (`plain`): MVC/Razor, `Reflection.Emit` (Dapper sin Dapper.AOT, NEST 7), DI por reflexión
   (HotChocolate, YARP, Ocelot, MassTransit, Rebus, Couchbase 3), `MakeGenericType` sobre tipos valor (GraphQL 4,
   OpenTelemetry.Api 1.3.1), log4net, carga de ensamblados y APIs que NativeAOT no tiene.
 - Los "por diseño" fallan al publicar con un error que pide la API manual de la versión del tracer: una aplicación
@@ -322,4 +322,6 @@ detecta lo mismo que bajo JIT (`crs-930-120`, `crs-941-110`) y el bloqueo de IP 
 
 | App | Estado | Evidencia y notas |
 |---|---|---|
+| apps/DapperAot (solo en el harness, net10.0) | Paridad | Dapper con Dapper.AOT (las llamadas se generan en el build) sobre SQLite: 6 spans `sqlite.query` y los mismos tags (`Execute`, `Query`, `QuerySingle`, `ExecuteScalar`, síncronos y asíncronos); también en `plain`, al contrario que Samples.Dapper |
+| apps/EfCoreAot (solo en el harness, net10.0) | Paridad | EF Core 10 con modelo compilado y consultas precompiladas al publicar (`EFOptimizeContext`) sobre SQLite: 8 spans `sqlite.query` y los mismos tags (`SaveChanges` con su transacción, `Where`/`SingleAsync`, `CountAsync`, `OrderBy`/`ToListAsync`, SQL directo); también en `plain`. Sin avisos de ILC de Datadog.Trace (los 16 de EF Core salen igual sin Datadog) |
 | apps/CodeOrigin.MinimalApi (solo en el harness) | Paridad | Minimal API con RDG y `RequestDelegate`: Code Origin (`_dd.code_origin.*` idénticas, H-57), activación remota de AppSec y bloqueo de IP por RCM |
