@@ -101,7 +101,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void Report(Span span, Exception exception)
         {
-            if (_isDisabled)
+            if (_isDisabled || !DebuggerManager.RuntimeDebuggerProductsSupported)
             {
                 Log.Debug("Exception replay is disabled.");
                 return;
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void BeginRequest()
         {
-            if (_isDisabled)
+            if (_isDisabled || !DebuggerManager.RuntimeDebuggerProductsSupported)
             {
                 return;
             }
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void EndRequest()
         {
-            if (_isDisabled)
+            if (_isDisabled || !DebuggerManager.RuntimeDebuggerProductsSupported)
             {
                 return;
             }

@@ -5,6 +5,9 @@
 
 using System;
 using System.IO;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -71,6 +74,16 @@ namespace Datadog.Trace.Debugger
         }
 
         internal static DebuggerManager Instance => _lazyInstance.Value;
+
+        // Dynamic Instrumentation and Exception Replay instrument methods at runtime (the native tracer's ReJIT), and the
+        // Symbol Database reads the assemblies' files: NativeAOT applications have neither. A constant for ILC, which leaves
+        // their code out of the application.
+        internal static bool RuntimeDebuggerProductsSupported
+#if NET6_0_OR_GREATER
+            => RuntimeFeature.IsDynamicCodeSupported;
+#else
+            => true;
+#endif
 
         internal DebuggerSettings DebuggerSettings { get; private set; }
 
@@ -232,16 +245,12 @@ namespace Datadog.Trace.Debugger
             EnsureTracerSettingsSubscription(tracerSettings);
 
             // Without the native tracer (applications instrumented at build time, NativeAOT), only Code Origin for spans works.
-            var buildTimeInstrumented = ClrProfiler.Instrumentation.IsBuildTimeInstrumented;
-            if (buildTimeInstrumented)
+            if (!RuntimeDebuggerProductsSupported || ClrProfiler.Instrumentation.IsBuildTimeInstrumented)
             {
-                WarnUnavailableProducts(newDebuggerSettings);
-            }
-            else
-            {
-                SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(tracerSettings, newDebuggerSettings);
+                return UpdateCodeOriginOnly(newDebuggerSettings);
             }
 
+            SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(tracerSettings, newDebuggerSettings);
             lock (_syncLock)
             {
                 if (_processExit.Task.IsCompleted)
@@ -251,17 +260,29 @@ namespace Datadog.Trace.Debugger
 
                 DebuggerSettings = newDebuggerSettings;
                 SetCodeOriginState(newDebuggerSettings);
-                if (!buildTimeInstrumented)
-                {
-                    SetExceptionReplayState(newDebuggerSettings);
-                }
+                SetExceptionReplayState(newDebuggerSettings);
             }
 
-            return buildTimeInstrumented ? Task.CompletedTask : DebouncedUpdateDynamicInstrumentationAsync(tracerSettings, newDebuggerSettings);
+            return DebouncedUpdateDynamicInstrumentationAsync(tracerSettings, newDebuggerSettings);
         }
 
-        // Dynamic Instrumentation and Exception Replay instrument methods at runtime (the native tracer's ReJIT), and the
-        // Symbol Database reads the assemblies' files: an application instrumented at build time has neither.
+        private Task UpdateCodeOriginOnly(DebuggerSettings newDebuggerSettings)
+        {
+            WarnUnavailableProducts(newDebuggerSettings);
+            lock (_syncLock)
+            {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return _processExit.Task;
+                }
+
+                DebuggerSettings = newDebuggerSettings;
+                SetCodeOriginState(newDebuggerSettings);
+            }
+
+            return Task.CompletedTask;
+        }
+
         private void WarnUnavailableProducts(DebuggerSettings debuggerSettings)
         {
             var requested = debuggerSettings.DynamicInstrumentationEnabled
@@ -270,7 +291,7 @@ namespace Datadog.Trace.Debugger
                          || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true;
             if (requested && Interlocked.Exchange(ref _buildTimeInstrumentationWarningLogged, 1) == 0)
             {
-                Log.Warning("Dynamic Instrumentation and Exception Replay are not available in applications instrumented at build time (NativeAOT): they instrument methods at runtime.");
+                Log.Warning("Dynamic Instrumentation and Exception Replay are not supported yet in applications instrumented at build time (NativeAOT): they instrument methods at runtime.");
             }
         }
 
