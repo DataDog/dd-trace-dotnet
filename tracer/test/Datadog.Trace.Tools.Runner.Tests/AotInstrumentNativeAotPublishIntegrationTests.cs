@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 /// (Datadog.Tracer.Native library for this host).
 /// </remarks>
 [UsesVerify]
-public class AotInstrumentNativeAotPublishIntegrationTests
+public partial class AotInstrumentNativeAotPublishIntegrationTests
 {
     // The NativeAOT binary of the package test application (ASP.NET Core, AppSec, RASP and IAST, net8.0, linux-x64): 38 MB
     // (12 MB without the instrumentation) plus a margin.
