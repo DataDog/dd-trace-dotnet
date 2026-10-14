@@ -177,37 +177,54 @@ internal static unsafe class MethodBodies
         }
     }
 
-    public static void Save(ModuleState state, string outputPath)
+    /// <summary>
+    /// Writes a rewritten module.
+    /// </summary>
+    /// <returns>The errors of dnlib's writer (e.g. a type of another module that wasn't imported: dnlib writes a nil token, and
+    /// the assembly is invalid); ILC must not compile the module then.</returns>
+    public static IReadOnlyList<string> Save(ModuleState state, string outputPath)
     {
-        var logger = new WriterErrors();
-        var options = new ModuleWriterOptions(state.Module)
-        {
-            // Only portable PDBs: a Windows PDB needs the Windows symbol writer, and ILC only reads portable ones.
-            WritePdb = state.Module.PdbState?.PdbFileKind is PdbFileKind.PortablePDB or PdbFileKind.EmbeddedPortablePDB,
-            Logger = logger,
-        };
-
-        // The rewritten bodies keep the max stack the native rewriter computed; generated bodies set their own.
-        options.MetadataOptions.Flags |= MetadataFlags.KeepOldMaxStack;
-        if (options.WritePdb)
+        // Only portable PDBs: a Windows PDB needs the Windows symbol writer, and ILC only reads portable ones.
+        var writePdb = state.Module.PdbState?.PdbFileKind is PdbFileKind.PortablePDB or PdbFileKind.EmbeddedPortablePDB;
+        if (writePdb)
         {
             NormalizeEnumConstants(state.Module);
         }
 
-        state.Module.Write(outputPath, options);
-        foreach (var error in logger.Errors.Take(10))
+        var pdbPath = Path.ChangeExtension(outputPath, ".pdb");
+        var errors = Write(state.Module, outputPath, writePdb);
+        if (errors.Count > 0 && writePdb && Write(state.Module, outputPath, writePdb: false) is { Count: 0 })
         {
-            // E.g. a type of another module that wasn't imported: dnlib writes a nil token, and the assembly is invalid.
+            // Errors in the symbols only: the module goes without them.
+            File.Delete(pdbPath);
+            AotLog.Warn($"{state.Module.Assembly?.Name}: the PDB of the instrumented assembly can't be written ({errors[0]}); it is left out");
+            return [];
+        }
+
+        foreach (var error in errors.Take(10))
+        {
             AotLog.Error($"{state.Module.Assembly?.Name}: {error}");
         }
 
         // dnlib 3.3 writes some portable PDBs that can't be read (log4net 3.0.0), and ILC fails on them: the module goes
         // without symbols instead.
-        var pdbPath = Path.ChangeExtension(outputPath, ".pdb");
-        if (options.WritePdb && state.Module.PdbState?.PdbFileKind == PdbFileKind.PortablePDB && File.Exists(pdbPath) && !IsReadablePortablePdb(pdbPath))
+        if (errors.Count == 0 && writePdb && state.Module.PdbState?.PdbFileKind == PdbFileKind.PortablePDB && File.Exists(pdbPath) && !IsReadablePortablePdb(pdbPath))
         {
             File.Delete(pdbPath);
             AotLog.Warn($"{state.Module.Assembly?.Name}: the PDB written for the instrumented assembly can't be read; it is left out");
+        }
+
+        return errors;
+
+        static List<string> Write(ModuleDef module, string outputPath, bool writePdb)
+        {
+            var logger = new WriterErrors();
+            var options = new ModuleWriterOptions(module) { WritePdb = writePdb, Logger = logger };
+
+            // The rewritten bodies keep the max stack the native rewriter computed; generated bodies set their own.
+            options.MetadataOptions.Flags |= MetadataFlags.KeepOldMaxStack;
+            module.Write(outputPath, options);
+            return logger.Errors;
         }
     }
 

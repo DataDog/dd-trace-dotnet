@@ -258,8 +258,9 @@ internal static class AotInstrumentProcessor
                 }
 
                 MethodBodies.Neutralize(module, options.Neutralize);
-                MethodBodies.Save(module, output);
-                if (options.Verify && rewrittenMethods.Count > 0)
+                var writeErrors = MethodBodies.Save(module, output);
+                report.Errors.AddRange(writeErrors.Take(10).Select(error => $"{module.AssemblyName} can't be written: {error}"));
+                if (options.Verify && rewrittenMethods.Count > 0 && writeErrors.Count == 0)
                 {
                     var outcome = new VerificationsRunner(output, module.Path, rewrittenMethods, options.ReferenceDirectories.Concat(new[] { Path.GetDirectoryName(module.Path)!, Path.GetFullPath(options.OutputDirectory) }).ToList(), failOnVerificationError: true).Run();
                     if (!outcome.IsValid)
