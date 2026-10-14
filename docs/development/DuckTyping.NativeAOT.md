@@ -90,7 +90,7 @@ compared to the previous release apply in both modes:
      comma inside generic arguments (`IDictionary<String,Object>.TryGetValue`) doesn't split a name. Method names are trimmed,
      even without a comma, and property and field names when they list fallback names (before, they weren't:
      `[Duck(Name = "Missing, Value")]` didn't find `Value`). Like for properties and fields, a method of the first name that has
-     one wins, also when the arguments are duck chained.
+     one wins, also when the arguments are duck chained: each name is selected like the only name of the proxy method.
    - A target method parameter the proxy method omits receives its default value, like the C# compiler passes it: the
      constant (for `nint`/`nuint` and their nullable types, converted to a native integer), `Type.Missing` for an `[Optional]`
      object, and a wrapper of null for an `[IUnknownConstant]`/`[IDispatchConstant]` object (before, no argument was loaded and
@@ -1088,17 +1088,29 @@ Use all of these gates together.
 
 ## Known Issues
 
+### Method selection ignores the binding flags when it adapts the arguments
+
+A proxy method's `[Duck(BindingFlags = ...)]` restricts the lookup of a target method with the proxy's parameter types
+(`Type.GetMethod`), but not the search that follows when there's none: it goes over every method of the target type
+(`DuckAttribute.DefaultFlags`: public and non-public, instance and static) and selects one whose parameters it can adapt
+(duck chaining, base types). E.g. `[Duck(BindingFlags = BindingFlags.Public | BindingFlags.Instance)]` on
+`string Describe(INameProxy value)` selects a private `Describe(Name value)`. With fallback names, such a method of the first name wins over a public method
+of a later name with the proxy's parameter types. Dynamic duck typing has always selected methods this way, and NativeAOT
+generates the same selection (the generator asks dynamic duck typing): the fix changes dynamic duck typing.
+
 ### The discovery recorder can lose the mappings of another process
 
 `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH` recording (test workflows, not applications) merges the mappings of every process
 that writes the same map, under the map's lock file. An explicit flush (the one at exit) that can't take the lock within
-30 seconds writes the map without it. If the process holding the lock stalled between reading the map and writing it
-(e.g. suspended by a debugger), it then writes the map it read before, without the mappings of the process that exited:
-those are lost.
+30 seconds writes the map without it, and so does one that can't open the lock file at all (e.g. a lock file of another
+user it can't read). If another process read the map before that write and writes it after (stalled in between, e.g.
+suspended by a debugger, or writing at the same time without the lock), the mappings of the process that exited are
+lost.
 
-Not fixed: it needs a stall in the few milliseconds between the read and the write of `TryMergeIntoMap`, and not writing
-without the lock would lose those mappings every time the lock can't be taken. A complete fix writes them to a file of
-the process next to the map, merged by the next flush and read by the generator and `dd-trace aot instrument`.
+Not fixed: it needs a write in the few milliseconds between the read and the write of `TryMergeIntoMap` of another
+process, and not writing without the lock would lose those mappings every time the lock can't be taken. A complete fix
+writes them to a file of the process next to the map, merged by the next flush and read by the generator and
+`dd-trace aot instrument`.
 
 ## Cross-Reference
 
