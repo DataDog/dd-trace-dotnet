@@ -7,6 +7,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Tools.Runner.Aot.Native;
 using dnlib.DotNet;
@@ -25,6 +26,7 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 public class AotModuleSaveTests : IDisposable
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "dd-aot-save-" + Guid.NewGuid().ToString("N"));
+    private readonly List<ModuleDefMD> _modules = new();
 
     public AotModuleSaveTests()
     {
@@ -33,11 +35,17 @@ public class AotModuleSaveTests : IDisposable
 
     public void Dispose()
     {
+        // dnlib maps the files it loads: Windows can't delete them before.
+        foreach (var module in _modules)
+        {
+            module.Dispose();
+        }
+
         try
         {
             Directory.Delete(_directory, recursive: true);
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
         }
     }
@@ -113,7 +121,9 @@ public class AotModuleSaveTests : IDisposable
 
         module.Write(path, options);
         Directory.CreateDirectory(Path.Combine(_directory, "out"));
-        return new ModuleState(1, path, ModuleDefMD.Load(path), writable: true);
+        var loaded = ModuleDefMD.Load(path);
+        _modules.Add(loaded);
+        return new ModuleState(1, path, loaded, writable: true);
     }
 }
 #endif
