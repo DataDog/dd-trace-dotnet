@@ -37,6 +37,8 @@ internal sealed class AotInstrumentReport
 
     public int Facades { get; set; }
 
+    public int LibraryDescriptors { get; set; }
+
     public int RuntimeMetricsInstantiations { get; set; }
 
     public int CompositeInterfaces { get; set; }

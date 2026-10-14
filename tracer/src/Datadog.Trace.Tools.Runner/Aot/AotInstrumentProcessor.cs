@@ -143,6 +143,10 @@ internal static class AotInstrumentProcessor
             report.Facades = FacadeDirectives.Write(modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Facades.rd.xml"));
             AotLog.Info($"Facades preserved: {report.Facades}");
 
+            // What the instrumented libraries use by reflection, without which they don't run in NativeAOT.
+            report.LibraryDescriptors = LibraryDescriptors.Write(modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Libraries.linker.xml"));
+            AotLog.Info($"Libraries whose reflection is preserved: {report.LibraryDescriptors}");
+
             // The instantiations the .NET 8 polyfill of the System.Runtime meter makes with MakeGenericMethod.
             report.RuntimeMetricsInstantiations = RuntimeMetricsDirectives.Write(modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.RuntimeMetrics.rd.xml"));
             AotLog.Info($"Runtime metrics instantiations preserved: {report.RuntimeMetricsInstantiations}");

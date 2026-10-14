@@ -127,6 +127,8 @@ it (including its failures). The runtime of the generator's framework stands for
 - `Datadog.Trace.Reflection.*`: the library types integrations find by name (`ReflectionRootDescriptor`);
 - `Datadog.Trace.Delegates.rd.xml`: the delegate wrappers of the delegate instrumentation (`DelegateWrapperDirectives`);
 - `Datadog.Trace.Facades.rd.xml`: `mscorlib` when Hangfire resolves type names with it (`FacadeDirectives`);
+- `Datadog.Trace.Libraries.linker.xml`: what instrumented libraries use by reflection and can't run without, for the
+  libraries of the application: the librdkafka bindings of Confluent.Kafka (`LibraryDescriptors`);
 - `Datadog.Trace.DuckType.Composites.dll`: the composite interfaces of reverse proxies (`CompositeInterfaceAssembly`);
 - for the application's module initializer: the IAST hardcoded secrets (user strings), the Code Origin locations of
   endpoints and the SourceLink of the PDB, which the tracer reads from files at runtime under JIT.
