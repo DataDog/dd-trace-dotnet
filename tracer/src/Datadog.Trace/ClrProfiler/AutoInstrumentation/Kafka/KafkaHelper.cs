@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -470,6 +471,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+        [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         internal static string? GetClusterId(string? bootstrapServers, object clientInstance)
         {
             if (StringUtil.IsNullOrEmpty(bootstrapServers))
@@ -522,6 +525,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         private static string? DescribeClusterWithTimeout(IAdminClient adminClient, Type describeClusterOptionsType)
         {
             var options = Activator.CreateInstance(describeClusterOptionsType)!;

@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -46,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
             return CallTargetState.GetDefault();
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         private static void TryAddSink<TTarget>(TTarget instance)
             where TTarget : ILoggerConfiguration, IDuckType
         {

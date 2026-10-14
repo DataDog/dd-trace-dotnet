@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -15,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticContextHelper));
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         private static IScopeContextSetterProxy GetScopeContextProxy(Assembly nlogAssembly)
         {
             var scType = nlogAssembly.GetType("NLog.ScopeContext");

@@ -56,6 +56,8 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: UnconditionalSuppressMessage("AotAnalysis", "IL3050", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.ImmutableCollectionsUtils", Justification = "Datadog.Trace doesn't deserialize immutable collections.")]
 
 // Datadog.Trace doesn't use JObject through System.ComponentModel type descriptors.
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2026", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JContainer", Justification = "Datadog.Trace doesn't use JObject through System.ComponentModel type descriptors.")]
+[assembly: UnconditionalSuppressMessage("Trimming", "IL2026", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject", Justification = "Datadog.Trace doesn't use JObject through System.ComponentModel type descriptors.")]
 [assembly: UnconditionalSuppressMessage("Trimming", "IL2046", Scope = "type", Target = "T:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject", Justification = "Datadog.Trace doesn't use JObject through System.ComponentModel type descriptors.")]
 
 // Datadog.Trace doesn't serialize dynamic objects (IDynamicMetaObjectProvider).

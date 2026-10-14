@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -41,6 +42,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         {
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The generic arguments are reference types: the instantiation runs the shared code.")]
         static CachedMessageHeadersHelper()
         {
             // Initialize delegate for creating a MessageAttributeValue object
@@ -60,6 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             return (IDictionary)DictionaryActivator.CreateInstance();
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         private static Func<MemoryStream, object> CreateMessageAttributeValueCreator(Type messageAttributeValueType, ConstructorInfo messageAttributeValueCtor)
         {
 #if NETCOREAPP3_0_OR_GREATER
