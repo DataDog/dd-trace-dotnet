@@ -159,7 +159,6 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.56.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -5670,7 +5669,12 @@ stages:
 
         - script: |
             dotnet --info
-            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --version $(ToolVersion)
+            # Derive the version from the nupkg that this build actually produced, rather than
+            # hardcoding it in this file. An explicit --version also means we don't need
+            # --prerelease, which .NET Core 3.1's dotnet tool install doesn't have.
+            TOOL_VERSION=$(basename $(smokeTestAppDir)/artifacts/dd-trace.*.nupkg | sed 's/^dd-trace\.//; s/\.nupkg$//')
+            echo "Installing dd-trace $TOOL_VERSION"
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --version "$TOOL_VERSION"
           displayName: Install tracer
 
         - script: |

@@ -1142,8 +1142,24 @@ partial class Build
 
             // Add the dd-dotnet scripts
             CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
-            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyDdDotnetScript(BundleHomeDirectory);
         });
+
+    /// <summary>
+    /// Copies dd-dotnet.sh into <paramref name="destination"/>, substituting the version
+    /// placeholders. The script only uses them to tell the user which package they should have
+    /// downloaded, but that name has to match what <see cref="PackageTracerHome"/> actually
+    /// produced, including any -dev suffix.
+    /// </summary>
+    private void CopyDdDotnetScript(AbsolutePath destination)
+    {
+        var contents = File.ReadAllText(BuildDirectory / "artifacts" / "dd-dotnet.sh")
+                           .Replace("@DD_SEMVER@", Ver.SemVer)
+                           .Replace("@DD_RPM_VERSION@", Ver.RpmVersion);
+
+        // Always LF: this is a shell script that ships to Linux.
+        File.WriteAllText(destination / "dd-dotnet.sh", contents.Replace("\r\n", "\n"));
+    }
 
     Target CreateBenchmarkIntegrationHome => _ => _
         .Unlisted()
@@ -1205,7 +1221,15 @@ partial class Build
         .Executes(() =>
         {
             var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
-            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+
+            if (IsWin)
+            {
+                CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            }
+            else
+            {
+                CopyDdDotnetScript(MonitoringHomeDirectory);
+            }
 
             if (IsLinux)
             {

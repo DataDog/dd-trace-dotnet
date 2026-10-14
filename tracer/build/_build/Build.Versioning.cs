@@ -49,11 +49,8 @@ partial class Build
        .Description("Verifies that every committed version literal matches version.props")
        .Executes(() =>
         {
-            // While the migration to build-time generation is in progress, the version is still
-            // committed in a number of files. This target is what proves the derived shapes in
-            // build/Version.props agree with those literals, so that each step of the migration
-            // can be validated against a known-good baseline. Entries are removed from this list
-            // as the corresponding literal stops being committed.
+            // Resolved on the release channel so the expected values are the plain ones, whatever
+            // channel the caller happens to be on.
             var version = DdVersion.Resolve(RootDirectory, buildChannelOverride: "release");
 
             var three = version.ThreePartVersion;
@@ -62,11 +59,7 @@ partial class Build
             var released = version.LatestReleasedVersion;
             var assemblyName = $"Datadog.Trace, Version={four}, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
 
-            var checks = new List<(string File, string Expected)>
-            {
-                (".azure-pipelines/ultimate-pipeline.yml", $"ToolVersion: {semver}"),
-                ("tracer/build/artifacts/dd-dotnet.sh", $"TRACER_VERSION=\"{three}\""),
-            };
+            var checks = new List<(string File, string Expected)>();
 
             // The native version header is generated rather than committed, so check the generated
             // content instead - it is what the .rc files, the CMake projects and the C++ sources

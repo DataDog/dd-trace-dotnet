@@ -23,7 +23,9 @@ partial class Build
                 TracerDirectory,
                 ArtifactsDirectory,
                 BuildDataDirectory,
-                Version,
+                // The full semver, not the bare three-part version: the smoke tests install the
+                // nupkg this build actually produced, which carries any -dev suffix.
+                FullVersion,
                 GetDotnetSdkImageTag(RootDirectory));
         });
 

@@ -1,6 +1,11 @@
 #!/bin/sh
 
-TRACER_VERSION="3.56.0"
+# These placeholders are substituted when the script is copied into the tracer home - see
+# CopyDdDotnetScript in tracer/build/_build/Build.Steps.cs. They are only used to build the name of
+# the package the user should have downloaded, for an error message. RPM forbids a '-' in a version,
+# so the rpm package name needs the '~' variant.
+TRACER_VERSION="@DD_SEMVER@"
+TRACER_RPM_VERSION="@DD_RPM_VERSION@"
 
 # Get the directory of the script
 DIR=$(dirname "$(readlink -f "$0")")
@@ -59,10 +64,10 @@ if contains_word "$DISTRO_ID" "alpine"; then
 elif contains_word "$DISTRO_ID" "centos" || contains_word "$DISTRO_ID" "rhel" || contains_word "$DISTRO_ID" "fedora" || contains_word "$DISTRO_ID" "opensuse"; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
-        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-1.x86_64.rpm"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_RPM_VERSION}-1.x86_64.rpm"
     elif [ "$ARCH" = "aarch64" ]; then
         DD_DOTNET_PATH="$DIR/linux-arm64/dd-dotnet"
-        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-1.aarch64.rpm"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_RPM_VERSION}-1.aarch64.rpm"
     else
         echo "Unsupported architecture: $ARCH"
         exit 1
