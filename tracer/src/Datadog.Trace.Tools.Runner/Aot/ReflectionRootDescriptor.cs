@@ -25,6 +25,10 @@ internal static class ReflectionRootDescriptor
 {
     private static readonly HashSet<string> TypeLookupDeclaringTypes = new(StringComparer.Ordinal) { "System.Type", "System.Reflection.Assembly", "System.Reflection.Module" };
 
+    // The vendored code whose type lookups Datadog.Trace doesn't use: Newtonsoft.Json's support of dynamic objects, which
+    // would keep the binder of Microsoft.CSharp (Datadog.Trace doesn't serialize dynamic objects).
+    private static readonly string[] ExcludedDeclaringTypes = ["Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.DynamicUtils"];
+
     /// <returns>The number of types preserved.</returns>
     public static int Write(ModuleDef datadogTrace, IEnumerable<ModuleDef> modules, string descriptorPath)
         => Write(CollectTypeNames(datadogTrace), datadogTrace, modules, descriptorPath);
@@ -77,7 +81,7 @@ internal static class ReflectionRootDescriptor
     internal static HashSet<(string TypeName, string? AssemblyName)> CollectTypeNames(ModuleDef datadogTrace)
     {
         var names = new HashSet<(string TypeName, string? AssemblyName)>();
-        foreach (var method in datadogTrace.GetTypes().SelectMany(t => t.Methods).Where(m => m.HasBody))
+        foreach (var method in datadogTrace.GetTypes().Where(t => !IsExcluded(t)).SelectMany(t => t.Methods).Where(m => m.HasBody))
         {
             var instructions = method.Body.Instructions;
             if (!instructions.Any(IsTypeLookup))
@@ -95,6 +99,19 @@ internal static class ReflectionRootDescriptor
         }
 
         return names;
+
+        static bool IsExcluded(TypeDef type)
+        {
+            for (var current = type; current is not null; current = current.DeclaringType)
+            {
+                if (ExcludedDeclaringTypes.Contains(current.FullName, StringComparer.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     private static bool IsTypeLookup(Instruction instruction)
