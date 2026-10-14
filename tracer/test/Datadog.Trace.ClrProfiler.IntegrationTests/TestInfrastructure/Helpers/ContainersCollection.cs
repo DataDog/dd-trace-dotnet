@@ -22,6 +22,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "ServiceStackRedis";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class SqlServerCollection : ICollectionFixture<SqlServerFixture>
+    {
+        public const string Name = "SqlServer";
+    }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class PostgresCollection : ICollectionFixture<PostgresFixture>
+    {
+        public const string Name = "Postgres";
+    }
+
+    // MySQL 8 is shared by the MySql.Data and MySqlConnector tests to avoid restarting the container.
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class MySqlCollection : ICollectionFixture<MySql8Fixture>
+    {
+        public const string Name = "MySql";
+    }
+
 }
 
 #pragma warning restore SA1649 // File name should match first type name
