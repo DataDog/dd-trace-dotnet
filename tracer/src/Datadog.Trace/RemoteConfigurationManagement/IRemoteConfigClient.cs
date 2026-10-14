@@ -15,6 +15,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 /// <summary>
 /// The remote configuration protocol client: polls the agent, validates and tracks the configurations.
 /// Implemented by libdatadog, see <see cref="LibDatadog.RemoteConfig.NativeRemoteConfigClient"/>.
+/// It must not be used by multiple threads at once, except for <see cref="Cancel"/>.
 /// </summary>
 internal interface IRemoteConfigClient : IDisposable
 {
@@ -36,7 +37,7 @@ internal interface IRemoteConfigClient : IDisposable
     void SetApplyState(string path, ulong applyState, string? error);
 
     /// <summary>
-    /// Aborts an ongoing fetch, and makes all further fetches fail. Can be called from any thread.
+    /// Aborts an ongoing fetch, and makes all further fetches fail. Can be called from any thread, even while the client is in use.
     /// </summary>
     void Cancel();
 }

@@ -1317,8 +1317,6 @@ public class DynamicInstrumentationTests
     {
         public bool HasAnySubscription { get; }
 
-        public string ClientId => "client-id";
-
         public ICollection<string> ProductKeys { get; } = new List<string>();
 
         public ISubscription? LastSubscription { get; private set; }
@@ -1359,7 +1357,9 @@ public class DynamicInstrumentationTests
             throw new NotImplementedException();
         }
 
-        public void Poll(IRemoteConfigClient client)
+        public bool Poll(Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory, RcmClientTracer tracer, RemoteConfigEndpoint endpoint, string[]? extraServices) => true;
+
+        public void Cancel()
         {
         }
     }

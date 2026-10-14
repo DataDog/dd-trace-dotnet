@@ -25,9 +25,15 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
 
     private readonly RemoteConfigClientHandle _handle;
 
+    // The fetches take one token, and Cancel cancels a clone of it, as a token must not be used by two threads at once
+    private readonly CancellationTokenHandle _fetchCancellation;
+    private readonly CancellationTokenHandle _cancellation;
+
     private NativeRemoteConfigClient(RemoteConfigClientHandle handle)
     {
         _handle = handle;
+        _fetchCancellation = CancellationTokenHandle.Create();
+        _cancellation = _fetchCancellation.Clone();
     }
 
     public static NativeRemoteConfigClient Create(string clientId, RcmClientTracer target, RemoteConfigEndpoint endpoint)
@@ -94,7 +100,7 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
 
     public unsafe RemoteConfigurationChanges Fetch()
     {
-        NativeInterop.RemoteConfig.ClientFetch(_handle, out var changes).ThrowIfError();
+        NativeInterop.RemoteConfig.ClientFetch(_handle, _fetchCancellation, out var changes).ThrowIfError();
 
         var updated = new List<RemoteConfiguration>();
         var removed = new List<RemoteConfigurationPath>();
@@ -138,9 +144,14 @@ internal sealed class NativeRemoteConfigClient : IRemoteConfigClient
         NativeInterop.RemoteConfig.ClientSetApplyState(_handle, strings.Add(path), (uint)applyState, strings.Add(error)).ThrowIfError();
     }
 
-    public void Cancel() => NativeInterop.RemoteConfig.ClientCancel(_handle);
+    public void Cancel() => _cancellation.Cancel();
 
-    public void Dispose() => _handle.Dispose();
+    public void Dispose()
+    {
+        _handle.Dispose();
+        _fetchCancellation.Dispose();
+        _cancellation.Dispose();
+    }
 
     /// <summary>
     /// Creates a libdatadog endpoint, which must be released with <see cref="NativeInterop.Common.EndpointDrop"/>.

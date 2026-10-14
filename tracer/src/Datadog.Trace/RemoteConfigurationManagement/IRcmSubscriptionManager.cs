@@ -4,18 +4,15 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Numerics;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal interface IRcmSubscriptionManager
 {
     bool HasAnySubscription { get; }
-
-    /// <summary>
-    /// Gets the id identifying this client to the agent.
-    /// </summary>
-    string ClientId { get; }
 
     void SubscribeToChanges(ISubscription subscription);
 
@@ -26,7 +23,15 @@ internal interface IRcmSubscriptionManager
     void SetCapability(BigInteger index, bool available);
 
     /// <summary>
-    /// Fetches the remote configurations once with <paramref name="client"/>, and dispatches the changes to the subscriptions.
+    /// Fetches the remote configurations for <paramref name="tracer"/> once, and dispatches the changes to the subscriptions.
+    /// All callers share one client, created with <paramref name="clientFactory"/> by the first poll, so that polling for
+    /// another target (e.g. by the remote configuration manager of a tracer replaced by Tracer.Configure) only reports the differences.
     /// </summary>
-    void Poll(IRemoteConfigClient client);
+    /// <returns>False if the client could not be created.</returns>
+    bool Poll(Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory, RcmClientTracer tracer, RemoteConfigEndpoint endpoint, string[]? extraServices);
+
+    /// <summary>
+    /// Cancels the pending and all further requests of the client, on shutdown.
+    /// </summary>
+    void Cancel();
 }

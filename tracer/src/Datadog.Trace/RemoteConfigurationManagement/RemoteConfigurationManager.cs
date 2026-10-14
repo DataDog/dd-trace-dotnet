@@ -38,12 +38,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private int _isDisposed;
         private bool _isRcmEnabled;
 
-        // Only accessed by the polling thread, except for cancellation
-        private IRemoteConfigClient? _client;
-        private RcmClientTracer? _clientTracer;
-        private RemoteConfigEndpoint? _clientEndpoint;
-        private string[]? _clientExtraServices;
-
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
             TracerSettings settings,
@@ -123,18 +117,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             // The libdatadog client blocks while polling, so poll on a dedicated thread
             _ = Task.Factory.StartNew(PollLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
-               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
+               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
         }
 
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _isDisposed, 1) == 0)
             {
+                // The client is shared with the remote configuration manager of a replacing tracer, so it is only cancelled on shutdown
                 _processExit.Set();
                 _discoveryService.RemoveSubscription(SetRcmEnabled);
                 _settingSubscription.Dispose();
-                // Don't wait for a pending request, e.g. when the AppDomain is unloaded
-                Volatile.Read(ref _client)?.Cancel();
             }
             else
             {
@@ -157,104 +150,55 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 return;
             }
 
-            try
+            while (!_processExit.IsSet)
             {
-                while (!_processExit.IsSet)
-                {
-                    var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
+                var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
 
-                    if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
+                if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
+                {
+                    try
                     {
-                        try
+                        var tracer = EnrichTagsWithGitMetadata(Volatile.Read(ref _rcmTracer));
+                        if (!_subscriptionManager.Poll(_clientFactory, tracer, Volatile.Read(ref _endpoint), ExtraServicesProvider.Instance.GetExtraServices()))
                         {
-                            if (!Poll())
-                            {
-                                return;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error while polling remote configuration management service");
+                            return;
                         }
                     }
-
-                    _processExit.Wait(_pollInterval);
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error while polling remote configuration management service");
+                    }
                 }
-            }
-            finally
-            {
-                var client = Interlocked.Exchange(ref _client, null);
-                client?.Dispose();
+
+                _processExit.Wait(_pollInterval);
             }
         }
 
         /// <summary>
-        /// Returns false if remote configuration is unavailable.
+        /// Returns <paramref name="tracer"/> with the git metadata tags once available. A new instance, as the client
+        /// is only rebound for new ones.
         /// </summary>
-        private bool Poll()
+        private RcmClientTracer EnrichTagsWithGitMetadata(RcmClientTracer tracer)
         {
-            var tracer = Volatile.Read(ref _rcmTracer);
-            var endpoint = Volatile.Read(ref _endpoint);
-            var gitMetadataAdded = EnrichTagsWithGitMetadata(tracer);
-
-            var client = _client;
-            if (client is null)
+            if (tracer.IsGitMetadataAddedToRequestTags || !_gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata))
             {
-                try
-                {
-                    client = _clientFactory!(_subscriptionManager.ClientId, tracer, endpoint);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Remote Configuration is unavailable: failed to create the remote configuration client");
-                    return false;
-                }
-
-                Volatile.Write(ref _client, client);
-            }
-            else if (gitMetadataAdded || !ReferenceEquals(tracer, _clientTracer) || !ReferenceEquals(endpoint, _clientEndpoint))
-            {
-                client.Rebind(tracer, ReferenceEquals(endpoint, _clientEndpoint) ? null : endpoint);
+                // already added, or no git metadata found yet, we can try again later.
+                return tracer;
             }
 
-            _clientTracer = tracer;
-            _clientEndpoint = endpoint;
-
-            var extraServices = ExtraServicesProvider.Instance.GetExtraServices();
-            if (!ReferenceEquals(extraServices, _clientExtraServices))
-            {
-                client.SetExtraServices(extraServices);
-                _clientExtraServices = extraServices;
-            }
-
-            _subscriptionManager.Poll(client);
-            return true;
-        }
-
-        /// <summary>
-        /// Adds the git metadata tags once available, returns whether they were just added.
-        /// </summary>
-        private bool EnrichTagsWithGitMetadata(RcmClientTracer details)
-        {
-            if (details.IsGitMetadataAddedToRequestTags)
-            {
-                return false;
-            }
-
-            if (!_gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata))
-            {
-                // no git metadata found, we can try again later.
-                return false;
-            }
-
-            if (gitMetadata != GitMetadata.Empty)
-            {
-                details.Tags.Add($"{CommonTags.GitCommit}:{gitMetadata.CommitSha}");
-                details.Tags.Add($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}");
-            }
-
-            details.IsGitMetadataAddedToRequestTags = true;
-            return gitMetadata != GitMetadata.Empty;
+            var enriched = gitMetadata == GitMetadata.Empty
+                               ? tracer
+                               : new RcmClientTracer(
+                                   tracer.RuntimeId!,
+                                   tracer.TracerVersion!,
+                                   tracer.Service!,
+                                   tracer.Env!,
+                                   tracer.AppVersion,
+                                   [.. tracer.Tags, $"{CommonTags.GitCommit}:{gitMetadata.CommitSha}", $"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}"],
+                                   tracer.ProcessTags);
+            enriched.IsGitMetadataAddedToRequestTags = true;
+            Interlocked.CompareExchange(ref _rcmTracer, enriched, tracer);
+            return enriched;
         }
 
         private void SetRcmEnabled(AgentConfiguration c)

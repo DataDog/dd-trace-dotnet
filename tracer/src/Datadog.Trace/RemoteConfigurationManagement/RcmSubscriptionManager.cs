@@ -12,6 +12,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
@@ -23,13 +24,20 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private readonly object _syncRoot = new();
 
+    // Serializes the polls, and with them the dispatch to the subscriptions: the remote configuration managers
+    // of a replaced and of the replacing tracer may poll concurrently
+    private readonly object _pollLock = new();
+
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
 
     private BigInteger _capabilities;
 
-    // What was last sent to the client
-    private IRemoteConfigClient? _pushedTo;
+    // The client of the AppDomain, and what was last sent to it. Only accessed with _pollLock held, except for cancellation.
+    private IRemoteConfigClient? _client;
+    private RcmClientTracer? _clientTracer;
+    private RemoteConfigEndpoint? _clientEndpoint;
+    private string[]? _clientExtraServices;
     private ICollection<string>? _pushedProductKeys;
     private BigInteger _pushedCapabilities;
 
@@ -152,10 +160,49 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
     }
 
-    public void Poll(IRemoteConfigClient client)
+    public bool Poll(Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory, RcmClientTracer tracer, RemoteConfigEndpoint endpoint, string[]? extraServices)
     {
-        PushProductsIfChanged(client);
+        lock (_pollLock)
+        {
+            var client = _client;
+            if (client is null)
+            {
+                try
+                {
+                    client = clientFactory(ClientId, tracer, endpoint);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Remote Configuration is unavailable: failed to create the remote configuration client");
+                    return false;
+                }
 
+                Volatile.Write(ref _client, client);
+            }
+            else if (!ReferenceEquals(tracer, _clientTracer) || !ReferenceEquals(endpoint, _clientEndpoint))
+            {
+                client.Rebind(tracer, ReferenceEquals(endpoint, _clientEndpoint) ? null : endpoint);
+            }
+
+            _clientTracer = tracer;
+            _clientEndpoint = endpoint;
+
+            if (!ReferenceEquals(extraServices, _clientExtraServices))
+            {
+                client.SetExtraServices(extraServices);
+                _clientExtraServices = extraServices;
+            }
+
+            PushProductsIfChanged(client);
+            FetchAndDispatch(client);
+            return true;
+        }
+    }
+
+    public void Cancel() => Volatile.Read(ref _client)?.Cancel();
+
+    private void FetchAndDispatch(IRemoteConfigClient client)
+    {
         RemoteConfigurationChanges changes;
         try
         {
@@ -232,13 +279,12 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             capabilities = _capabilities;
         }
 
-        if (ReferenceEquals(client, _pushedTo) && ReferenceEquals(productKeys, _pushedProductKeys) && capabilities == _pushedCapabilities)
+        if (ReferenceEquals(productKeys, _pushedProductKeys) && capabilities == _pushedCapabilities)
         {
             return;
         }
 
         client.SetProducts(productKeys, capabilities);
-        _pushedTo = client;
         _pushedProductKeys = productKeys;
         _pushedCapabilities = capabilities;
     }

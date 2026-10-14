@@ -7,7 +7,11 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.RemoteConfig;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -168,6 +172,32 @@ public class NativeRemoteConfigClientTests
 
         changes.Updated.Should().NotBeEmpty();
         changes.Updated.Should().OnlyContain(c => ReadAll(c.Contents).Length > 0);
+    }
+
+    [Fact]
+    public async Task CancelAbortsAnOngoingFetch()
+    {
+        // Accepts connections (into its backlog), but never responds
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            using var client = NativeRemoteConfigClient.Create(
+                "client-id",
+                RcmClientTracer.Create("runtime-id", "1.2.3", "service", "env", null, new ReadOnlyDictionary<string, string>(new System.Collections.Generic.Dictionary<string, string>()), null),
+                new RemoteConfigEndpoint($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/", TimeSpan.FromMinutes(1)));
+            client.SetProducts([RcmProducts.AsmFeatures], 0);
+
+            var fetch = Task.Run(() => client.Fetch());
+            await Task.Delay(200);
+            client.Cancel();
+
+            await fetch.Awaiting(f => f).Should().ThrowAsync<LibDatadogException>().WithMessage("*cancelled*");
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 
     private static byte[] ReadAll(RemoteConfigurationContent contents)

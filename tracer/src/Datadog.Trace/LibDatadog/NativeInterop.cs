@@ -36,6 +36,19 @@ internal static class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_endpoint_drop")]
         internal static extern void EndpointDrop(IntPtr endpoint);
+
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_new")]
+        internal static extern IntPtr CancellationTokenNew();
+
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_clone")]
+        internal static extern IntPtr CancellationTokenClone(CancellationTokenHandle token);
+
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_cancel")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static extern bool CancellationTokenCancel(CancellationTokenHandle token);
+
+        [DllImport(DllName, EntryPoint = "ddog_CancellationToken_drop")]
+        internal static extern void CancellationTokenDrop(IntPtr token);
     }
 
     internal static class LibraryConfig
@@ -79,9 +92,6 @@ internal static class NativeInterop
         [DllImport(DllName, EntryPoint = "ddog_rc_client_drop")]
         internal static extern void ClientDrop(IntPtr client);
 
-        [DllImport(DllName, EntryPoint = "ddog_rc_client_cancel")]
-        internal static extern void ClientCancel(RemoteConfigClientHandle client);
-
         [DllImport(DllName, EntryPoint = "ddog_rc_client_rebind")]
         internal static extern VoidResult ClientRebind(RemoteConfigClientHandle client, ref RcTarget target, IntPtr endpoint);
 
@@ -92,7 +102,7 @@ internal static class NativeInterop
         internal static extern VoidResult ClientSetExtraServices(RemoteConfigClientHandle client, CharSlices services);
 
         [DllImport(DllName, EntryPoint = "ddog_rc_client_fetch")]
-        internal static extern VoidResult ClientFetch(RemoteConfigClientHandle client, out RcChanges changes);
+        internal static extern VoidResult ClientFetch(RemoteConfigClientHandle client, CancellationTokenHandle cancel, out RcChanges changes);
 
         [DllImport(DllName, EntryPoint = "ddog_rc_client_set_apply_state")]
         internal static extern VoidResult ClientSetApplyState(RemoteConfigClientHandle client, CharSlice path, uint state, CharSlice error);

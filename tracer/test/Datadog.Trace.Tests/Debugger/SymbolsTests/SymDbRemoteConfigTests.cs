@@ -271,8 +271,6 @@ public class SymDbRemoteConfigTests
 
         public bool HasAnySubscription => _subscription is not null;
 
-        public string ClientId => "client-id";
-
         public void SubscribeToChanges(ISubscription subscription)
         {
             _subscription = subscription;
@@ -296,7 +294,9 @@ public class SymDbRemoteConfigTests
         {
         }
 
-        public void Poll(IRemoteConfigClient client)
+        public bool Poll(Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory, RcmClientTracer tracer, RemoteConfigEndpoint endpoint, string[]? extraServices) => true;
+
+        public void Cancel()
         {
         }
 
