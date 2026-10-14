@@ -113,7 +113,9 @@ runs `dd-trace aot check-declarations`, which fails when a recorded mapping of a
 to `build_data/ducktype-aot-declarations.json`). The targets are resolved from the directory of the sample, for the derived
 types. Left out: the mappings of the duck typing constraints of CallTarget integrations, which the build generates from the
 instrumented methods (the recorder marks them `"callTarget": true`), the ones dynamic duck typing doesn't create, which fail
-without a declaration too (`"canCreate": false`), and the proxies of CI Visibility and Dynamic Instrumentation.
+without a declaration too (`"canCreate": false`), and the proxies of CI Visibility, Dynamic Instrumentation and Exception
+Replay (their NativeAOT support is planned separately: the NativeAOT modes of the test frameworks run the tests with other
+assemblies, such as `xunit.v3.core.aot`, or are previews, such as `MSTest.Engine`).
 
 The generator evaluates dynamic duck typing with the application's types in its own process, so the registry behaves like
 it (including its failures). The runtime of the generator's framework stands for the application's framework assemblies
@@ -128,6 +130,10 @@ it (including its failures). The runtime of the generator's framework stands for
 - `Datadog.Trace.DuckType.Composites.dll`: the composite interfaces of reverse proxies (`CompositeInterfaceAssembly`);
 - for the application's module initializer: the IAST hardcoded secrets (user strings), the Code Origin locations of
   endpoints and the SourceLink of the PDB, which the tracer reads from files at runtime under JIT.
+
+Without the ASP.NET Core assemblies (a console or worker application), the code of Datadog.Trace that uses them can't run:
+the targets set the feature switch `Datadog.Trace.AspNetCore.IsSupported` to false (`AspNetCoreAvailabilityChecker`), and
+ILC leaves that code out instead of compiling it to throw.
 
 What doesn't depend on the application (the JSON models, the delegate wrappers, the type names Datadog.Trace looks up and
 its duck typing declarations) is computed once per build of Datadog.Trace: `dd-trace aot prepare` writes it to
