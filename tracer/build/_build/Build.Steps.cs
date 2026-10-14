@@ -1742,6 +1742,42 @@ partial class Build
                 .WithDatadogLogger());
         });
 
+    /// <summary>
+    /// The application of the Datadog.Trace.Aot package (BuildNativeAotNuget, in artifacts/nuget/aot) published with NativeAOT
+    /// for .NET 8 and .NET 10: the manual API, AppSec, RASP and IAST work, its binary stays in its budget, and Datadog.Trace
+    /// has no trimming or AOT analysis warning (Verify snapshots). CI runs it on Linux x64 once the package is built.
+    /// </summary>
+    Target RunNativeAotPackageTests => _ => _
+        .Unlisted()
+        .Description("Publishes the NativeAOT application of the Datadog.Trace.Aot package and checks it")
+        .Executes(() =>
+        {
+            var feed = ArtifactsDirectory / "nuget" / "aot";
+            if (!feed.GlobFiles("Datadog.Trace.Aot.*.nupkg").Any())
+            {
+                throw new Exception($"The Datadog.Trace.Aot package wasn't found in {feed}: build it (BuildNativeAotNuget) or download it there.");
+            }
+
+            var manualApiProject = Solution.GetProject(Projects.DatadogTraceManual) ?? throw new Exception($"Could not resolve project '{Projects.DatadogTraceManual}'.");
+            var runnerTestsProjectPath = TracerDirectory / "test" / "Datadog.Trace.Tools.Runner.Tests" / "Datadog.Trace.Tools.Runner.Tests.csproj";
+            DotnetBuild(manualApiProject, framework: TargetFramework.NETSTANDARD2_0, noRestore: false, noDependencies: false);
+            DotnetBuild(new[] { runnerTestsProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+            var manualApi = GetProjectBinDirectory(Projects.DatadogTraceManual, "netstandard2.0") / "Datadog.Trace.Manual.dll";
+            EnsureFileExists(manualApi, "Datadog.Trace.Manual");
+
+            DotNetTest(x => x
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetConfiguration(BuildConfiguration)
+                .SetProjectFile(runnerTestsProjectPath)
+                .SetFramework("net8.0")
+                .SetFilter("FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.ManualApiApplicationWithThePackage")
+                .SetProcessEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH", "1")
+                .SetProcessEnvironmentVariable("DD_AOT_PACKAGE_FEED", feed)
+                .SetProcessEnvironmentVariable("DD_AOT_MANUAL_API", manualApi)
+                .WithDatadogLogger());
+        });
+
     Target RunDuckTypeAotProcessorGate => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => ShouldRunDuckTypeAotGatesInCurrentJob())
