@@ -42,7 +42,9 @@ public class ExposureApiTests
             uri => new BlockingApiRequest(uri, firstSendStarted, releaseFirstSend),
             uri => new BlockingApiRequest(uri, finalSendStarted, releaseFinalSend));
         using var transport = CreateLocalTransport(local);
-        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(5));
+        // The send gates control shutdown in this test; a finite shutdown timeout would race
+        // the test's continuations. The bounded shutdown path is covered separately below.
+        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), Timeout.InfiniteTimeSpan);
         Task? dispose = null;
 
         try
@@ -52,7 +54,8 @@ public class ExposureApiTests
                .Should().BeSameAs(firstSendStarted.Task);
 
             api.SendExposure(CreateExposure("second"));
-            dispose = Task.Run(api.Dispose);
+            // Dispose blocks synchronously, so keep it off the pool that runs the send/test continuations.
+            dispose = Task.Factory.StartNew(api.Dispose, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             releaseFirstSend.TrySetResult(true);
 
             (await Task.WhenAny(finalSendStarted.Task, Task.Delay(TimeSpan.FromSeconds(3))))

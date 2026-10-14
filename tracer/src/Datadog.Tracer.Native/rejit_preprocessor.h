@@ -57,6 +57,7 @@ class RejitPreprocessor : public Rejitter
 protected:
     CorProfiler* m_corProfiler;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
+    const bool m_isDesktopClr;
 
     void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                             ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
