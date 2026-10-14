@@ -87,8 +87,7 @@ public abstract class ContainerFixture : IAsyncLifetime
             catch (DockerApiException exception) when (attempt < MaxContainerStartAttempts && IsTransientSystemdCgroupFailure(exception))
             {
                 container.Logger.LogDebug(
-                    "Docker failed to start container {ContainerId} because its systemd cgroup request was interrupted. Retrying in {RetryDelaySeconds} seconds (attempt {NextAttempt}/{MaxAttempts}).",
-                    container.Id,
+                    "Docker failed to start a container because its systemd cgroup request was interrupted. Retrying in {RetryDelaySeconds} seconds (attempt {NextAttempt}/{MaxAttempts}).",
                     ContainerStartRetryDelay.TotalSeconds,
                     attempt + 1,
                     MaxContainerStartAttempts);
