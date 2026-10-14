@@ -11,7 +11,7 @@
 | Fase actual | F0, F3, núcleo de F2, F4, **F5 (C1 + C3 + C6)** y **spike de F7** y **F6 parcial**: HttpClient, **ASP.NET Core**, **AppSec (WAF)**, **RASP** e **IAST** (opt-in) funcionan de extremo a extremo en NativeAOT, y: `CallTargetNativeTest` publicado con **NativeAOT: los 18 modos terminan bien, 16 con salida idéntica al profiler**; el 0 con el mismo contenido en otro orden (carrera de `Task.Yield`) y bubbleup solo con el formato de trazas de NativeAOT (H-20) (2026-10-08). Pendiente de F5: G5/C2 y G3. Después: e2e de integraciones reales → F1 → F9 |
 | Rama / worktree | `nativeaot/tracer` (publicada como `origin/tony/nativeaot-tracer`) en `dd-trace-dotnet-worktrees/nativeaot-tracer`, apilada sobre `fix/pr-8252-review-findings` (`a82583bb66`) |
 | Gate F0 | **Superado** (2026-10-08): IL offline = IL de runtime en 600/600 métodos comparables; 18/18 modos de `CallTargetNativeTest` con la misma salida; sin parches nativos |
-| Última actualización | 2026-10-09 |
+| Última actualización | 2026-10-14 |
 
 ## Hallazgos abiertos (deben cerrarse antes de lo que indica "Bloquea")
 
@@ -85,6 +85,8 @@
 | H-67 | **SDK de distribución:** el SDK empaquetado por Ubuntu tiene RID `ubuntu.24.04-x64` y el paquete no encontraba el nativo del host (se saltaba la instrumentación). **Resuelto:** en Linux, si no hay nativo para `NETCoreSdkRuntimeIdentifier`, se usa el RID portable (`linux-` / `linux-musl-` + arquitectura del SO) | Revisión de H-19 | — | `[x]` |
 | H-68 | **Oráculo JIT en .NET 11 rc:** el `Datadog.Tracer.Native.so` compilado en local hace SIGSEGV al cargarse en un proceso .NET 11 rc, en un inicializador estático (`Logger::BuildLogFileSuffix` → `std::basic_ostream::_M_insert<long>` → `codecvt::do_unshift`), también con una app de consola. La librería lleva libstdc++ estática con 358 símbolos `std::` exportados (débiles, interponibles) y el host de .NET enlaza `libstdc++.so.6`; con .NET 8-10 no falla. No afecta a NativeAOT (no carga el nativo en runtime), pero impide comparar net11 con JIT en local: se compara con el JIT de net10. Pendiente: comprobar con el nativo de CI y avisar al equipo del nativo | TFM net11 | Comparación net11 | `[ ]` |
 | H-69 | ~~**Genéricos de librería cerrados sobre tipos de la app, creados en runtime**~~ (gRPC: `GrpcCall<TReq,TResp>`, los call handlers e invokers de servidor, `Method<,>` y los de Grpc.Core; Couchbase: `Get<T>`, `OperationResult<T>`…; `SignInManager<TUser>`): la librería los construye con `MakeGenericType`/DI y sin mapa grabado la integración perdía esos spans (GrpcDotNet sin mapas: 80 / 48). **Resuelto (F5.9):** proxies genéricos para los targets genéricos abiertos declarados, instanciados en runtime con los argumentos del tipo real; reglas de derivados no genéricas donde la librería tiene una base o interfaz no genérica (`Grpc.Core.IMethod`, `Couchbase.IO.Operations.OperationBase`, `Couchbase.OperationResult`). GrpcDotNet sin mapas: 80 / 80 en NativeAOT | e2e solo con atributos (F5.8) | Paridad sin mapas grabados | `[x]` |
+| H-70 | **Trazas redactadas de telemetría en NativeAOT:** `ExceptionRedactor` descarta los frames cuyo método no tiene metadatos de reflexión (`StackFrame.GetMethod()` null), así que los errores que llegan a telemetría pierden frames. Usar `StackFrameMethod` (nombres de los datos de stack trace) para redactar o mantener esos frames | Avisos de F12.4 | Paridad de telemetría | `[ ]` |
+| H-71 | ~~**Polyfill de métricas de runtime en .NET 8 NativeAOT:** `RuntimeMetricsPolyfill` fallaba al iniciar (`CreateObservableUpDownCounter<Int64>` "is missing native code": se crea con `MakeGenericMethod`)~~ Resuelto (2026-10-14): `RuntimeMetricsDirectives` escribe la instanciación en un rd.xml para apps de .NET < 9; verificado (el polyfill arranca) | Avisos de F12.4 | — | `[x]` |
 | H-7 | El nativo no entrega mapa de IL en CallTarget: los sequence points se transfieren por alineación; hay que validar la calidad con PDBs reales. **Confirmado en el spike:** el PDB se escribe, pero los métodos reescritos pierden las líneas en los stack traces | Revisión del plan v3 / spike | Cierre de F2 | `[x]` `SequencePointTransfer` |
 
 ## Prerrequisitos (P)
@@ -325,10 +327,6 @@ Criterio (2026-10-13): en NativeAOT no se desactiva funcionalidad; lo que depend
 una alternativa (datos generados al compilar, MVID en vez de rutas...). Solo se deja fuera el código que no puede ejecutarse
 (p. ej. los observers de ASP.NET Core en una app sin ASP.NET Core, `Datadog.Trace.AspNetCore.IsSupported`).
 
-- [ ] F12.1 Datos de los PDB generados al compilar (documentos, secuencias, nombres de locales) e incrustados en la app, con un
-  `DatadogMetadataReader` sobre ellos (quita los `IL3000`/`IL3002` de `DatadogMetadataReader` y del dnlib vendorizado)
-- [ ] F12.2 SymDB en NativeAOT: símbolos extraídos al compilar (mismo extractor) e incrustados o subidos desde el build; clave
-  de deduplicación por nombre + MVID en vez de `Assembly.Location` (`SymbolsUploader`, `SymbolExtractor`)
 - [ ] F12.3 CI Visibility en apps de tests NativeAOT. **Aplazado (usuario, 2026-10-14)**: el modo NativeAOT de xUnit v3
   (`xunit.v3.aot.mtp-v2` 4.0) ejecuta los tests con otros ensamblados (`xunit.v3.core.aot`) y runners generados
   (`CodeGenTestRunner`, `CodeGenTestMethodRunner`...), sin `MethodInfo` ni argumentos de las teorías (sí nombre de método,
@@ -336,10 +334,20 @@ una alternativa (datos generados al compilar, MVID en vez de rutas...). Solo se 
   (`MSTest.Engine` + `MSTest.SourceGeneration`) sigue en alpha; TUnit no tiene integración ni bajo JIT. Las declaraciones
   de los frameworks de JIT (xUnit v2/v3, NUnit, MSTest, 118 mapeos) no sirven en NativeAOT y el check deja fuera CI
   Visibility. `GitInfo` ya busca en el directorio de la app sin runtime compartido
-- [ ] F12.4 Anotar Datadog.Trace para trimming/AOT (los `IL2104`/`IL3053` colapsados) a medida que cada subsistema tenga su
-  alternativa
+- [~] F12.4 Avisos de trimming/AOT de Datadog.Trace (2026-10-14): una app de consola tenía 250 detrás de `IL2104`/`IL3053`
+  (`TrimmerSingleWarn=false`; 119 del Newtonsoft vendorizado, 78 del motor dinámico de duck typing, 22 de CallTarget, 23 de
+  Debugger/PDB/dnlib) y una minimal API de ASP.NET Core 3 más: ahora 0 con ILC 8 y 10. Código dinámico fuera con checks
+  constantes para ILC (propiedades sobre `RuntimeFeature.IsDynamicCodeSupported`; ILC 8 no las propaga y
+  `ILLink.Substitutions.xml` las fija), alternativas donde las hay (`GetDelegateForFunctionPointer<T>`, `typeof(Func<T>)`,
+  `RuntimeMetricsDirectives`) y supresiones justificadas (lo que el build conserva; vendorizados en `VendorsTrimming.cs`).
+  Newtonsoft sin `HAVE_DYNAMIC`/`HAVE_FSHARP_TYPES`/`HAVE_ENTITY_FRAMEWORK` (sacaba el binder de Microsoft.CSharp, 11 avisos
+  con ILC 8). Falta: un gate en CI que publique y falle con avisos nuevos (las supresiones de vendorizados son por tipo y
+  código: un camino nuevo de Newtonsoft avisaría)
 - Aplazado (usuario, 2026-10-13): Exception Replay y Dynamic Instrumentation (reescriben métodos en runtime; en AOT harían
-  falta puntos de captura y sondas instrumentados al compilar y activados por Remote Config)
+  falta puntos de captura y sondas instrumentados al compilar y activados por Remote Config). Con ellos (2026-10-14), su base:
+  F12.1 datos de los PDB generados al compilar (documentos, secuencias, nombres de locales) con un `DatadogMetadataReader`
+  sobre ellos, y F12.2 SymDB (símbolos extraídos al compilar, deduplicación por nombre + MVID). Mientras, en NativeAOT no se
+  compilan (`DebuggerManager.RuntimeDebuggerProductsSupported`) y avisan si se activan; Code Origin para spans sí funciona
 
 ## Fase 11 — Limpieza
 
@@ -377,6 +385,7 @@ una alternativa (datos generados al compilar, MVID en vez de rutas...). Solo se 
 
 | Fecha | Qué se hizo | Commits |
 |---|---|---|
+| 2026-10-14 | **Avisos de trimming/AOT (F12.4)**: CI Visibility fuera del check de declaraciones (el modo NativeAOT de xUnit v3 usa otros ensamblados; el de MSTest es alpha). DI, Exception Replay y SymDB fuera de las apps NativeAOT (check constante para ILC; F12.1/F12.2 aplazados con ellos). Avisos de Datadog.Trace con `TrimmerSingleWarn=false`: consola 250 → 0, ASP.NET Core 3 → 0, paquete (net8, AppSec/RASP/IAST/API manual) 283 → 0 (snapshot vacío), con ILC 8 y 10. Polyfill de métricas de runtime de .NET 8 arreglado (H-71). Pendiente: H-70 y el gate en CI | Debugger, DuckTyping (#8252), CallTarget, Newtonsoft, supresiones, ILC 8, RuntimeMetricsDirectives, docs |
 | 2026-10-13 | **Tiempo de build y warnings**: el paquete llevaba dos builds de Datadog.Trace (runner y app, MVIDs distintos: el generador de DuckType no podía usar su oráculo, 10 s y menos proxies) → un único build y aviso en el runner; caché de identidades en el emisor (#8252); análisis de Datadog.Trace al empaquetar (`dd-trace aot prepare`, `Datadog.Trace.aot.json`); el host no recorre los módulos que el dataflow excluye (export nativa `IsCallSiteModuleExcluded`), caché de búsquedas de dnlib y server GC. Consola: instrumentación 27,5 s → 6,2 s, publish 57 s → ~38 s. Warnings: switch `Datadog.Trace.AspNetCore.IsSupported` (sin ASP.NET Core, ILC deja fuera ese código: 14 "will always throw" → 0), alternativas AOT para `Assembly.Location` (log con `Environment.ProcessPath`, SourceLink y Code Origin generados al compilar, `FrameworkDescription` sin la ruta en net5+, `AssemblyFilter`), bug de `GitInfo` sin runtime compartido; `IL3000` 13 → 7 (quedan los de Fase 12) | — |
 | 2026-10-13 | **CI del PR #9400 (build 211011)**: declaraciones de los 62 mapeos que grabó el CI en .NET 6+ (validadas con `check-declarations` y el generador sobre los paquetes reales); grabación solo en .NET 6+; `AttributeTests` (el grabador ya no usa `NullValueHandling` en atributos); NRE del check con ensamblados que no se resuelven; el `dd-trace` standalone (trimmed) sin los comandos `aot`/`ducktype-aot`; el test del host nativo admite los fallos reproducidos de los mapeos declarados. Los fallos heredados de #8252 se arreglan allí (`2cbbc7912e`..`ae968edda5`): `FileLoadException` sin `FileName` antes de .NET 7 (nombre de ensamblado dinámico inválido) tratada como fallo de entorno; tests de runtimes antiguos (atributo ReadOnly como root, ALC coleccionable antes de .NET 6); el gate de paridad completa recompila el runner tras los tests de DuckTyping (MVID distinto); el standalone sin `ducktype-aot` | — |
 | 2026-10-12 | **Check en CI de las declaraciones (F10.3)**: grabación en los integration tests de Linux, `dd-trace aot check-declarations`, target `CheckAotDuckTypeDeclarations` en el pipeline; marcas `callTarget`/`canCreate` del grabador. En local, 19 samples con mapeos reales: 206 mapeos, todos declarados. Corregidos dos fallos de compilación en TFMs antiguos (net5.0 del Runner y netcoreapp2.1/3.0 de sus tests) | — |

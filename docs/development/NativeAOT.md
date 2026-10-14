@@ -142,6 +142,25 @@ instrumentation uses it when it's the analysis of the same builds of Datadog.Tra
 Datadog.Trace again (several seconds of each publish). The runner and the application use the same build of Datadog.Trace
 (the package ships one): the generator checks the application's duck typing with dynamic duck typing on the runner's.
 
+### Trimming and AOT warnings
+
+A NativeAOT publish of an application with Datadog shows no trimming or AOT warning of Datadog.Trace, also with
+`TrimmerSingleWarn=false` (which lists the warnings `IL2104`/`IL3053` sum up), with ILC 8 and 10. Each warning gets one of:
+
+- the code that needs dynamic code is left out: checks of `RuntimeFeature.IsDynamicCodeSupported` (a constant for ILC) keep
+  out the dynamic duck typing engine (`DuckTypeAotEngine.IsDynamicCodeSupported`), the binding of CallTarget integrations
+  at runtime (`IntegrationMapper.IsSupported`), Dynamic Instrumentation, Exception Replay and the Symbol Database
+  (`DebuggerManager.RuntimeDebuggerProductsSupported`: they instrument methods or read the assemblies' files at runtime, and
+  log a warning when they're enabled) and Service Fabric Remoting (it emits its proxies). ILC 9+ propagates the constant
+  through those properties; for ILC 8, `ILLink.Substitutions.xml` stubs them when the feature switch is false;
+- an alternative that works there: `Marshal.GetDelegateForFunctionPointer<T>` for the WAF, `typeof(Func<T>)` instead of
+  `MakeGenericType` in the delegate wrappers, the `long` instantiations of the .NET 8 runtime metrics polyfill
+  (`Datadog.Trace.RuntimeMetrics.rd.xml`, `RuntimeMetricsDirectives`);
+- a suppression that says why the reflection works: the build keeps what it needs (JSON models, delegate wrappers, the
+  types looked up by name, composite interfaces), or the code isn't used by Datadog.Trace. The vendored libraries' are in
+  `VendorsTrimming.cs` (their files are generated), and Newtonsoft.Json is compiled without the features Datadog.Trace
+  doesn't use (`dynamic`, F#, Entity Framework), which also keeps Microsoft.CSharp's binder out of the applications.
+
 ## Runtime
 
 The application's module initializer registers the DuckType AOT registry (duck typing then runs in AOT mode) and the
