@@ -189,6 +189,11 @@ internal static unsafe class MethodBodies
 
         // The rewritten bodies keep the max stack the native rewriter computed; generated bodies set their own.
         options.MetadataOptions.Flags |= MetadataFlags.KeepOldMaxStack;
+        if (options.WritePdb)
+        {
+            NormalizeEnumConstants(state.Module);
+        }
+
         state.Module.Write(outputPath, options);
         foreach (var error in logger.Errors.Take(10))
         {
@@ -203,6 +208,38 @@ internal static unsafe class MethodBodies
         {
             File.Delete(pdbPath);
             AotLog.Warn($"{state.Module.Assembly?.Name}: the PDB written for the instrumented assembly can't be read; it is left out");
+        }
+    }
+
+    /// <summary>
+    /// dnlib reads the local constants of the PDB whose enum type it can't resolve (<c>const BindingFlags all = ...</c>) as
+    /// constants of a class type, which its writer rejects (a class constant can only be null): a constant of a class type
+    /// with a value is an enum constant.
+    /// </summary>
+    internal static void NormalizeEnumConstants(ModuleDef module)
+    {
+        foreach (var method in module.GetTypes().SelectMany(t => t.Methods))
+        {
+            if (method.Body?.PdbMethod?.Scope is { } scope)
+            {
+                Normalize(scope);
+            }
+        }
+
+        static void Normalize(PdbScope scope)
+        {
+            foreach (var constant in scope.Constants)
+            {
+                if (constant.Type is ClassSig classSig && constant.Value is not null and not byte[])
+                {
+                    constant.Type = new ValueTypeSig(classSig.TypeDefOrRef);
+                }
+            }
+
+            foreach (var child in scope.Scopes)
+            {
+                Normalize(child);
+            }
         }
     }
 
