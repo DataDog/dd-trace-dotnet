@@ -34,9 +34,11 @@ using MsTestMethod = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTes
 using NUnitIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitIntegration;
 using NUnitMethodInfo = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IMethodInfo;
 using NUnitPropertyBag = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IPropertyBag;
+using NUnitResultState = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IResultState;
 using NUnitRunState = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.RunState;
 using NUnitTest = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITest;
 using NUnitTestResult = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestResult;
+using NUnitTestStatus = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.TestStatus;
 using NUnitTypeInfo = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITypeInfo;
 using NUnitWorkItem = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IWorkItem;
 using NUnitWorkItemPerformWorkIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration;
@@ -1831,6 +1833,89 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
+    public void NUnitDependencyChainCannotBeConvertedToItrSkip()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var fixture = new NUnitTestStub(method, "fixture", [], testType: "TestFixture");
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], parent: fixture);
+        var dependent = new NUnitTestStub(method, "dependent", [], parent: fixture) { DependantTest = prerequisite };
+        var independent = new NUnitTestStub(method, "independent", [], parent: fixture);
+        fixture.Tests = new[] { prerequisite, dependent, independent };
+
+        NUnitWorkItemPerformWorkIntegration.CanApplyItrSkip(prerequisite, null).Should().BeFalse();
+        NUnitWorkItemPerformWorkIntegration.CanApplyItrSkip(dependent, null).Should().BeFalse();
+        NUnitWorkItemPerformWorkIntegration.CanApplyItrSkip(independent, null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void NUnitPassingResultClearsErrorsFromFailedNativeRepeatIterations()
+    {
+        var previousTestOptimization = TestOptimization.Instance;
+        TestOptimization.Instance = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory()).Object;
+        TestModule module = null;
+        TestSuite suite = null;
+        var resultState = new Mock<NUnitResultState>();
+        resultState.Setup(x => x.Status).Returns(NUnitTestStatus.Passed);
+        var result = new Mock<NUnitTestResult>();
+        result.Setup(x => x.ResultState).Returns(resultState.Object);
+
+        try
+        {
+            module = TestModule.Create("NUnitRepeat", "NUnit", "5.0.0");
+            suite = module.GetOrCreateSuite("RepeatFixture");
+            var test = suite.CreateTest("RepeatWithThreshold");
+            test.SetErrorInfo(new InvalidOperationException("An intermediate iteration failed"));
+
+            NUnitIntegration.FinishTest(test, result.Object);
+
+            test.GetTags().Status.Should().Be(TestTags.StatusPass);
+            test.GetInternalSpan().Error.Should().BeFalse();
+            test.GetInternalSpan().GetTag(Tags.ErrorType).Should().BeNull();
+            test.GetInternalSpan().GetTag(Tags.ErrorMsg).Should().BeNull();
+            test.GetInternalSpan().GetTag(Tags.ErrorStack).Should().BeNull();
+        }
+        finally
+        {
+            suite?.Close();
+            module?.Close();
+            TestOptimization.Instance = previousTestOptimization;
+        }
+    }
+
+    [Fact]
+    public void NUnitFixtureDependencyProtectsTestsInBothFixtures()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var assembly = new NUnitTestStub(method, "assembly", [], testType: "Assembly");
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], testType: "TestFixture", parent: assembly);
+        var dependent = new NUnitTestStub(method, "dependent", [], testType: "TestFixture", parent: assembly) { DependantTest = prerequisite };
+        assembly.Tests = new[] { prerequisite, dependent };
+        var prerequisiteTest = new NUnitTestStub(method, "first", [], parent: prerequisite);
+        var dependentTest = new NUnitTestStub(method, "second", [], parent: dependent);
+        prerequisite.Tests = new[] { prerequisiteTest };
+        dependent.Tests = new[] { dependentTest };
+
+        NUnitWorkItemPerformWorkIntegration.CanApplyItrSkip(prerequisiteTest, null).Should().BeFalse();
+        NUnitWorkItemPerformWorkIntegration.CanApplyItrSkip(dependentTest, null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void NUnitParameterizedDependencyProtectsEveryCase()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var fixture = new NUnitTestStub(method, "fixture", [], testType: "TestFixture");
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], testType: "ParameterizedMethod", parent: fixture);
+        var dependent = new NUnitTestStub(method, "dependent", [], parent: fixture) { DependantTest = prerequisite };
+        fixture.Tests = new[] { prerequisite, dependent };
+        var firstCase = new NUnitTestStub(method, "first case", [], parent: prerequisite);
+        var secondCase = new NUnitTestStub(method, "second case", [], parent: prerequisite);
+        prerequisite.Tests = new[] { firstCase, secondCase };
+
+        NUnitWorkItemPerformWorkIntegration.CanApplyItrSkip(firstCase, null).Should().BeFalse();
+        NUnitWorkItemPerformWorkIntegration.CanApplyItrSkip(secondCase, null).Should().BeFalse();
+    }
+
+    [Fact]
     public void DisabledTestManagementTestWithoutAttemptToFixCannotBeConvertedToItrSkip()
     {
         var properties = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(quarantined: false, disabled: true, attemptToFix: false);
@@ -2517,7 +2602,9 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public bool HasChildren => false;
 
-        public IList Tests => null;
+        public IList Tests { get; set; }
+
+        public NUnitTest DependantTest { get; set; }
 
         public object Fixture => null;
 
