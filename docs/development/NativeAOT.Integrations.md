@@ -83,6 +83,7 @@ is whether the library's latest version declares trimming/AOT compatibility; a l
 | Ocelot, YARP, MassTransit, Rebus, Dapper without Dapper.AOT, EF Core without precompiled queries (no integration of their own) | — | Not supported (library) | No, except YARP | DI and middlewares by reflection, `Reflection.Emit` |
 | AspNet, AspNetMvc, AspNetWebApi2, Wcf, Msmq, Remoting | .NET Framework | Not applicable | — | NativeAOT is .NET 8+ |
 | XUnit, NUnit, MsTestV2, DotnetTest, Selenium, TestPlatformAssemblyResolver | Test frameworks | Deferred (CI Visibility) | — | The NativeAOT mode of xUnit v3 runs the tests with other assemblies (`xunit.v3.core.aot`); MSTest's is alpha |
+| OpenTelemetry thread context (OTEP 4947, `DD_TRACE_OTEL_CTX_ENABLED`, opt-in) | — | Not supported yet | — | External readers (the OpenTelemetry eBPF profiler) look up a TLS symbol the native tracer exports, which NativeAOT applications don't load: the tracer logs a warning and doesn't publish the context (H-60) |
 | Dynamic Instrumentation, Exception Replay, Symbol Database | — | Deferred | — | They rewrite methods or read the assemblies' files at runtime: not compiled in NativeAOT applications |
 | Continuous Profiler | — | Not applicable | — | Needs the CLR profiling API |
 
