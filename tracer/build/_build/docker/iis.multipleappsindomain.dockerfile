@@ -3,6 +3,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 
 # Copy IIS websites
 ADD tracer/test/test-applications/aspnet/Samples.AspNet.MultipleAppsInDomain/bin/Release/publish MultipleAppsInDomain
+ADD tracer/test/test-applications/aspnet/Samples.AspNet.NGenNameHash/bin/Release/publish NGenNameHash
 
 # Set up multiple apps in single domain with custom config IIS websites
 ARG ENABLE_32_BIT
@@ -13,14 +14,18 @@ RUN c:\Windows\System32\inetsrv\appcmd add apppool /name:mutliAppPool /managedRu
 # The SetEnvironmentVariable() calls shouldn't _need_ to be here - we should be able to do it just
 # using docker-compose, but I can't get that to work for some inexplicable reason, no matter
 # what I do, so here we are.
+# The first AppDomain to start the tracer registers DD_TRACE_METHODS for the whole worker process, so the
+# NGenNameHash site can't set it in its own web.config.
 RUN Remove-WebSite -Name 'Default Web Site'; \
     Write-Host "Created app pool with 32 bit reg key: $env:ENABLE_32_BIT"; \
     Write-Host "Creating multi app domain sites"; \
     [System.Environment]::SetEnvironmentVariable('DD_TRACE_AGENT_URL', 'http://test-agent.windows:8126', [System.EnvironmentVariableTarget]::Machine); \
     [System.Environment]::SetEnvironmentVariable('DD_TRACE_AGENT_URL', 'http://test-agent.windows:8126', [System.EnvironmentVariableTarget]::Process); \
     [System.Environment]::SetEnvironmentVariable('DD_TRACE_AGENT_URL', 'http://test-agent.windows:8126', [System.EnvironmentVariableTarget]::User); \
+    [System.Environment]::SetEnvironmentVariable('DD_TRACE_METHODS', 'NGenInlinerCollision.Targets[*]', [System.EnvironmentVariableTarget]::Machine); \
     New-Website -Name 'MultiAppPoolWithCustomConfig1' -ApplicationPool mutliAppPool -Port 8081 -PhysicalPath 'c:\MultipleAppsInDomain'; \
-    New-Website -Name 'MultiAppPoolWithCustomConfig2' -ApplicationPool mutliAppPool -Port 8082 -PhysicalPath 'c:\MultipleAppsInDomain';
+    New-Website -Name 'MultiAppPoolWithCustomConfig2' -ApplicationPool mutliAppPool -Port 8082 -PhysicalPath 'c:\MultipleAppsInDomain'; \
+    New-Website -Name 'NGenNameHash' -ApplicationPool mutliAppPool -Port 8083 -PhysicalPath 'c:\NGenNameHash';
 
 # Install the .NET Tracer MSI
 ARG DOTNET_TRACER_MSI
