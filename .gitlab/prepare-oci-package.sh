@@ -4,6 +4,13 @@ set -eo pipefail
 
 PACKAGE_VERSION=$(< ../artifacts/version.txt)
 
+# Note: on a branch build PACKAGE_VERSION already carries a -dev.<sha> suffix (see
+# build/Version.props), so the version below ends up with two uniqueness tokens, e.g.
+# 3.56.0-dev.gabc1234<CI_VERSION_SUFFIX>. That is still valid semver, a valid OCI tag and still
+# unique, and CI_VERSION_SUFFIX is owned by the external one-pipeline template rather than by us,
+# so it is deliberately left alone. Master keeps the plain version, which is the path that
+# actually ships dev OCI packages. The one real downside is that the sha sorts before the pipeline
+# id, so the doubled version loses the pipeline-ordered sortability CI_VERSION_SUFFIX provides.
 if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   VERSION=$PACKAGE_VERSION
 else

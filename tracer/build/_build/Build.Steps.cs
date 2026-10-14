@@ -1330,12 +1330,16 @@ partial class Build
                     CopyFile(BuildDirectory / "artifacts" / FileNames.AfterInstallScript, scriptsDir / "after_install");
                     CopyFile(BuildDirectory / "artifacts" / FileNames.AfterRemoveScript, scriptsDir / "after_remove");
 
+                    // FullVersion, so the tar name matches the MSI and the NuGet packages. These
+                    // used to use the bare three-part version, which meant a prerelease build
+                    // produced a tar and a nupkg that disagreed about the version - and the
+                    // pipeline derives $(tracer_version) from both.
                     var tarOutputPath = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
                     {
-                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{Version}-musl.tar.gz",
-                        (true, var a) => workingDirectory / $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
-                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{Version}.tar.gz",
-                        (false, var a) => workingDirectory / $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}-musl.tar.gz",
+                        (true, var a) => workingDirectory / $"{packageName}-{FullVersion}-musl.{a.ToString().ToLower()}.tar.gz",
+                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}.tar.gz",
+                        (false, var a) => workingDirectory / $"{packageName}-{FullVersion}.{a.ToString().ToLower()}.tar.gz",
                     };
 
                     tar($"-czvf {tarOutputPath} .", workingDirectory: assetsDirectory);
@@ -1356,7 +1360,9 @@ partial class Build
                          name: "{packageName}"
                          arch: "{nFpmArch}"
                          platform: "linux"
-                         version: "{Version}"
+                         # RPM rejects a '-' in the Version field, and both RPM and dpkg sort '~'
+                         # before the unsuffixed version, which is the right order for a prerelease.
+                         version: "{Ver.RpmVersion}"
                          maintainer: "Datadog Packages <package@datadoghq.com>"
                          description: "Datadog APM client library for .NET"
                          vendor: "Datadog <package@datadoghq.com>"
