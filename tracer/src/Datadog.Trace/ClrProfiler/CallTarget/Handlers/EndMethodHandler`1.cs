@@ -45,7 +45,11 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         }
         else if (returnType.IsGenericType)
         {
-            if (typeof(Task).IsAssignableFrom(returnType))
+            if (!IntegrationMapper.IsSupported)
+            {
+                // NativeAOT without a registered generator: MakeGenericType needs dynamic code.
+            }
+            else if (typeof(Task).IsAssignableFrom(returnType))
             {
                 // The type is a Task<>
                 _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>?)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
