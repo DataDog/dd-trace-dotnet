@@ -380,8 +380,10 @@ public class FlagEvaluationWriterTests
         }
     }
 
-    [Fact]
-    public async Task FlushDuringBlockedSendWaitsForTheNextBatchAndCoalescesCallers()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FlushDuringBlockedSendCoalescesCallersAndCompletesWithoutWaitingForTimer(bool enqueueNext)
     {
         var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -393,21 +395,30 @@ public class FlagEvaluationWriterTests
                 entered.TrySetResult(true);
                 return release.Task;
             },
-            Context());
+            Context(),
+            flushInterval: TimeSpan.FromHours(1));
         try
         {
             writer.TryEnqueue(Observation()).Should().BeTrue();
             var first = writer.FlushAsync();
             await Completes(entered.Task);
-            writer.TryEnqueue(Observation(flag: "next")).Should().BeTrue();
+            if (enqueueNext)
+            {
+                writer.TryEnqueue(Observation(flag: "next")).Should().BeTrue();
+            }
+
             var next = writer.FlushAsync();
             next.Should().NotBeSameAs(first);
             writer.FlushAsync().Should().BeSameAs(next);
             next.IsCompleted.Should().BeFalse();
             release.TrySetResult(true);
             await Completes(next);
-            bodies.Should().HaveCount(2);
-            JObject.Parse(Encoding.UTF8.GetString(bodies.Last()))["flagEvaluations"]![0]!["flag"]!["key"]!.Value<string>().Should().Be("next");
+            await Completes(first);
+            bodies.Should().HaveCount(enqueueNext ? 2 : 1);
+            if (enqueueNext)
+            {
+                JObject.Parse(Encoding.UTF8.GetString(bodies.Last()))["flagEvaluations"]![0]!["flag"]!["key"]!.Value<string>().Should().Be("next");
+            }
         }
         finally
         {
@@ -472,41 +483,6 @@ public class FlagEvaluationWriterTests
         }
         finally
         {
-            await writer.CloseAsync(TimeSpan.FromSeconds(2));
-        }
-    }
-
-    [Fact]
-    public async Task EmptyFlushRequestedDuringSendCompletesWithoutWaitingForTimer()
-    {
-        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var calls = 0;
-        var writer = new FlagEvaluationWriter(
-            _ =>
-            {
-                Interlocked.Increment(ref calls);
-                entered.TrySetResult(true);
-                return release.Task;
-            },
-            Context(),
-            flushInterval: TimeSpan.FromHours(1));
-        try
-        {
-            writer.TryEnqueue(Observation()).Should().BeTrue();
-            var first = writer.FlushAsync();
-            await Completes(entered.Task);
-            var next = writer.FlushAsync();
-            next.Should().NotBeSameAs(first);
-            next.IsCompleted.Should().BeFalse();
-            release.TrySetResult(true);
-            await Completes(next);
-            await Completes(first);
-            Volatile.Read(ref calls).Should().Be(1);
-        }
-        finally
-        {
-            release.TrySetResult(true);
             await writer.CloseAsync(TimeSpan.FromSeconds(2));
         }
     }
