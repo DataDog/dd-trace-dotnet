@@ -153,7 +153,8 @@ public class CallTargetRegistryGeneratorTests
 
     /// <summary>
     /// A Task subclass with several generic arguments: its result type is the one of its base type, like
-    /// <c>ContinuationsHelper.GetResultType</c> computes it under JIT.
+    /// <c>ContinuationsHelper.GetResultType</c> computes it under JIT. Like under JIT, the continuation returns a
+    /// <c>Task&lt;int&gt;</c> as the subclass (docs/development/NativeAOT.KnownIssues.md): only the value is checked.
     /// </summary>
     [Fact]
     public async Task TaskSubclassContinuationHasTheResultTypeOfItsBaseType()
