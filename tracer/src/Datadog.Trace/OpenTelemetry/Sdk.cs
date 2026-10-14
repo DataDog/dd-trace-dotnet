@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Datadog.Trace.OpenTelemetry
 {
     internal static class Sdk
     {
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "TextMapPropagator is a class: an array of a reference type needs no code generated at runtime.")]
         public static void Initialize()
         {
             // Initialize no-op OpenTelemetry API implementations that the OpenTelemetry SDK would typically overwrite

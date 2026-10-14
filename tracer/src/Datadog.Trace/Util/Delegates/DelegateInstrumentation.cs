@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 #if NETCOREAPP3_0_OR_GREATER
@@ -34,6 +35,8 @@ internal static class DelegateInstrumentation
         where TCallbacks : struct, ICallbacks
         => (TDelegate)Wrap<TCallbacks>(target, typeof(TDelegate), callbacks);
 
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Delegate types keep their Invoke method.")]
+    [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
     public static Delegate Wrap<TCallbacks>(Delegate? target, Type targetType, TCallbacks callbacks)
         where TCallbacks : struct, ICallbacks
     {
@@ -219,11 +222,20 @@ internal static class DelegateInstrumentation
         public Wrapper<TCallbacks> CreateInstance(Delegate? target, TCallbacks callbacks)
             => _activator(target, callbacks);
 
+        [UnconditionalSuppressMessage("Trimming", "IL2077", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
         private Wrapper<TCallbacks> DefaultActivator(Delegate? target, TCallbacks callbacks)
             => (Wrapper<TCallbacks>)Activator.CreateInstance(_wrapperType, target, callbacks)!;
 
         private void CreateCustomActivator()
         {
+#if NETCOREAPP3_0_OR_GREATER
+            // Only started with dynamic code; the check keeps it out of NativeAOT applications, whose directives keep the type.
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                return;
+            }
+#endif
+
             try
             {
                 var ctor = _wrapperType.GetConstructors()[0];
@@ -279,6 +291,7 @@ internal static class DelegateInstrumentation
         {
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
         protected override Delegate GetHandler()
         {
             return Delegate.CreateDelegate(typeof(TDelegate), this, "Invoke");
@@ -290,6 +303,7 @@ internal static class DelegateInstrumentation
     {
         private static readonly Type? ReturnInnerType;
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
         static Wrapper()
         {
             var returnType = typeof(TReturn);
@@ -518,8 +532,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Action<TArg>)target.Method.CreateDelegate(
-                    typeof(Action<>).MakeGenericType(
-                        typeof(TArg)),
+                    typeof(Action<TArg>),
                     target.Target);
             }
         }
@@ -576,9 +589,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Action<TArg, TArg2>)target.Method.CreateDelegate(
-                    typeof(Action<,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2)),
+                    typeof(Action<TArg, TArg2>),
                     target.Target);
             }
         }
@@ -635,10 +646,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Action<TArg, TArg2, TArg3>)target.Method.CreateDelegate(
-                    typeof(Action<,,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2),
-                        typeof(TArg3)),
+                    typeof(Action<TArg, TArg2, TArg3>),
                     target.Target);
             }
         }
@@ -695,11 +703,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Action<TArg, TArg2, TArg3, TArg4>)target.Method.CreateDelegate(
-                    typeof(Action<,,,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2),
-                        typeof(TArg3),
-                        typeof(TArg4)),
+                    typeof(Action<TArg, TArg2, TArg3, TArg4>),
                     target.Target);
             }
         }
@@ -756,12 +760,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Action<TArg, TArg2, TArg3, TArg4, TArg5>)target.Method.CreateDelegate(
-                    typeof(Action<,,,,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2),
-                        typeof(TArg3),
-                        typeof(TArg4),
-                        typeof(TArg5)),
+                    typeof(Action<TArg, TArg2, TArg3, TArg4, TArg5>),
                     target.Target);
             }
         }
@@ -818,8 +817,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Func<TReturn>)target.Method.CreateDelegate(
-                    typeof(Func<>).MakeGenericType(
-                        typeof(TReturn)),
+                    typeof(Func<TReturn>),
                     target.Target);
             }
         }
@@ -887,9 +885,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Func<TArg, TReturn>)target.Method.CreateDelegate(
-                    typeof(Func<,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TReturn)),
+                    typeof(Func<TArg, TReturn>),
                     target.Target);
             }
         }
@@ -957,10 +953,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Func<TArg, TArg2, TReturn>)target.Method.CreateDelegate(
-                    typeof(Func<,,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2),
-                        typeof(TReturn)),
+                    typeof(Func<TArg, TArg2, TReturn>),
                     target.Target);
             }
         }
@@ -1028,11 +1021,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Func<TArg, TArg2, TArg3, TReturn>)target.Method.CreateDelegate(
-                    typeof(Func<,,,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2),
-                        typeof(TArg3),
-                        typeof(TReturn)),
+                    typeof(Func<TArg, TArg2, TArg3, TReturn>),
                     target.Target);
             }
         }
@@ -1100,12 +1089,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Func<TArg, TArg2, TArg3, TArg4, TReturn>)target.Method.CreateDelegate(
-                    typeof(Func<,,,,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2),
-                        typeof(TArg3),
-                        typeof(TArg4),
-                        typeof(TReturn)),
+                    typeof(Func<TArg, TArg2, TArg3, TArg4, TReturn>),
                     target.Target);
             }
         }
@@ -1173,13 +1157,7 @@ internal static class DelegateInstrumentation
             if (target is not null)
             {
                 _invokeDelegate = (Func<TArg, TArg2, TArg3, TArg4, TArg5, TReturn>)target.Method.CreateDelegate(
-                    typeof(Func<,,,,,>).MakeGenericType(
-                        typeof(TArg),
-                        typeof(TArg2),
-                        typeof(TArg3),
-                        typeof(TArg4),
-                        typeof(TArg5),
-                        typeof(TReturn)),
+                    typeof(Func<TArg, TArg2, TArg3, TArg4, TArg5, TReturn>),
                     target.Target);
             }
         }

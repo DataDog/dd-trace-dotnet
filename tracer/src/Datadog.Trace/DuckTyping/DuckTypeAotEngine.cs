@@ -1401,6 +1401,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="registration">The registration.</param>
         /// <param name="instantiation">The instantiation of the target type: the runtime type, or a type it derives from or implements.</param>
         /// <returns>true if a registration serves the runtime type; otherwise, false.</returns>
+        [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "The type of an instance: the generic interfaces the registered proxies target stay implemented, since the generated proxies call through them.")]
         private static bool TrySelectGenericRegistration(GenericRegistration[] registrations, Type type, [NotNullWhen(true)] out GenericRegistration? registration, [NotNullWhen(true)] out Type? instantiation)
         {
             for (var current = type; current is not null; current = current.BaseType)

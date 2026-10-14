@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.DuckTyping
         internal static bool IsCompositeInterface(Type type)
             => type.IsInterface && type.Namespace == CompositeInterfacesNamespace && type.Assembly.GetName().Name == CompositeInterfacesAssemblyName;
 
+        [UnconditionalSuppressMessage("Trimming", "IL2057", Justification = "The NativeAOT build writes the composite interfaces with a descriptor that keeps them for this lookup (CompositeInterfaceAssembly).")]
         private static Type? CreateCompositeInterface(string name, Type[] interfaces)
         {
             var fullName = $"{CompositeInterfacesNamespace}.{name}";

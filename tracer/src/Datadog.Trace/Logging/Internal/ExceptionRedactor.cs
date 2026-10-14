@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -95,6 +96,7 @@ internal static class ExceptionRedactor
     }
 
     [TestingAndPrivateOnly]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The frames whose method has no metadata (NativeAOT) are skipped.")]
     internal static void RedactStackTrace(StringBuilder sb, StackTrace stackTrace)
     {
         for (var i = 0; i < stackTrace.FrameCount; i++)
@@ -249,6 +251,7 @@ internal static class ExceptionRedactor
         }
     }
 #else
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only called for the frames whose method has metadata.")]
     private static void AppendFrame(StringBuilder sb, StackFrame sf)
     {
         // Passing a default string for "at" in case SR.UsingResourceKeys() is true
@@ -435,6 +438,7 @@ internal static class ExceptionRedactor
         return true;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Without the metadata of the declaring type's methods (NativeAOT), the frame keeps the state machine method.")]
     private static bool TryResolveStateMachineMethod(ref MethodBase method, out Type declaringType)
     {
         declaringType = method.DeclaringType!;

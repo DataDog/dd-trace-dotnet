@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Logging;
 
@@ -88,6 +89,7 @@ internal readonly struct StackFrameMethod
     /// JIT, they are skipped as before.
     /// </summary>
     /// <returns>true when the frame has a method with a declaring type.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The frames whose method has no metadata (NativeAOT) use the stack trace data.")]
     public static bool TryGet(StackFrame? frame, out StackFrameMethod method)
     {
         method = default;

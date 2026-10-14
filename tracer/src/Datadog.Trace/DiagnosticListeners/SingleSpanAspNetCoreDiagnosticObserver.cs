@@ -7,6 +7,7 @@
 
 #if NET6_0_OR_GREATER
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -40,9 +41,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 
-        private static readonly Type? EndpointFeatureType =
-            Assembly.GetAssembly(typeof(RouteValueDictionary))
-                   ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
+        private static readonly Type? EndpointFeatureType = GetEndpointFeatureType();
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SingleSpanAspNetCoreDiagnosticObserver>();
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
@@ -153,6 +152,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
             }
         }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types Datadog.Trace looks up by name (ReflectionRootDescriptor).")]
+        private static Type? GetEndpointFeatureType()
+            => Assembly.GetAssembly(typeof(RouteValueDictionary))?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private void OnHostingHttpRequestInStart(object arg)
         {

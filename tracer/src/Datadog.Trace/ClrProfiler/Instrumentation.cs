@@ -464,8 +464,9 @@ namespace Datadog.Trace.ClrProfiler
                 // ignore
             }
 #if !NETFRAMEWORK
-            // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
-            if (FrameworkDescription.Instance.IsCoreClr())
+            // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+). It builds its
+            // proxies with Reflection.Emit, so it can't run in NativeAOT applications (a constant for ILC).
+            if (FrameworkDescription.Instance.IsCoreClr() && DuckTyping.DuckTypeAotEngine.IsDynamicCodeSupported)
             {
                 Log.Debug("Initializing ServiceFabric instrumentation");
 
