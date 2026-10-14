@@ -152,6 +152,32 @@ public class CallTargetRegistryGeneratorTests
     }
 
     /// <summary>
+    /// A Task subclass with several generic arguments: its result type is the one of its base type, like
+    /// <c>ContinuationsHelper.GetResultType</c> computes it under JIT.
+    /// </summary>
+    [Fact]
+    public async Task TaskSubclassContinuationHasTheResultTypeOfItsBaseType()
+    {
+        var probe = new ProbeModule(nameof(TaskSubclassContinuationHasTheResultTypeOfItsBaseType));
+        var target = probe.AddType("Target");
+        var method = probe.AddTaskMethod(target, "RunAsync", typeof(AsyncIntegration), typeof(PairTask<int, string>), typeof(PairTask<int, string>).GetMethod(nameof(PairTask<int, string>.Run))!);
+
+        var (assembly, result) = probe.Generate(method);
+        result.Deferred.Should().Be(0);
+        result.ContinuationFactories.Should().Be(1);
+        result.Bound.Should().Be(1, "OnAsyncMethodEnd");
+
+        var targetType = assembly.GetType("Probe.Target")!;
+        var task = (Task<int>)targetType.GetMethod("RunAsync")!.Invoke(Activator.CreateInstance(targetType), new object[] { 41 })!;
+        (await task).Should().Be(42);
+
+        var holder = typeof(CallTargetAotContinuation<,,>).MakeGenericType(typeof(AsyncIntegration), targetType, typeof(PairTask<int, string>));
+        var arguments = new object?[] { null };
+        ((bool)holder.GetMethod("TryGet", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, arguments)!).Should().BeTrue();
+        ((Delegate)arguments[0]!).DynamicInvoke()!.GetType().GetGenericArguments().Last().Should().Be(typeof(int));
+    }
+
+    /// <summary>
     /// A generic return type (<c>T M&lt;T&gt;(T)</c>) that is a Task&lt;X&gt; at runtime: the open registration can't create the
     /// continuation without MakeGenericType, the closed instantiation found in the module registers its factory (H-22).
     /// </summary>
@@ -240,6 +266,21 @@ public class CallTargetRegistryGeneratorTests
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
             where TTarget : ITarget, IDuckType
             => new(returnValue);
+    }
+
+    public sealed class PairTask<TResult, TTag> : Task<TResult>
+    {
+        private PairTask(Func<TResult> function)
+            : base(function)
+        {
+        }
+
+        public static PairTask<TResult, TTag> Run(TResult value)
+        {
+            var task = new PairTask<TResult, TTag>(() => value);
+            task.RunSynchronously();
+            return task;
+        }
     }
 
     internal sealed class RefArgumentIntegration
@@ -359,11 +400,12 @@ public class CallTargetRegistryGeneratorTests
         }
 
         /// <summary>
-        /// <c>Task&lt;int&gt; Method(int value)</c> returning <c>Task.FromResult(value)</c> through <c>EndMethod&lt;I, TTarget, Task&lt;int&gt;&gt;</c>.
+        /// <c>Task&lt;int&gt; Method(int value)</c> returning <c>Task.FromResult(value)</c> through <c>EndMethod&lt;I, TTarget, Task&lt;int&gt;&gt;</c>
+        /// (or another task type, returned by a static factory taking the value).
         /// </summary>
-        public MethodDef AddTaskMethod(TypeDef type, string name, Type integration)
+        public MethodDef AddTaskMethod(TypeDef type, string name, Type integration, Type? task = null, MethodInfo? factory = null)
         {
-            var taskType = _importer.ImportAsTypeSig(typeof(Task<int>));
+            var taskType = _importer.ImportAsTypeSig(task ?? typeof(Task<int>));
             var method = new MethodDefUser(name, MethodSig.CreateInstance(taskType, Module.CorLibTypes.Int32), MethodImplAttributes.IL | MethodImplAttributes.Managed, MethodAttributes.Public | MethodAttributes.HideBySig);
             type.Methods.Add(method);
             var targetType = TargetSig(type);
@@ -381,7 +423,7 @@ public class CallTargetRegistryGeneratorTests
             body.Instructions.Add(OpCodes.Stloc.ToInstruction(state));
             body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             body.Instructions.Add(OpCodes.Ldarg_1.ToInstruction());
-            body.Instructions.Add(OpCodes.Call.ToInstruction(_importer.Import(typeof(Task).GetMethod(nameof(Task.FromResult))!.MakeGenericMethod(typeof(int)))));
+            body.Instructions.Add(OpCodes.Call.ToInstruction(_importer.Import(factory ?? typeof(Task).GetMethod(nameof(Task.FromResult))!.MakeGenericMethod(typeof(int)))));
             body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
             body.Instructions.Add(OpCodes.Ldloca.ToInstruction(state));
             body.Instructions.Add(OpCodes.Call.ToInstruction(end));

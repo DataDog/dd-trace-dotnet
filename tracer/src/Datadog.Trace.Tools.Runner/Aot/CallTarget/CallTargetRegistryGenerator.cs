@@ -149,7 +149,7 @@ internal sealed class CallTargetRegistryGenerator
                         break;
                     case CallTargetInvocationKind.EndReturn:
                         IntegrationBinder.BindEndReturn(integration, target, invocation.ReturnType!, collector);
-                        if (ContinuationResultType(invocation.ReturnType!, objectType) is { } result)
+                        if (ContinuationResultType(invocation.ReturnType!, objectType, resolveType) is { } result)
                         {
                             IntegrationBinder.BindAsyncEnd(integration, target, result, collector);
                         }
@@ -167,10 +167,15 @@ internal sealed class CallTargetRegistryGenerator
     /// <summary>
     /// The value <c>OnAsyncMethodEnd</c> receives for a Task/ValueTask return type (object without one), or null.
     /// </summary>
-    private static TypeSig? ContinuationResultType(TypeSig returnType, TypeSig objectType)
+    private static TypeSig? ContinuationResultType(TypeSig returnType, TypeSig objectType, Func<ITypeDefOrRef, TypeDef?> resolveType)
         => returnType.FullName is "System.Threading.Tasks.Task" or "System.Threading.Tasks.ValueTask"
                ? objectType
-               : returnType is GenericInstSig { GenericArguments.Count: 1 } instance ? instance.GenericArguments[0] : null;
+               : returnType switch
+               {
+                   GenericInstSig { GenericArguments.Count: 1 } instance => instance.GenericArguments[0],
+                   GenericInstSig instance when DerivesFromTask(instance, resolveType) => GetTaskResultType(instance, objectType, resolveType),
+                   _ => null,
+               };
 
     private static IResolutionScope? FindDatadogTraceScope(CilBody body)
         => body.Instructions.Select(i => i.Operand)
@@ -197,6 +202,42 @@ internal sealed class CallTargetRegistryGenerator
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The result type of the continuation of a generic type deriving from <c>Task</c>, like <c>ContinuationsHelper.GetResultType</c>
+    /// computes it under JIT: the generic argument of the first type of the hierarchy with one, <c>object</c> for a type
+    /// without generic arguments, the base type for a type with several.
+    /// </summary>
+    private static TypeSig? GetTaskResultType(GenericInstSig type, TypeSig objectType, Func<ITypeDefOrRef, TypeDef?> resolveType)
+    {
+        TypeSig current = type;
+        for (var depth = 0; depth < 32; depth++)
+        {
+            if (current is not GenericInstSig instance)
+            {
+                return objectType;
+            }
+
+            if (instance.GenericArguments.Count == 1)
+            {
+                return instance.GenericArguments[0];
+            }
+
+            if (resolveType(instance.GenericType.TypeDefOrRef) is not { } definition)
+            {
+                return null;
+            }
+
+            if (definition.BaseType is not { } baseType)
+            {
+                return objectType;
+            }
+
+            current = GenericInstantiationDiscovery.Substitute(baseType.ToTypeSig(), new GenericInstantiationDiscovery.Instantiation(instance.GenericArguments, Array.Empty<TypeSig>()));
+        }
+
+        return null;
     }
 
     private static void Finish(CilBody body)
@@ -466,13 +507,16 @@ internal sealed class CallTargetRegistryGenerator
         }
 
         string generator;
+        TypeSig? result;
         switch (instance.GenericType.FullName)
         {
             case "System.Threading.Tasks.Task`1":
                 generator = "TaskContinuationGenerator`4";
+                result = instance.GenericArguments[0];
                 break;
             case "System.Threading.Tasks.ValueTask`1":
                 generator = "ValueTaskContinuationGenerator`4";
+                result = instance.GenericArguments[0];
                 break;
             default:
                 if (!_derivesFromTask(returnType))
@@ -480,9 +524,10 @@ internal sealed class CallTargetRegistryGenerator
                     return;
                 }
 
-                if (instance.GenericArguments.Count != 1)
+                result = GetTaskResultType(instance, _module.CorLibTypes.Object, _resolveType);
+                if (result is null)
                 {
-                    Defer(builder, invocation, $"continuation of {returnType.FullName}: result type with several generic arguments");
+                    Defer(builder, invocation, $"continuation of {returnType.FullName}: a base type can't be resolved");
                     return;
                 }
 
@@ -490,7 +535,6 @@ internal sealed class CallTargetRegistryGenerator
                 break;
         }
 
-        var result = instance.GenericArguments[0];
         var factory = new MethodDefUser(
             $"CreateContinuation{builder.Factories.Count}",
             MethodSig.CreateStatic(_references.DatadogGeneric($"{ContinuationsNamespace}.ContinuationGenerator`2", target, returnType)),
