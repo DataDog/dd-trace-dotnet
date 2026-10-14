@@ -29,11 +29,9 @@ internal readonly struct AttemptToFixRetryBehavior : IRetryBehavior
     {
         if (_testProperties is { Quarantined: true } or { Disabled: true })
         {
-            // NUnit 5 dependency chains only hide failures, so NUnit keeps deciding which dependents run.
-            if (NUnitIntegration.CanHideResult(result))
+            if (NUnitIntegration.TryHideResult(result, "Flaky test is quarantined or disabled by Datadog."))
             {
                 Common.Log.Debug("AttemptToFixRetryBehavior: Test is quarantined or disabled by Datadog.");
-                result.SetResult(result.ResultState.StaticIgnored, "Flaky test is quarantined or disabled by Datadog.", string.Empty);
             }
             else
             {

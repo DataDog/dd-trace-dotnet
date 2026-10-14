@@ -32,7 +32,7 @@ public static class NUnitCompositeWorkItemSetSkippedResultIntegration
         where TTarget : ICompositeWorkItem, IDuckType
         where TResultState : IResultState, IDuckType
     {
-        // Dependency skips use FailureSite.Test. Parent and setup skips use FailureSite.Parent and are handled by the existing completion hook.
+        // Dependency skips use FailureSite.Test. Parent and setup skips use FailureSite.Parent and are not dependency skips.
         return NUnitIntegration.IsEnabled && resultState.Status == TestStatus.Skipped && resultState.Site == FailureSite.Test
                    ? new CallTargetState(null, result)
                    : CallTargetState.GetDefault();

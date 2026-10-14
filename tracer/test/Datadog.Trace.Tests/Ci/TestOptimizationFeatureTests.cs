@@ -1987,9 +1987,18 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var dependent = new NUnitTestStub(method, "dependent", [], parent: dependentFixture) { DependantTest = prerequisite };
         dependentFixture.Tests = new[] { prerequisite, dependent };
 
-        NUnitIntegration.CanHideResult(CreateNUnitResult(fixtureTest, (NUnitTestStatus)status).Object).Should().Be(expected);
-        NUnitIntegration.CanHideResult(CreateNUnitResult(prerequisite, (NUnitTestStatus)status).Object).Should().Be(expected);
-        NUnitIntegration.CanHideResult(CreateNUnitResult(dependent, (NUnitTestStatus)status).Object).Should().BeTrue();
+        var fixtureTestResult = CreateNUnitResult(fixtureTest, (NUnitTestStatus)status);
+        var prerequisiteResult = CreateNUnitResult(prerequisite, (NUnitTestStatus)status);
+        var dependentResult = CreateNUnitResult(dependent, (NUnitTestStatus)status);
+
+        NUnitIntegration.TryHideResult(fixtureTestResult.Object, "hidden").Should().Be(expected);
+        NUnitIntegration.TryHideResult(prerequisiteResult.Object, "hidden").Should().Be(expected);
+        NUnitIntegration.TryHideResult(dependentResult.Object, "hidden").Should().BeTrue();
+
+        var hiddenTimes = expected ? Times.Once() : Times.Never();
+        fixtureTestResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), "hidden", string.Empty), hiddenTimes);
+        prerequisiteResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), "hidden", string.Empty), hiddenTimes);
+        dependentResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), "hidden", string.Empty), Times.Once);
     }
 
     [Theory]
@@ -2012,8 +2021,8 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var dependentSuiteResult = CreateNUnitResult(dependentFixture, (NUnitTestStatus)suiteStatus);
         var ignoredState = prerequisiteSuiteResult.Object.ResultState.StaticIgnored;
 
-        NUnitIntegration.CanHideResult(CreateNUnitResult(hiddenFailure, NUnitTestStatus.Failed).Object).Should().BeTrue();
-        NUnitIntegration.CanHideResult(CreateNUnitResult(dependentFailure, NUnitTestStatus.Failed).Object).Should().BeTrue();
+        NUnitIntegration.TryHideResult(CreateNUnitResult(hiddenFailure, NUnitTestStatus.Failed).Object, "hidden").Should().BeTrue();
+        NUnitIntegration.TryHideResult(CreateNUnitResult(dependentFailure, NUnitTestStatus.Failed).Object, "hidden").Should().BeTrue();
         NUnitIntegration.BlockDependentsOfHiddenFailures(prerequisiteFixture, prerequisiteSuiteResult.Object);
         NUnitIntegration.BlockDependentsOfHiddenFailures(dependentFixture, dependentSuiteResult.Object);
 

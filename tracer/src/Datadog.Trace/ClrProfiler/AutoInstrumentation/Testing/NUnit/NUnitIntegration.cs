@@ -90,6 +90,11 @@ internal static class NUnitIntegration
         // Native Repeat/Retry commands can end without failing after an exception captured by Reflect.InvokeMethod.
         // The completed NUnit result determines the outcome of the whole command.
         var span = test.GetInternalSpan();
+        if (!span.Error)
+        {
+            return;
+        }
+
         span.Error = false;
         span.SetTag(Tags.ErrorType, null);
         span.SetTag(Tags.ErrorMsg, null);
@@ -239,40 +244,40 @@ internal static class NUnitIntegration
         return false;
     }
 
+    // Reports a test management result to NUnit as ignored, keeping the actual outcome in Datadog.
     // NUnit 5 runs dependents only when their prerequisite, or the prerequisite suite containing it, passes or ends with
-    // a warning. Inside a dependency chain only failures are hidden from NUnit, so it schedules dependents from the real
-    // outcomes. A hidden failure still blocks the dependents of every prerequisite suite containing it.
-    internal static bool CanHideResult(ITestResult result)
+    // a warning. Inside a dependency chain only failures are hidden, so NUnit schedules dependents from the real outcomes,
+    // and a hidden failure still blocks the dependents of every prerequisite suite containing it.
+    internal static bool TryHideResult(ITestResult result, string message)
     {
         var currentTest = result.Test;
 
         // Older NUnit versions do not expose a dependency graph.
-        if (currentTest.Instance is not { } currentInstance || !currentInstance.TryDuckCast<ITestWithDependency>(out _))
+        if (currentTest.Instance is { } currentInstance && currentInstance.TryDuckCast<ITestWithDependency>(out _))
         {
-            return true;
-        }
-
-        var isFailure = result.ResultState.Status == TestStatus.Failed;
-        var test = currentTest;
-        while (test?.Instance is { } instance)
-        {
-            var parent = test.Parent;
-            if (parent?.Instance is { } parentInstance && IsPrerequisite(parentInstance, instance))
+            var isFailure = result.ResultState.Status == TestStatus.Failed;
+            var test = currentTest;
+            while (test?.Instance is { } instance)
             {
-                if (!isFailure)
+                var parent = test.Parent;
+                if (parent?.Instance is { } parentInstance && IsPrerequisite(parentInstance, instance))
                 {
-                    return false;
+                    if (!isFailure)
+                    {
+                        return false;
+                    }
+
+                    if (!ReferenceEquals(instance, currentInstance))
+                    {
+                        PrerequisitesWithHiddenFailures.GetValue(instance, static _ => new object());
+                    }
                 }
 
-                if (!ReferenceEquals(instance, currentInstance))
-                {
-                    PrerequisitesWithHiddenFailures.GetValue(instance, static _ => new object());
-                }
+                test = parent;
             }
-
-            test = parent;
         }
 
+        result.SetResult(result.ResultState.StaticIgnored, message, string.Empty);
         return true;
     }
 
