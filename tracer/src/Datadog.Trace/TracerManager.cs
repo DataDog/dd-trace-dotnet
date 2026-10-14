@@ -436,7 +436,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Environment.OSVersion.ToString());
 
                     writer.WritePropertyName("version");
-                    writer.WriteValue(TracerConstants.AssemblyVersion);
+                    writer.WriteValue(TracerConstants.ReportedVersion);
 
                     writer.WritePropertyName("native_tracer_version");
                     writer.WriteValue(Instrumentation.GetNativeTracerVersion());

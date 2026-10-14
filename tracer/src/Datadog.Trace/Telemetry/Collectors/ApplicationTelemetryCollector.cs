@@ -75,7 +75,7 @@ internal sealed class ApplicationTelemetryCollector
             serviceName: mutableSettings.DefaultServiceName,
             env: mutableSettings.Environment ?? string.Empty, // required, but we don't have it
             serviceVersion: mutableSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
-            tracerVersion: TracerConstants.AssemblyVersion,
+            tracerVersion: TracerConstants.ReportedVersion,
             languageName: TracerConstants.Language,
             languageVersion: frameworkDescription.ProductVersion,
             runtimeName: frameworkDescription.Name,

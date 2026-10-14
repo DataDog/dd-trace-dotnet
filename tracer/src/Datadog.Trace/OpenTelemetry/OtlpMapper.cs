@@ -56,7 +56,7 @@ internal static class OtlpMapper
         // Write telemetry SDK attributes
         writeKeyValue(ref state, new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
         writeKeyValue(ref state, new KeyValue("telemetry.sdk.language", TracerConstants.Language));
-        writeKeyValue(ref state, new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.version", TracerConstants.ReportedVersion));
 
         if (traceChunk.GitCommitSha is string gitCommitSha)
         {

@@ -137,7 +137,7 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
             WriteStringKvJson(writer, "telemetry.sdk.language", TracerConstants.Language);
-            WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
+            WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.ReportedVersion);
 
             WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
@@ -383,7 +383,7 @@ namespace Datadog.Trace.Agent
 
             WriteAttribute(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
             WriteAttribute(writer, "telemetry.sdk.language", TracerConstants.Language);
-            WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
+            WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.ReportedVersion);
 
             WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
 

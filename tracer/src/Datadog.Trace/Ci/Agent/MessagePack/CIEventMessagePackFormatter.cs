@@ -43,7 +43,7 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
     private static ReadOnlySpan<byte> LanguageNameBytes => "language"u8;
     private static ReadOnlySpan<byte> LanguageNameValueBytes => "dotnet"u8;
     private static ReadOnlySpan<byte> LibraryVersionBytes => "library_version"u8;
-    private static ReadOnlySpan<byte> LibraryVersionValueBytes => TracerConstants.AssemblyVersionBytes;
+    private static ReadOnlySpan<byte> LibraryVersionValueBytes => TracerConstants.ReportedVersionBytes;
     private static ReadOnlySpan<byte> EnvironmentBytes => "env"u8;
     private static ReadOnlySpan<byte> TestBytes => "test"u8;
     private static ReadOnlySpan<byte> TestSuiteEndBytes => "test_suite_end"u8;

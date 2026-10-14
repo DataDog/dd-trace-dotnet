@@ -43,7 +43,7 @@
 
 tags ProfileExporter::CommonTags = {
     {"language", "dotnet"},
-    {"profiler_version", PROFILER_VERSION},
+    {"profiler_version", PROFILER_SEMVER},
 #ifdef BIT64
     {"process_architecture", "x64"},
 #else
@@ -58,7 +58,7 @@ int32_t const ProfileExporter::RequestTimeOutMs = 10000;
 
 std::string const ProfileExporter::LibraryName = "dd-profiling-dotnet";
 
-std::string const ProfileExporter::LibraryVersion = PROFILER_VERSION;
+std::string const ProfileExporter::LibraryVersion = PROFILER_SEMVER;
 
 std::string const ProfileExporter::LanguageFamily = "dotnet";
 
@@ -907,7 +907,7 @@ void ProfileExporter::AppendProfilerInfo(std::stringstream& builder, std::string
     }
 
     ElementStart(builder, "profiler");
-        AppendValue(builder, "version", PROFILER_VERSION);
+        AppendValue(builder, "version", PROFILER_SEMVER);
         builder << ",";
         ElementStart(builder, "ssi");
             AppendValue(builder, "mechanism",

@@ -135,7 +135,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             WriteVarInt(writer, sdkLangAttr.Length);
             writer.Write(sdkLangAttr);
 
-            var sdkVersionAttr = SerializeKeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion);
+            var sdkVersionAttr = SerializeKeyValue("telemetry.sdk.version", TracerConstants.ReportedVersion);
             WriteTag(writer, FieldNumbers.Attributes, LengthDelimited);
             WriteVarInt(writer, sdkVersionAttr.Length);
             writer.Write(sdkVersionAttr);

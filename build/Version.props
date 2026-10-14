@@ -66,6 +66,19 @@
     <DD_SemVer>$(DD_VersionPrefix)$(DD_VersionSuffix)</DD_SemVer>
 
     <!--
+      The version the SDK reports to Datadog - telemetry headers, span tags, statsd tags, the
+      stats and Data Streams payloads and the OpenTelemetry telemetry.sdk.version attribute.
+
+      On a release build this is deliberately the four-part assembly version, which is exactly what
+      those sites reported before any of this existed, so a release build's output is unchanged. On
+      a dev build it is the full semver, so the specific build can be identified from a customer's
+      telemetry. The shape therefore differs between channels; nothing downstream parses it as a
+      semantic version.
+    -->
+    <DD_ReportedVersion Condition="'$(DD_VersionSuffix)' == ''">$(DD_FourPartVersion)</DD_ReportedVersion>
+    <DD_ReportedVersion Condition="'$(DD_VersionSuffix)' != ''">$(DD_SemVer)</DD_ReportedVersion>
+
+    <!--
       RPM refuses a '-' in the Version field, and both RPM and dpkg sort '~' *before* the
       unsuffixed version, which is the correct ordering for a prerelease.
     -->

@@ -32,7 +32,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
     {
         case DLL_PROCESS_ATTACH:
             Log::Info("Profiler DLL loaded.");
-            Log::Info("Profiler version = ", PROFILER_VERSION);
+            Log::Info("Profiler version = ", PROFILER_SEMVER);
             Log::Info("Pointer size: ", 8 * sizeof(void*), " bits.");
             break;
 

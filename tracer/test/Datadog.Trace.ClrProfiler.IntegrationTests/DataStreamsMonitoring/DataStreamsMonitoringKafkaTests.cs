@@ -91,7 +91,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         var payload = MockDataStreamsPayload.Normalize(agent.DataStreams);
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
+        settings.AddSimpleScrubber(TracerConstants.ReportedVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(SubmitsDataStreams)}_scope={enableConsumerScopeCreation}_legacy={enableLegacyHeaders}")
@@ -131,7 +131,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
 
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
+        settings.AddSimpleScrubber(TracerConstants.ReportedVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(HandlesBatchProcessing)}")

@@ -194,7 +194,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteStringBytes(stream, LangValueBytes);
 
             MessagePackBinary.WriteStringBytes(stream, TracerVersionKeyBytes);
-            MessagePackBinary.WriteStringBytes(stream, TracerConstants.AssemblyVersionBytes);
+            MessagePackBinary.WriteStringBytes(stream, TracerConstants.ReportedVersionBytes);
 
             MessagePackBinary.WriteStringBytes(stream, RuntimeIdKeyBytes);
             MessagePackBinary.WriteString(stream, Tracer.RuntimeId);

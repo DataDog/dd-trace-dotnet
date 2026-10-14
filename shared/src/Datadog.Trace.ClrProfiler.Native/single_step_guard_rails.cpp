@@ -288,7 +288,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         "{\"metadata\":{\"runtime_name\": \"" + runtimeName
         + "\",\"runtime_version\": \"" + runtimeVersion
         + "\",\"language_name\": \"dotnet\",\"language_version\": \"" + runtimeVersion
-        + "\",\"tracer_version\": \"" + PROFILER_VERSION
+        + "\",\"tracer_version\": \"" + PROFILER_SEMVER
         + "\",\"pid\":" + std::to_string(GetPID())
         + ",\"inject_result\": \"" + injectResult
         + "\",\"inject_result_reason\": \"" + injectResultReason

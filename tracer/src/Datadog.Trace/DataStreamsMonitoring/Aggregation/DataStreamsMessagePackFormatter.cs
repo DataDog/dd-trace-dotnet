@@ -76,7 +76,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private static ReadOnlySpan<byte> StatsBytes => "Stats"u8;
         private static ReadOnlySpan<byte> BacklogsBytes => "Backlogs"u8;
         private static ReadOnlySpan<byte> TracerVersionBytes => "TracerVersion"u8;
-        private static ReadOnlySpan<byte> TracerVersionValueBytes => TracerConstants.AssemblyVersionBytes;
+        private static ReadOnlySpan<byte> TracerVersionValueBytes => TracerConstants.ReportedVersionBytes;
         private static ReadOnlySpan<byte> LangBytes => "Lang"u8;
         private static ReadOnlySpan<byte> LangValueBytes => "dotnet"u8;
         private static ReadOnlySpan<byte> StartBytes => "Start"u8;

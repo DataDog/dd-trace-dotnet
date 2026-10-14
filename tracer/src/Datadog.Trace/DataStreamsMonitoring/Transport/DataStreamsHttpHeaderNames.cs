@@ -17,7 +17,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Transport
             => new KeyValuePair<string, string>[]
             {
                 new(AgentHttpHeaderNames.Language, ".NET"),
-                new(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion),
+                new(AgentHttpHeaderNames.TracerVersion, TracerConstants.ReportedVersion),
                 new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
                 new(AgentHttpHeaderNames.LanguageInterpreter, FrameworkDescription.Instance.Name),
                 new(AgentHttpHeaderNames.LanguageVersion, FrameworkDescription.Instance.ProductVersion),

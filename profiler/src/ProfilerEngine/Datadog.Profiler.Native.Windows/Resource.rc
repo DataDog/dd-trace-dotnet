@@ -76,7 +76,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog"
             VALUE "FileDescription", "Continuous Profiler for .NET Applications"
-            VALUE "FileVersion", DD_SEMVER_STR
+            VALUE "FileVersion", DD_FOUR_PART_VERSION_STR
             VALUE "InternalName", "Native Profiler Engine"
             VALUE "LegalCopyright", "(c) Datadog 2020-2022"
             VALUE "OriginalFilename", "Datadog.Profiler.Native.dll"

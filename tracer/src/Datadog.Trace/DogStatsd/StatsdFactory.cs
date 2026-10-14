@@ -33,7 +33,7 @@ internal static class StatsdFactory
             constantTags.Add("lang:.NET");
             constantTags.Add($"lang_interpreter:{FrameworkDescription.Instance.Name}");
             constantTags.Add($"lang_version:{FrameworkDescription.Instance.ProductVersion}");
-            constantTags.Add($"tracer_version:{TracerConstants.AssemblyVersion}");
+            constantTags.Add($"tracer_version:{TracerConstants.ReportedVersion}");
             constantTags.Add($"{Tags.RuntimeId}:{Tracer.RuntimeId}");
             // update count above if adding new tags
 

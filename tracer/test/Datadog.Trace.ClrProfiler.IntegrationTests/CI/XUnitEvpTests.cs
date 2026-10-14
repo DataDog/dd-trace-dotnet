@@ -634,7 +634,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                 // CI Library Language
-                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.ReportedVersion);
 
                 // Check Session data
                 AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);

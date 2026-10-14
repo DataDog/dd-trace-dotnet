@@ -70,7 +70,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog, Inc."
             VALUE "FileDescription", "Datadog CLR Profiler"
-            VALUE "FileVersion", DD_SEMVER_STR
+            VALUE "FileVersion", DD_FOUR_PART_VERSION_STR
             VALUE "InternalName", "Datadog.Tracer.Native.DLL"
             VALUE "LegalCopyright", "Copyright 2017 Datadog, Inc."
             VALUE "OriginalFilename", "Datadog.Tracer.Native.DLL"

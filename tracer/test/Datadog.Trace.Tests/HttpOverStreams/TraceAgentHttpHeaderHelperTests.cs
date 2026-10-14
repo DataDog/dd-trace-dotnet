@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
 
             var helper = TraceAgentHttpHeaderHelper.Instance;
 
-            var tracerVersion = TracerConstants.AssemblyVersion;
+            var tracerVersion = TracerConstants.ReportedVersion;
             var lang = FrameworkDescription.Instance.Name;
             var fxVersion = FrameworkDescription.Instance.ProductVersion;
 

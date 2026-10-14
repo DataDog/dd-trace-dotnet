@@ -103,11 +103,15 @@
     <Compile Include="$(DD_GeneratedVersionSourceFile)" />
   </ItemGroup>
 
+  <!--
+    Deliberately no Inputs/Outputs: the content depends on version.props, on the resolved channel in
+    artifacts/version/Version.g.props and on the templates in this file, and an incremental check
+    keyed on only one of those silently serves a stale file. WriteOnlyWhenDifferent already makes
+    this a no-op read when nothing changed, so MSBuild's up-to-date checks see an unchanged file.
+  -->
   <Target Name="DD_GenerateVersionSource"
           BeforeTargets="BeforeCompile;CoreCompile;CompileDesignTime"
-          Condition="'$(DD_GenerateVersionSource)' != ''"
-          Inputs="$(DD_RepoRoot)version.props"
-          Outputs="$(DD_GeneratedVersionSourceFile)">
+          Condition="'$(DD_GenerateVersionSource)' != ''">
 
     <MakeDir Directories="$(IntermediateOutputPath)" />
 
@@ -130,10 +134,18 @@
       <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// shape that identifies a specific build." />
       <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;/summary&gt;" />
       <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public const string SemanticVersion = &quot;$(DD_SemVer)&quot;%3B" />
-      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;Gets the UTF-8 encoded &lt;see cref=&quot;AssemblyVersion&quot;/&gt;, for MessagePack payloads.&lt;/summary&gt;" />
-      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public static System.ReadOnlySpan&lt;byte&gt; AssemblyVersionBytes =&gt; &quot;$(DD_FourPartVersion)&quot;u8%3B" />
-      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;Gets the UTF-8 encoded &lt;see cref=&quot;SemanticVersion&quot;/&gt;, for MessagePack payloads.&lt;/summary&gt;" />
-      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public static System.ReadOnlySpan&lt;byte&gt; SemanticVersionBytes =&gt; &quot;$(DD_SemVer)&quot;u8%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// The version reported to Datadog - telemetry headers, span tags, statsd tags, the stats" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// and Data Streams payloads, and telemetry.sdk.version." />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;para&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// Equal to &lt;see cref=&quot;AssemblyVersion&quot;/&gt; on a release build, which is what these sites" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// have always reported, and to &lt;see cref=&quot;SemanticVersion&quot;/&gt; on a dev build so the" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// specific build can be identified. The shape therefore differs between channels." />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;/para&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;/summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public const string ReportedVersion = &quot;$(DD_ReportedVersion)&quot;%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;Gets the UTF-8 encoded &lt;see cref=&quot;ReportedVersion&quot;/&gt;, for MessagePack payloads.&lt;/summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public static System.ReadOnlySpan&lt;byte&gt; ReportedVersionBytes =&gt; &quot;$(DD_ReportedVersion)&quot;u8%3B" />
       <DD_VersionSourceLine Include="%20%20%20%20}" />
       <DD_VersionSourceLine Include="}" />
     </ItemGroup>

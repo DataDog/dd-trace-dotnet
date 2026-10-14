@@ -116,9 +116,9 @@ IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 // in WinDbg:  dt Datadog_Profiler_Native!Profiler_Version
 // in gdb: p Profiler_Version
 #ifdef _WINDOWS
-extern "C" __declspec(dllexport) const char* Profiler_Version = PROFILER_VERSION;
+extern "C" __declspec(dllexport) const char* Profiler_Version = PROFILER_SEMVER;
 #else
-extern "C" __attribute__((visibility("default"))) const char* Profiler_Version = PROFILER_VERSION;
+extern "C" __attribute__((visibility("default"))) const char* Profiler_Version = PROFILER_SEMVER;
 #endif
 
 // Initialization
