@@ -22,6 +22,7 @@ Sources (2026-10-14):
 | Binding an integration method (a missing member, the duck typing of a constraint) | The CallTarget registration records the failure | The first call throws `CallTargetInvokerException`, which disables the integration for that type | A warning in the tracer log and the `IntegrationDisabledDueToError` telemetry; the application keeps running |
 | A duck typing mapping that isn't declared nor comes from a constraint | — (`CheckAotDuckTypeDeclarations` fails in CI for the mappings the integration tests record) | `DuckTypeAotMissingProxyRegistrationException` where the proxy is created | The integration's own error handling (usually a warning in the log) |
 | A duck typing mapping that also fails with dynamic duck typing | The registry replays the failure | The same exception as under JIT | Same as under JIT |
+| The search of generic instantiations is cut (a generic cycle, or its limit) and instrumented generic methods need them | The warning `DDAOT001` lists the methods (an error with `DatadogAotFailOnError`) | Their integrations don't trace the instantiations that are missing (`CallTargetInvokerException` on the first call, the integration disabled for that type) | The build warning, and the report's `GenericInstantiations` |
 | A method ILC can't compile | ILC prints `Method '...' will always throw` | The method throws | The package tests fail when it's a method of Datadog.Trace |
 | A library that doesn't support NativeAOT | Usually trimming/AOT warnings of the library | The library fails, also without Datadog | The application's own errors |
 
@@ -93,7 +94,7 @@ is whether the library's latest version declares trimming/AOT compatibility; a l
 | H-73: ILC 8 can't compile `EnumerateTags<TagWriter<__Canon>>`: the OTLP export of traces in JSON threw `InvalidProgramException` on .NET 8 | Fixed (the state is a struct); the package tests fail on any `will always throw` of Datadog.Trace |
 | H-74: `will always throw` of the ASP.NET Core observers in the samples without ASP.NET Core (ILC 8) | Test-only: the samples' helper looks up Datadog.Trace types by name, which keeps them; applications don't |
 | H-75: ILC warnings of Datadog.Trace in real applications (49 in the samples) | Explained where verified (see below); the unverified paths keep theirs |
-| H-76: the search of generic instantiations hits its limit in 27 samples | No deferred shape left unresolved; to review |
+| H-76: the search of generic instantiations spent its budget (50,000 contexts) on the framework first and left out the instantiations of the packages in large applications: in an ASP.NET Core application with MongoDB, the `mongodb.query` spans had no command and the ASP.NET Core route tags were missing | Fixed: the search only follows the generic code that leads to instrumented generic methods (1,294 contexts instead of a cut at 50,000 in Security.AspNetCore5; MongoDB 0 → 12 instantiations, AWS SDK 0 → 71), cuts generic cycles, and warns (`DDAOT001`) when cut |
 | H-77: the Kafka client handle proxy was only declared for `Producer<Null, Null>`: no cluster id with other types | Fixed (open generic `Producer<,>` and `Consumer<,>`) |
 
 ## ILC warnings left
