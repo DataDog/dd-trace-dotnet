@@ -53,6 +53,12 @@
     <None Include="$(GeneratedFolder)/*/**/*.cs" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- TracerConstants.cs is linked below, so this project needs the generated half of the
+         partial class too - see build/Version.targets -->
+    <DD_GenerateVersionSource>TracerConstants</DD_GenerateVersionSource>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />

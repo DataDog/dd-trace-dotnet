@@ -65,10 +65,6 @@ partial class Build
             var checks = new List<(string File, string Expected)>
             {
                 (".azure-pipelines/ultimate-pipeline.yml", $"ToolVersion: {semver}"),
-                ("tracer/src/Datadog.Trace/TracerConstants.cs", $"AssemblyVersion = \"{four}\""),
-                ("tracer/src/Datadog.Trace/TracerConstants.cs", $"ThreePartVersion = \"{three}\""),
-                ("tracer/src/Datadog.Trace/TracerConstants.cs", $"\"{four}\"u8"),
-                ("tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs", assemblyName),
                 ("tracer/build/artifacts/dd-dotnet.sh", $"TRACER_VERSION=\"{three}\""),
             };
 
@@ -80,6 +76,22 @@ partial class Build
                 checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_THREE_PART_VERSION_STR \"{three}\""));
                 checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_FOUR_PART_VERSION_STR \"{four}\""));
                 checks.Add(("shared/src/native-src/dd_version.g.h", $"#define DD_VERSION_REVISION {version.Revision}"));
+            }
+
+            // Same for the managed constants. The native tracer resolves Datadog.Trace by this
+            // exact strong name, so the loader's copy has to agree with the real assembly version.
+            foreach (var generated in RootDirectory.GlobFiles("artifacts/obj/*/*/DatadogVersion.g.cs"))
+            {
+                var content = File.ReadAllText(generated);
+                if (content.Contains("class Startup", StringComparison.Ordinal))
+                {
+                    checks.Add((RootDirectory.GetRelativePathTo(generated), assemblyName));
+                }
+                else
+                {
+                    checks.Add((RootDirectory.GetRelativePathTo(generated), $"AssemblyVersion = \"{four}\""));
+                    checks.Add((RootDirectory.GetRelativePathTo(generated), $"ThreePartVersion = \"{three}\""));
+                }
             }
 
             // The samples deliberately reference the *previously released* version, because they

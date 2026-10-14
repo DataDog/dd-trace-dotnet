@@ -17,9 +17,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public sealed partial class Startup
     {
-        // internal so ManagedProfilerAssemblyResolver can reference it. Safe because const strings are inlined at compile time.
-        // Do not add non-const static members on Startup that the resolver needs - that would re-introduce the .cctor deadlock.
-        internal const string AssemblyName = "Datadog.Trace, Version=3.56.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        // AssemblyName is generated from version.props into the intermediate output directory -
+        // see tracer/src/Directory.Build.targets. It stays a const there for the reason documented
+        // alongside it: a non-const static member that ManagedProfilerAssemblyResolver reads would
+        // re-introduce the .cctor deadlock.
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 

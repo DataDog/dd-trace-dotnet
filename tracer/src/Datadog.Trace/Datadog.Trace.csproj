@@ -11,6 +11,9 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsTrimmable>false</IsTrimmable>
+
+    <!-- Generates the version members of TracerConstants - see tracer/src/Directory.Build.targets -->
+    <DD_GenerateVersionSource>TracerConstants</DD_GenerateVersionSource>
   </PropertyGroup>
 
   <PropertyGroup>

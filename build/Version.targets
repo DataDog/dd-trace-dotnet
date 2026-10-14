@@ -71,4 +71,98 @@
     </ItemGroup>
   </Target>
 
+  <!--
+    Generates the managed version constants that used to be committed literals kept in sync by the
+    version-bump tooling.
+
+    A project opts in by setting DD_GenerateVersionSource to the name of the template it wants.
+    Three projects compile TracerConstants.cs (Datadog.Trace, the dd-dotnet tool and the tool's
+    integration tests), so this lives here rather than in tracer/src/Directory.Build.targets - it
+    has to reach tracer/test as well.
+
+    The file goes into $(IntermediateOutputPath), which this repo redirects to
+    artifacts/obj/<Project>/<config>_<tfm>/ (see UseArtifactsOutput in tracer/Directory.Build.props).
+    That path is gitignored and per-target-framework, so the target frameworks never race on it.
+
+    Deliberately an MSBuild target rather than a source generator: Datadog.Trace.csproj sets
+    EmitCompilerGeneratedFiles with CompilerGeneratedFilesOutputPath pointing at Generated/, and
+    those 500+ files are committed. A version source generator would rewrite a tracked file on
+    every build, dirtying the working tree and breaking the verify_source_generators CI check.
+
+    The templates use one item per line and avoid blank lines, because MSBuild rejects an empty
+    Include. Leading indentation is written as %20 escapes because MSBuild trims item Include
+    values. The leading auto-generated comment stops the analyzers running over the result.
+  -->
+  <PropertyGroup Condition="'$(DD_GenerateVersionSource)' != ''">
+    <DD_GeneratedVersionSourceFile>$(IntermediateOutputPath)DatadogVersion.g.cs</DD_GeneratedVersionSourceFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(DD_GenerateVersionSource)' != ''">
+    <!-- A literal path, not a glob, so the item exists from evaluation onward and design-time
+         builds in the IDE see it before the first real build has produced it. -->
+    <Compile Include="$(DD_GeneratedVersionSourceFile)" />
+  </ItemGroup>
+
+  <Target Name="DD_GenerateVersionSource"
+          BeforeTargets="BeforeCompile;CoreCompile;CompileDesignTime"
+          Condition="'$(DD_GenerateVersionSource)' != ''"
+          Inputs="$(DD_RepoRoot)version.props"
+          Outputs="$(DD_GeneratedVersionSourceFile)">
+
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+
+    <ItemGroup Condition="'$(DD_GenerateVersionSource)' == 'TracerConstants'">
+      <DD_VersionSourceLine Include="// &lt;auto-generated/&gt; Generated from version.props by build/Version.targets." />
+      <DD_VersionSourceLine Include="// Do not edit, and do not commit - this is written into the intermediate output directory." />
+      <DD_VersionSourceLine Include="namespace Datadog.Trace" />
+      <DD_VersionSourceLine Include="{" />
+      <DD_VersionSourceLine Include="%20%20%20%20internal static partial class TracerConstants" />
+      <DD_VersionSourceLine Include="%20%20%20%20{" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;The four-part assembly version, e.g. 3.56.0.0. Never carries a suffix.&lt;/summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public const string AssemblyVersion = &quot;$(DD_FourPartVersion)&quot;%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// The three-part numeric version, e.g. 3.56.0. Never carries a suffix: Instrumentation.cs" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// compares this against the native tracer's PROFILER_VERSION for an exact string match." />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;/summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public const string ThreePartVersion = &quot;$(DD_ThreePartVersion)&quot;%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// The full semantic version, e.g. 3.56.0 or 3.56.0-dev.g1a2b3c4d. This is the only" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// shape that identifies a specific build." />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;/summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public const string SemanticVersion = &quot;$(DD_SemVer)&quot;%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;Gets the UTF-8 encoded &lt;see cref=&quot;AssemblyVersion&quot;/&gt;, for MessagePack payloads.&lt;/summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public static System.ReadOnlySpan&lt;byte&gt; AssemblyVersionBytes =&gt; &quot;$(DD_FourPartVersion)&quot;u8%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20/// &lt;summary&gt;Gets the UTF-8 encoded &lt;see cref=&quot;SemanticVersion&quot;/&gt;, for MessagePack payloads.&lt;/summary&gt;" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20public static System.ReadOnlySpan&lt;byte&gt; SemanticVersionBytes =&gt; &quot;$(DD_SemVer)&quot;u8%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20}" />
+      <DD_VersionSourceLine Include="}" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(DD_GenerateVersionSource)' == 'LoaderAssemblyName'">
+      <DD_VersionSourceLine Include="// &lt;auto-generated/&gt; Generated from version.props by build/Version.targets." />
+      <DD_VersionSourceLine Include="// Do not edit, and do not commit - this is written into the intermediate output directory." />
+      <DD_VersionSourceLine Include="namespace Datadog.Trace.ClrProfiler.Managed.Loader" />
+      <DD_VersionSourceLine Include="{" />
+      <DD_VersionSourceLine Include="%20%20%20%20public sealed partial class Startup" />
+      <DD_VersionSourceLine Include="%20%20%20%20{" />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20// internal so ManagedProfilerAssemblyResolver can reference it. Safe because const strings are inlined at compile time." />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20// Do not add non-const static members on Startup that the resolver needs - that would re-introduce the .cctor deadlock." />
+      <DD_VersionSourceLine Include="%20%20%20%20%20%20%20%20internal const string AssemblyName = &quot;Datadog.Trace, Version=$(DD_FourPartVersion), Culture=neutral, PublicKeyToken=def86d061d0d2eeb&quot;%3B" />
+      <DD_VersionSourceLine Include="%20%20%20%20}" />
+      <DD_VersionSourceLine Include="}" />
+    </ItemGroup>
+
+    <Error Condition="'@(DD_VersionSourceLine)' == ''"
+           Text="Unknown DD_GenerateVersionSource template '$(DD_GenerateVersionSource)'. See build/Version.targets." />
+
+    <WriteLinesToFile File="$(DD_GeneratedVersionSourceFile)"
+                      Lines="@(DD_VersionSourceLine)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <DD_VersionSourceLine Remove="@(DD_VersionSourceLine)" />
+    </ItemGroup>
+  </Target>
+
 </Project>

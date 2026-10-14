@@ -30,6 +30,12 @@
     <PackageReference Remove="coverlet.collector" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- TracerConstants.cs is linked below, so this project needs the generated half of the
+         partial class too - see build/Version.targets -->
+    <DD_GenerateVersionSource>TracerConstants</DD_GenerateVersionSource>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\..\src\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
   </ItemGroup>

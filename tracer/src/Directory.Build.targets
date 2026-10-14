@@ -1,0 +1,18 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!--
+    Pin the assembly identity to the numeric four-part version.
+
+    This has to run after the project file, which is the only way to tell whether a project kept
+    the shared version or set its own: Datadog.Trace.Annotations (1.0.0) and
+    Datadog.FeatureFlags.OpenFeature (2.3.2) are versioned independently and must keep deriving
+    their assembly version from their own <Version>.
+  -->
+  <PropertyGroup Condition="'$(Version)' == '$(DD_SemVer)'">
+    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(DD_FourPartVersion)</AssemblyVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">$(DD_FourPartVersion)</FileVersion>
+  </PropertyGroup>
+
+</Project>

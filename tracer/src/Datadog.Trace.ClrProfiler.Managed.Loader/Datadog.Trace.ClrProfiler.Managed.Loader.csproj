@@ -11,6 +11,9 @@
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+
+    <!-- Generates Startup.AssemblyName - see tracer/src/Directory.Build.targets -->
+    <DD_GenerateVersionSource>LoaderAssemblyName</DD_GenerateVersionSource>
   </PropertyGroup>
 
 </Project>
