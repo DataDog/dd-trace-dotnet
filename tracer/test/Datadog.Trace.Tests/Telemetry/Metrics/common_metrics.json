@@ -1,5 +1,5 @@
 ﻿{
-  "live_debugger": {
+  "debugger": {
     "memory_pressure.transitions": {
       "tags": [
         "state",
