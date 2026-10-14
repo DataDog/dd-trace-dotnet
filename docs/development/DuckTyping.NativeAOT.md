@@ -1086,6 +1086,20 @@ Use all of these gates together.
    1. `DuckTypeAotRegistryBootstrapBenchmark`
 5. Optional explicit verify-compat step against generated artifacts.
 
+## Known Issues
+
+### The discovery recorder can lose the mappings of another process
+
+`DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH` recording (test workflows, not applications) merges the mappings of every process
+that writes the same map, under the map's lock file. An explicit flush (the one at exit) that can't take the lock within
+30 seconds writes the map without it. If the process holding the lock stalled between reading the map and writing it
+(e.g. suspended by a debugger), it then writes the map it read before, without the mappings of the process that exited:
+those are lost.
+
+Not fixed: it needs a stall in the few milliseconds between the read and the write of `TryMergeIntoMap`, and not writing
+without the lock would lose those mappings every time the lock can't be taken. A complete fix writes them to a file of
+the process next to the map, merged by the next flush and read by the generator and `dd-trace aot instrument`.
+
 ## Cross-Reference
 
 1. Dynamic DuckTyping guide: [DuckTyping.md](./DuckTyping.md)
