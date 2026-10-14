@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging.Internal;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -30,6 +31,23 @@ public class ExceptionRedactorTests
 
         // We don't necessarily _want_ the new line at the end, but it's fine
         redacted.Should().Be(exceptionType.FullName + Environment.NewLine);
+    }
+
+    // NativeAOT frames whose method has no reflection metadata: the names of the stack trace data.
+    [Theory]
+    [InlineData("Datadog.Trace.Agent.Api+Sender", "Send", "Datadog.Trace, Version=3.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.Agent.Api.Sender.Send")]
+    [InlineData("System.Net.Http.HttpClient", "SendAsync", "System.Net.Http, Version=8.0.0.0", "System.Net.Http.HttpClient.SendAsync")]
+    [InlineData("Confluent.Kafka.Producer`2", "Produce", "Confluent.Kafka, Version=2.0.0.0", "Confluent.Kafka.Producer`2.Produce")]
+    [InlineData("MyCompany.Orders.Checkout", "Pay", "MyCompany.Orders, Version=1.0.0.0", ExceptionRedactor.Redacted)]
+    [InlineData("Datadog.Trace.Agent.Api", "Send", null, ExceptionRedactor.Redacted)] // .NET 8 doesn't give the assembly
+    public void AppendFrame_UsesTheNamesOfFramesWithoutMetadata(string declaringTypeName, string name, string assemblyName, string expected)
+    {
+        StackFrameMethod.TryCreate(declaringTypeName, name, assemblyName, out var method).Should().BeTrue();
+        var sb = new StringBuilder();
+
+        ExceptionRedactor.AppendFrame(sb, method);
+
+        sb.ToString().Should().Be(ExceptionRedactor.StackFrameAt + expected + Environment.NewLine);
     }
 
     [Fact]
