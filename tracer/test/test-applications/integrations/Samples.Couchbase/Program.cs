@@ -50,8 +50,8 @@ namespace Samples.Couchbase
         {
             var config = GetConnectionConfig();
             _cluster = new Cluster(config);
-            _cluster.Authenticate("default", "password");
-            _bucket = _cluster.OpenBucket("default");
+            _cluster.Authenticate(Username(), Password());
+            _bucket = _cluster.OpenBucket(BucketName());
             RetrieveAndUpdate();
             await RetrieveAndUpdateAsync();
         }
@@ -90,6 +90,12 @@ namespace Samples.Couchbase
 
             return $"{host}:{port}";
         }
+
+        private static string Username() => Environment.GetEnvironmentVariable("COUCHBASE_USERNAME") ?? "default";
+
+        private static string Password() => Environment.GetEnvironmentVariable("COUCHBASE_PASSWORD") ?? "password";
+
+        private static string BucketName() => Environment.GetEnvironmentVariable("COUCHBASE_BUCKET") ?? "default";
 
         public void RetrieveAndUpdate()
         {
