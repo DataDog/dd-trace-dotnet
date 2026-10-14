@@ -305,7 +305,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         // NUnit 5 builds of this sample also contain the fixtures exercised by NUnit5Tests.
         internal static string GetSharedSampleArguments(string packageVersion)
-            => packageVersion.StartsWith("5.", StringComparison.Ordinal) ? "/TestCaseFilter:FullyQualifiedName!~Samples.NUnit5Tests -- NUnit.PreFilter=false" : null;
+            => packageVersion.StartsWith("5.", StringComparison.Ordinal) ? "/TestCaseFilter:FullyQualifiedName!~Samples.NUnit5Tests" : null;
 
         protected override void CheckSimpleTestSpan(MockSpan targetSpan)
         {

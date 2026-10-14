@@ -21,6 +21,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Trait("Area", "CIVisibility")]
 public class NUnit5Tests : TestingFrameworkTest
 {
+    // With parallel workers NUnit 5 queues fixtures and evaluates a fixture dependency before the prerequisite fixture
+    // completes, so dependent fixtures are skipped whatever the prerequisite outcome. Without workers NUnit decides
+    // from the completed prerequisite fixture.
+    internal const string RunFixturesSequentially = "-- NUnit.NumberOfTestWorkers=0";
+
     public NUnit5Tests(ITestOutputHelper output)
         : base("NUnitTests", output)
     {
@@ -46,7 +51,7 @@ public class NUnit5Tests : TestingFrameworkTest
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName~Samples.NUnit5Tests -- NUnit.PreFilter=false", packageVersion: packageVersion, expectedExitCode: 1);
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: $"/TestCaseFilter:FullyQualifiedName~Samples.NUnit5Tests {RunFixturesSequentially}", packageVersion: packageVersion, expectedExitCode: 1);
         var spans = (await agent.WaitForSpansAsync(19)).Where(s => s.Name == "nunit.test").ToArray();
 
         spans.Should().HaveCount(19);
@@ -77,8 +82,8 @@ public class NUnit5Tests : TestingFrameworkTest
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
-        // The adapter's prefilter removes prerequisites before NUnit can expand its dependency graph.
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName=Samples.NUnit5Tests.DependenciesFixture.PassedDependent -- NUnit.PreFilter=false", packageVersion: packageVersion);
+        // NUnit adds the prerequisite of the selected dependent to the run.
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: "/TestCaseFilter:FullyQualifiedName=Samples.NUnit5Tests.DependenciesFixture.PassedDependent", packageVersion: packageVersion);
         var spans = (await agent.WaitForSpansAsync(2)).Where(s => s.Name == "nunit.test").ToArray();
 
         spans.Should().HaveCount(2);
@@ -97,7 +102,7 @@ public class NUnit5Tests : TestingFrameworkTest
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
         // The adapter receives no individual results from the blocked fixture and reports exit code zero.
         // NUnit adds the whole prerequisite fixture to the run: WarningBeforeFailure and Failed.
-        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: $"/TestCaseFilter:{filter} -- NUnit.PreFilter=false", packageVersion: packageVersion);
+        using var process = await RunDotnetTestSampleAndWaitForExit(agent, arguments: $"/TestCaseFilter:{filter} {RunFixturesSequentially}", packageVersion: packageVersion);
         var spans = (await agent.WaitForSpansAsync(selectedCount + 2)).Where(s => s.Name == "nunit.test").ToArray();
 
         spans.Should().HaveCount(selectedCount + 2);
