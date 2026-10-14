@@ -6,6 +6,7 @@
 #if NET6_0_OR_GREATER
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,10 @@ public class AotReflectionRootDescriptorTests
     [InlineData("OpenTelemetry.Trace.TracerProviderBuilderExtensions", "OpenTelemetry")] // Type.GetType, then GetMethod
     public void TypeNamesAreCollected(string typeName, string? assemblyName)
         => Names.Should().Contain((typeName, assemblyName));
+
+    [Fact]
+    public void TheBinderOfDynamicObjectsIsNotKept()
+        => Names.Should().NotContain(n => n.TypeName.StartsWith("Microsoft.CSharp.RuntimeBinder.", StringComparison.Ordinal));
 
     [Fact]
     public void TypesOfTheApplicationArePreserved()
