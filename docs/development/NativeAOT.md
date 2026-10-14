@@ -2,7 +2,8 @@
 
 How the tracer instruments applications published with NativeAOT (`PublishAot=true`). Customer-facing documentation is
 the README of the [`Datadog.Trace.Aot`](../../tracer/src/Datadog.Trace.Aot/README.md) package; duck typing has its own
-documents ([`DuckTyping.NativeAOT.md`](./DuckTyping.NativeAOT.md) and the related ones).
+documents ([`DuckTyping.NativeAOT.md`](./DuckTyping.NativeAOT.md) and the related ones). Bugs found and not fixed:
+[`NativeAOT.KnownIssues.md`](./NativeAOT.KnownIssues.md).
 
 ## Why build time
 
