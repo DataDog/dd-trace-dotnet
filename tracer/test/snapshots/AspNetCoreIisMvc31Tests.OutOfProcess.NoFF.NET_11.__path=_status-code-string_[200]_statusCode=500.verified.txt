@@ -15,12 +15,14 @@
 System.Exception: Input was not a status code
 at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String input),
       error.type: System.Exception,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
       http.url: http://localhost:00000/status-code-string/%5B200%5D,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       network.protocol.version: 1.1,
       runtime-id: Guid_1,
       server.address: localhost,
@@ -37,6 +39,7 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String 
       _dd.code_origin.type: entry
     },
     Metrics: {
+      network.peer.port: 00000,
       process_id: 0,
       server.port: 00000,
       _dd.top_level: 1.0,
