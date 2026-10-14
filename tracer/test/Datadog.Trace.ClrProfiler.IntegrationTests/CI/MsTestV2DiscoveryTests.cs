@@ -54,8 +54,7 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
 
     public static IEnumerable<object[]> DiscoveryScenarios()
     {
-        // There are 21 discovered cases and two new tests among the three we run. Thresholds of
-        // 1%, 5%, and 10% allow zero, one, or both new tests to receive their two extra attempts.
+        // Exercise how faulty-session thresholds limit EFD retries for newly discovered tests.
         foreach (var version in PackageVersions.MSTest)
         {
             var packageVersion = (string)version[0];

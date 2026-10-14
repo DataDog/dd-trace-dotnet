@@ -32,8 +32,7 @@ public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFr
     public async Task OpenSessionIsSentBeforeTheWriterCloses(string shutdownTrigger)
     {
         EnvironmentHelper.EnableDefaultTransport();
-        SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "0");
-        SetEnvironmentVariable("COR_ENABLE_PROFILING", "0");
+        EnvironmentHelper.SetAutomaticInstrumentation(false);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         // Exercise agent discovery during initialization instead of bypassing it with a forced EVP mode.
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, null);

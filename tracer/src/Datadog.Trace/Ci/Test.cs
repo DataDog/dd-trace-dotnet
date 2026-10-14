@@ -508,13 +508,17 @@ public sealed class Test
     /// Assigns remaining tags and closes the test under the same guard as shutdown.
     /// The callback is skipped if another caller has already closed the test.
     /// </summary>
+    /// <remarks>
+    /// The callback is reserved for internal final-tag assignment and must not block or invoke user code.
+    /// It runs under the execution lock so shutdown cannot finish the span between tag writes.
+    /// </remarks>
     internal void Close(TestStatus status, TimeSpan? duration, string? skipReason, Action<Test>? beforeClose)
     {
         lock (_executionLock)
         {
             if (IsClosed)
             {
-                _testOptimization.Log.Warning("Test.Close() was already called before.");
+                _testOptimization.Log.Debug("Test.Close() was already called before.");
                 return;
             }
 

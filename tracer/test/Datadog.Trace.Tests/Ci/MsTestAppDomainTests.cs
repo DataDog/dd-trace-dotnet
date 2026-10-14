@@ -14,8 +14,7 @@ namespace Datadog.Trace.Tests.Ci;
 public class MsTestAppDomainTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public void DiscoveryCountSurvivesIsolationWithoutBeingCountedTwice(bool initializeExecutionBeforeDiscovery)
     {
         var discoveryDomain = CreateDomain();
