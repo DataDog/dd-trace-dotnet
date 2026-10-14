@@ -150,8 +150,9 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static CreateTypeResult GetOrCreateProxyType(Type proxyType, Type targetType, bool reverse)
         {
-            // The engines own their caches; per proxy definition fast paths live in CreateCache<T>.
-            if (EnsureRuntimeModeIsInitialized() == DuckTypeRuntimeMode.Aot)
+            // The engines own their caches; per proxy definition fast paths live in CreateCache<T>. Without dynamic code
+            // (NativeAOT), only the AOT engine can work: a constant for ILC, which leaves the dynamic engine out.
+            if (!DuckTypeAotEngine.IsDynamicCodeSupported || EnsureRuntimeModeIsInitialized() == DuckTypeRuntimeMode.Aot)
             {
                 return reverse ? DuckTypeAotEngine.GetOrCreateReverseProxyType(proxyType, targetType) : DuckTypeAotEngine.GetOrCreateProxyType(proxyType, targetType);
             }
