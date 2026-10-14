@@ -38,7 +38,7 @@ internal sealed class GenericInstantiationDiscovery
     /// <summary>
     /// A safety net: the search only follows the code that leads to rewritten methods.
     /// </summary>
-    internal const int DefaultMaxContexts = 1_000_000;
+    internal const int DefaultMaxContexts = AotInstrumentOptions.DefaultMaxGenericContexts;
 
     private readonly HashSet<ModuleDef> _modules;
     private readonly Func<IMethod, MethodDef?> _resolveMethod;

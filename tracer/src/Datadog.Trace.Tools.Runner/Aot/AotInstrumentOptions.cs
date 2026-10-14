@@ -15,6 +15,10 @@ namespace Datadog.Trace.Tools.Runner.Aot;
 /// </summary>
 internal sealed class AotInstrumentOptions
 {
+    /// <summary>The default limit of the search of generic instantiations: a safety net, the search only follows the code
+    /// that leads to instrumented generic methods.</summary>
+    public const int DefaultMaxGenericContexts = 1_000_000;
+
     public string NativeTracerPath { get; init; } = string.Empty;
 
     public string DatadogTracePath { get; init; } = string.Empty;
@@ -68,5 +72,5 @@ internal sealed class AotInstrumentOptions
     public bool FailOnIncompleteGenericInstantiations { get; init; }
 
     /// <summary>Gets the limit of generic contexts the search of generic instantiations follows (tests).</summary>
-    public int MaxGenericContexts { get; init; } = CallTarget.GenericInstantiationDiscovery.DefaultMaxContexts;
+    public int MaxGenericContexts { get; init; } = DefaultMaxGenericContexts;
 }
