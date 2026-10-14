@@ -80,8 +80,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true } &&
                 HttpContext.Current is { } httpContext)
                 {
+                    // A child action is not the endpoint of the request, so it must not set the root span's code origin
                     if (SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey) is { Root.Span: { } rootSpan } &&
-                        !codeOrigin.HasCodeOrigin(rootSpan))
+                        !codeOrigin.HasCodeOrigin(rootSpan) &&
+                        !AspNetMvcIntegration.IsChildAction(controllerContext))
                     {
                         if (AspNetFrameworkEndpointCodeOrigin.TryGetTypeAndMethod(actionDescriptor, out var type, out var method))
                         {

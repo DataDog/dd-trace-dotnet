@@ -683,11 +683,17 @@ public class SpanMessagePackFormatterTests
         }
     }
 
-    [Fact]
-    public async Task SdkOtlpExport_IsWrittenOncePerPayload()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SdkOtlpExport_IsWrittenOncePerPayload(bool propagateProcessTags)
     {
         var mockApi = new MockApi();
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "test-service" } });
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.ServiceName, "test-service" },
+            { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
+        });
         var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
@@ -712,7 +718,7 @@ public class SpanMessagePackFormatterTests
         }
 
         await tracer.FlushAsync();
-        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+        var traceChunks = mockApi.Traces;
 
         traceChunks.Should().HaveCount(2, "both traces should be batched into a single payload as two chunks");
         traceChunks[0].Should().HaveCount(3);
@@ -736,6 +742,23 @@ public class SpanMessagePackFormatterTests
         {
             span.GetTag(Tags.SdkOtlpExport).Should().BeNull("the OTLP export marker is payload-scoped, not per-chunk");
         }
+
+        // A later flush starts a new payload and must write its own marker.
+        using (_ = tracer.StartActive("trace3-root"))
+        {
+            using (_ = tracer.StartActive("trace3-child"))
+            {
+            }
+        }
+
+        await tracer.FlushAsync();
+        traceChunks = mockApi.Traces;
+        traceChunks.Should().HaveCount(3);
+        traceChunks[2].Should().HaveCount(2);
+        traceChunks[2][0].GetTag(Tags.SdkOtlpExport).Should().Be("false");
+        traceChunks[2][1].GetTag(Tags.SdkOtlpExport).Should().BeNull();
+        traceChunks.SelectMany(chunk => chunk).Count(span => span.GetTag(Tags.SdkOtlpExport) is not null)
+                   .Should().Be(2, "each payload should carry exactly one marker");
     }
 
     [Fact]

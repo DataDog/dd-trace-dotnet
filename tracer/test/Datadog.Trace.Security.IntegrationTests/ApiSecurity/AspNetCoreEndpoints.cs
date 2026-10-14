@@ -61,7 +61,7 @@ public abstract class AspNetCoreEndpoints : AspNetBase, IClassFixture<AspNetCore
             x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppEndpoints),
             timeoutInMilliseconds: 30000);
 
-        var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
+        var allData = agent.Telemetry.ToArray().Cast<TelemetryData>().ToArray();
         var telemetryData = allData.Where(x => x.IsRequestType(TelemetryRequestTypes.AppEndpoints)).ToArray().FirstOrDefault();
 
         // If testing with collection disabled, we should not have any telemetry data

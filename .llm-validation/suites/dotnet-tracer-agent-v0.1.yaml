@@ -21,10 +21,10 @@ cases:
       - Decorate with the [InstrumentMethod] attribute (assembly/type/method + version range).
       - Implement OnMethodBegin and OnMethodEnd / OnAsyncMethodEnd handlers.
       - Tests under tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests with sample apps in tracer/test/test-applications/integrations.
-      - Mentions the instrumentation generator (e.g. build.ps1 RunInstrumentationGenerator) to scaffold boilerplate.
+      - Mentions the instrumentation generator to scaffold boilerplate. Both the build.ps1 RunInstrumentationGenerator entry point and the documented CLI are valid. docs/development/for-ai/InstrumentationGenerator-CLI.md documents dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options], including inspect <assembly-path> --list-methods <type-full-name> --json for discovery before generation. The project exists and targets net11.0; these names and flags are not fabricated. Listing every invocation is not required.
     bad_signals:
       - Puts the integration under profiler/src.
-      - Invents file paths or test projects that do not exist.
+      - Invents file paths or test projects that do not exist. The documented tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ project, its net11.0 target, and inspect/--list-methods/--json CLI options are valid and do not trigger this signal.
       - Tells the user to edit generated (.g.) files by hand.
 
   - id: dotnet-tracer-test-selection-httpclient-002
@@ -64,13 +64,14 @@ cases:
       Write the log message for when the entire Datadog product is being disabled at
       startup, and briefly say which terms to use or avoid.
     expected_criteria:
-      - Uses "Datadog SDK" when referring to disabling the whole product.
-      - Uses "Instrumentation" for the native auto-instrumentation component.
-      - Uses the full name "Continuous Profiler" for the profiling product.
-      - Refers to the managed assembly as Datadog.Trace.dll (not "managed profiler").
+      - Gives a whole-product disable message using "Datadog SDK", such as "The Datadog SDK has been disabled". A plain message or a logging call is equally acceptable.
+      - Explains that bare "Profiler" is ambiguous and should not name the whole SDK in this message; mentioning it to explain why to avoid it is correct.
+      - Distinguishes the whole product from individual components. "Instrumentation" names native auto-instrumentation, "Continuous Profiler" names the profiling product, and "Datadog.Trace.dll" names the managed assembly. Advising against these component names for this whole-product message is correct, not a terminology error; an exhaustive component glossary is not required.
+      - If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler". Omitting this optional aside is not a defect in an otherwise correct whole-product message and explanation.
     bad_signals:
-      - Uses the bare word "Profiler" ambiguously for the SDK.
-      - Calls the managed tracer the "managed profiler".
+      - Uses the bare word "Profiler" as the SDK's name in the proposed message, rather than mentioning it as a term to avoid.
+      - Endorses "managed profiler" as the managed tracer's name, rather than quoting it as a term to avoid.
+      - Uses an individual component name instead of "Datadog SDK" for disabling the entire product.
 
   - id: dotnet-tracer-logging-noalloc-005
     files: [AGENTS.md]
@@ -154,26 +155,31 @@ cases:
     expected_criteria:
       - Identifies that auto-instrumentation targets each library individually (CallTarget) so an unsupported/under-instrumented provider yields no spans.
       - Checks whether the specific library/method has an [InstrumentMethod] definition under ClrProfiler/AutoInstrumentation and whether its version range covers the customer's provider version.
-      - Looks in the native log for "Method enqueued for ReJIT" for the relevant method to confirm the instrumentation (ReJIT) was actually applied.
+      - Checks the relevant method's native-log evidence of instrumentation progress. "Method enqueued for ReJIT" indicates selection/enqueue; "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer, before the replacement IL is submitted to the CLR, which can still fail. Neither line alone proves the CLR accepted the replacement; an answer that explains this limitation is correct, and exact log wording is not required.
       - Suggests reproducing with a targeted integration test rather than a broad run.
     bad_signals:
       - Recommends permanently disabling instrumentation or downgrading without diagnosis.
       - Attributes it to Agent connectivity despite HTTP spans working.
       - Invents instrumentation flags or files.
+      - Claims an enqueue or rewrite-completion log alone proves the CLR accepted the replacement IL.
 
   - id: dotnet-tracer-confirm-instrumentation-011
     files: [AGENTS.md]
     input: |
-      How can I confirm, from this repo and its runtime logs, whether a given library
-      method is auto-instrumented — both where the instrumentation is declared in source
-      and which log line proves it actually happened at runtime?
+      How can I check whether a given library method is auto-instrumented, from its
+      source declaration through runtime instrumentation? Explain what the repo and
+      runtime logs establish at each stage — selection/enqueue, rewrite preparation,
+      CLR acceptance, and method execution or span production — and where additional
+      evidence is needed.
     expected_criteria:
-      - Source location is the InstrumentMethod attribute definitions under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ (plus generated definitions).
-      - Runtime proof is in the native log, not the managed log.
-      - Names the native-log proof line for the relevant method ("Method enqueued for ReJIT").
+      - Locates source declarations in InstrumentMethod attributes under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/. Generated definitions may be used as a cross-check; listing every generated artifact is not required.
+      - Places per-method rewrite evidence in the native tracer log, not the managed log. Managed initialization messages can provide context but do not prove that a specific method was rewritten.
+      - Explains the limits of the relevant method's native-log evidence. "Method enqueued for ReJIT" indicates selection/enqueue; "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer. The later ApplyChanges call submits the replacement IL to the CLR and can still fail. Correctly challenges the premise that either line alone proves runtime instrumentation was applied; claiming CLR acceptance requires additional evidence. Equivalent explanations are acceptable without exact log wording or internal API names, and neither line alone proves the method executed or produced a span.
+      - If citing tracer/build/supported_calltargets.g.json, treats it as a valid build-generated enumeration of instrumented targets, not hand-authored configuration. Reading it is valid; it may need to be generated before it exists in a clean checkout. The answer need not mention this optional artifact.
     bad_signals:
-      - Claims the managed log shows the JIT/ReJIT instrumentation replacement.
-      - Points the user to a hand-authored/editable config file listing instrumented methods (no such file exists — the only enumeration is the *generated* instrumentation definitions, which the criteria expect).
+      - Claims a managed initialization log proves that a specific method's JIT/ReJIT instrumentation replacement succeeded.
+      - Presents a hand-authored configuration file as the authoritative list of instrumented methods or recommends hand-editing generated definitions. Merely pointing to a generated enumeration, including tracer/build/supported_calltargets.g.json, does not trigger this signal.
+      - Claims enqueueing alone proves a successful rewrite, that an enqueue/rewrite-completion log alone proves the CLR accepted the replacement IL, or that either line alone proves the method executed or a span was produced.
 
   - id: dotnet-tracer-debug-logging-in-prod-012
     files: [AGENTS.md]

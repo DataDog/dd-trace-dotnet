@@ -330,6 +330,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/DataDog", 200 }, // Contains child actions
             { "/DataDog/DogHouse", 200 }, // Contains child actions
             { "/DataDog/DogHouse/Woof", 200 }, // Contains child actions
+            { "/SyncParent", 200 }, // Child action without an MVC parent span: must not name the request
             { "/", 200 },
             { "/Home", 200 },
             { "/Home/Index", 200 },

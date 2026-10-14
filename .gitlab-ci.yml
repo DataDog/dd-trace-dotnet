@@ -41,6 +41,9 @@ variables:
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
   SLS_CI_BRANCH: main
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
+  # Build OpenTelemetry Operator-compatible .NET images through one-pipeline.
+  CI_OTEL_OPERATOR_IMAGES_ENABLED: "true"
+  CI_OTEL_OPERATOR_LANGUAGE: dotnet
 
 "llm validation":
   variables:
