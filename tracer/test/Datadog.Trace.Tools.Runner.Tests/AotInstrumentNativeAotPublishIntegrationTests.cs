@@ -253,6 +253,9 @@ public class AotInstrumentNativeAotPublishIntegrationTests
             Skip.If(publishExit != 0 && publishOutput.Contains("Platform linker", StringComparison.OrdinalIgnoreCase), "The NativeAOT toolchain isn't available.");
             publishExit.Should().Be(0, publishOutput);
             publishOutput.Should().Contain("Datadog NativeAOT instrumentation:").And.Contain("Datadog.Trace.Manual");
+
+            // ILC compiles the methods it can't compile to throw (with ILC 8, the OTLP JSON export did, H-73).
+            publishOutput.Should().NotMatchRegex(@"Method '\[Datadog\.Trace\][^']*' will always throw");
             var executable = Path.Combine(published, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "PkgAot.exe" : "PkgAot");
             _output.WriteLine($"Binary size: {new FileInfo(executable).Length} bytes");
             new FileInfo(executable).Length.Should().BeLessThan(BinarySizeBudget, "the instrumentation must not grow the binary unnoticed (raise the budget when it's expected)");
