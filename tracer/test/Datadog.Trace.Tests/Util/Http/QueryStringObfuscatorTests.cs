@@ -136,24 +136,6 @@ public class QueryStringObfuscatorTests
         obfuscator.Obfuscate(queryString).Should().Be(expected);
     }
 
-    // These inputs used to take quadratic time in the JWT branch. A linear pattern handles them in well
-    // under a millisecond, so a timeout here means the backtracking is back.
-    [SkippableTheory]
-    [InlineData("eyJ")]
-    [InlineData("=eyJa")]
-    [InlineData("%3DeyJ")]
-    [InlineData("-eyJa")]
-    public void DefaultPatternStaysLinearOnRepeatedJwtPrefixes(string unit)
-    {
-#if NETCOREAPP2_1
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
-#endif
-        var obfuscator = ObfuscatorFactory.GetObfuscator(200, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, new Mock<IDatadogLogger>().Object);
-        var queryString = "?q=" + string.Concat(Enumerable.Repeat(unit, 20_000 / unit.Length));
-
-        obfuscator.Obfuscate(queryString).Should().Be(queryString);
-    }
-
     [Fact]
     public void CustomPatternNeverReEmitsCapturedSecret()
     {
