@@ -86,7 +86,6 @@ services:
     ports:
     - "8081:8081"
     - "8082:8082"
-    - "8083:8083"
     depends_on:
     - test-agent.windows
     environment:
