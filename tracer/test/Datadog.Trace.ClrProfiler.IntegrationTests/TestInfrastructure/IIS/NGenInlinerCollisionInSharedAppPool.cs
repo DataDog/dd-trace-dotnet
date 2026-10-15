@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS;
 public class NGenInlinerCollisionInSharedAppPool(ITestOutputHelper output)
 {
     private const string Url = "http://localhost:8083";
+    private const string WarmupUrl = "http://localhost:8081";
     private const string RewrittenLogEntry = "CallTarget_RewriterCallback() Finished: NGenInlinerCollision.Targets.M0001";
 
     [SkippableFact]
@@ -50,13 +51,14 @@ public class NGenInlinerCollisionInSharedAppPool(ITestOutputHelper output)
         var logDirectory = Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), "MultipleAppsInDomain");
         using var logEntryWatcher = new LogEntryWatcher("dotnet-tracer-native-*", logDirectory, output);
 
-        // wait for server to be ready to receive requests
+        // Warm up the worker process through another site in the app pool. The warmup ignores failed requests, so it
+        // must not start this site's AppDomain, which starts the lookup that crashed.
         while (intervals-- > 0)
         {
             try
             {
-                output.WriteLine($"Sending warmup request to {Url}");
-                var serverReadyResponse = await client.GetAsync(Url);
+                output.WriteLine($"Sending warmup request to {WarmupUrl}");
+                var serverReadyResponse = await client.GetAsync(WarmupUrl);
                 serverReady = serverReadyResponse.StatusCode == HttpStatusCode.OK;
             }
             catch
