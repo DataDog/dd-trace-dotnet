@@ -5,10 +5,10 @@
 
 #if (NET8_0_OR_GREATER || NETFRAMEWORK) && !DEFAULT_SAMPLES
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,31 +23,13 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
     {
     }
 
-    public static IEnumerable<object[]> GetData()
-    {
-        foreach (var version in NUnit5Tests.GetVersions())
-        {
-            // EVP version to remove, expects gzip
-            yield return [version[0], "evp_proxy/v2", true];
-            yield return [version[0], "evp_proxy/v4", false];
-        }
-    }
-
-    public static IEnumerable<object[]> GetTestManagementData()
-    {
-        foreach (var row in GetData())
-        {
-            // Quarantined tests are hidden by the test command; attempt to fix tests by the retry behavior.
-            yield return [.. row, false];
-            yield return [.. row, true];
-        }
-    }
-
     [SkippableTheory]
-    [MemberData(nameof(GetData))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task ReportsSkippedFixtureAndPreservesPrerequisites(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+    public async Task ReportsSkippedFixtureAndPreservesPrerequisites(
+        [PackageVersionData(nameof(PackageVersions.NUnit), minInclusive: "5.0.0")] string packageVersion,
+        [CombinatorialValues("evp_proxy/v2", "evp_proxy/v4")] string evpVersionToRemove)
     {
         const string SkippableTestsJson = """
                                           {"data":[
@@ -60,7 +42,7 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
         await ExecuteTestAsync(
                 packageVersion,
                 evpVersionToRemove,
-                expectedGzip,
+                ExpectsGzip(evpVersionToRemove),
                 new TestScenario(
                     nameof(NUnit5EvpTests),
                     "dependencies_with_itr",
@@ -97,11 +79,14 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
     }
 
     [SkippableTheory]
-    [MemberData(nameof(GetTestManagementData))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "QuarantinedTests")]
-    public async Task QuarantineHidesOnlyFailuresFromNUnitDependencies(string packageVersion, string evpVersionToRemove, bool expectedGzip, bool attemptToFix)
+    public async Task QuarantineHidesOnlyFailuresFromNUnitDependencies(
+        [PackageVersionData(nameof(PackageVersions.NUnit), minInclusive: "5.0.0")] string packageVersion,
+        [CombinatorialValues("evp_proxy/v2", "evp_proxy/v4")] string evpVersionToRemove,
+        bool attemptToFix)
     {
         const string TestManagementJson = """
                                           {"data":{"id":"nunit5-quarantine","type":"ci_app_libraries_tests","attributes":{"modules":{"Samples.NUnitTests":{"suites":{
@@ -119,7 +104,7 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
         await ExecuteTestAsync(
                 packageVersion,
                 evpVersionToRemove,
-                expectedGzip,
+                ExpectsGzip(evpVersionToRemove),
                 new TestScenario(
                     nameof(NUnit5EvpTests),
                     attemptToFix ? "dependencies_with_attempt_to_fix" : "dependencies_with_quarantine",
@@ -152,6 +137,9 @@ public class NUnit5EvpTests : TestingFrameworkEvpTest
                     arguments: $"/TestCaseFilter:{Filter} {NUnit5Tests.RunFixturesSequentially}"))
            .ConfigureAwait(false);
     }
+
+    // Removing evp_proxy/v2 leaves evp_proxy/v4, which compresses payloads.
+    private static bool ExpectsGzip(string evpVersionToRemove) => evpVersionToRemove == "evp_proxy/v2";
 }
 
 #endif

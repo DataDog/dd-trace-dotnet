@@ -5,11 +5,10 @@
 
 #if (NET8_0_OR_GREATER || NETFRAMEWORK) && !DEFAULT_SAMPLES
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -31,22 +30,11 @@ public class NUnit5Tests : TestingFrameworkTest
     {
     }
 
-    public static IEnumerable<object[]> GetVersions() => PackageVersions.NUnit.Where(v => ((string)v[0]).StartsWith("5.", StringComparison.Ordinal));
-
-    public static IEnumerable<object[]> GetFilteredSkipData()
-    {
-        foreach (var version in GetVersions())
-        {
-            yield return [version[0], "FullyQualifiedName~Samples.NUnit5Tests.DependentFixture.SkippedFixtureCase", "SkippedFixtureCase", 2];
-            yield return [version[0], "FullyQualifiedName=Samples.NUnit5Tests.DependentFixture.IgnoredFixtureCase", "IgnoredFixtureCase", 1];
-        }
-    }
-
     [SkippableTheory]
-    [MemberData(nameof(GetVersions))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task ReportsDependencySkipsAndAggregatedResults(string packageVersion)
+    public async Task ReportsDependencySkipsAndAggregatedResults([PackageVersionData(nameof(PackageVersions.NUnit), minInclusive: "5.0.0")] string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -74,10 +62,10 @@ public class NUnit5Tests : TestingFrameworkTest
     }
 
     [SkippableTheory]
-    [MemberData(nameof(GetVersions))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task FilterIncludesPrerequisite(string packageVersion)
+    public async Task FilterIncludesPrerequisite([PackageVersionData(nameof(PackageVersions.NUnit), minInclusive: "5.0.0")] string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -92,11 +80,15 @@ public class NUnit5Tests : TestingFrameworkTest
     }
 
     [SkippableTheory]
-    [MemberData(nameof(GetFilteredSkipData))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task FilterExcludesUnselectedDependencySkippedCases(string packageVersion, string filter, string selectedName, int selectedCount)
+    public async Task FilterExcludesUnselectedDependencySkippedCases(
+        [PackageVersionData(nameof(PackageVersions.NUnit), minInclusive: "5.0.0")] string packageVersion,
+        [CombinatorialValues("SkippedFixtureCase", "IgnoredFixtureCase")] string selectedName)
     {
+        var filter = $"FullyQualifiedName~Samples.NUnit5Tests.DependentFixture.{selectedName}";
+        var selectedCount = selectedName == "SkippedFixtureCase" ? 2 : 1;
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy")).ToArray();
