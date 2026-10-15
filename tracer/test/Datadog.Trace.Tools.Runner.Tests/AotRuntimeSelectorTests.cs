@@ -24,6 +24,13 @@ public class AotRuntimeSelectorTests
     [InlineData("10.0.0", "8.0.31", "8.0.31,9.0.20", null)] // none can load the application's assemblies
     [InlineData("9.0.0", "8.0.31", "", null)]
     public void SelectsTheRuntimeOfTheApplication(string target, string current, string installed, string? expected)
-        => AotRuntimeSelector.Select(Version.Parse(target), Version.Parse(current), installed.Split(',', StringSplitOptions.RemoveEmptyEntries)).Should().Be(expected);
+        => AotRuntimeSelector.Select(Version.Parse(target), Version.Parse(current), installed.Split(',', StringSplitOptions.RemoveEmptyEntries), runnerMajor: 8).Should().Be(expected);
+
+    [Theory]
+    [InlineData("8.0.0", "11.0.0", "8.0.31,10.0.5,11.0.0", "10.0.5")] // the closest one the runner runs on
+    [InlineData("8.0.0", "10.0.5", "8.0.31,10.0.5,11.0.0", null)] // already on it
+    [InlineData("8.0.0", "11.0.0", "8.0.31,11.0.0", null)]
+    public void NeverSelectsARuntimeOlderThanTheRunnerTargets(string target, string current, string installed, string? expected)
+        => AotRuntimeSelector.Select(Version.Parse(target), Version.Parse(current), installed.Split(',', StringSplitOptions.RemoveEmptyEntries), runnerMajor: 10).Should().Be(expected);
 }
 #endif
