@@ -1785,7 +1785,7 @@ partial class Build
     /// <summary>
     /// The samples of the execution benchmarks (tracer/build/timeit) published with NativeAOT: without the tracer (their
     /// baseline) and instrumented at build time with the tracer home (its native tracer, Datadog.Trace and libdatadog), into
-    /// artifacts/publish/Samples.X/nativeaot_{baseline,instrumented}_net8.0. CI publishes them on a hosted Windows agent
+    /// artifacts/publish/Samples.X/nativeaot_{baseline,instrumented}_{net8.0,net10.0}. CI publishes them on a hosted Windows agent
     /// (NativeAOT needs the C++ toolchain) for the execution benchmark agents.
     /// </summary>
     Target PublishNativeAotExecutionBenchmarkSamples => _ => _
@@ -1813,7 +1813,7 @@ partial class Build
 
             var helpers = TracerDirectory / "build" / "timeit" / "NativeAot";
             var aotTargets = TracerDirectory / "src" / "Datadog.Trace.Aot" / "build" / "Datadog.Trace.Aot.targets";
-            var frameworks = new string[] { TargetFramework.NET8_0 };
+            var frameworks = new string[] { TargetFramework.NET8_0, TargetFramework.NET10_0 };
             foreach (var sample in new[] { "Samples.HttpMessageHandler", "Samples.FakeDbCommand" })
             foreach (var framework in frameworks)
             foreach (var instrumented in new[] { false, true })
