@@ -1875,6 +1875,14 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Maximum number of threads sampled per wall-time collection interval.
+  DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '2000'
+    product: Profiler
+    documentation: |-
+      Change StackSamplerLoop thread startup timeout (in ms). Used only in testing to force a failure.
   DD_INTERNAL_SKIP_METHOD_BODY_ENABLED:
   - implementation: A
     scope: native
