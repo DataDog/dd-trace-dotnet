@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO.MemoryMappedFiles;
 using System.Threading;
 using Datadog.Trace.Logging;
 
@@ -20,6 +21,10 @@ internal partial class CircularChannel
         private readonly ManualResetEventSlim _pollingThreadFinishEvent;
         private readonly Thread _pollingThread;
         private readonly CircularChannel _channel;
+
+        // Mapped once and reused for the lifetime of the reader. Creating a view maps the whole buffer, which
+        // is far too slow to do while holding the cross-process mutex on every poll.
+        private readonly MemoryMappedViewAccessor _accessor;
         private Action<ArraySegment<byte>>? _callback;
         private long _disposed;
 
@@ -28,6 +33,7 @@ internal partial class CircularChannel
             _channel = channel;
             _callback = null;
             _disposed = 0;
+            _accessor = channel._mmf.CreateViewAccessor();
             _pollingThreadFinishEvent = new ManualResetEventSlim();
             _pollingThread = new Thread(PollForMessages) { IsBackground = true };
             _pollingThread.Start();
@@ -66,31 +72,41 @@ internal partial class CircularChannel
                 return;
             }
 
-            try
+            // Decide whether there is anything to read _before_ taking the cross-process mutex. Taking it on
+            // every poll starves writers in other processes, which is how coverage messages get dropped.
+            // Only the decision to lock uses this unsynchronized read - both pointers are read again under
+            // the mutex below, so a stale "empty" just defers the message to the next poll and a stale
+            // "not empty" costs one wasted lock. Both pointers are aligned 16-bit values, so neither read
+            // can tear, and the read pointer is only ever written by this thread.
+            if (_accessor.ReadUInt16(0) == _accessor.ReadUInt16(2))
             {
-                var hasHandle = _channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-                if (!hasHandle)
-                {
-                    Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
-                    return;
-                }
-            }
-            catch (AbandonedMutexException ex)
-            {
-                Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
                 return;
             }
-            catch (ObjectDisposedException ex)
+
+            var acquisition = _channel.WaitForMutex();
+            if (acquisition == MutexAcquisition.Abandoned)
+            {
+                // A previous owner died while holding the mutex. The wait still succeeded and we own the
+                // mutex now, so keep going and let the finally below release it. Bailing out here would
+                // leak ownership and stop every process from ever using this channel again.
+                Log.Warning("CircularChannel.Reader: Mutex was abandoned by a previous owner. Recovering ownership.");
+            }
+            else if (acquisition == MutexAcquisition.Disposed)
             {
                 // The mutex was disposed, nothing to do
-                Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
+                Log.Error("CircularChannel.Reader: Mutex has been disposed.");
+                return;
+            }
+            else if (acquisition != MutexAcquisition.Acquired)
+            {
+                Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
                 return;
             }
 
             object? messagesToHandle = null;
             try
             {
-                using var accessor = _channel._mmf.CreateViewAccessor();
+                var accessor = _accessor;
                 var writePos = accessor.ReadUInt16(0);
                 var readPos = accessor.ReadUInt16(2);
                 while (readPos != writePos)
@@ -167,15 +183,7 @@ internal partial class CircularChannel
             }
             finally
             {
-                try
-                {
-                    _channel._mutex.ReleaseMutex();
-                }
-                catch (ObjectDisposedException ex)
-                {
-                    // The mutex was disposed, nothing to do
-                    Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
-                }
+                _channel.ReleaseMutex();
             }
 
             // Once we have released the mutex, we can safely handle the messages
@@ -228,6 +236,10 @@ internal partial class CircularChannel
 
             _pollingThreadFinishEvent.Set();
             _pollingThread.Join();
+
+            // Safe to drop the view now the polling thread has stopped using it, and before the channel
+            // disposes the memory mapped file it came from.
+            _accessor.Dispose();
             _callback = null;
         }
     }
