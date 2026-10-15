@@ -836,12 +836,10 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     {
         Log::Error("One or multiple services failed to start after a delay. Stopping all services.");
 
-        {
-            std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
-            _isServicesShutdown = true;
-        }
-
-        StopEventPipeSession();
+        // The callbacks (EventPipe, exceptions, thread lifetime) keep being called by the CLR and only check
+        // IsProfilerStarted() before creating samples. Make it return false *before* stopping the services:
+        // otherwise, samples would keep accumulating in the providers while the SamplesCollector is stopped.
+        _pSsiManager->OnDelayedStartFailed();
         StopServices();
 
         Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler.");
@@ -928,15 +926,6 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
     return true;
 }
 
-void CorProfilerCallback::StopEventPipeSession()
-{
-    auto* pInfo = _pCorProfilerInfoEvents;
-    if (pInfo != nullptr && _session != 0)
-    {
-        pInfo->EventPipeStopSession(_session);
-        _session = 0;
-    }
-}
 
 void CorProfilerCallback::StartEtwCommunication()
 {
@@ -1071,21 +1060,16 @@ void CorProfilerCallback::DisposeInternal()
         ProfilerEngineStatus::WriteIsProfilerEngineActive(false);
         _isInitialized.store(false);
 
-        {
-            // Wait for all guarded callbacks that were already in flight, then permanently reject
-            // new ones before stopping EventPipe/ETW or releasing any of their dependencies.
-            // Do not hold the exclusive lock while stopping the sessions: those calls may cause
-            // reentrant callbacks, which will now fail their non-blocking EngineActiveGuard.
-            std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
-            _isServicesShutdown = true;
-        }
-
-        StopEventPipeSession();
-
-        // Release the CLR events interface if any
+        // Don't forget to stop the CLR events session if any
         auto* pInfo = _pCorProfilerInfoEvents;
         if (pInfo != nullptr)
         {
+            if (_session != 0)
+            {
+                pInfo->EventPipeStopSession(_session);
+                _session = 0;
+            }
+
             pInfo->Release();
             _pCorProfilerInfoEvents = nullptr;
         }
@@ -1097,9 +1081,14 @@ void CorProfilerCallback::DisposeInternal()
         }
 
         {
-            // _isServicesShutdown was published under this mutex before the event sessions were
-            // stopped, so guarded callbacks can no longer access the services being destroyed.
+            // _isServicesShutdown must be set to true before this lock releases, not after - see
+            // EngineActiveGuard.h. From this point on, no EngineActiveGuard can ever report
+            // IsActive() again (the mutex's own synchronizes-with guarantee ensures every future
+            // lock acquisition, on any thread, observes _isServicesShutdown == true), so no guarded
+            // ICorProfilerCallback method can race DisposeServices() below, or run after it and
+            // find already-destroyed service pointers.
             std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
+            _isServicesShutdown = true;
             DisposeServices();
         }
 
@@ -2825,12 +2814,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
-    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
-    if (!engineGuard.IsActive())
-    {
-        return S_OK;
-    }
-
     if (_pEventPipeEventsManager != nullptr && _pSsiManager->IsProfilerStarted())
     {
         _pEventPipeEventsManager->ParseEvent(
@@ -2853,12 +2836,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider)
 {
-    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
-    if (!engineGuard.IsActive())
-    {
-        return S_OK;
-    }
-
     if (_pCorProfilerInfoEvents == nullptr)
     {
         return S_OK;

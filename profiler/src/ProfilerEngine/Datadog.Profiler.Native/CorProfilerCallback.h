@@ -252,7 +252,7 @@ private :
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
-    // Synchronizes guarded callback access to EventPipe state, the services below, and the engine lifetime flag.
+    // Synchronizes access to the services below, and the engine lifetime flag.
     mutable std::shared_mutex _engineLifetimeMutex;
     bool _isServicesShutdown = false;
 
@@ -345,7 +345,6 @@ private:
     bool StartServices();
     bool StopServices();
     void StartEtwCommunication();
-    void StopEventPipeSession();
 
     template <class T, typename... ArgTypes>
     T* RegisterService(ArgTypes&&... args)

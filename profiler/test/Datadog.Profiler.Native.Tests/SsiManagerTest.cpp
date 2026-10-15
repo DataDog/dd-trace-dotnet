@@ -114,6 +114,50 @@ TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
     ASSERT_EQ(manager.IsProfilerStarted(), true);
 }
 
+TEST(SsiManagerTest, Should_NotBeStarted_When_DelayedStartFailed_And_ManuallyEnabled)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyEnabled));
+
+    SsiLifetimeForTest lifetime;
+
+    SsiManager manager(configuration.get(), &lifetime);
+    manager.ProcessStart();
+    ASSERT_EQ(manager.IsProfilerStarted(), true);
+
+    manager.OnDelayedStartFailed();
+
+    // still enabled by configuration, but the services are stopped: no sample must be created anymore
+    ASSERT_EQ(manager.IsProfilerEnabled(), true);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
+}
+
+TEST(SsiManagerTest, Should_NotBeStarted_When_DelayedStartFailed_And_HeuristicsTriggered)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms)); // simulate long lived
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
+
+    SsiLifetimeForTest lifetime;
+
+    SsiManager manager(configuration.get(), &lifetime);
+    manager.ProcessStart();
+    manager.OnSpanCreated();
+
+    // wait for the timer to finish
+    std::this_thread::sleep_for(100ms);
+    ASSERT_EQ(manager.IsProfilerStarted(), true);
+
+    manager.OnDelayedStartFailed();
+
+    // the heuristics are still triggered, but the services are stopped: no sample must be created anymore
+    ASSERT_EQ(manager.GetSkipProfileHeuristic(), SkipProfileHeuristicType::AllTriggered);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
+}
+
 TEST(SsiManagerTest, Should_NotStart_When_NotDeployAsSSI_WithStableConfiguration)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();

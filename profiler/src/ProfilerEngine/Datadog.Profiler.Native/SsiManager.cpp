@@ -29,7 +29,8 @@ SsiManager::SsiManager(IConfiguration* pConfiguration, ISsiLifetime* pSsiLifetim
     _pConfiguration(pConfiguration),
     _deploymentMode{pConfiguration->GetDeploymentMode()},
     _longLivedThreshold{pConfiguration->GetSsiLongLivedThreshold()},
-    _isStableConfigurationSet{false}
+    _isStableConfigurationSet{false},
+    _hasDelayedStartFailed{false}
 {
 }
 
@@ -174,6 +175,13 @@ bool SsiManager::IsProfilerEnabled()
 //  or - Stable Configuration enabled status is provided by managed layer + is enabled via SSI + runs for more than 30 seconds + has at least one span
 bool SsiManager::IsProfilerStarted()
 {
+    // the services are stopped and will never be restarted: CLR events must not be turned into samples anymore
+    // because nobody would collect them (unbounded memory growth and, on Windows, leaked thread handles)
+    if (_hasDelayedStartFailed.load())
+    {
+        return false;
+    }
+
     auto enablementStatus = GetCurrentEnabledStatus();
     if (enablementStatus == EnablementStatus::Standby)
     {
@@ -183,6 +191,11 @@ bool SsiManager::IsProfilerStarted()
 
     return (enablementStatus == EnablementStatus::ManuallyEnabled) ||
            ((enablementStatus == EnablementStatus::Auto) && IsLongLived() && IsSpanCreated());
+}
+
+void SsiManager::OnDelayedStartFailed()
+{
+    _hasDelayedStartFailed.store(true);
 }
 
 void SsiManager::ProcessStart()

@@ -26,6 +26,9 @@ public:
     // started if manually enabled (DD_PROFILING_ENABLED=true) or enabled by SII and triggered heuristics (long lived + spans)
     virtual bool IsProfilerStarted() = 0;
 
+    // called when the delayed start of the services failed: IsProfilerStarted() will then always return false
+    virtual void OnDelayedStartFailed() = 0;
+
     // send metrics
     virtual void ProcessStart() = 0;
     virtual void ProcessEnd() = 0;
