@@ -198,6 +198,68 @@ NativeAOT specifics in the tracer:
   stack trace data (`DiagnosticMethodInfo` in .NET 9+, the frame's text in .NET 8) for RASP and IAST;
 - file and line in stack frames need .NET 11 and `StackTraceLineNumberSupport` (the package enables it).
 
+## Not supported yet
+
+### OpenTelemetry thread context (OTEP 4947)
+
+`DD_TRACE_OTEL_CTX_ENABLED` (opt-in, Linux) publishes the active span of each thread for external readers, such as the
+OpenTelemetry eBPF profiler (see [OTelContextPropagation.md](../OTelContextPropagation.md)). Readers look up the ELF TLS
+symbol `otel_thread_ctx_v1` in the dynamic symbol table of the process's modules. Under JIT, `Datadog.Tracer.Native.so`
+defines it (`otel_thread_ctx.cpp`) along with `GetOrCreateOtelThreadContextRecord`. That function rents each thread's
+record and returns it to a pool when the thread exits (a `pthread_key` destructor). The managed tracer owns the record
+layout and every write (`OtelThreadContextRecord`). A NativeAOT application doesn't load the native tracer:
+`OtelThreadContextPublisher.Create` logs that instrumentation isn't attached and returns the null publisher.
+
+The native part can't move to C#:
+
+- NativeAOT can't define an ELF TLS symbol or export data. A `[ThreadStatic]` lives in the runtime's TLS block, which has
+  no symbol of its own, and `UnmanagedCallersOnly(EntryPoint = ...)` exports functions only.
+- The record goes back to the pool from a `pthread_key` destructor while the thread exits. NativeAOT detaches the thread
+  from the runtime in its own thread-exit callback, in no order relative to that destructor, so managed code can't run
+  there (a reverse P/Invoke would attach the thread again).
+
+A NativeAOT application is already a native executable, so the solution is to link that code into it, with nothing to
+deploy next to the application:
+
+1. **Static library.** Build `otel_thread_ctx.cpp`, unchanged, as a static library for `linux-x64` and `linux-arm64`
+   (e.g. `libDatadog.OtelThreadContext.a`), with `-fPIC` (NativeAOT executables are position independent) and the same
+   TLS dialect probe as the shared target. The JIT build keeps it in the shared target. The file only needs pthreads and
+   `posix_memalign`, resolved when the application is linked, so one archive per architecture should serve glibc and musl:
+   check it on Alpine.
+2. **Package.** `Datadog.Trace.Aot` ships the archives outside `runtimes/` (NuGet copies `runtimes/<RID>/native` next to
+   the published application), e.g. `build/native/<RID>/`, collected by `BuildNativeAotNuget` from the tracer home.
+3. **Targets.** For Linux RIDs, `Datadog.Trace.Aot.targets` links the archive and binds the one P/Invoke to it directly
+   (the other `Datadog.Tracer.Native` P/Invokes stay unresolved, as now):
+
+   ```xml
+   <NativeLibrary Include="$(MSBuildThisFileDirectory)native/$(RuntimeIdentifier)/libDatadog.OtelThreadContext.a" />
+   <DirectPInvoke Include="Datadog.Tracer.Native!GetOrCreateOtelThreadContextRecord" />
+   <LinkerArg Include="-Wl,--dynamic-list=$(MSBuildThisFileDirectory)native/otel_thread_ctx.list" />
+   <RuntimeHostConfigurationOption Include="Datadog.Trace.OtelThreadContext.IsLinked" Value="true" Trim="true" />
+   ```
+
+   An executable doesn't export its symbols, whatever their visibility: the linker has to add `otel_thread_ctx_v1` to the
+   dynamic symbol table. The OTEP advises `--export-dynamic-symbol` for executables, which needs GNU ld 2.35 or later;
+   `--dynamic-list` (a file with `{ otel_thread_ctx_v1; };`) does the same with older linkers. A static archive member is
+   only linked when something references it: the direct P/Invoke does.
+4. **Tracer.** `OtelThreadContextPublisher.Create` also accepts a NativeAOT application whose build linked the library
+   (the `Datadog.Trace.OtelThreadContext.IsLinked` switch) instead of requiring the profiler. ILC treats the switch as a
+   constant, so the applications without the library don't keep that code.
+
+In an executable, the linker relaxes the TLS access to local-exec, which the OTEP requires readers to handle. The slot
+is then in the executable's static TLS block, without the static TLS surplus limit of a library loaded with `dlopen`.
+
+To validate:
+
+- `readelf --dyn-syms -W <application> | grep otel_thread_ctx_v1` shows an 8-byte `TLS GLOBAL DEFAULT` symbol, and
+  `readelf -r` the access model the linker produced;
+- `OtelThreadContextTests` with the sample published with NativeAOT. The sample resolves the slot's address with
+  `dlsym` on `Datadog.Tracer.Native.so`; in NativeAOT, it uses the executable's own handle (`dlopen(NULL)`). The test
+  then reads the record from another process and compares it with the spans;
+- the process context announcement (`OtelProcessContextAnnouncer`, through libdatadog, which the package ships);
+- a real reader, such as the [`ctx-sharing-demo` reader](https://github.com/scottgerring/ctx-sharing-demo/tree/main/context-reader)
+  or the OpenTelemetry eBPF profiler, on x64 and arm64, glibc and musl.
+
 ## Testing
 
 | What | Where |
