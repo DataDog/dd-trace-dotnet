@@ -586,6 +586,7 @@ public class CompareExecutionTime
         ExecutionTimeFramework.Net6 => ".NET 6",
         ExecutionTimeFramework.Net8 => ".NET 8",
         ExecutionTimeFramework.Net8NativeAot => ".NET 8 NativeAOT",
+        ExecutionTimeFramework.Net10NativeAot => ".NET 10 NativeAOT",
         _ => throw new NotImplementedException(),
     };
 
@@ -597,6 +598,7 @@ public class CompareExecutionTime
             ("results_Samples.FakeDbCommand.windows.net60.json", ExecutionTimeFramework.Net6),
             ("results_Samples.FakeDbCommand.windows.net80.json", ExecutionTimeFramework.Net8),
             ("results_Samples.FakeDbCommand.windows.net80.nativeaot.json", ExecutionTimeFramework.Net8NativeAot),
+            ("results_Samples.FakeDbCommand.windows.net100.nativeaot.json", ExecutionTimeFramework.Net10NativeAot),
         }),
         ("execution_time_benchmarks_windows_x64_HttpMessageHandler_1", ExecutionTimeSample.HttpMessageHandler, new[] { 
             ("results_Samples.HttpMessageHandler.windows.net48.json", ExecutionTimeFramework.NetFramework),
@@ -604,6 +606,7 @@ public class CompareExecutionTime
             ("results_Samples.HttpMessageHandler.windows.net60.json", ExecutionTimeFramework.Net6),
             ("results_Samples.HttpMessageHandler.windows.net80.json", ExecutionTimeFramework.Net8),
             ("results_Samples.HttpMessageHandler.windows.net80.nativeaot.json", ExecutionTimeFramework.Net8NativeAot),
+            ("results_Samples.HttpMessageHandler.windows.net100.nativeaot.json", ExecutionTimeFramework.Net10NativeAot),
         }),
     };
 
@@ -702,6 +705,7 @@ public class CompareExecutionTime
         Net6,
         Net8,
         Net8NativeAot,
+        Net10NativeAot,
     }
 }
 

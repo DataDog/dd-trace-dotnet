@@ -1,0 +1,45 @@
+{
+  "enableDatadog": true,
+  "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.net100.nativeaot.json",
+  "warmUpCount": 5,
+  "count": 180,
+  "acceptableRelativeWidth": 0.005,
+  "services": [
+    {
+      "name": "Execute",
+      "options": {
+        "onScenarioStart": {
+          "processName": "cmd.exe",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)",
+          "redirectStandardOutput": true
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Baseline",
+      "isBaseline": true,
+      "processName": "$(CWD)\\..\\..\\..\\..\\artifacts\\publish\\Samples.HttpMessageHandler\\nativeaot_baseline_net10.0\\Samples.HttpMessageHandler.exe",
+      "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\publish\\Samples.HttpMessageHandler\\nativeaot_baseline_net10.0"
+    },
+    {
+      "name": "CallTarget+NativeAOT"
+    }
+  ],
+  "processName": "$(CWD)\\..\\..\\..\\..\\artifacts\\publish\\Samples.HttpMessageHandler\\nativeaot_instrumented_net10.0\\Samples.HttpMessageHandler.exe",
+  "processTimeout": 15,
+  "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\publish\\Samples.HttpMessageHandler\\nativeaot_instrumented_net10.0",
+  "pathValidations": [
+    "$(CWD)\\..\\..\\..\\..\\artifacts\\publish\\Samples.HttpMessageHandler\\nativeaot_baseline_net10.0\\Samples.HttpMessageHandler.exe",
+    "$(CWD)\\..\\..\\..\\..\\artifacts\\publish\\Samples.HttpMessageHandler\\nativeaot_instrumented_net10.0\\Samples.HttpMessageHandler.exe"
+  ],
+  "tags": {
+    "runtime.architecture": "x64",
+    "runtime.name": ".NET Core",
+    "runtime.version": "10.0",
+    "benchmark.job.runtime.name": ".NET 10.0 NativeAOT",
+    "benchmark.job.runtime.moniker": "net10.0"
+  }
+}
