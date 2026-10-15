@@ -88,6 +88,10 @@ public:
     inline static const shared::WSTRING TestHeapSnapshotInterval    = WStr("DD_INTERNAL_PROFILING_TEST_HEAPSNAPSHOT_INTERVAL");
     inline static const shared::WSTRING LibrariesInfoCacheStartTimeout = WStr("DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT");
 
+    // How long StackSamplerLoopManager waits for its watcher thread to be ready before giving up and
+    // failing to start. On CPU-starved machines the default can be too short: see SCP-1413.
+    inline static const shared::WSTRING WatcherStartTimeout = WStr("DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT");
+
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
     inline static const shared::WSTRING WaitHandleProfilingEnabled  = WStr("DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED");

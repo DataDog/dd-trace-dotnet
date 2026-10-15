@@ -633,7 +633,8 @@ void CorProfilerCallback::InitializeServices()
         _pClrLifetime.get(),
         _pThreadsCpuManager,
         _pStackFramesCollector.get(),
-        _metricsRegistry);
+        _metricsRegistry,
+        _pConfiguration.get());
 
     _pStackSamplerLoop = RegisterService<StackSamplerLoop>(
         _pCorProfilerInfo,
@@ -728,6 +729,12 @@ void CorProfilerCallback::InitializeServices()
         _pThreadsCpuManager,
         _pExporter.get(),
         _metricsSender.get());
+
+    // Raw samples waiting in the providers. Must stay close to zero: a growing value means samples are
+    // created but never drained by the SamplesCollector, i.e. unbounded memory growth (SCP-1413).
+    _pendingSamplesMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_pending_raw_samples", [this]() {
+        return (_pSamplesCollector != nullptr) ? static_cast<double>(_pSamplesCollector->GetPendingSamplesCount()) : 0.0;
+    });
 
     if (_pConfiguration->IsThreadLifetimeEnabled())
     {
@@ -839,7 +846,12 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         // The callbacks (EventPipe, exceptions, thread lifetime) keep being called by the CLR and only check
         // IsProfilerStarted() before creating samples. Make it return false *before* stopping the services:
         // otherwise, samples would keep accumulating in the providers while the SamplesCollector is stopped.
+        // This also prevents ETW from being started (see ThreadCreated) and endpoints from being accumulated.
         _pSsiManager->OnDelayedStartFailed();
+
+        // Note: _isServicesShutdown is deliberately NOT set here, unlike in DisposeInternal().
+        // That's a known hack/issue. Accepted for now until the refactoring @gleocadie
+        StopEventSources();
         StopServices();
 
         Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler.");
@@ -851,7 +863,7 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         // for .NET Framework, we need to start ETW communication
         if (_pEtwEventsManager != nullptr)
         {
-            StartEtwCommunication();
+            StartEtwSession();
         }
     }
 }
@@ -927,8 +939,16 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
 }
 
 
-void CorProfilerCallback::StartEtwCommunication()
+void CorProfilerCallback::StartEtwSession()
 {
+    std::lock_guard<std::mutex> lock(_etwLifetimeMutex);
+
+    // the providers are stopped: nobody would collect the samples created from ETW events
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
+        return;
+    }
+
     if (_isETWStarted)
     {
         Log::Warn("ETW communication is already started.");
@@ -941,7 +961,6 @@ void CorProfilerCallback::StartEtwCommunication()
         return;
     }
 
-    _isETWStarted = true;
     auto success = _pEtwEventsManager->Start();
     if (!success)
     {
@@ -949,7 +968,48 @@ void CorProfilerCallback::StartEtwCommunication()
 
         _pEtwEventsManager->Stop();
         _pEtwEventsManager = nullptr;
+        return;
     }
+
+    _isETWStarted = true;
+}
+
+void CorProfilerCallback::StopEtwSession()
+{
+    std::lock_guard<std::mutex> lock(_etwLifetimeMutex);
+
+    if (!_isETWStarted || (_pEtwEventsManager == nullptr))
+    {
+        return;
+    }
+
+    _pEtwEventsManager->Stop();
+    _isETWStarted = false;
+}
+
+void CorProfilerCallback::StopEventSources()
+{
+    StopEtwSession();
+
+    StopEventPipeSession();
+}
+
+void CorProfilerCallback::StopEventPipeSession()
+{
+    std::lock_guard<std::mutex> lock(_eventPipeLifetimeMutex);
+
+    if ((_session == 0) || (_pCorProfilerInfoEvents == nullptr))
+    {
+        return;
+    }
+
+    auto hr = _pCorProfilerInfoEvents->EventPipeStopSession(_session);
+    if (FAILED(hr))
+    {
+        Log::Error("Failed to stop the EventPipe session with hr=0x", std::hex, hr, std::dec, ".");
+    }
+
+    _session = 0;
 }
 
 bool CorProfilerCallback::StartServices()
@@ -1034,6 +1094,14 @@ bool CorProfilerCallback::StopServices()
     {
         const auto& service = _services[i - 1];
         const auto* name = service->GetName();
+
+        // Prevent unhelpful logs (service did not start or was stopped already)
+        if (!service->IsStarted())
+        {
+            Log::Debug(name, " was not started: nothing to stop.");
+            continue;
+        }
+
         success = service->Stop();
         LogServiceStop(success, name);
         result &= success;
@@ -1060,24 +1128,22 @@ void CorProfilerCallback::DisposeInternal()
         ProfilerEngineStatus::WriteIsProfilerEngineActive(false);
         _isInitialized.store(false);
 
-        // Don't forget to stop the CLR events session if any
-        auto* pInfo = _pCorProfilerInfoEvents;
-        if (pInfo != nullptr)
+        // Same two-phase teardown as the OnStartDelayedProfiling() failure path: event sources first,
+        // then the consumers (DisposeServices() -> StopServices() below).
+        // Both are idempotent: they might already have been stopped if the delayed start failed.
+        StopEventSources();
+
         {
-            if (_session != 0)
+            // same lock as StopEventPipeSession(): _pCorProfilerInfoEvents must not be released while
+            // a concurrent OnStartDelayedProfiling() failure path is about to use it
+            std::lock_guard<std::mutex> lock(_eventPipeLifetimeMutex);
+
+            auto* pInfo = _pCorProfilerInfoEvents;
+            if (pInfo != nullptr)
             {
-                pInfo->EventPipeStopSession(_session);
-                _session = 0;
+                pInfo->Release();
+                _pCorProfilerInfoEvents = nullptr;
             }
-
-            pInfo->Release();
-            _pCorProfilerInfoEvents = nullptr;
-        }
-
-        // Do the same for .NET Framework if any
-        if (_pEtwEventsManager != nullptr)
-        {
-            _pEtwEventsManager->Stop();
         }
 
         {
@@ -2034,6 +2100,19 @@ if (_pCpuProfiler != nullptr)
 
         Log::Info("Total measured profiler memory: ", totalMemory, " bytes (", (totalMemory / 1024.0 / 1024.0), " MB)");
         Log::Info("==============================================");
+
+        if (Log::IsDebugEnabled())
+        {
+            // This is mainly for tests where no profile is sent (SSI + failing service)
+            // We want to know what the metrics at shutdow to check if there is anything wrong (ex: pending samples)
+            // In a normal setup (started correctly, shutdown normally), pending samples metric should be 0.
+            Log::Debug("=== Profiler Metrics at Shutdown ===");
+            for (auto const& [name, value] : _metricsRegistry.Collect())
+            {
+                Log::Debug("  ", name, ": ", value);
+            }
+            Log::Debug("====================================");
+        }
     } // IsMemoryFootprintEnabled
 
     // DisposeInternal() already respects the _isInitialized flag.
@@ -2055,6 +2134,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDoma
     // can free concurrently. See EngineActiveGuard.h.
     EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
+    {
+        return S_OK;
+    }
+
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
     {
         return S_OK;
     }
@@ -2120,6 +2204,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         GetFullFrameworkVersion(moduleId);
     }
 #endif
+
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
+        return S_OK;
+    }
 
     // must be done first: the other consumers rely on the core library module id being set
     if (_pCoreLibModuleProvider != nullptr)
@@ -2240,7 +2329,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     //       -> Look at OnStartDelayedProfiling()
     if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
-        StartEtwCommunication();
+        StartEtwSession();
     }
 
     if (_pThreadLifetimeProvider != nullptr)
@@ -2557,7 +2646,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::MovedReferences(ULONG cMovedObjec
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ObjectAllocated(ObjectID objectId, ClassID classId)
 {
-    if (_pAllocationsRecorder != nullptr)
+    // the recorded allocations are serialized by the (stopped) SamplesCollector: don't accumulate them anymore
+    if (_pAllocationsRecorder != nullptr && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
         _pAllocationsRecorder->OnObjectAllocated(objectId, classId);
     }

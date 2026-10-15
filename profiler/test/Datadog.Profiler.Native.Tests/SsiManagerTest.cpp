@@ -126,8 +126,11 @@ TEST(SsiManagerTest, Should_NotBeStarted_When_DelayedStartFailed_And_ManuallyEna
     SsiManager manager(configuration.get(), &lifetime);
     manager.ProcessStart();
     ASSERT_EQ(manager.IsProfilerStarted(), true);
+    ASSERT_EQ(manager.IsProfilingPermanentlyDisabled(), false);
 
     manager.OnDelayedStartFailed();
+
+    ASSERT_EQ(manager.IsProfilingPermanentlyDisabled(), true);
 
     // still enabled by configuration, but the services are stopped: no sample must be created anymore
     ASSERT_EQ(manager.IsProfilerEnabled(), true);
@@ -150,13 +153,75 @@ TEST(SsiManagerTest, Should_NotBeStarted_When_DelayedStartFailed_And_HeuristicsT
     // wait for the timer to finish
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(manager.IsProfilerStarted(), true);
+    ASSERT_EQ(manager.IsProfilingPermanentlyDisabled(), false);
 
     manager.OnDelayedStartFailed();
+
+    ASSERT_EQ(manager.IsProfilingPermanentlyDisabled(), true);
 
     // the heuristics are still triggered, but the services are stopped: no sample must be created anymore
     ASSERT_EQ(manager.GetSkipProfileHeuristic(), SkipProfileHeuristicType::AllTriggered);
     ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
+
+TEST(SsiManagerTest, Should_StayNotStarted_When_OnDelayedStartFailed_IsCalledSeveralTimes)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyEnabled));
+
+    SsiLifetimeForTest lifetime;
+
+    SsiManager manager(configuration.get(), &lifetime);
+    manager.ProcessStart();
+
+    // the latch is one-way: no later event can ever bring the profiler back to "started"
+    manager.OnDelayedStartFailed();
+    manager.OnDelayedStartFailed();
+    manager.OnSpanCreated();
+
+    ASSERT_EQ(manager.IsProfilingPermanentlyDisabled(), true);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
+}
+
+class SsiManagerDelayedStartFailureTest : public ::testing::TestWithParam<EnablementStatus>
+{
+};
+
+// whatever the reason the profiler was considered started, a failed delayed start means the services
+// are stopped for good: IsProfilerStarted() must never return true again
+TEST_P(SsiManagerDelayedStartFailureTest, Should_NotBeStarted_When_DelayedStartFailed)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms)); // simulate long lived
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(GetParam()));
+
+    SsiLifetimeForTest lifetime;
+
+    SsiManager manager(configuration.get(), &lifetime);
+    manager.ProcessStart();
+    manager.OnSpanCreated();
+
+    // wait for the timer to finish
+    std::this_thread::sleep_for(100ms);
+
+    manager.OnDelayedStartFailed();
+
+    ASSERT_EQ(manager.IsProfilingPermanentlyDisabled(), true);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllEnablementStatuses,
+    SsiManagerDelayedStartFailureTest,
+    ::testing::Values(
+        EnablementStatus::NotSet,
+        EnablementStatus::ManuallyEnabled,
+        EnablementStatus::ManuallyDisabled,
+        EnablementStatus::Auto,
+        EnablementStatus::Standby));
 
 TEST(SsiManagerTest, Should_NotStart_When_NotDeployAsSSI_WithStableConfiguration)
 {

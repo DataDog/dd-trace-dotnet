@@ -35,6 +35,10 @@ public:
     // Public but should only be called privately or from tests
     void Export(bool lastCall = false);
 
+    // Total number of raw samples still waiting in the registered providers. Stays close to zero in
+    // normal operation; a value that keeps growing means samples are created but never drained (SCP-1413).
+    std::size_t GetPendingSamplesCount() const;
+
     inline static constexpr std::chrono::nanoseconds CollectingPeriod = 60ms;
 
 private:

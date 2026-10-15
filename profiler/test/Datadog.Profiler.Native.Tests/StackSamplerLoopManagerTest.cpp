@@ -53,12 +53,13 @@ namespace
 TEST(StackSamplerLoopManagerTest, StartFailsCleanlyWhenStackSamplerLoopWasNeverWiredIn)
 {
     MockProfilerInfo profilerInfo;
+    auto [configHolder, config] = CreateConfiguration();
     ThreadsCpuManager threadsCpuManager;
     MetricsRegistry metricsRegistry;
 
     StackSamplerLoopManager manager(
         &profilerInfo, nullptr /*metricsSender*/, nullptr /*clrLifetime*/,
-        &threadsCpuManager, nullptr /*stackFramesCollector*/, metricsRegistry);
+        &threadsCpuManager, nullptr /*stackFramesCollector*/, metricsRegistry, configHolder.get());
 
     // SetStackSamplerLoop() is deliberately never called. Before the fix, a mistake like this
     // (e.g. dropping the wiring call in a future refactor of CorProfilerCallback::
@@ -86,7 +87,7 @@ TEST(StackSamplerLoopManagerTest, StackSamplerLoopStartsAndStopsIndependentlyOfT
     // independence this fix is meant to provide (previously, StackSamplerLoop had no lifecycle of
     // its own to test - it was entirely internal to StackSamplerLoopManager).
     StackSamplerLoopManager manager(
-        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry);
+        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry, configHolder.get());
 
     StackSamplerLoop stackSamplerLoop(
         &profilerInfo, configHolder.get(), nullptr /*stackFramesCollector*/, &manager,
@@ -111,7 +112,7 @@ TEST(StackSamplerLoopManagerTest, FullLifecycleMatchesStartServicesAndStopServic
     MetricsRegistry metricsRegistry;
 
     StackSamplerLoopManager manager(
-        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry);
+        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry, configHolder.get());
 
     StackSamplerLoop stackSamplerLoop(
         &profilerInfo, configHolder.get(), nullptr, &manager, &threadsCpuManager,
@@ -124,7 +125,8 @@ TEST(StackSamplerLoopManagerTest, FullLifecycleMatchesStartServicesAndStopServic
     // started) before StackSamplerLoop.
     //
     // manager.Start() spawns the watcher thread and blocks - via a std::promise/std::future
-    // handshake bounded by a 2s timeout (WatcherStartupTimeout in StackSamplerLoopManager.cpp) -
+    // handshake bounded by IConfiguration::GetWatcherStartTimeout() (2s by default, configurable via
+    // DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT) -
     // until that thread actually signals it's running, not merely constructed. If that
     // synchronization were broken (e.g. reverted to a bare std::make_unique<std::thread>(...)
     // with no wait), this call would still "succeed" as far as the type system is concerned; what
