@@ -187,11 +187,14 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
 
     private async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
     {
+        // Discovery can change UseGZip while a request is being created. Keep the header tied to
+        // the encoding of these bytes, including retries, instead of reading UseGZip again.
+        var useGzip = payload.UseGZip;
         ArraySegment<byte> payloadArraySegment;
         MemoryStream? agentlessMemoryStream = null;
         try
         {
-            if (payload.UseGZip)
+            if (useGzip)
             {
                 agentlessMemoryStream = new MemoryStream();
                 int uncompressedSize;
@@ -218,11 +221,10 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadArraySegment.Count);
 
-            await SendPayloadAsync(
-                    payload,
-                    static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseGZip ? "gzip" : null),
-                    payloadArraySegment)
-               .ConfigureAwait(false);
+            Func<IApiRequest, EventPlatformPayload, ArraySegment<byte>, Task<IApiResponse>> sender = useGzip
+                ? static (request, _, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, "gzip")
+                : static (request, _, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, null);
+            await SendPayloadAsync(payload, sender, payloadArraySegment).ConfigureAwait(false);
         }
         finally
         {
