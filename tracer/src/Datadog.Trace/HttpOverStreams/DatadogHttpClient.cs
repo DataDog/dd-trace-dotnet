@@ -89,7 +89,7 @@ namespace Datadog.Trace.HttpOverStreams
                 var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
-                    throw new EndOfStreamException($"Unexpected end of stream at position {streamPosition}");
+                    ThrowHelper.ThrowEndOfStreamException($"Unexpected end of stream at position {streamPosition}");
                 }
 
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
@@ -112,7 +112,7 @@ namespace Datadog.Trace.HttpOverStreams
                     lastBytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: bytesToRead).ConfigureAwait(false);
                     if (lastBytesRead == 0)
                     {
-                        throw new EndOfStreamException($"Unexpected end of stream at position {streamPosition}");
+                        ThrowHelper.ThrowEndOfStreamException($"Unexpected end of stream at position {streamPosition}");
                     }
 
                     bytesRemaining -= lastBytesRead;
