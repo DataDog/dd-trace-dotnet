@@ -33,6 +33,7 @@ public:
     bool IsProfilerEnabled() override;
     bool IsProfilerStarted() override;
     void OnDelayedStartFailed() override;
+    bool IsProfilingPermanentlyDisabled() const override;
 
     // send metrics
     void ProcessStart() override;

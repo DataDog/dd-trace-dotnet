@@ -30,6 +30,23 @@ void SamplesCollector::Register(ISamplesProvider* samplesProvider)
     _samplesProviders.push_front(std::make_pair(samplesProvider, 0));
 }
 
+std::size_t SamplesCollector::GetPendingSamplesCount() const
+{
+    std::size_t pending = 0;
+
+    for (auto const& [provider, _] : _samplesProviders)
+    {
+        pending += provider->GetPendingSamplesCount();
+    }
+
+    for (auto const& [provider, _] : _batchedSamplesProviders)
+    {
+        pending += provider->GetPendingSamplesCount();
+    }
+
+    return pending;
+}
+
 void SamplesCollector::RegisterBatchedProvider(IBatchedSamplesProvider* batchedSamplesProvider)
 {
     _batchedSamplesProviders.push_front(std::make_pair(batchedSamplesProvider, 0));

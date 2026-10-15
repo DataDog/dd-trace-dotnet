@@ -4,6 +4,7 @@
 #include "StackSamplerLoopManager.h"
 
 #include "IClrLifetime.h"
+#include "IConfiguration.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ThreadsCpuManager.h"
@@ -15,7 +16,8 @@ constexpr std::chrono::milliseconds MaxExpectedStackSampleCollectionDurationMs =
 constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(MaxExpectedStackSampleCollectionDurationMs);
 
 // Make sure the Watcher thread does not hang Start() forever.
-constexpr std::chrono::seconds WatcherStartupTimeout = 2s;
+// Configurable (DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT) because on CPU-starved machines the
+// default is too short and the whole profiler start fails - see SCP-1413.
 
 #ifdef NDEBUG
 constexpr std::chrono::milliseconds StatsAggregationPeriodMs = 30000ms;
@@ -33,9 +35,11 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IClrLifetime const* clrLifetime,
     IThreadsCpuManager* pThreadsCpuManager,
     StackFramesCollectorBase* pStackFramesCollector,
-    MetricsRegistry& metricsRegistry
+    MetricsRegistry& metricsRegistry,
+    IConfiguration const* pConfiguration
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
+    _watcherStartTimeout{pConfiguration->GetWatcherStartTimeout()},
     _pThreadsCpuManager{pThreadsCpuManager},
     _pStackFramesCollector{pStackFramesCollector},
     _pStackSamplerLoop{nullptr},
@@ -127,13 +131,13 @@ bool StackSamplerLoopManager::RunWatcher()
     }
 
     // Wait for the watcher thread to be ready before returning
-    if (watcherReadyFuture.wait_for(WatcherStartupTimeout) == std::future_status::ready)
+    if (watcherReadyFuture.wait_for(_watcherStartTimeout) == std::future_status::ready)
     {
         return true;
     }
 
-    Log::Error("StackSamplerLoopManager::RunWatcher - Timed out after ", WatcherStartupTimeout.count(),
-               " seconds waiting for the watcher thread to start.");
+    Log::Error("StackSamplerLoopManager::RunWatcher - Timed out after ", _watcherStartTimeout.count(),
+               " ms waiting for the watcher thread to start.");
 
     _isWatcherShutdownRequested = true;
 
