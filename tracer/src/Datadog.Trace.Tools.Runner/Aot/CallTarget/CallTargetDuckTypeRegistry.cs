@@ -63,8 +63,10 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
     /// <param name="requests">The proxies the adapters create for static types.</param>
     /// <param name="runtimeRequests">The proxies looked up by runtime type for values of static types (begin slow path).</param>
     /// <param name="recordedMappings">The mappings recorded at runtime by dynamic duck typing (C6).</param>
-    /// <param name="genericInstantiations">The instantiations over value types of the open generic targets of mappings the
-    /// application creates, with their mappings (see <see cref="GenericDuckTypeTargets"/>).</param>
+    /// <param name="otherRuntimeTypes">Other runtime types the targets of mappings have in the application, which need proxies of
+    /// their own, with their mappings: instantiations over value types of open generic targets (see
+    /// <see cref="GenericDuckTypeTargets"/>), and classes deriving from derived-types targets that bind them differently (see
+    /// <see cref="DerivedDuckTypeTargets"/>).</param>
     /// <param name="assemblyPaths">The paths of the loaded assemblies, by name, for the recorded mappings.</param>
     /// <param name="outputDirectory">The output directory.</param>
     /// <param name="assemblyName">The name of the registry assembly.</param>
@@ -74,7 +76,7 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
         IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> requests,
         IEnumerable<(TypeSig ProxyDefinition, TypeSig Target)> runtimeRequests,
         IEnumerable<DuckTypeAotMapping> recordedMappings,
-        IEnumerable<(DuckTypeAotMapping Mapping, TypeSig Target)> genericInstantiations,
+        IEnumerable<(DuckTypeAotMapping Mapping, TypeSig Target)> otherRuntimeTypes,
         IReadOnlyDictionary<string, string> assemblyPaths,
         string outputDirectory,
         string assemblyName,
@@ -127,9 +129,9 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
             }
         }
 
-        // The generic proxy of an open generic target only serves reference type arguments in NativeAOT: the instantiations over
-        // value types the application creates get proxies of their own, like recorded ones.
-        foreach (var (mapping, target) in genericInstantiations)
+        // The runtime types the proxy of a target doesn't serve like dynamic duck typing (the instantiations over value types of
+        // an open generic target, the derived classes that bind differently) get proxies of their own, like recorded ones.
+        foreach (var (mapping, target) in otherRuntimeTypes)
         {
             if (Describe(target, resolveType) is not { } targetType || !assemblyPaths.TryGetValue(mapping.ProxyAssemblyName, out var proxyPath))
             {

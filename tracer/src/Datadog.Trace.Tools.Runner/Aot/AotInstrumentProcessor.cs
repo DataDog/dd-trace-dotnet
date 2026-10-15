@@ -203,6 +203,8 @@ internal static class AotInstrumentProcessor
                 AotLog.Info($"Closed instantiations of generic instrumented methods: {instantiations.Values.Sum(i => i.Count)} for {instantiations.Count} methods");
                 var valueTypeTargets = GenericDuckTypeTargets.ValueTypeInstantiations(genericDuckTypeTargets, found);
                 AotLog.Info($"Instantiations over value types of the open generic targets of duck typing mappings: {valueTypeTargets.Select(t => t.Target.FullName).Distinct().Count()} for {genericDuckTypeTargets.Count} targets");
+                var derivedTargets = DerivedDuckTypeTargets.Find(declaredMappings, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), FindType, typeResolver.Resolve);
+                AotLog.Info($"Classes deriving from the targets of derived-types duck typing mappings that bind them differently: {derivedTargets.Select(t => t.Target.FullName).Distinct().Count()}");
                 var collector = new DuckProxyRequestCollector();
                 foreach (var rewritten in rewrittenByModule.Values)
                 {
@@ -236,7 +238,7 @@ internal static class AotInstrumentProcessor
                         assemblyPaths[CompositeInterfaceAssembly.AssemblyName] = compositeInterfaces;
                     }
 
-                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, valueTypeTargets, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
+                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, valueTypeTargets.Concat(derivedTargets), assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
                     if (duckTypeRegistry is not null)
                     {
                         report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, ReplayedFailures = duckTypeRegistry.ReplayedFailures, Warnings = duckTypeRegistry.Warnings.ToList() };
