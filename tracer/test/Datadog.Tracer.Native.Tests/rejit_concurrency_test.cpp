@@ -167,6 +167,23 @@ public:
     }
 };
 
+class DesktopNGenInlinerProfilerInfo : public NGenInlinerProfilerInfo
+{
+public:
+    HRESULT STDMETHODCALLTYPE GetRuntimeInformation(USHORT* pClrInstanceId, COR_PRF_RUNTIME_TYPE* pRuntimeType,
+                                                    USHORT* pMajorVersion, USHORT* pMinorVersion,
+                                                    USHORT* pBuildNumber, USHORT* pQFEVersion, ULONG cchVersionString,
+                                                    ULONG* pcchVersionString, WCHAR szVersionString[]) override
+    {
+        *pRuntimeType = COR_PRF_DESKTOP_CLR;
+        *pMajorVersion = 4;
+        *pMinorVersion = 0;
+        *pBuildNumber = 30319;
+        *pQFEVersion = 0;
+        return S_OK;
+    }
+};
+
 class CountingNGenProfilerInfo : public MockCorProfilerInfo
 {
 public:
@@ -657,6 +674,50 @@ TEST(RejitPreprocessor, IncompleteNGenDataForNewMethodIsRetriedByReplay)
     handler->AddNGenInlinerModule(inlinersModuleId);
 
     EXPECT_EQ(2, profilerInfo.enumerations);
+
+    handler->Shutdown();
+}
+
+TEST(RejitPreprocessor, DesktopNewMethodNGenInlinersAreDeferredToReplay)
+{
+    DesktopNGenInlinerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    constexpr mdMethodDef inlineeMethodId = 1;
+    constexpr mdMethodDef inlinerMethodId = 2;
+    profilerInfo.inliners.method = {inlinersModuleId, inlinerMethodId};
+    const auto inlineeModule = handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    // The module is checked against the NGen module while it has no methods yet.
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    module->CreateMethodIfNotExists(
+        inlineeMethodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+
+    {
+        auto moduleLifetime = inlineeModule.TryAcquire();
+        std::vector<RejitRequest> requests;
+        preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
+
+        // The ReJIT worker has no AppDomain on Desktop CLR, so it must not enumerate NGen inliners.
+        EXPECT_TRUE(requests.empty());
+        EXPECT_EQ(0, profilerInfo.enumerations);
+    }
+
+    // The next replay checks the module again and finds the new method's inliners.
+    handler->AddNGenInlinerModule(inlinersModuleId);
+
+    EXPECT_EQ(1, profilerInfo.enumerations);
 
     handler->Shutdown();
 }
