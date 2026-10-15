@@ -131,7 +131,9 @@ public class QuartzTests : TracingIntegrationTest
                                                                          : x.Tags.TryGetValue("job.name", out var legacyJobName) ? legacyJobName : null))
                               .UseFileName(filename);
 
-            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
+            (await telemetry.GetMetricDataPointsAsync("spans_created", "integration_name:quartz")).Sum(x => x.Value).Should().Be(expectedSpanCount);
+            (await telemetry.GetMetricDataPointsAsync("spans_created", "integration_name:otel")).Should().BeEmpty();
         }
     }
 

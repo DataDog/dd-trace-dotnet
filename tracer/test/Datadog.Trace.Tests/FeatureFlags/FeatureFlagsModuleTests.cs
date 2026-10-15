@@ -6,17 +6,26 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Evp;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -27,6 +36,119 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    [Fact]
+    public void AgentlessModuleUsesSharedDiscoveryForEventDelivery()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var discovery = new DiscoveryServiceMock();
+        var source = new FakeDeliverySource();
+        var collection = new NameValueCollection
+        {
+            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
+            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless" },
+            { ConfigurationKeys.ApiKey, "test-api-key" },
+            { ConfigurationKeys.Site, "datadoghq.com" },
+        };
+        var settings = new TracerSettings(new NameValueConfigurationSource(collection));
+
+        using (var module = FeatureFlagsModule.Create(settings, rcmManager, _ => source, discovery))
+        {
+            module.Should().NotBeNull();
+            source.Started.Should().Be(0);
+            rcmManager.HasAnySubscription.Should().BeFalse();
+            discovery.Callbacks.Should().BeEmpty("event discovery subscriptions start with the first exposure");
+            module!.GetExposureApi().Should().NotBeNull();
+            discovery.Callbacks.Should().ContainSingle();
+
+            module.Activate();
+            module.Activate();
+            source.Started.Should().Be(1);
+        }
+
+        discovery.Callbacks.Should().BeEmpty();
+        source.Disposed.Should().Be(1);
+    }
+
+    [Fact]
+    public void DefaultModuleDoesNotCreateExposureTransportUntilFirstUse()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+        var transportField = typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        settings.FeatureFlags.Enabled.Should().BeTrue();
+        module.Should().NotBeNull();
+        transportField.GetValue(module).Should().BeNull("applications that never use exposures need no HTTP client or settings subscription");
+
+        var exposureApi = module!.GetExposureApi();
+        exposureApi.Should().NotBeNull();
+        transportField.GetValue(module).Should().NotBeNull();
+        module.GetExposureApi().Should().BeSameAs(exposureApi);
+
+        module.Dispose();
+        transportField.GetValue(module).Should().BeNull();
+        module.GetExposureApi().Should().BeNull();
+    }
+
+    [Fact]
+    public void DisposingUnusedModuleDoesNotCreateExposureTransport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        module!.Dispose();
+
+        module.GetExposureApi().Should().BeNull();
+        typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                  .GetValue(module).Should().BeNull();
+    }
+
+    [Fact]
+    public void ExposureSettingsUpdateUntilModuleDisposalRemovesBothSubscriptions()
+    {
+        var settings = CreateSettings();
+        var subscribers = (ICollection)typeof(TracerSettings.SettingsManager)
+                                     .GetField("_subscribers", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                     .GetValue(settings.Manager)!;
+        var initialSubscriptions = subscribers.Count;
+        using var module = CreateModule(settings, new MockRcmSubscriptionManager());
+        var api = module.GetExposureApi()!;
+        var transport = (FeatureFlagsEvpTransport)typeof(FeatureFlagsModule)
+                                                .GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                                .GetValue(module)!;
+        var endpointField = typeof(FeatureFlagsEvpTransport).GetField("_localEndpoint", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var factoryProperty = endpointField.FieldType.GetProperty("Factory")!;
+        var contextField = typeof(ExposureApi).GetField("_context", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        subscribers.Count.Should().Be(initialSubscriptions + 2, "both the sender and exposure context subscribe to settings");
+        UpdateSettings("before-disposal", new Uri("http://127.0.0.1:18126/updated/"));
+
+        var factory = (IApiRequestFactory)factoryProperty.GetValue(endpointField.GetValue(transport))!;
+        factory.GetEndpoint("evp_proxy/v2/api/v2/exposures").Should().Be(new Uri("http://127.0.0.1:18126/updated/evp_proxy/v2/api/v2/exposures"));
+        var context = (Dictionary<string, string>)contextField.GetValue(api)!;
+        context["service"].Should().Be("before-disposal");
+
+        module.Dispose();
+
+        subscribers.Count.Should().Be(initialSubscriptions, "module disposal must remove both settings subscriptions");
+        UpdateSettings("after-disposal", new Uri("http://127.0.0.1:28126/ignored/"));
+        factoryProperty.GetValue(endpointField.GetValue(transport)).Should().BeSameAs(factory);
+        contextField.GetValue(api).Should().BeSameAs(context);
+
+        void UpdateSettings(string service, Uri agentUri)
+        {
+            settings.Manager.UpdateManualConfigurationSettings(
+                new ManualInstrumentationConfigurationSource(
+                    new Dictionary<string, object?>
+                    {
+                        { TracerSettingKeyConstants.ServiceNameKey, service },
+                        { TracerSettingKeyConstants.AgentUriKey, agentUri },
+                    },
+                    useDefaultSources: false),
+                NullConfigurationTelemetry.Instance).Should().BeTrue();
+        }
+    }
+
     [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {

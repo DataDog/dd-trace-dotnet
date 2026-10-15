@@ -492,11 +492,9 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
                                       .AsBool(defaultValue: false);
 
-            var obfuscationRegexResult = config
-                                        .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                        .AsStringResult();
-            ObfuscationQueryStringRegex = obfuscationRegexResult.WithDefault(new DefaultResult<string>(TracerSettingsConstants.DefaultObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex));
-            ObfuscationQueryStringRegexWasConfigured = obfuscationRegexResult.ConfigurationResult.IsPresent;
+            ObfuscationQueryStringRegex = config
+                                         .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
+                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -823,12 +821,7 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit)
                                     .AsInt32(2000, value => value > 0).Value;
 
-#if NET6_0_OR_GREATER
-            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
-#else
-            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
-            OtlpRuntimeMetricsEnabled = false;
-#endif
+            OtlpRuntimeMetricsEnabled = OtlpMetricsExportEnabled && RuntimeMetricsEnabled;
 
             // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
@@ -970,6 +963,16 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled"/>
         internal bool OpenTelemetryMetricsEnabled { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the OTLP metrics pipeline is enabled on this target framework.
+        /// </summary>
+        internal bool OtlpMetricsExportEnabled =>
+#if NET6_0_OR_GREATER
+            OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled;
+#else
+            false;
+#endif
+
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
         internal HashSet<string> OpenTelemetryMeterNames { get; }
@@ -1053,6 +1056,16 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled"/>
         internal bool OpenTelemetryLogsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the OTLP logs pipeline is enabled on this target framework.
+        /// </summary>
+        internal bool OtlpLogsExportEnabled =>
+#if NETCOREAPP3_1_OR_GREATER
+            OpenTelemetryLogsEnabled;
+#else
+            false;
+#endif
 
         /// <summary>
         /// Gets the OTLP protocol for logs export with fallback behavior.
@@ -1220,11 +1233,6 @@ namespace Datadog.Trace.Configuration
         /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the query string obfuscation regex was explicitly configured, including an empty value.
-        /// </summary>
-        internal bool ObfuscationQueryStringRegexWasConfigured { get; }
 
         /// <summary>
         /// Gets a value indicating whether or not http.url should contain the query string, enabled by default

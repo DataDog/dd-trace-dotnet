@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
 
-                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AzureServiceBus);
             }
         }
 
