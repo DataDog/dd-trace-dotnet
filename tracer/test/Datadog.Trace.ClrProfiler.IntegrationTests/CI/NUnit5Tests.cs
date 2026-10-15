@@ -20,9 +20,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Trait("Area", "CIVisibility")]
 public class NUnit5Tests : TestingFrameworkTest
 {
-    // With parallel workers NUnit 5 queues fixtures and evaluates a fixture dependency before the prerequisite fixture
-    // completes, so dependent fixtures are skipped whatever the prerequisite outcome. Without workers NUnit decides
-    // from the completed prerequisite fixture.
+    // NUnit 5.0.0 bug: with parallel workers (the default) NUnit queues fixtures and evaluates [DependsOnFixture] before
+    // the prerequisite fixture runs. Symptom: dependent fixtures are always skipped with "Dependency on X did not pass.",
+    // even when the prerequisite passes, and their tests are missing from the dotnet test results.
+    // Without workers NUnit decides from the completed prerequisite fixture.
     internal const string RunFixturesSequentially = "-- NUnit.NumberOfTestWorkers=0";
 
     public NUnit5Tests(ITestOutputHelper output)
