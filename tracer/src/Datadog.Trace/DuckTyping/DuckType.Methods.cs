@@ -7,9 +7,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -208,7 +211,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create the proxy method implementation
                 MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(proxyMethodDefinition.Name, proxyMethodAttributes, proxyMethodDefinition.ReturnType, proxyMethodDefinitionParametersTypes);
-                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, targetMethod, instanceField);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, proxyMethodDefinitionGenericArguments, targetMethod, instanceField);
 
                 // Load all the arguments / parameters
                 if (MethodIlHelper.AddIlToLoadArguments(
@@ -359,7 +362,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create the proxy method implementation
                 MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(overriddenMethod.Name, proxyMethodAttributes, overriddenMethod.ReturnType, overriddenMethodParametersTypes);
-                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, implementationMethod, instanceField);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, overriddenMethodGenericArguments, implementationMethod, instanceField);
 
                 // Load all the arguments / parameters
                 if (MethodIlHelper.AddIlToLoadArguments(
@@ -432,10 +435,40 @@ namespace Datadog.Trace.DuckTyping
             out MethodInfo? selectedMethod)
             where T : DuckAttributeBase, new()
         {
-            selectedMethod = null;
-
             T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
-            proxyMethodDuckAttribute.Name ??= proxyMethod.Name;
+            var proxyMethodDuckAttributeName = proxyMethodDuckAttribute.Name ?? proxyMethod.Name;
+
+            // With fallback names, a method of the first name that has one wins (like for properties and fields): each name
+            // is selected like the only name of the proxy method, also when the arguments are duck chained.
+            selectedMethod = null;
+            foreach (var methodName in GetDuckAttributeCandidateNames(proxyMethodDuckAttributeName))
+            {
+                if (SelectTargetMethod(targetType, proxyMethod, proxyMethodDuckAttribute, methodName, proxyMethodParameters, proxyMethodParametersTypes, allTargetMethods, out selectedMethod) is { } error)
+                {
+                    return error;
+                }
+
+                if (selectedMethod is not null)
+                {
+                    return null;
+                }
+            }
+
+            return null;
+        }
+
+        private static DuckTypeException? SelectTargetMethod<T>(
+            Type targetType,
+            MethodInfo proxyMethod,
+            T proxyMethodDuckAttribute,
+            string methodName,
+            ParameterInfo[] proxyMethodParameters,
+            Type[] proxyMethodParametersTypes,
+            IEnumerable<MethodInfo> allTargetMethods,
+            out MethodInfo? selectedMethod)
+            where T : DuckAttributeBase
+        {
+            selectedMethod = null;
 
             // A non-generic proxy method can select a generic target method and provide every generic argument
             // explicitly through DuckAttribute.GenericParameterTypeNames. The candidate is still an open generic
@@ -446,7 +479,7 @@ namespace Datadog.Trace.DuckTyping
                 proxyMethodDuckAttribute is DuckAttribute { GenericParameterTypeNames: { Length: > 0 } }
              && !proxyMethod.IsGenericMethodDefinition;
 
-            MethodInfo? targetMethod;
+            MethodInfo? targetMethod = null;
 
             // Check if the duck attribute has the parameter type names to use for selecting the target method
             // If any of the parameter types can't be loaded (happens if it's a generic parameter for example)
@@ -469,7 +502,7 @@ namespace Datadog.Trace.DuckTyping
                 if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)
                 {
                     // all types were loaded
-                    targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
+                    targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
                     if (targetMethod is not null)
                     {
                         selectedMethod = targetMethod;
@@ -481,7 +514,7 @@ namespace Datadog.Trace.DuckTyping
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
 
             // First we try with the current proxy parameter types
-            targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
+            targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
             if (targetMethod is not null)
             {
                 selectedMethod = targetMethod;
@@ -494,35 +527,10 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
-                string name = proxyMethodDuckAttribute.Name;
-                bool useRelaxedNameComparison = false;
-
-                // If there is an explicit interface type name we add it to the name
-                if (!string.IsNullOrEmpty(proxyMethodDuckAttribute.ExplicitInterfaceTypeName))
-                {
-                    string interfaceTypeName = proxyMethodDuckAttribute.ExplicitInterfaceTypeName!;
-
-                    if (interfaceTypeName == "*")
-                    {
-                        // If a wildcard is use, then we relax the name comparison so it can be an implicit or explicity implementation
-                        useRelaxedNameComparison = true;
-                    }
-                    else
-                    {
-                        // Nested types are separated with a "." on explicit implementation.
-                        interfaceTypeName = interfaceTypeName.Replace("+", ".");
-
-                        name = interfaceTypeName + "." + name;
-                    }
-                }
-
                 // We omit target methods with different names.
-                if (candidateMethod.Name != name)
+                if (!IsCandidateMethodName(candidateMethod, methodName, proxyMethodDuckAttribute.ExplicitInterfaceTypeName))
                 {
-                    if (!useRelaxedNameComparison || !candidateMethod.Name.EndsWith("." + name))
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 // Check if the candidate method is a reverse mapped method
@@ -588,6 +596,10 @@ namespace Datadog.Trace.DuckTyping
                     // If the parameters are by ref we unwrap them to have the actual type
                     proxyParamType = proxyParamType.IsByRef ? proxyParamType.GetElementType()! : proxyParamType;
                     candidateParamType = candidateParamType.IsByRef ? candidateParamType.GetElementType()! : candidateParamType;
+                    if (!proxyParam.ParameterType.IsByRef)
+                    {
+                        TryUnwrapValueWithType(proxyParamType, out proxyParamType);
+                    }
 
                     // Generic parameter names are only documentation. Their positions define their identity in
                     // metadata, so TFirst (position 0) and TSecond (position 1) are different types even though
@@ -721,6 +733,61 @@ namespace Datadog.Trace.DuckTyping
 
             selectedMethod = targetMethod;
             return null;
+        }
+
+        /// <summary>
+        /// Sets the default value of a parameter of a generated proxy method, metadata only (the method passes the arguments it
+        /// receives): a value the runtime can't store as a parameter constant is left out, like a decimal, a native integer or
+        /// a Missing value (its parameters keep [Optional]), or null for a value type, which .NET Framework rejects.
+        /// </summary>
+        /// <param name="parameter">The parameter of the generated method.</param>
+        /// <param name="definitionParameter">The parameter of the proxy definition method.</param>
+        private static void TrySetDefaultValue(ParameterBuilder parameter, ParameterInfo definitionParameter)
+        {
+            var value = definitionParameter.RawDefaultValue;
+            var parameterType = definitionParameter.ParameterType.IsByRef ? definitionParameter.ParameterType.GetElementType()! : definitionParameter.ParameterType;
+            if ((value is null && parameterType.IsValueType && Nullable.GetUnderlyingType(parameterType) is null) ||
+                value is decimal or Missing ||
+                ((parameterType == typeof(IntPtr) || parameterType == typeof(UIntPtr)) && value is not null))
+            {
+                return;
+            }
+
+            try
+            {
+                parameter.SetConstant(value);
+            }
+            catch (ArgumentException)
+            {
+                // Another value the runtime doesn't store as a constant (e.g. a custom constant attribute's).
+            }
+        }
+
+        private static bool IsCandidateMethodName(MethodInfo candidateMethod, string methodName, string? explicitInterfaceTypeName)
+        {
+            string name = methodName;
+            bool useRelaxedNameComparison = false;
+
+            // If there is an explicit interface type name we add it to the name
+            if (!StringUtil.IsNullOrEmpty(explicitInterfaceTypeName))
+            {
+                string interfaceTypeName = explicitInterfaceTypeName!;
+
+                if (interfaceTypeName == "*")
+                {
+                    // If a wildcard is use, then we relax the name comparison so it can be an implicit or explicity implementation
+                    useRelaxedNameComparison = true;
+                }
+                else
+                {
+                    // Nested types are separated with a "." on explicit implementation.
+                    interfaceTypeName = interfaceTypeName.Replace("+", ".");
+
+                    name = interfaceTypeName + "." + name;
+                }
+            }
+
+            return candidateMethod.Name == name || (useRelaxedNameComparison && candidateMethod.Name.EndsWith("." + name));
         }
 
         private static DuckTypeException? ValidateGenericMethodSignature(
@@ -917,6 +984,7 @@ namespace Datadog.Trace.DuckTyping
                 MethodBuilder? proxyMethod,
                 ParameterInfo[] proxyMethodDefinitionParameters,
                 string[] proxyMethodDefinitionGenericArgumentsNames,
+                Type[] implementedMethodGenericArguments,
                 MethodInfo targetMethod,
                 FieldInfo? instanceField)
             {
@@ -928,17 +996,20 @@ namespace Datadog.Trace.DuckTyping
                 ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
                 if (proxyMethodDefinitionGenericArgumentsNames.Length > 0)
                 {
-                    _ = proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArgumentsNames);
+                    // The generic parameters have the constraints of the method the proxy implements: the target method can
+                    // have them too (a generic argument that doesn't satisfy them fails verification).
+                    CopyGenericParameterConstraints(proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArgumentsNames), implementedMethodGenericArguments);
                 }
 
-                // Define the proxy method implementation parameters for optional parameters with default values
+                // Define the proxy method implementation parameters for optional parameters with default values (position 0
+                // is the return value).
                 for (int j = 0; j < proxyMethodDefinitionParameters.Length; j++)
                 {
                     ParameterInfo pmDefParameter = proxyMethodDefinitionParameters[j];
-                    ParameterBuilder pmImpParameter = proxyMethod.DefineParameter(j, pmDefParameter.Attributes, pmDefParameter.Name);
+                    ParameterBuilder pmImpParameter = proxyMethod.DefineParameter(j + 1, pmDefParameter.Attributes, pmDefParameter.Name);
                     if (pmDefParameter.HasDefaultValue)
                     {
-                        pmImpParameter.SetConstant(pmDefParameter.RawDefaultValue);
+                        TrySetDefaultValue(pmImpParameter, pmDefParameter);
                     }
 
                     proxyMethodParametersBuilders[j] = pmImpParameter;
@@ -957,6 +1028,87 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 return il;
+            }
+
+            private static void CopyGenericParameterConstraints(GenericTypeParameterBuilder[] genericParameters, Type[] implementedMethodGenericArguments)
+            {
+                if (implementedMethodGenericArguments.Length != genericParameters.Length)
+                {
+                    return;
+                }
+
+                for (var i = 0; i < genericParameters.Length; i++)
+                {
+                    var implementedGenericArgument = implementedMethodGenericArguments[i];
+                    if (!implementedGenericArgument.IsGenericParameter)
+                    {
+                        continue;
+                    }
+
+                    genericParameters[i].SetGenericParameterAttributes(implementedGenericArgument.GenericParameterAttributes & GenericParameterAttributes.SpecialConstraintMask);
+                    List<Type>? interfaceConstraints = null;
+                    foreach (var constraint in implementedGenericArgument.GetGenericParameterConstraints())
+                    {
+                        // A constraint built on a generic parameter of another method or type isn't copied.
+                        if (SubstituteMethodGenericParameters(constraint, genericParameters) is not { } substitutedConstraint)
+                        {
+                            continue;
+                        }
+
+                        if (substitutedConstraint.IsInterface)
+                        {
+                            (interfaceConstraints ??= []).Add(substitutedConstraint);
+                        }
+                        else
+                        {
+                            genericParameters[i].SetBaseTypeConstraint(substitutedConstraint);
+                        }
+                    }
+
+                    if (interfaceConstraints is not null)
+                    {
+                        genericParameters[i].SetInterfaceConstraints(interfaceConstraints.ToArray());
+                    }
+                }
+
+                static Type? SubstituteMethodGenericParameters(Type type, GenericTypeParameterBuilder[] genericParameters)
+                {
+                    if (type.IsGenericParameter)
+                    {
+                        return type.DeclaringMethod is not null && type.GenericParameterPosition < genericParameters.Length ? genericParameters[type.GenericParameterPosition] : null;
+                    }
+
+                    if (type.HasElementType)
+                    {
+                        if (SubstituteMethodGenericParameters(type.GetElementType()!, genericParameters) is not { } elementType)
+                        {
+                            return null;
+                        }
+
+                        // A vector (T[]) isn't the array type of rank 1 (T[*]).
+                        return type.IsPointer ? elementType.MakePointerType() :
+                               type.IsByRef ? elementType.MakeByRefType() :
+                               type == type.GetElementType()!.MakeArrayType() ? elementType.MakeArrayType() : elementType.MakeArrayType(type.GetArrayRank());
+                    }
+
+                    if (!type.IsGenericType || !type.ContainsGenericParameters)
+                    {
+                        return type;
+                    }
+
+                    var arguments = type.GetGenericArguments();
+                    for (var i = 0; i < arguments.Length; i++)
+                    {
+                        if (SubstituteMethodGenericParameters(arguments[i], genericParameters) is not { } argument)
+                        {
+                            return null;
+                        }
+
+                        arguments[i] = argument;
+                    }
+
+                    return type.GetGenericTypeDefinition().MakeGenericType(arguments);
+                }
             }
 
             internal static DuckTypeException? AddIlToLoadArguments(
@@ -995,6 +1147,11 @@ namespace Datadog.Trace.DuckTyping
                         {
                             // The target method parameter is not optional.
                             return DuckTypeProxyMethodParameterIsMissingException.Create(outerMethod, innerParamInfo);
+                        }
+
+                        if (AddIlToLoadOptionalArgument(il, innerParamInfo) is { } optionalArgumentError)
+                        {
+                            return optionalArgumentError;
                         }
                     }
                     else
@@ -1038,7 +1195,7 @@ namespace Datadog.Trace.DuckTyping
                                 outputAndRefParameters.Add(new OutputAndRefParameterData(localIndex, innerParamType, idx, outerParamType));
 
                                 // Load the local var ref (to be used in the target method param as output)
-                                il.Emit(OpCodes.Ldloca_S, localIndex);
+                                il.WriteLoadLocalAddress(localIndex);
                             }
                             else
                             {
@@ -1115,7 +1272,7 @@ namespace Datadog.Trace.DuckTyping
                                 il.WriteStoreLocal(localIndex);
 
                                 // Load the local var ref (to be used in the target method param)
-                                il.Emit(OpCodes.Ldloca_S, localIndex);
+                                il.WriteLoadLocalAddress(localIndex);
                             }
                             else
                             {
@@ -1124,11 +1281,19 @@ namespace Datadog.Trace.DuckTyping
                         }
                         else
                         {
+                            var isValueWithType = TryUnwrapValueWithType(outerParamType, out var unwrappedOuterParamType);
+                            var originalOuterParamType = outerParamType;
+                            outerParamType = unwrappedOuterParamType;
+
                             // Check if the type can be converted of if we need to enable duck chaining
                             if (needsDuckChaining(innerParamType, outerParamType))
                             {
                                 // Load the argument
                                 il.WriteLoadArgument(idx, false);
+                                if (isValueWithType)
+                                {
+                                    il.Emit(OpCodes.Ldfld, originalOuterParamType.GetField(nameof(ValueWithType<object>.Value))!);
+                                }
 
                                 // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
                                 // If this is a reverse duck type, we need to create a duck type from the original instance
@@ -1137,6 +1302,10 @@ namespace Datadog.Trace.DuckTyping
                             else
                             {
                                 il.WriteLoadArgument(idx, false);
+                                if (isValueWithType)
+                                {
+                                    il.Emit(OpCodes.Ldfld, originalOuterParamType.GetField(nameof(ValueWithType<object>.Value))!);
+                                }
                             }
 
                             // If the target parameter type is public or if it's by ref we have to actually use the original target type.
@@ -1151,6 +1320,174 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
+                return null;
+            }
+
+            internal static DuckTypeException? AddIlToLoadOptionalArgument(LazyILGenerator il, ParameterInfo parameter)
+            {
+                var parameterType = parameter.ParameterType;
+                if (!parameterType.IsByRef)
+                {
+                    if (AddIlToLoadOptionalValue(il, parameter, parameterType, out var valueLoaded) is { } error)
+                    {
+                        return error;
+                    }
+
+                    if (!valueLoaded)
+                    {
+                        AddIlToLoadDefaultValue(il, parameterType);
+                    }
+
+                    return null;
+                }
+
+                // Optional by-ref parameters (e.g. `in int value = 5`) need a storage location, not a null managed pointer.
+                var elementType = parameterType.GetElementType()!;
+                var valueLocalIndex = il.DeclareLocal(elementType)?.LocalIndex ?? 0;
+                if (AddIlToLoadOptionalValue(il, parameter, elementType, out var byRefValueLoaded) is { } byRefValueError)
+                {
+                    return byRefValueError;
+                }
+
+                if (byRefValueLoaded)
+                {
+                    il.WriteStoreLocal(valueLocalIndex);
+                }
+                else
+                {
+                    il.WriteLoadLocalAddress(valueLocalIndex);
+                    il.Emit(OpCodes.Initobj, elementType);
+                }
+
+                il.WriteLoadLocalAddress(valueLocalIndex);
+                return null;
+            }
+
+            private static void AddIlToLoadDefaultValue(LazyILGenerator il, Type type)
+            {
+                if (type.IsValueType || type.IsGenericParameter)
+                {
+                    var localIndex = il.DeclareLocal(type)?.LocalIndex ?? 0;
+                    il.WriteLoadLocalAddress(localIndex);
+                    il.Emit(OpCodes.Initobj, type);
+                    il.WriteLoadLocal(localIndex);
+                }
+                else
+                {
+                    il.Emit(OpCodes.Ldnull);
+                }
+            }
+
+            /// <summary>
+            /// Loads the default value of an omitted optional parameter. <paramref name="valueLoaded"/> is false when the
+            /// value is default(T), which the caller materializes because it depends on how the value is passed.
+            /// </summary>
+            private static DuckTypeException? AddIlToLoadOptionalValue(LazyILGenerator il, ParameterInfo parameter, Type parameterType, out bool valueLoaded)
+            {
+                var value = parameter.DefaultValue;
+                if (value == Missing.Value && parameterType == typeof(object))
+                {
+                    // Like the C# compiler, an omitted [Optional] object parameter without a default value receives Type.Missing.
+                    il.Emit(OpCodes.Ldsfld, typeof(Type).GetField(nameof(Type.Missing))!);
+                    valueLoaded = true;
+                    return null;
+                }
+
+                if (value is null || value == Missing.Value || value == DBNull.Value)
+                {
+                    valueLoaded = false;
+                    return null;
+                }
+
+                valueLoaded = true;
+
+                // Like the C# compiler: an omitted [IUnknownConstant] or [IDispatchConstant] object parameter receives a wrapper
+                // of null.
+#pragma warning disable CS0618 // The wrappers of VARIANT marshalling are obsolete on .NET 6+, but still what these defaults are
+                if (value is UnknownWrapper or DispatchWrapper)
+#pragma warning restore CS0618
+                {
+                    il.Emit(OpCodes.Ldnull);
+                    il.Emit(OpCodes.Newobj, value.GetType().GetConstructor([typeof(object)])!);
+                    return il.WriteSafeTypeConversion(value.GetType(), parameterType);
+                }
+
+                var valueType = value.GetType();
+                if (valueType.IsEnum)
+                {
+                    valueType = Enum.GetUnderlyingType(valueType);
+                    value = Convert.ChangeType(value, valueType, CultureInfo.InvariantCulture);
+                }
+
+                // The constant of a native integer parameter (nint, nuint, or a Nullable of one) is a 32-bit or 64-bit integer.
+                var nativeIntegerType = Nullable.GetUnderlyingType(parameterType) ?? parameterType;
+                if ((nativeIntegerType == typeof(IntPtr) || nativeIntegerType == typeof(UIntPtr)) && value is sbyte or byte or short or ushort or int or uint or long or ulong)
+                {
+                    il.Emit(OpCodes.Ldc_I8, value is ulong or uint or ushort or byte ? unchecked((long)Convert.ToUInt64(value, CultureInfo.InvariantCulture)) : Convert.ToInt64(value, CultureInfo.InvariantCulture));
+                    il.Emit(nativeIntegerType == typeof(IntPtr) ? OpCodes.Conv_I : OpCodes.Conv_U);
+                    if (nativeIntegerType != parameterType)
+                    {
+                        il.Emit(OpCodes.Newobj, parameterType.GetConstructor([nativeIntegerType])!);
+                    }
+
+                    return null;
+                }
+
+                switch (value)
+                {
+                    case string text:
+                        il.Emit(OpCodes.Ldstr, text);
+                        break;
+                    case bool flag:
+                        il.WriteInt(flag ? 1 : 0);
+                        break;
+                    case char or byte or sbyte or short or ushort or int:
+                        il.WriteInt(Convert.ToInt32(value, CultureInfo.InvariantCulture));
+                        break;
+                    case uint number:
+                        il.WriteInt(unchecked((int)number));
+                        break;
+                    case long number:
+                        il.Emit(OpCodes.Ldc_I8, number);
+                        break;
+                    case ulong number:
+                        il.Emit(OpCodes.Ldc_I8, unchecked((long)number));
+                        break;
+                    case float number:
+                        il.Emit(OpCodes.Ldc_R4, number);
+                        break;
+                    case double number:
+                        il.Emit(OpCodes.Ldc_R8, number);
+                        break;
+                    case decimal number:
+                        var bits = decimal.GetBits(number);
+                        il.WriteInt(bits[0]);
+                        il.WriteInt(bits[1]);
+                        il.WriteInt(bits[2]);
+                        il.WriteInt((bits[3] & int.MinValue) != 0 ? 1 : 0);
+                        il.WriteInt((bits[3] >> 16) & 0xff);
+                        il.Emit(OpCodes.Newobj, typeof(decimal).GetConstructor([typeof(int), typeof(int), typeof(int), typeof(bool), typeof(byte)])!);
+                        break;
+                    case DateTime dateTime:
+                        il.Emit(OpCodes.Ldc_I8, dateTime.Ticks);
+                        il.Emit(OpCodes.Newobj, typeof(DateTime).GetConstructor([typeof(long)])!);
+                        break;
+                    default:
+                        return DuckTypeException.Create($"Unsupported optional argument value for '{parameter.Name}'.");
+                }
+
+                // The default value of a Nullable<T> parameter is the T value, so it has to be wrapped.
+                if (Nullable.GetUnderlyingType(parameterType) is not { } nullableUnderlyingType)
+                {
+                    return il.WriteSafeTypeConversion(valueType, parameterType);
+                }
+
+                if (il.WriteSafeTypeConversion(valueType, nullableUnderlyingType) is { } nullableConversionError)
+                {
+                    return nullableConversionError;
+                }
+
+                il.Emit(OpCodes.Newobj, parameterType.GetConstructor([nullableUnderlyingType])!);
                 return null;
             }
 
