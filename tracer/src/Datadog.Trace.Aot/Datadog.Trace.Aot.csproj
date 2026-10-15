@@ -3,6 +3,9 @@
   <PropertyGroup>
     <!-- Unconditionally add a prerelease suffix to the package while NativeAOT support is a preview. -->
     <Version Condition="!$(Version.EndsWith('-prerelease'))">$(Version)-prerelease</Version>
+    <!-- Pull request builds add their Azure Pipelines build id: NuGet keeps the first package of a version it extracts, so
+         testing another build of the same version would use the old one. -->
+    <Version Condition="'$(BUILD_REASON)' == 'PullRequest' and '$(BUILD_BUILDID)' != ''">$(Version).$(BUILD_BUILDID)</Version>
   </PropertyGroup>
 
   <PropertyGroup>
