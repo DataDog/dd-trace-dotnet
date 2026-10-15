@@ -358,6 +358,21 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="activatorFactory">Creates the <see cref="IDuckTypeAotGenericProxyActivator"/> of the type arguments of an
         /// instantiation.</param>
         internal static void RegisterGenericProxy(Type proxyDefinitionType, Type targetGenericTypeDefinition, bool derivedTypes, Func<Type[], object> activatorFactory)
+            => RegisterGenericProxy(proxyDefinitionType, targetGenericTypeDefinition, derivedTypes, activatorFactory, fromValidatedRegistry: false);
+
+        /// <summary>
+        /// Registers the proxies of the instantiations of an open generic target type of the bootstrap of a generated registry,
+        /// which validated its contract (and identity) before registering: like
+        /// <see cref="RegisterGenericProxy(Type, Type, bool, Func{Type[], object})"/>, without inspecting the activator factory.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetGenericTypeDefinition">The open generic target type.</param>
+        /// <param name="derivedTypes">Whether the classes deriving from an instantiation (or implementing it) are served too.</param>
+        /// <param name="activatorFactory">Creates the activator of the type arguments of an instantiation.</param>
+        internal static void RegisterValidatedGenericProxy(Type proxyDefinitionType, Type targetGenericTypeDefinition, bool derivedTypes, Func<Type[], object> activatorFactory)
+            => RegisterGenericProxy(proxyDefinitionType, targetGenericTypeDefinition, derivedTypes, activatorFactory, fromValidatedRegistry: true);
+
+        private static void RegisterGenericProxy(Type proxyDefinitionType, Type targetGenericTypeDefinition, bool derivedTypes, Func<Type[], object> activatorFactory, bool fromValidatedRegistry)
         {
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
             if (targetGenericTypeDefinition is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetGenericTypeDefinition)); }
@@ -370,7 +385,7 @@ namespace Datadog.Trace.DuckTyping
 
             lock (RegistrationLock)
             {
-                EnsureSingleRegistryAssemblyPerProcess(activatorFactory);
+                EnsureRegistryIdentity(activatorFactory, fromValidatedRegistry);
                 var current = ForwardGenericTargets.TryGetValue(proxyDefinitionType, out var registrations) ? registrations : [];
                 var updated = new List<GenericRegistration>(current.Length + 1);
                 foreach (var registration in current)
@@ -1317,7 +1332,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Gets the result for an instantiation of a registered open generic target type (see <see cref="RegisterGenericProxy"/>),
+        /// Gets the result for an instantiation of a registered open generic target type (see <see cref="RegisterGenericProxy(Type, Type, bool, Func{Type[], object})"/>),
         /// which the library created over types only known at runtime: the runtime type itself, or, for a registration that
         /// serves derived types, its closest base class, else an interface it implements. The activator of the proxy type the
         /// registry generated over the type parameters of the target is created with the type arguments of the instantiation;
@@ -1772,7 +1787,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// A registration of an open generic target type (see <see cref="RegisterGenericProxy"/>).
+        /// A registration of an open generic target type (see <see cref="RegisterGenericProxy(Type, Type, bool, Func{Type[], object})"/>).
         /// </summary>
         private sealed class GenericRegistration
         {
