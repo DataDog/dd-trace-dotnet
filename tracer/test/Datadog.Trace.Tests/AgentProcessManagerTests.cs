@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
 using KeepAliveAction = Datadog.Trace.AgentProcessManager.KeepAliveAction;
@@ -80,12 +81,34 @@ public class AgentProcessManagerTests
     [InlineData(3, 8_000)]
     [InlineData(4, 16_000)]
     [InlineData(5, 32_000)]
-    [InlineData(6, 60_000)]
-    [InlineData(7, 60_000)]
-    [InlineData(1_000, 60_000)]
-    [InlineData(int.MaxValue, 60_000)]
-    public void GetRetryDelay_DoublesFromTwoSecondsUpToSixtySeconds(int sequentialFailures, int expectedDelay)
+    [InlineData(6, 64_000)]
+    [InlineData(7, 128_000)]
+    [InlineData(8, 256_000)]
+    [InlineData(9, 300_000)]
+    [InlineData(1_000, 300_000)]
+    [InlineData(int.MaxValue, 300_000)]
+    public void GetRetryDelay_DoublesFromTwoSecondsUpToTheDefaultFiveMinuteCap(int sequentialFailures, int expectedDelay)
     {
-        AgentProcessManager.GetRetryDelay(sequentialFailures).Should().Be(expectedDelay);
+        var defaultCap = AgentProcessManager.GetMaxRetryInterval(ImmutableAzureAppServiceSettings.DefaultAgentMaxRetryIntervalSeconds);
+        AgentProcessManager.GetRetryDelay(sequentialFailures, defaultCap).Should().Be(expectedDelay);
+    }
+
+    [Theory]
+    [InlineData(5, 60_000)]
+    [InlineData(6, 60_000)]
+    [InlineData(int.MaxValue, 60_000)]
+    public void GetRetryDelay_UsesTheConfiguredCap(int sequentialFailures, int expectedDelay)
+    {
+        AgentProcessManager.GetRetryDelay(sequentialFailures, AgentProcessManager.GetMaxRetryInterval(60)).Should().Be(expectedDelay);
+    }
+
+    [Theory]
+    [InlineData(300, 300_000)]
+    [InlineData(60, 60_000)]
+    [InlineData(1, 2_000)]
+    [InlineData(int.MaxValue, int.MaxValue)]
+    public void GetMaxRetryInterval_ConvertsSecondsWithoutOverflowAndNeverGoesBelowTheFirstDelay(int seconds, int expectedMilliseconds)
+    {
+        AgentProcessManager.GetMaxRetryInterval(seconds).Should().Be(expectedMilliseconds);
     }
 }
