@@ -13,6 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 #endif
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.DuckTyping;
 using dnlib.DotNet;
@@ -401,7 +402,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 instructions.Add(OpCodes.Ldnull.ToInstruction());
                 instructions.Add(OpCodes.Ldftn.ToInstruction(createActivator));
                 instructions.Add(OpCodes.Newobj.ToInstruction(importer.Import(typeof(Func<Type[], object>).GetConstructor([typeof(object), typeof(IntPtr)])!)));
-                instructions.Add(OpCodes.Call.ToInstruction(importer.Import(typeof(DuckType).GetMethod(nameof(DuckType.RegisterAotGenericProxy))!)));
+                // The bootstrap validated the registry contract (and identity): the activator factory isn't inspected.
+                instructions.Add(OpCodes.Call.ToInstruction(importer.Import(typeof(DuckTypeAotEngine).GetMethod(nameof(DuckTypeAotEngine.RegisterValidatedGenericProxy), BindingFlags.NonPublic | BindingFlags.Static)!)));
 
                 if (genericTypes.Concat([bootstrapType]).SelectMany(type => type.Methods).FirstOrDefault(ReferencesGenericArgumentPlaceholder) is { } leftover)
                 {
