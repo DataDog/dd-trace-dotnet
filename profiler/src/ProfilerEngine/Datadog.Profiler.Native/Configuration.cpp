@@ -43,6 +43,12 @@ std::chrono::milliseconds const Configuration::DefaultLibrariesInfoCacheStartTim
 #else
     2s;
 #endif
+std::chrono::milliseconds const Configuration::DefaultWatcherStartTimeout =
+#if defined(DD_SANITIZERS)
+    10s;
+#else
+    2s;
+#endif
 
 Configuration::Configuration()
 {
@@ -136,6 +142,7 @@ Configuration::Configuration()
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 50);
     _testHeapSnapshotInterval = ExtractTestHeapSnapshotInterval();
     _librariesInfoCacheStartTimeout = ExtractLibrariesInfoCacheStartTimeout();
+    _watcherStartTimeout = ExtractWatcherStartTimeout();
     _heapHandleLimit = ExtractHeapHandleLimit();
     bool defaultUseManagedCodeCache =
     #if ARM64
@@ -1007,6 +1014,25 @@ std::chrono::milliseconds Configuration::ExtractLibrariesInfoCacheStartTimeout()
 std::chrono::milliseconds Configuration::GetLibrariesInfoCacheStartTimeout() const
 {
     return _librariesInfoCacheStartTimeout;
+}
+
+std::chrono::milliseconds Configuration::ExtractWatcherStartTimeout() const
+{
+    auto timeout = GetEnvironmentValue(EnvironmentVariables::WatcherStartTimeout, DefaultWatcherStartTimeout);
+    if (timeout <= 0ms)
+    {
+        Log::Warn("Configuration: ", EnvironmentVariables::WatcherStartTimeout,
+                  " env var must be strictly positive but is set to '", timeout,
+                  "' - '", DefaultWatcherStartTimeout, "' is used instead");
+        return DefaultWatcherStartTimeout;
+    }
+
+    return timeout;
+}
+
+std::chrono::milliseconds Configuration::GetWatcherStartTimeout() const
+{
+    return _watcherStartTimeout;
 }
 
 int32_t Configuration::ExtractHeapHandleLimit() const

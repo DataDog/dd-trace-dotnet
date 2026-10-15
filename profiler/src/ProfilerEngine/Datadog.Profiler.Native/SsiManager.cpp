@@ -177,7 +177,7 @@ bool SsiManager::IsProfilerStarted()
 {
     // the services are stopped and will never be restarted: CLR events must not be turned into samples anymore
     // because nobody would collect them (unbounded memory growth and, on Windows, leaked thread handles)
-    if (_hasDelayedStartFailed.load())
+    if (IsProfilingPermanentlyDisabled())
     {
         return false;
     }
@@ -196,6 +196,13 @@ bool SsiManager::IsProfilerStarted()
 void SsiManager::OnDelayedStartFailed()
 {
     _hasDelayedStartFailed.store(true);
+}
+
+bool SsiManager::IsProfilingPermanentlyDisabled() const
+{
+    // relaxed is enough: this is a one-way latch (never reset) and it is read from hot CLR callbacks
+    // such as ObjectAllocated() and EventPipeEventDelivered()
+    return _hasDelayedStartFailed.load(std::memory_order_relaxed);
 }
 
 void SsiManager::ProcessStart()

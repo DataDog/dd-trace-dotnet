@@ -116,6 +116,13 @@ public:
         return std::chrono::seconds(10);
     }
 
+    // Same rationale as GetLibrariesInfoCacheStartTimeout() above: a mocked zero would make
+    // StackSamplerLoopManager fail to start in every test.
+    std::chrono::milliseconds GetWatcherStartTimeout() const override
+    {
+        return std::chrono::seconds(10);
+    }
+
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
     MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
@@ -160,6 +167,7 @@ public:
     MOCK_METHOD(bool, IsProfilerEnabled, (), (override));
     MOCK_METHOD(bool, IsProfilerStarted, (), (override));
     MOCK_METHOD(void, OnDelayedStartFailed, (), (override));
+    MOCK_METHOD(bool, IsProfilingPermanentlyDisabled, (), (const override));
     MOCK_METHOD(void, ProcessStart, (), (override));
     MOCK_METHOD(void, ProcessEnd, (), (override));
     MOCK_METHOD(SkipProfileHeuristicType, GetSkipProfileHeuristic, (), (const override));
