@@ -150,8 +150,7 @@ internal static class OtlpMapper
             }
 
             // add "runtime-id" tag to service-entry (aka top-level) spans
-            var testOptimization = Ci.TestOptimization.Instance;
-            if (spanModel.Span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
+            if (spanModel.Span.IsTopLevel && !Ci.TestOptimizationAvailability.IsRunningAgentless())
             {
                 if (count < limit)
                 {

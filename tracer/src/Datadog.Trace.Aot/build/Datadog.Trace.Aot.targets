@@ -95,6 +95,13 @@
       <RuntimeHostConfigurationOption Include="Datadog.Trace.AspNetCore.IsSupported" Value="false" Trim="true" Condition="'@(_DatadogAotAspNetCore)' == ''" />
     </ItemGroup>
 
+    <!-- Test Optimization (CI Visibility) doesn't support NativeAOT applications yet: ILC leaves its code out
+         (TestOptimizationAvailability.IsSupported). -->
+    <ItemGroup>
+      <_TrimmerFeatureSettings Include="Datadog.Trace.TestOptimization.IsSupported" Value="false" />
+      <RuntimeHostConfigurationOption Include="Datadog.Trace.TestOptimization.IsSupported" Value="false" Trim="true" />
+    </ItemGroup>
+
     <!-- The application only references the manual API: ILC compiles the package's Datadog.Trace.dll. -->
     <ItemGroup Condition="'@(_DatadogAotDatadogTrace)' == '' and '$(DatadogAotDatadogTracePath)' != ''">
       <IlcReference Include="$(DatadogAotDatadogTracePath)" />

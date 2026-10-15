@@ -5,6 +5,11 @@
     <type fullname="Datadog.Trace.AspNetCoreAvailabilityChecker" feature="Datadog.Trace.AspNetCore.IsSupported" featurevalue="false">
       <method signature="System.Boolean get_IsSupported()" body="stub" value="false" />
     </type>
+    <!-- NativeAOT applications, which Test Optimization (CI Visibility) doesn't support yet: the Datadog.Trace.Aot targets set the
+         feature switch, so ILC leaves its code out (see TestOptimizationAvailability.IsSupported). -->
+    <type fullname="Datadog.Trace.Ci.TestOptimizationAvailability" feature="Datadog.Trace.TestOptimization.IsSupported" featurevalue="false">
+      <method signature="System.Boolean get_IsSupported()" body="stub" value="false" />
+    </type>
     <!-- Without dynamic code (NativeAOT, which sets the feature switch): these properties return
          RuntimeFeature.IsDynamicCodeSupported, a constant ILC 9+ propagates through them but ILC 8 doesn't. -->
     <type fullname="Datadog.Trace.DuckTyping.DuckTypeAotEngine" feature="System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported" featurevalue="false">
