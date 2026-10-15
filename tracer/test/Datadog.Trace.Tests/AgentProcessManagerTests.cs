@@ -5,8 +5,13 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using KeepAliveAction = Datadog.Trace.AgentProcessManager.KeepAliveAction;
@@ -111,4 +116,151 @@ public class AgentProcessManagerTests
     {
         AgentProcessManager.GetMaxRetryInterval(seconds).Should().Be(expectedMilliseconds);
     }
+
+    [Theory]
+    [InlineData(21, 2_097_152_000)]
+    [InlineData(22, int.MaxValue)]
+    [InlineData(1_000, int.MaxValue)]
+    [InlineData(int.MaxValue, int.MaxValue)]
+    public void GetRetryDelay_DoesNotOverflowAtTheLargestAcceptedCap(int sequentialFailures, int expectedDelay)
+    {
+        var largestCap = AgentProcessManager.GetMaxRetryInterval(int.MaxValue);
+        AgentProcessManager.GetRetryDelay(sequentialFailures, largestCap).Should().Be(expectedDelay);
+    }
+
+    [Fact]
+    public void GetStartDelay_IsImmediateUnlessOurOwnProcessJustExited()
+    {
+        var cap = AgentProcessManager.GetMaxRetryInterval(ImmutableAzureAppServiceSettings.DefaultAgentMaxRetryIntervalSeconds);
+
+        // First start, or an agent we did not start went away
+        AgentProcessManager.GetStartDelay(ownProcessExited: false, sequentialFailures: 5, cap).Should().Be(0);
+
+        // Our own agent exited: back off with the shared counter
+        AgentProcessManager.GetStartDelay(ownProcessExited: true, sequentialFailures: 1, cap).Should().Be(2_000);
+        AgentProcessManager.GetStartDelay(ownProcessExited: true, sequentialFailures: 4, cap).Should().Be(16_000);
+    }
+
+    [Fact]
+    public void RecordOwnProcessExit_CountsAChildThatExitsBetweenPolls()
+    {
+        // An agent that started, failed its startup health check, then exited before the next poll
+        var metadata = new AgentProcessManager.ProcessMetadata { Name = "test-agent", ProcessPath = "test-agent" };
+
+        for (var expectedFailures = 1; expectedFailures <= 2; expectedFailures++)
+        {
+            var child = StartShortLivedChild();
+            child.WaitForExit(10_000).Should().BeTrue();
+            metadata.Process = child;
+
+            AgentProcessManager.RecordOwnProcessExit(metadata).Should().BeTrue();
+            metadata.SequentialFailures.Should().Be(expectedFailures);
+            metadata.Process.Should().BeNull();
+        }
+
+        // Each exit is counted once
+        AgentProcessManager.RecordOwnProcessExit(metadata).Should().BeFalse();
+        metadata.SequentialFailures.Should().Be(2);
+    }
+
+    [Fact]
+    public void RecordOwnProcessExit_IgnoresAChildThatIsStillRunning()
+    {
+        var metadata = new AgentProcessManager.ProcessMetadata { Name = "test-agent", ProcessPath = "test-agent" };
+        var child = StartLongRunningChild();
+        try
+        {
+            metadata.Process = child;
+
+            AgentProcessManager.RecordOwnProcessExit(metadata).Should().BeFalse();
+            metadata.SequentialFailures.Should().Be(0);
+            metadata.Process.Should().BeSameAs(child);
+        }
+        finally
+        {
+            child.Kill();
+            child.WaitForExit(10_000);
+            child.Dispose();
+        }
+    }
+
+    [SkippableFact]
+    public async Task ProcessIsHealthyAsync_TraceAgentThatAnswersIsHealthy()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+        var pipeName = $"dd-test-agent-{Guid.NewGuid():N}";
+        using var server = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        var serve = Task.Run(
+            async () =>
+            {
+                await server.WaitForConnectionAsync();
+                var buffer = new byte[1024];
+                await server.ReadAsync(buffer, 0, buffer.Length);
+                var response = Encoding.ASCII.GetBytes("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+                await server.WriteAsync(response, 0, response.Length);
+            });
+
+        var metadata = new AgentProcessManager.ProcessMetadata { Name = "test-agent", PipeName = pipeName, IsTraceAgent = true };
+
+        (await metadata.ProcessIsHealthyAsync()).Should().BeTrue();
+        metadata.LastHealthCheckFailure.Should().BeNull();
+        await serve;
+    }
+
+    [SkippableFact]
+    public async Task ProcessIsHealthyAsync_TraceAgentThatAcceptsButNeverAnswersFailsWithinTheTimeout()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+        var pipeName = $"dd-test-agent-{Guid.NewGuid():N}";
+        using var server = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        var connected = server.WaitForConnectionAsync();
+
+        var metadata = new AgentProcessManager.ProcessMetadata { Name = "test-agent", PipeName = pipeName, IsTraceAgent = true };
+
+        var stopwatch = Stopwatch.StartNew();
+        (await metadata.ProcessIsHealthyAsync()).Should().BeFalse();
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
+        metadata.LastHealthCheckFailure.Should().Contain("no response to GET /info").And.Contain(pipeName);
+
+        // The probe closed its connection: the server's next read ends instead of waiting forever
+        await connected;
+        var buffer = new byte[1024];
+        await server.ReadAsync(buffer, 0, buffer.Length); // the request
+        var closed = await ReadUntilClosedAsync(server, TimeSpan.FromSeconds(10));
+        closed.Should().BeTrue();
+    }
+
+    private static async Task<bool> ReadUntilClosedAsync(Stream stream, TimeSpan timeout)
+    {
+        // Pipe reads may ignore cancellation on .NET Framework, so bound the wait with WhenAny instead
+        var readToEnd = Task.Run(
+            async () =>
+            {
+                var buffer = new byte[1024];
+                try
+                {
+                    while (await stream.ReadAsync(buffer, 0, buffer.Length) > 0)
+                    {
+                    }
+                }
+                catch (IOException)
+                {
+                    // A broken pipe also means the client closed it
+                }
+            });
+
+        return await Task.WhenAny(readToEnd, Task.Delay(timeout)) == readToEnd;
+    }
+
+    private static Process StartShortLivedChild()
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+               ? Process.Start(new ProcessStartInfo("cmd.exe", "/c exit 3") { UseShellExecute = false, CreateNoWindow = true })
+               : Process.Start(new ProcessStartInfo("/bin/sh", "-c \"exit 3\"") { UseShellExecute = false });
+
+    private static Process StartLongRunningChild()
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+               ? Process.Start(new ProcessStartInfo("ping.exe", "-n 60 127.0.0.1") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true })
+               : Process.Start(new ProcessStartInfo("/bin/sh", "-c \"sleep 60\"") { UseShellExecute = false });
 }
