@@ -77,11 +77,13 @@ public partial class DuckTypeAotAdditionalParityTests
     [InlineData("async-method-void-task")]
     [InlineData("delay-task")]
     // Classes deriving from the target of a mapping that includes derived types ([DuckType(IncludeDerivedTypes = true)]): the
-    // proxy of the most derived registered base class, else of the most derived registered interface.
+    // proxy of the most derived registered base class, else of the most derived registered interface, else of System.Object,
+    // which serves value types too.
     [InlineData("derived-types-base-class")]
     [InlineData("derived-types-most-derived-base-class")]
     [InlineData("derived-types-interface")]
     [InlineData("derived-types-activator")]
+    [InlineData("derived-types-object")]
     public void GeneratedRegistryShouldServeRuntimeTypesItCantNameLikeDynamicMode(string scenario)
     {
         var (exercises, mappings) = scenario switch
@@ -338,6 +340,19 @@ public partial class DuckTypeAotAdditionalParityTests
                     () => DescribeDuckType(DuckType.GetOrCreateProxyType(typeof(IFallbackNameProxy), typeof(FallbackDerivedChild)).CreateInstance<IFallbackNameProxy>(new FallbackDerivedOther())),
                 },
                 new[] { Mapping(typeof(IFallbackNameProxy), typeof(FallbackDerivedBase)).WithDerivedTypes() }),
+            // Like the proxy of a marker interface the NativeAOT CallTarget adapters look up by runtime type (see
+            // CallTargetDuckTypeRegistry): no alias, the proxy of System.Object serves every type.
+            "derived-types-object" => (
+                new Func<object?>[]
+                {
+                    () => DescribeDuckType(DuckType.Create<IFallbackMarkerProxy>(new object())),
+                    () => DescribeDuckType(DuckType.Create<IFallbackMarkerProxy>(Tuple.Create(1, 2))),
+                    () => DescribeDuckType(DuckType.Create<IFallbackMarkerProxy>(new FallbackDerivedChild())),
+                    () => DescribeDuckType(DuckType.Create<IFallbackMarkerProxy>(42)),
+                    () => DescribeDuckType(DuckType.Create<IFallbackMarkerProxy>(CancellationToken.None)),
+                    () => DuckType.CanCreate<IFallbackMarkerProxy>(DateTime.MinValue),
+                },
+                new[] { new DuckTypeAotMapping(typeof(IFallbackMarkerProxy).FullName!, typeof(IFallbackMarkerProxy).Assembly.GetName().Name!, typeof(object).FullName!, typeof(object).Assembly.GetName().Name!, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.CallTarget, includesDerivedTypes: true) }),
             _ => (
                 new Func<object?>[]
                 {
@@ -521,6 +536,10 @@ public partial class DuckTypeAotAdditionalParityTests
     public interface IFallbackEqualsProxy
     {
         bool Equals(object? obj);
+    }
+
+    public interface IFallbackMarkerProxy
+    {
     }
 
     public interface IFallbackEnumerableProxy

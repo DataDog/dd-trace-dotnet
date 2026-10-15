@@ -1478,6 +1478,8 @@ namespace Datadog.Trace.DuckTyping
         /// NativeAOT has): the proxy of a registered type it derives from or implements (see
         /// <see cref="SelectCoreLibraryFallbackRegistration"/>), bound to the members of that type. A failure isn't replayed: it
         /// would be the one of another type.</item>
+        /// <item>Another type assignable to the target type of a <c>[DuckType(IncludeDerivedTypes = true)]</c> declaration (see
+        /// <see cref="SelectDerivedTypesRegistration"/>): the proxy of that type, bound to its members.</item>
         /// </list>
         /// The proxy reports the runtime type as IDuckType.Type.
         /// </summary>
@@ -1497,12 +1499,6 @@ namespace Datadog.Trace.DuckTyping
             var type = key.TargetType;
             var isArray = type.IsArray;
             var isRuntimeInternal = !isArray && IsRuntimeInternalType(type);
-            if (!isArray && !isRuntimeInternal && type.IsValueType)
-            {
-                result = default;
-                return false;
-            }
-
             if (ForwardFallbackResults.TryGetValue(key, out result))
             {
                 return true;
@@ -1641,39 +1637,57 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Selects the registration serving a class without registration of its own that derives from (or implements) the target
-        /// type of a <c>[DuckType(IncludeDerivedTypes = true)]</c> declaration: the most derived registered base class, else the
-        /// most derived registered interface. The proxy binds the members of that type, which the class inherits.
+        /// Selects the registration serving a type without registration of its own that derives from (or implements) the target
+        /// type of a <c>[DuckType(IncludeDerivedTypes = true)]</c> declaration: for a class, the most derived registered base
+        /// class, else the most derived registered interface. The proxy binds the members of that type, which the class inherits.
+        /// A declaration of System.Object serves the other types, value types included: its proxy binds the members every
+        /// instance has (a value type's boxed).
         /// </summary>
         /// <param name="registrations">The fallback registrations of the proxy definition type.</param>
-        /// <param name="type">The class.</param>
+        /// <param name="type">The type.</param>
         /// <returns>The registration, or null.</returns>
         private static FallbackRegistration? SelectDerivedTypesRegistration(FallbackRegistration[] registrations, Type type)
         {
-            for (var baseType = type.BaseType; baseType is not null && baseType != typeof(object); baseType = baseType.BaseType)
+            if (!type.IsValueType)
             {
-                foreach (var registration in registrations)
+                for (var baseType = type.BaseType; baseType is not null && baseType != typeof(object); baseType = baseType.BaseType)
                 {
-                    if (registration.ServesDerivedTypes && registration.TargetType == baseType)
+                    foreach (var registration in registrations)
                     {
-                        return registration;
+                        if (registration.ServesDerivedTypes && registration.TargetType == baseType)
+                        {
+                            return registration;
+                        }
                     }
                 }
-            }
 
-            FallbackRegistration? selected = null;
-            foreach (var registration in registrations)
-            {
-                if (registration.ServesDerivedTypes &&
-                    registration.TargetType.IsInterface &&
-                    registration.TargetType.IsAssignableFrom(type) &&
-                    (selected is null || selected.TargetType.IsAssignableFrom(registration.TargetType)))
+                FallbackRegistration? selected = null;
+                foreach (var registration in registrations)
                 {
-                    selected = registration;
+                    if (registration.ServesDerivedTypes &&
+                        registration.TargetType.IsInterface &&
+                        registration.TargetType.IsAssignableFrom(type) &&
+                        (selected is null || selected.TargetType.IsAssignableFrom(registration.TargetType)))
+                    {
+                        selected = registration;
+                    }
+                }
+
+                if (selected is not null)
+                {
+                    return selected;
                 }
             }
 
-            return selected;
+            foreach (var registration in registrations)
+            {
+                if (registration.ServesDerivedTypes && registration.TargetType == typeof(object))
+                {
+                    return registration;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
