@@ -70,6 +70,11 @@ public sealed class HandlerWrapperSetHandlerIntegration
 
         public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
         {
+            if (!LambdaCommon.IsEnabled(Tracer.Instance))
+            {
+                return CallTargetState.GetDefault();
+            }
+
             LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
 
             Scope scope;
@@ -105,32 +110,33 @@ public sealed class HandlerWrapperSetHandlerIntegration
         /// <inheritdoc/>
         public async Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
         {
-            LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
-            if (state is CallTargetState callTargetState)
+            if (state is not CallTargetState callTargetState || !LambdaCommon.ShouldCompleteInvocation(callTargetState.Scope))
             {
-                try
-                {
-                    var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
-                    if (proxyInstance == null)
-                    {
-                        LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
-                        await LambdaCommon.EndInvocationAsync(string.Empty, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var jsonString = ConvertPayloadStream(proxyInstance.OutputStream);
-                        await LambdaCommon.EndInvocationAsync(jsonString, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
-                    await LambdaCommon.EndInvocationAsync(string.Empty, ex, callTargetState, RequestBuilder).ConfigureAwait(false);
-                }
-
-                LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateEndAsync");
+                return returnValue;
             }
 
+            LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
+            try
+            {
+                var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
+                if (proxyInstance == null)
+                {
+                    LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
+                    await LambdaCommon.EndInvocationAsync(string.Empty, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
+                }
+                else
+                {
+                    var jsonString = ConvertPayloadStream(proxyInstance.OutputStream);
+                    await LambdaCommon.EndInvocationAsync(jsonString, exception, callTargetState, RequestBuilder).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
+                await LambdaCommon.EndInvocationAsync(string.Empty, ex, callTargetState, RequestBuilder).ConfigureAwait(false);
+            }
+
+            LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateEndAsync");
             return returnValue;
         }
     }

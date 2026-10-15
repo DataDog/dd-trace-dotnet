@@ -10,6 +10,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -24,6 +25,91 @@ namespace Datadog.Trace.Tests
     public class LambdaCommonTests
     {
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new();
+
+        [Fact]
+        public async Task TestCreatePlaceholderScopeWhenTraceDisabled()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.TraceEnabled, false } });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" } }.Wrap();
+            LambdaCommon.CreatePlaceholderScope(tracer, headers).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task TestSendStartInvocationWhenTraceDisabled()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.TraceEnabled, false } });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            var previous = Tracer.Instance;
+            Tracer.UnsafeSetTracerInstance(tracer);
+            try
+            {
+                LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", null).Should().BeNull();
+                _lambdaRequestMock.Verify(lr => lr.GetStartInvocationRequest(), Times.Never);
+            }
+            finally
+            {
+                Tracer.UnsafeSetTracerInstance(previous);
+            }
+        }
+
+        [Fact]
+        public async Task TestEndInvocationAsyncWhenTraceDisabled()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.TraceEnabled, false } });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            var previous = Tracer.Instance;
+            Tracer.UnsafeSetTracerInstance(tracer);
+            try
+            {
+                var stateObject = new CallTargetState(scope: null, state: "example-aws-request-id");
+                await LambdaCommon.EndInvocationAsync("{}", exception: null, stateObject, _lambdaRequestMock.Object);
+                _lambdaRequestMock.Verify(lr => lr.GetEndInvocationRequest(It.IsAny<CallTargetState>(), It.IsAny<bool>()), Times.Never);
+            }
+            finally
+            {
+                Tracer.UnsafeSetTracerInstance(previous);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "ArmUnsupported")]
+        public async Task TestEndInvocationAsyncFinishesScopeWhenTraceDisabledAfterStart()
+        {
+            await using var enabledTracer = TracerHelper.CreateWithFakeAgent();
+            var disabledSettings = TracerSettings.Create(new() { { ConfigurationKeys.TraceEnabled, false } });
+            await using var disabledTracer = TracerHelper.CreateWithFakeAgent(disabledSettings);
+
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" } }.Wrap();
+            var scope = LambdaCommon.CreatePlaceholderScope(enabledTracer, headers);
+            scope.Should().NotBeNull();
+
+            var exception = new InvalidOperationException("boom");
+            var stateObject = new CallTargetState(scope, "example-aws-request-id");
+            var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
+            var responseStream = new Mock<Stream>(MockBehavior.Loose);
+            response.Setup(c => c.StatusCode).Returns(HttpStatusCode.OK);
+
+            var httpRequest = new Mock<WebRequest>();
+            httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
+            httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(stateObject, true)).Returns(httpRequest.Object);
+
+            var previous = Tracer.Instance;
+            Tracer.UnsafeSetTracerInstance(disabledTracer);
+            try
+            {
+                await LambdaCommon.EndInvocationAsync("{}", exception, stateObject, _lambdaRequestMock.Object);
+                _lambdaRequestMock.Verify(lr => lr.GetEndInvocationRequest(stateObject, true), Times.Once);
+                scope.Span.IsFinished.Should().BeTrue();
+                scope.Span.Error.Should().BeTrue();
+            }
+            finally
+            {
+                Tracer.UnsafeSetTracerInstance(previous);
+            }
+        }
 
         [Fact]
         public async Task TestCreatePlaceholderScopeSuccessWithTraceIdOnly()

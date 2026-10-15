@@ -26,8 +26,26 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LambdaRuntimeAwsRequestIdHeader = "lambda-runtime-aws-request-id";
 
+    internal static bool IsEnabled(Tracer tracer)
+    {
+        // IsIntegrationEnabled is false when DD_TRACE_ENABLED is false.
+        return tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AwsLambda);
+    }
+
+    internal static bool ShouldCompleteInvocation(Scope scope)
+    {
+        // An existing scope means start-invocation already ran. Finish it even if tracing was disabled afterwards.
+        return scope is not null || IsEnabled(Tracer.Instance);
+    }
+
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers, string awsRequestId = null)
     {
+        if (!IsEnabled(tracer))
+        {
+            // integration disabled, don't create a scope, skip this trace
+            return null;
+        }
+
         var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
 
         var span = tracer.StartSpan(
@@ -52,6 +70,11 @@ internal abstract class LambdaCommon
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, ILambdaContext context)
     {
+        if (!IsEnabled(Tracer.Instance))
+        {
+            return null;
+        }
+
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context?.ClientContext?.Custom);
@@ -75,6 +98,11 @@ internal abstract class LambdaCommon
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, CallTargetState stateObject, bool isError, string data)
     {
+        if (!ShouldCompleteInvocation(stateObject.Scope))
+        {
+            return;
+        }
+
         var request = requestBuilder.GetEndInvocationRequest(stateObject, isError);
         WriteRequestPayload(request, data);
         using var response = (HttpWebResponse)request.GetResponse();
@@ -88,6 +116,11 @@ internal abstract class LambdaCommon
     internal static async Task EndInvocationAsync(string returnValue, Exception exception, CallTargetState stateObject, ILambdaExtensionRequest requestBuilder)
     {
         var scope = stateObject.Scope;
+
+        if (!ShouldCompleteInvocation(scope))
+        {
+            return;
+        }
 
         if (exception != null && scope is { Span: var span })
         {
