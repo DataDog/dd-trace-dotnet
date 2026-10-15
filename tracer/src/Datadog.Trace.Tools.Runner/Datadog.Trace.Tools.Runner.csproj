@@ -42,6 +42,9 @@
         <TrimMode>copyused</TrimMode>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
+        <!-- copyused keeps the assemblies the tool uses whole (it only removes the unused ones), so their trim analysis
+             warnings (thousands per runtime) don't point at anything trimming removes. -->
+        <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
         <PublishSingleFile>true</PublishSingleFile>
         <SelfContained>true</SelfContained>
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
