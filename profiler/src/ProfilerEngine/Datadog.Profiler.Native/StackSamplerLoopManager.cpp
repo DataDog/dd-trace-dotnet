@@ -112,6 +112,15 @@ bool StackSamplerLoopManager::StopImpl()
 
 bool StackSamplerLoopManager::RunWatcher()
 {
+    // TODO: revised when fault-injection is implemented
+    // This is for test purposes only.
+    if (_watcherStartTimeout <= 0ms)
+    {
+        Log::Error("StackSamplerLoopManager::RunWatcher - the watcher start timeout is 0: "
+                   "not waiting for the watcher thread and failing the start.");
+        return false;
+    }
+
     std::promise<void> watcherReadyPromise;
     std::future<void> watcherReadyFuture = watcherReadyPromise.get_future();
 

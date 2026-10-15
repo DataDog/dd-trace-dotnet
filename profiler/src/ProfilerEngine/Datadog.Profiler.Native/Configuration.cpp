@@ -1018,11 +1018,14 @@ std::chrono::milliseconds Configuration::GetLibrariesInfoCacheStartTimeout() con
 
 std::chrono::milliseconds Configuration::ExtractWatcherStartTimeout() const
 {
+    // Unlike the other start timeouts, 0 is a valid value here: it means "do not wait for the watcher
+    // thread", which makes StackSamplerLoopManager fail to start. That is how the integration tests reach
+    // the delayed-start failure path deterministically (see SCP-1413). Negative values are not meaningful.
     auto timeout = GetEnvironmentValue(EnvironmentVariables::WatcherStartTimeout, DefaultWatcherStartTimeout);
-    if (timeout <= 0ms)
+    if (timeout < 0ms)
     {
         Log::Warn("Configuration: ", EnvironmentVariables::WatcherStartTimeout,
-                  " env var must be strictly positive but is set to '", timeout,
+                  " env var must not be negative but is set to '", timeout,
                   "' - '", DefaultWatcherStartTimeout, "' is used instead");
         return DefaultWatcherStartTimeout;
     }
