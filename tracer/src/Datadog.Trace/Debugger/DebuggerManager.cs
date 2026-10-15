@@ -904,13 +904,18 @@ namespace Datadog.Trace.Debugger
                 Log.Debug(ex, "Shutdown task for DebuggerManager is running with exception");
             }
 
-            SafeDisposal.New()
-                        .Add(_tracerSettingsSubscription)
-                        .Add(Volatile.Read(ref _symDbRemoteConfig))
+            var disposal = SafeDisposal.New().Add(_tracerSettingsSubscription);
+
+            // Without them (NativeAOT), they're never created: Add<T> would make ILC compile their code (it assumes T is constructed).
+            if (RuntimeDebuggerProductsSupported)
+            {
+                disposal.Add(Volatile.Read(ref _symDbRemoteConfig))
                         .Add(_dynamicInstrumentation)
-                        .Add(ExceptionReplay)
-                        .Execute(DebuggerGlobalRateLimiter.TryDisposeInstance, "disposing global debugger rate limiter")
-                        .DisposeAll();
+                        .Add(ExceptionReplay);
+            }
+
+            disposal.Execute(DebuggerGlobalRateLimiter.TryDisposeInstance, "disposing global debugger rate limiter")
+                    .DisposeAll();
         }
     }
 }
