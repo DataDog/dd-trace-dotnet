@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
@@ -19,13 +20,18 @@ namespace Datadog.Trace.Logging.DirectSubmission
         {
             // Still quite a long time, but we could be sending a lot of data
             var timeout = TimeSpan.FromSeconds(15);
+            KeyValuePair<string, string>[] defaultHeaders =
+            [
+                ..LogsApiHeaderNames.DefaultHeaders,
+                new(ApiKeyHttpTransportGuard.ApiKeyHeaderName, settings.ApiKey)
+            ];
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for log submission transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory(settings.IntakeUrl, LogsApiHeaderNames.DefaultHeaders, timeout: timeout);
+            return new HttpClientRequestFactory(settings.IntakeUrl, defaultHeaders, timeout: timeout);
 #else
             Log.Information("Using {FactoryType} for log submission transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory(settings.IntakeUrl, LogsApiHeaderNames.DefaultHeaders, timeout: timeout);
+            return new ApiWebRequestFactory(settings.IntakeUrl, defaultHeaders, timeout: timeout);
 #endif
         }
     }

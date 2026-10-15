@@ -16,8 +16,15 @@ namespace Datadog.Trace.Debugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerTransportStrategy));
 
-        public static IApiRequestFactory Get(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders)
+        public static IApiRequestFactory Get(Uri baseEndpoint, string apiKey)
         {
+            KeyValuePair<string, string>[] defaultHeaders =
+            [
+                ..AgentHttpHeaderNames.DefaultHeaders,
+                new(ApiKeyHttpTransportGuard.ApiKeyHeaderName, apiKey),
+                new("DD-EVP-ORIGIN", "dd-trace-dotnet")
+            ];
+
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for debugger transport.", nameof(HttpClientRequestFactory));
             return new HttpClientRequestFactory(baseEndpoint, defaultHeaders);
