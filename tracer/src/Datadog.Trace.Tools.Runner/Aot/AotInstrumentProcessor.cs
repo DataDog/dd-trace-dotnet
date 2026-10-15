@@ -180,20 +180,29 @@ internal static class AotInstrumentProcessor
             GenericInstantiationDiscovery.Statistics? discovery = null;
             if (options.GenerateCallTargetRegistry)
             {
-                // The instantiations come from all the given assemblies (the application creates the framework's generic types).
+                // The mappings Datadog's assemblies declare ([DuckType], [DuckReverseDelegation]...).
+                var declaredMappings = ReadDeclaredDuckTypeMappings(analysis, options.DatadogTracePath, modules.Select(m => (m.AssemblyName, m.Path)), report);
+                var modulesByAssembly = modules.GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First().Module, StringComparer.OrdinalIgnoreCase);
+                dnlib.DotNet.TypeDef? FindType(string assembly, string typeName) => modulesByAssembly.TryGetValue(assembly, out var module) ? module.Find(typeName, isReflectionName: true) : null;
+                var genericDuckTypeTargets = GenericDuckTypeTargets.Find(declaredMappings, FindType);
+
+                // The instantiations come from all the given assemblies (the application creates the framework's generic types):
+                // the ones of the instrumented generic methods, and the ones of the open generic targets of duck typing mappings.
                 var genericRewritten = rewrittenByModule.Values.SelectMany(m => m).Where(m => m.HasGenericParameters || m.DeclaringType.HasGenericParameters).ToList();
-                if (genericRewritten.Count == 0)
+                var genericDuckTypeSeeds = GenericDuckTypeTargets.Seeds(genericDuckTypeTargets.Keys).ToList();
+                var found = new Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>();
+                if (genericRewritten.Count + genericDuckTypeSeeds.Count > 0)
                 {
-                    instantiations = new Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>();
-                }
-                else
-                {
-                    instantiations = GenericInstantiationDiscovery.Discover(modules.Where(m => m.Writable).Select(m => (dnlib.DotNet.ModuleDef)m.Module), genericRewritten, typeResolver.Resolve, out var statistics, options.MaxGenericContexts);
+                    found = GenericInstantiationDiscovery.Discover(modules.Where(m => m.Writable).Select(m => (dnlib.DotNet.ModuleDef)m.Module), genericRewritten.Concat(genericDuckTypeSeeds).Distinct().ToList(), typeResolver.Resolve, out var statistics, options.MaxGenericContexts);
                     discovery = statistics;
                     AotLog.Info($"Search of generic instantiations: {statistics.RelevantMembers} generic types and methods lead to instrumented ones, {statistics.ClosedReferences} closed references, {statistics.Contexts} generic contexts followed");
                 }
 
+                var genericRewrittenSet = new HashSet<dnlib.DotNet.MethodDef>(genericRewritten);
+                instantiations = found.Where(f => genericRewrittenSet.Contains(f.Key)).ToDictionary(f => f.Key, f => f.Value);
                 AotLog.Info($"Closed instantiations of generic instrumented methods: {instantiations.Values.Sum(i => i.Count)} for {instantiations.Count} methods");
+                var valueTypeTargets = GenericDuckTypeTargets.ValueTypeInstantiations(genericDuckTypeTargets, found);
+                AotLog.Info($"Instantiations over value types of the open generic targets of duck typing mappings: {valueTypeTargets.Select(t => t.Target.FullName).Distinct().Count()} for {genericDuckTypeTargets.Count} targets");
                 var collector = new DuckProxyRequestCollector();
                 foreach (var rewritten in rewrittenByModule.Values)
                 {
@@ -201,20 +210,18 @@ internal static class AotInstrumentProcessor
                 }
 
                 AotLog.Info($"Duck typing proxies needed by the CallTarget adapters: {collector.Requests.Count} (+{collector.RuntimeRequests.Count} looked up at runtime)");
-                // The mappings Datadog's assemblies declare ([DuckType], [DuckReverseDelegation]...), then the recorded ones.
-                var declaredMappings = ReadDeclaredDuckTypeMappings(analysis, options.DatadogTracePath, modules.Select(m => (m.AssemblyName, m.Path)), report);
+                // The declared mappings, then the recorded ones.
                 var mapFileMappings = ReadDuckTypeMaps(options.DuckTypeMaps, report);
                 var recordedMappings = declaredMappings.Concat(mapFileMappings).ToList();
                 var undeclaredMappings = new List<string>();
                 if (mapFileMappings.Count > 0)
                 {
-                    var modulesByAssembly = modules.GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First().Module, StringComparer.OrdinalIgnoreCase);
                     undeclaredMappings = CallTargetDuckTypeRegistry.FindUndeclared(
                         collector.Requests,
                         collector.RuntimeRequests,
                         declaredMappings,
                         mapFileMappings,
-                        (assembly, typeName) => modulesByAssembly.TryGetValue(assembly, out var module) ? module.Find(typeName, isReflectionName: true) : null,
+                        FindType,
                         typeResolver.Resolve);
                 }
 
@@ -229,7 +236,7 @@ internal static class AotInstrumentProcessor
                         assemblyPaths[CompositeInterfaceAssembly.AssemblyName] = compositeInterfaces;
                     }
 
-                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
+                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, valueTypeTargets, assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
                     if (duckTypeRegistry is not null)
                     {
                         report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, ReplayedFailures = duckTypeRegistry.ReplayedFailures, Warnings = duckTypeRegistry.Warnings.ToList() };

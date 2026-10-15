@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Tools.Runner.Aot.CallTarget;
+using Datadog.Trace.Tools.Runner.DuckTypeAot;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using FluentAssertions;
@@ -133,6 +134,34 @@ public class GenericInstantiationDiscoveryTests
         Instantiations(Discover(out var statistics, maxContexts: 1)).Should().BeEmpty();
         statistics.LimitReached.Should().BeTrue();
         statistics.Truncated.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TheInstantiationsOverValueTypesOfOpenGenericDuckTypingTargetsAreFound()
+    {
+        // A library creates its Producer<TKey> in generic code (Builder<TKey>.Build calls its constructor), and the application
+        // uses Builder<int> and Builder<string>: the generic proxy serves Producer<string>, Producer<int> needs a proxy of its own.
+        var producer = AddType("Producer`1", genericParameters: 1);
+        var constructor = AddMethod(producer, ".ctor", instance: true);
+        constructor.Attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        var builder = AddType("Builder`1", genericParameters: 1);
+        var build = AddMethod(builder, "Build");
+        build.Body.Instructions.Clear();
+        build.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(new MemberRefUser(_module, ".ctor", MethodSig.CreateInstance(_module.CorLibTypes.Void), new TypeSpecUser(new GenericInstSig(new ClassSig(producer), new GenericVar(0, builder))))));
+        build.Body.Instructions.Add(OpCodes.Pop.ToInstruction());
+        build.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+        Calls(AddMethod(AddType("Application"), "Main"), Call(builder, "Build", _module.CorLibTypes.Int32), Call(builder, "Build", _module.CorLibTypes.String));
+
+        var mapping = new DuckTypeAotMapping("Datadog.Trace.IProducerProxy", "Datadog.Trace", "Generics.Producer`1", "Generics", DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.Attribute);
+        var targets = GenericDuckTypeTargets.Find([mapping], (assembly, name) => assembly == "Generics" ? _module.Find(name, isReflectionName: true) : null);
+        targets.Keys.Should().ContainSingle().Which.Should().BeSameAs(producer);
+
+        var corlib = ModuleDefMD.Load(typeof(object).Assembly.Location);
+        var resolver = new LoadedModulesTypeResolver(new ModuleDef[] { _module, corlib });
+        var found = GenericInstantiationDiscovery.Discover([_module], GenericDuckTypeTargets.Seeds(targets.Keys).ToList(), resolver.Resolve);
+        var instantiations = GenericDuckTypeTargets.ValueTypeInstantiations(targets, found);
+        instantiations.Select(i => i.Target.FullName).Should().BeEquivalentTo("Generics.Producer`1<System.Int32>");
+        instantiations.Should().OnlyContain(i => i.Mapping == mapping);
     }
 
     private Dictionary<MethodDef, List<GenericInstantiationDiscovery.Instantiation>> Discover(out GenericInstantiationDiscovery.Statistics statistics, int maxContexts = GenericInstantiationDiscovery.DefaultMaxContexts)

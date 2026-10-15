@@ -231,7 +231,9 @@ the factory of an instantiation with `typeof(Factory<,>).MakeGenericType(argumen
 runtime from the canonical code of the generic types, for reference type arguments. A lookup for a runtime type that is an
 instantiation of the open generic type (or, with `IncludeDerivedTypes`, derives from one or implements one) gets the proxy of
 that instantiation, which binds its members like dynamic duck typing does. Instantiations with value type arguments aren't served
-(NativeAOT has no code for them unless it compiled them): a recorded map gives them their own proxy. The generic parameters
+(NativeAOT has no code for them unless it compiled them): a recorded map gives them their own proxy, and so does the NativeAOT
+build-time instrumentation for the ones the application creates (the search of generic instantiations follows the code that calls
+the constructors of the target, e.g. `ProducerBuilder<int, string>.Build()` creating a Kafka `Producer<int, string>`). The generic parameters
 of the target can be constrained to classes and to `new()`, not to other types.
 
 ### Reverse Proxy
