@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Versioning;
 using Datadog.Trace.Tools.Runner.Aot.Native;
 
 namespace Datadog.Trace.Tools.Runner.Aot;
@@ -41,7 +43,14 @@ internal static class AotRuntimeSelector
 
         var frameworks = Path.Combine(Path.GetDirectoryName(dotnet)!, "shared", "Microsoft.NETCore.App");
         var installed = Directory.Exists(frameworks) ? Directory.GetDirectories(frameworks).Select(Path.GetFileName).OfType<string>().ToList() : [];
-        if (Select(targetRuntime, Environment.Version, installed) is not { } version)
+        var runnerFramework = typeof(AotRuntimeSelector).Assembly.GetCustomAttribute<TargetFrameworkAttribute>() is { } attribute ? new FrameworkName(attribute.FrameworkName).Version : Environment.Version;
+        if (runnerFramework.Major > targetRuntime.Major)
+        {
+            // E.g. the runner of the tests: the package's runner targets the oldest version NativeAOT applications can target.
+            AotLog.Warn($"The application targets .NET {targetRuntime.ToString(2)}, but this runner needs .NET {runnerFramework.ToString(2)}: the framework assemblies of the application's runtime may differ.");
+        }
+
+        if (Select(targetRuntime, Environment.Version, installed, runnerFramework.Major) is not { } version)
         {
             return null;
         }
@@ -65,13 +74,15 @@ internal static class AotRuntimeSelector
 
     /// <summary>
     /// Selects the installed runtime to instrument on: the latest of the target's major version, otherwise the closest newer
-    /// major version (an older one can't load the application's assemblies).
+    /// major version (an older one can't load the application's assemblies), and never one older than the runner targets
+    /// (<paramref name="runnerMajor"/>), which couldn't run it.
     /// </summary>
     /// <returns>The version (the name of its directory) when it isn't the current runtime's major version; otherwise, null.</returns>
-    internal static string? Select(Version targetRuntime, Version currentRuntime, IEnumerable<string> installed)
+    internal static string? Select(Version targetRuntime, Version currentRuntime, IEnumerable<string> installed, int runnerMajor)
     {
+        var minimumMajor = Math.Max(targetRuntime.Major, runnerMajor);
         var candidates = installed.Select(name => (Name: name, Version: ParseVersion(name)))
-                                  .Where(c => c.Version is not null && c.Version.Major >= targetRuntime.Major)
+                                  .Where(c => c.Version is not null && c.Version.Major >= minimumMajor)
                                   .OrderBy(c => c.Version!.Major)
                                   .ThenByDescending(c => c.Version)
                                   .ThenBy(c => c.Name.Contains('-')) // a release before its previews
