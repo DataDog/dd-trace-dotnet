@@ -1251,6 +1251,33 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void ValidatedRegistryRegistrationsTakeTheValidatedIdentity()
+        {
+            // The bootstrap of a generated registry validates its contract and identity, then registers its failures and
+            // fallbacks without their delegates being inspected: they take that identity, and another registry is rejected.
+            DuckTypeAotEngine.ValidateContract(
+                new DuckTypeAotContract(DuckTypeAotContract.CurrentSchemaVersion, CurrentDatadogTraceAssemblyVersion, CurrentDatadogTraceAssemblyMvid),
+                CreateCurrentRegistryMetadata());
+            DuckTypeAotEngine.RegisterValidatedProxyFailureFactory(
+                typeof(IArrayLengthProxy),
+                typeof(int[]),
+                () => DuckTypeAotRegisteredFailureException.Create(typeof(DuckTypePropertyOrFieldNotFoundException).FullName!, "The property or field 'Missing' was not found in the instance of type 'System.Int32[]'."));
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IArrayLengthProxy), typeof(int[]));
+            result.CanCreate().Should().BeFalse();
+            Action create = () => result.CreateInstance<IArrayLengthProxy>(new int[1]);
+            create.Should().Throw<DuckTypePropertyOrFieldNotFoundException>();
+
+            var dynamicActivator = CreateDynamicAssemblyActivator();
+            Action conflictingRegistryRegistration = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(ISingleRegistryConflictProxy),
+                typeof(SingleRegistryConflictTarget),
+                typeof(SingleRegistryConflictGeneratedProxy),
+                dynamicActivator);
+            conflictingRegistryRegistration.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
+        }
+
+        [Fact]
         public void RegisterProxyFromDifferentRegistryAssemblyThrows()
         {
             DuckTypeAotEngine.RegisterProxy(

@@ -285,6 +285,21 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="generatedProxyType">The generated proxy type.</param>
         /// <param name="activator">The activator.</param>
         internal static void RegisterFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator)
+            => RegisterFallbackProxy(proxyDefinitionType, targetType, generatedProxyType, activator, fromValidatedRegistry: false);
+
+        /// <summary>
+        /// Registers a fallback proxy of the bootstrap of a generated registry, which validated its contract (and identity)
+        /// before registering: like <see cref="RegisterFallbackProxy(Type, Type, Type, Func{object, Type, object})"/>, without
+        /// inspecting the activator.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetType">The target type of the registration.</param>
+        /// <param name="generatedProxyType">The generated proxy type.</param>
+        /// <param name="activator">The activator.</param>
+        internal static void RegisterValidatedFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator)
+            => RegisterFallbackProxy(proxyDefinitionType, targetType, generatedProxyType, activator, fromValidatedRegistry: true);
+
+        private static void RegisterFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator, bool fromValidatedRegistry)
         {
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
@@ -298,7 +313,7 @@ namespace Datadog.Trace.DuckTyping
 
             lock (RegistrationLock)
             {
-                EnsureSingleRegistryAssemblyPerProcess(activator);
+                EnsureRegistryIdentity(activator, fromValidatedRegistry);
                 var result = ForwardRegistry.TryGetValue(new TypesTuple(proxyDefinitionType, targetType), out var registration)
                                  ? registration.CreateTypeResult
                                  : new DuckType.CreateTypeResult(proxyDefinitionType, generatedProxyType, targetType, new Func<object?, object?>(instance => activator(instance, targetType)), exceptionInfo: null);
@@ -315,6 +330,16 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="exceptionFactory">The nonthrowing exception factory.</param>
         internal static void RegisterProxyFailureFactory(Type proxyDefinitionType, Type targetType, Func<Exception> exceptionFactory)
             => RegisterFailureFactory(proxyDefinitionType, targetType, exceptionFactory, reverse: false);
+
+        /// <summary>
+        /// Registers a forward AOT mapping failure of the bootstrap of a generated registry, which validated its contract (and
+        /// identity) before registering: like <see cref="RegisterProxyFailureFactory"/>, without inspecting the factory.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetType">The target type.</param>
+        /// <param name="exceptionFactory">The nonthrowing exception factory.</param>
+        internal static void RegisterValidatedProxyFailureFactory(Type proxyDefinitionType, Type targetType, Func<Exception> exceptionFactory)
+            => RegisterFailureFactory(proxyDefinitionType, targetType, exceptionFactory, reverse: false, fromValidatedRegistry: true);
 
         /// <summary>
         /// Registers a forward AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
@@ -357,6 +382,16 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="exceptionFactory">The nonthrowing exception factory.</param>
         internal static void RegisterReverseProxyFailureFactory(Type typeToDeriveFrom, Type delegationType, Func<Exception> exceptionFactory)
             => RegisterFailureFactory(typeToDeriveFrom, delegationType, exceptionFactory, reverse: true);
+
+        /// <summary>
+        /// Registers a reverse AOT mapping failure of the bootstrap of a generated registry, which validated its contract (and
+        /// identity) before registering: like <see cref="RegisterReverseProxyFailureFactory"/>, without inspecting the factory.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The proxy definition type.</param>
+        /// <param name="delegationType">The target type.</param>
+        /// <param name="exceptionFactory">The nonthrowing exception factory.</param>
+        internal static void RegisterValidatedReverseProxyFailureFactory(Type typeToDeriveFrom, Type delegationType, Func<Exception> exceptionFactory)
+            => RegisterFailureFactory(typeToDeriveFrom, delegationType, exceptionFactory, reverse: true, fromValidatedRegistry: true);
 
         /// <summary>
         /// Registers a reverse AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
@@ -661,16 +696,7 @@ namespace Datadog.Trace.DuckTyping
 
             lock (RegistrationLock)
             {
-                // The bootstrap of a generated registry validates its contract (and identity) before registering: its activators
-                // don't have to be inspected (Delegate.Method is reflection, slow under NativeAOT).
-                if (fromValidatedRegistry && _validatedRegistryAssemblyIdentity is { } validatedRegistryAssemblyIdentity)
-                {
-                    _registeredRegistryAssemblyIdentity ??= validatedRegistryAssemblyIdentity;
-                }
-                else
-                {
-                    EnsureSingleRegistryAssemblyPerProcess(activator);
-                }
+                EnsureRegistryIdentity(activator, fromValidatedRegistry);
 
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
                 if (registry.TryGetValue(key, out var currentRegistration))
@@ -753,7 +779,7 @@ namespace Datadog.Trace.DuckTyping
             RegisterFailureResult(proxyDefinitionType, targetType, createTypeResult, failureThrower, reverse, enforceRegistryIdentity);
         }
 
-        private static void RegisterFailureFactory(Type proxyDefinitionType, Type targetType, Func<Exception> exceptionFactory, bool reverse)
+        private static void RegisterFailureFactory(Type proxyDefinitionType, Type targetType, Func<Exception> exceptionFactory, bool reverse, bool fromValidatedRegistry = false)
         {
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
@@ -761,10 +787,10 @@ namespace Datadog.Trace.DuckTyping
 
             var exception = exceptionFactory() ?? throw new ArgumentException("AOT failure factory returned null.", nameof(exceptionFactory));
             var result = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, ExceptionDispatchInfo.Capture(exception));
-            RegisterFailureResult(proxyDefinitionType, targetType, result, exceptionFactory, reverse, enforceRegistryIdentity: true);
+            RegisterFailureResult(proxyDefinitionType, targetType, result, exceptionFactory, reverse, enforceRegistryIdentity: true, fromValidatedRegistry);
         }
 
-        private static void RegisterFailureResult(Type proxyDefinitionType, Type targetType, DuckType.CreateTypeResult createTypeResult, Delegate registrySource, bool reverse, bool enforceRegistryIdentity)
+        private static void RegisterFailureResult(Type proxyDefinitionType, Type targetType, DuckType.CreateTypeResult createTypeResult, Delegate registrySource, bool reverse, bool enforceRegistryIdentity, bool fromValidatedRegistry = false)
         {
             var key = new TypesTuple(proxyDefinitionType, targetType);
 
@@ -772,7 +798,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 if (enforceRegistryIdentity)
                 {
-                    EnsureSingleRegistryAssemblyPerProcess(registrySource);
+                    EnsureRegistryIdentity(registrySource, fromValidatedRegistry);
                 }
 
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
@@ -995,6 +1021,25 @@ namespace Datadog.Trace.DuckTyping
             return activatorType.IsGenericType &&
                    activatorType.GetGenericTypeDefinition() == typeof(CreateProxyInstance<>) &&
                    activatorType.GetGenericArguments()[0] == proxyDefinitionType;
+        }
+
+        /// <summary>
+        /// Enforces the single-registry-assembly-per-process rule for a registration. The bootstrap of a generated registry
+        /// validates its contract (and identity) before registering: its delegates don't have to be inspected (Delegate.Method
+        /// is reflection, slow under NativeAOT: its first use builds the lookup table of every method).
+        /// </summary>
+        /// <param name="registrySource">Delegate whose declaring assembly identifies the incoming registry.</param>
+        /// <param name="fromValidatedRegistry">Whether the registration comes from the bootstrap of a generated registry.</param>
+        private static void EnsureRegistryIdentity(Delegate registrySource, bool fromValidatedRegistry)
+        {
+            if (fromValidatedRegistry && _validatedRegistryAssemblyIdentity is { } validatedRegistryAssemblyIdentity)
+            {
+                _registeredRegistryAssemblyIdentity ??= validatedRegistryAssemblyIdentity;
+            }
+            else
+            {
+                EnsureSingleRegistryAssemblyPerProcess(registrySource);
+            }
         }
 
         /// <summary>
