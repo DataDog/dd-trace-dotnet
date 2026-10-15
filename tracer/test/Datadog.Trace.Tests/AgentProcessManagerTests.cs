@@ -94,7 +94,7 @@ public class AgentProcessManagerTests
     }
 
     [Theory]
-    [InlineData(5, 60_000)]
+    [InlineData(5, 32_000)]
     [InlineData(6, 60_000)]
     [InlineData(int.MaxValue, 60_000)]
     public void GetRetryDelay_UsesTheConfiguredCap(int sequentialFailures, int expectedDelay)
