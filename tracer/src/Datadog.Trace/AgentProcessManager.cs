@@ -270,7 +270,7 @@ namespace Datadog.Trace
                                             Log.Warning<string, string, int>("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row. Restarting it.", path, GetProcessId(metadata.Process), metadata.FailedHealthChecks);
                                         }
 
-                                        metadata.ProcessState = TryStopOwnProcess(metadata, firstAttempt) ? ProcessState.ReadyToStart : ProcessState.Unhealthy;
+                                        metadata.ProcessState = TryStopOwnProcess(metadata) ? ProcessState.ReadyToStart : ProcessState.Unhealthy;
                                     }
                                     else
                                     {
@@ -285,7 +285,7 @@ namespace Datadog.Trace
 
                                 if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
-                                    Log.Debug("Attempting to start {Process}.", path);
+                                    Log.Information("Attempting to start {Process}.", path);
                                     metadata.FailedHealthChecks = 0;
 
                                     var startInfo = new ProcessStartInfo
@@ -408,7 +408,7 @@ namespace Datadog.Trace
         /// Kills the process this keep-alive started. Returns false if it is still running afterwards,
         /// in which case it stays tracked so that a second copy is never started next to it.
         /// </summary>
-        private static bool TryStopOwnProcess(ProcessMetadata metadata, bool logErrorAsWarning)
+        private static bool TryStopOwnProcess(ProcessMetadata metadata)
         {
             var process = metadata.Process;
             if (process == null)
@@ -423,14 +423,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                if (logErrorAsWarning)
-                {
-                    Log.Warning<string, string>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
-                }
-                else
-                {
-                    Log.Debug<string, string>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
-                }
+                Log.Warning<string, string>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
             }
 
             if (metadata.OwnProcessIsRunning())
@@ -481,7 +474,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Error when checking whether {Process} exited.", metadata.ProcessPath);
+                Log.Error(ex, "Error when checking whether {Process} exited.", metadata.ProcessPath);
                 return;
             }
 
@@ -590,7 +583,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug(ex, "Error when checking whether {Process} is running.", ProcessPath);
+                    Log.Error(ex, "Error when checking whether {Process} is running.", ProcessPath);
                     return false;
                 }
             }
@@ -668,7 +661,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug(ex, "Trace agent did not respond on named pipe {PipeName}.", PipeName);
+                    Log.Information(ex, "Trace agent did not respond on named pipe {PipeName}.", PipeName);
                     return false;
                 }
             }
