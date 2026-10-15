@@ -274,6 +274,14 @@ public class FlagEvaluationIntegrationTests : TestHelper
     public async Task EnablingEventsAfterStartupRequiresProviderRecreation()
     {
         using var agent = EnvironmentHelper.GetMockAgent();
+        // Provider configuration can arrive before the replacement tracer discovers EVP support.
+        agent.RequestReceived += (_, args) =>
+        {
+            if (args.Value.PathAndQuery == "/info")
+            {
+                Thread.Sleep(2_000);
+            }
+        };
         using var cdn = new FlagEvaluationConfigurationServer(Envelope(CreateConfiguration(false)));
         var payloads = new ConcurrentQueue<string>();
         agent.EventPlatformProxyPayloadReceived += (_, args) =>

@@ -72,6 +72,8 @@ internal static class EvaluationEventsSample
         using var replacement = new Datadog.FeatureFlags.OpenFeature.DatadogProvider();
         Check(HasEventHook(replacement), "new provider sees enabled setting before initialization");
         await global::OpenFeature.Api.Instance.SetProviderAsync(replacement);
+        // Reconfiguring the tracer also restarts Agent discovery; provider readiness only covers configuration.
+        await WaitForDeliveryAsync();
         var after = await client.GetStringDetailsAsync("simple-string", "caller-default", context);
         Check(after.Value == "test-value", "replacement provider still evaluates");
         Check(after.FlagMetadata?.GetDouble("__dd_eval_timestamp_ms") is not null, "enabled provider captures EVP timestamp");
