@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         // This duck types with the isolated-worker FunctionContext contracts.
-        private class MockFunctionContext : IFunctionContext
+        internal class MockFunctionContext : IFunctionContext
         {
             public FunctionDefinitionStruct FunctionDefinition { get; set; }
 
@@ -191,6 +191,14 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             public IDictionary<object, object?>? Items { get; }
 
             public IWorkerTraceContext? TraceContext { get; set; }
+        }
+
+        // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs
+        internal class MockBindingsFeature
+        {
+            public IDictionary<string, object?>? TriggerMetadata { get; set; }
+
+            public IDictionary<string, object?>? InputData { get; set; }
         }
 
         private class MockBindingMetadata
@@ -205,14 +213,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             public string? TraceParent { get; set; }
 
             public string? TraceState { get; set; }
-        }
-
-        // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs
-        private class MockBindingsFeature
-        {
-            public IDictionary<string, object?>? TriggerMetadata { get; set; }
-
-            public IDictionary<string, object?>? InputData { get; set; }
         }
     }
 }
