@@ -1,5 +1,16 @@
 version: '2'
 supportedConfigurations:
+  DD_AAS_AGENT_MAX_RETRY_INTERVAL_SECONDS:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '300'
+    product: AzureAppService
+    const_name: AasAgentMaxRetryIntervalSeconds
+    documentation: |-
+      Configuration key for the longest wait, in seconds, between attempts to start or restart the trace agent or
+      DogStatsD in Azure App Service. The wait starts at 2 seconds and doubles after each failed start or health-check
+      restart, up to this value. Retries never stop. Default value is 300 (5 minutes).
   DD_AAS_DOTNET_EXTENSION_VERSION:
   - implementation: A
     scope: managed
