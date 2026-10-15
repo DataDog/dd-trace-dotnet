@@ -201,6 +201,9 @@ internal static class AotInstrumentProcessor
                 var genericRewrittenSet = new HashSet<dnlib.DotNet.MethodDef>(genericRewritten);
                 instantiations = found.Where(f => genericRewrittenSet.Contains(f.Key)).ToDictionary(f => f.Key, f => f.Value);
                 AotLog.Info($"Closed instantiations of generic instrumented methods: {instantiations.Values.Sum(i => i.Count)} for {instantiations.Count} methods");
+                // The default delivery handler of Kafka producers over value types (MakeGenericType of DeliveryReport<TKey, TValue>).
+                report.KafkaDeliveryReports = KafkaDeliveryReportDirectives.Write(found, typeResolver.Resolve, Path.Combine(options.OutputDirectory, "Datadog.Trace.Kafka.rd.xml"));
+                AotLog.Info($"Kafka delivery reports over value types preserved: {report.KafkaDeliveryReports}");
                 var valueTypeTargets = GenericDuckTypeTargets.ValueTypeInstantiations(genericDuckTypeTargets, found);
                 AotLog.Info($"Instantiations over value types of the open generic targets of duck typing mappings: {valueTypeTargets.Select(t => t.Target.FullName).Distinct().Count()} for {genericDuckTypeTargets.Count} targets");
                 var derivedTargets = DerivedDuckTypeTargets.Find(declaredMappings, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), FindType, typeResolver.Resolve);

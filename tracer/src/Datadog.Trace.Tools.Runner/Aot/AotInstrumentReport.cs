@@ -41,6 +41,8 @@ internal sealed class AotInstrumentReport
 
     public int RuntimeMetricsInstantiations { get; set; }
 
+    public int KafkaDeliveryReports { get; set; }
+
     public int CompositeInterfaces { get; set; }
 
     public int DeclaredDuckTypeMappings { get; set; }

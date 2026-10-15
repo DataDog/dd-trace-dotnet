@@ -41,8 +41,8 @@ internal static class ProducerCache
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
-    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "DeliveryReport<TKey, TValue> is a class, and the producer's own Produce method, whose parameters use it and its handler type, makes the application have the instantiation.")]
-    [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "DeliveryReport<TKey, TValue> is a class, and the producer's own Produce method, whose parameters use it and its handler type, makes the application have the instantiation.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "DeliveryReport<TKey, TValue> is a class: its instantiations over reference types share their canonical code, and the NativeAOT build keeps the ones over value types of the producers the application creates (KafkaDeliveryReportDirectives).")]
+    [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "DeliveryReport<TKey, TValue> is a class: its instantiations over reference types share their canonical code, and the NativeAOT build keeps the ones over value types of the producers the application creates (KafkaDeliveryReportDirectives).")]
     private static Delegate? CreateDefaultDeliveryHandler(Type producerType)
     {
         var deliveryReportType = producerType.Assembly.GetType("Confluent.Kafka.DeliveryReport`2");
