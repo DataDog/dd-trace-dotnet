@@ -83,6 +83,13 @@ internal static class AotInstrumentProcessor
             var fileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var assembly in options.Assemblies.Select(Path.GetFullPath))
             {
+                // The compiler's references can have native libraries: nothing to instrument there.
+                if (!EmulatedRuntime.IsManagedAssembly(assembly))
+                {
+                    AotLog.Debug($"Skipping {assembly}: it isn't a .NET assembly");
+                    continue;
+                }
+
                 if (fileNames.Add(Path.GetFileName(assembly)))
                 {
                     host.LoadModule(assembly, writable: true);

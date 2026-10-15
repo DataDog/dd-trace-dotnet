@@ -9,7 +9,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Threading;
 using dnlib.DotNet;
@@ -74,6 +77,25 @@ internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo12, IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets whether a file is a .NET assembly: the compiler's inputs and reference directories also have native libraries.
+    /// </summary>
+    /// <param name="path">The path of the file.</param>
+    /// <returns>true for a .NET assembly; otherwise, false.</returns>
+    public static bool IsManagedAssembly(string path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            using var reader = new PEReader(stream);
+            return reader.HasMetadata && reader.GetMetadataReader().IsAssembly;
+        }
+        catch (BadImageFormatException)
+        {
+            return false;
+        }
+    }
+
     public void Dispose()
     {
         Blobs.Dispose();
@@ -99,7 +121,16 @@ internal sealed unsafe class EmulatedRuntime : ICorProfilerInfo12, IDisposable
             var id = _modules.Count + 1;
             // Without it, each lookup of a type by name enumerates all the types of the module (thousands of lookups over the
             // framework). Adding a type resets it (see CallTargetRegistryGenerator).
-            var module = ModuleDefMD.Load(path, new ModuleCreationOptions { TryToLoadPdbFromDisk = true });
+            ModuleDefMD module;
+            try
+            {
+                module = ModuleDefMD.Load(path, new ModuleCreationOptions { TryToLoadPdbFromDisk = true });
+            }
+            catch (BadImageFormatException ex)
+            {
+                throw new BadImageFormatException($"{path} isn't a .NET module: {ex.Message}", path, ex);
+            }
+
             module.EnableTypeDefFindCache = true;
             var state = new ModuleState(id, path, module, writable);
             _modules[id] = state;

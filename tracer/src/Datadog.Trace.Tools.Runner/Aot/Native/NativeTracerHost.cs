@@ -308,6 +308,12 @@ internal sealed unsafe class NativeTracerHost : IDisposable
                     continue;
                 }
 
+                if (!EmulatedRuntime.IsManagedAssembly(candidate))
+                {
+                    AotLog.Debug($"Reference {reference.Name}: {candidate} isn't a .NET assembly");
+                    continue;
+                }
+
                 pending.Enqueue(LoadModule(candidate, writable: false));
             }
         }
