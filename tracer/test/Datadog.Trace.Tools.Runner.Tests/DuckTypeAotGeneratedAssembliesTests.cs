@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -404,6 +405,61 @@ public class DuckTypeAotGeneratedAssembliesTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AliasesSkipTheTypesTheApplicationCantLayOut(bool applicationAssembliesKnown)
+    {
+        // The types whose layout needs an assembly the application doesn't have can't be loaded there: no alias for them when
+        // the application's assemblies are known (the NativeAOT compiler fails on a registry method that takes one).
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var targetPath = WriteLayoutTargets(directory);
+            var testAssembly = typeof(DuckTypeAotGeneratedAssembliesTests).Assembly;
+            var mapping = new DuckTypeAotMapping(
+                typeof(IStandaloneNameReader).FullName!,
+                testAssembly.GetName().Name!,
+                "LayoutTargets.Base",
+                "LayoutTargets",
+                DuckTypeAotMappingMode.Forward,
+                DuckTypeAotMappingSource.MapFile);
+            var outputPath = Path.Combine(directory, "Registry.dll");
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: [testAssembly.Location],
+                targetAssemblies: [targetPath],
+                targetFolders: [],
+                targetFilters: [],
+                mapFile: string.Empty,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Registry",
+                trimmerDescriptorPath: outputPath + ".linker.xml",
+                propsPath: outputPath + ".props");
+            var resolution = new DuckTypeAotMappingResolutionResult(
+                [mapping],
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [testAssembly.GetName().Name!] = testAssembly.Location },
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["LayoutTargets"] = targetPath },
+                [],
+                [],
+                [],
+                applicationAssembliesKnown ? ["LayoutTargets", testAssembly.GetName().Name!] : null);
+
+            var emission = DuckTypeAotRegistryAssemblyEmitter.Emit(options, DuckTypeAotArtifactPaths.Create(options), resolution);
+
+            var aliases = emission.RuntimeRegistrations
+                                  .Where(registration => registration.Kind == DuckTypeAotRuntimeRegistrationKind.AssignableAlias)
+                                  .Select(registration => registration.Mapping.TargetTypeName);
+            string[] loadable = ["LayoutTargets.Available", "LayoutTargets.ReferencesUnloadableClass"];
+            aliases.Should().BeEquivalentTo(applicationAssembliesKnown ? loadable : [.. loadable, "LayoutTargets.MissingField", "LayoutTargets.EmbedsMissing", "LayoutTargets.DerivesFromMissingField", "LayoutTargets.ImplementsMissing"]);
+        }
+        finally
+        {
+            DuckType.ResetRuntimeModeForTests();
+            TryDeleteDirectory(directory);
+        }
+    }
+
     // On Windows, the files of the assemblies the test loaded stay locked until the process exits.
     private static void TryDeleteDirectory(string directory)
     {
@@ -707,6 +763,54 @@ public class DuckTypeAotGeneratedAssembliesTests
         handler.Methods.Add(handle);
 
         var path = Path.Combine(directory, "MissingDependencyTargets.dll");
+        module.Write(path);
+        return path;
+    }
+
+    /// <summary>
+    /// Writes LayoutTargets, whose classes derive from Base { Name => "base" }, with types of an assembly that isn't written:
+    /// Available; MissingField { MissingType Value; }; EmbedsMissing { Holder Value; } (struct Holder { MissingType Value; });
+    /// DerivesFromMissingField : MissingField; ImplementsMissing : IMissing; and ReferencesUnloadableClass { Unloadable Value; }
+    /// (class Unloadable : IMissing { MissingType Value; }: a reference field doesn't need to load its type).
+    /// </summary>
+    private static string WriteLayoutTargets(string directory)
+    {
+        var module = CreateModule("LayoutTargets");
+        var missingAssembly = new AssemblyRefUser("MissingDependency", new Version(1, 0, 0, 0));
+        var missingType = new ClassSig(new TypeRefUser(module, "MissingDependency", "MissingType", missingAssembly));
+        var missingInterface = new TypeRefUser(module, "MissingDependency", "IMissing", missingAssembly);
+
+        TypeDef AddType(string name, ITypeDefOrRef baseType, TypeSig? fieldType = null)
+        {
+            var type = new TypeDefUser("LayoutTargets", name, baseType) { Attributes = TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.BeforeFieldInit };
+            module.Types.Add(type);
+            AddDefaultConstructor(module, type, baseType);
+            if (fieldType is not null)
+            {
+                type.Fields.Add(new FieldDefUser("Value", new FieldSig(fieldType), FieldAttributes.Public));
+            }
+
+            return type;
+        }
+
+        var baseType = AddType("Base", module.CorLibTypes.Object.TypeDefOrRef);
+        AddConstantProperty(module, baseType, "Name", "base");
+        AddType("Available", baseType);
+        var missingField = AddType("MissingField", baseType, missingType);
+        AddType("DerivesFromMissingField", missingField);
+        var holder = new TypeDefUser("LayoutTargets", "Holder", module.CorLibTypes.GetTypeRef("System", "ValueType"))
+        {
+            Attributes = TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.SequentialLayout | TypeAttributes.BeforeFieldInit
+        };
+        holder.Fields.Add(new FieldDefUser("Value", new FieldSig(missingType), FieldAttributes.Public));
+        module.Types.Add(holder);
+        AddType("EmbedsMissing", baseType, new ValueTypeSig(holder));
+        AddType("ImplementsMissing", baseType).Interfaces.Add(new InterfaceImplUser(missingInterface));
+        var unloadable = AddType("Unloadable", module.CorLibTypes.Object.TypeDefOrRef, missingType);
+        unloadable.Interfaces.Add(new InterfaceImplUser(missingInterface));
+        AddType("ReferencesUnloadableClass", baseType, new ClassSig(unloadable));
+
+        var path = Path.Combine(directory, "LayoutTargets.dll");
         module.Write(path);
         return path;
     }

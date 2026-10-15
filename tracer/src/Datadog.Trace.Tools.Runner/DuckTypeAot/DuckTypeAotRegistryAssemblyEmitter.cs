@@ -708,7 +708,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeTypeResolutionMapSeconds += seconds);
                 phaseStopwatch = StartProfilePhase();
                 var queriedTargetTypeKeys = BuildQueriedTargetTypeKeys(mappingResolutionResult.Mappings);
-                var targetTypeIndex = BuildTargetTypeIndex(targetModulesByAssemblyName, queriedTargetTypeKeys);
+                var targetTypeIndex = BuildTargetTypeIndex(targetModulesByAssemblyName, queriedTargetTypeKeys, mappingResolutionResult.ApplicationAssemblyNames);
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildTargetTypeIndexSeconds += seconds);
                 phaseStopwatch = StartProfilePhase();
                 _currentExecutionContext = new EmitterExecutionContext(targetTypeIndex, dynamicOracleCache);
@@ -1669,9 +1669,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// Builds the target-type index used to expand assignable runtime registrations without rescanning all module types per mapping.
         /// </summary>
         /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
+        /// <param name="queriedTargetTypeKeys">The target types the mappings query.</param>
+        /// <param name="applicationAssemblyNames">The names of every assembly of the application, or null when they aren't known.</param>
         /// <returns>The resulting target-type index.</returns>
-        private static TargetTypeIndex BuildTargetTypeIndex(IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName, ISet<string> queriedTargetTypeKeys)
+        private static TargetTypeIndex BuildTargetTypeIndex(IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName, ISet<string> queriedTargetTypeKeys, ISet<string>? applicationAssemblyNames)
         {
+            var applicationTypeLayouts = applicationAssemblyNames is null ? null : new ApplicationTypeLayouts(applicationAssemblyNames);
             var typeByAssemblyAndName = new Dictionary<string, TypeDef>(StringComparer.Ordinal);
             var assignableForwardTypesByAncestor = new Dictionary<string, List<TargetTypeIndexEntry>>(StringComparer.Ordinal);
             var assignableReverseTypesByAncestor = new Dictionary<string, List<TargetTypeIndexEntry>>(StringComparer.Ordinal);
@@ -1697,7 +1700,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         typeByAssemblyAndName[string.Concat(assemblyTypeCacheKeyPrefix, candidateType.ReflectionFullName)] = candidateType;
                     }
 
-                    if (!IsAliasCandidateType(candidateType))
+                    // The types the application can't load have no instances there (dynamic duck typing never sees them).
+                    if (!IsAliasCandidateType(candidateType) ||
+                        applicationTypeLayouts?.LayoutNeedsMissingAssembly(candidateType) == true)
                     {
                         continue;
                     }
@@ -17625,6 +17630,132 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// Gets the load failures of the generated proxy types, by registration key.
             /// </summary>
             internal Dictionary<string, string> UnloadableProxyTypes { get; } = new(StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// Which types of the target assemblies can't be loaded and laid out with the assemblies of the application: a base
+        /// type, an interface or the type of an instance field (of the type, or of a value type it embeds) comes from another
+        /// assembly. No instance of them exists in the application (NativeAOT can't allocate them) and the NativeAOT compiler
+        /// fails to compile a reflectable method whose signature has one of them (the registry's proxy factories are reflectable).
+        /// </summary>
+        private sealed class ApplicationTypeLayouts
+        {
+            private readonly ISet<string> _applicationAssemblyNames;
+            private readonly Dictionary<TypeDef, bool>[] _needsMissingAssembly =
+            [
+                new(ReferenceIdentityComparer<TypeDef>.Instance),
+                new(ReferenceIdentityComparer<TypeDef>.Instance),
+                new(ReferenceIdentityComparer<TypeDef>.Instance),
+            ];
+
+            internal ApplicationTypeLayouts(ISet<string> applicationAssemblyNames)
+            {
+                _applicationAssemblyNames = applicationAssemblyNames;
+            }
+
+            /// <summary>
+            /// What the runtime needs of a type.
+            /// </summary>
+            private enum Need
+            {
+                /// <summary>
+                /// Its base types: the type of a reference field (e.g. to know it's a reference type).
+                /// </summary>
+                Resolution,
+
+                /// <summary>
+                /// Its base types and interfaces, loaded.
+                /// </summary>
+                Load,
+
+                /// <summary>
+                /// Loaded, and the types of its instance fields (and of its base types'): to allocate it or embed it.
+                /// </summary>
+                Layout,
+            }
+
+            /// <summary>
+            /// Determines whether loading or laying out a type needs an assembly the application doesn't have. A type dnlib
+            /// can't resolve isn't missing: only the assemblies the application doesn't have are.
+            /// </summary>
+            /// <param name="type">The type.</param>
+            /// <returns>true when the type can't be laid out in the application; otherwise, false.</returns>
+            internal bool LayoutNeedsMissingAssembly(TypeDef type) => NeedsMissingAssembly(type, Need.Layout);
+
+            private bool NeedsMissingAssembly(TypeDef type, Need need)
+            {
+                var results = _needsMissingAssembly[(int)need];
+                if (results.TryGetValue(type, out var result))
+                {
+                    return result;
+                }
+
+                // Value types can't embed themselves and types can't derive from themselves: a cycle is through an invalid
+                // type, which adds no assembly.
+                results[type] = false;
+                result = (type.BaseType is { } baseType && NeedsMissingAssembly(baseType, need)) ||
+                         (need >= Need.Load && type.Interfaces.Any(implementation => implementation.Interface is { } interfaceType && NeedsMissingAssembly(interfaceType, Need.Load))) ||
+                         (need == Need.Layout && type.Fields.Any(field => !field.IsStatic && field.FieldSig?.Type is { } fieldType && NeedsMissingAssembly(fieldType, Need.Resolution)));
+                results[type] = result;
+                return result;
+            }
+
+            /// <summary>
+            /// Determines whether a type of a signature, or of its type arguments or element types, needs an assembly the
+            /// application doesn't have (value types are always laid out).
+            /// </summary>
+            private bool NeedsMissingAssembly(TypeSig signature, Need need)
+            {
+                for (var current = signature; current is not null; current = current.Next)
+                {
+                    switch (current)
+                    {
+                        case CorLibTypeSig:
+                            return false;
+                        case TypeDefOrRefSig typeSignature:
+                            return NeedsMissingAssembly(typeSignature.TypeDefOrRef, need);
+                        case GenericInstSig genericSignature:
+                            return NeedsMissingAssembly(genericSignature.GenericType.TypeDefOrRef, need) ||
+                                   genericSignature.GenericArguments.Any(argument => NeedsMissingAssembly(argument, Need.Resolution));
+                    }
+                }
+
+                // Arrays, pointers and by-refs of the types above; generic parameters and function pointers.
+                return false;
+            }
+
+            private bool NeedsMissingAssembly(ITypeDefOrRef type, Need need)
+            {
+                if (type is TypeSpec { TypeSig: { } signature })
+                {
+                    // E.g. a generic base type, with its type arguments.
+                    return NeedsMissingAssembly(signature, need);
+                }
+
+                if (!IsApplicationAssembly(type.DefinitionAssembly))
+                {
+                    return true;
+                }
+
+                if (type.ResolveTypeDef() is not { } definition)
+                {
+                    return false;
+                }
+
+                if (!IsApplicationAssembly(definition.Module?.Assembly))
+                {
+                    // Forwarded to an assembly the application doesn't have.
+                    return true;
+                }
+
+                return NeedsMissingAssembly(definition, definition.IsValueType ? Need.Layout : need);
+            }
+
+            private bool IsApplicationAssembly(IAssembly? assembly)
+                => assembly?.Name is not { } name ||
+                   StringUtil.IsNullOrEmpty(name) ||
+                   string.Equals(name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase) ||
+                   _applicationAssemblyNames.Contains(name);
         }
 
         private sealed class TargetTypeIndex
