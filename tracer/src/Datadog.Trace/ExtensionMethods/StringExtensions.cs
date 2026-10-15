@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -37,48 +38,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="value">The string to convert.</param>
         /// <returns><c>true</c> or <c>false</c> if <paramref name="value"/> is one of the accepted values; <c>null</c> otherwise.</returns>
-        public static bool? ToBoolean(this string value)
-        {
-            if (value == null) { ThrowHelper.ThrowArgumentNullException(nameof(value)); }
-
-            if (value.Length == 0)
-            {
-                return null;
-            }
-
-            if (value.Length == 1)
-            {
-                if (value[0] == 'T' || value[0] == 't' ||
-                    value[0] == 'Y' || value[0] == 'y' ||
-                    value[0] == '1')
-                {
-                    return true;
-                }
-
-                if (value[0] == 'F' || value[0] == 'f' ||
-                    value[0] == 'N' || value[0] == 'n' ||
-                    value[0] == '0')
-                {
-                    return false;
-                }
-
-                return null;
-            }
-
-            if (string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(value, "YES", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (string.Equals(value, "FALSE", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(value, "NO", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return null;
-        }
+        public static bool? ToBoolean(this string value) => BooleanConfigurationParser.Parse(value);
 
         /// <summary>
         /// Datadog tag requirements:

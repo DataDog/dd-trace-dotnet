@@ -70,7 +70,8 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
             throw new ArgumentNullException(nameof(options));
         }
 
-        _evaluationTelemetryOptOutParameterEnabled = options.EnableEvaluationTelemetryOptOutParameter;
+        _evaluationTelemetryOptOutParameterEnabled = options.EnableEvaluationTelemetryOptOutParameter
+                                                 ?? ProviderEnvironmentConfiguration.IsEvaluationTelemetryOptOutEnabled();
         _evaluate = evaluate;
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
 #if NET6_0_OR_GREATER

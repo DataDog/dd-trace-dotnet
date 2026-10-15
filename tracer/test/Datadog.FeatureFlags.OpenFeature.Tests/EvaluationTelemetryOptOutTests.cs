@@ -31,6 +31,7 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLifetime
 {
     private const string Parameter = "dd_evaluation_telemetry_opt_out";
+    private const string EnvironmentVariable = "DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED";
 
     public Task InitializeAsync() => Task.CompletedTask;
 
@@ -41,6 +42,114 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
     {
         Assert.Equal("options", Assert.Throws<ArgumentNullException>(() => new DatadogProvider((DatadogProviderOptions)null!)).ParamName);
         Assert.Equal("evaluate", Assert.Throws<ArgumentNullException>(() => new DatadogProvider((FeatureFlagsSdk.EvaluationCallback)null!)).ParamName);
+    }
+
+    [Fact]
+    public async Task EnvironmentActivationPreservesResultAndExposureWithoutEvaluationTelemetry()
+    {
+        var previous = Environment.GetEnvironmentVariable(EnvironmentVariable);
+        try
+        {
+            Environment.SetEnvironmentVariable(EnvironmentVariable, "true");
+            using var harness = new Harness(new DatadogProviderOptions());
+            var client = await harness.CreateClient();
+
+            var result = await client.GetBooleanDetailsAsync(harness.FlagKey, false, Context(true));
+
+            output.WriteLine($"metrics={harness.Metrics.Count}, span_calls={harness.SpanCalls.Count}, exposures={harness.Exposures.Count}, value={result.Value}, variant={result.Variant}, reason={result.Reason}");
+            Assert.True(result.Value);
+            Assert.Equal("on", result.Variant);
+            Assert.Equal("static", result.Reason);
+            Assert.Single(harness.Exposures);
+            Assert.Empty(harness.Metrics);
+            Assert.Empty(harness.SpanCalls);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(EnvironmentVariable, previous);
+        }
+    }
+
+    [Theory]
+    [InlineData(null, null, 1)]
+    [InlineData("true", null, 0)]
+    [InlineData("false", null, 1)]
+    [InlineData("invalid", null, 1)]
+    [InlineData("", null, 1)]
+    [InlineData("true", false, 1)]
+    [InlineData("false", true, 0)]
+    [InlineData("invalid", true, 0)]
+    public async Task EnvironmentConfigurationRespectsExplicitProviderOptions(string? value, bool? option, int emissions)
+    {
+        using var environment = new EnvironmentScope(value);
+        using var harness = new Harness(new DatadogProviderOptions { EnableEvaluationTelemetryOptOutParameter = option });
+        var client = await harness.CreateClient();
+
+        var result = await client.GetBooleanDetailsAsync(harness.FlagKey, false, Context(true));
+
+        Assert.True(result.Value);
+        Assert.Equal("on", result.Variant);
+        Assert.Equal("static", result.Reason);
+        Assert.Equal(emissions, harness.Metrics.Count);
+        Assert.Equal(emissions, harness.SpanCalls.Count);
+        Assert.Single(harness.Exposures);
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("false")]
+    [InlineData("string")]
+    public async Task EnvironmentActivationAloneDoesNotSuppressTelemetry(string kind)
+    {
+        using var environment = new EnvironmentScope("true");
+        using var harness = new Harness(new DatadogProviderOptions());
+        var client = await harness.CreateClient();
+        var builder = EvaluationContext.Builder().SetTargetingKey("subject");
+        if (kind != "missing")
+        {
+            builder.Set(Parameter, kind == "string" ? new Value("true") : new Value(false));
+        }
+
+        Assert.True(await client.GetBooleanValueAsync(harness.FlagKey, false, builder.Build()));
+        Assert.Single(harness.Metrics);
+        Assert.Single(harness.SpanCalls);
+        Assert.Single(harness.Exposures);
+    }
+
+    [Theory]
+    [InlineData("true", "false", 0, 1)]
+    [InlineData("false", "true", 1, 0)]
+    public async Task EnvironmentIsCopiedAtConstruction(string initial, string replacement, int initialEmissions, int replacementEmissions)
+    {
+        using var environment = new EnvironmentScope(initial);
+        using var original = new Harness(new DatadogProviderOptions());
+        Environment.SetEnvironmentVariable(EnvironmentVariable, replacement);
+        using var later = new Harness(new DatadogProviderOptions());
+        var originalClient = await original.CreateClient();
+        var laterClient = await later.CreateClient();
+
+        Assert.True(await originalClient.GetBooleanValueAsync(original.FlagKey, false, Context(true)));
+        Assert.True(await laterClient.GetBooleanValueAsync(later.FlagKey, false, Context(true)));
+        Assert.Equal(initialEmissions, original.Metrics.Count);
+        Assert.Equal(initialEmissions, original.SpanCalls.Count);
+        Assert.Equal(replacementEmissions, later.Metrics.Count);
+        Assert.Equal(replacementEmissions, later.SpanCalls.Count);
+        Assert.Single(original.Exposures);
+        Assert.Single(later.Exposures);
+    }
+
+    [Fact]
+    public async Task ParameterlessProviderReadsEnvironmentConfiguration()
+    {
+        using var environment = new EnvironmentScope("true");
+        using var harness = new Harness();
+        using var provider = new DatadogProvider();
+        var client = await harness.CreateClient(provider);
+
+        var result = await client.GetBooleanDetailsAsync(harness.FlagKey, false, Context(true));
+
+        Assert.Equal(ErrorType.ProviderNotReady, result.ErrorType);
+        Assert.Empty(harness.Metrics);
     }
 
     [Fact]
@@ -444,6 +553,15 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
 
     private static EvaluationContext Context(bool optedOut, string subject = "subject")
         => EvaluationContext.Builder().SetTargetingKey(subject).Set(Parameter, optedOut).Build();
+
+    private sealed class EnvironmentScope : IDisposable
+    {
+        private readonly string? _previous = Environment.GetEnvironmentVariable(EnvironmentVariable);
+
+        public EnvironmentScope(string? value) => Environment.SetEnvironmentVariable(EnvironmentVariable, value);
+
+        public void Dispose() => Environment.SetEnvironmentVariable(EnvironmentVariable, _previous);
+    }
 
     private sealed class Harness : IDisposable
     {

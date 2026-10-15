@@ -54,6 +54,11 @@ Fresh wrappers isolate nested and concurrent calls. The synchronous methods also
 request fresh wrappers, but use their supplied context because they skip Before.
 Disabled providers continue to return their cached hooks.
 
+The nullable provider option distinguishes an omitted value from explicit `false`.
+An omitted value reads `DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED` once at construction.
+The provider links the tracer's boolean parser without taking a dependency on the tracer assembly.
+Tests cover configuration precedence, invalid values, snapshots, and both assemblies' parser behavior.
+
 The suite records the upstream limitation when a Before hook changes the context
 and a later Before hook throws. The provider never receives the replacement context.
 Setting opt-out in the supplied context covers this aborted evaluation path.

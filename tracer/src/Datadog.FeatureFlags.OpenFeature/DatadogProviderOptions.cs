@@ -11,8 +11,9 @@ public sealed class DatadogProviderOptions
     /// <summary>
     /// Gets or sets a value indicating whether boolean <c>true</c> at the evaluation-context key
     /// <c>dd_evaluation_telemetry_opt_out</c> suppresses new Datadog evaluation telemetry.
-    /// Disabled by default. Other values preserve telemetry. Flag results, experiment exposures,
-    /// application hooks, and previously recorded telemetry remain unchanged.
+    /// If unset, uses <c>DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED</c> at construction.
+    /// An explicit value overrides the environment. Disabled by default. Other context values preserve telemetry.
+    /// Flag results, experiment exposures, application hooks, and previously recorded telemetry remain unchanged.
     /// </summary>
-    public bool EnableEvaluationTelemetryOptOutParameter { get; set; }
+    public bool? EnableEvaluationTelemetryOptOutParameter { get; set; }
 }

@@ -132,7 +132,12 @@ var enabled = await OpenFeature.Api.Instance.GetClient()
     .GetBooleanValueAsync("new-checkout", false, context);
 ```
 
-The option defaults to `false`. The provider copies it at construction.
+Alternatively, set `DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED=true`
+and use `new DatadogProvider()` without an explicit option.
+An explicit `true` or `false` option overrides the environment setting.
+An unset option uses the environment. Missing or invalid environment values disable the parameter.
+The provider copies the resolved setting at construction. Later environment or option changes do not affect it.
+Activation alone does not suppress telemetry; each subject must supply the boolean context value.
 Only boolean `true` suppresses new Datadog evaluation metrics and automatic flag
 span annotations. Missing values, strings, numbers, null, and boolean `false`
 preserve telemetry. The provider does not currently produce evaluation EVP events.
