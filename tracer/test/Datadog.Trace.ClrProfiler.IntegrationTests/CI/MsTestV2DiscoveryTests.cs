@@ -105,11 +105,12 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
 
     private async Task RunDiscoveryScenario(string packageVersion, int threshold, int expectedAttempts, bool faulty, string filter, int expectedTests, bool useMtp, string additionalSample = null)
     {
-        if (faulty && !useMtp && EnvironmentTools.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64 &&
+        if (expectedTests > 0 && !useMtp && EnvironmentTools.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64 &&
             EnvironmentHelper.GetTargetFramework() is "net8.0" or "net9.0" or "net10.0")
         {
             // VSTest in .NET 11 RC1/RC2 cannot share named mutexes with .NET 8-10 on Linux ARM64,
-            // so the testhost cannot send the session's "faulty" tag. MTP uses the same runtime at both ends.
+            // so the testhost cannot initialize IPC. Even cases that do not assert "faulty" fail the log check.
+            // Empty runs do not create an IPC client; MTP uses the same runtime at both ends. Keep both enabled.
             // Runtime bug: https://github.com/dotnet/runtime/issues/134491.
             // Fixed for .NET 11 GA in https://github.com/dotnet/runtime/pull/134595.
             // Remove this block after upgrading to GA and verifying these cases on Debian and Alpine ARM64.
