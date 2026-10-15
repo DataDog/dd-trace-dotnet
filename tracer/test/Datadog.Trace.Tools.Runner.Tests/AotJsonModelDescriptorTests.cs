@@ -6,6 +6,7 @@
 #if NET6_0_OR_GREATER
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Tools.Runner.Aot;
@@ -32,6 +33,12 @@ public class AotJsonModelDescriptorTests
     [InlineData("Datadog.Trace.RemoteConfigurationManagement.Protocol.GetRcmResponse")]
     public void ModelsArePreserved(string type)
         => Models.Types.Select(t => t.FullName).Should().Contain(type);
+
+    [Theory]
+    [InlineData("Datadog.Trace.Ci")] // Test Optimization
+    [InlineData("Datadog.Trace.Debugger")] // Dynamic Instrumentation, Exception Replay, Symbol Database
+    public void ModelsOfProductsNativeAotApplicationsDontHaveAreNotPreserved(string productNamespace)
+        => Models.Types.Should().NotContain(t => t.FullName.StartsWith(productNamespace + ".", StringComparison.Ordinal));
 
     [Fact]
     public void VendoredTypesAreNotPreserved()
