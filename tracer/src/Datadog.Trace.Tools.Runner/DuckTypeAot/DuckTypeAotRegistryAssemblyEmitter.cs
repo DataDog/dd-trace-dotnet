@@ -16847,14 +16847,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     throw new InvalidOperationException("Unable to resolve Func<object?, Type, object?> constructor.");
                 }
 
-                var registerAotFallbackProxyMethod = typeof(DuckType).GetMethod(
-                    nameof(DuckType.RegisterAotFallbackProxy),
-                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(Func<object?, Type, object?>) });
-                if (registerAotFallbackProxyMethod is null)
-                {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotFallbackProxy(Type, Type, Type, Func<object?, Type, object?>).");
-                }
-
                 var registerAotProxyMethod = typeof(DuckType).GetMethod(
                     nameof(DuckType.RegisterAotProxy),
                     new[] { typeof(Type), typeof(Type), typeof(Type), typeof(Func<object?, object?>) });
@@ -16869,22 +16861,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 if (registerAotReverseProxyMethod is null)
                 {
                     throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxy(Type, Type, Type, Func<object?, object?>).");
-                }
-
-                var registerAotProxyFailureMethod = typeof(DuckType).GetMethod(
-                    nameof(DuckType.RegisterAotProxyFailureFactory),
-                    new[] { typeof(Type), typeof(Type), typeof(Func<Exception>) });
-                if (registerAotProxyFailureMethod is null)
-                {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotProxyFailureFactory(Type, Type, Func<Exception>).");
-                }
-
-                var registerAotReverseProxyFailureMethod = typeof(DuckType).GetMethod(
-                    nameof(DuckType.RegisterAotReverseProxyFailureFactory),
-                    new[] { typeof(Type), typeof(Type), typeof(Func<Exception>) });
-                if (registerAotReverseProxyFailureMethod is null)
-                {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxyFailureFactory(Type, Type, Func<Exception>).");
                 }
 
                 var enableAotModeMethod = typeof(DuckType).GetMethod(nameof(DuckType.EnableAotMode), Type.EmptyTypes);
@@ -16984,11 +16960,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     typeof(DuckTypeAotEngine).GetProperty(nameof(DuckTypeAotEngine.IsDynamicCodeSupported), BindingFlags.NonPublic | BindingFlags.Static)?.GetMethod
                     ?? throw new InvalidOperationException("Unable to resolve DuckTypeAotEngine.IsDynamicCodeSupported."));
                 FuncObjectObjectTypeSig = importer.ImportAsTypeSig(typeof(Func<object?, object?>));
-                RegisterAotFallbackProxyMethod = importer.Import(registerAotFallbackProxyMethod);
+                // The bootstrap validates the registry contract (and identity) first: these entry points don't inspect its
+                // delegates (Delegate.Method, slow under NativeAOT), like RegisterTypedProxy.
+                RegisterAotFallbackProxyMethod = importer.Import(
+                    typeof(DuckTypeAotEngine).GetMethod(nameof(DuckTypeAotEngine.RegisterValidatedFallbackProxy), BindingFlags.NonPublic | BindingFlags.Static)
+                    ?? throw new InvalidOperationException("Unable to resolve DuckTypeAotEngine.RegisterValidatedFallbackProxy(Type, Type, Type, Func<object?, Type, object?>)."));
                 SystemTypeSig = importer.ImportAsTypeSig(typeof(Type));
                 RegisterAotReverseProxyMethod = importer.Import(registerAotReverseProxyMethod);
-                RegisterAotProxyFailureMethod = importer.Import(registerAotProxyFailureMethod);
-                RegisterAotReverseProxyFailureMethod = importer.Import(registerAotReverseProxyFailureMethod);
+                RegisterAotProxyFailureMethod = importer.Import(
+                    typeof(DuckTypeAotEngine).GetMethod(nameof(DuckTypeAotEngine.RegisterValidatedProxyFailureFactory), BindingFlags.NonPublic | BindingFlags.Static)
+                    ?? throw new InvalidOperationException("Unable to resolve DuckTypeAotEngine.RegisterValidatedProxyFailureFactory(Type, Type, Func<Exception>)."));
+                RegisterAotReverseProxyFailureMethod = importer.Import(
+                    typeof(DuckTypeAotEngine).GetMethod(nameof(DuckTypeAotEngine.RegisterValidatedReverseProxyFailureFactory), BindingFlags.NonPublic | BindingFlags.Static)
+                    ?? throw new InvalidOperationException("Unable to resolve DuckTypeAotEngine.RegisterValidatedReverseProxyFailureFactory(Type, Type, Func<Exception>)."));
                 EnableAotModeMethod = importer.Import(enableAotModeMethod);
                 ValidateAotRegistryContractMethod = importer.Import(validateAotRegistryContractMethod);
                 DuckTypeAotRegisteredFailureCreateMethod = importer.Import(duckTypeAotRegisteredFailureCreateMethod);

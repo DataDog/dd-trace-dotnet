@@ -14221,14 +14221,14 @@ public class DuckTypeAotProcessorsTests
                                               .Where(instruction =>
                                                    instruction.OpCode == OpCodes.Call &&
                                                    instruction.Operand is IMethod method &&
-                                                   (string.Equals(method.Name, "RegisterAotProxyFailureFactory", StringComparison.Ordinal) ||
-                                                    string.Equals(method.Name, "RegisterAotReverseProxyFailureFactory", StringComparison.Ordinal)))
+                                                   (string.Equals(method.Name, "RegisterValidatedProxyFailureFactory", StringComparison.Ordinal) ||
+                                                    string.Equals(method.Name, "RegisterValidatedReverseProxyFailureFactory", StringComparison.Ordinal)))
                                               .Select(instruction => (IMethod)instruction.Operand)
                                               .ToList();
                 failureRegistrationCalls.Should().NotBeEmpty();
                 failureRegistrationCalls.Should().OnlyContain(method => method.MethodSig.Params.Last().FullName == "System.Func`1<System.Exception>");
-                AssertDirectDelegateRegistrationCalls(bootstrapTypeDef, "RegisterAotProxyFailureFactory", "CreateFailure_", "System.Func`1<System.Exception>");
-                AssertDirectDelegateRegistrationCalls(bootstrapTypeDef, "RegisterAotReverseProxyFailureFactory", "CreateFailure_", "System.Func`1<System.Exception>");
+                AssertDirectDelegateRegistrationCalls(bootstrapTypeDef, "RegisterValidatedProxyFailureFactory", "CreateFailure_", "System.Func`1<System.Exception>");
+                AssertDirectDelegateRegistrationCalls(bootstrapTypeDef, "RegisterValidatedReverseProxyFailureFactory", "CreateFailure_", "System.Func`1<System.Exception>");
 
                 bootstrapInstructions.Any(
                     instruction =>
@@ -16605,8 +16605,8 @@ public class DuckTypeAotProcessorsTests
                 instruction.Operand is IMethod method &&
                 (string.Equals(method.Name, "RegisterAotProxy", StringComparison.Ordinal) ||
                  string.Equals(method.Name, "RegisterAotReverseProxy", StringComparison.Ordinal) ||
-                 string.Equals(method.Name, "RegisterAotProxyFailureFactory", StringComparison.Ordinal) ||
-                 string.Equals(method.Name, "RegisterAotReverseProxyFailureFactory", StringComparison.Ordinal)) &&
+                 string.Equals(method.Name, "RegisterValidatedProxyFailureFactory", StringComparison.Ordinal) ||
+                 string.Equals(method.Name, "RegisterValidatedReverseProxyFailureFactory", StringComparison.Ordinal)) &&
                 method.MethodSig.Params.Any(parameter => string.Equals(parameter.FullName, "System.RuntimeMethodHandle", StringComparison.Ordinal)))
                              .Should()
                              .BeFalse("generated registry bootstrap should call delegate-based AOT registration overloads");
