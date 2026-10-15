@@ -173,7 +173,9 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
             assemblyName: assemblyName,
             trimmerDescriptorPath: Path.Combine(outputDirectory, assemblyName + ".linker.xml"),
             propsPath: Path.Combine(outputDirectory, assemblyName + ".props"));
-        var resolution = new DuckTypeAotMappingResolutionResult(mappings.Values, proxyAssemblies, targetAssemblies, Array.Empty<DuckTypeAotTypeReference>(), Array.Empty<string>(), Array.Empty<string>());
+        // The application's assemblies are the compiler's (its inputs and the closure of their references): the target types
+        // that need another one can't exist in the application, and the compiler can't lay them out.
+        var resolution = new DuckTypeAotMappingResolutionResult(mappings.Values, proxyAssemblies, targetAssemblies, Array.Empty<DuckTypeAotTypeReference>(), Array.Empty<string>(), Array.Empty<string>(), assemblyPaths.Keys);
         var artifactPaths = DuckTypeAotArtifactPaths.Create(options);
         // The generator replays dynamic duck typing in this process with the assemblies of the mappings: the other assemblies
         // their types need (e.g. the dependencies of the types of a closed generic argument) come from the application.
