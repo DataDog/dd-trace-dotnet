@@ -165,7 +165,10 @@ public class AotInstrumentNativeHostIntegrationTests
                     "-o",
                     published,
                 ],
-                []);
+                [],
+                // It builds Datadog.Trace, instruments the application and compiles it with ILC: more than 5 minutes on the
+                // macOS agents.
+                timeoutMilliseconds: 900_000);
             Skip.If(publishExit != 0 && publishOutput.Contains("Platform linker", StringComparison.OrdinalIgnoreCase), "The NativeAOT toolchain isn't available.");
             publishExit.Should().Be(0, publishOutput);
             publishOutput.Should().Contain("Datadog NativeAOT instrumentation:");
@@ -430,7 +433,7 @@ public class AotInstrumentNativeHostIntegrationTests
     private (int ExitCode, string Output) Run(string application, string mode, params (string Name, string Value)[] environment)
         => RunProcess("dotnet", application, ["CallTargetNativeTest.dll", mode], environment);
 
-    private (int ExitCode, string Output) RunProcess(string fileName, string workingDirectory, IEnumerable<string> arguments, (string Name, string Value)[] environment)
+    private (int ExitCode, string Output) RunProcess(string fileName, string workingDirectory, IEnumerable<string> arguments, (string Name, string Value)[] environment, int timeoutMilliseconds = 300_000)
     {
         var startInfo = new ProcessStartInfo(fileName)
         {
@@ -457,7 +460,7 @@ public class AotInstrumentNativeHostIntegrationTests
         using var process = Process.Start(startInfo)!;
         var standardOutput = process.StandardOutput.ReadToEndAsync();
         var standardError = process.StandardError.ReadToEndAsync();
-        process.WaitForExit(300_000).Should().BeTrue($"{fileName} {string.Join(" ", startInfo.ArgumentList)} timed out");
+        process.WaitForExit(timeoutMilliseconds).Should().BeTrue($"{fileName} {string.Join(" ", startInfo.ArgumentList)} timed out");
         var output = standardOutput.Result + Environment.NewLine + standardError.Result;
         if (process.ExitCode != 0)
         {
