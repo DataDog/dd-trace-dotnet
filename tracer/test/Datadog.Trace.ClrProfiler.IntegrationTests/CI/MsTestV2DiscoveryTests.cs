@@ -8,11 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
@@ -86,7 +88,7 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
         }
     }
 
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(InputSources))]
     public Task InputSourcesPreserveTheDiscoveryThreshold(string packageVersion, string additionalSample)
     {
@@ -96,13 +98,31 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
         return RunDiscoveryScenario(packageVersion, 5, repeatedSource ? 5 : 10, true, PassingTestsFilter, repeatedSource ? 3 : 6, useMtp: false, additionalSample: additionalSample);
     }
 
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(DiscoveryScenarios))]
     public Task DiscoveryControlsTheFaultySessionThreshold(string packageVersion, int threshold, int expectedAttempts, bool faulty, string filter, int expectedTests, bool useMtp)
         => RunDiscoveryScenario(packageVersion, threshold, expectedAttempts, faulty, filter, expectedTests, useMtp);
 
     private async Task RunDiscoveryScenario(string packageVersion, int threshold, int expectedAttempts, bool faulty, string filter, int expectedTests, bool useMtp, string additionalSample = null)
     {
+        if (faulty && !useMtp && EnvironmentTools.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64 &&
+            EnvironmentHelper.GetTargetFramework() is "net8.0" or "net9.0" or "net10.0")
+        {
+            // VSTest in .NET 11 RC1/RC2 cannot share named mutexes with .NET 8-10 on Linux ARM64,
+            // so the testhost cannot send the session's "faulty" tag. MTP uses the same runtime at both ends.
+            // Runtime bug: https://github.com/dotnet/runtime/issues/134491.
+            // Fixed for .NET 11 GA in https://github.com/dotnet/runtime/pull/134595.
+            // Remove this block after upgrading to GA and verifying these cases on Debian and Alpine ARM64.
+            // Check the selected SDK: the integration test's own runtime is not the VSTest runner's runtime.
+            var sdk = ProcessHelpers.RunCommand(new ProcessHelpers.Command(EnvironmentHelper.GetDotnetExe(), "--version", timeout: TimeSpan.FromSeconds(10)));
+            sdk.Should().NotBeNull();
+            sdk.ExitCode.Should().Be(0, sdk.Error);
+            var sdkVersion = sdk.Output.Trim();
+            Skip.If(
+                sdkVersion == "11.0.100-rc.1.26425.128" || sdkVersion == "11.0.100-rc.2.26504.105",
+                "Named mutex IPC is incompatible between .NET 11 RC1/RC2 and .NET 8-10 on Linux ARM64 (dotnet/runtime#134491). Re-enable with .NET 11 GA.");
+        }
+
         EnvironmentHelper.EnableDefaultTransport();
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");
