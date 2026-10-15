@@ -209,7 +209,7 @@ internal interface IResponseProxy
 }
 ```
 
-The registry registers the proxy of the base type with `DuckType.RegisterAotDerivedTypesProxy`, and a lookup for a class without its own registration that derives from it (or implements it, for an interface) uses the registration of its most derived registered base class, else of its most derived registered interface. The proxy binds the members of that type (which the class may override), and reports the class as `IDuckType.Type`, like the proxy dynamic duck typing creates for it. Members only the derived classes have aren't bound: declare the types that add them too. Value types and sealed types don't have derived types.
+The registry registers the proxy of the base type with `DuckType.RegisterAotDerivedTypesProxy`, and a lookup for a class without its own registration that derives from it (or implements it, for an interface) uses the registration of its most derived registered base class, else of its most derived registered interface. The proxy binds the members of that type (which the class may override), and reports the class as `IDuckType.Type`, like the proxy dynamic duck typing creates for it. Members only the derived classes have aren't bound: declare the types that add them too. Value types and sealed types don't have derived types. A declaration of `System.Object` serves the other types too, value types included (boxed): its proxy binds the members every instance has.
 
 ### Generic Proxies
 

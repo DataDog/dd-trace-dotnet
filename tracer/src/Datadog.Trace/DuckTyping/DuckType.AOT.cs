@@ -69,7 +69,8 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Registers the activator of a forward AOT proxy for the classes that derive from (or implement) the target type and
         /// have no registration of their own: the duck type declares the target type with
-        /// <c>[DuckType(IncludeDerivedTypes = true)]</c>, and binds members the derived classes inherit from it.
+        /// <c>[DuckType(IncludeDerivedTypes = true)]</c>, and binds members the derived classes inherit from it. The proxy of
+        /// System.Object serves the other types, value types included.
         /// </summary>
         /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
         /// <param name="targetType">Target type of the registration: an interface or a class that isn't sealed.</param>

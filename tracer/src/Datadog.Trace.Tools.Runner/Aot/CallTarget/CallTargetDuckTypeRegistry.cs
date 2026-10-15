@@ -126,6 +126,17 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
 
         foreach (var (proxyDefinition, target) in runtimeRequests)
         {
+            // A proxy that binds no member (e.g. a marker interface) is the same for every runtime type: the proxy of
+            // System.Object serves them all (see DuckTypeAotEngine), instead of the proxy of each type assignable to the static
+            // type, which for System.Object would be every type of the inputs.
+            if (proxyDefinition is TypeDefOrRefSig { TypeDefOrRef: { } reference } &&
+                resolveType(reference) is { } definition &&
+                BindsNoMember(definition, resolveType))
+            {
+                AddRequest(proxyDefinition, definition.Module.CorLibTypes.Object, DuckTypeAotMappingSource.CallTarget, derivedTypes: true);
+                continue;
+            }
+
             AddRequest(proxyDefinition, target, DuckTypeAotMappingSource.MapFile);
         }
 
@@ -139,16 +150,22 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
             return null;
         }
 
-        void AddRequest(TypeSig proxyDefinition, TypeSig target, DuckTypeAotMappingSource source)
+        void AddRequest(TypeSig proxyDefinition, TypeSig target, DuckTypeAotMappingSource source, bool derivedTypes = false)
         {
             if (Describe(proxyDefinition, resolveType) is not { } proxy || Describe(target, resolveType) is not { } targetType)
             {
                 return;
             }
 
-            var mapping = new DuckTypeAotMapping(proxy.TypeName, proxy.AssemblyName, targetType.TypeName, targetType.AssemblyName, DuckTypeAotMappingMode.Forward, source);
+            var mapping = new DuckTypeAotMapping(proxy.TypeName, proxy.AssemblyName, targetType.TypeName, targetType.AssemblyName, DuckTypeAotMappingMode.Forward, source, includesDerivedTypes: derivedTypes);
             if (mappings.ContainsKey(mapping.Key))
             {
+                // The same pair requested for the static type, or recorded (whose aliases this proxy makes unnecessary).
+                if (derivedTypes)
+                {
+                    mappings[mapping.Key] = mapping;
+                }
+
                 return;
             }
 
@@ -368,6 +385,42 @@ internal sealed class CallTargetDuckTypeRegistry : IDuckProxyProvider
         }
 
         return undeclared.Distinct(StringComparer.Ordinal).OrderBy(k => k, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
+    /// Gets whether a proxy definition binds no member of its target: an interface without methods (nor properties or events),
+    /// like the interfaces it extends, besides IDuckType (which every proxy implements).
+    /// </summary>
+    private static bool BindsNoMember(TypeDef proxyDefinition, Func<ITypeDefOrRef, TypeDef?> resolveType)
+    {
+        var pending = new Stack<TypeDef>();
+        var seen = new HashSet<TypeDef>();
+        pending.Push(proxyDefinition);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            if (!seen.Add(current) || current.FullName == "Datadog.Trace.DuckTyping.IDuckType")
+            {
+                continue;
+            }
+
+            if (!current.IsInterface || current.Methods.Count > 0)
+            {
+                return false;
+            }
+
+            foreach (var implemented in current.Interfaces)
+            {
+                if (resolveType(implemented.Interface.ScopeType ?? implemented.Interface) is not { } interfaceDefinition)
+                {
+                    return false;
+                }
+
+                pending.Push(interfaceDefinition);
+            }
+        }
+
+        return true;
     }
 
     private static bool DerivesFrom(TypeDef type, string baseTypeName, string baseAssemblyName, Func<ITypeDefOrRef, TypeDef?> resolveType)
