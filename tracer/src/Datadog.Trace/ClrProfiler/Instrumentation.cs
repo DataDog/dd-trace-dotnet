@@ -415,9 +415,8 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                // ensure global instance is created if it's not already
-                var testOptimization = TestOptimization.Instance;
-                if (testOptimization.Enabled)
+                // ensure global instance is created if it's not already (NativeAOT applications don't have Test Optimization)
+                if (TestOptimizationAvailability.IsSupported && TestOptimization.Instance is { Enabled: true } testOptimization)
                 {
                     testOptimization.Initialize();
                 }
