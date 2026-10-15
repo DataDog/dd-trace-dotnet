@@ -32,9 +32,26 @@ foreach ($attempt in 1..4) {
     }
     catch {
         Remove-Item $out -Force -ErrorAction SilentlyContinue
-        if ($attempt -eq 4) { throw }
+        # PowerShell wraps exceptions thrown by .NET method calls.
+        $downloadException = $_.Exception
+        while ($downloadException -isnot [System.Net.WebException] -and $null -ne $downloadException.InnerException) {
+            $downloadException = $downloadException.InnerException
+        }
 
-        Write-Warning "Could not download vcpkg from $url`: $($_.Exception.Message)"
+        $permanentHttpError = $false
+        if ($downloadException -is [System.Net.WebException] -and $downloadException.Response -is [System.Net.HttpWebResponse]) {
+            $statusCode = [int]$downloadException.Response.StatusCode
+            # Request timeouts and rate limiting can recover, including via the alternate endpoint.
+            $permanentHttpError = $statusCode -ge 400 -and $statusCode -lt 500 -and $statusCode -notin @(408, 429)
+        }
+
+        if ($permanentHttpError -or $attempt -eq 4) {
+            throw [System.Exception]::new(
+                "Could not download vcpkg $Version after $attempt attempts. Last endpoint: $url. Error: $($_.Exception.Message). Troubleshooting: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/_build/docker/gitlab/UPDATING_IMAGE.md#troubleshooting-vcpkg-downloads",
+                $_.Exception)
+        }
+
+        Write-Debug "Could not download vcpkg from $url`: $($_.Exception.Message)"
         Start-Sleep -Seconds (5 * $attempt)
     }
 }
