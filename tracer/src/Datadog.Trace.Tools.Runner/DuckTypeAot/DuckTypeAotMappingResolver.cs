@@ -471,13 +471,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="genericTypeRoots">The generic type roots value.</param>
         /// <param name="warnings">The warnings value.</param>
         /// <param name="errors">The errors value.</param>
+        /// <param name="applicationAssemblyNames">The names of every assembly of the application, when they're known.</param>
         public DuckTypeAotMappingResolutionResult(
             IEnumerable<DuckTypeAotMapping> mappings,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
             IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
             IEnumerable<DuckTypeAotTypeReference> genericTypeRoots,
             IReadOnlyList<string> warnings,
-            IReadOnlyList<string> errors)
+            IReadOnlyList<string> errors,
+            IEnumerable<string>? applicationAssemblyNames = null)
         {
             Mappings = new List<DuckTypeAotMapping>(mappings);
             ProxyAssemblyPathsByName = proxyAssemblyPathsByName;
@@ -485,6 +487,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             GenericTypeRoots = new List<DuckTypeAotTypeReference>(genericTypeRoots);
             Warnings = warnings;
             Errors = errors;
+            ApplicationAssemblyNames = applicationAssemblyNames is null ? null : new HashSet<string>(applicationAssemblyNames, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -522,6 +525,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <value>The errors value.</value>
         public IReadOnlyList<string> Errors { get; }
+
+        /// <summary>
+        /// Gets the names of every assembly of the application (e.g. the compiler's inputs and references), or null when
+        /// they aren't known: the types whose layout needs another assembly can't be loaded there, so they aren't aliases.
+        /// </summary>
+        /// <value>The application assembly names value.</value>
+        public ISet<string>? ApplicationAssemblyNames { get; }
 
         /// <summary>
         /// Gets the Datadog.Trace assembly the generated registry is bound to (it validates its version and MVID at startup):
