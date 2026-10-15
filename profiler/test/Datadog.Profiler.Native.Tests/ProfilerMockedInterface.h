@@ -159,6 +159,7 @@ public:
     MOCK_METHOD(bool, IsLongLived, (), (const override));
     MOCK_METHOD(bool, IsProfilerEnabled, (), (override));
     MOCK_METHOD(bool, IsProfilerStarted, (), (override));
+    MOCK_METHOD(void, OnDelayedStartFailed, (), (override));
     MOCK_METHOD(void, ProcessStart, (), (override));
     MOCK_METHOD(void, ProcessEnd, (), (override));
     MOCK_METHOD(SkipProfileHeuristicType, GetSkipProfileHeuristic, (), (const override));

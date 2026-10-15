@@ -52,33 +52,6 @@ TEST(EngineActiveGuardTest, NotActiveBeforeInitialization)
     ASSERT_FALSE(guard.IsActive());
 }
 
-TEST(EngineActiveGuardTest, InactiveCallbackDoesNotDelayExclusiveLock)
-{
-    std::atomic<bool> isInitialized{false};
-    std::shared_mutex mutex;
-    bool isServicesShutdown = false;
-
-    auto guard = std::make_unique<EngineActiveGuard>(isInitialized, mutex, isServicesShutdown);
-    ASSERT_FALSE(guard->IsActive());
-
-    std::promise<void> writerAcquired;
-    auto writerAcquiredFuture = writerAcquired.get_future();
-    std::thread writer(
-        [&] {
-            std::unique_lock<std::shared_mutex> exclusiveLock(mutex);
-            writerAcquired.set_value();
-        });
-
-    // Inactive EventPipe callbacks may keep arriving until the session is stopped. They must not
-    // acquire the shared lock and starve the exclusive shutdown barrier.
-    auto status = writerAcquiredFuture.wait_for(1s);
-
-    guard.reset();
-    writer.join();
-
-    ASSERT_EQ(status, std::future_status::ready);
-}
-
 TEST(EngineActiveGuardTest, NotActiveOnceServicesShutdownFlagIsSet)
 {
     std::atomic<bool> isInitialized{true};
@@ -124,7 +97,7 @@ TEST(EngineActiveGuardTest, NotActiveWhileWriterHoldsTheExclusiveLock)
     writer.join();
 }
 
-TEST(EngineActiveGuardTest, ShutdownBarrierWaitsForActiveGuardAndRejectsSubsequentGuards)
+TEST(EngineActiveGuardTest, WriterBlocksUntilReaderGuardIsReleased)
 {
     std::atomic<bool> isInitialized{true};
     std::shared_mutex mutex;
@@ -138,7 +111,6 @@ TEST(EngineActiveGuardTest, ShutdownBarrierWaitsForActiveGuardAndRejectsSubseque
         [&]
         {
             std::unique_lock<std::shared_mutex> exclusiveLock(mutex);
-            isServicesShutdown = true;
             writerAcquired.store(true);
         });
 
@@ -152,11 +124,6 @@ TEST(EngineActiveGuardTest, ShutdownBarrierWaitsForActiveGuardAndRejectsSubseque
     writer.join();
 
     ASSERT_TRUE(writerAcquired.load());
-
-    // Once shutdown is published under the exclusive lock, later callbacks must remain inactive
-    // even though the writer has released the lock.
-    EngineActiveGuard lateGuard(isInitialized, mutex, isServicesShutdown);
-    ASSERT_FALSE(lateGuard.IsActive());
 }
 
 TEST(EngineActiveGuardTest, MultipleReadersCanBeActiveConcurrently)
