@@ -30,6 +30,8 @@ internal static class JsonModelDescriptor
     private const string NewtonsoftNamespace = "Datadog.Trace.Vendors.Newtonsoft.Json";
     private const string JsonHelperType = "Datadog.Trace.Util.Json.JsonHelper";
 
+    private static readonly string[] UnsupportedProductNamespaces = ["Datadog.Trace.Ci", "Datadog.Trace.Debugger"];
+
     private static readonly HashSet<string> SerializeMethods = new(StringComparer.Ordinal) { "SerializeObject", "Serialize", "FromObject" };
 
     /// <returns>The number of types preserved.</returns>
@@ -156,7 +158,7 @@ internal static class JsonModelDescriptor
 
                         return;
                     case TypeDefOrRefSig { TypeDefOrRef: { } reference }:
-                        if (reference.ResolveTypeDef() is { } definition && definition.Module == datadogTrace && !IsVendored(definition) && types.Add(definition))
+                        if (reference.ResolveTypeDef() is { } definition && definition.Module == datadogTrace && !IsVendored(definition) && !IsOfUnsupportedProduct(definition) && types.Add(definition))
                         {
                             pending.Enqueue(definition);
                         }
@@ -169,7 +171,7 @@ internal static class JsonModelDescriptor
             }
         }
 
-        foreach (var type in datadogTrace.GetTypes().Where(t => !IsVendored(t)))
+        foreach (var type in datadogTrace.GetTypes().Where(t => !IsVendored(t) && !IsOfUnsupportedProduct(t)))
         {
             if (IsJsonDecorated(type.CustomAttributes) || type.Fields.Any(f => IsJsonDecorated(f.CustomAttributes)) || type.Properties.Any(p => IsJsonDecorated(p.CustomAttributes)))
             {
@@ -256,6 +258,19 @@ internal static class JsonModelDescriptor
         => method.IsConstructor
         || method.Name.StartsWith("ShouldSerialize", StringComparison.Ordinal)
         || method.CustomAttributes.Any(a => a.TypeFullName.StartsWith("System.Runtime.Serialization.On", StringComparison.Ordinal));
+
+    // The products NativeAOT applications don't have never (de)serialize their models there, and preserving them would keep
+    // their code: Test Optimization (TestOptimizationAvailability.IsSupported), and Dynamic Instrumentation, Exception Replay
+    // and the Symbol Database (DebuggerManager.RuntimeDebuggerProductsSupported; Code Origin has no models).
+    private static bool IsOfUnsupportedProduct(TypeDef type)
+    {
+        while (type.DeclaringType is { } declaringType)
+        {
+            type = declaringType;
+        }
+
+        return UnsupportedProductNamespaces.Any(n => type.Namespace == n || type.Namespace.StartsWith(n + ".", StringComparison.Ordinal));
+    }
 
     // Newtonsoft and the other vendored libraries use their own types statically.
     private static bool IsVendored(TypeDef type)
