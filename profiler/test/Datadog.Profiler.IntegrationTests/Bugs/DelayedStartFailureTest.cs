@@ -38,11 +38,11 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
             runner.Run(agent);
 
             AssertLogDoesNotContain(runner.Environment.LogDir, DelayedStartFailureLog);
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0, "the delayed start must succeed when the timeout is not shrunk");
-            
-            var pendingSamples = GetShutdownMetric(logDir, PendingSamplesMetric);
-            pendingSamples.Should().NotBeNull($"'{PendingSamplesMetric}' must be dumped at shutdown");
-            pendingSamples.Should().Be(0, "no sample may be created once the SamplesCollector is stopped for good");
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0, "the delayed start must succeed when the trigger is not applied");
+
+            // Do not assert on PendingSamplesMetric here
+            // In success run, the metrics are dumped in the log *before* flushing the SamplesCollector, which means that
+            // the count could be > 0.
         }
 
         [TestAppFact("Samples.BuggyBits")]
@@ -102,12 +102,9 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
             return runner;
         }
 
-        // 1 ms is always shorter than the time the watcher thread needs to signal readiness, so
-        // StackSamplerLoopManager::RunWatcher() times out and StartServices() fails - deterministically,
-        // on every platform, without relying on CPU starvation.
         private static void ForceDelayedStartFailure(TestApplicationRunner runner)
         {
-            runner.Environment.SetVariable(EnvironmentVariables.WatcherStartTimeout, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.WatcherStartTimeout, "0");
         }
 
         private static string GetNativeLogFile(string logDir)

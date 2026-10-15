@@ -117,10 +117,11 @@ public:
     }
 
     // Same rationale as GetLibrariesInfoCacheStartTimeout() above: a mocked zero would make
-    // StackSamplerLoopManager fail to start in every test.
+    std::chrono::milliseconds WatcherStartTimeout = std::chrono::seconds(10);
+
     std::chrono::milliseconds GetWatcherStartTimeout() const override
     {
-        return std::chrono::seconds(10);
+        return WatcherStartTimeout;
     }
 
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));

@@ -70,6 +70,35 @@ TEST(StackSamplerLoopManagerTest, StartFailsCleanlyWhenStackSamplerLoopWasNeverW
     ASSERT_FALSE(manager.IsStarted());
 }
 
+// A zero watcher start timeout means "do not wait for the watcher thread": Start() must fail without
+// creating it. This is what the integration tests rely on to reach the delayed-start failure path
+// deterministically - a small-but-nonzero timeout would race the readiness handshake (SCP-1413).
+TEST(StackSamplerLoopManagerTest, StartFailsWithoutWaitingWhenWatcherStartTimeoutIsZero)
+{
+    MockProfilerInfo profilerInfo;
+    auto [configHolder, config] = CreateConfiguration();
+    StubOutSamplingConfig(config);
+    config.WatcherStartTimeout = 0ms;
+
+    ThreadsCpuManager threadsCpuManager;
+    ManagedThreadList managedThreadList(nullptr);
+    ManagedThreadList codeHotspotThreadList(nullptr);
+    MetricsRegistry metricsRegistry;
+
+    StackSamplerLoopManager manager(
+        &profilerInfo, nullptr, nullptr, &threadsCpuManager, nullptr, metricsRegistry, configHolder.get());
+
+    StackSamplerLoop stackSamplerLoop(
+        &profilerInfo, configHolder.get(), nullptr, &manager, &threadsCpuManager,
+        &managedThreadList, &codeHotspotThreadList, nullptr, nullptr, metricsRegistry);
+
+    // wired in correctly, so this is not the StartFailsCleanlyWhenStackSamplerLoopWasNeverWiredIn case
+    manager.SetStackSamplerLoop(&stackSamplerLoop);
+
+    ASSERT_FALSE(manager.Start());
+    ASSERT_FALSE(manager.IsStarted());
+}
+
 TEST(StackSamplerLoopManagerTest, StackSamplerLoopStartsAndStopsIndependentlyOfTheManager)
 {
     MockProfilerInfo profilerInfo;
