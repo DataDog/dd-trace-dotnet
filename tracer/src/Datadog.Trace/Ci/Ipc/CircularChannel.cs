@@ -19,7 +19,7 @@ internal sealed partial class CircularChannel : IChannel
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CircularChannel));
 
     private readonly MemoryMappedFile _mmf;
-    private readonly Mutex _mutex;
+    private readonly IChannelLock _lock;
     private readonly CircularChannelSettings _settings;
 
     private long _disposed;
@@ -72,14 +72,30 @@ internal sealed partial class CircularChannel : IChannel
         }
 
         _disposed = 0;
-        _mutex = new Mutex(
-            initiallyOwned: false,
-            FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}");
+        _lock = CreateLock(fileName);
 
-        var hasHandle = _mutex.WaitOne(_settings.MutexTimeout);
-        if (!hasHandle)
+        LockAcquisition acquisition;
+        try
         {
-            throw new TimeoutException("CircularChannel: Failed to acquire mutex within the time limit.");
+            acquisition = WaitForLock();
+        }
+        catch
+        {
+            // For example, the file system doesn't support the lock. This channel can't work at all then.
+            _lock.Dispose();
+            throw;
+        }
+
+        if (acquisition == LockAcquisition.Abandoned)
+        {
+            // A previous owner died while holding the mutex. The wait still succeeded and we own the
+            // mutex now, so carry on initializing the channel; the finally below releases it as usual.
+            Log.Warning("CircularChannel: Mutex was abandoned by a previous owner. Recovering ownership.");
+        }
+        else if (acquisition != LockAcquisition.Acquired)
+        {
+            _lock.Dispose();
+            throw new TimeoutException("CircularChannel: Failed to acquire the channel lock within the time limit.");
         }
 
         try
@@ -87,20 +103,28 @@ internal sealed partial class CircularChannel : IChannel
             // Let's open or create the file we want to map
             var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
 
-            // Ensure we have the correct size
-            stream.SetLength(_settings.BufferSize);
+            // Only a file we have just created, or one with an unexpected size, needs initializing. The other side of
+            // the channel may already be using an existing one, and resetting its pointers drops every unread message.
+            var initialize = stream.Length != _settings.BufferSize;
+            if (initialize)
+            {
+                stream.SetLength(_settings.BufferSize);
+            }
 
             // Create the memory mapped file from the stream
             _mmf = MemoryMappedFile.CreateFromFile(stream, mapName: null, _settings.BufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, leaveOpen: false);
 
-            // Initialize the write and read pointer
-            using var accessor = _mmf.CreateViewAccessor();
-            accessor.Write(0, (ushort)0); // Write pointer
-            accessor.Write(2, (ushort)0); // Read pointer
+            if (initialize)
+            {
+                // Initialize the write and read pointer
+                using var accessor = _mmf.CreateViewAccessor();
+                accessor.Write(0, (ushort)0); // Write pointer
+                accessor.Write(2, (ushort)0); // Read pointer
+            }
         }
         finally
         {
-            _mutex.ReleaseMutex();
+            ReleaseLock();
         }
     }
 
@@ -128,6 +152,46 @@ internal sealed partial class CircularChannel : IChannel
         _writer?.Dispose();
         _reader?.Dispose();
         _mmf.Dispose();
-        _mutex.Dispose();
+        _lock.Dispose();
+    }
+
+    internal static string GetMutexName(string fileName)
+        => FrameworkDescription.Instance.IsWindows()
+               ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}"
+               : $"{Path.GetFileNameWithoutExtension(fileName)}";
+
+    internal static string GetLockFilePath(string fileName) => fileName + ".lock";
+
+    /// <summary>
+    /// Waits for the channel lock.
+    /// </summary>
+    /// <remarks>
+    /// Callers must release whenever this returns <see cref="LockAcquisition.Acquired"/> or
+    /// <see cref="LockAcquisition.Abandoned"/>, because in both cases the caller owns the lock.
+    /// </remarks>
+    /// <returns>The outcome of the wait.</returns>
+    private LockAcquisition WaitForLock() => _lock.Acquire(_settings.MutexTimeout);
+
+    private void ReleaseLock()
+    {
+        try
+        {
+            _lock.Release();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The lock was disposed while we held it, nothing to do
+        }
+        catch (Exception ex) when (Interlocked.Read(ref _disposed) == 1)
+        {
+            // The channel is being torn down underneath us, so losing ownership here is expected
+            Log.Debug(ex, "CircularChannel: Could not release the channel lock while disposing.");
+        }
+        catch (Exception ex)
+        {
+            // We acquired the lock but could not give it back, so it may stay held and every process using
+            // this channel would time out from now on. Never swallow this silently.
+            Log.Error(ex, "CircularChannel: Failed to release the channel lock. The channel may now be unusable.");
+        }
     }
 }
