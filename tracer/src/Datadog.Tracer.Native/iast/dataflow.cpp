@@ -852,6 +852,9 @@ void Dataflow::RemoveModule(ModuleID moduleId)
 void Dataflow::AddNGenInlinerModule(ModuleID moduleId, std::vector<trace::RejitRequest>& rejitRequests)
 {
 }
+void Dataflow::GetNGenInlinerRejitRequests(std::vector<trace::RejitRequest>& rejitRequests)
+{
+}
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {

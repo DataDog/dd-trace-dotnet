@@ -669,6 +669,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     WaitForPendingRejit(module_rejit);
     WaitForPendingRejit(deferred_modules_rejit);
 
+    // On .NET Core, the worker adds the precompiled inliners of the methods instrumented above to their batch, so
+    // the waits above cover them. On .NET Framework it can't look them up, so wait for their ReJIT here instead.
+    const auto ngen_inliners_rejit = rejit_handler->EnqueueRejitForNGenInliners();
+    if (ngen_inliners_rejit.has_value() && ngen_inliners_rejit->wait_for(200ms) == std::future_status::timeout)
+    {
+        Logger::Warn("Timeout while waiting for the rejit requests of NGen inliners to be processed. Rejit will "
+                     "continue asynchronously, but some initial calls may not be instrumented");
+    }
+
     if (_dataflow != nullptr)
     {
         _dataflow->ModuleLoaded(module);
