@@ -1738,6 +1738,7 @@ partial class Build
                 .SetFilter("FullyQualifiedName~AotInstrumentNativeHostIntegrationTests|FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.AspNetCoreSpansReachTheAgent")
                 .SetProcessEnvironmentVariable("DD_AOT_NATIVE_TRACER", nativeTracer)
                 .SetProcessEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_DIR", callTargetNativeTest)
+                .SetProcessEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_PROJECT", callTargetNativeTestProjectPath)
                 .SetProcessEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH", "1")
                 .WithDatadogLogger());
         });
