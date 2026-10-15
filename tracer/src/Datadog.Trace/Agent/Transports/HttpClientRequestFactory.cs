@@ -1,4 +1,4 @@
-﻿// <copyright file="HttpClientRequestFactory.cs" company="Datadog">
+// <copyright file="HttpClientRequestFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,9 +22,9 @@ namespace Datadog.Trace.Agent.Transports
         private readonly HttpMessageHandler _handler;
         private readonly Uri _baseEndpoint;
 
-        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null, TimeSpan? timeout = null)
+        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null, TimeSpan? timeout = null, bool allowAutoRedirect = true)
         {
-            _handler = handler ?? new HttpClientHandler();
+            _handler = handler ?? new HttpClientHandler { AllowAutoRedirect = allowAutoRedirect };
             _client = new HttpClient(_handler);
             _baseEndpoint = baseEndpoint;
             if (timeout.HasValue)
@@ -40,6 +40,15 @@ namespace Datadog.Trace.Agent.Transports
             // Disable keep-alive
             _client.DefaultRequestHeaders.ConnectionClose = true;
         }
+
+        internal bool AllowAutoRedirect => _handler switch
+        {
+            HttpClientHandler handler => handler.AllowAutoRedirect,
+#if NET5_0_OR_GREATER
+            SocketsHttpHandler handler => handler.AllowAutoRedirect,
+#endif
+            _ => true,
+        };
 
         public Uri GetEndpoint(string relativePath) => relativePath is null ? _baseEndpoint : UriHelpers.Combine(_baseEndpoint, relativePath);
 
