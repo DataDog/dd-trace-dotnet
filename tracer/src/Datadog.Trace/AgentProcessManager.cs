@@ -264,10 +264,18 @@ namespace Datadog.Trace
                                         var startDelay = GetStartDelay(ownProcessExited, metadata.SequentialFailures, maxRetryInterval);
                                         if (startDelay > 0)
                                         {
-                                            // The process we started exited after its startup window: back off like any other failure
-                                            Log.Warning(
-                                                "{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).",
-                                                new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
+                                            // The process we started exited after its startup window: back off like any other failure.
+                                            // Only the first retry in a run of failures is logged above Debug.
+                                            var message = "{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).";
+                                            var args = new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures };
+                                            if (metadata.SequentialFailures == 1)
+                                            {
+                                                Log.Warning(message, args);
+                                            }
+                                            else
+                                            {
+                                                Log.Debug(message, args);
+                                            }
                                             await Task.Delay(startDelay).ConfigureAwait(false);
                                             metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
                                         }
@@ -283,14 +291,22 @@ namespace Datadog.Trace
                                         metadata.HealthyStopwatch = null;
                                         var firstAttempt = metadata.FailedHealthChecks == MaxFailedHealthChecks;
                                         var childPid = GetProcessId(metadata.Process);
-                                        if (TryStopOwnProcess(metadata))
+                                        if (TryStopOwnProcess(metadata, firstAttempt))
                                         {
                                             // A restart counts as a failure, so an agent that never becomes healthy backs off too
                                             metadata.SequentialFailures++;
                                             var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
-                                            Log.Warning(
-                                                "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).",
-                                                new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
+                                            var message = "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).";
+                                            var args = new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures };
+                                            if (metadata.SequentialFailures == 1)
+                                            {
+                                                Log.Warning(message, args);
+                                            }
+                                            else
+                                            {
+                                                // Later restarts in the same run of failures are intermediate retries
+                                                Log.Debug(message, args);
+                                            }
                                             await Task.Delay(delay).ConfigureAwait(false);
                                             metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
                                         }
@@ -320,7 +336,17 @@ namespace Datadog.Trace
 
                                 if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
-                                    Log.Information("Attempting to start {Process}.", path);
+                                    // Starts while failures are being retried are intermediate attempts
+                                    var isRetry = metadata.SequentialFailures > 0;
+                                    if (isRetry)
+                                    {
+                                        Log.Debug("Attempting to start {Process}.", path);
+                                    }
+                                    else
+                                    {
+                                        Log.Information("Attempting to start {Process}.", path);
+                                    }
+
                                     metadata.FailedHealthChecks = 0;
 
                                     var startInfo = new ProcessStartInfo
@@ -335,7 +361,14 @@ namespace Datadog.Trace
 
                                     metadata.Process = Process.Start(startInfo);
                                     var childPid = GetProcessId(metadata.Process);
-                                    Log.Information("Started {Process} with pid {ChildPid}.", path, childPid);
+                                    if (isRetry)
+                                    {
+                                        Log.Debug("Started {Process} with pid {ChildPid}.", path, childPid);
+                                    }
+                                    else
+                                    {
+                                        Log.Information("Started {Process} with pid {ChildPid}.", path, childPid);
+                                    }
 
                                     const int startupTimeout = 2000;
                                     var startupStopwatch = Stopwatch.StartNew();
@@ -367,7 +400,15 @@ namespace Datadog.Trace
 
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
-                                            Log.Error("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                            // Retried with backoff, so not an Error; only the first failure in a run is logged above Debug
+                                            if (isRetry)
+                                            {
+                                                Log.Debug("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                            }
+                                            else
+                                            {
+                                                Log.Warning("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                            }
                                             ForgetOwnProcess(metadata);
                                             metadata.ProcessState = ProcessState.Faulted;
                                             break;
@@ -378,9 +419,16 @@ namespace Datadog.Trace
 
                                     if (metadata.ProcessState == ProcessState.ReadyToStart)
                                     {
-                                        Log.Warning(
-                                            "{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).",
-                                            new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
+                                        var message = "{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).";
+                                        var args = new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure };
+                                        if (isRetry)
+                                        {
+                                            Log.Debug(message, args);
+                                        }
+                                        else
+                                        {
+                                            Log.Warning(message, args);
+                                        }
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                     }
                                 }
@@ -392,7 +440,16 @@ namespace Datadog.Trace
                             catch (Exception ex)
                             {
                                 metadata.ProcessState = ProcessState.Faulted;
-                                Log.Error(ex, "Failed to start {Process}.", path);
+
+                                // Retried with backoff, so not an Error; only the first failure in a run is logged above Debug
+                                if (metadata.SequentialFailures == 0)
+                                {
+                                    Log.Warning(ex, "Failed to start {Process}.", path);
+                                }
+                                else
+                                {
+                                    Log.Debug(ex, "Failed to start {Process}.", path);
+                                }
                             }
                             finally
                             {
@@ -447,7 +504,7 @@ namespace Datadog.Trace
         /// Kills the process this keep-alive started. Returns false if it is still running afterwards,
         /// in which case it stays tracked so that a second copy is never started next to it.
         /// </summary>
-        private static bool TryStopOwnProcess(ProcessMetadata metadata)
+        private static bool TryStopOwnProcess(ProcessMetadata metadata, bool firstAttempt)
         {
             var process = metadata.Process;
             if (process == null)
@@ -462,7 +519,14 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Warning<string, int?>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                if (firstAttempt)
+                {
+                    Log.Warning<string, int?>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                }
+                else
+                {
+                    Log.Debug<string, int?>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                }
             }
 
             if (metadata.OwnProcessIsRunning())
@@ -537,11 +601,15 @@ namespace Datadog.Trace
                     return false;
                 }
 
-                Log.Information(
-                    "{Process} with pid {ChildPid} started by this process exited with code {ExitCode}.",
-                    metadata.ProcessPath,
-                    GetProcessId(process),
-                    GetExitCode(process));
+                // An exit while failures are already being retried is an intermediate attempt
+                if (metadata.SequentialFailures == 0)
+                {
+                    Log.Information("{Process} with pid {ChildPid} started by this process exited with code {ExitCode}.", metadata.ProcessPath, GetProcessId(process), GetExitCode(process));
+                }
+                else
+                {
+                    Log.Debug("{Process} with pid {ChildPid} started by this process exited with code {ExitCode}.", metadata.ProcessPath, GetProcessId(process), GetExitCode(process));
+                }
             }
             catch (Exception ex)
             {
