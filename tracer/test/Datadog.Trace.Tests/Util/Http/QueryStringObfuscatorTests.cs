@@ -153,7 +153,8 @@ public class QueryStringObfuscatorTests
     [Fact]
     public void RegexTimeoutOmitsQueryString()
     {
-        var obfuscator = ObfuscatorFactory.GetObfuscator(1, "(a+)+$", new Mock<IDatadogLogger>().Object);
+        // The backreference prevents regex optimizations from eliminating the backtracking, as .NET 5 does for (a+)+$.
+        var obfuscator = ObfuscatorFactory.GetObfuscator(1, @"^(a+)+\1$", new Mock<IDatadogLogger>().Object);
 
         obfuscator.Obfuscate(new string('a', 256) + "!").Should().BeEmpty();
     }
