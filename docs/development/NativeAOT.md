@@ -189,8 +189,11 @@ build-time data, then calls `Instrumentation.InitializeAot()` (`Instrumentation.
 initializes the tracer like `Instrumentation.Initialize` without the native tracer (`NativeMethods.CanBeLoaded` is false
 without dynamic code) and enables the instrumentation categories. Each step is in its own `try`/`catch`: a failure is
 logged and the application goes on. Products that instrument at runtime (Dynamic Instrumentation, Exception Replay,
-Symbol Database) and the Continuous Profiler aren't available. The native libraries the tracer P/Invokes (`LibDatadog`,
-`libddwaf`) come with the package's runtime assets.
+Symbol Database), Test Optimization (CI Visibility) and the Continuous Profiler aren't available. ILC leaves their code
+out of the application: `DebuggerManager.RuntimeDebuggerProductsSupported` is a constant without dynamic code, the targets
+set the `Datadog.Trace.TestOptimization.IsSupported` feature switch to false (`TestOptimizationAvailability`), and the
+instrumentation doesn't preserve their JSON models. The native libraries the tracer P/Invokes (`LibDatadog`, `libddwaf`)
+come with the package's runtime assets.
 
 NativeAOT specifics in the tracer:
 
