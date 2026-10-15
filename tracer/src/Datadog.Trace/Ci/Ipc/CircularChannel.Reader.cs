@@ -77,8 +77,9 @@ internal partial class CircularChannel
             }
             catch (AbandonedMutexException ex)
             {
-                Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
-                return;
+                // WaitOne grants ownership even when the previous owner abandoned the mutex.
+                // Continue through the finally below so other processes can send messages.
+                Log.Warning(ex, "CircularChannel.Reader: Mutex was abandoned. Continuing with ownership.");
             }
             catch (ObjectDisposedException ex)
             {
