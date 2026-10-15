@@ -41,6 +41,10 @@ namespace Datadog.Trace.Agent
 
         private readonly ManualResetEventSlim _serializationMutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
 
+        // Set with _processExit: ends the batch interval wait of the serialization thread (waiting on it doesn't allocate,
+        // unlike waiting on _processExit.Task)
+        private readonly ManualResetEventSlim _processExitSignal = new ManualResetEventSlim(initialState: false, spinCount: 0);
+
         private readonly int _batchInterval;
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
@@ -220,6 +224,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Wake up the serialization thread so that it observes _processExit, drains the queue, and exits
+            _processExitSignal.Set();
             _serializationMutex.Set();
 
             // One deadline for the whole shutdown, rather than one per stage
@@ -792,7 +797,7 @@ namespace Datadog.Trace.Agent
                 if (hasDequeuedTraces && _batchInterval > 0)
                 {
                     // Like a Thread.Sleep, but FlushAndCloseAsync doesn't wait for the end of the batch interval
-                    _processExit.Task.Wait(_batchInterval);
+                    _processExitSignal.Wait(_batchInterval);
                 }
                 else
                 {
