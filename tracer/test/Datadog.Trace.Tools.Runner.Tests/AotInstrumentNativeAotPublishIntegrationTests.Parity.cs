@@ -259,7 +259,9 @@ public partial class AotInstrumentNativeAotPublishIntegrationTests
                 <PackageReference Include="Datadog.Trace.Aot" Version="{version}" />
                 <PackageReference Include="Dapper" Version="2.1.89" />
                 <PackageReference Include="Dapper.AOT" Version="1.1.0" />
-                <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.32" />
+                <!-- The native SQLite of SQLitePCLRaw 2.1.12+ needs glibc 2.34: CI runs on Debian buster (glibc 2.28). -->
+                <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.29" />
+                <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.11" />
               </ItemGroup>
             </Project>
             """;
