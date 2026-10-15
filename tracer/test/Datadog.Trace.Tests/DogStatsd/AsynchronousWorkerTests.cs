@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Vendors.StatsdClient.Worker;
@@ -23,27 +25,28 @@ public class AsynchronousWorkerTests
     [Fact]
     public async Task FlushAndDisposeWakeUpAnIdleWorker()
     {
-        const int flushes = 20;
+        const int flushes = 40;
         var handler = new Handler();
         var worker = new AsynchronousWorker<int>(handler, new Waiter(), workerThreadCount: 1, maxItemCount: 10, blockingQueueTimeout: null);
 
-        // Idle long enough for the worker to sleep MaxWaitDuration between its polls.
-        await Task.Delay(TimeSpan.FromMilliseconds(500));
-
-        var stopwatch = Stopwatch.StartNew();
+        // Without being woken up, a flush waits for the end of the worker's sleep, whose duration doubles from MinWaitDuration
+        // up to MaxWaitDuration (a flush doesn't reset it): only the first 6 flushes take less than half of MaxWaitDuration.
+        var durations = new List<TimeSpan>();
         for (var i = 0; i < flushes; i++)
         {
+            var stopwatch = Stopwatch.StartNew();
             worker.Flush();
+            durations.Add(stopwatch.Elapsed);
         }
 
         await worker.DisposeAsync();
-        stopwatch.Stop();
 
         // DisposeAsync flushes too
         handler.Flushes.Should().Be(flushes + 1);
 
-        // Without being woken up, each flush waits for the end of the worker's sleep: about MaxWaitDuration.
-        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromTicks(AsynchronousWorker<int>.MaxWaitDuration.Ticks * flushes / 2));
+        // Woken up, they're immediate: a third of them is enough, so a busy machine can delay the wake-ups of the others.
+        var halfMaxWaitDuration = TimeSpan.FromTicks(AsynchronousWorker<int>.MaxWaitDuration.Ticks / 2);
+        durations.Count(duration => duration < halfMaxWaitDuration).Should().BeGreaterThanOrEqualTo(flushes / 3, $"flushes took {string.Join(", ", durations)}");
     }
 
     private class Handler : IAsynchronousWorkerHandler<int>
