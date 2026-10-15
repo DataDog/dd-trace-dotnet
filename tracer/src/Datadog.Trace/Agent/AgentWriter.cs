@@ -791,7 +791,8 @@ namespace Datadog.Trace.Agent
 
                 if (hasDequeuedTraces && _batchInterval > 0)
                 {
-                    Thread.Sleep(_batchInterval);
+                    // Like a Thread.Sleep, but FlushAndCloseAsync doesn't wait for the end of the batch interval
+                    _processExit.Task.Wait(_batchInterval);
                 }
                 else
                 {
