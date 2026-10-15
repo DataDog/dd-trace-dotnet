@@ -110,6 +110,45 @@ exception behavior.
 These APIs report diagnostic `DDFF001`; suppress it explicitly to opt in. Older
 compilers may not enforce this diagnostic. Existing async calls require no opt-in.
 
+## Per-subject evaluation telemetry opt-out
+
+Enable the parameter when you construct the provider. Then set the exact context
+key `dd_evaluation_telemetry_opt_out` to boolean `true` for an opted-out subject.
+
+```csharp
+using Datadog.FeatureFlags.OpenFeature;
+using OpenFeature.Model;
+
+var provider = new DatadogProvider(new DatadogProviderOptions
+{
+    EnableEvaluationTelemetryOptOutParameter = true,
+});
+await OpenFeature.Api.Instance.SetProviderAsync(provider);
+var context = EvaluationContext.Builder()
+    .SetTargetingKey("subject-123")
+    .Set("dd_evaluation_telemetry_opt_out", true)
+    .Build();
+var enabled = await OpenFeature.Api.Instance.GetClient()
+    .GetBooleanValueAsync("new-checkout", false, context);
+```
+
+The option defaults to `false`. The provider copies it at construction.
+Only boolean `true` suppresses new Datadog evaluation metrics and automatic flag
+span annotations. Missing values, strings, numbers, null, and boolean `false`
+preserve telemetry. The provider does not currently produce evaluation EVP events.
+
+Flag results, randomization, experiment exposures, exposure deduplication, and
+application hooks remain unchanged. Previously recorded telemetry remains available.
+The asynchronous client uses the merged evaluation context, including successful
+Before hook changes. Experimental synchronous methods use only their supplied context.
+
+OpenFeature 2.3.0 has one error-path limitation. If one application Before hook
+changes the context and a later Before hook throws, the provider receives only
+the original context. Evaluation does not run and no exposure is produced.
+An error metric and runtime-default span annotation can still be recorded if
+the original context did not opt out. Set opt-out in the supplied evaluation
+context when you need suppression on this path.
+
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).

@@ -18,6 +18,18 @@ namespace Datadog.FeatureFlags.OpenFeature;
 
 internal sealed class SpanEnrichmentHook : Hook
 {
+    private readonly Action<long?, bool, string?, bool, string, object?> _accumulate;
+
+    public SpanEnrichmentHook()
+        : this(FeatureFlagsSdk.AccumulateSpanEnrichment)
+    {
+    }
+
+    internal SpanEnrichmentHook(Action<long?, bool, string?, bool, string, object?> accumulate)
+    {
+        _accumulate = accumulate;
+    }
+
     /// <inheritdoc/>
     public override ValueTask FinallyAsync<T>(
         HookContext<T> context,
@@ -51,7 +63,7 @@ internal sealed class SpanEnrichmentHook : Hook
                 runtimeValue = context.DefaultValue is Value defaultValue ? ToPlainObject(defaultValue) : details.Value;
             }
 
-            FeatureFlagsSdk.AccumulateSpanEnrichment(serialId, doLog, targetingKey, hasVariant, context.FlagKey, runtimeValue);
+            _accumulate(serialId, doLog, targetingKey, hasVariant, context.FlagKey, runtimeValue);
         }
         catch (Exception)
         {
