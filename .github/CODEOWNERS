@@ -30,7 +30,7 @@
 #       As there appears to be a bug with CI Visibility that causes files
 #       to be listed as ../../../_/tracer/test/ which the rooted version doesn't match on.
 #       We need to update the test logger to fix this.
-tracer/                                   @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
+tracer/                                   @DataDog/tracing-dotnet
 /tracer/build/                            @DataDog/apm-dotnet
 /tracer/build/timeit/                     @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.TestHelpers*/  @DataDog/apm-lang-platform-dotnet
@@ -250,6 +250,9 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs  @DataDog/apm-dotnet @DataDog/ci-app-libraries-dotnet @DataDog/tracing-dotnet @DataDog/asm-dotnet @DataDog/debugger-dotnet
 
 # Test projects
+
+/tracer/test/Datadog.Trace.IntegrationTests/ @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Tracer.Native.Tests/   @DataDog/apm-sdk-capabilities @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
 
 ## Single-owner projects
 /tracer/test/benchmarks/Benchmarks.OpenTelemetry.*/ @DataDog/apm-sdk-capabilities
