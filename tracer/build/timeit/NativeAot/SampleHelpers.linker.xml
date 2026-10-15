@@ -19,7 +19,4 @@
     <type fullname="Datadog.Trace.UserDetails" preserve="all" />
     <type fullname="Datadog.Trace.Util.ProcessHelpers" preserve="all" />
   </assembly>
-  <assembly fullname="Datadog.Trace.Manual">
-    <type fullname="Datadog.Trace.ClrProfiler.Instrumentation" preserve="all" />
-  </assembly>
 </linker>
