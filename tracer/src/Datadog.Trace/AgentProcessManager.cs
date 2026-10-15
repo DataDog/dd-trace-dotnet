@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
@@ -239,7 +238,7 @@ namespace Datadog.Trace
                                 {
                                     // This means we have tried to start from this domain before
                                     var previousState = metadata.ProcessState;
-                                    LogIfOwnProcessExited(metadata);
+                                    var ownProcessExited = RecordOwnProcessExit(metadata);
                                     var isHealthy = await metadata.ProcessIsHealthyAsync().ConfigureAwait(false);
                                     metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
                                     var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning(), metadata.FailedHealthChecks);
@@ -262,9 +261,19 @@ namespace Datadog.Trace
                                     {
                                         metadata.HealthyStopwatch = null;
                                         metadata.ProcessState = ProcessState.ReadyToStart;
-                                        if (previousState == ProcessState.Healthy)
+                                        var startDelay = GetStartDelay(ownProcessExited, metadata.SequentialFailures, maxRetryInterval);
+                                        if (startDelay > 0)
                                         {
-                                            Log.Information("{Process} is no longer available. Starting a new one.", path);
+                                            // The process we started exited after its startup window: back off like any other failure
+                                            Log.Warning(
+                                                "{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).",
+                                                new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
+                                            await Task.Delay(startDelay).ConfigureAwait(false);
+                                            metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
+                                        }
+                                        else if (previousState == ProcessState.Healthy)
+                                        {
+                                            Log.Information("{Process} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
                                         }
                                     }
                                     else if (action == KeepAliveAction.Restart)
@@ -280,16 +289,18 @@ namespace Datadog.Trace
                                             metadata.SequentialFailures++;
                                             var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
                                             Log.Warning(
-                                                "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row. Restarting it in {Delay} ms ({Failures} failures in a row).",
-                                                new object[] { path, childPid, metadata.FailedHealthChecks, delay, metadata.SequentialFailures });
+                                                "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).",
+                                                new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
                                             await Task.Delay(delay).ConfigureAwait(false);
-                                            metadata.ProcessState = ProcessState.ReadyToStart;
+                                            metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
                                         }
                                         else
                                         {
                                             if (firstAttempt)
                                             {
-                                                Log.Warning<string, string, int>("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row and could not be stopped. Retrying.", path, childPid, metadata.FailedHealthChecks);
+                                                Log.Warning(
+                                                    "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}) and could not be stopped. Retrying.",
+                                                    new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure });
                                             }
 
                                             metadata.ProcessState = ProcessState.Unhealthy;
@@ -302,7 +313,7 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                         if (previousState != ProcessState.Unhealthy)
                                         {
-                                            Log.Warning("{Process} with pid {ChildPid} started by this process is running but failed its health check.", path, GetProcessId(metadata.Process));
+                                            Log.Warning("{Process} with pid {ChildPid} started by this process is running but failed its health check ({Reason}).", path, GetProcessId(metadata.Process), metadata.LastHealthCheckFailure);
                                         }
                                     }
                                 }
@@ -344,6 +355,7 @@ namespace Datadog.Trace
                                                     path,
                                                     childPid,
                                                     GetExitCode(metadata.Process));
+                                                ForgetOwnProcess(metadata);
                                             }
                                             else
                                             {
@@ -356,6 +368,7 @@ namespace Datadog.Trace
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
                                             Log.Error("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                            ForgetOwnProcess(metadata);
                                             metadata.ProcessState = ProcessState.Faulted;
                                             break;
                                         }
@@ -365,7 +378,9 @@ namespace Datadog.Trace
 
                                     if (metadata.ProcessState == ProcessState.ReadyToStart)
                                     {
-                                        Log.Warning<string, string, int>("{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms.", path, childPid, startupTimeout);
+                                        Log.Warning(
+                                            "{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).",
+                                            new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                     }
                                 }
@@ -447,7 +462,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Warning<string, string>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                Log.Warning<string, int?>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
             }
 
             if (metadata.OwnProcessIsRunning())
@@ -466,14 +481,36 @@ namespace Datadog.Trace
         /// </summary>
         internal static int GetRetryDelay(int sequentialFailures, int maxRetryInterval)
         {
-            var delay = ExceptionRetryInterval;
+            // long, so doubling toward a very large cap cannot overflow into a negative delay
+            long delay = ExceptionRetryInterval;
             for (var i = 1; i < sequentialFailures && delay < maxRetryInterval; i++)
             {
                 delay *= 2;
             }
 
-            return Math.Min(delay, maxRetryInterval);
+            return (int)Math.Min(delay, maxRetryInterval);
         }
+
+        /// <summary>
+        /// After a retry wait, another worker may have started a healthy agent: use it instead of starting a duplicate.
+        /// </summary>
+        private static async Task<ProcessState> GetStateAfterRetryDelayAsync(ProcessMetadata metadata)
+        {
+            if (!await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
+            {
+                return ProcessState.ReadyToStart;
+            }
+
+            Log.Information("{Process} is already running and was not started by this process. Using it.", metadata.ProcessPath);
+            return ProcessState.Healthy;
+        }
+
+        /// <summary>
+        /// Gets the wait before starting a new agent after a health check. Starting is immediate unless the
+        /// process this keep-alive started has just exited, which counts as a failure and backs off.
+        /// </summary>
+        internal static int GetStartDelay(bool ownProcessExited, int sequentialFailures, int maxRetryInterval)
+            => ownProcessExited ? GetRetryDelay(sequentialFailures, maxRetryInterval) : 0;
 
         /// <summary>
         /// Converts the configured cap in seconds to milliseconds, without overflowing.
@@ -481,19 +518,23 @@ namespace Datadog.Trace
         internal static int GetMaxRetryInterval(int maxRetryIntervalSeconds)
             => maxRetryIntervalSeconds > int.MaxValue / 1000 ? int.MaxValue : Math.Max(ExceptionRetryInterval, maxRetryIntervalSeconds * 1000);
 
-        private static void LogIfOwnProcessExited(ProcessMetadata metadata)
+        /// <summary>
+        /// Logs and forgets the process this keep-alive started if it has exited since the last check, and counts
+        /// that exit as a failure in the shared backoff. Returns true when such an exit was found.
+        /// </summary>
+        internal static bool RecordOwnProcessExit(ProcessMetadata metadata)
         {
             var process = metadata.Process;
             if (process == null)
             {
-                return;
+                return false;
             }
 
             try
             {
                 if (!process.HasExited)
                 {
-                    return;
+                    return false;
                 }
 
                 Log.Information(
@@ -505,12 +546,20 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 Log.Error(ex, "Error when checking whether {Process} exited.", metadata.ProcessPath);
-                return;
+                return false;
             }
 
-            // Only report each exit once
+            // Only report and count each exit once
+            metadata.SequentialFailures++;
+            ForgetOwnProcess(metadata);
+            return true;
+        }
+
+        private static void ForgetOwnProcess(ProcessMetadata metadata)
+        {
+            var process = metadata.Process;
             metadata.Process = null;
-            process.Dispose();
+            process?.Dispose();
         }
 
         /// <summary>
@@ -539,27 +588,27 @@ namespace Datadog.Trace
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool WaitNamedPipe(string name, uint timeout);
 
-        private static string GetProcessId(Process process)
+        private static int? GetProcessId(Process process)
         {
             try
             {
-                return process?.Id.ToString(CultureInfo.InvariantCulture) ?? "unknown";
+                return process?.Id;
             }
             catch
             {
-                return "unknown";
+                return null;
             }
         }
 
-        private static string GetExitCode(Process process)
+        private static int? GetExitCode(Process process)
         {
             try
             {
-                return process?.ExitCode.ToString(CultureInfo.InvariantCulture) ?? "unknown";
+                return process?.ExitCode;
             }
             catch
             {
-                return "unknown";
+                return null;
             }
         }
 
@@ -610,6 +659,11 @@ namespace Datadog.Trace
             /// </summary>
             public bool IsTraceAgent { get; set; }
 
+            /// <summary>
+            /// Gets or sets why the last health check failed, for the state-change logs, or null if it passed.
+            /// </summary>
+            public string LastHealthCheckFailure { get; set; }
+
             public bool OwnProcessIsRunning()
             {
                 try
@@ -632,11 +686,13 @@ namespace Datadog.Trace
             {
                 if (!NamedPipeIsBound())
                 {
+                    LastHealthCheckFailure = $"named pipe {PipeName} is not present";
                     return false;
                 }
 
                 // DogStatsD never replies, so its pipe being present is all we can check
-                return !IsTraceAgent || await TraceAgentRespondsAsync().ConfigureAwait(false);
+                LastHealthCheckFailure = IsTraceAgent ? await GetTraceAgentFailureAsync().ConfigureAwait(false) : null;
+                return LastHealthCheckFailure == null;
             }
 
             private bool NamedPipeIsBound()
@@ -654,8 +710,9 @@ namespace Datadog.Trace
             /// <summary>
             /// Sends GET /info over the trace agent's pipe and checks that an HTTP response comes back.
             /// The connect and the response are both bounded, so a hung agent fails the check.
+            /// Returns null if the agent answered, otherwise why it did not.
             /// </summary>
-            private async Task<bool> TraceAgentRespondsAsync()
+            private async Task<string> GetTraceAgentFailureAsync()
             {
                 using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
                 using var timeoutCancellation = new CancellationTokenSource();
@@ -667,15 +724,23 @@ namespace Datadog.Trace
                     return await exchange.ConfigureAwait(false);
                 }
 
-                // Timed out: disposing the pipe aborts the pending read
-                return false;
+                // Disposing the pipe on the way out aborts the pending exchange
+                return $"no response to GET /info on named pipe {PipeName} within {TraceAgentResponseTimeout} ms";
             }
 
-            private async Task<bool> SendInfoRequestAsync(NamedPipeClientStream pipe)
+            private async Task<string> SendInfoRequestAsync(NamedPipeClientStream pipe)
             {
                 try
                 {
-                    await pipe.ConnectAsync(TraceAgentConnectTimeout).ConfigureAwait(false);
+                    try
+                    {
+                        await pipe.ConnectAsync(TraceAgentConnectTimeout).ConfigureAwait(false);
+                    }
+                    catch (TimeoutException)
+                    {
+                        return $"could not connect to named pipe {PipeName} within {TraceAgentConnectTimeout} ms";
+                    }
+
                     await pipe.WriteAsync(TraceAgentInfoRequest, 0, TraceAgentInfoRequest.Length).ConfigureAwait(false);
 
                     // Any status line means the agent is serving requests
@@ -686,18 +751,20 @@ namespace Datadog.Trace
                         var count = await pipe.ReadAsync(statusLineStart, read, statusLineStart.Length - read).ConfigureAwait(false);
                         if (count == 0)
                         {
-                            return false;
+                            return $"named pipe {PipeName} closed before a response to GET /info";
                         }
 
                         read += count;
                     }
 
-                    return Encoding.ASCII.GetString(statusLineStart) == "HTTP/";
+                    return Encoding.ASCII.GetString(statusLineStart) == "HTTP/" ? null : $"unexpected response to GET /info on named pipe {PipeName}";
                 }
                 catch (Exception ex)
                 {
-                    Log.Information(ex, "Trace agent did not respond on named pipe {PipeName}.", PipeName);
-                    return false;
+                    // Every probe can fail during an outage: keep the details out of default-level logs.
+                    // The state-change logs carry the reason.
+                    Log.Debug(ex, "Health check request to the trace agent failed on named pipe {PipeName}.", PipeName);
+                    return $"{ex.GetType().Name} on named pipe {PipeName}: {ex.Message}";
                 }
             }
         }
