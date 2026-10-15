@@ -100,7 +100,11 @@ tracer/                                   @DataDog/tracing-dotnet
 /tracer/samples/AzureFunctionsWithAgentLessLogging/                             @DataDog/apm-serverless
 /docs/development/**/AzureFunctions*.md                                         @DataDog/apm-serverless
 /tracer/tools/Build-AzureFunctionsNuget.ps1                                     @DataDog/apm-serverless
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/      @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                 @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/Tagging/Azure*Tags.cs                                  @DataDog/apm-serverless
+/tracer/test/test-applications/integrations/Samples.Azure*/                    @DataDog/apm-serverless
+/tracer/test/snapshots/Azure*.verified.txt                                     @DataDog/apm-serverless
+/docker/eventgrid-emulator-config.json                                        @DataDog/apm-serverless
 /.claude/skills/azure-functions/                                                @DataDog/apm-serverless
 
 ## Serverless (GCP)
@@ -350,6 +354,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/Serverless/Azure/HttpBypassTests.cs      @DataDog/apm-serverless
 
 ### Datadog.Trace.ClrProfiler.IntegrationTests
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/Azure/             @DataDog/apm-serverless
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNet/            @DataDog/apm-idm-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNetCore/        @DataDog/apm-idm-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/ProcessStartTests/ @DataDog/asm-dotnet
