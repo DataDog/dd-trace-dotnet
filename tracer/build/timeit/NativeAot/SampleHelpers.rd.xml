@@ -1,0 +1,18 @@
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <!-- SampleHelpers calls these generic methods with MakeGenericMethod(carrier.GetType()): a reference type
+         instantiation needs the canonical code. -->
+    <Assembly Name="Datadog.Trace">
+      <Type Name="Datadog.Trace.SpanContextExtractor">
+        <Method Name="Extract" Dynamic="Required">
+          <GenericArgument Name="System.Object, System.Private.CoreLib" />
+        </Method>
+      </Type>
+      <Type Name="Datadog.Trace.SpanContextInjector">
+        <Method Name="Inject" Dynamic="Required">
+          <GenericArgument Name="System.Object, System.Private.CoreLib" />
+        </Method>
+      </Type>
+    </Assembly>
+  </Application>
+</Directives>

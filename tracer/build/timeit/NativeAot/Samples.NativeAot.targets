@@ -1,0 +1,10 @@
+<Project>
+  <!-- Execution benchmarks, instrumented build: Samples.Shared's SampleHelpers reaches Datadog.Trace by reflection (manual spans,
+       tags), like under JIT. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == '$(DatadogExecutionBenchmarkSample)' and '$(DatadogAotTargets)' != ''">
+    <TrimmerRootDescriptor Include="$(MSBuildThisFileDirectory)SampleHelpers.linker.xml" />
+    <RdXmlFile Include="$(MSBuildThisFileDirectory)SampleHelpers.rd.xml" />
+  </ItemGroup>
+
+  <Import Project="$(DatadogAotTargets)" Condition="'$(MSBuildProjectName)' == '$(DatadogExecutionBenchmarkSample)' and '$(DatadogAotTargets)' != ''" />
+</Project>
