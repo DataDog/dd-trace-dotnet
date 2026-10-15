@@ -1537,11 +1537,13 @@ TEST_F(ConfigurationTest, CheckWatcherStartTimeoutIsDefaultWhenEnvVarIsNotParsab
     ASSERT_THAT(configuration.GetWatcherStartTimeout(), ExpectedDefaultWatcherStartTimeout);
 }
 
-TEST_F(ConfigurationTest, CheckWatcherStartTimeoutIsDefaultWhenEnvVarIsZero)
+// 0 is meaningful for this timeout: it means "do not wait for the watcher thread", so it must be
+// honored rather than replaced by the default (see Configuration::ExtractWatcherStartTimeout).
+TEST_F(ConfigurationTest, CheckWatcherStartTimeoutIsHonoredWhenEnvVarIsZero)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WatcherStartTimeout, WStr("0"));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetWatcherStartTimeout(), ExpectedDefaultWatcherStartTimeout);
+    ASSERT_THAT(configuration.GetWatcherStartTimeout(), 0ms);
 }
 
 TEST_F(ConfigurationTest, CheckWatcherStartTimeoutIsDefaultWhenEnvVarIsNegative)
