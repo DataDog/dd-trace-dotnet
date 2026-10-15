@@ -29,7 +29,7 @@ namespace Datadog.Trace
     {
         internal const int KeepAliveInterval = 10_000;
         internal const int ExceptionRetryInterval = 2_000;
-        internal const int MaxRetryInterval = 60_000;
+        internal const int StableHealthyPeriod = 60_000;
         internal const int MaxFailedHealthChecks = 3;
 
         private const int ErrorSemTimeout = 121;
@@ -165,13 +165,13 @@ namespace Datadog.Trace
                 {
                     if (!metadata.IsBeingManaged)
                     {
-                        metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata);
+                        metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata, GetMaxRetryInterval(azureAppServiceSettings.AgentMaxRetryIntervalSeconds));
                     }
                 }
             }
         }
 
-        private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
+        private static Task StartProcessWithKeepAlive(ProcessMetadata metadata, int maxRetryInterval)
         {
             var path = metadata.ProcessPath;
             Log.Debug("Starting keep alive for {Process}.", path);
@@ -245,7 +245,13 @@ namespace Datadog.Trace
                                     var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning(), metadata.FailedHealthChecks);
                                     if (isHealthy)
                                     {
-                                        metadata.SequentialFailures = 0;
+                                        // Failed starts and restarts share one backoff; it resets only once the agent stays healthy
+                                        metadata.HealthyStopwatch ??= Stopwatch.StartNew();
+                                        if (metadata.HealthyStopwatch.ElapsedMilliseconds >= StableHealthyPeriod)
+                                        {
+                                            metadata.SequentialFailures = 0;
+                                        }
+
                                         metadata.ProcessState = ProcessState.Healthy;
                                         if (previousState == ProcessState.Unhealthy)
                                         {
@@ -254,6 +260,7 @@ namespace Datadog.Trace
                                     }
                                     else if (action == KeepAliveAction.Start)
                                     {
+                                        metadata.HealthyStopwatch = null;
                                         metadata.ProcessState = ProcessState.ReadyToStart;
                                         if (previousState == ProcessState.Healthy)
                                         {
@@ -264,17 +271,34 @@ namespace Datadog.Trace
                                     {
                                         // Only reached for the process we started: we never stop an agent we did not start.
                                         // Log once; later attempts only happen if stopping it failed.
+                                        metadata.HealthyStopwatch = null;
                                         var firstAttempt = metadata.FailedHealthChecks == MaxFailedHealthChecks;
-                                        if (firstAttempt)
+                                        var childPid = GetProcessId(metadata.Process);
+                                        if (TryStopOwnProcess(metadata))
                                         {
-                                            Log.Warning<string, string, int>("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row. Restarting it.", path, GetProcessId(metadata.Process), metadata.FailedHealthChecks);
+                                            // A restart counts as a failure, so an agent that never becomes healthy backs off too
+                                            metadata.SequentialFailures++;
+                                            var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
+                                            Log.Warning(
+                                                "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row. Restarting it in {Delay} ms ({Failures} failures in a row).",
+                                                new object[] { path, childPid, metadata.FailedHealthChecks, delay, metadata.SequentialFailures });
+                                            await Task.Delay(delay).ConfigureAwait(false);
+                                            metadata.ProcessState = ProcessState.ReadyToStart;
                                         }
+                                        else
+                                        {
+                                            if (firstAttempt)
+                                            {
+                                                Log.Warning<string, string, int>("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row and could not be stopped. Retrying.", path, childPid, metadata.FailedHealthChecks);
+                                            }
 
-                                        metadata.ProcessState = TryStopOwnProcess(metadata) ? ProcessState.ReadyToStart : ProcessState.Unhealthy;
+                                            metadata.ProcessState = ProcessState.Unhealthy;
+                                        }
                                     }
                                     else
                                     {
                                         // The process we started is still running: never start a second copy
+                                        metadata.HealthyStopwatch = null;
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                         if (previousState != ProcessState.Unhealthy)
                                         {
@@ -310,7 +334,7 @@ namespace Datadog.Trace
                                         // Loop and watch for evidence that the process is up and running
                                         if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
                                         {
-                                            metadata.SequentialFailures = 0;
+                                            metadata.HealthyStopwatch = Stopwatch.StartNew();
                                             metadata.ProcessState = ProcessState.Healthy;
                                             if (metadata.Process == null || metadata.Process.HasExited)
                                             {
@@ -361,7 +385,7 @@ namespace Datadog.Trace
                                 {
                                     metadata.SequentialFailures++;
                                     // Quicker retry in these cases, backing off while failures repeat
-                                    await Task.Delay(GetRetryDelay(metadata.SequentialFailures)).ConfigureAwait(false);
+                                    await Task.Delay(GetRetryDelay(metadata.SequentialFailures, maxRetryInterval)).ConfigureAwait(false);
                                 }
                                 else
                                 {
@@ -437,19 +461,25 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the delay before retrying after a failed start: <see cref="ExceptionRetryInterval"/> after the
-        /// first failure, doubling with each further failure up to <see cref="MaxRetryInterval"/>. Retries never stop.
+        /// Gets the delay before retrying after a failed start or a health-check restart: <see cref="ExceptionRetryInterval"/>
+        /// after the first failure, doubling with each further failure up to <paramref name="maxRetryInterval"/>. Retries never stop.
         /// </summary>
-        internal static int GetRetryDelay(int sequentialFailures)
+        internal static int GetRetryDelay(int sequentialFailures, int maxRetryInterval)
         {
             var delay = ExceptionRetryInterval;
-            for (var i = 1; i < sequentialFailures && delay < MaxRetryInterval; i++)
+            for (var i = 1; i < sequentialFailures && delay < maxRetryInterval; i++)
             {
                 delay *= 2;
             }
 
-            return Math.Min(delay, MaxRetryInterval);
+            return Math.Min(delay, maxRetryInterval);
         }
+
+        /// <summary>
+        /// Converts the configured cap in seconds to milliseconds, without overflowing.
+        /// </summary>
+        internal static int GetMaxRetryInterval(int maxRetryIntervalSeconds)
+            => maxRetryIntervalSeconds > int.MaxValue / 1000 ? int.MaxValue : Math.Max(ExceptionRetryInterval, maxRetryIntervalSeconds * 1000);
 
         private static void LogIfOwnProcessExited(ProcessMetadata metadata)
         {
@@ -553,6 +583,11 @@ namespace Datadog.Trace
             public int SequentialFailures { get; set; }
 
             public int FailedHealthChecks { get; set; }
+
+            /// <summary>
+            /// Gets or sets how long the agent has been healthy without a failed check, or null while it is not healthy.
+            /// </summary>
+            public Stopwatch HealthyStopwatch { get; set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
