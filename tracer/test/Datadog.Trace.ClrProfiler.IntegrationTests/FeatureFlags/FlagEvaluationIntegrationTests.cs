@@ -33,6 +33,8 @@ public class FlagEvaluationIntegrationTests : TestHelper
     public FlagEvaluationIntegrationTests(ITestOutputHelper output)
         : base("OpenFeature", output)
     {
+        // Never let a routing regression send these synthetic events to a real intake.
+        SetEnvironmentVariable(ConfigurationKeys.Site, "example.invalid");
     }
 
     [SkippableTheory]
@@ -51,7 +53,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task InstrumentedEvaluationsPreserveResultsAndRespectPrivacy(bool consent, bool enabled, bool agentless, bool synchronous)
     {
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = CreateIdentityCompatibleAgent();
         var configuration = CreateConfiguration(consent);
         using var cdn = agentless ? new FlagEvaluationConfigurationServer(Envelope(configuration)) : null;
         if (agentless && enabled && consent && synchronous)
@@ -108,7 +110,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         payloads.Should().NotBeEmpty("the real native profiler must connect all provider stubs");
         foreach (var payload in payloads)
         {
-            payload.PathAndQuery.Should().Be("/evp_proxy/v2/api/v2/flagevaluation");
+            payload.PathAndQuery.Should().Be(agentless ? "/evp_proxy/v4/api/v2/flagevaluation" : "/evp_proxy/v2/api/v2/flagevaluation");
             payload.Headers["Content-Encoding"].Should().Be("gzip");
             payload.Headers["Content-Type"].Should().Be("application/json");
             payload.Headers["X-Datadog-EVP-Subdomain"].Should().Be("event-platform-intake");
@@ -199,7 +201,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ConfigurationChangeBeforeFlushPreservesEachEvaluationsConsent(bool initialConsent)
     {
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = CreateIdentityCompatibleAgent();
         using var cdn = new FlagEvaluationConfigurationServer(Envelope(CreateConfiguration(initialConsent)));
         var payloads = new ConcurrentQueue<string>();
         agent.EventPlatformProxyPayloadReceived += (_, args) =>
@@ -237,7 +239,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task UnavailableAgentDoesNotChangeCdnEvaluationsOrIntroduceFallback()
+    public async Task UnavailableAgentWithoutCredentialsDoesNotChangeCdnEvaluations()
     {
         // Delivery failure intentionally logs an error. Keep this test's expected errors
         // out of CI's CheckLogsForErrors scan, as in Telemetry_SendsRedactedErrorLogs.
@@ -260,7 +262,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl, cdn.Url + "configuration");
         SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}");
-        SetEnvironmentVariable(ConfigurationKeys.ApiKey, "not-an-event-credential");
+        SetEnvironmentVariable(ConfigurationKeys.ApiKey, null);
         using var telemetry = this.ConfigureTelemetry();
         var elapsed = Stopwatch.StartNew();
         using var process = await RunSampleAndWaitForExit(agent, arguments: "evp");
@@ -273,7 +275,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task EnablingEventsAfterStartupRequiresProviderRecreation()
     {
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = CreateIdentityCompatibleAgent();
         // Provider configuration can arrive before the replacement tracer discovers EVP support.
         agent.RequestReceived += (_, args) =>
         {
@@ -314,4 +316,15 @@ public class FlagEvaluationIntegrationTests : TestHelper
 
     private static string Envelope(ServerConfiguration configuration)
         => JsonHelper.SerializeObject(new { data = new { type = "universal-flag-configuration", attributes = configuration } });
+
+    private MockTracerAgent CreateIdentityCompatibleAgent()
+    {
+        var agent = EnvironmentHelper.GetMockAgent();
+        // Agentless delivery uses the local Agent only when discovery confirms that
+        // it forwards both SDK identity headers. Preserve the other mock capabilities.
+        var info = JObject.FromObject(agent.Configuration);
+        info["evp_proxy_allowed_headers"] = new JArray { "DD-EVP-ORIGIN", "DD-EVP-ORIGIN-VERSION" };
+        agent.CustomResponses[MockTracerResponseType.Info] = new MockTracerResponse(info.ToString());
+        return agent;
+    }
 }
