@@ -9,21 +9,25 @@ namespace Datadog.Trace.Iast.Aspects;
 
 #nullable enable
 
+[DuckType("Amazon.SimpleEmail.Model.SendEmailRequest", "AWSSDK.SimpleEmail")]
 internal interface ISendEmailRequest
 {
     IMessage? Message { get; }
 }
 
+[DuckType("Amazon.SimpleEmail.Model.Message", "AWSSDK.SimpleEmail")]
 internal interface IMessage
 {
     IBody? Body { get; }
 }
 
+[DuckType("Amazon.SimpleEmail.Model.Body", "AWSSDK.SimpleEmail")]
 internal interface IBody
 {
     IHtml? Html { get; }
 }
 
+[DuckType("Amazon.SimpleEmail.Model.Content", "AWSSDK.SimpleEmail")]
 internal interface IHtml
 {
     string? Data { get; }

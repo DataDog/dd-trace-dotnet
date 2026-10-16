@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Iast.Aspects;
 
 #nullable enable
 
+[DuckType("System.Net.Mail.MailMessage", "System.Net.Mail")]
 internal interface IMailMessage
 {
     string Body { get; }
