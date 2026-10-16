@@ -1,0 +1,86 @@
+{
+  "name": "object-nested-deep",
+  "description": "Object flag with deeply nested structure. SDK must preserve full object hierarchy without flattening or truncating.",
+  "context": {
+    "targetingKey": "nested-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "fixture.config.deep": {
+            "allocationKey": "alloc-deep",
+            "variationKey": "deep-config",
+            "variationType": "object",
+            "variationValue": {
+              "level1": {
+                "level2": {
+                  "level3": {
+                    "enabled": true,
+                    "tags": [
+                      "alpha",
+                      "beta"
+                    ],
+                    "threshold": 0.95
+                  }
+                },
+                "name": "nested-test"
+              },
+              "metadata": {
+                "version": 3,
+                "empty": {}
+              }
+            },
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.config.deep",
+      "variationType": "object",
+      "defaultValue": {},
+      "expectedResult": {
+        "value": {
+          "level1": {
+            "level2": {
+              "level3": {
+                "enabled": true,
+                "tags": [
+                  "alpha",
+                  "beta"
+                ],
+                "threshold": 0.95
+              }
+            },
+            "name": "nested-test"
+          },
+          "metadata": {
+            "version": 3,
+            "empty": {}
+          }
+        },
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "deep-config"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 1
+      }
+    ]
+  }
+}
