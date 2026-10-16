@@ -5,7 +5,6 @@
 
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -52,7 +51,6 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().Contain(sample => IsGcCpuSample(sample) && sample.StackTrace.Equals(GcStack));
         }
 
-        [Flaky("Test flaked in CI")]
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void CheckCpuTimeForGcThreadsValueIsReported(string appName, string framework, string appAssembly)
         {
