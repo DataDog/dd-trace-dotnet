@@ -54,7 +54,7 @@ steps:
       url="https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens"
       echo "Sending request with JWT to $url"
 
-      response=$(curl --fail --silent --show-error \
+      response=$(curl --fail --silent --show-error $(CURL_RETRY_FLAGS) \
         --request POST \
         --url $url \
         --header "Accept: application/vnd.github+json" \
