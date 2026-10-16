@@ -23,6 +23,20 @@ public class EdgeTagsTests
                           .Should().Be(HashHelper.CalculateNodeHash(nodeHashBase, Tags).Value);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void GetNodeHash_IsTheSame_WithOrWithoutMemoization(bool memoizeNodeHash)
+    {
+        var base1 = HashHelper.CalculateNodeHashBase("service-1", "env-1", primaryTag: null, processTags: null, containerTagsHash: null);
+        var base2 = HashHelper.CalculateNodeHashBase("service-2", "env-1", primaryTag: null, processTags: null, containerTagsHash: null);
+        var edgeTags = new EdgeTags(Tags, memoizeNodeHash);
+
+        edgeTags.GetNodeHash(base1).Value.Should().Be(HashHelper.CalculateNodeHash(base1, Tags).Value);
+        edgeTags.GetNodeHash(base1).Value.Should().Be(HashHelper.CalculateNodeHash(base1, Tags).Value);
+        edgeTags.GetNodeHash(base2).Value.Should().Be(HashHelper.CalculateNodeHash(base2, Tags).Value);
+    }
+
     [Fact]
     public void GetNodeHash_ReturnsSameHash_ForSameBase()
     {

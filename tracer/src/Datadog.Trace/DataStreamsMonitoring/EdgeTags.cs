@@ -11,26 +11,34 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 
 /// <summary>
 /// The edge tags for a checkpoint, along with their node hash.
-/// The node hash is memoized on the instance, so instances that are reused
-/// (e.g. cached via <see cref="DataStreamsManager.GetOrCreateEdgeTags{TKey}"/>)
-/// only compute it once per node hash base, while one-off instances are simply collected.
+/// The node hash is memoized on reused instances (e.g. cached via
+/// <see cref="DataStreamsManager.GetOrCreateEdgeTags{TKey}"/>), so they only compute it once
+/// per node hash base. One-off instances skip memoization to avoid an extra allocation.
 /// </summary>
 internal sealed class EdgeTags
 {
     public static readonly EdgeTags Empty = new([]);
 
+    private readonly bool _memoizeNodeHash;
     private NodeHashSnapshot? _nodeHash;
 
     /// <param name="tags">The edge tags. MUST be sorted in alphabetical order</param>
-    public EdgeTags(string[] tags)
+    /// <param name="memoizeNodeHash">Whether to memoize the node hash. Pass <c>false</c> for instances used for a single checkpoint.</param>
+    public EdgeTags(string[] tags, bool memoizeNodeHash = true)
     {
         Tags = tags;
+        _memoizeNodeHash = memoizeNodeHash;
     }
 
     public string[] Tags { get; }
 
     public NodeHash GetNodeHash(in NodeHashBase nodeHashBase)
     {
+        if (!_memoizeNodeHash)
+        {
+            return HashHelper.CalculateNodeHash(nodeHashBase, Tags);
+        }
+
         var snapshot = Volatile.Read(ref _nodeHash);
         if (snapshot is not null && snapshot.Base == nodeHashBase.Value)
         {

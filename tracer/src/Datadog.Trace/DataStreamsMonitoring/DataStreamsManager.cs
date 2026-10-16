@@ -372,7 +372,7 @@ internal sealed class DataStreamsManager
     /// On cache hits, zero heap allocations occur, and the node hash memoized on the returned
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
     /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
-    /// the least recently used entry that has been idle for a minute, or bypass caching
+    /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
@@ -386,7 +386,7 @@ internal sealed class DataStreamsManager
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
     /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
     /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
-    /// the least recently used entry that has been idle for a minute, or bypass caching
+    /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>

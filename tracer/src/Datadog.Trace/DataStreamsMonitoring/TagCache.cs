@@ -13,7 +13,7 @@ using System.Threading;
 namespace Datadog.Trace.DataStreamsMonitoring;
 
 /// <summary>
-/// Bounded tag cache that replaces the least recently used idle entry under capacity pressure.
+/// Bounded tag cache that replaces entries idle for a minute under capacity pressure.
 /// Active entries stay cached even when the working set exceeds the capacity.
 /// </summary>
 internal sealed class TagCache<TKey, TValue>
@@ -24,7 +24,7 @@ internal sealed class TagCache<TKey, TValue>
     private readonly ConcurrentDictionary<TKey, Entry> _cache = new();
     private readonly object _evictionLock = new();
     private readonly int _capacity;
-    private readonly Func<long> _getTimestampSeconds;
+    private readonly Func<long>? _getTimestampSeconds;
     private int _count;
     private long _nextEvictionCheck;
 
@@ -37,12 +37,12 @@ internal sealed class TagCache<TKey, TValue>
         }
 
         _capacity = capacity;
-        _getTimestampSeconds = getTimestampSeconds ?? (static () => Stopwatch.GetTimestamp() / Stopwatch.Frequency);
+        _getTimestampSeconds = getTimestampSeconds;
     }
 
     internal TValue GetOrCreate<TState>(TKey key, TState state, Func<TKey, TState, TValue> factory)
     {
-        var now = _getTimestampSeconds();
+        var now = GetTimestampSeconds();
         if (_cache.TryGetValue(key, out var existing))
         {
             existing.Touch(now);
@@ -58,14 +58,14 @@ internal sealed class TagCache<TKey, TValue>
 
         lock (_evictionLock)
         {
-            now = _getTimestampSeconds();
+            now = GetTimestampSeconds();
             if (_cache.TryGetValue(key, out existing))
             {
                 existing.Touch(now);
                 return existing.Value;
             }
 
-            if (_count >= _capacity && (now < _nextEvictionCheck || !TryEvictIdleEntry(now)))
+            if (_count >= _capacity && (now < _nextEvictionCheck || !TryEvictIdleEntries(now)))
             {
                 return value;
             }
@@ -76,34 +76,50 @@ internal sealed class TagCache<TKey, TValue>
         }
     }
 
+    // The production clock is read directly rather than through a delegate, since it runs on every hit.
+    private long GetTimestampSeconds()
+        => _getTimestampSeconds is null ? Stopwatch.GetTimestamp() / Stopwatch.Frequency : _getTimestampSeconds();
+
     // Called only under the insertion lock. Hits can continue while the entries are scanned.
-    private bool TryEvictIdleEntry(long now)
+    // Every idle entry is removed in a single pass, so a burst of misses for new keys pays for
+    // one scan rather than one scan per miss.
+    private bool TryEvictIdleEntries(long now)
     {
-        TKey oldestKey = default!;
-        Entry? oldestEntry = null;
-        var oldestAccess = long.MaxValue;
+        var evicted = 0;
+        var oldestActiveAccess = long.MaxValue;
         foreach (var item in _cache)
         {
             var lastAccess = item.Value.LastAccess;
-            if (lastAccess < oldestAccess)
+            if (now - lastAccess < IdleTimeoutSeconds)
             {
-                oldestAccess = lastAccess;
-                oldestKey = item.Key;
-                oldestEntry = item.Value;
+                oldestActiveAccess = Math.Min(oldestActiveAccess, lastAccess);
+                continue;
             }
+
+            if (!_cache.TryRemove(item.Key, out var removed))
+            {
+                continue;
+            }
+
+            // A concurrent hit may have refreshed the entry after the idle check. Inserts only
+            // happen under this lock, so the entry can be restored without overwriting anything.
+            var refreshedAccess = removed.LastAccess;
+            if (now - refreshedAccess < IdleTimeoutSeconds)
+            {
+                _cache[item.Key] = removed;
+                oldestActiveAccess = Math.Min(oldestActiveAccess, refreshedAccess);
+                continue;
+            }
+
+            evicted++;
         }
 
-        if (oldestEntry is not null && now - oldestEntry.LastAccess >= IdleTimeoutSeconds)
-        {
-            _cache.TryRemove(oldestKey, out _);
-            Volatile.Write(ref _count, _count - 1);
-            return true;
-        }
+        Volatile.Write(ref _count, _count - evicted);
 
-        // Recheck when the oldest observed entry could become idle. If it was refreshed
-        // during the scan, wait at least a second rather than rescanning on every miss.
-        Volatile.Write(ref _nextEvictionCheck, Math.Max(now + 1, oldestAccess + IdleTimeoutSeconds));
-        return false;
+        // Every remaining entry is active, so none can become idle before the oldest of them does.
+        // Entries inserted later are newer, so they cannot become idle earlier either.
+        Volatile.Write(ref _nextEvictionCheck, oldestActiveAccess == long.MaxValue ? now : Math.Max(now + 1, oldestActiveAccess + IdleTimeoutSeconds));
+        return evicted > 0;
     }
 
     private sealed class Entry

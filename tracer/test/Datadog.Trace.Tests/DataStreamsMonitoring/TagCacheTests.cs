@@ -14,17 +14,15 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
 public class TagCacheTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void FullCache_PreservesActiveEntries_WhenWorkingSetExceedsCapacity(bool backlog)
+    [Fact]
+    public void FullCache_PreservesActiveEntries_WhenWorkingSetExceedsCapacity()
     {
         long now = 0;
         var cache = new TagCache<int, object>(DataStreamsManager.MaxEdgeTagCacheSize, () => now);
         var results = new object[1200];
         for (var i = 0; i < results.Length; i++)
         {
-            results[i] = GetTags(cache, i, backlog);
+            results[i] = GetTags(cache, i);
         }
 
         // Keep cycling for longer than the idle timeout. The first 1000 keys must stay cached.
@@ -33,7 +31,7 @@ public class TagCacheTests
             now += TagCache<int, object>.IdleTimeoutSeconds - 1;
             for (var i = 0; i < results.Length; i++)
             {
-                var tags = GetTags(cache, i, backlog);
+                var tags = GetTags(cache, i);
                 if (i < DataStreamsManager.MaxEdgeTagCacheSize)
                 {
                     tags.Should().BeSameAs(results[i]);
@@ -46,64 +44,86 @@ public class TagCacheTests
         }
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void FullCache_ReplacesLeastRecentlyUsedIdleEntry_AndCachesNewKey(bool backlog)
+    [Fact]
+    public void FullCache_ReplacesOnlyIdleEntries_AndCachesNewKey()
     {
         long now = 0;
         var cache = new TagCache<int, object>(3, () => now);
-        var first = GetTags(cache, 0, backlog);
+        var first = GetTags(cache, 0);
         now = 1;
-        var second = GetTags(cache, 1, backlog);
+        var second = GetTags(cache, 1);
         now = 2;
-        var third = GetTags(cache, 2, backlog);
+        var third = GetTags(cache, 2);
 
         now = 10;
-        GetTags(cache, 0, backlog).Should().BeSameAs(first);
+        GetTags(cache, 0).Should().BeSameAs(first);
 
         now = 61;
-        var replacement = GetTags(cache, 3, backlog);
-        GetTags(cache, 3, backlog).Should().BeSameAs(replacement);
-        GetTags(cache, 0, backlog).Should().BeSameAs(first);
-        GetTags(cache, 2, backlog).Should().BeSameAs(third);
-        GetTags(cache, 1, backlog).Should().NotBeSameAs(second);
+        var replacement = GetTags(cache, 3);
+        GetTags(cache, 3).Should().BeSameAs(replacement);
+        GetTags(cache, 0).Should().BeSameAs(first);
+        GetTags(cache, 2).Should().BeSameAs(third);
+        GetTags(cache, 1).Should().NotBeSameAs(second);
 
         // Once older keys become idle too, a previously evicted key can be cached again.
         now += TagCache<int, object>.IdleTimeoutSeconds;
-        GetTags(cache, 3, backlog).Should().BeSameAs(replacement);
-        var recreated = GetTags(cache, 1, backlog);
-        GetTags(cache, 1, backlog).Should().BeSameAs(recreated);
+        GetTags(cache, 3).Should().BeSameAs(replacement);
+        var recreated = GetTags(cache, 1);
+        GetTags(cache, 1).Should().BeSameAs(recreated);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ConcurrentInsertionsAndIdleEvictions_KeepCapacityAvailable(bool backlog)
+    [Fact]
+    public void ConcurrentInsertionsAndIdleEvictions_KeepCapacityAvailable()
     {
         long now = 0;
         var cache = new TagCache<int, object>(DataStreamsManager.MaxEdgeTagCacheSize, () => Volatile.Read(ref now));
         var results = new object[DataStreamsManager.MaxEdgeTagCacheSize];
-        Parallel.For(0, results.Length, i => results[i] = GetTags(cache, i, backlog));
+        Parallel.For(0, results.Length, i => results[i] = GetTags(cache, i));
         for (var i = 0; i < results.Length; i++)
         {
-            GetTags(cache, i, backlog).Should().BeSameAs(results[i]);
+            GetTags(cache, i).Should().BeSameAs(results[i]);
         }
 
         for (var generation = 1; generation <= 3; generation++)
         {
             Interlocked.Add(ref now, TagCache<int, object>.IdleTimeoutSeconds);
             var offset = generation * results.Length;
-            Parallel.For(0, results.Length, i => results[i] = GetTags(cache, offset + i, backlog));
+            Parallel.For(0, results.Length, i => results[i] = GetTags(cache, offset + i));
             for (var i = 0; i < results.Length; i++)
             {
-                GetTags(cache, offset + i, backlog).Should().BeSameAs(results[i]);
+                GetTags(cache, offset + i).Should().BeSameAs(results[i]);
             }
 
             // Every slot is now active, so another key cannot evict any of them.
-            var uncached = GetTags(cache, -1, backlog);
-            GetTags(cache, -1, backlog).Should().NotBeSameAs(uncached);
+            var uncached = GetTags(cache, -1);
+            GetTags(cache, -1).Should().NotBeSameAs(uncached);
         }
+    }
+
+    [Fact]
+    public void FullCache_EvictsEveryIdleEntryInOnePass()
+    {
+        long now = 0;
+        var cache = new TagCache<int, object>(3, () => now);
+        var first = GetTags(cache, 0);
+        GetTags(cache, 1);
+        GetTags(cache, 2);
+
+        now = 10;
+        GetTags(cache, 0).Should().BeSameAs(first);
+
+        // Keys 1 and 2 are idle, so the first miss frees both slots and the next new key also gets cached.
+        now = TagCache<int, object>.IdleTimeoutSeconds;
+        var replacement1 = GetTags(cache, 3);
+        var replacement2 = GetTags(cache, 4);
+
+        GetTags(cache, 3).Should().BeSameAs(replacement1);
+        GetTags(cache, 4).Should().BeSameAs(replacement2);
+        GetTags(cache, 0).Should().BeSameAs(first);
+
+        // The cache is full of active entries again, so another key bypasses it.
+        var uncached = GetTags(cache, 5);
+        GetTags(cache, 5).Should().NotBeSameAs(uncached);
     }
 
     [Fact]
@@ -111,7 +131,7 @@ public class TagCacheTests
     {
         var cache = new TagCache<int, object>(1);
         var results = new object[1000];
-        Parallel.For(0, results.Length, i => results[i] = GetTags(cache, 0, backlog: false));
+        Parallel.For(0, results.Length, i => results[i] = GetTags(cache, 0));
         results.Should().OnlyContain(value => ReferenceEquals(value, results[0]));
     }
 
@@ -120,14 +140,14 @@ public class TagCacheTests
     {
         long now = 0;
         var cache = new TagCache<int, object>(1, () => now);
-        var existing = GetTags(cache, 0, backlog: false);
+        var existing = GetTags(cache, 0);
         now = TagCache<int, object>.IdleTimeoutSeconds;
 
         Action create = () => cache.GetOrCreate(1, false, static (_, _) => throw new InvalidOperationException());
         create.Should().Throw<InvalidOperationException>();
-        GetTags(cache, 0, backlog: false).Should().BeSameAs(existing);
+        GetTags(cache, 0).Should().BeSameAs(existing);
     }
 
-    private static object GetTags(TagCache<int, object> cache, int key, bool backlog)
-        => cache.GetOrCreate(key, backlog, static (k, b) => b ? $"tag:{k}" : new EdgeTags([$"tag:{k}"]));
+    private static object GetTags(TagCache<int, object> cache, int key)
+        => cache.GetOrCreate(key, false, static (k, _) => new EdgeTags([$"tag:{k}"]));
 }
