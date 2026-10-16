@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class TestExtensionsSetBenchmarkMetadataIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TTest, THostInfo, TJobInfo>(TTest test, in THostInfo hostInfo, in TJobInfo jobInfo)
+    internal static CallTargetState OnMethodBegin<TTarget, TTest, THostInfo, TJobInfo>(TTest test, THostInfo hostInfo, TJobInfo jobInfo)
         where THostInfo : IBenchmarkHostInfo
         where TJobInfo : IBenchmarkJobInfo
     {

@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
@@ -44,11 +45,23 @@ namespace Datadog.Trace.ClrProfiler
         private static int _firstNonNativePartsInitialization = 1;
 
         /// <summary>
+        /// Whether the application was instrumented at build time (NativeAOT, see <see cref="InitializeAot"/>): the
+        /// instrumentation categories are enabled through <see cref="CallTargetAotCategories"/>, not the native tracer.
+        /// </summary>
+        private static bool _aot;
+
+        /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
         /// </summary>
         public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
+
+        /// <summary>
+        /// Gets a value indicating whether the application was instrumented at build time (NativeAOT): there is no native
+        /// tracer, so the products that instrument methods at runtime aren't available.
+        /// </summary>
+        internal static bool IsBuildTimeInstrumented => _aot;
 
         /// <summary>
         /// Gets a value indicating the version of the native Datadog profiler. This method
@@ -266,6 +279,88 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        /// <summary>
+        /// Initializes the instrumentation of an application instrumented at build time for NativeAOT, from the module
+        /// initializer <c>dd-trace aot instrument</c> adds to it: the CallTarget instrumentation is compiled into the
+        /// application and there is no native tracer, so only the managed parts start (tracer, AppSec, diagnostic
+        /// observers, Activity and OpenTelemetry). It never throws.
+        /// </summary>
+        internal static void InitializeAot()
+        {
+            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            {
+                // Initialize() or InitializeAot() was already called before
+                return;
+            }
+
+            _aot = true;
+            try
+            {
+                var sw = RefStopwatch.Create();
+                Log.Debug("NativeAOT initialization started.");
+                InitializeNoNativeParts(ref sw);
+
+                try
+                {
+                    // The categories Initialize() enables in the native tracer.
+                    var categories = InstrumentationCategory.Tracing;
+                    if (Security.Instance.AppsecEnabled)
+                    {
+                        categories |= InstrumentationCategory.AppSec;
+                    }
+
+                    if (Iast.Iast.Instance.Settings.Enabled)
+                    {
+                        categories |= InstrumentationCategory.Iast;
+                        Iast.Iast.Instance.InitAnalyzers();
+                    }
+
+                    if (Security.Instance.Settings.RaspEnabled)
+                    {
+                        categories |= InstrumentationCategory.Rasp;
+                    }
+
+                    EnableTracerInstrumentations(categories);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error enabling the NativeAOT instrumentation categories");
+                }
+
+                try
+                {
+                    if (Tracer.Instance is { } tracer)
+                    {
+                        // Code Origin for spans (DebuggerManager leaves out the debugger products that need the native tracer).
+                        InitializeDebugger(tracer.Settings);
+
+                        // The methods to trace were instrumented when publishing (InitializeTracer gives them to the native tracer).
+                        if (!StringUtil.IsNullOrEmpty(tracer.Settings.TraceMethods))
+                        {
+                            Log.Information("DD_TRACE_METHODS is applied when publishing NativeAOT applications (DatadogAotTraceMethods, or DD_TRACE_METHODS of the build): its runtime value doesn't change the instrumentation.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error initializing the debugger products in NativeAOT");
+                }
+
+                Log.Debug("NativeAOT initialization finished.");
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    Log.Error(ex, "Error initializing the NativeAOT instrumentation. Functionality may be impacted.");
+                }
+                catch
+                {
+                    // The application must start anyway.
+                }
+            }
+        }
+
         private static void RunShutdown(Exception ex)
         {
             InstrumentationDefinitions.Dispose();
@@ -289,8 +384,10 @@ namespace Datadog.Trace.ClrProfiler
                 // intentionally using string interpolation, as this is only called once, and avoids array allocation
 #pragma warning disable DDLOG004 // Message templates should be constant
 #if NET5_0_OR_GREATER
-                // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
-                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+                // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+. NativeAOT applications have no assembly files:
+                // the tracer is in the executable.
+                var location = RuntimeFeature.IsDynamicCodeSupported ? asm.Location : Environment.ProcessPath;
+                Log.Information($"[Assembly metadata] Location: {location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #else
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #endif
@@ -318,9 +415,8 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                // ensure global instance is created if it's not already
-                var testOptimization = TestOptimization.Instance;
-                if (testOptimization.Enabled)
+                // ensure global instance is created if it's not already (NativeAOT applications don't have Test Optimization)
+                if (TestOptimizationAvailability.IsSupported && TestOptimization.Instance is { Enabled: true } testOptimization)
                 {
                     testOptimization.Initialize();
                 }
@@ -367,8 +463,9 @@ namespace Datadog.Trace.ClrProfiler
                 // ignore
             }
 #if !NETFRAMEWORK
-            // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
-            if (FrameworkDescription.Instance.IsCoreClr())
+            // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+). It builds its
+            // proxies with Reflection.Emit, so it can't run in NativeAOT applications (a constant for ILC).
+            if (FrameworkDescription.Instance.IsCoreClr() && DuckTyping.DuckTypeAotEngine.IsDynamicCodeSupported)
             {
                 Log.Debug("Initializing ServiceFabric instrumentation");
 
@@ -494,7 +591,7 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
 #if !NETFRAMEWORK
-            if (!SkipAspNetCoreDiagnosticObserver())
+            if (AspNetCoreAvailabilityChecker.IsSupported && !SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }
@@ -627,6 +724,15 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
+            if (_aot)
+            {
+                // The instrumentation is compiled in: the integrations of the categories are enabled.
+                var integrations = CallTargetAotCategories.Enable(categories);
+                Log.Information<InstrumentationCategory, int>("NativeAOT instrumentation categories {Categories} enabled: {Count} integrations.", categories, integrations);
+                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, integrations);
+                return;
+            }
+
             var defs = NativeMethods.EnableCallTargetDefinitions((uint)categories);
             TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
             EnableCallSiteInstrumentations(categories, sw);
@@ -667,6 +773,12 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
+            if (_aot)
+            {
+                CallTargetAotCategories.Disable(categories);
+                return;
+            }
+
             NativeMethods.DisableCallTargetDefinitions((uint)categories);
         }
     }

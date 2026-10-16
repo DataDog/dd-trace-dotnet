@@ -6,9 +6,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.DuckTyping;
@@ -44,6 +48,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             var messageAttributeValueType = typeof(TMarkerType).Assembly.GetType("Amazon.SimpleNotificationService.Model.MessageAttributeValue");
             var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes);
 
+            MessageAttributeValueCreator = CreateMessageAttributeValueCreator(messageAttributeValueType, messageAttributeValueCtor);
+
+            // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
+            DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
+
+            Instance = new CachedMessageHeadersHelper<TMarkerType>();
+        }
+
+        public IDictionary CreateMessageAttributes()
+        {
+            return (IDictionary)DictionaryActivator.CreateInstance();
+        }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+        private static Func<MemoryStream, object> CreateMessageAttributeValueCreator(Type messageAttributeValueType, ConstructorInfo messageAttributeValueCtor)
+        {
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): reflection calls.
+                var dataTypeSetter = messageAttributeValueType.GetProperty("DataType").GetSetMethod();
+                var valueSetter = messageAttributeValueType.GetProperty("BinaryValue").GetSetMethod();
+                return stream =>
+                {
+                    var messageAttributeValue = messageAttributeValueCtor.Invoke(null);
+                    dataTypeSetter.Invoke(messageAttributeValue, new object[] { StringDataType });
+                    valueSetter.Invoke(messageAttributeValue, new object[] { stream });
+                    return messageAttributeValue;
+                };
+            }
+
+#endif
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
                 $"SnsCachedMessageHeadersHelpers",
                 messageAttributeValueType,
@@ -64,17 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             messageAttributeIL.Emit(OpCodes.Ret);
 
-            MessageAttributeValueCreator = (Func<MemoryStream, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<MemoryStream, object>));
-
-            // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
-            DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
-
-            Instance = new CachedMessageHeadersHelper<TMarkerType>();
-        }
-
-        public IDictionary CreateMessageAttributes()
-        {
-            return (IDictionary)DictionaryActivator.CreateInstance();
+            return (Func<MemoryStream, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<MemoryStream, object>));
         }
 
         public object CreateMessageAttributeValue(string value)

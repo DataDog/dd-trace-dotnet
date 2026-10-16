@@ -5,6 +5,10 @@
 
 #nullable enable
 using System;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+#endif
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Util;
 
@@ -24,8 +28,20 @@ internal static class LibDatadogAvailabilityHelper
     private static readonly Lazy<LibDatadogAvailableResult> LibDatadogAvailable = new(() =>
     {
         var isServerless = EnvironmentHelpersNoLogging.IsServerlessEnvironment(out var possibleException);
-        return new(!isServerless && EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe(), possibleException);
+        return new(!isServerless && (EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe() || IsPublishedWithApplication()), possibleException);
     });
 
     public static LibDatadogAvailableResult IsLibDatadogAvailable => LibDatadogAvailable.Value;
+
+    // A NativeAOT application (no JIT) has no native tracer to rewrite the P/Invokes: the library is published next to it
+    // (Datadog.Trace.Aot) with the name they import. The configuration can be read before the instrumentation initializes
+    // (module initializers), so this doesn't depend on it.
+    private static bool IsPublishedWithApplication()
+    {
+#if NETCOREAPP3_0_OR_GREATER
+        return !RuntimeFeature.IsDynamicCodeCompiled && NativeLibrary.TryLoad(NativeInterop.DllName, typeof(NativeInterop).Assembly, null, out _);
+#else
+        return false;
+#endif
+    }
 }

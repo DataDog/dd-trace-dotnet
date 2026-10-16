@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -429,7 +430,8 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         }
     }
 
-    private static List<System.Reflection.FieldInfo> GetAllFieldsRecursive(Type type)
+    [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "The nested types of a type kept with all its members are kept with all their members.")]
+    private static List<System.Reflection.FieldInfo> GetAllFieldsRecursive([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
     {
         var fields = new List<System.Reflection.FieldInfo>(type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static));
         foreach (var nestedType in type.GetNestedTypes(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic))

@@ -4,9 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb.SourceLink;
 using Datadog.Trace.Util.Json;
@@ -18,6 +22,9 @@ namespace Datadog.Trace.Pdb;
 
 internal static class SourceLinkInformationExtractor
 {
+    // Applications compiled with NativeAOT have no PDB at runtime: the build gives the SourceLink document of their PDB.
+    private static readonly ConcurrentDictionary<string, string> BuildTimeSourceLinks = new(StringComparer.OrdinalIgnoreCase);
+
     private static IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(SourceLinkInformationExtractor));
 
     public static bool TryGetSourceLinkInfo(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
@@ -28,13 +35,39 @@ internal static class SourceLinkInformationExtractor
         // If these conditions weren't met, the attributes won't be there, so we'll need to extract the information from the PDB file.
 
         return TryExtractFromAssemblyAttributes(assembly, out commitSha, out repositoryUrl) ||
+               TryExtractFromBuildTimeSourceLink(assembly, out commitSha, out repositoryUrl) ||
                TryExtractFromPdb(assembly, out commitSha, out repositoryUrl);
+    }
+
+    /// <summary>
+    /// Called by the module initializer of an application instrumented at build time (NativeAOT) with the SourceLink
+    /// document of its PDB, which isn't there at runtime.
+    /// </summary>
+    internal static void AddBuildTimeSourceLink(string assemblyName, string sourceLinkJsonDocument)
+        => BuildTimeSourceLinks[assemblyName] = sourceLinkJsonDocument;
+
+    private static bool TryExtractFromBuildTimeSourceLink(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
+    {
+        commitSha = null;
+        repositoryUrl = null;
+        return !BuildTimeSourceLinks.IsEmpty
+            && assembly.GetName().Name is { } name
+            && BuildTimeSourceLinks.TryGetValue(name, out var sourceLinkJsonDocument)
+            && TryExtractSourceLinkMappingUrl(sourceLinkJsonDocument, $"{name} (build)", out var sourceLinkMappedUri)
+            && CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(sourceLinkMappedUri, out commitSha, out repositoryUrl);
     }
 
     private static bool TryExtractFromPdb(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;
+#if NET6_0_OR_GREATER
+        // NativeAOT applications have no assembly or PDB files: their SourceLink comes from the build (TryExtractFromBuildTimeSourceLink).
+        if (!RuntimeFeature.IsDynamicCodeSupported)
+        {
+            return false;
+        }
+#endif
 
         try
         {
