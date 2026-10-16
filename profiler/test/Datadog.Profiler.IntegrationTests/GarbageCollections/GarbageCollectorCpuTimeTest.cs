@@ -52,7 +52,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().Contain(sample => IsGcCpuSample(sample) && sample.StackTrace.Equals(GcStack));
         }
 
-        [Flaky("Intermittent failures reported in incident af432c97-8b49-447f-b85a-3ac8b9986868")]
+        [Flaky("Test flaked in CI")]
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void CheckCpuTimeForGcThreadsValueIsReported(string appName, string framework, string appAssembly)
         {
