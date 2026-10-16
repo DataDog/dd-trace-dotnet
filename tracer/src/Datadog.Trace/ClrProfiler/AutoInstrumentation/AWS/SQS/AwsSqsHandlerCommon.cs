@@ -88,7 +88,7 @@ internal sealed class AwsSqsHandlerCommon
                            ? dataStreamsManager.GetOrCreateEdgeTags(
                                new SqsEdgeTagCacheKey(queueName, IsConsume: false),
                                static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"])
-                           : [];
+                           : EdgeTags.Empty;
         foreach (var e in requestProxy.Entries)
         {
             var entry = e.DuckCast<IContainsMessageAttributes>();

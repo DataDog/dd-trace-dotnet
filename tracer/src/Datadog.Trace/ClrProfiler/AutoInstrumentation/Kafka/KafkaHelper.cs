@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string BootstrapServersKey = "bootstrap.servers";
         internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
-        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
+        private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:kafka"]);
         private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
         private static bool _headersInjectionEnabled = true;
 
@@ -433,7 +433,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
 
-                    string[] edgeTags;
+                    EdgeTags edgeTags;
                     if (StringUtil.IsNullOrEmpty(topic) && StringUtil.IsNullOrEmpty(producerClusterId))
                     {
                         edgeTags = DefaultProduceEdgeTags;

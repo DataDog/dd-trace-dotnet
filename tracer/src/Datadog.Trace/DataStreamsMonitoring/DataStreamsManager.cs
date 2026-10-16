@@ -29,8 +29,8 @@ internal sealed class DataStreamsManager
 {
     /// <summary>
     /// Maximum number of distinct keys stored in a single per-type edge-tag cache.
-    /// When the limit is reached, new keys are computed on the fly without caching to
-    /// prevent unbounded memory growth caused by high-cardinality identifiers.
+    /// When the limit is reached, the least recently used idle entry can be evicted
+    /// to make room for new keys. Active entries are preserved to avoid cache thrashing.
     /// </summary>
     internal const int MaxEdgeTagCacheSize = 1000;
 
@@ -43,9 +43,6 @@ internal sealed class DataStreamsManager
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
     private readonly bool _isInDefaultState;
-    // Keyed by string[] identity (reference equality) — safe because TagCache holds strong
-    // references to the cached arrays (bounded by MaxEdgeTagCacheSize).
-    private readonly ConcurrentDictionary<string[], NodeHash> _nodeHashCache = new();
 
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
@@ -125,7 +122,6 @@ internal sealed class DataStreamsManager
         Interlocked.Exchange(
             ref _nodeHashBase,
             unchecked((long)value.Value)); // reinterpret as a long
-        _nodeHashCache.Clear();
     }
 
     public static DataStreamsManager Create(
@@ -286,7 +282,7 @@ internal sealed class DataStreamsManager
     public PathwayContext? SetCheckpoint(
         in PathwayContext? parentPathway,
         CheckpointKind checkpointKind,
-        string[] edgeTags,
+        EdgeTags edgeTags,
         long payloadSizeBytes,
         long timeInQueueMs)
     {
@@ -316,11 +312,8 @@ internal sealed class DataStreamsManager
             // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
             var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
 
-            // Fast path: hash already cached for current base (cleared on settings updates).
-            if (!_nodeHashCache.TryGetValue(edgeTags, out var nodeHash))
-            {
-                nodeHash = _nodeHashCache.GetOrAdd(edgeTags, tags => HashHelper.CalculateNodeHash(nodeHashBase, tags));
-            }
+            // Memoized on the EdgeTags instance, recomputed when the base changes (settings updates).
+            var nodeHash = edgeTags.GetNodeHash(nodeHashBase);
 
             var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
@@ -333,7 +326,7 @@ internal sealed class DataStreamsManager
             var writer = Volatile.Read(ref _writer);
             writer?.Add(
                 new StatsPoint(
-                    edgeTags: edgeTags,
+                    edgeTags: edgeTags.Tags,
                     hash: pathwayHash,
                     parentHash: parentHash,
                     timestampNs: nowNs,
@@ -375,32 +368,33 @@ internal sealed class DataStreamsManager
     }
 
     /// <summary>
-    /// Returns a cached edge-tag array for the given key, creating and caching it on first use.
-    /// On cache hits, zero heap allocations occur. The factory is only invoked on the first call
-    /// per unique key, making this safe to use on high-throughput hot paths.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries the result is computed
-    /// fresh each time (no caching) to bound memory usage for high-cardinality key spaces.
+    /// Returns cached edge tags for the given key, creating and caching them on first use.
+    /// On cache hits, zero heap allocations occur, and the node hash memoized on the returned
+    /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
+    /// the least recently used entry that has been idle for a minute, or bypass caching
+    /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
     /// <param name="factory">A static factory that builds the edge-tag array from the key on cache miss.</param>
-    public string[] GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
+    public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
         where TKey : IEquatable<TKey>
-        => TagCache<TKey, string[]>.GetOrCreate(key, factory, MaxEdgeTagCacheSize);
+        => SharedTagCache<TKey, EdgeTags>.Cache.GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)));
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
-    /// On cache hits, zero heap allocations occur. The factory is only invoked on the first call
-    /// per unique key, making this safe to use on high-throughput hot paths.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries the result is computed
-    /// fresh each time (no caching) to bound memory usage for high-cardinality key spaces.
+    /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
+    /// the least recently used entry that has been idle for a minute, or bypass caching
+    /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
         where TKey : IEquatable<TKey>
-        => TagCache<TKey, string>.GetOrCreate(key, factory, MaxEdgeTagCacheSize);
+        => SharedTagCache<TKey, string>.Cache.GetOrCreate(key, factory, static (k, f) => f(k));
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions
@@ -423,29 +417,9 @@ internal sealed class DataStreamsManager
         return false;
     }
 
-    private static class TagCache<TKey, TValue>
+    private static class SharedTagCache<TKey, TValue>
         where TKey : IEquatable<TKey>
     {
-        private static readonly ConcurrentDictionary<TKey, TValue> Cache = new();
-        private static int _count;
-
-        internal static TValue GetOrCreate(TKey key, Func<TKey, TValue> factory, int maxSize)
-        {
-            if (Cache.TryGetValue(key, out var existing))
-            {
-                return existing;
-            }
-
-            if (_count >= maxSize)
-            {
-                return factory(key);
-            }
-
-            var result = Cache.GetOrAdd(key, factory);
-            // May overcount by at most O(concurrent threads) when threads race on the same unseen key
-            // and both reach GetOrAdd. Acceptable for a soft limit — we stop caching slightly early.
-            Interlocked.Increment(ref _count);
-            return result;
-        }
+        internal static readonly TagCache<TKey, TValue> Cache = new(MaxEdgeTagCacheSize);
     }
 }

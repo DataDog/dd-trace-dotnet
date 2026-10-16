@@ -38,7 +38,7 @@ namespace Datadog.Trace
                 !string.IsNullOrEmpty(target) &&
                 tracer.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
             {
-                var edgeTags = new[] { "direction:out", $"topic:{target}", $"type:{messageType}" };
+                var edgeTags = new EdgeTags(["direction:out", $"topic:{target}", $"type:{messageType}"]);
                 spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parent: null);
 
                 if (carrier != null)
