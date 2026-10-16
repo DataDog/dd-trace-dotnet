@@ -175,8 +175,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         private static readonly string? RuntimeFrameworkDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
 
-        // The registry layer (DuckTypeAotRegistryAssemblyEmitter.cs) sets the per-emission state at the start of each pass.
-#pragma warning disable CS0169, CS0649
         /// <summary>
         /// Stores runtime assembly paths used by metadata-to-runtime type resolution during emission.
         /// Thread-static like the other per-emission state, so concurrent Emit calls don't clear each other's map.
@@ -208,7 +206,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         [ThreadStatic]
         private static EmitterExecutionContext? _currentExecutionContext;
-#pragma warning restore CS0169, CS0649
 
         /// <summary>
         /// Where a type hierarchy uses duck attributes dynamic duck typing doesn't read (see GetMetadataOnlyDuckAttributes).
