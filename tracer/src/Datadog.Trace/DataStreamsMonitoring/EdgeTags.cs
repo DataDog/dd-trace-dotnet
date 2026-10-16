@@ -38,7 +38,8 @@ internal sealed class EdgeTags
         }
 
         // The base changes when settings are updated, so the memoized hash must be recomputed.
-        // Racing threads compute the same value, so last write wins is fine.
+        // Racing threads may use different bases; every reader checks the snapshot's base
+        // before reusing its hash, so an older snapshot can only cause another recomputation.
         var nodeHash = HashHelper.CalculateNodeHash(nodeHashBase, Tags);
         Volatile.Write(ref _nodeHash, new NodeHashSnapshot(nodeHashBase.Value, nodeHash));
         return nodeHash;

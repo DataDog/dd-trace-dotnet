@@ -29,8 +29,8 @@ internal sealed class DataStreamsManager
 {
     /// <summary>
     /// Maximum number of distinct keys stored in a single per-type edge-tag cache.
-    /// When the limit is reached, the least recently used entry is evicted to make
-    /// room for new keys while bounding memory usage.
+    /// When the limit is reached, the least recently used idle entry can be evicted
+    /// to make room for new keys. Active entries are preserved to avoid cache thrashing.
     /// </summary>
     internal const int MaxEdgeTagCacheSize = 1000;
 
@@ -371,28 +371,30 @@ internal sealed class DataStreamsManager
     /// Returns cached edge tags for the given key, creating and caching them on first use.
     /// On cache hits, zero heap allocations occur, and the node hash memoized on the returned
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys evict
-    /// the least recently used entry.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
+    /// the least recently used entry that has been idle for a minute, or bypass caching
+    /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
     /// <param name="factory">A static factory that builds the edge-tag array from the key on cache miss.</param>
     public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
         where TKey : IEquatable<TKey>
-        => TagCache<TKey, EdgeTags>.GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)), MaxEdgeTagCacheSize);
+        => SharedTagCache<TKey, EdgeTags>.Cache.GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)));
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
     /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys evict
-    /// the least recently used entry.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
+    /// the least recently used entry that has been idle for a minute, or bypass caching
+    /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
         where TKey : IEquatable<TKey>
-        => TagCache<TKey, string>.GetOrCreate(key, factory, static (k, f) => f(k), MaxEdgeTagCacheSize);
+        => SharedTagCache<TKey, string>.Cache.GetOrCreate(key, factory, static (k, f) => f(k));
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions
@@ -415,57 +417,9 @@ internal sealed class DataStreamsManager
         return false;
     }
 
-    private static class TagCache<TKey, TValue>
+    private static class SharedTagCache<TKey, TValue>
         where TKey : IEquatable<TKey>
     {
-        private static readonly object CacheLock = new();
-        private static readonly Dictionary<TKey, LinkedListNode<KeyValuePair<TKey, TValue>>> Cache = new();
-        // Most recently used entries are at the front; the tail is evicted first.
-        private static readonly LinkedList<KeyValuePair<TKey, TValue>> Recency = new();
-
-        // The factory takes an explicit state argument so that callers can pass static lambdas (no closure allocations)
-        internal static TValue GetOrCreate<TState>(TKey key, TState state, Func<TKey, TState, TValue> factory, int maxSize)
-        {
-            lock (CacheLock)
-            {
-                if (Cache.TryGetValue(key, out var existing))
-                {
-                    Recency.Remove(existing);
-                    Recency.AddFirst(existing);
-                    return existing.Value.Value;
-                }
-            }
-
-            // Build tags outside the lock so unrelated keys can still be accessed during creation.
-            var value = factory(key, state);
-            lock (CacheLock)
-            {
-                // Another thread may have inserted this key while the factory was running.
-                if (Cache.TryGetValue(key, out var existing))
-                {
-                    Recency.Remove(existing);
-                    Recency.AddFirst(existing);
-                    return existing.Value.Value;
-                }
-
-                LinkedListNode<KeyValuePair<TKey, TValue>> node;
-                if (Cache.Count >= maxSize)
-                {
-                    // Reuse the evicted node to avoid allocating list nodes as the cache turns over.
-                    node = Recency.Last!;
-                    Recency.RemoveLast();
-                    Cache.Remove(node.Value.Key);
-                    node.Value = new KeyValuePair<TKey, TValue>(key, value);
-                }
-                else
-                {
-                    node = new LinkedListNode<KeyValuePair<TKey, TValue>>(new(key, value));
-                }
-
-                Recency.AddFirst(node);
-                Cache.Add(key, node);
-                return value;
-            }
-        }
+        internal static readonly TagCache<TKey, TValue> Cache = new(MaxEdgeTagCacheSize);
     }
 }

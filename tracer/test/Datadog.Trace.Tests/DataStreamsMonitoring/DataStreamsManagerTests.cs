@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -17,8 +18,11 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -26,6 +30,7 @@ using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
+using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -561,80 +566,21 @@ public class DataStreamsManagerTests
         second.Should().BeSameAs(first);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void TagCache_EvictsLeastRecentlyUsedEntry_WhenAtMaxCapacity(bool backlog)
-    {
-        var dsm = GetDataStreamManager(true, out _);
-        Func<int, object> getTags = backlog
-                                       ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey<int>(value), static k => $"tag:{k.Value}")
-                                       : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey<int>(value), static k => [$"tag:{k.Value}"]);
-
-        var oldest = getTags(0);
-        var nextOldest = getTags(1);
-        for (var i = 2; i < DataStreamsManager.MaxEdgeTagCacheSize; i++)
-        {
-            getTags(i);
-        }
-
-        // Refresh the oldest entry, making key 1 the eviction candidate.
-        getTags(0).Should().BeSameAs(oldest);
-        var newest = getTags(DataStreamsManager.MaxEdgeTagCacheSize);
-        getTags(DataStreamsManager.MaxEdgeTagCacheSize).Should().BeSameAs(newest);
-        getTags(0).Should().BeSameAs(oldest);
-
-        var recreated = getTags(1);
-        recreated.Should().NotBeSameAs(nextOldest);
-        getTags(1).Should().BeSameAs(recreated);
-
-        // Keep admitting and caching new keys over several complete turnovers.
-        for (var i = DataStreamsManager.MaxEdgeTagCacheSize + 1; i < 3 * DataStreamsManager.MaxEdgeTagCacheSize; i++)
-        {
-            var tags = getTags(i);
-            getTags(i).Should().BeSameAs(tags);
-        }
-
-        getTags(0).Should().NotBeSameAs(oldest);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void TagCache_HandlesConcurrentInsertionsAndEvictions(bool backlog)
-    {
-        var dsm = GetDataStreamManager(true, out _);
-        Func<int, object> getTags = backlog
-                                       ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey<string>(value), static k => $"tag:{k.Value}")
-                                       : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey<string>(value), static k => [$"tag:{k.Value}"]);
-
-        var results = new object[DataStreamsManager.MaxEdgeTagCacheSize];
-        Parallel.For(0, results.Length, i => results[i] = getTags(i));
-        for (var i = 0; i < results.Length; i++)
-        {
-            getTags(i).Should().BeSameAs(results[i]);
-        }
-
-        Parallel.For(0, 4 * DataStreamsManager.MaxEdgeTagCacheSize, i => getTags(i));
-
-        // Concurrent requests for one new key must all observe the same cached instance.
-        Parallel.For(0, results.Length, i => results[i] = getTags(4 * DataStreamsManager.MaxEdgeTagCacheSize));
-        results.Should().OnlyContain(tags => ReferenceEquals(tags, results[0]));
-    }
-
     [Fact]
     public void SetCheckpoint_DoesNotRetainUncachedEdgeTags()
     {
         // One-off edge tags (e.g. SpanContextExtractor/Injector) must not be retained by the manager,
         // or memory grows per message.
-        var dsm = GetDataStreamManager(true, out _);
+        var dsm = GetDataStreamManager(true, out var writer);
 
-        var edgeTags = SetCheckpointWithUncachedEdgeTags(dsm);
+        var edgeTags = SetCheckpointWithUncachedEdgeTags(dsm, writer);
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
 
-        edgeTags.IsAlive.Should().BeFalse();
+        edgeTags[0].IsAlive.Should().BeFalse("the EdgeTags wrapper should be collected");
+        edgeTags[1].IsAlive.Should().BeFalse("the tag array must not be retained by the manager");
+        GC.KeepAlive(dsm);
     }
 
     [Fact]
@@ -650,12 +596,72 @@ public class DataStreamsManagerTests
         actual.Value.Hash.Should().Be(expected.Value.Hash);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SetCheckpoint_CachedEdgeTagsReflectConfigurationChanges(bool updateContainerTags)
+    {
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.Environment, "foo" },
+            { ConfigurationKeys.ServiceName, "bar" },
+            { ConfigurationKeys.PropagateProcessTags, "true" },
+            { ConfigurationKeys.DataStreamsMonitoring.Enabled, "true" },
+        });
+        var discovery = new DiscoveryServiceMock();
+        var dsm = new DataStreamsManager(settings, new DataStreamsWriterMock(), discovery);
+        try
+        {
+            var key = new ProduceEdgeTagCacheKey("hash-update-cluster", "hash-update-topic");
+            var cached = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.Topic}", "type:kafka"]);
+            var before = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, cached, payloadSizeBytes: 0, timeInQueueMs: 0);
+
+            if (updateContainerTags)
+            {
+                discovery.TriggerChange(containerTagsHash: "updated-container-hash");
+            }
+            else
+            {
+                settings.Manager.UpdateManualConfigurationSettings(
+                    new ManualInstrumentationConfigurationSource(
+                        new Dictionary<string, object> { { TracerSettingKeyConstants.EnvironmentKey, "updated" } },
+                        useDefaultSources: true),
+                    NullConfigurationTelemetry.Instance);
+            }
+
+            dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.Topic}", "type:kafka"]).Should().BeSameAs(cached);
+            var after = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, cached, payloadSizeBytes: 0, timeInQueueMs: 0);
+            var initial = settings.Manager.InitialMutableSettings;
+            var expectedBase = HashHelper.CalculateNodeHashBase(
+                initial.DefaultServiceName,
+                updateContainerTags ? "foo" : "updated",
+                primaryTag: null,
+                initial.ProcessTags.SerializedTags,
+                updateContainerTags ? "updated-container-hash" : null);
+            var expectedHash = HashHelper.CalculatePathwayHash(HashHelper.CalculateNodeHash(expectedBase, cached.Tags), parentHash: default);
+
+            before.Should().NotBeNull();
+            after.Should().NotBeNull();
+            after.Value.Hash.Should().Be(expectedHash);
+            after.Value.Hash.Should().NotBe(before.Value.Hash);
+        }
+        finally
+        {
+            await dsm.DisposeAsync();
+        }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static WeakReference SetCheckpointWithUncachedEdgeTags(DataStreamsManager dsm)
+    private static WeakReference[] SetCheckpointWithUncachedEdgeTags(DataStreamsManager dsm, DataStreamsWriterMock writer)
     {
         var edgeTags = new EdgeTags(["direction:in", "group:group1", "topic:topic1", "type:kafka"]);
         dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-        return new WeakReference(edgeTags);
+        // The writer legitimately owns the array until its pending stats have been processed.
+        while (writer.Points.TryDequeue(out _))
+        {
+        }
+
+        return [new WeakReference(edgeTags), new WeakReference(edgeTags.Tags)];
     }
 
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)
@@ -673,22 +679,6 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.PropagateProcessTags, "false" }
             });
         return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
-    }
-
-    /// <summary>
-    /// The type parameter isolates each test's static tag caches from other tests.
-    /// </summary>
-    private readonly struct OverflowTestKey<T> : IEquatable<OverflowTestKey<T>>
-    {
-        public readonly int Value;
-
-        public OverflowTestKey(int value) => Value = value;
-
-        public bool Equals(OverflowTestKey<T> other) => Value == other.Value;
-
-        public override bool Equals(object obj) => obj is OverflowTestKey<T> other && Equals(other);
-
-        public override int GetHashCode() => Value;
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter
