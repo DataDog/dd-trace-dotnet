@@ -1603,7 +1603,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Use managed code cache
     if (_pConfiguration->UseManagedCodeCache())
     {
-        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _metricsRegistry);
+        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo);
         if (!_managedCodeCache->Initialize())
         {
             Log::Error("Failed to initialize managed code cache. The profiler will not run.");
