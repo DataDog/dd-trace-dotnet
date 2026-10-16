@@ -3256,6 +3256,16 @@ supportedConfigurations:
     documentation: |-
       Enables APM span enrichment with feature-flag evaluation metadata (Experimental).
       Default value is <c>false</c> (disabled).
+  DD_FLAGGING_EVALUATION_COUNTS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    product: FeatureFlags
+    documentation: |-
+      Enables Feature Flags flagevaluation track EVP events through the configured Datadog Agent.
+      Default value is <c>true</c> (enabled). Disabling this does not disable flag evaluation,
+      configuration fetching, experiment exposures, or span enrichment.
   DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED:
   - implementation: A
     scope: managed

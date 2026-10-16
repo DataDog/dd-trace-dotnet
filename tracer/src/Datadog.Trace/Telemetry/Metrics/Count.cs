@@ -349,4 +349,25 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.IastVulnerabilityType>("suppressed.vulnerabilities", isCommon: true, NS.Iast)] IastSuppressedVulnerabilities,
     #endregion
+
+#region Feature Flags (Tracers Namespace)
+
+    /// <summary>Evaluations dropped locally, not aggregate bucket counts.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationDropReason>("flagevaluation.rows.dropped", isCommon: true)] FlagEvaluationRowsDropped,
+
+    /// <summary>Evaluations whose telemetry was degraded to omit identity and context.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationDegradeReason>("flagevaluation.rows.degraded", isCommon: true)] FlagEvaluationRowsDegraded,
+
+    /// <summary>Additional payloads created to respect the uncompressed payload limit.</summary>
+    [TelemetryMetric("flagevaluation.payload.splits", isCommon: true)] FlagEvaluationPayloadSplits,
+
+    /// <summary>Evaluations with context omissions, counted once per fixed reason.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationContextReason>("flagevaluation.context.truncated", isCommon: true)] FlagEvaluationContextTruncated,
+
+    /// <summary>Evaluations with an invalid targeting key omitted from telemetry.</summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationTargetingReason>("flagevaluation.targeting_key.omitted", isCommon: true)] FlagEvaluationTargetingKeyOmitted,
+
+    /// <summary>Unexpected hook errors isolated from customer evaluations.</summary>
+    [TelemetryMetric("flagevaluation.hook.errors", isCommon: true)] FlagEvaluationHookErrors,
+#endregion
 }
