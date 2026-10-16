@@ -29,8 +29,8 @@ internal sealed class DataStreamsManager
 {
     /// <summary>
     /// Maximum number of distinct keys stored in a single per-type edge-tag cache.
-    /// When the limit is reached, new keys are computed on the fly without caching to
-    /// prevent unbounded memory growth caused by high-cardinality identifiers.
+    /// When the limit is reached, the least recently used entry is evicted to make
+    /// room for new keys while bounding memory usage.
     /// </summary>
     internal const int MaxEdgeTagCacheSize = 1000;
 
@@ -370,10 +370,9 @@ internal sealed class DataStreamsManager
     /// <summary>
     /// Returns cached edge tags for the given key, creating and caching them on first use.
     /// On cache hits, zero heap allocations occur, and the node hash memoized on the returned
-    /// <see cref="EdgeTags"/> is reused. The factory is only invoked on the first call
-    /// per unique key, making this safe to use on high-throughput hot paths.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries the result is computed
-    /// fresh each time (no caching) to bound memory usage for high-cardinality key spaces.
+    /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys evict
+    /// the least recently used entry.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
@@ -384,10 +383,9 @@ internal sealed class DataStreamsManager
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
-    /// On cache hits, zero heap allocations occur. The factory is only invoked on the first call
-    /// per unique key, making this safe to use on high-throughput hot paths.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries the result is computed
-    /// fresh each time (no caching) to bound memory usage for high-cardinality key spaces.
+    /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys evict
+    /// the least recently used entry.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
@@ -420,28 +418,54 @@ internal sealed class DataStreamsManager
     private static class TagCache<TKey, TValue>
         where TKey : IEquatable<TKey>
     {
-        private static readonly ConcurrentDictionary<TKey, TValue> Cache = new();
-        private static int _count;
+        private static readonly object CacheLock = new();
+        private static readonly Dictionary<TKey, LinkedListNode<KeyValuePair<TKey, TValue>>> Cache = new();
+        // Most recently used entries are at the front; the tail is evicted first.
+        private static readonly LinkedList<KeyValuePair<TKey, TValue>> Recency = new();
 
         // The factory takes an explicit state argument so that callers can pass static lambdas (no closure allocations)
         internal static TValue GetOrCreate<TState>(TKey key, TState state, Func<TKey, TState, TValue> factory, int maxSize)
         {
-            if (Cache.TryGetValue(key, out var existing))
+            lock (CacheLock)
             {
-                return existing;
+                if (Cache.TryGetValue(key, out var existing))
+                {
+                    Recency.Remove(existing);
+                    Recency.AddFirst(existing);
+                    return existing.Value.Value;
+                }
             }
 
-            if (_count >= maxSize)
+            // Build tags outside the lock so unrelated keys can still be accessed during creation.
+            var value = factory(key, state);
+            lock (CacheLock)
             {
-                return factory(key, state);
-            }
+                // Another thread may have inserted this key while the factory was running.
+                if (Cache.TryGetValue(key, out var existing))
+                {
+                    Recency.Remove(existing);
+                    Recency.AddFirst(existing);
+                    return existing.Value.Value;
+                }
 
-            // If threads race on the same unseen key, GetOrAdd keeps a single value and all callers get that one
-            var result = Cache.GetOrAdd(key, factory(key, state));
-            // May overcount by at most O(concurrent threads) when threads race on the same unseen key
-            // and both reach GetOrAdd. Acceptable for a soft limit — we stop caching slightly early.
-            Interlocked.Increment(ref _count);
-            return result;
+                LinkedListNode<KeyValuePair<TKey, TValue>> node;
+                if (Cache.Count >= maxSize)
+                {
+                    // Reuse the evicted node to avoid allocating list nodes as the cache turns over.
+                    node = Recency.Last!;
+                    Recency.RemoveLast();
+                    Cache.Remove(node.Value.Key);
+                    node.Value = new KeyValuePair<TKey, TValue>(key, value);
+                }
+                else
+                {
+                    node = new LinkedListNode<KeyValuePair<TKey, TValue>>(new(key, value));
+                }
+
+                Recency.AddFirst(node);
+                Cache.Add(key, node);
+                return value;
+            }
         }
     }
 }

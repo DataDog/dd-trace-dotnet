@@ -561,31 +561,72 @@ public class DataStreamsManagerTests
         second.Should().BeSameAs(first);
     }
 
-    [Fact]
-    public void GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacity()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TagCache_EvictsLeastRecentlyUsedEntry_WhenAtMaxCapacity(bool backlog)
     {
         var dsm = GetDataStreamManager(true, out _);
+        Func<int, object> getTags = backlog
+                                       ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey<int>(value), static k => $"tag:{k.Value}")
+                                       : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey<int>(value), static k => [$"tag:{k.Value}"]);
 
-        // Fill the per-type cache to the cap using a key type private to this test
-        // (OverflowTestKey has its own static dictionary, isolated from ProduceEdgeTagCacheKey)
-        for (var i = 0; i < DataStreamsManager.MaxEdgeTagCacheSize; i++)
+        var oldest = getTags(0);
+        var nextOldest = getTags(1);
+        for (var i = 2; i < DataStreamsManager.MaxEdgeTagCacheSize; i++)
         {
-            dsm.GetOrCreateEdgeTags(new OverflowTestKey(i), static k => [$"tag:{k.Value}"]);
+            getTags(i);
         }
 
-        // The cache is now full; a new key should bypass caching and return a fresh array each call
-        var overflowKey = new OverflowTestKey(DataStreamsManager.MaxEdgeTagCacheSize);
-        var first = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
-        var second = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
+        // Refresh the oldest entry, making key 1 the eviction candidate.
+        getTags(0).Should().BeSameAs(oldest);
+        var newest = getTags(DataStreamsManager.MaxEdgeTagCacheSize);
+        getTags(DataStreamsManager.MaxEdgeTagCacheSize).Should().BeSameAs(newest);
+        getTags(0).Should().BeSameAs(oldest);
 
-        second.Should().NotBeSameAs(first);
+        var recreated = getTags(1);
+        recreated.Should().NotBeSameAs(nextOldest);
+        getTags(1).Should().BeSameAs(recreated);
+
+        // Keep admitting and caching new keys over several complete turnovers.
+        for (var i = DataStreamsManager.MaxEdgeTagCacheSize + 1; i < 3 * DataStreamsManager.MaxEdgeTagCacheSize; i++)
+        {
+            var tags = getTags(i);
+            getTags(i).Should().BeSameAs(tags);
+        }
+
+        getTags(0).Should().NotBeSameAs(oldest);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TagCache_HandlesConcurrentInsertionsAndEvictions(bool backlog)
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        Func<int, object> getTags = backlog
+                                       ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey<string>(value), static k => $"tag:{k.Value}")
+                                       : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey<string>(value), static k => [$"tag:{k.Value}"]);
+
+        var results = new object[DataStreamsManager.MaxEdgeTagCacheSize];
+        Parallel.For(0, results.Length, i => results[i] = getTags(i));
+        for (var i = 0; i < results.Length; i++)
+        {
+            getTags(i).Should().BeSameAs(results[i]);
+        }
+
+        Parallel.For(0, 4 * DataStreamsManager.MaxEdgeTagCacheSize, i => getTags(i));
+
+        // Concurrent requests for one new key must all observe the same cached instance.
+        Parallel.For(0, results.Length, i => results[i] = getTags(4 * DataStreamsManager.MaxEdgeTagCacheSize));
+        results.Should().OnlyContain(tags => ReferenceEquals(tags, results[0]));
     }
 
     [Fact]
     public void SetCheckpoint_DoesNotRetainUncachedEdgeTags()
     {
-        // Edge tags that bypass the cache (cache full, or SpanContextExtractor/Injector) are a fresh
-        // instance on every call. The manager must not keep them alive, or memory grows per message.
+        // One-off edge tags (e.g. SpanContextExtractor/Injector) must not be retained by the manager,
+        // or memory grows per message.
         var dsm = GetDataStreamManager(true, out _);
 
         var edgeTags = SetCheckpointWithUncachedEdgeTags(dsm);
@@ -635,18 +676,17 @@ public class DataStreamsManagerTests
     }
 
     /// <summary>
-    /// Private key type used exclusively by <see cref="GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacity"/>.
-    /// Having a unique type gives an isolated <c>EdgeTagCache&lt;OverflowTestKey&gt;</c> dictionary.
+    /// The type parameter isolates each test's static tag caches from other tests.
     /// </summary>
-    private readonly struct OverflowTestKey : IEquatable<OverflowTestKey>
+    private readonly struct OverflowTestKey<T> : IEquatable<OverflowTestKey<T>>
     {
         public readonly int Value;
 
         public OverflowTestKey(int value) => Value = value;
 
-        public bool Equals(OverflowTestKey other) => Value == other.Value;
+        public bool Equals(OverflowTestKey<T> other) => Value == other.Value;
 
-        public override bool Equals(object obj) => obj is OverflowTestKey other && Equals(other);
+        public override bool Equals(object obj) => obj is OverflowTestKey<T> other && Equals(other);
 
         public override int GetHashCode() => Value;
     }
