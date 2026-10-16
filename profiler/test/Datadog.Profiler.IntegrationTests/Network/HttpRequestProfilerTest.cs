@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -191,6 +192,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             }
         }
 
+        [Flaky("Intermittent failures reported in incident af432c97-8b49-447f-b85a-3ac8b9986868")]
         [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetDetails(string appName, string framework, string appAssembly)
         {
@@ -279,6 +281,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             Assert.True(checkedSamples > 0);
         }
 
+        [Flaky("Intermittent failures reported in incident af432c97-8b49-447f-b85a-3ac8b9986868")]
         [TestAppFact("Samples.HttpRequest", new[] { "net7.0", "net8.0", "net9.0", "net10.0", "net11.0" })]
         public void ShouldGetExactDurations(string appName, string framework, string appAssembly)
         {
