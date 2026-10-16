@@ -96,6 +96,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => BuildArtifactsDirectory / "native-obj";
 
+    // Keep in sync with DatadogAotLibDdwafVersion in tracer/src/Datadog.Trace.Aot/Datadog.Trace.Aot.csproj
     const string LibDdwafVersion = "2.0.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0", "1.30.0" };
@@ -563,6 +564,7 @@ partial class Build
             var exclude = TracerDirectory.GlobFiles(
                 "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
+                $"src/{Projects.DatadogTraceAot}/{Projects.DatadogTraceAot}.csproj", // no code, packed by BuildNativeAotNuget
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
@@ -1739,6 +1741,111 @@ partial class Build
                 .SetProcessEnvironmentVariable("DD_AOT_CALLTARGET_NATIVE_TEST_PROJECT", callTargetNativeTestProjectPath)
                 .SetProcessEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH", "1")
                 .WithDatadogLogger());
+        });
+
+    /// <summary>
+    /// The application of the Datadog.Trace.Aot package (BuildNativeAotNuget, in artifacts/nuget/aot) published with NativeAOT
+    /// for .NET 8 and .NET 10: the manual API, AppSec, RASP and IAST work, its binary stays in its budget, and Datadog.Trace
+    /// has no trimming or AOT analysis warning (Verify snapshots). Then the parity check: an application published with
+    /// NativeAOT sends the spans it sends published for JIT with the tracer home (artifacts/monitoring-home). CI runs them on
+    /// Linux x64 once the package is built.
+    /// </summary>
+    Target RunNativeAotPackageTests => _ => _
+        .Unlisted()
+        .Description("Publishes the NativeAOT application of the Datadog.Trace.Aot package and checks it, and compares the spans of NativeAOT and JIT applications (the JIT one with the tracer home)")
+        .Executes(() =>
+        {
+            var feed = ArtifactsDirectory / "nuget" / "aot";
+            if (!feed.GlobFiles("Datadog.Trace.Aot.*.nupkg").Any())
+            {
+                throw new Exception($"The Datadog.Trace.Aot package wasn't found in {feed}: build it (BuildNativeAotNuget) or download it there.");
+            }
+
+            var manualApiProject = Solution.GetProject(Projects.DatadogTraceManual) ?? throw new Exception($"Could not resolve project '{Projects.DatadogTraceManual}'.");
+            var runnerTestsProjectPath = TracerDirectory / "test" / "Datadog.Trace.Tools.Runner.Tests" / "Datadog.Trace.Tools.Runner.Tests.csproj";
+            DotnetBuild(manualApiProject, framework: TargetFramework.NETSTANDARD2_0, noRestore: false, noDependencies: false);
+            DotnetBuild(new[] { runnerTestsProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+            var manualApi = GetProjectBinDirectory(Projects.DatadogTraceManual, "netstandard2.0") / "Datadog.Trace.Manual.dll";
+            EnsureFileExists(manualApi, "Datadog.Trace.Manual");
+
+            DotNetTest(x => x
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetConfiguration(BuildConfiguration)
+                .SetProjectFile(runnerTestsProjectPath)
+                .SetFramework("net8.0")
+                .SetFilter("FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.ManualApiApplicationWithThePackage|FullyQualifiedName~AotInstrumentNativeAotPublishIntegrationTests.NativeAotSpansMatchTheJitOnes")
+                .SetProcessEnvironmentVariable("DD_RUN_CALLTARGET_AOT_NATIVEAOT_PUBLISH", "1")
+                .SetProcessEnvironmentVariable("DD_AOT_PACKAGE_FEED", feed)
+                .SetProcessEnvironmentVariable("DD_AOT_MANUAL_API", manualApi)
+                .SetProcessEnvironmentVariable("DD_AOT_MONITORING_HOME", MonitoringHomeDirectory)
+                .WithDatadogLogger());
+        });
+
+    /// <summary>
+    /// The samples of the execution benchmarks (tracer/build/timeit) published with NativeAOT: without the tracer (their
+    /// baseline) and instrumented at build time with the tracer home (its native tracer, Datadog.Trace and libdatadog), into
+    /// artifacts/publish/Samples.X/nativeaot_{baseline,instrumented}_{net8.0,net10.0}. CI publishes them on a hosted Windows agent
+    /// (NativeAOT needs the C++ toolchain) for the execution benchmark agents.
+    /// </summary>
+    Target PublishNativeAotExecutionBenchmarkSamples => _ => _
+        .Unlisted()
+        .Description("Publishes the execution benchmark samples with NativeAOT, without the tracer and instrumented at build time")
+        .Executes(() =>
+        {
+            var (extension, nativeDirectory, libdatadog) = Platform switch
+            {
+                PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / "win-x64", "datadog_profiling_ffi.dll"),
+                PlatformFamily.Linux => ("so", MonitoringHomeDirectory / GetUnixArchitectureAndExtension().Arch, "libdatadog_profiling.so"),
+                PlatformFamily.OSX => ("dylib", MonitoringHomeDirectory / "osx", "libdatadog_profiling.dylib"),
+                _ => throw new NotSupportedException($"Unsupported platform: {Platform}")
+            };
+            var runtimeIdentifier = IsWin ? "win-x64" : GetUnixArchitectureAndExtension().Arch;
+            var nativeTracer = nativeDirectory / $"Datadog.Tracer.Native.{extension}";
+            var datadogTrace = MonitoringHomeDirectory / "net6.0" / "Datadog.Trace.dll";
+            EnsureFileExists(nativeTracer, "Native tracer");
+            EnsureFileExists(datadogTrace, "Datadog.Trace");
+            EnsureFileExists(nativeDirectory / libdatadog, "libdatadog");
+
+            DotnetBuild(Solution.GetProject(Projects.DdTrace), framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+            var runner = GetProjectBinDirectory("Datadog.Trace.Tools.Runner.Tool", "net8.0") / "Datadog.Trace.Tools.Runner.dll";
+            EnsureFileExists(runner, "dd-trace runner");
+
+            var helpers = TracerDirectory / "build" / "timeit" / "NativeAot";
+            var aotTargets = TracerDirectory / "src" / "Datadog.Trace.Aot" / "build" / "Datadog.Trace.Aot.targets";
+            var frameworks = new string[] { TargetFramework.NET8_0, TargetFramework.NET10_0 };
+            foreach (var sample in new[] { "Samples.HttpMessageHandler", "Samples.FakeDbCommand" })
+            foreach (var framework in frameworks)
+            foreach (var instrumented in new[] { false, true })
+            {
+                var variant = $"nativeaot_{(instrumented ? "instrumented" : "baseline")}_{framework}";
+                var output = BuildArtifactsDirectory / "publish" / sample / variant;
+                EnsureCleanDirectory(output);
+                DotNetPublish(s => s
+                    .SetProject(TracerDirectory / "test" / "test-applications" / "integrations" / sample / $"{sample}.csproj")
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(framework)
+                    .SetRuntime(runtimeIdentifier)
+                    .SetOutput(output)
+                    // Each variant has intermediate outputs of its own.
+                    .SetProperty("ArtifactsPivots", variant)
+                    .SetProperty("CustomBeforeMicrosoftCommonProps", helpers / "Samples.NativeAot.props")
+                    .SetProperty("CustomAfterMicrosoftCommonTargets", helpers / "Samples.NativeAot.targets")
+                    .SetProperty("DatadogExecutionBenchmarkSample", sample)
+                    .SetProperty("DatadogExecutionBenchmarkFramework", framework)
+                    .When(instrumented, s => s
+                        .SetProperty("DatadogAotTargets", aotTargets)
+                        .SetProperty("DatadogAotRunnerPath", runner)
+                        .SetProperty("DatadogAotNativeTracerPath", nativeTracer)
+                        .SetProperty("DatadogAotDatadogTracePath", datadogTrace)
+                        .SetProperty("DatadogAotFailOnError", "true")));
+
+                if (instrumented)
+                {
+                    // The Datadog.Trace.Aot package brings it as a runtime asset.
+                    CopyFile(nativeDirectory / libdatadog, output / $"LibDatadog.{extension}", FileExistsPolicy.Overwrite);
+                }
+            }
         });
 
     Target RunDuckTypeAotProcessorGate => _ => _

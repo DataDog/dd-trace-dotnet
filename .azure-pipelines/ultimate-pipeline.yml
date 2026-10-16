@@ -3903,7 +3903,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build_runner_tool_and_standalone]
+      jobs: [build_runner_tool_and_standalone, native_aot_package_tests]
 
   - job: build_runner_tool_and_standalone
     timeoutInMinutes: 60 #default value
@@ -4048,8 +4048,8 @@ stages:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
-      displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark)
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget BuildNativeAotNuget
+      displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark, NativeAOT)
       timeoutInMinutes: 20
       retryCountOnTaskFailure: 1
       env:
@@ -4066,6 +4066,10 @@ stages:
     - publish: $(artifacts)/nuget/benchmark
       displayName: Uploading Benchmark package
       artifact: benchmark-nuget-package
+
+    - publish: $(artifacts)/nuget/aot
+      displayName: Uploading Datadog.Trace.Aot package
+      artifact: aot-nuget-package
 
     - publish: $(artifacts)/nuget/dd-trace
       displayName: Uploading runner dotnet tool artifact
@@ -4102,6 +4106,49 @@ stages:
     - powershell: |
         echo "##vso[build.addbuildtag]$(dotnetToolTag)"
       displayName: Add $(dotnetToolTag) build tag
+
+  # The application of the Datadog.Trace.Aot package published with NativeAOT (.NET 8 and .NET 10): the manual API, AppSec,
+  # RASP and IAST work, its binary stays in its budget, and Datadog.Trace has no trimming or AOT analysis warning.
+  - job: native_aot_package_tests
+    dependsOn: [build_runner_tool_and_standalone]
+    timeoutInMinutes: 60
+    pool:
+      name: $(linuxX64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-x64-working-directory
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: aot-nuget-package
+        path: $(artifacts)/nuget/aot
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "RunNativeAotPackageTests"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/make-artifacts-uploadable.yml
+    - publish: artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: artifacts/build_data/results/**/*.trx
+      condition: succeededOrFailed()
 
 - stage: tool_artifacts_tests_windows
   dependsOn: [dotnet_tool, merge_commit_id]
@@ -4532,6 +4579,12 @@ stages:
             artifact: azurefunctions-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
+        # NativeAOT instrumentation (prerelease version)
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: aot-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
 #        Don't include the Datadog.Trace.BenchmarkDotNet package in the release artifacts
 #        as it currently doesn't work with v3.
 #        - task: DownloadPipelineArtifact@2
@@ -4785,9 +4838,38 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows, compare, create_github_token]
+      jobs: [publish_nativeaot_samples, Windows, compare, create_github_token]
+
+  # NativeAOT needs the C++ toolchain: the samples are published with NativeAOT (without the tracer, and instrumented at
+  # build time) on a hosted agent, and the execution benchmark agents run them.
+  - job: publish_nativeaot_samples
+    pool:
+      name: $(windowsX64Pool)
+    timeoutInMinutes: 60
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/restore-working-directory.yml
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
+        retryCountOnTaskFailure: 5
+
+    - script: tracer\build.cmd PublishNativeAotExecutionBenchmarkSamples
+      displayName: Publish the samples with NativeAOT
+
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/publish
+      displayName: Upload the NativeAOT samples
+      artifact: execution_time_benchmarks_nativeaot_samples
 
   - job: Windows
+    dependsOn: [publish_nativeaot_samples]
     strategy:
       matrix:
         HttpMessageHandler:
@@ -4812,6 +4894,12 @@ stages:
       parameters:
         artifact: windows-profiler-home
         path: $(monitoringHome)
+        retryCountOnTaskFailure: 5
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: execution_time_benchmarks_nativeaot_samples
+        path: $(System.DefaultWorkingDirectory)/artifacts/publish
         retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2

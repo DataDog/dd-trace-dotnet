@@ -1,0 +1,6 @@
+<Project>
+  <!-- Execution benchmarks: the sample (not its project references) published with NativeAOT for the framework of the run. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == '$(DatadogExecutionBenchmarkSample)' and '$(TargetFramework)' == '$(DatadogExecutionBenchmarkFramework)'">
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+</Project>
