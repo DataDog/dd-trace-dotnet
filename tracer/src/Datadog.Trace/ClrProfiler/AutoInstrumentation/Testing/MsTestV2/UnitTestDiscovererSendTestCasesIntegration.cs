@@ -53,7 +53,7 @@ public sealed class UnitTestDiscovererSendTestCasesIntegration
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement]", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestCaseDiscoverySink", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IDiscoveryContext", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"],
     MinimumVersion = "4.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "4.3.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

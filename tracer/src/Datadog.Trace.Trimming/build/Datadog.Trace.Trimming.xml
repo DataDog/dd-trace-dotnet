@@ -1187,6 +1187,7 @@
       <type fullname="System.Threading.AsyncLocal`1" />
       <type fullname="System.Threading.AsyncLocalValueChangedArgs`1" />
       <type fullname="System.Threading.AutoResetEvent" />
+      <type fullname="System.Threading.ContextCallback" />
       <type fullname="System.Threading.EventWaitHandle" />
       <type fullname="System.Threading.ExecutionContext" />
       <type fullname="System.Threading.Interlocked" />
