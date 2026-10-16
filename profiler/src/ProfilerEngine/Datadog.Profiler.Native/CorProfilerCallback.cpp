@@ -1004,12 +1004,14 @@ void CorProfilerCallback::StopEventPipeSession()
     }
 
     auto hr = _pCorProfilerInfoEvents->EventPipeStopSession(_session);
-    if (FAILED(hr))
+    if (SUCCEEDED(hr))
     {
-        Log::Error("Failed to stop the EventPipe session with hr=0x", std::hex, hr, std::dec, ".");
+        _session = 0;
+        return;
     }
 
-    _session = 0;
+    // Do not clear _session to give it a chance to be stopped again later (at shutdown)
+    Log::Error("Failed to stop the EventPipe session with hr=0x", std::hex, hr, std::dec, ".");
 }
 
 bool CorProfilerCallback::StartServices()
@@ -2287,7 +2289,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationStarted(FunctionID 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus) && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
         _managedCodeCache->AddFunction(functionId, /*isDynamic*/ false);
     }
@@ -2833,7 +2835,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::GetReJITParameters(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus) && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
         _managedCodeCache->AddFunction(functionId, /*isDynamic*/ false);
     }
@@ -2878,7 +2880,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationStarte
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus) && !_pSsiManager->IsProfilingPermanentlyDisabled())
     {
         // The CLR calls this callback (and not JITCompilationFinished) for every
         // dynamic method, so no need to ask it if the function is dynamic or not.
