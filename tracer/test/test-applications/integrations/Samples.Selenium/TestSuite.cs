@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -16,18 +17,66 @@ public class TestSuite(ITestOutputHelper output) : IDisposable
     {
         const int maxAttempts = 3;
         var delay = TimeSpan.FromSeconds(5);
+        var options = new ChromeOptions();
+        var binaryLocation = Environment.GetEnvironmentVariable("SAMPLES_SELENIUM_CHROME_BINARY");
+        if (!string.IsNullOrEmpty(binaryLocation))
+        {
+            options.BinaryLocation = binaryLocation;
+        }
+
+        if (string.Equals(Environment.GetEnvironmentVariable("SAMPLES_SELENIUM_HEADLESS"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            options.AddArgument("--headless");
+            options.AddArgument("--no-sandbox");
+            options.AddArgument("--disable-gpu");
+            // Avoid relying on the DevToolsActivePort file when Chrome runs in
+            // an isolated Windows container. The named pipe is created by
+            // ChromeDriver before Chrome starts, so startup does not depend on
+            // the container's temporary profile filesystem.
+            options.AddArgument("--remote-debugging-pipe");
+        }
+
+        var chromeDriverDirectory = Environment.GetEnvironmentVariable("SAMPLES_SELENIUM_CHROMEDRIVER_DIRECTORY");
+        var logDirectory = Environment.GetEnvironmentVariable("SAMPLES_SELENIUM_LOG_DIRECTORY");
+        if (!string.IsNullOrEmpty(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
 
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             WebDriver driver = null;
+            ChromeDriverService service = null;
+            var logPath = string.IsNullOrEmpty(logDirectory) ? null : Path.Combine(logDirectory, $"chromedriver-attempt-{attempt}.log");
             try
             {
-                driver = new ChromeDriver();
+                if (logPath is null)
+                {
+                    driver = string.IsNullOrEmpty(chromeDriverDirectory)
+                                 ? new ChromeDriver(options)
+                                 : new ChromeDriver(chromeDriverDirectory, options);
+                }
+                else
+                {
+                    service = string.IsNullOrEmpty(chromeDriverDirectory)
+                                  ? ChromeDriverService.CreateDefaultService()
+                                  : ChromeDriverService.CreateDefaultService(chromeDriverDirectory);
+                    service.EnableVerboseLogging = true;
+                    service.LogPath = logPath;
+                    driver = new ChromeDriver(service, options, TimeSpan.FromSeconds(60));
+                }
+
                 return driver;
             }
             catch (Exception ex) when (ex is InvalidOperationException or WebDriverException)
             {
                 driver?.Dispose();
+                service?.Dispose();
+
+                if (logPath is not null && File.Exists(logPath))
+                {
+                    output.WriteLine($"ChromeDriver log for attempt {attempt}:{Environment.NewLine}{File.ReadAllText(logPath)}");
+                }
 
                 if (attempt == maxAttempts)
                 {
