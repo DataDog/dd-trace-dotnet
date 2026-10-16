@@ -33,6 +33,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     private static Action? _onNewConfig = null;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
+    private readonly bool _evaluationTelemetryOptOutParameterEnabled;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
@@ -42,19 +43,45 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     // nothing is allocated/registered when the feature is disabled.
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
 
-    // Both hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
+    // Cache the underlying hooks at construction. GetProviderHooks creates per-evaluation wrappers
+    // only when the opt-out parameter is enabled.
     private readonly IImmutableList<Hook> _providerHooks;
 
     private int _status = StatusInitializing;
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
+        : this(new DatadogProviderOptions())
     {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="DatadogProvider"/> class with the supplied options.</summary>
+    /// <param name="options">Options copied at construction.</param>
+    public DatadogProvider(DatadogProviderOptions options)
+        : this(options, null, null)
+    {
+    }
+
+    // Tests connect the real evaluator and span accumulator across the native profiler boundary.
+    internal DatadogProvider(DatadogProviderOptions options, FeatureFlagsSdk.EvaluationCallback? evaluate, Action<long?, bool, string?, bool, string, object?>? accumulateSpanEnrichment)
+    {
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        _evaluationTelemetryOptOutParameterEnabled = options.EnableEvaluationTelemetryOptOutParameter
+                                                 ?? ProviderEnvironmentConfiguration.IsEvaluationTelemetryOptOutEnabled();
+        _evaluate = evaluate;
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
 #if NET6_0_OR_GREATER
         _metricsHook = new FlagEvalMetricsHook();
 #endif
-        if (FeatureFlagsSdk.IsSpanEnrichmentEnabled())
+        if (accumulateSpanEnrichment is not null)
+        {
+            _spanEnrichmentHook = new SpanEnrichmentHook(accumulateSpanEnrichment);
+        }
+        else if (FeatureFlagsSdk.IsSpanEnrichmentEnabled())
         {
             _spanEnrichmentHook = new SpanEnrichmentHook();
         }
@@ -284,7 +311,14 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     /// <summary> Gets provider hooks for flag evaluation metrics tracking. </summary>
     /// <returns> Returns the list of provider hooks. </returns>
-    public override IImmutableList<Hook> GetProviderHooks() => _providerHooks;
+    public override IImmutableList<Hook> GetProviderHooks()
+    {
+        // OpenFeature obtains this list once for each evaluation. Fresh wrappers isolate Before
+        // decisions across nested/concurrent calls; disabled providers keep their cached hooks.
+        return _evaluationTelemetryOptOutParameterEnabled && _providerHooks.Count != 0
+            ? _providerHooks.Select(hook => (Hook)new EvaluationTelemetryOptOutHook(hook)).ToImmutableList()
+            : _providerHooks;
+    }
 
     /// <inheritdoc/>
     public void Dispose()

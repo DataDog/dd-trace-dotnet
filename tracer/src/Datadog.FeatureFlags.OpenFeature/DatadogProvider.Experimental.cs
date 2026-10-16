@@ -189,8 +189,9 @@ public sealed partial class DatadogProvider
     {
         cancellationToken.ThrowIfCancellationRequested();
         var resolution = FeatureFlagsSdk.Resolve(flagKey, valueType, defaultValue, context, _evaluate);
-        return _providerHooks.Count == 0
+        var hooks = GetProviderHooks();
+        return hooks.Count == 0
             ? resolution
-            : RunProviderHooks(_providerHooks, new HookContext<T>(flagKey, defaultValue, flagValueType, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
+            : RunProviderHooks(hooks, new HookContext<T>(flagKey, defaultValue, flagValueType, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
     }
 }

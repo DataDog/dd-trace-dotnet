@@ -39,6 +39,30 @@ net9.0 targets cover the BCL attribute. Compiler tests verify the opt-in diagnos
 while resolution and hook tests cover defaults, cancellation, hook ordering and
 failure behavior, completion before return, and exactly-once evaluation metrics.
 
+## Evaluation telemetry opt-out tests
+
+`EvaluationTelemetryOptOutTests` uses the real OpenFeature client, Datadog provider,
+production evaluator, metrics hook, span hook, span accumulator, and exposure cache.
+The tests count metrics, span-admission calls, raw exposures, and deduplicated exposures.
+Internal callbacks replace only the evaluator and span-accumulator connections made
+by the native profiler. These tests do not prove native CallTarget loading.
+
+When opt-out is enabled, `GetProviderHooks` creates wrappers for each evaluation.
+Each wrapper captures its provider Before context. OpenFeature 2.3.0 supplies the
+original context to Finally, which can differ from the context used for evaluation.
+Fresh wrappers isolate nested and concurrent calls. The synchronous methods also
+request fresh wrappers, but use their supplied context because they skip Before.
+Disabled providers continue to return their cached hooks.
+
+The nullable provider option distinguishes an omitted value from explicit `false`.
+An omitted value reads `DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED` once at construction.
+The provider links the tracer's boolean parser without taking a dependency on the tracer assembly.
+Tests cover configuration precedence, invalid values, snapshots, and both assemblies' parser behavior.
+
+The suite records the upstream limitation when a Before hook changes the context
+and a later Before hook throws. The provider never receives the replacement context.
+Setting opt-out in the supplied context covers this aborted evaluation path.
+
 ## Instrumented coverage
 
 `Evaluator.ExtraChecks` in `Samples.OpenFeature` compares synchronous string resolution
