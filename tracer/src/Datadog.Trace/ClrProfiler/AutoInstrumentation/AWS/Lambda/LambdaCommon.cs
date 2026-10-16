@@ -32,20 +32,8 @@ internal abstract class LambdaCommon
         return tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AwsLambda);
     }
 
-    internal static bool ShouldCompleteInvocation(Scope scope)
-    {
-        // An existing scope means start-invocation already ran. Finish it even if tracing was disabled afterwards.
-        return scope is not null || IsEnabled(Tracer.Instance);
-    }
-
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers, string awsRequestId = null)
     {
-        if (!IsEnabled(tracer))
-        {
-            // integration disabled, don't create a scope, skip this trace
-            return null;
-        }
-
         var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
 
         var span = tracer.StartSpan(
@@ -70,11 +58,6 @@ internal abstract class LambdaCommon
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, ILambdaContext context)
     {
-        if (!IsEnabled(Tracer.Instance))
-        {
-            return null;
-        }
-
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context?.ClientContext?.Custom);
@@ -98,11 +81,6 @@ internal abstract class LambdaCommon
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, CallTargetState stateObject, bool isError, string data)
     {
-        if (!ShouldCompleteInvocation(stateObject.Scope))
-        {
-            return;
-        }
-
         var request = requestBuilder.GetEndInvocationRequest(stateObject, isError);
         WriteRequestPayload(request, data);
         using var response = (HttpWebResponse)request.GetResponse();
@@ -117,11 +95,6 @@ internal abstract class LambdaCommon
     {
         var scope = stateObject.Scope;
 
-        if (!ShouldCompleteInvocation(scope))
-        {
-            return;
-        }
-
         if (exception != null && scope is { Span: var span })
         {
             span.SetException(exception);
@@ -129,6 +102,25 @@ internal abstract class LambdaCommon
 
         scope?.Dispose();
 
+        await FlushAsync().ConfigureAwait(false);
+
+        try
+        {
+            SendEndInvocation(requestBuilder, stateObject, exception != null, returnValue);
+        }
+        catch (Exception ex)
+        {
+            Log("Could not send payload to the extension", ex, false);
+        }
+    }
+
+    /// <summary>
+    /// Flushes traces and Data Streams points. Lambda can freeze the execution environment as soon as the handler
+    /// returns, so this runs at the end of every invocation, including when the AWS Lambda integration is disabled
+    /// and no start/end-invocation is sent (other integrations or manual instrumentation may still have recorded data).
+    /// </summary>
+    internal static async Task FlushAsync()
+    {
         try
         {
             await Task.WhenAll(
@@ -141,15 +133,6 @@ internal abstract class LambdaCommon
         catch (Exception ex)
         {
             Log("Could not flush to the extension", ex, false);
-        }
-
-        try
-        {
-            SendEndInvocation(requestBuilder, stateObject, exception != null, returnValue);
-        }
-        catch (Exception ex)
-        {
-            Log("Could not send payload to the extension", ex, false);
         }
     }
 
