@@ -1509,6 +1509,50 @@ TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVar
     ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
 }
 
+// Mirrors Configuration::DefaultWatcherStartTimeout, which is private
+#if defined(DD_SANITIZERS)
+static constexpr auto ExpectedDefaultWatcherStartTimeout = 10s;
+#else
+static constexpr auto ExpectedDefaultWatcherStartTimeout = 2s;
+#endif
+
+TEST_F(ConfigurationTest, CheckWatcherStartTimeoutWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetWatcherStartTimeout(), ExpectedDefaultWatcherStartTimeout);
+}
+
+TEST_F(ConfigurationTest, CheckWatcherStartTimeoutWhenEnvVarIsCorrectlySet)
+{
+    // Deliberately not one of the defaults, so the test fails if the env var is ignored
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WatcherStartTimeout, WStr("4200"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetWatcherStartTimeout(), 4200ms);
+}
+
+TEST_F(ConfigurationTest, CheckWatcherStartTimeoutIsDefaultWhenEnvVarIsNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WatcherStartTimeout, WStr("not_an_int"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetWatcherStartTimeout(), ExpectedDefaultWatcherStartTimeout);
+}
+
+// 0 is meaningful for this timeout: it means "do not wait for the watcher thread", so it must be
+// honored rather than replaced by the default (see Configuration::ExtractWatcherStartTimeout).
+TEST_F(ConfigurationTest, CheckWatcherStartTimeoutIsHonoredWhenEnvVarIsZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WatcherStartTimeout, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetWatcherStartTimeout(), 0ms);
+}
+
+TEST_F(ConfigurationTest, CheckWatcherStartTimeoutIsDefaultWhenEnvVarIsNegative)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WatcherStartTimeout, WStr("-5000"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetWatcherStartTimeout(), ExpectedDefaultWatcherStartTimeout);
+}
+
 TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledByDefault)
 {
     auto configuration = Configuration{};
