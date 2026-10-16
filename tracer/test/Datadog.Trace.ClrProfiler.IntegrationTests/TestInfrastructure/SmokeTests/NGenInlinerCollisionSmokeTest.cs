@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     /// <summary>
-    /// The app's module name hashes like mscorlib's, so looking up the NGen inliners of its instrumented methods
+    /// The app's module name, `Samples.NGenInlinerCollision` hashes to the same value as `mscorlib`, so looking up the NGen inliners of its instrumented methods
     /// also decodes NGen inline records of mscorlib methods. mscorlib is domain-neutral, and decoding it needs a
     /// current AppDomain, which the native ReJIT worker doesn't have.
     /// Expected behavior: the app runs to completion and its methods are instrumented.
