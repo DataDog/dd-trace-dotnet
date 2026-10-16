@@ -16,10 +16,11 @@ internal class AotCommand : CommandWithExamples
     /// Initializes a new instance of the <see cref="AotCommand"/> class.
     /// </summary>
     public AotCommand()
-        : base("aot", "Build-time tools of the NativeAOT instrumentation")
+        : base("aot", "Instrument assemblies at build time for NativeAOT applications")
     {
-        AddExample("dd-trace aot check-declarations --datadog-trace Datadog.Trace.dll --maps ./ducktype-aot-maps");
+        AddExample("dd-trace aot instrument --native-tracer Datadog.Tracer.Native.so --datadog-trace Datadog.Trace.dll --assembly ./obj/MyApp.dll --reference-dir ./runtime --output ./obj/datadog-aot");
 
+        AddCommand(new AotInstrumentCommand());
         AddCommand(new AotPrepareCommand());
         AddCommand(new AotCheckDeclarationsCommand());
     }
