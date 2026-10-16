@@ -193,6 +193,11 @@ extern "C" void __stdcall FlushProfile()
         return;
     }
 
+    if (profiler->IsProfilingPermanentlyDisabled())
+    {
+        return;
+    }
+
     Log::Debug("FlushProfile called by Managed code");
     profiler->GetSamplesCollector()->Export();
 }
