@@ -28,7 +28,7 @@ internal abstract class LambdaCommon
 
     internal static bool IsEnabled(Tracer tracer)
     {
-        // IsIntegrationEnabled is false when DD_TRACE_ENABLED is false.
+        // IsIntegrationEnabled is false when either DD_TRACE_ENABLED or DD_TRACE_AWSLAMBDA_ENABLED is false.
         return tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AwsLambda);
     }
 
