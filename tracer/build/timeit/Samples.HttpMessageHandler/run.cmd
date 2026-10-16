@@ -6,6 +6,8 @@ IF EXIST results_Samples.HttpMessageHandler.windows.net48.json DEL /F results_Sa
 IF EXIST results_Samples.HttpMessageHandler.windows.netcoreapp31.json DEL /F results_Samples.HttpMessageHandler.windows.netcoreapp31.json
 IF EXIST results_Samples.HttpMessageHandler.windows.net60.json DEL /F results_Samples.HttpMessageHandler.windows.net60.json
 IF EXIST results_Samples.HttpMessageHandler.windows.net80.json DEL /F results_Samples.HttpMessageHandler.windows.net80.json
+IF EXIST results_Samples.HttpMessageHandler.windows.net80.nativeaot.json DEL /F results_Samples.HttpMessageHandler.windows.net80.nativeaot.json
+IF EXIST results_Samples.HttpMessageHandler.windows.net100.nativeaot.json DEL /F results_Samples.HttpMessageHandler.windows.net100.nativeaot.json
 
 REM =====================
 REM Handle log artifact directory
@@ -69,6 +71,26 @@ IF ERRORLEVEL 1 (
     set FAILED=1
 )
 call :CopyLogs net8.0
+
+echo *********************
+echo .NET 8.0 NativeAOT
+echo *********************
+dotnet timeit Samples.HttpMessageHandler.windows.net80.nativeaot.json
+IF ERRORLEVEL 1 (
+    echo ❌ .NET 8.0 NativeAOT benchmark FAILED
+    set FAILED=1
+)
+call :CopyLogs net8.0-nativeaot
+
+echo *********************
+echo .NET 10.0 NativeAOT
+echo *********************
+dotnet timeit Samples.HttpMessageHandler.windows.net100.nativeaot.json
+IF ERRORLEVEL 1 (
+    echo ❌ .NET 10.0 NativeAOT benchmark FAILED
+    set FAILED=1
+)
+call :CopyLogs net10.0-nativeaot
 
 IF "!FAILED!"=="1" (
     echo =====================
