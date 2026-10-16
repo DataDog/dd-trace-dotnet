@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     /// Duck typing for LoggerConfiguration
     /// Interface, as used in instrumentation constraint
     /// </summary>
+    [DuckType("Serilog.LoggerConfiguration", "Serilog")]
     internal interface ILoggerConfiguration
     {
         /// <summary>

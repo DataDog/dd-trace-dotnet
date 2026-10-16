@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     /// <summary>
     /// Ducktyping of Couchbase.ClusterOptions
     /// </summary>
+    [DuckType("Couchbase.ClusterOptions", "Couchbase.NetClient")]
     internal interface IClusterOptions
     {
         IConnectionString? ConnectionStringValue { get; }

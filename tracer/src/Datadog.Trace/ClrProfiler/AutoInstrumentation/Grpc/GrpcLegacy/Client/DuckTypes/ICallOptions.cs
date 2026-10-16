@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
 {
     /// <summary>
@@ -12,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     /// Interface as need to call the WithHeaders method
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core.Api/CallOptions.cs
     /// </summary>
+    [DuckType("Grpc.Core.CallOptions", "Grpc.Core.Api")]
     internal interface ICallOptions
     {
         public IMetadata? Headers { get; }

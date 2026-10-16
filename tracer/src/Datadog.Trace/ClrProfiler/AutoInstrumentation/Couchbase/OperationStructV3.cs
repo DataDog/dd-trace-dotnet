@@ -11,6 +11,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     /// Ducktyping of Couchbase.Core.Operations.IOperation in V3
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Couchbase.Core.IO.Operations.Authentication.SaslList", "Couchbase.NetClient")]
+    [DuckCopy("Couchbase.Core.IO.Operations.Errors.GetErrorMap", "Couchbase.NetClient")]
+    [DuckCopy("Couchbase.Core.IO.Operations.Hello", "Couchbase.NetClient")]
+    [DuckCopy("Couchbase.Core.IO.Operations.Noop", "Couchbase.NetClient")]
+    [DuckCopy("Couchbase.Core.IO.Operations.OperationBase", "Couchbase.NetClient", IncludeDerivedTypes = true)]
     internal struct OperationStructV3
     {
         /// <summary>

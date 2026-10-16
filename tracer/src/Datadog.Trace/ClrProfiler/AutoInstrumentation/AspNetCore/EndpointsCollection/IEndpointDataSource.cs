@@ -8,9 +8,11 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection;
 
+[DuckType("Microsoft.AspNetCore.Routing.CompositeEndpointDataSource", "Microsoft.AspNetCore.Routing")]
 internal interface IEndpointDataSource
 {
     public IReadOnlyList<object> Endpoints { get; }

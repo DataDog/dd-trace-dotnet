@@ -3,11 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     /// <summary>
     /// GraphQL.Validation.IValidationResult interface for ducktyping
     /// </summary>
+    [DuckType("GraphQL.Validation.IValidationResult", "GraphQL")]
+    [DuckType("GraphQL.Validation.SuccessfullyValidatedResult", "GraphQL")]
+    [DuckType("GraphQL.Validation.ValidationResult", "GraphQL")]
     internal interface IValidationResult
     {
         /// <summary>

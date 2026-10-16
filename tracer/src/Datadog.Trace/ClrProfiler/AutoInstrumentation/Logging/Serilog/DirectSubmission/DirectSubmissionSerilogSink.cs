@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     /// <summary>
     /// Serilog Sink
     /// </summary>
+    [DuckReverseDelegation("Serilog.Core.ILogEventSink", "Serilog")]
     internal sealed class DirectSubmissionSerilogSink
     {
         private readonly IDirectSubmissionLogSink _sink;

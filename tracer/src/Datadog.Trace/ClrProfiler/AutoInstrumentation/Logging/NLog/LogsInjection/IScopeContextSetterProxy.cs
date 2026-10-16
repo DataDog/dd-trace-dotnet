@@ -5,12 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
     /// <summary>
     /// Duck type for IScopeContextSetterProxy in NLog 5.0+
     /// </summary>
+    [DuckType("NLog.ScopeContext", "NLog")]
     internal interface IScopeContextSetterProxy
     {
         /// <summary>

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase;
 /// <summary>
 /// Ducktyping of Couchbase.Configuration.Client.ClientConfiguration
 /// </summary>
+[DuckType("Couchbase.Configuration.Client.ClientConfiguration", "Couchbase.NetClient")]
 internal interface IClientConfiguration : IDuckType
 {
     public IList<Uri> Servers { get; }

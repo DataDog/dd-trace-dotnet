@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     /// <summary>
     /// Ducktyping of Couchbase.ConnectionString
     /// </summary>
+    [DuckType("Couchbase.ConnectionString", "Couchbase.NetClient")]
     internal interface IConnectionString : IDuckType
     {
         IEnumerable Hosts { get; }

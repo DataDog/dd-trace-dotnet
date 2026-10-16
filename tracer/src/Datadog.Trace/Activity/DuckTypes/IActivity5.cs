@@ -7,9 +7,11 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Activity.DuckTypes
 {
+    [DuckType("System.Diagnostics.Activity", "System.Diagnostics.DiagnosticSource")]
     internal interface IActivity5 : IW3CActivity
     {
         string DisplayName { get; set; }

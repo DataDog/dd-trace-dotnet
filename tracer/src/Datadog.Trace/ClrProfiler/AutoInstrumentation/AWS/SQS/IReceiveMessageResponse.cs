@@ -12,11 +12,13 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
+    [DuckType("Amazon.SQS.Model.ReceiveMessageResponse", "AWSSDK.SQS")]
     internal interface IReceiveMessageResponse : IDuckType
     {
         IList? Messages { get; } // <IMessage>
     }
 
+    [DuckType("Amazon.SQS.Model.Message", "AWSSDK.SQS")]
     internal interface IMessage : IContainsMessageAttributes
     {
         Dictionary<string, string?>? Attributes { get; set; }

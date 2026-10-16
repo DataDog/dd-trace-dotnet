@@ -15,6 +15,7 @@ namespace Datadog.Trace.Util.Http;
 /// See https://github.com/dotnet/runtime/blob/v10.0.3/src/libraries/System.Private.Uri/src/System/Uri.cs#L125
 /// </summary>
 [DuckCopy]
+[DuckCopy("System.Uri", "System.Private.Uri")]
 internal struct UriStruct
 {
     // The flag changed in .NET 10

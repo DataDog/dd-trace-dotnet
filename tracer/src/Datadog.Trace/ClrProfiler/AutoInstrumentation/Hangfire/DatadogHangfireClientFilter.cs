@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
     /// <summary>
     /// The Datadog client-side Hangfire job filter.
     /// </summary>
+    [DuckReverseDelegation("Hangfire.Client.IClientFilter", "Hangfire.Core")]
     public sealed class DatadogHangfireClientFilter
     {
         /// <summary>
