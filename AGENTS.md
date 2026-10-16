@@ -252,14 +252,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 ## CI Scripts
 
-Every `curl` that runs in CI (GitHub Actions, Azure DevOps, GitLab, the scripts they call, and the Dockerfiles they build) must:
-- **Fail on HTTP errors**: pass `-f`/`--fail` (or `--fail-with-body` to keep the response for diagnostics). Without it, a 4xx/5xx exits 0 and the error page is used as if it were the real response.
-- **Retry transient errors**: pass `--retry <n> --retry-delay <s>`. In Azure DevOps use the shared `$(CURL_RETRY_FLAGS)` variable. Add `--retry-connrefused` only where the curl version supports it (7.52+, so not CentOS 7).
-- **Propagate the failure**: make sure the step/script stops when curl fails (`set -e`, `|| exit 1`, or the last command). In Windows PowerShell, `curl` is an alias of `Invoke-WebRequest`; call `curl.exe` and check `$LASTEXITCODE`.
-
-Example: `curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused -o out.zip "$url"`
-
-If a call is deliberately best-effort (e.g. polling an endpoint that 404s until ready, or a non-blocking upload), still use `-f` and retries, and handle the non-zero exit explicitly with a comment explaining why.
+- Every `curl` run in CI must fail on HTTP errors and retry (`curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused`; in Azure DevOps use `$(CURL_RETRY_FLAGS)`), and its failure must stop the step. In Windows PowerShell, `curl` is `Invoke-WebRequest`: call `curl.exe`.
 
 ## Commit & Pull Request Guidelines
 
