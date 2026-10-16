@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     /// <summary>
-    /// The site's assembly name hashes like System's. ASP.NET loads System domain-neutral, so looking up the NGen
+    /// The site's assembly name, `Samples.AspNet.NGenNameHash`, hashes to the same value as `System`. ASP.NET loads System domain-neutral, so looking up the NGen
     /// inliners of the site's instrumented methods also decodes NGen inline records of System methods, and decoding
     /// them needs a current AppDomain, which the native ReJIT worker doesn't have.
     /// Expected behavior: every request succeeds, and the site's methods are instrumented.
