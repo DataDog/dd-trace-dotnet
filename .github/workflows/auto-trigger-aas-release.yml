@@ -19,9 +19,15 @@ jobs:
           policy: dd-trace-dotnet.github.trigger-aas-release
 
       - name: Trigger AAS release
+        env:
+          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
         run: |
+          payload=$(jq -nc --arg version "$RELEASE_TAG" --arg is_prerelease "$IS_PRERELEASE" \
+            '{event_type: "dd-trace-dotnet-release", client_payload: {is_prerelease: $is_prerelease, version: $version}}')
           curl -fX POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer ${{ steps.octo-sts.outputs.token }}" \
+          -H "Authorization: Bearer $GH_TOKEN" \
           https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
-          -d '{"event_type": "dd-trace-dotnet-release", "client_payload": {"is_prerelease":"${{github.event.release.prerelease}}", "version":"${{github.event.release.tag_name}}" } }'
+          -d "$payload"
