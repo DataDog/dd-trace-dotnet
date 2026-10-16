@@ -89,3 +89,7 @@ WRAPPED_FUNCTION(int, connect, (int, sockfd)(const struct sockaddr*, addr)(sockl
 WRAPPED_FUNCTION(ssize_t, send, (int, sockfd)(const void*, buf)(size_t, len)(int, flags))
 WRAPPED_FUNCTION(ssize_t, sendto, (int, sockfd)(const void*, buf)(size_t, len)(int, flags)(const struct sockaddr*, dest_addr)(socklen_t, addrlen))
 WRAPPED_FUNCTION(ssize_t, sendmsg, (int, sockfd)(const struct msghdr*, msg)(int, flags))
+
+// fortified 
+WRAPPED_FUNCTION(int, __poll_chk, (struct pollfd*, fds)(nfds_t, nfds)(int, timeout)(size_t, fdslen))
+
