@@ -55,23 +55,24 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     {
         auto& location = locations[idx];
 
-        location.mapping = {};
-        location.mapping.filename = to_char_slice(frame.ModuleName);
-        location.function.filename = to_char_slice(frame.Filename);
+        location = {};
+        location.mapping_filename = to_poc_char_slice(frame.ModuleName);
+        location.function.filename = to_poc_char_slice(frame.Filename);
         location.line = frame.StartLine; // For now we only have the start line of the function.
-        location.function.name = to_char_slice(frame.Frame);
+        location.function.name = to_poc_char_slice(frame.Frame);
         location.address = 0; // TODO check if we can get that information in the provider
 
         ++idx;
     }
 
-    auto ffiSample = ddog_prof_Sample{};
-    ffiSample.locations = {locations.data(), nbFrames};
+    auto ffiSample = ddog_prof_sample{};
+    ffiSample.locations = locations.data();
+    ffiSample.locations_len = nbFrames;
 
     // Labels
     // PERF: since adding to a profile is done by only one thread (SamplesCollector worker thread),
     // we can reuse the same ffi labels vector for all samples.
-    static std::vector<ddog_prof_Label> ffiLabels;
+    static std::vector<ddog_prof_label> ffiLabels;
     auto const& labels = sample->GetLabels();
     ffiLabels.reserve(labels.size());
 
@@ -81,16 +82,16 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     };
 
     auto labelsVisitor = LabelsVisitor{
-        [](NumericLabel const& l) -> ddog_prof_Label {
+        [](NumericLabel const& l) -> ddog_prof_label {
             auto const& [name, value] = l;
-            return ddog_prof_Label {
+            return ddog_prof_label {
                 .key = {name.data(), name.size()},
                 .num = value
             };
         },
-        [](StringLabel const& l) -> ddog_prof_Label {
+        [](StringLabel const& l) -> ddog_prof_label {
             auto const& [name, value] = l;
-            return ddog_prof_Label {
+            return ddog_prof_label {
                 .key = {name.data(), name.size()},
                 .str = {value.data(), value.size()}
             };
@@ -103,11 +104,13 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         ffiLabels.push_back(ffiLabel);
     }
 
-    ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};
+    ffiSample.labels = ffiLabels.data();
+    ffiSample.labels_len = ffiLabels.size();
 
     // values
     auto const& values = sample->GetValues();
-    ffiSample.values = {values.data(), values.size()};
+    ffiSample.values = values.data();
+    ffiSample.values_len = values.size();
 
     // add timestamp
     auto timestamp = 0ns;
@@ -118,36 +121,34 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         timestamp = sample->GetTimeStamp();
     }
 
-    auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp.count());
-    if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto add_res = ddog_prof_profile_add(profile, &ffiSample, timestamp.count());
+    if (add_res != DDOG_OK)
     {
-        return make_error(add_res.err);
+        return make_error(add_res);
     }
     return make_success();
 }
 
 void Profile::SetEndpoint(int64_t traceId, std::string const& endpoint)
 {
-    auto endpointName = to_char_slice(endpoint);
+    auto endpointName = to_poc_char_slice(endpoint);
 
-    auto res = ddog_prof_Profile_set_endpoint(*_impl, traceId, endpointName);
-    if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto res = ddog_prof_profile_set_endpoint(*_impl, traceId, endpointName);
+    if (res != DDOG_OK)
     {
-        // this is needed even though we already logged: to free the allocated error message
-        auto error = libdatadog::make_error(res.err);
+        auto error = libdatadog::make_error(res);
         LogOnce(Info, "Unable to associate endpoint '", endpoint, "' to traced id '", traceId, "': ", error.message());
     }
 }
 
 void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
 {
-    auto endpointName = to_char_slice(endpoint);
+    auto endpointName = to_poc_char_slice(endpoint);
 
-    auto res = ddog_prof_Profile_add_endpoint_count(*_impl, endpointName, 1);
-    if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto res = ddog_prof_profile_add_endpoint_count(*_impl, endpointName, 1);
+    if (res != DDOG_OK)
     {
-        // this is needed even though we already logged: to free the allocated error message
-        auto error = libdatadog::make_error(res.err);
+        auto error = libdatadog::make_error(res);
         LogOnce(Info, "Unable to add count for endpoint '", endpoint, "': ", error.message());
     }
 }
@@ -155,18 +156,17 @@ void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
 libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
                                                           uint64_t sampled, uint64_t real)
 {
-    ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
-    ddog_CharSlice labelName_slice = to_char_slice(labelName);
-    ddog_CharSlice groupName_slice = to_char_slice(groupName);
+    ddog_charslice labelName_slice = to_poc_char_slice(labelName);
+    ddog_charslice groupName_slice = to_poc_char_slice(groupName);
 
-    auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
-    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto upscalingRuleAdd = ddog_prof_profile_add_upscaling_rule_proportional(*_impl, offsets.data(), offsets.size(), labelName_slice, groupName_slice, sampled, real);
+    if (upscalingRuleAdd != DDOG_OK)
     {
         // not great, we create 2 Success
         // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
         // - the second one is to provide the caller with the actual error.
         // TODO: have a make_error(<format>, vars, ...) approach ?
-        auto error = make_error(upscalingRuleAdd.err);
+        auto error = make_error(upscalingRuleAdd);
         std::stringstream ss;
         ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sampled) << "/" << std::to_string(real) << "]:"
            << error.message();
@@ -179,14 +179,13 @@ libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintp
 libdatadog::Success Profile::AddUpscalingRulePoisson(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
                                                           uintptr_t sumValueOffset, uintptr_t countValueOffset, uint64_t sampling_distance)
 {
-    ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
-    ddog_CharSlice labelName_slice = to_char_slice(labelName);
-    ddog_CharSlice groupName_slice = to_char_slice(groupName);
+    ddog_charslice labelName_slice = to_poc_char_slice(labelName);
+    ddog_charslice groupName_slice = to_poc_char_slice(groupName);
 
-    auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_poisson(*_impl, offsets_slice, labelName_slice, groupName_slice, sumValueOffset, countValueOffset, sampling_distance);
-    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto upscalingRuleAdd = ddog_prof_profile_add_upscaling_rule_poisson(*_impl, offsets.data(), offsets.size(), labelName_slice, groupName_slice, sumValueOffset, countValueOffset, sampling_distance);
+    if (upscalingRuleAdd != DDOG_OK)
     {
-        auto error = make_error(upscalingRuleAdd.err);
+        auto error = make_error(upscalingRuleAdd);
         std::stringstream ss;
         ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sumValueOffset) << ", " << std::to_string(countValueOffset) << ", " << std::to_string(sampling_distance) << "]:"
            << error.message();
@@ -204,12 +203,12 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
         return nullptr;
     }
 
-    std::vector<ddog_prof_SampleType> samplesTypes;
+    std::vector<ddog_prof_value_type> samplesTypes;
     samplesTypes.reserve(valueTypes.size());
 
     for (auto const& type : valueTypes)
     {
-        ddog_prof_SampleType sampleType;
+        ddog_prof_value_type sampleType;
         if (!TryCreateSampleType(type.Name, type.Unit, sampleType))
         {
             Log::Error("Unsupported libdatadog sample type: ", type.Name, "/", type.Unit);
@@ -219,31 +218,30 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
         samplesTypes.push_back(sampleType);
     }
 
-    ddog_prof_Slice_SampleType sample_types = {samplesTypes.data(), samplesTypes.size()};
-
-    ddog_prof_SampleType periodSampleType;
+    ddog_prof_value_type periodSampleType;
     if (!TryCreateSampleType(periodType, periodUnit, periodSampleType))
     {
         Log::Error("Unsupported libdatadog period type: ", periodType, "/", periodUnit);
         return nullptr;
     }
 
-    auto period = ddog_prof_Period{};
-    period.sample_type = periodSampleType;
+    auto period = ddog_prof_period{};
+    period.type = periodSampleType;
     period.value = 1;
 
-    Log::Debug("Creating libdatadog profile with ", samplesTypes.size(), " sample type(s), slice ptr=", (void*)sample_types.ptr, ", len=", sample_types.len);
+    Log::Debug("Creating libdatadog profile with ", samplesTypes.size(), " sample type(s), ptr=", (void*)samplesTypes.data());
 
-    auto res = ddog_prof_Profile_new(sample_types, &period);
-    if (res.tag == DDOG_PROF_PROFILE_NEW_RESULT_ERR)
+    ddog_prof_profile* rawProfile = nullptr;
+    auto res = ddog_prof_profile_new(samplesTypes.data(), samplesTypes.size(), &period, &rawProfile);
+    if (res != DDOG_OK)
     {
-        auto error = libdatadog::make_error(res.err);
-        Log::Error("ddog_prof_Profile_new failed: ", error.message(),
+        auto error = libdatadog::make_error(res);
+        Log::Error("ddog_prof_profile_new failed: ", error.message(),
                    " (sample_types count=", samplesTypes.size(),
                    ", period=", periodType, "/", periodUnit, ")");
         return nullptr;
     }
-    return std::make_unique<ProfileImpl>(res.ok);
+    return std::make_unique<ProfileImpl>(rawProfile);
 }
 
 std::string const& Profile::GetApplicationName() const

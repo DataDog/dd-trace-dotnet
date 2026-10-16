@@ -10,28 +10,28 @@
 
 extern "C"
 {
-#include "datadog/common.h"
-#include "datadog/profiling.h"
+#include "datadog_poc/common.h"
+#include "datadog_poc/profiling.h"
 }
 
 struct EncodedProfile
 {
-    EncodedProfile(ddog_prof_EncodedProfile* p) :
+    EncodedProfile(ddog_prof_encoded_profile* p) :
         _profile(p)
     {
     }
 
     struct EncodedProfileDeleter
     {
-        void operator()(ddog_prof_EncodedProfile* o)
+        void operator()(ddog_prof_encoded_profile* o)
         {
-            ddog_prof_EncodedProfile_drop(o);
+            ddog_prof_encoded_profile_drop(o);
         }
     };
 
-    using encoded_profile_ptr = std::unique_ptr<ddog_prof_EncodedProfile, EncodedProfileDeleter>;
+    using encoded_profile_ptr = std::unique_ptr<ddog_prof_encoded_profile, EncodedProfileDeleter>;
 
-    operator ddog_prof_EncodedProfile*() const
+    operator ddog_prof_encoded_profile*() const
     {
         return _profile.get();
     }
