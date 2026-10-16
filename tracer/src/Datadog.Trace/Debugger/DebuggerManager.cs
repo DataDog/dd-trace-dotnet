@@ -5,6 +5,9 @@
 
 using System;
 using System.IO;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -56,6 +59,7 @@ namespace Datadog.Trace.Debugger
         private TracerSettings.SettingsManager? _subscribedSettingsManager;
         private IDisposable? _tracerSettingsSubscription;
         private SymDbRemoteConfig? _symDbRemoteConfig;
+        private int _buildTimeInstrumentationWarningLogged;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
@@ -70,6 +74,16 @@ namespace Datadog.Trace.Debugger
         }
 
         internal static DebuggerManager Instance => _lazyInstance.Value;
+
+        // Dynamic Instrumentation and Exception Replay instrument methods at runtime (the native tracer's ReJIT), and the
+        // Symbol Database reads the assemblies' files: NativeAOT applications have neither. A constant for ILC, which leaves
+        // their code out of the application.
+        internal static bool RuntimeDebuggerProductsSupported
+#if NET6_0_OR_GREATER
+            => RuntimeFeature.IsDynamicCodeSupported;
+#else
+            => true;
+#endif
 
         internal DebuggerSettings DebuggerSettings { get; private set; }
 
@@ -230,8 +244,13 @@ namespace Datadog.Trace.Debugger
             OneTimeSetup(tracerSettings);
             EnsureTracerSettingsSubscription(tracerSettings);
 
-            SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(tracerSettings, newDebuggerSettings);
+            // Without the native tracer (applications instrumented at build time, NativeAOT), only Code Origin for spans works.
+            if (!RuntimeDebuggerProductsSupported || ClrProfiler.Instrumentation.IsBuildTimeInstrumented)
+            {
+                return UpdateCodeOriginOnly(newDebuggerSettings);
+            }
 
+            SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(tracerSettings, newDebuggerSettings);
             lock (_syncLock)
             {
                 if (_processExit.Task.IsCompleted)
@@ -245,6 +264,35 @@ namespace Datadog.Trace.Debugger
             }
 
             return DebouncedUpdateDynamicInstrumentationAsync(tracerSettings, newDebuggerSettings);
+        }
+
+        private Task UpdateCodeOriginOnly(DebuggerSettings newDebuggerSettings)
+        {
+            WarnUnavailableProducts(newDebuggerSettings);
+            lock (_syncLock)
+            {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return _processExit.Task;
+                }
+
+                DebuggerSettings = newDebuggerSettings;
+                SetCodeOriginState(newDebuggerSettings);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private void WarnUnavailableProducts(DebuggerSettings debuggerSettings)
+        {
+            var requested = debuggerSettings.DynamicInstrumentationEnabled
+                         || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true
+                         || ExceptionReplaySettings.Enabled
+                         || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true;
+            if (requested && Interlocked.Exchange(ref _buildTimeInstrumentationWarningLogged, 1) == 0)
+            {
+                Log.Warning("Dynamic Instrumentation and Exception Replay are not supported yet in applications instrumented at build time (NativeAOT): they instrument methods at runtime.");
+            }
         }
 
         private void OneTimeSetup(TracerSettings tracerSettings)
@@ -856,13 +904,18 @@ namespace Datadog.Trace.Debugger
                 Log.Debug(ex, "Shutdown task for DebuggerManager is running with exception");
             }
 
-            SafeDisposal.New()
-                        .Add(_tracerSettingsSubscription)
-                        .Add(Volatile.Read(ref _symDbRemoteConfig))
+            var disposal = SafeDisposal.New().Add(_tracerSettingsSubscription);
+
+            // Without them (NativeAOT), they're never created: Add<T> would make ILC compile their code (it assumes T is constructed).
+            if (RuntimeDebuggerProductsSupported)
+            {
+                disposal.Add(Volatile.Read(ref _symDbRemoteConfig))
                         .Add(_dynamicInstrumentation)
-                        .Add(ExceptionReplay)
-                        .Execute(DebuggerGlobalRateLimiter.TryDisposeInstance, "disposing global debugger rate limiter")
-                        .DisposeAll();
+                        .Add(ExceptionReplay);
+            }
+
+            disposal.Execute(DebuggerGlobalRateLimiter.TryDisposeInstance, "disposing global debugger rate limiter")
+                    .DisposeAll();
         }
     }
 }
