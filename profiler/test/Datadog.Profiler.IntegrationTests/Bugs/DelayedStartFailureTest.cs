@@ -58,7 +58,7 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
 
             // 1. the failure path really ran (otherwise the assertions below are vacuous)
             AssertLogContains(logDir, DelayedStartFailureLog);
-            AssertLogContains(logDir, "waiting for the watcher thread to start");
+            AssertLogContains(logDir, "[TEST ONLY] StackSamplerLoopManager::RunWatcher - the watcher start timeout is 0: not waiting for the watcher thread and failing the start.");
 
             // 2. the profiler stayed stopped
             agent.NbCallsOnProfilingEndpoint.Should().Be(0, "no profile can be exported once the delayed start failed");

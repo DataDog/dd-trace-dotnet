@@ -116,7 +116,7 @@ bool StackSamplerLoopManager::RunWatcher()
     // This is for test purposes only.
     if (_watcherStartTimeout <= 0ms)
     {
-        Log::Error("StackSamplerLoopManager::RunWatcher - the watcher start timeout is 0: "
+        Log::Error("[TEST ONLY] StackSamplerLoopManager::RunWatcher - the watcher start timeout is 0: "
                    "not waiting for the watcher thread and failing the start.");
         return false;
     }
