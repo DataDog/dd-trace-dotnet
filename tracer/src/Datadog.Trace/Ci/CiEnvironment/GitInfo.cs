@@ -7,6 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Security;
 using Datadog.Trace.Logging;
 
@@ -16,7 +19,8 @@ internal sealed class GitInfo : IGitInfo
 {
     private const string DatadogTraceToolsRunnerAssembly = "Datadog.Trace.Tools.Runner.dll";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitInfo));
-    private static readonly string? RuntimeFolder = Path.GetDirectoryName(typeof(string).Assembly.Location);
+    // The folder of the shared runtime, which isn't the application's: NativeAOT and single-file applications have none.
+    private static readonly string? RuntimeFolder = GetRuntimeFolder();
     private static IGitInfoProvider[] _gitInfoProviders = [
         GitCommandGitInfoProvider.Instance,
     ];
@@ -125,7 +129,7 @@ internal sealed class GitInfo : IGitInfo
         List<string> searchPaths = new();
 
         var baseDirectory = AppContext.BaseDirectory;
-        if (!baseDirectory.Contains("/dotnet/sdk") && !string.IsNullOrWhiteSpace(RuntimeFolder) && !baseDirectory.Contains(RuntimeFolder))
+        if (!baseDirectory.Contains("/dotnet/sdk") && (RuntimeFolder is null || !baseDirectory.Contains(RuntimeFolder)))
         {
             if (!File.Exists(Path.Combine(baseDirectory, DatadogTraceToolsRunnerAssembly)))
             {
@@ -239,5 +243,17 @@ internal sealed class GitInfo : IGitInfo
         }
 
         return null;
+    }
+
+    private static string? GetRuntimeFolder()
+    {
+#if NET6_0_OR_GREATER
+        if (!RuntimeFeature.IsDynamicCodeSupported)
+        {
+            return null;
+        }
+#endif
+        var location = typeof(string).Assembly.Location;
+        return string.IsNullOrWhiteSpace(location) ? null : Path.GetDirectoryName(location);
     }
 }

@@ -273,6 +273,25 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             inode1.Should().BeGreaterThan(0);
             inode2.Should().Be(inode1);
         }
+
+#if NET5_0_OR_GREATER
+        [SkippableFact]
+        public void Parse_TryGetInode_ShouldGetSameValueFromStatxAndProcess()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+            string currentDirectory = Environment.CurrentDirectory;
+            bool success1 = ContainerMetadata.TryGetInodeUsingStat(currentDirectory, out long inode1);
+            bool success2 = ContainerMetadata.TryGetInodeUsingStatx(currentDirectory, out long inode2);
+
+            // statx needs glibc 2.28+ or musl 1.2.5+, and a seccomp profile that allows it (TryGetInode falls back to stat).
+            Skip.IfNot(success2, "statx isn't available");
+            success1.Should().BeTrue();
+            inode1.Should().BeGreaterThan(0);
+            inode2.Should().Be(inode1);
+        }
+#endif
     }
 }
 

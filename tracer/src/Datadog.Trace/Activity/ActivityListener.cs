@@ -8,6 +8,9 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
+#if NET6_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.DuckTypes;
@@ -15,6 +18,16 @@ using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+#if NET6_0_OR_GREATER
+using SystemActivity = System.Diagnostics.Activity;
+using SystemActivityCreationOptionsOfContext = System.Diagnostics.ActivityCreationOptions<System.Diagnostics.ActivityContext>;
+using SystemActivityCreationOptionsOfString = System.Diagnostics.ActivityCreationOptions<string>;
+using SystemActivityIdFormat = System.Diagnostics.ActivityIdFormat;
+using SystemActivityKind = System.Diagnostics.ActivityKind;
+using SystemActivityListener = System.Diagnostics.ActivityListener;
+using SystemActivitySamplingResult = System.Diagnostics.ActivitySamplingResult;
+using SystemActivitySource = System.Diagnostics.ActivitySource;
+#endif
 
 namespace Datadog.Trace.Activity
 {
@@ -96,6 +109,16 @@ namespace Datadog.Trace.Activity
             {
                 return;
             }
+
+#if NET6_0_OR_GREATER
+            // Without dynamic code (NativeAOT), the delegates below can't be emitted; but the runtime's DiagnosticSource is
+            // then the only one, and its API is used directly.
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                InitializeWithoutDynamicCode();
+                return;
+            }
+#endif
 
             // Try to resolve System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource
             var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource", throwOnError: false);
@@ -193,6 +216,40 @@ namespace Datadog.Trace.Activity
                 }
             }
         }
+
+#if NET6_0_OR_GREATER
+        /// <summary>
+        /// The same listener as <see cref="CreateActivityListenerInstance"/> and the same delegates, with the
+        /// System.Diagnostics API instead of emitted code.
+        /// </summary>
+        private static void InitializeWithoutDynamicCode()
+        {
+            Log.Information("DiagnosticSource: {DiagnosticSourceAssemblyNameFullName}", typeof(SystemActivity).Assembly.GetName().FullName);
+            _getCurrentActivity = static () => SystemActivity.Current!;
+            SystemActivity.DefaultIdFormat = SystemActivityIdFormat.W3C;
+
+            // The setter of Activity.Kind is internal.
+            var kindProperty = typeof(SystemActivity).GetProperty(nameof(SystemActivity.Kind));
+            if (kindProperty is not null)
+            {
+                _setKindProperty = (activity, kind) => kindProperty.SetValue(activity, (SystemActivityKind)kind);
+            }
+
+            var activityListener = new SystemActivityListener
+            {
+                ActivityStarted = static activity => ActivityListenerHandler.OnActivityStarted(activity.DuckCast<IActivity6>()!),
+                ActivityStopped = static activity => ActivityListenerHandler.OnActivityStopped(activity.DuckCast<IActivity6>()!),
+                Sample = static (ref SystemActivityCreationOptionsOfContext options) => (SystemActivitySamplingResult)ActivityListenerHandler.OnSample(),
+                SampleUsingParentId = static (ref SystemActivityCreationOptionsOfString options) => (SystemActivitySamplingResult)ActivityListenerHandler.OnSampleUsingParentId(),
+                ShouldListenTo = static source => ActivityListenerHandler.OnShouldListenTo(source.DuckCast<IActivitySource>()!),
+            };
+            Log.Information("Activity listener: {ActivityListenerType}", typeof(SystemActivityListener).AssemblyQualifiedName ?? "(null)");
+            SystemActivitySource.AddActivityListener(activityListener);
+            _activityListenerInstance = activityListener;
+
+            ActivityHandlerCommon.StartReconciliationLoop();
+        }
+#endif
 
         public static void StopListeners()
         {
