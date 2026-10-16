@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.RabbitMQ
             await using var tracer = CreateDsmTracer(writer);
             var publishedAt = DateTimeOffset.UtcNow - TimeInQueue;
             var properties = new FakeBasicProperties(ToAmqpUnixTime(publishedAt, unit)).DuckCast<IReadOnlyBasicProperties>();
-            var body = new ReadOnlyMemory<byte>(new byte[10]).DuckCast<IBody>();
+            var body = new FakeBody().DuckCast<IBody>();
 
             // TBody is constrained to IDuckType, so only the runtime duck proxy type can be the type argument.
             var state = (CallTargetState)typeof(RabbitMQIntegration)
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.RabbitMQ
             var writer = new CapturingAgentWriter();
             await using var tracer = CreateDsmTracer(writer);
             var publishedAt = DateTimeOffset.UtcNow - TimeInQueue;
-            var result = new FakeBasicGetResult(new FakeBasicProperties(ToAmqpUnixTime(publishedAt, unit)), new ReadOnlyMemory<byte>(new byte[10]))
+            var result = new FakeBasicGetResult(new FakeBasicProperties(ToAmqpUnixTime(publishedAt, unit)), new FakeBody())
                .DuckCast<IBasicGetResult>();
 
             var instance = new object();
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.RabbitMQ
         // Same member shape as the parts of RabbitMQ.Client's BasicGetResult the integration reads
         public class FakeBasicGetResult
         {
-            public FakeBasicGetResult(FakeBasicProperties basicProperties, ReadOnlyMemory<byte> body)
+            public FakeBasicGetResult(FakeBasicProperties basicProperties, FakeBody body)
             {
                 BasicProperties = basicProperties;
                 Body = body;
@@ -150,7 +150,14 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             public FakeBasicProperties BasicProperties { get; }
 
-            public ReadOnlyMemory<byte> Body { get; }
+            public FakeBody Body { get; }
+        }
+
+        // Stands in for RabbitMQ.Client's ReadOnlyMemory<byte> body; ReadOnlyMemory<T> is ambiguous here on
+        // netcoreapp2.1 and .NET Framework because Datadog.Trace vendors System.Memory.
+        public class FakeBody
+        {
+            public int Length => 10;
         }
 
         private class CapturingAgentWriter : IAgentWriter
