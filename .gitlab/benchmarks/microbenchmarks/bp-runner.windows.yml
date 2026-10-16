@@ -9,7 +9,8 @@
 #
 # Three experiments run in parallel:
 #   - trace-0: Benchmarks.Trace (9 benchmarks) on NUMA node 0, cores 0-17
-#   - trace-1: Benchmarks.Trace (11 benchmarks) on NUMA node 1, cores 0-21
+#   - trace-1: Benchmarks.Trace (11 benchmarks) on NUMA node 1, cores 0-3 and 8-23 (see the cpus
+#              comment on that experiment for why 4-7 are excluded)
 #   - otel:    OpenTelemetry benchmarks on NUMA node 0, cores 18-23
 #     - This experiment has two experiment steps that run sequentially (because we don't have enough CPUs): 
 #         - Step 1: InstrumentedApi (always);
@@ -171,9 +172,19 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0x3FFFFF"
+        # Node 1 CPUs 4-7 are deliberately excluded: 0xFFFFFF (all 24 cores) minus bits 4-7.
+        #
+        # Builds pinned to those four CPUs crash csc.exe with STATUS_HEAP_CORRUPTION. It reproduced in
+        # four consecutive pipelines, on a fresh EC2 instance each time, always in whichever items
+        # bp-runner assigned CPUs 4,5 and 6,7 - reordering the item list moved the benchmarks but not
+        # the failures. Node 0 hands out its own CPUs 4-7 and has never failed, so it is specific to
+        # node 1. Excluding them fixed it. Needs investigation
+        #
+        # Costs a second wave: 20 cores / 2 = 10 groups for 11 items, so the benchmark phase takes
+        # roughly 40 min rather than 21. Well inside the 2h job timeout.
+        cpus: "1,0xFFFF0F"
         parallelize:
-          # 11 Benchmarks.Trace benchmarks on NUMA node 1, cores 0-21 (11 × 2 = 22 CPUs)
+          # 11 Benchmarks.Trace benchmarks on NUMA node 1 (10 x 2 CPUs, run in two waves)
           items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
