@@ -4644,10 +4644,10 @@ stages:
           WORKFLOW="create-system-test-docker-base-images-master.yml"
           if [ "$(Build.Reason)" = "PullRequest" ]; then
             WORKFLOW="create-system-test-docker-base-images-pr.yml"
-            LABELS=$(curl -s $(CURL_RETRY_FLAGS) \
+            PR_JSON=$(curl -fsS $(CURL_RETRY_FLAGS) \
             -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)" \
-            | jq -r '.labels[].name')
+            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)") || exit 1
+            LABELS=$(echo "$PR_JSON" | jq -r '.labels[].name')
 
             if echo "$LABELS" | grep -q "docker_image_artifacts"; then
               BRANCH_NAME="$PR_SOURCE_BRANCH"
@@ -4664,7 +4664,7 @@ stages:
           fi
 
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/$WORKFLOW with ref=$REF and azdo_build_id=$(Build.BuildId)"
-          curl \
+          curl --fail \
             $(CURL_RETRY_FLAGS) \
             -X POST \
             -H "Accept: application/vnd.github+json" \
@@ -5684,7 +5684,7 @@ stages:
             done
 
             echo "Sending initialisation request"
-            $(CURL_COMMAND) --fail "http://localhost:8126$(START_ENDPOINT)"
+            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) "http://localhost:8126$(START_ENDPOINT)"
           displayName: run test agent
           env:
             ENABLED_CHECKS: trace_count_header,meta_tracer_version_header,trace_content_length
@@ -5713,17 +5713,18 @@ stages:
           displayName: Run the app
 
         - script: |
+            set -e
             echo "Dumping traces"
-            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
+            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) -o $(snapshotOutputDir)/smoke_test_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
 
             echo "Dumping stats"
-            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
+            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) -o $(snapshotOutputDir)/smoke_test_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
 
             echo "Dumping all requests"
-            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
+            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) -o $(snapshotOutputDir)/smoke_test_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
 
             echo "Verifying snapshot session (fail on mis-match)"
-            $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
+            $(CURL_COMMAND) --fail-with-body $(CURL_RETRY_FLAGS) "http://localhost:8126$(VERIFY_ENDPOINT)"
           displayName: check snapshots
 
         - publish: artifacts/build_data

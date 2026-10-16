@@ -16,7 +16,7 @@ mkdir -p $target_dir
 if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
   # Release pipeline
   echo "Downloading artifacts from Azure"
-  curl --location --fail \
+  curl --location --fail --retry 5 --retry-delay 2 --retry-connrefused \
     --output $target_dir/serverless-artifacts.zip \
     "https://apmdotnetbuildstorage.blob.core.windows.net/apm-dotnet-ci-artifacts-master/${CI_COMMIT_SHA}/serverless-artifacts.zip"
 

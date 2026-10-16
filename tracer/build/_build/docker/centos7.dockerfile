@@ -61,18 +61,18 @@ RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
         libubsan1 \
         nfpm
 
-RUN curl -Ol https://raw.githubusercontent.com/llvm-mirror/clang-tools-extra/master/clang-tidy/tool/run-clang-tidy.py \
+RUN curl -fsSLO --retry 5 --retry-delay 2 https://raw.githubusercontent.com/llvm-mirror/clang-tools-extra/master/clang-tidy/tool/run-clang-tidy.py \
     && mv run-clang-tidy.py /usr/bin/ \
     && chmod +x /usr/bin/run-clang-tidy.py \
     && ln -s /usr/bin/run-clang-tidy.py /usr/bin/run-clang-tidy
 
 # Install CppCheck
-RUN curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/cppcheck-2.7-1.el7.x86_64.rpm --output cppcheck-2.7-1.el7.x86_64.rpm \
+RUN curl -fsSL --retry 5 --retry-delay 2 https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/cppcheck-2.7-1.el7.x86_64.rpm --output cppcheck-2.7-1.el7.x86_64.rpm \
     && echo '7b1e2c6abf34cfbc9d542ea466f2fb752ec2cee2ef92297271c8c8325cf8d16e29d1c32784da0ccc6bc4e9bee8647b14daa8568f4e2d1fd1626a584dc4f2419a cppcheck-2.7-1.el7.x86_64.rpm' | sha512sum --check \
     && sudo yum localinstall -y cppcheck-2.7-1.el7.x86_64.rpm
 
 # Install the .NET SDK
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+RUN curl -fsSL --retry 5 --retry-delay 2 https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \

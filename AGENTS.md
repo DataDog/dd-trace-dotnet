@@ -250,6 +250,10 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 - **`docs/development/TracerDebugging.md`** — Local debugging techniques, launchSettings.json configuration, $(SolutionDir) path issues, IDE-specific tips, and troubleshooting common tracer loading problems
 
+## CI Scripts
+
+- Every `curl` run in CI must fail on HTTP errors and retry (`curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused`; in Azure DevOps use `$(CURL_RETRY_FLAGS)`), and its failure must stop the step. In Windows PowerShell, `curl` is `Invoke-WebRequest`: call `curl.exe`.
+
 ## Commit & Pull Request Guidelines
 
 - Commits: imperative mood, optional `[Area]` prefix (e.g. `[Debugger]`, `[SymDB]`). Keep messages concise — avoid full diffs or extensive explanation.
