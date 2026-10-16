@@ -213,6 +213,45 @@ public partial class DuckTypeAotAdditionalParityTests
             Mapping(typeof(IOrderedFailureProxy), typeof(NamedWithoutMethodTarget)));
     }
 
+    [Fact]
+    public void CompatibilityVerificationShouldOnlyAcceptReplayedDynamicFailures()
+    {
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var assemblyName = typeof(DuckTypeAotAdditionalParityTests).Assembly.GetName().Name!;
+            var replayedFailure = Mapping(typeof(IOrderedFailureProxy), typeof(NamedWithoutMethodTarget));
+            Verify(replayedFailure).Should().Be(0, "the registry fails like dynamic duck typing");
+
+            // A target the generator can't find isn't a dynamic duck typing failure.
+            var missingTarget = new DuckTypeAotMapping(
+                typeof(INamedProxy).FullName!,
+                assemblyName,
+                typeof(INamedProxy).Namespace + ".MissingTargetType",
+                assemblyName,
+                DuckTypeAotMappingMode.Forward,
+                DuckTypeAotMappingSource.MapFile);
+            Verify(replayedFailure, missingTarget).Should().Be(1);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+
+        int Verify(params DuckTypeAotMapping[] mappings)
+        {
+            var mapPath = WriteMapFile(directory, mappings);
+            var options = CreateGenerateOptions(directory, mapPath, targetFolders: []);
+            DuckTypeAotGenerateProcessor.Process(options).Should().Be(0);
+            return DuckTypeAotVerifyCompatProcessor.Process(
+                DuckTypeAotVerifyCompatOptions.CreateCanonicalMapContract(
+                    compatReportPath: options.OutputPath + ".compat.md",
+                    compatMatrixPath: options.OutputPath + ".compat.json",
+                    mapFilePath: mapPath,
+                    failureMode: DuckTypeAotFailureMode.Strict));
+        }
+    }
+
     [Theory]
     // The target overrides object.ToString: the proxy forwards it.
     [InlineData("overridden", "target")]

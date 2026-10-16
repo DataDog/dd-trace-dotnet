@@ -33,6 +33,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         public void Dispose()
         {
             DuckType.ResetRuntimeModeForTests();
+            DuckTypeTestRuntimeBootstrap.ReinitializeAotRegistryForTests();
         }
 
         [Fact]
