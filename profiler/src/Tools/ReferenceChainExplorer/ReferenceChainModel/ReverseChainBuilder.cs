@@ -6,222 +6,46 @@
 namespace ReferenceChainModel;
 
 /// <summary>
-/// Builds reverse reference chains from the forward tree for a selected type.
+/// Indexes the forward tree and builds reverse reference chains for selected types.
 /// Given chains A → B → C and F → G → C, selecting C produces:
 /// C
 /// ├── B → A [root]
 /// └── G → F [root]
 /// </summary>
-public static class ReverseChainBuilder
+public sealed class ReverseChainBuilder
 {
     private static readonly string[] CategoryDisplayOrder = ["P", "H", "F", "K", "S", "W", "R", "O", "?"];
+
+    private readonly List<Occurrence> _occurrences = [];
+    private readonly Dictionary<int, List<int>> _occurrencesByType = [];
+    private readonly Dictionary<int, (long Count, long Size)> _typeStats = [];
+
+    public ReverseChainBuilder(ReferenceTree tree)
+    {
+        foreach (var root in tree.Roots)
+        {
+            IndexNode(root, parentIndex: -1, root.CategoryCode, root.FieldName);
+        }
+
+        TypeSummaries = _typeStats
+                       .Select(entry => new TypeSummary(entry.Key, entry.Value.Count, entry.Value.Size))
+                       .ToList();
+    }
+
+    /// <summary>
+    /// Gets the per-type statistics collected while indexing the tree.
+    /// </summary>
+    public IReadOnlyList<TypeSummary> TypeSummaries { get; }
 
     /// <summary>
     /// Build reverse chains for the given type index.
     /// Returns one <see cref="ReverseChainNode"/> with all chains that reach the selected type, reversed.
     /// </summary>
-    public static IReadOnlyList<ReverseChainNode> Build(ReferenceTree tree, int selectedTypeIndex)
+    public IReadOnlyList<ReverseChainNode> Build(int selectedTypeIndex)
     {
-        // Build a parent adjacency map from the forward tree.
-        var parentMap = new Dictionary<int, List<ParentInfo>>();
-        var typeStats = new Dictionary<int, (long Count, long Size)>();
-        foreach (var root in tree.Roots)
-        {
-            var rootNode = (ReferenceRootNode)root;
-            CollectParents(root, parentMap, isRoot: true, rootNode.CategoryCode, rootNode.FieldName);
-            AggregateTypeStats(root, typeStats);
-        }
-
-        // Check if the type is a root with no parents referencing it
-        if (!parentMap.ContainsKey(selectedTypeIndex))
-        {
-            var categoryCodes = new HashSet<string>(StringComparer.Ordinal);
-            string? fieldName = null;
-
-            foreach (var root in tree.Roots)
-            {
-                if (root.TypeIndex == selectedTypeIndex)
-                {
-                    var rootNode = (ReferenceRootNode)root;
-                    categoryCodes.Add(rootNode.CategoryCode);
-                    fieldName ??= rootNode.FieldName;
-                }
-            }
-
-            if (categoryCodes.Count > 0)
-            {
-                typeStats.TryGetValue(selectedTypeIndex, out var stats);
-                var allCategories = string.Join(",", OrderCategoriesForDisplay(categoryCodes));
-                return
-                [
-                    new ReverseChainNode(
-                        selectedTypeIndex,
-                        stats.Count,
-                        stats.Size,
-                        isRoot: true,
-                        allCategories,
-                        parents: Array.Empty<ReverseChainNode>(),
-                        fieldName)
-                ];
-            }
-
-            return Array.Empty<ReverseChainNode>();
-        }
-
-        var visited = new HashSet<int>();
-        var cache = new Dictionary<int, ReverseChainNode>();
-        var reverseNode = BuildReverseNode(selectedTypeIndex, parentMap, tree, typeStats, visited, cache);
-        return reverseNode is not null ? [reverseNode] : Array.Empty<ReverseChainNode>();
-    }
-
-    private static void CollectParents(
-        ReferenceNode node,
-        Dictionary<int, List<ParentInfo>> parentMap,
-        bool isRoot,
-        string? categoryCode,
-        string? fieldName)
-    {
-        foreach (var child in node.Children)
-        {
-            if (!parentMap.TryGetValue(child.TypeIndex, out var parents))
-            {
-                parents = [];
-                parentMap[child.TypeIndex] = parents;
-            }
-
-            // Avoid duplicate parent entries for the same parent type.
-            // When a type appears as both a root and a non-root parent (e.g.,
-            // ReferenceChainScenarios is a direct root AND a child of ComputerService),
-            // prefer the non-root entry because its reverse chain will provide the
-            // full path up to the actual root.
-            int existingIdx = -1;
-            for (int i = 0; i < parents.Count; i++)
-            {
-                if (parents[i].TypeIndex == node.TypeIndex)
-                {
-                    existingIdx = i;
-                    break;
-                }
-            }
-
-            if (existingIdx >= 0)
-            {
-                if (parents[existingIdx].IsRoot && !isRoot)
-                {
-                    // Replace root entry with non-root entry (richer chain context)
-                    parents[existingIdx] = new ParentInfo(
-                        node.TypeIndex,
-                        node.InstanceCount,
-                        node.TotalSize,
-                        isRoot,
-                        categoryCode,
-                        fieldName);
-                }
-            }
-            else
-            {
-                parents.Add(new ParentInfo(
-                    node.TypeIndex,
-                    node.InstanceCount,
-                    node.TotalSize,
-                    isRoot,
-                    categoryCode,
-                    fieldName));
-            }
-
-            // Recurse into children (they are not roots)
-            CollectParents(child, parentMap, isRoot: false, categoryCode: null, fieldName: null);
-        }
-    }
-
-    private static ReverseChainNode? BuildReverseNode(
-        int typeIndex,
-        Dictionary<int, List<ParentInfo>> parentMap,
-        ReferenceTree tree,
-        Dictionary<int, (long Count, long Size)> typeStats,
-        HashSet<int> visited,
-        Dictionary<int, ReverseChainNode> cache)
-    {
-        // Cycle guard: type already in current path
-        if (!visited.Add(typeIndex))
-        {
-            return null;
-        }
-
-        // Memoization: reuse cached node if safe (would not create a cycle)
-        if (cache.TryGetValue(typeIndex, out var cached))
-        {
-            visited.Remove(typeIndex);
-            if (!SubtreeContainsAny(cached, visited))
-            {
-                return cached;
-            }
-
-            visited.Add(typeIndex); // Restore for build path
-        }
-
-        // Check if this type is itself a root (may have multiple categories: Pinning, StaticVariable, etc.)
-        bool isRoot = false;
-        var categoryCodes = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var root in tree.Roots)
-        {
-            if (root.TypeIndex == typeIndex)
-            {
-                isRoot = true;
-                categoryCodes.Add(((ReferenceRootNode)root).CategoryCode);
-            }
-        }
-
-        var categoryCode = categoryCodes.Count > 0 ? string.Join(",", OrderCategoriesForDisplay(categoryCodes)) : null;
-
-        // Use the pre-computed type stats (aggregated from the entire forward tree)
-        typeStats.TryGetValue(typeIndex, out var stats);
-        long instanceCount = stats.Count;
-        long totalSize = stats.Size;
-
-        // Build parent chain: one node per unique parent type (DAG, not tree)
-        var parentNodes = new List<ReverseChainNode>();
-        var seenNonRootTypes = new HashSet<int>();
-
-        if (parentMap.TryGetValue(typeIndex, out var parentInfos))
-        {
-            foreach (var parentInfo in parentInfos)
-            {
-                if (parentInfo.IsRoot)
-                {
-                    typeStats.TryGetValue(parentInfo.TypeIndex, out var parentStats);
-                    parentNodes.Add(new ReverseChainNode(
-                        parentInfo.TypeIndex,
-                        parentStats.Count,
-                        parentStats.Size,
-                        isRoot: true,
-                        parentInfo.CategoryCode,
-                        parents: Array.Empty<ReverseChainNode>(),
-                        parentInfo.FieldName));
-                }
-                else if (seenNonRootTypes.Add(parentInfo.TypeIndex))
-                {
-                    var parentNode = BuildReverseNode(parentInfo.TypeIndex, parentMap, tree, typeStats, visited, cache);
-                    if (parentNode is not null)
-                    {
-                        parentNodes.Add(parentNode);
-                    }
-                }
-            }
-        }
-
-        visited.Remove(typeIndex);
-
-        var node = new ReverseChainNode(
-            typeIndex,
-            instanceCount,
-            totalSize,
-            isRoot,
-            categoryCode,
-            parentNodes);
-        cache[typeIndex] = node;
-        return node;
+        return _occurrencesByType.TryGetValue(selectedTypeIndex, out var occurrences)
+                   ? [CreateNode(selectedTypeIndex, occurrences)]
+                   : Array.Empty<ReverseChainNode>();
     }
 
     /// <summary>
@@ -236,52 +60,116 @@ public static class ReverseChainBuilder
         });
     }
 
-    /// <summary>
-    /// Returns true if the node's subtree (including self and all descendants) contains any type in the set.
-    /// </summary>
-    private static bool SubtreeContainsAny(ReverseChainNode node, HashSet<int> types)
+    private void IndexNode(
+        ReferenceNode node,
+        int parentIndex,
+        string? categoryCode,
+        string? fieldName)
     {
-        if (types.Contains(node.TypeIndex))
+        int occurrenceIndex = _occurrences.Count;
+        _occurrences.Add(new Occurrence(node.TypeIndex, parentIndex, categoryCode, fieldName));
+
+        if (!_occurrencesByType.TryGetValue(node.TypeIndex, out var occurrences))
         {
-            return true;
+            occurrences = [];
+            _occurrencesByType[node.TypeIndex] = occurrences;
         }
 
-        foreach (var parent in node.Parents)
+        occurrences.Add(occurrenceIndex);
+
+        if (_typeStats.TryGetValue(node.TypeIndex, out var existing))
         {
-            if (SubtreeContainsAny(parent, types))
-            {
-                return true;
-            }
+            _typeStats[node.TypeIndex] = (existing.Count + node.InstanceCount, existing.Size + node.TotalSize);
         }
-
-        return false;
-    }
-
-    private static void AggregateTypeStats(ReferenceNode node, Dictionary<int, (long Count, long Size)> stats)
-    {
-        if (node.TypeIndex >= 0)
+        else
         {
-            if (stats.TryGetValue(node.TypeIndex, out var existing))
-            {
-                stats[node.TypeIndex] = (existing.Count + node.InstanceCount, existing.Size + node.TotalSize);
-            }
-            else
-            {
-                stats[node.TypeIndex] = (node.InstanceCount, node.TotalSize);
-            }
+            _typeStats[node.TypeIndex] = (node.InstanceCount, node.TotalSize);
         }
 
         foreach (var child in node.Children)
         {
-            AggregateTypeStats(child, stats);
+            IndexNode(child, occurrenceIndex, categoryCode: null, fieldName: null);
         }
     }
 
-    private readonly record struct ParentInfo(
+    private ReverseChainNode CreateNode(
+        int typeIndex,
+        IReadOnlyList<int> occurrenceIndices)
+    {
+        bool isRoot = false;
+        HashSet<string>? categoryCodes = null;
+        string? fieldName = null;
+
+        foreach (int occurrenceIndex in occurrenceIndices)
+        {
+            var occurrence = _occurrences[occurrenceIndex];
+            if (occurrence.ParentIndex < 0)
+            {
+                isRoot = true;
+                if (occurrence.CategoryCode is not null)
+                {
+                    categoryCodes ??= new HashSet<string>(StringComparer.Ordinal);
+                    categoryCodes.Add(occurrence.CategoryCode);
+                }
+
+                fieldName ??= occurrence.FieldName;
+            }
+        }
+
+        var categoryCode = categoryCodes is { Count: > 0 }
+                               ? string.Join(",", OrderCategoriesForDisplay(categoryCodes))
+                               : null;
+        _typeStats.TryGetValue(typeIndex, out var stats);
+        return new ReverseChainNode(
+            typeIndex,
+            stats.Count,
+            stats.Size,
+            isRoot,
+            categoryCode,
+            () => BuildParents(occurrenceIndices),
+            fieldName);
+    }
+
+    private IReadOnlyList<ReverseChainNode> BuildParents(IReadOnlyList<int> occurrenceIndices)
+    {
+        var parentOccurrencesByType = new Dictionary<int, List<int>>();
+        var seenParentOccurrences = new HashSet<int>();
+
+        foreach (int occurrenceIndex in occurrenceIndices)
+        {
+            int parentIndex = _occurrences[occurrenceIndex].ParentIndex;
+            if (parentIndex < 0 || !seenParentOccurrences.Add(parentIndex))
+            {
+                continue;
+            }
+
+            int parentTypeIndex = _occurrences[parentIndex].TypeIndex;
+            if (!parentOccurrencesByType.TryGetValue(parentTypeIndex, out var parentOccurrences))
+            {
+                parentOccurrences = [];
+                parentOccurrencesByType[parentTypeIndex] = parentOccurrences;
+            }
+
+            parentOccurrences.Add(parentIndex);
+        }
+
+        if (parentOccurrencesByType.Count == 0)
+        {
+            return Array.Empty<ReverseChainNode>();
+        }
+
+        var parents = new List<ReverseChainNode>(parentOccurrencesByType.Count);
+        foreach (var (parentTypeIndex, parentOccurrences) in parentOccurrencesByType)
+        {
+            parents.Add(CreateNode(parentTypeIndex, parentOccurrences));
+        }
+
+        return parents;
+    }
+
+    private readonly record struct Occurrence(
         int TypeIndex,
-        long InstanceCount,
-        long TotalSize,
-        bool IsRoot,
+        int ParentIndex,
         string? CategoryCode,
         string? FieldName);
 }

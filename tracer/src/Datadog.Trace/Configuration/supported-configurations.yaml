@@ -1702,7 +1702,8 @@ supportedConfigurations:
     default: '1'
     product: Profiler
     documentation: |-
-      Bitfield selecting the heap snapshot reference tree output format: 1 (binary), 2 (JSON), or 3 (both). Defaults to 1 (binary).
+      Bitfield selecting heap snapshot reference tree behavior: 1 (binary output), 2 (JSON output),
+      and 4 (benchmark diagnostics). At least one output bit is required. Defaults to 1 (binary).
   DD_INTERNAL_PROFILING_HEAPSNAPSHOT_SKIP_TRAVERSAL:
   - implementation: A
     scope: native
