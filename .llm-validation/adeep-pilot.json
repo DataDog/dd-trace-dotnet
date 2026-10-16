@@ -1,0 +1,10 @@
+{
+  "suite": ".llm-validation/suites/dotnet-tracer-agent-v0.1.yaml",
+  "repositoryName": "dd-trace-dotnet",
+  "cases": ["dotnet-tracer-logging-terminology-004"],
+  "setupPaths": ["AGENTS.md", "CLAUDE.md", ".claude"],
+  "runs": 1,
+  "confirmRuns": 0,
+  "maxTurns": 12,
+  "attemptTimeoutSeconds": 900
+}
