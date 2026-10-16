@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -176,6 +177,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             private static readonly CreateWrapperDelegate _createWrapper;
 
+            [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The type argument, DeliveryReport<TKey, TValue>, is a class: the instantiation runs the shared code.")]
             static CachedWrapperDelegate()
             {
                 // This type makes the following assumption: TActionDelegate = Action<TParam> !

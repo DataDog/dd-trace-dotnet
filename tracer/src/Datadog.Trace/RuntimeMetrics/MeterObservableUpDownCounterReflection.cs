@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Reflection;
@@ -59,6 +60,8 @@ internal static class MeterObservableUpDownCounterReflection
         where T : struct
         => Invoke(FuncOfMeasurementsMethod, meter, typeof(T), name, observeValues, unit, description);
 
+    [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = "The NativeAOT build keeps the long instantiations, the only ones RuntimeMetricsPolyfill uses (RuntimeMetricsDirectives).")]
+    [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The NativeAOT build keeps the long instantiations, the only ones RuntimeMetricsPolyfill uses (RuntimeMetricsDirectives).")]
     private static bool Invoke(MethodInfo? method, Meter meter, Type genericArg, string name, object observe, string unit, string description)
     {
         if (method is null)

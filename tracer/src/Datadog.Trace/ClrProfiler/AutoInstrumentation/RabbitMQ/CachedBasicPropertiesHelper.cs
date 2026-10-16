@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Emit;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.CompilerServices;
@@ -18,6 +19,8 @@ internal static class CachedBasicPropertiesHelper<TBasicProperties>
 {
     private static readonly Func<object, TBasicProperties>? Activator;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
     static CachedBasicPropertiesHelper()
     {
         try
