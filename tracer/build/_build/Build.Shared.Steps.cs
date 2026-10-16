@@ -101,6 +101,11 @@ partial class Build
             {
                 additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
             }
+            else
+            {
+                // Must match the toolchain passed everywhere else (shared build dir).
+                additionalArgs += Glibc217SysrootCMakeArgs;
+            }
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}");
@@ -116,8 +121,9 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
+            // Must match the toolchain passed everywhere else (shared build dir).
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoaderTests}",
                 workingDirectory: NativeBuildDirectory);

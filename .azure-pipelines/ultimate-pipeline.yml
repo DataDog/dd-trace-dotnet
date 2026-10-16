@@ -365,14 +365,12 @@ stages:
     strategy:
       matrix:
         x64:
-          nativeBaseImage: centos7
-          managedBaseImage: debian
-          useNativeSdkVersion: true
+          nativeBaseImage: ubuntu
+          managedBaseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           nativeBaseImage: alpine
           managedBaseImage: alpine
-          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
       name: $(linuxX64Pool)
@@ -397,7 +395,6 @@ stages:
         build: true
         target: builder
         baseImage: $(nativeBaseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -452,7 +449,7 @@ stages:
           parameters:
             build: true
             target: builder
-            baseImage: debian
+            baseImage: ubuntu
             command: "Clean CompileManagedLoader"
             retryCountForRunCommand: 1
             timeoutInMinutesForRunCommand: 10
@@ -461,8 +458,7 @@ stages:
           parameters:
             build: true
             target: builder
-            baseImage: centos7
-            useNativeSdkVersion: true
+            baseImage: ubuntu
             command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
             retryCountForRunCommand: 1
             apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -470,7 +466,7 @@ stages:
         - template: steps/run-in-docker.yml
           parameters:
             target: builder
-            baseImage: debian
+            baseImage: ubuntu
             command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
             retryCountForRunCommand: 1
             timeoutInMinutesForRunCommand: 20
@@ -518,6 +514,8 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
+        # keep it for now, we'll see if we can update the "universal" image to
+        # be able to use latest .NET SDK version
         useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux"
         retryCountForRunCommand: 1
@@ -547,15 +545,13 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
-          managedBaseImage: debian
+          baseImage: ubuntu
+          managedBaseImage: ubuntu
           artifactSuffix: linux-x64
-          useNativeSdkVersion: true
         alpine:
           baseImage: alpine
           managedBaseImage: alpine
           artifactSuffix: linux-musl-x64
-          useNativeSdkVersion: ""
     pool:
       name: $(linuxX64Pool)
 
@@ -570,7 +566,6 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
         # We only need the native wrapper for the unit tests but we do not want to publish it (universal binary)
         command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
         retryCountForRunCommand: 1
@@ -613,7 +608,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
@@ -710,7 +705,7 @@ stages:
     strategy:
       matrix:
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -772,7 +767,7 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
+        baseImage: ubuntu
         command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 20
@@ -805,7 +800,7 @@ stages:
     strategy:
       matrix:
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -897,7 +892,7 @@ stages:
     strategy:
       matrix:
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -1158,7 +1153,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: debian # cannot build it on ubuntu. We still need to target older glibc version.
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
@@ -1206,7 +1201,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: debian # cannot build it on ubuntu. We still need to older glibc version.
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -1254,14 +1249,12 @@ stages:
     strategy:
       matrix:
         x64:
-          nativeBaseImage: centos7
-          managedBaseImage: debian
-          useNativeSdkVersion: true
+          nativeBaseImage: ubuntu
+          managedBaseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           nativeBaseImage: alpine
           managedBaseImage: alpine
-          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
       name: $(linuxX64Pool)
@@ -1286,7 +1279,6 @@ stages:
           build: true
           target: builder
           baseImage: $(nativeBaseImage)
-          useNativeSdkVersion: $(useNativeSdkVersion)
           command: "BuildNativeTracerHome -buildConfiguration Debug"
           retryCountForRunCommand: 1
           timeoutInMinutesForRunCommand: 15
@@ -1331,7 +1323,7 @@ stages:
         parameters:
           build: true
           target: builder
-          baseImage: debian
+          baseImage: ubuntu
           command: "Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
           retryCountForRunCommand: 1
           timeoutInMinutesForRunCommand: 30
@@ -2040,7 +2032,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    baseImage: "debian"
+    baseImage: "ubuntu"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2529,7 +2521,7 @@ stages:
     variables:
       TestAllPackageVersions: false
       IncludeMinorPackageVersions:  false
-      baseImage: "debian"
+      baseImage: "ubuntu"
       artifactSuffix: "linux-x64"
 
     strategy:
@@ -2882,12 +2874,10 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
-          useNativeSdkVersion: ""
+          baseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
-          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
 
     variables:
@@ -2922,7 +2912,6 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildProfilerSamples"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
@@ -2931,7 +2920,6 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -2940,7 +2928,6 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -2952,7 +2939,6 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunProfilerSigPendingLimitTests"
         extraArgs: "--ulimit sigpending=64:64"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -3012,7 +2998,7 @@ stages:
     strategy:
       matrix:
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -3146,9 +3132,8 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: centos7
-        useNativeSdkVersion: true
-        command: "BuildProfilerAsanTest -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerAsanTest -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
@@ -3156,8 +3141,8 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -3165,9 +3150,8 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
-        baseImage: centos7
-        useNativeSdkVersion: true
-        command: "RunSampleWithProfilerAsan -Framework net7.0"
+        baseImage: ubuntu
+        command: "RunSampleWithProfilerAsan -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3229,24 +3213,24 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
-        command: "BuildProfilerAsanTest -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerAsanTest -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
 
     - template: steps/run-in-docker.yml
       parameters:
-        baseImage: debian
-        command: "RunSampleWithProfilerAsan -Framework net7.0"
+        baseImage: ubuntu
+        command: "RunSampleWithProfilerAsan -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3286,24 +3270,24 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
-        command: "BuildProfilerUbsanTest -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerUbsanTest -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
 
     - template: steps/run-in-docker.yml
       parameters:
-        baseImage: debian
-        command: "RunSampleWithProfilerUbsan -Framework net7.0"
+        baseImage: ubuntu
+        command: "RunSampleWithProfilerUbsan -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3345,9 +3329,8 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: centos7
-        useNativeSdkVersion: true
-        command: "BuildProfilerUbsanTest -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerUbsanTest -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
@@ -3355,8 +3338,8 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -3364,9 +3347,8 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
-        baseImage: centos7
-        useNativeSdkVersion: true
-        command: "RunSampleWithProfilerUbsan -Framework net7.0"
+        baseImage: ubuntu
+        command: "RunSampleWithProfilerUbsan -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3412,9 +3394,8 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: centos7
-        useNativeSdkVersion: true
-        command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net7.0"
+        baseImage: ubuntu
+        command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -4183,7 +4164,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-x64
           poolName: $(linuxX64Pool)
           targetArch: x64
@@ -4193,7 +4174,7 @@ stages:
           poolName: $(linuxX64Pool)
           targetArch: x64
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-arm64
           poolname: $(linuxArm64Pool)
           targetArch: arm64
@@ -4270,7 +4251,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
+        command: "BuildAndRunDdDotnetArtifactTests --framework net11.0"
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data

@@ -41,6 +41,15 @@ public static class Symbols
                 if (index >= 0 && index + 1 < span.Length)
                 {
                     var symbol = span.Slice(index + 1).ToString();
+                    // Strip ELF symbol version tags (e.g. @GCC_3.3 or @GLIBC_2.0)
+                    // so the allowlist uses unversioned names, matching the output of
+                    // nm --without-symbol-versions used by ValidateNativeSymbols.
+                    var at = symbol.IndexOf('@');
+                    if (at >= 0)
+                    {
+                        symbol = symbol.Substring(0, at);
+                    }
+
                     set.Add(symbol);
                 }
             }
