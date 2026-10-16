@@ -8,6 +8,8 @@
 #include "rejit_handler.h"
 #include "stats.h"
 
+#include <algorithm>
+
 namespace trace
 {
 // Rejitter
@@ -110,7 +112,8 @@ void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
 }
 
 template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID moduleId)
+void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID moduleId,
+                                                                     std::vector<RejitRequest>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -123,40 +126,35 @@ void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID mo
     std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
 
-    bool alreadyAdded = false;
-    for (const auto& moduleInliner : m_ngenInlinersModules)
+    if (std::find(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId) == m_ngenInlinersModules.end())
     {
-        if (moduleInliner == moduleId)
-        {
-            alreadyAdded = true;
-        }
-
-        for (const auto& mod : m_modules)
-        {
-            mod.second->RequestRejitForInlinersInModule(moduleInliner);
-        }
+        m_ngenInlinersModules.push_back(moduleId);
     }
 
-    // If the module is not in the inliners list we added and request rejit for it.
-    if (!alreadyAdded)
+    for (const auto& mod : m_modules)
     {
-        // Add the new module inliner
-        m_ngenInlinersModules.push_back(moduleId);
-
-        for (const auto& mod : m_modules)
-        {
-            mod.second->RequestRejitForInlinersInModule(moduleId);
-        }
+        // GetNGenInlinerRejitRequestsForNewMethods leaves Desktop CLR's new methods to this replay.
+        const auto newMethods =
+            m_isDesktopClr ? mod.second->TakeNewMethods() : std::vector<RejitHandlerModuleMethod*>();
+        mod.second->GetRejitRequestsForInlinersInModules(m_ngenInlinersModules, newMethods, rejitRequests);
     }
 }
 
-// The AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so it never
-// sees methods created afterwards. On CoreCLR, add their inliners to the caller's batch so a method and its
-// precompiled callers are rejitted together. Desktop CLR defers enumeration to the next replay.
+// On CoreCLR, the AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so
+// it never sees methods created afterwards. Add their inliners to the caller's batch so a method and its
+// precompiled callers are rejitted together. On Desktop CLR, the replay checks them instead.
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNewMethods(
     ModuleID moduleId, std::vector<RejitRequest>& rejitRequests)
 {
+    if (m_isDesktopClr)
+    {
+        // Desktop CLR's NGen dependency lookup uses the current AppDomain. The native ReJIT worker has none,
+        // even after InitializeCurrentThread, and can crash in Module::FindDomainFile. AddNGenInlinerModule takes
+        // the new methods in ModuleLoadFinished/JITCachedFunctionSearchStarted instead.
+        return;
+    }
+
     RejitHandlerModule* moduleHandler = nullptr;
     {
         std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
@@ -178,20 +176,6 @@ void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNe
     // AddNGenInlinerModule and RemoveModule change the NGen module list under this lock, so it has to be held while
     // iterating it. RemoveModule erases an unloading ModuleID, so it also has to be held across the CLR calls.
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
-    if (m_isDesktopClr)
-    {
-        // Desktop CLR's NGen dependency lookup uses the current AppDomain. The native ReJIT worker has none,
-        // even after InitializeCurrentThread, and can crash in Module::FindDomainFile. Defer enumeration to
-        // AddNGenInlinerModule in ModuleLoadFinished/JITCachedFunctionSearchStarted. Clear the processed markers
-        // so those callbacks also discover the newly registered methods.
-        for (const auto& inlinerModule : m_ngenInlinersModules)
-        {
-            moduleHandler->RemoveProcessedInlinerModule(inlinerModule);
-        }
-
-        return;
-    }
-
     for (const auto method : newMethods)
     {
         for (const auto& inlinerModule : m_ngenInlinersModules)
