@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -97,7 +98,7 @@ public class DataStreamsManagerTests
     {
         var dsm = GetDataStreamManager(true, out _);
 
-        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, 100);
+        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(new[] { "some-tags" }), 100, 100);
         context.Should().NotBeNull();
     }
 
@@ -108,7 +109,7 @@ public class DataStreamsManagerTests
         var latencyNs = latencyMs * 1_000_000;
 
         var dsm = GetDataStreamManager(true, out var writer);
-        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
+        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(new[] { "some-tags" }), 100, latencyMs);
 
         context.Should().NotBeNull();
         context?.EdgeStart.Should().Be(context.Value.PathwayStart);
@@ -151,9 +152,9 @@ public class DataStreamsManagerTests
         var latencyNs = latencyMs * 1_000_000;
 
         var dsm = GetDataStreamManager(true, out var writer);
-        var parent = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
+        var parent = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(new[] { "some-tags" }), 100, latencyMs);
         await Task.Delay(1);
-        dsm.SetCheckpoint(parentPathway: parent, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
+        dsm.SetCheckpoint(parentPathway: parent, CheckpointKind.Consume, new EdgeTags(new[] { "some-tags" }), 100, latencyMs);
 
         writer.Points.Should().HaveCount(2);
         writer.Points.TryDequeue(out var _).Should().BeTrue();
@@ -167,7 +168,7 @@ public class DataStreamsManagerTests
     public void WhenEnabled_PayloadSizeIsUsed()
     {
         var dsm = GetDataStreamManager(true, out var writer);
-        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, 0);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(new[] { "some-tags" }), 100, 0);
 
         writer.Points.Should().ContainSingle();
         writer.Points.TryPeek(out var point).Should().BeTrue();
@@ -182,7 +183,7 @@ public class DataStreamsManagerTests
         var edgeTags = new[] { "some-tags" };
         var dsm = GetDataStreamManager(true, out _);
 
-        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, 100, 100);
+        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(edgeTags), 100, 100);
         context.Should().NotBeNull();
 
         var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
@@ -201,7 +202,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(true, out _);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
-        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, edgeTags, 100, 100);
+        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, new EdgeTags(edgeTags), 100, 100);
         context.Should().NotBeNull();
 
         var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
@@ -253,7 +254,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(false, out _);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
-        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, new[] { "some-tags" }, 100, 100);
+        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, new EdgeTags(new[] { "some-tags" }), 100, 100);
         context.Should().BeNull();
     }
 
@@ -263,7 +264,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(true, out _);
         var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
-        span.SetDataStreamsCheckpoint(dsm, CheckpointKind.Produce, new[] { "direction:out" }, 100, 0);
+        span.SetDataStreamsCheckpoint(dsm, CheckpointKind.Produce, new EdgeTags(new[] { "direction:out" }), 100, 0);
         span.Tags.GetTag("pathway.hash").Should().NotBeNull();
     }
 
@@ -330,10 +331,10 @@ public class DataStreamsManagerTests
     {
         var dsm = GetDataStreamManager(enabled: true, out var writer);
 
-        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "in" }, payloadSizeBytes: 100, timeInQueueMs: 100);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(new[] { "in" }), payloadSizeBytes: 100, timeInQueueMs: 100);
 
-        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new[] { "out" }, payloadSizeBytes: 100, timeInQueueMs: 100);
-        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new[] { "out" }, payloadSizeBytes: 100, timeInQueueMs: 100);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new EdgeTags(new[] { "out" }), payloadSizeBytes: 100, timeInQueueMs: 100);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Produce, new EdgeTags(new[] { "out" }), payloadSizeBytes: 100, timeInQueueMs: 100);
 
         await dsm.DisposeAsync();
 
@@ -363,7 +364,7 @@ public class DataStreamsManagerTests
         await dsm.DisposeAsync();
         dsm.IsEnabled.Should().BeFalse();
 
-        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, new[] { "some-tags" }, 100, 100);
+        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, new EdgeTags(new[] { "some-tags" }), 100, 100);
         context.Should().BeNull();
     }
 
@@ -373,7 +374,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(enabled: false, out var writer);
         writer.Should().BeNull(); // can't send points to it, because it's null!
 
-        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "edge" }, 100, 100);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(new[] { "edge" }), 100, 100);
 
         await dsm.DisposeAsync();
     }
@@ -383,7 +384,7 @@ public class DataStreamsManagerTests
     {
         var dsm = GetDataStreamManager(enabled: true, out var writer);
 
-        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "edge" }, 100, 100);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags(new[] { "edge" }), 100, 100);
 
         await dsm.DisposeAsync();
 
@@ -516,7 +517,7 @@ public class DataStreamsManagerTests
         var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
 
         second.Should().BeSameAs(first);
-        first.Should().Equal("direction:out", "exchange:event-bus-1", "topic:detail-type-1", "type:eventbridge");
+        first.Tags.Should().Equal("direction:out", "exchange:event-bus-1", "topic:detail-type-1", "type:eventbridge");
     }
 
     [Fact]
@@ -578,6 +579,42 @@ public class DataStreamsManagerTests
         var second = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
 
         second.Should().NotBeSameAs(first);
+    }
+
+    [Fact]
+    public void SetCheckpoint_DoesNotRetainUncachedEdgeTags()
+    {
+        // Edge tags that bypass the cache (cache full, or SpanContextExtractor/Injector) are a fresh
+        // instance on every call. The manager must not keep them alive, or memory grows per message.
+        var dsm = GetDataStreamManager(true, out _);
+
+        var edgeTags = SetCheckpointWithUncachedEdgeTags(dsm);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        edgeTags.IsAlive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SetCheckpoint_WithUncachedEdgeTags_ProducesSameHashAsCachedEdgeTags()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var cached = dsm.GetOrCreateEdgeTags(new ConsumeEdgeTagCacheKey("group1", "topic1", "cluster1"), static k => ["direction:in", $"group:{k.GroupId}", $"topic:{k.Topic}", "type:kafka"]);
+
+        var expected = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, cached, payloadSizeBytes: 0, timeInQueueMs: 0);
+        var actual = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new EdgeTags([.. cached.Tags]), payloadSizeBytes: 0, timeInQueueMs: 0);
+
+        actual.Should().NotBeNull();
+        actual.Value.Hash.Should().Be(expected.Value.Hash);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference SetCheckpointWithUncachedEdgeTags(DataStreamsManager dsm)
+    {
+        var edgeTags = new EdgeTags(["direction:in", "group:group1", "topic:topic1", "type:kafka"]);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+        return new WeakReference(edgeTags);
     }
 
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)

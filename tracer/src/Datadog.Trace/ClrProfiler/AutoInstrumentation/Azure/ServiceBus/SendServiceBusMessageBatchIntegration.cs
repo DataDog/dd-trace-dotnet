@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class SendServiceBusMessageBatchIntegration
     {
-        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:servicebus"];
+        private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:servicebus"]);
 
         /// <summary>
         /// OnMethodBegin callback

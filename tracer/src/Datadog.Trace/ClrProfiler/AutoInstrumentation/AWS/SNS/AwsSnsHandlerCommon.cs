@@ -41,7 +41,7 @@ internal sealed class AwsSnsHandlerCommon
                                ? dataStreamsManager.GetOrCreateEdgeTags(
                                    new SnsEdgeTagCacheKey(topicName),
                                    static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"])
-                               : [];
+                               : EdgeTags.Empty;
 
             if (sendType == SendType.SingleMessage)
             {

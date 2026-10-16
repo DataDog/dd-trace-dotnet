@@ -25,7 +25,7 @@ public class SpanContextDataStreamsManagerTests
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
-        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new EdgeTags(new[] { "some-edge" }), payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
 
         spanContext.PathwayContext.Should().NotBeNull();
     }
@@ -37,12 +37,12 @@ public class SpanContextDataStreamsManagerTests
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
-        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new EdgeTags(new[] { "some-edge" }), payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
 
         spanContext.PathwayContext.Should().NotBeNull();
         var firstPathwayHash = spanContext.PathwayContext.Value.Hash;
 
-        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new EdgeTags(new[] { "some-edge" }), payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
 
         spanContext.PathwayContext.Should().NotBeNull();
         // we used the same parameters, so we should have the same hash
@@ -58,12 +58,12 @@ public class SpanContextDataStreamsManagerTests
         spanContext.PathwayContext.Should().BeNull();
         var parentCtx = new PathwayContext(new PathwayHash(value: 12), pathwayStartNs: 5, edgeStartNs: 8);
 
-        spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parentCtx);
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, new EdgeTags(new[] { "some-edge" }), payloadSizeBytes: 100, timeInQueueMs: 0, parentCtx);
 
         spanContext.PathwayContext.Should().NotBeNull();
         var firstPathwayHash = spanContext.PathwayContext.Value.Hash;
 
-        spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parentCtx);
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, new EdgeTags(new[] { "some-edge" }), payloadSizeBytes: 100, timeInQueueMs: 0, parentCtx);
 
         spanContext.PathwayContext.Should().NotBeNull();
         // we used the same parameters and the same parent hash, so we should have the same hash
