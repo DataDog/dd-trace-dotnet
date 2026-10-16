@@ -46,6 +46,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task SubmitsTracesWithOpenTelemetryEnvironmentVariables()
+        {
+            // The OpenTelemetry Operator hard-codes the OpenTelemetry auto-instrumentation CLSID and sets
+            // OTEL_DOTNET_AUTO_HOME when it injects .NET auto-instrumentation.
+            // Assert that we correctly load the Datadog SDK when both are set.
+            // SetEnvironmentVariable("CORECLR_PROFILER", EnvironmentTools.OpenTelemetryProfilerClsId);
+            // SetEnvironmentVariable("COR_PROFILER", EnvironmentTools.OpenTelemetryProfilerClsId);
+            SetEnvironmentVariable("OTEL_DOTNET_AUTO_HOME", EnvironmentHelper.MonitoringHome);
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", null);
+
+            await RunTest("v0");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public async Task TracingDisabled_DoesNotSubmitsTraces()
         {
             SetInstrumentationVerification();
@@ -122,7 +139,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                             .ThenBy(x => x.Tags.TryGetValue("http.url", out var url) ? url : string.Empty)
                                             .ThenBy(x => x.Start)
                                             .ThenBy(x => x.Duration))
-                              .UseFileName($"{nameof(WebRequestTests)}{suffix}_{metadataSchemaVersion}");
+                              .UseFileName($"{nameof(WebRequestTests)}{suffix}_{metadataSchemaVersion}")
+                              .DisableRequireUniquePrefix();
 
             allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
             var httpSpans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();

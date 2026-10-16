@@ -22,6 +22,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
         internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
 
+        private const string TracerHomeKey = "DD_DOTNET_TRACER_HOME";
+        private const string OpenTelemetryAutoHomeKey = "OTEL_DOTNET_AUTO_HOME";
+
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
             bool ok = true;
@@ -122,23 +125,23 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
             }
 
-            AnsiConsole.WriteLine(EnvVarCheck("DD_DOTNET_TRACER_HOME"));
+            AnsiConsole.WriteLine(EnvVarCheck(TracerHomeKey));
 
-            if (process.EnvironmentVariables.TryGetValue("DD_DOTNET_TRACER_HOME", out var tracerHome))
+            if (TryGetTracerHome(process, out var tracerHomeKey, out var tracerHome))
             {
                 if (!Directory.Exists(tracerHome))
                 {
-                    Utils.WriteWarning(TracerHomeNotFoundFormat(tracerHome));
+                    Utils.WriteWarning(TracerHomeNotFoundFormat(tracerHomeKey, tracerHome));
                     ok = false;
                 }
                 else
                 {
-                    Utils.WriteSuccess(TracerHomeFoundFormat(tracerHome));
+                    Utils.WriteSuccess(TracerHomeFoundFormat(tracerHomeKey, tracerHome));
                 }
             }
             else
             {
-                Utils.WriteWarning(EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"));
+                Utils.WriteWarning(TracerHomeNotSet(TracerHomeKey, OpenTelemetryAutoHomeKey));
                 ok = false;
             }
 
@@ -714,6 +717,24 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             }
 
             return versionFound;
+        }
+
+        private static bool TryGetTracerHome(ProcessInfo process, out string key, out string value)
+        {
+            foreach (var candidate in new[] { TracerHomeKey, OpenTelemetryAutoHomeKey })
+            {
+                if (process.EnvironmentVariables.TryGetValue(candidate, out var candidateValue)
+                 && !string.IsNullOrEmpty(candidateValue))
+                {
+                    key = candidate;
+                    value = candidateValue;
+                    return true;
+                }
+            }
+
+            key = TracerHomeKey;
+            value = string.Empty;
+            return false;
         }
 
         private static bool CheckEnableDiagnostics(ProcessInfo process)
