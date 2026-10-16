@@ -48,7 +48,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // The lookup that crashed ran on the ReJIT worker before it requested the ReJIT of the site's methods, and a
             // method is only rewritten on its next call after that request, so keep calling the site until a span shows
             // the rewrite, then once more. IIS Express doesn't restart after a crash, so a crash makes a request fail.
-            var deadline = DateTime.UtcNow.AddSeconds(30);
+            // The fixture skips its health check, so the first request here also starts the site.
+            var deadline = DateTime.UtcNow.AddSeconds(60);
             while (!_iisFixture.Agent.Spans.Any(span => span.Resource == "Targets.M0001"))
             {
                 DateTime.UtcNow.Should().BeBefore(deadline, "a span should show that the site's methods were rewritten");
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             (await client.GetAsync(url)).StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
-        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated, sendHealthCheck: false);
 
         public Task DisposeAsync() => Task.CompletedTask;
     }
