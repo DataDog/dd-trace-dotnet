@@ -16,6 +16,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
@@ -44,7 +45,7 @@ public class ExposureApiTimeoutTests
         var uri = new Uri(unixSocket ? "http://localhost" : "http://127.0.0.1:" + ((IPEndPoint)listener.LocalEndPoint!).Port);
         IApiRequestFactory factory = unixSocket
                                          ? new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(path), new DatadogHttpClient(EventPlatformHeaderHelper.Instance), uri, requestTimeout: TimeSpan.FromSeconds(5))
-                                         : new ApiWebRequestFactory(uri, EventPlatformHeaderHelper.Instance.DefaultHeaders, asyncTimeout: TimeSpan.FromSeconds(5));
+                                         : new ApiWebRequestFactory(uri, EventPlatformHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5), enforceAsyncTimeout: true);
         try
         {
             var send = factory.Create(factory.GetEndpoint(FeatureFlagsEvpTransport.EventPlatformProxyV2 + "/" + FeatureFlagsEvpTransport.ExposureIntakePath)).PostAsJsonAsync(Observation("first"), MultipartCompression.GZip, ExposureApi.SerializerSettings);
@@ -74,8 +75,12 @@ public class ExposureApiTimeoutTests
         listener.Bind(unixSocket ? new UnixDomainSocketEndPoint(path) : new IPEndPoint(IPAddress.Loopback, 0));
         listener.Listen(2);
         var uri = unixSocket ? "unix://" + path : "http://127.0.0.1:" + ((IPEndPoint)listener.LocalEndPoint!).Port;
-        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { "DD_TRACE_AGENT_URL", uri } }));
-        using var transport = new FeatureFlagsEvpTransport(settings);
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            { "DD_TRACE_AGENT_URL", uri },
+            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config" },
+        }));
+        using var transport = new FeatureFlagsEvpTransport(settings, NullDiscoveryService.Instance);
         using var api = new ExposureApi(settings, transport);
         try
         {

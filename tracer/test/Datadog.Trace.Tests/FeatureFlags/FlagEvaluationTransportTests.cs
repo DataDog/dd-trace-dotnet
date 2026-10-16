@@ -1,4 +1,4 @@
-// <copyright file="FlagEvaluationAgentSenderTests.cs" company="Datadog">
+// <copyright file="FlagEvaluationTransportTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,9 +15,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
@@ -35,7 +38,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 [Collection(nameof(WebRequestCollection))]
-public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
+public class FlagEvaluationTransportTests(ITestOutputHelper output)
 {
     [Theory]
     [InlineData(202, false)]
@@ -65,10 +68,10 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         factory.Setup(x => x.Create(uri)).Returns(request.Object);
         request.Setup(x => x.PostAsync(payload, "application/json", "gzip")).ReturnsAsync(response.Object);
 
-        using var sender = new FlagEvaluationAgentSender(factory.Object, logger);
+        using var sender = CreateTransport(factory.Object, logger);
         try
         {
-            await sender.SendCompressedAsync(payload);
+            await sender.SendFlagEvaluationsAsync(payload);
         }
         finally
         {
@@ -121,13 +124,13 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
                .ThrowsAsync(error)
                .ReturnsAsync(response.Object);
 
-        using var sender = new FlagEvaluationAgentSender(factory.Object, logger);
+        using var sender = CreateTransport(factory.Object, logger);
         var first = new ArraySegment<byte>(new byte[] { 1 });
         var second = new ArraySegment<byte>(new byte[] { 2 });
         try
         {
-            await sender.SendCompressedAsync(first);
-            await sender.SendCompressedAsync(second);
+            await sender.SendFlagEvaluationsAsync(first);
+            await sender.SendFlagEvaluationsAsync(second);
         }
         finally
         {
@@ -155,12 +158,12 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         factory.Setup(x => x.Create(uri)).Returns(request.Object);
         request.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/json", "gzip")).Returns(pending.Task);
 
-        using var sender = new FlagEvaluationAgentSender(factory.Object);
-        var send = sender.SendCompressedAsync(new ArraySegment<byte>(new byte[] { 1 }));
+        using var sender = CreateTransport(factory.Object);
+        var send = sender.SendFlagEvaluationsAsync(new ArraySegment<byte>(new byte[] { 1 }));
         sender.Dispose();
         sender.Dispose();
         send.IsCompleted.Should().BeFalse();
-        await sender.SendCompressedAsync(new ArraySegment<byte>(new byte[] { 2 }));
+        await sender.SendFlagEvaluationsAsync(new ArraySegment<byte>(new byte[] { 2 }));
         pending.SetResult(response.Object);
         await send;
 
@@ -171,7 +174,7 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
     [Fact]
     public async Task StreamHeadersCarryProducerIdentityWithoutCredentials()
     {
-        var helper = FlagEvaluationAgentHeaderHelper.Instance;
+        var helper = FeatureFlagsEvpHeaderHelper.Instance;
         helper.DefaultHeaders.Should().Contain(new KeyValuePair<string, string>("X-Datadog-EVP-Subdomain", "event-platform-intake"));
         helper.DefaultHeaders.Should().Contain(new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet"));
         helper.DefaultHeaders.Should().Contain(new KeyValuePair<string, string>("DD-EVP-ORIGIN-VERSION", TracerConstants.ThreePartVersion));
@@ -193,8 +196,8 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         var received = new List<MockTracerAgent.EvpProxyPayload>();
         agent.EventPlatformProxyPayloadReceived += (_, args) => received.Add(args.Value);
         var settings = CreateSettings($"http://127.0.0.1:{agent.Port}", source);
-        using var sender = new FlagEvaluationAgentSender(settings.Manager.InitialExporterSettings);
-        await sender.SendCompressedAsync(Compress("{\"events\":[]}"));
+        using var sender = CreateTransport(settings);
+        await sender.SendFlagEvaluationsAsync(Compress("{\"events\":[]}"));
 
         received.Should().ContainSingle();
         received[0].PathAndQuery.Should().Be("/evp_proxy/v2/api/v2/flagevaluation");
@@ -208,39 +211,6 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         received[0].BodyInJson.Should().Be("{\"events\":[]}");
     }
 
-    [Fact]
-    public async Task ExporterChangeUsesNewAgentWithoutInterruptingInFlightSend()
-    {
-        var factory = new Mock<IApiRequestFactory>();
-        var request = new Mock<IApiRequest>();
-        var response = new Mock<IApiResponse>();
-        response.SetupGet(x => x.StatusCode).Returns(202);
-        var pending = new TaskCompletionSource<IApiResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var uri = new Uri("http://127.0.0.1:8126/evp_proxy/v2/api/v2/flagevaluation");
-        factory.Setup(x => x.GetEndpoint(It.IsAny<string>())).Returns(uri);
-        factory.Setup(x => x.Create(uri)).Returns(request.Object);
-        request.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/json", "gzip")).Returns(pending.Task);
-        using var sender = new FlagEvaluationAgentSender(factory.Object);
-        var originalSend = sender.SendCompressedAsync(Compress("{}"));
-        using var agent = MockTracerAgent.Create(output);
-        var received = new List<MockTracerAgent.EvpProxyPayload>();
-        agent.EventPlatformProxyPayloadReceived += (_, args) => received.Add(args.Value);
-
-        sender.UpdateExporterSettings(CreateSettings($"http://127.0.0.1:{agent.Port}").Manager.InitialExporterSettings);
-        await sender.SendCompressedAsync(Compress("{\"new\":true}"));
-        received.Should().ContainSingle();
-        received[0].BodyInJson.Should().Be("{\"new\":true}");
-        originalSend.IsCompleted.Should().BeFalse();
-        pending.SetResult(response.Object);
-        await originalSend;
-        response.Verify(x => x.Dispose(), Times.Once);
-
-        sender.Dispose();
-        sender.UpdateExporterSettings(CreateSettings($"http://127.0.0.1:{agent.Port}").Manager.InitialExporterSettings);
-        await sender.SendCompressedAsync(Compress("{\"afterDispose\":true}"));
-        received.Should().ContainSingle("exporter changes must not resurrect a disposed sender");
-    }
-
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -248,11 +218,11 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentUri = new Uri($"http://127.0.0.1:{agent.Port}");
-        // Modern runtimes honor HttpWebRequest.Timeout, unlike .NET Framework's async path.
-        // Leave that property unset to verify the factory independently bounds legacy requests.
+        // Exercise both factory implementations; ApiWebRequestFactoryTests separately verifies
+        // the opt-in async deadline with HttpWebRequest.Timeout disabled.
         using var sender = useLegacyTransport
-                               ? new FlagEvaluationAgentSender(new ApiWebRequestFactory(agentUri, FlagEvaluationAgentHeaderHelper.Instance.DefaultHeaders, asyncTimeout: TimeSpan.FromSeconds(5)))
-                               : new FlagEvaluationAgentSender(CreateSettings(agentUri.ToString()).Manager.InitialExporterSettings);
+                               ? CreateTransport(new ApiWebRequestFactory(agentUri, FeatureFlagsEvpHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5), enforceAsyncTimeout: true))
+                               : CreateTransport(CreateSettings(agentUri.ToString()));
         await AssertStalledAgentSendTimesOut(agent, sender);
     }
 
@@ -266,12 +236,12 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         // Exercise the stream transport on modern runtimes too: older .NET uses it for UDS,
         // and Windows named pipes use the same request implementation.
         using var sender = useLegacyTransport
-                               ? new FlagEvaluationAgentSender(new HttpStreamRequestFactory(
+                               ? CreateTransport(new HttpStreamRequestFactory(
                                    new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
-                                   new DatadogHttpClient(FlagEvaluationAgentHeaderHelper.Instance),
+                                   new DatadogHttpClient(FeatureFlagsEvpHeaderHelper.Instance),
                                    new Uri("http://localhost"),
                                    requestTimeout: TimeSpan.FromSeconds(5)))
-                               : new FlagEvaluationAgentSender(CreateSettings("unix://" + agent.TracesUdsPath).Manager.InitialExporterSettings);
+                               : CreateTransport(CreateSettings("unix://" + agent.TracesUdsPath));
         await AssertStalledAgentSendTimesOut(agent, sender);
     }
 
@@ -281,8 +251,8 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         using var agent = MockTracerAgent.Create(output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
         var received = new List<MockTracerAgent.EvpProxyPayload>();
         agent.EventPlatformProxyPayloadReceived += (_, args) => received.Add(args.Value);
-        using var sender = new FlagEvaluationAgentSender(CreateSettings("unix://" + agent.TracesUdsPath).Manager.InitialExporterSettings);
-        await sender.SendCompressedAsync(Compress("{}"));
+        using var sender = CreateTransport(CreateSettings("unix://" + agent.TracesUdsPath));
+        await sender.SendFlagEvaluationsAsync(Compress("{}"));
         received.Should().ContainSingle();
         received[0].PathAndQuery.Should().Be("/evp_proxy/v2/api/v2/flagevaluation");
         received[0].Headers["DD-EVP-ORIGIN"].Should().Be("dd-trace-dotnet");
@@ -301,7 +271,7 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         {
             { "DD_TRACE_PIPE_NAME", agent.TracesWindowsPipeName },
         }));
-        using var sender = new FlagEvaluationAgentSender(settings.Manager.InitialExporterSettings);
+        using var sender = CreateTransport(settings);
         await AssertStalledAgentSendTimesOut(agent, sender);
     }
 
@@ -317,8 +287,8 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         {
             { "DD_TRACE_PIPE_NAME", agent.TracesWindowsPipeName },
         }));
-        using var sender = new FlagEvaluationAgentSender(settings.Manager.InitialExporterSettings);
-        await sender.SendCompressedAsync(Compress("{}"));
+        using var sender = CreateTransport(settings);
+        await sender.SendFlagEvaluationsAsync(Compress("{}"));
         received.Should().ContainSingle();
         received[0].PathAndQuery.Should().Be("/evp_proxy/v2/api/v2/flagevaluation");
         received[0].Headers["DD-EVP-ORIGIN"].Should().Be("dd-trace-dotnet");
@@ -326,7 +296,7 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         received[0].BodyInJson.Should().Be("{}");
     }
 
-    private static async Task AssertStalledAgentSendTimesOut(MockTracerAgent agent, FlagEvaluationAgentSender sender)
+    private static async Task AssertStalledAgentSendTimesOut(MockTracerAgent agent, FeatureFlagsEvpTransport sender)
     {
         using var release = new ManualResetEventSlim();
         var received = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -342,7 +312,7 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
             handlerExited.TrySetResult(true);
         };
         var elapsed = Stopwatch.StartNew();
-        var send = sender.SendCompressedAsync(Compress("{}"));
+        var send = sender.SendFlagEvaluationsAsync(Compress("{}"));
         try
         {
             (await Task.WhenAny(received.Task, Task.Delay(TimeSpan.FromSeconds(10)))).Should().BeSameAs(received.Task, "the Agent must accept and read the payload before we test a stalled response");
@@ -364,6 +334,12 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
             }
         }
     }
+
+    private static FeatureFlagsEvpTransport CreateTransport(IApiRequestFactory factory, IDatadogLogger? logger = null)
+        => new(FeatureFlagsSource.RemoteConfig, factory, null, NullDiscoveryService.Instance, logger: logger);
+
+    private static FeatureFlagsEvpTransport CreateTransport(TracerSettings settings)
+        => new(settings, FlagEvaluationTestDiscovery.Available(settings));
 
     private static IDatadogLogger CreateLogger(TextWriter logs, RedactedErrorLogCollector collector)
     {

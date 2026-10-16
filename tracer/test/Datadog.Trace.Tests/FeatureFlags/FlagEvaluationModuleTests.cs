@@ -33,9 +33,26 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
 {
     private readonly ITestOutputHelper _output = output;
 
+    [Fact]
+    public async Task AgentlessActivationAcceptsObservationsBeforeDiscovery()
+    {
+        var settings = Settings(8126, "agentless");
+        var discovery = new FlagEvaluationTestDiscovery();
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), _ => new FakeDeliverySource(), discovery)!;
+        try
+        {
+            module.EvaluationWriter.Should().BeNull("events remain lazy until provider adoption");
+            module.Activate();
+            module.EvaluationWriter.Should().NotBeNull("Agentless delivery can use direct intake without discovering an Agent");
+        }
+        finally
+        {
+            await module.DisposeAsync();
+        }
+    }
+
     [Theory]
     [InlineData("remote_config", "evp_proxy/v2")]
-    [InlineData("agentless", "evp_proxy/v4")]
     public async Task DiscoveryStartsOneWriterAfterActivation(string source, string endpoint)
     {
         using var agent = MockTracerAgent.Create(_output);
@@ -173,7 +190,6 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
 
     [Theory]
     [InlineData("remote_config")]
-    [InlineData("agentless")]
     public async Task NoAgentDoesNotStartEvaluationWriterOrDisableConfiguration(string source)
     {
         var delivery = new FakeDeliverySource();

@@ -1,4 +1,4 @@
-﻿// <copyright file="ApiWebRequest.cs" company="Datadog">
+// <copyright file="ApiWebRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -43,10 +43,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> GetAsync()
         {
-            using var cancellation = StartTimeout();
-            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             ResetRequest(method: "GET", contentType: null, contentEncoding: null);
-
+            using var timeout = StartAsyncTimeout();
             return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
@@ -55,9 +53,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
-            using var cancellation = StartTimeout();
-            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             ResetRequest(method: "POST", contentType, contentEncoding);
+            using var timeout = StartAsyncTimeout();
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
@@ -72,8 +69,6 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
         {
-            using var cancellation = StartTimeout();
-            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             var contentEncoding = compression == MultipartCompression.GZip ? "gzip" : null;
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -81,6 +76,7 @@ namespace Datadog.Trace.Agent.Transports
             }
 
             ResetRequest(method: "POST", contentType: MimeTypes.Json, contentEncoding: contentEncoding);
+            using var timeout = StartAsyncTimeout();
 
             using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
@@ -92,9 +88,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
         {
-            using var cancellation = StartTimeout();
-            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             ResetRequest(method: "POST", ContentTypeHelper.GetContentType(contentType, multipartBoundary), contentEncoding);
+            using var timeout = StartAsyncTimeout();
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
@@ -113,8 +108,6 @@ namespace Datadog.Trace.Agent.Transports
         /// <returns>Task with the response</returns>
         public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
         {
-            using var cancellation = StartTimeout();
-            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             if (items is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(items));
@@ -123,6 +116,7 @@ namespace Datadog.Trace.Agent.Transports
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
             ResetRequest(method: "POST", contentType: "multipart/form-data; boundary=" + Boundary, contentEncoding: multipartCompression == MultipartCompression.GZip ? "gzip" : null);
+            using var timeout = StartAsyncTimeout();
             using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 if (multipartCompression == MultipartCompression.GZip)
@@ -195,9 +189,12 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        // HttpWebRequest.Timeout does not bound asynchronous requests on .NET Framework.
-        // Opted-in callers abort the actual request instead of abandoning its task and payload.
-        private CancellationTokenSource StartTimeout() => _asyncTimeout is { } timeout ? new CancellationTokenSource(timeout) : null;
+        // HttpWebRequest.Timeout does not apply to asynchronous sends on .NET Framework.
+        // Opt-in callers abort the outstanding operation; other products keep their existing behavior.
+        private Timer StartAsyncTimeout()
+            => _asyncTimeout is { } timeout
+                   ? new Timer(static request => ((HttpWebRequest)request).Abort(), _request, timeout, Timeout.InfiniteTimeSpan)
+                   : null;
 
         private void ResetRequest(string method, string contentType, string contentEncoding)
         {

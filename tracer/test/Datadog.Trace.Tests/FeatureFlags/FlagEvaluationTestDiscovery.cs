@@ -74,7 +74,8 @@ internal sealed class FlagEvaluationTestDiscovery : IDiscoveryService
             clientDropP0: false,
             spanMetaStructs: false,
             spanEvents: false,
-            discoverySettings: settings);
+            discoverySettings: settings,
+            eventPlatformProxySupportsEvpOriginHeaders: true);
         Action<AgentConfiguration>? callbacks;
         lock (_lock)
         {

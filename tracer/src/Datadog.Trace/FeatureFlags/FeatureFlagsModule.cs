@@ -75,7 +75,7 @@ namespace Datadog.Trace.FeatureFlags
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
-        private FlagEvaluationAgentSender? _evaluationSender;
+        private FeatureFlagsEvpTransport? _evaluationTransport;
         private FlagEvaluationWriter? _evaluationWriter;
         private FlagEvaluationWriter? _availableEvaluationWriter;
         private IDisposable? _evaluationSettingsSubscription;
@@ -155,7 +155,7 @@ namespace Datadog.Trace.FeatureFlags
             IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
             FlagEvaluationWriter? writer;
-            FlagEvaluationAgentSender? sender;
+            FeatureFlagsEvpTransport? evaluationTransport;
             IDisposable? settingsSubscription;
             Action<AgentConfiguration>? discoveryCallback;
             FeatureFlagsEvpTransport? evpTransport;
@@ -175,10 +175,10 @@ namespace Datadog.Trace.FeatureFlags
                 lock (_evaluationLock)
                 {
                     writer = _evaluationWriter;
-                    sender = _evaluationSender;
+                    evaluationTransport = _evaluationTransport;
                     Volatile.Write(ref _availableEvaluationWriter, null);
                     Volatile.Write(ref _evaluationWriter, null);
-                    _evaluationSender = null;
+                    _evaluationTransport = null;
                 }
 
                 settingsSubscription = _evaluationSettingsSubscription;
@@ -195,7 +195,7 @@ namespace Datadog.Trace.FeatureFlags
 
             // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
             var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
-            _ = FinishDisposalAsync(close, sender, settingsSubscription, discoveryCallback, subscription, agentlessSource, exposureApi, evpTransport);
+            _ = FinishDisposalAsync(close, evaluationTransport, settingsSubscription, discoveryCallback, subscription, agentlessSource, exposureApi, evpTransport);
             return _disposeCompletion.Task;
         }
 
@@ -416,6 +416,10 @@ namespace Datadog.Trace.FeatureFlags
                 return;
             }
 
+            // Each track owns an instance: an evaluation delivery failure must not change
+            // exposure routing or disposal. Both instances reuse the same transport policy.
+            var transport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
+            _evaluationTransport = transport;
             var exporter = _settingsManager.InitialExporterSettings;
             var context = CreateEvaluationContext(_settingsManager.InitialMutableSettings);
             AgentConfiguration? agent = null;
@@ -449,15 +453,26 @@ namespace Datadog.Trace.FeatureFlags
                         context = CreateEvaluationContext(changes.UpdatedMutable ?? changes.PreviousMutable);
                     }
 
-                    if (changes.UpdatedExporter is not null)
+                    if (_settings.Source == FeatureFlagsSource.RemoteConfig && changes.UpdatedExporter is not null)
                     {
                         Volatile.Write(ref _availableEvaluationWriter, null);
-                        _evaluationSender?.UpdateExporterSettings(exporter);
                     }
 
                     UpdateAvailability();
                 }
             });
+
+            if (_settings.Source != FeatureFlagsSource.RemoteConfig)
+            {
+                // Agentless collection does not wait for a route. The bounded worker sends
+                // through the transport's existing discovery/fallback policy.
+                lock (_evaluationLock)
+                {
+                    UpdateAvailability();
+                }
+
+                return;
+            }
 
             _evaluationDiscoveryCallback = configuration =>
             {
@@ -483,12 +498,12 @@ namespace Datadog.Trace.FeatureFlags
             };
             _discoveryService.SubscribeToChanges(_evaluationDiscoveryCallback);
 
-            // Called only under _evaluationLock. No startup queue: the existing hook skips
-            // snapshots and enqueueing until discovery confirms EVP at the current address.
-            // Discovery is capability detection, not a continuous Agent health check.
+            // Called only under _evaluationLock. Remote Config retains its Agent capability gate.
+            // Agentless uses the existing bounded queue while the transport chooses a route.
             void UpdateAvailability()
             {
-                if (StringUtil.IsNullOrEmpty(agent?.EventPlatformProxyEndpoint) || !MatchesCurrentAgent(agent))
+                if (_settings.Source == FeatureFlagsSource.RemoteConfig
+                 && (StringUtil.IsNullOrEmpty(agent?.EventPlatformProxyEndpoint) || !MatchesCurrentAgent(agent)))
                 {
                     Volatile.Write(ref _availableEvaluationWriter, null);
                     return;
@@ -496,19 +511,15 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (_evaluationWriter is null)
                 {
-                    FlagEvaluationAgentSender? sender = null;
                     try
                     {
-                        sender = new FlagEvaluationAgentSender(exporter);
                         // Keep tags for this writer's lifetime; changing the Agent must not
                         // relabel observations that have already been accepted.
-                        var writer = new FlagEvaluationWriter(sender.SendCompressedAsync, context);
-                        _evaluationSender = sender;
+                        var writer = new FlagEvaluationWriter(transport.SendFlagEvaluationsAsync, context);
                         Volatile.Write(ref _evaluationWriter, writer);
                     }
                     catch (Exception)
                     {
-                        sender?.Dispose();
                         Log.Debug("FeatureFlags flagevaluation writer could not be started.");
                     }
                 }
@@ -529,7 +540,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private async Task FinishDisposalAsync(
             Task close,
-            FlagEvaluationAgentSender? sender,
+            FeatureFlagsEvpTransport? evaluationTransport,
             IDisposable? settingsSubscription,
             Action<AgentConfiguration>? discoveryCallback,
             ISubscription? subscription,
@@ -570,7 +581,7 @@ namespace Datadog.Trace.FeatureFlags
                 finally
                 {
                     // Dispose stops new sends but preserves any request still live after the deadline.
-                    sender?.Dispose();
+                    evaluationTransport?.Dispose();
                     evpTransport?.Dispose();
                     _disposeCompletion.TrySetResult(true);
                 }
@@ -734,7 +745,7 @@ namespace Datadog.Trace.FeatureFlags
                 if (exposureApi is null)
                 {
                     // Keep the HTTP client and its settings subscription lazy with the first exposure.
-                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings);
+                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
                     exposureApi = new ExposureApi(_tracerSettings, _evpTransport);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }

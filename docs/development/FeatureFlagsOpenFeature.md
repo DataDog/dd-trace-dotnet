@@ -25,19 +25,28 @@ capture to Finally, which removes it even when delivery is rejected. If OpenFeat
 replaces the result after a hook failure, the weak association can be collected.
 No full evaluation context is retained or added to public flag metadata.
 
-## Agent-only evaluation events
+## Evaluation event delivery
 
-Provider activation subscribes to the tracer's shared Agent discovery service.
-The `flagevaluation` writer starts only after discovery confirms EVP support at
-the configured Agent address. Until then, evaluations still work, but the EVP
-hook skips context capture and queueing; there is no startup buffer. A later
-successful discovery enables future observations. Agent-address changes close
-admission until that address is discovered, without replacing the writer or its
-service tags. Flush and shutdown still drain observations already accepted.
+Both event tracks use `FeatureFlagsEvpTransport`, with separate instances so
+evaluation fallback and disposal do not change exposure routing.
 
-Discovery reports capabilities, not continuous health: a later Agent outage
-retains the existing bounded, best-effort sends. This does not add direct-intake
-fallback or change the separate exposure transport.
+- **Remote Config:** provider activation subscribes to shared Agent discovery.
+  The evaluation writer starts after discovery confirms EVP support at the
+  configured address. Until then, evaluations work, but the hook skips context
+  capture and queueing. Agent-address changes close admission until the new
+  address is discovered. Delivery uses the existing fixed v2 route without
+  direct-intake fallback.
+- **Agentless:** provider activation starts the bounded evaluation writer without
+  waiting for discovery. The transport chooses an identity-preserving Agent route
+  or direct intake using the existing exposure fallback policy. It does not replay
+  a batch whose delivery is uncertain. If neither route is available, events are
+  dropped best-effort; flag evaluation is not blocked on network delivery.
+
+Service tags remain fixed for a writer's lifetime. Privacy filtering, aggregation
+and payload limits happen before transport, which sends the already-compressed
+bytes unchanged. Requests have a five-second deadline, including socket/pipe
+connections that succeed but never receive a response. Explicit evaluation flush
+and shutdown retain their bounded, best-effort waits.
 
 ## Focused tests
 

@@ -25,6 +25,7 @@ using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -35,6 +36,41 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    [Fact]
+    public async Task AgentlessModuleUsesSharedDiscoveryForEventDelivery()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var discovery = new DiscoveryServiceMock();
+        var source = new FakeDeliverySource();
+        var collection = new NameValueCollection
+        {
+            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
+            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless" },
+            { ConfigurationKeys.ApiKey, "test-api-key" },
+            { ConfigurationKeys.Site, "datadoghq.com" },
+        };
+        var settings = new TracerSettings(new NameValueConfigurationSource(collection));
+
+        using (var module = FeatureFlagsModule.Create(settings, rcmManager, _ => source, discovery))
+        {
+            module.Should().NotBeNull();
+            source.Started.Should().Be(0);
+            rcmManager.HasAnySubscription.Should().BeFalse();
+            discovery.Callbacks.Should().BeEmpty("event discovery subscriptions start with the first exposure");
+            module!.GetExposureApi().Should().NotBeNull();
+            discovery.Callbacks.Should().ContainSingle();
+
+            module.Activate();
+            module.Activate();
+            source.Started.Should().Be(1);
+            discovery.Callbacks.Should().HaveCount(2, "exposures and evaluations own separate transports");
+            await module.DisposeAsync();
+        }
+
+        discovery.Callbacks.Should().BeEmpty();
+        source.Disposed.Should().Be(1);
+    }
+
     [Fact]
     public void DefaultModuleDoesNotCreateExposureTransportUntilFirstUse()
     {
@@ -90,13 +126,14 @@ public class FeatureFlagsModuleTests
         var transport = (FeatureFlagsEvpTransport)typeof(FeatureFlagsModule)
                                                 .GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
                                                 .GetValue(module)!;
-        var factoryField = typeof(FeatureFlagsEvpTransport).GetField("_localRequestFactory", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var endpointField = typeof(FeatureFlagsEvpTransport).GetField("_localEndpoint", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var factoryProperty = endpointField.FieldType.GetProperty("Factory")!;
         var contextField = typeof(ExposureApi).GetField("_context", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-        subscribers.Count.Should().Be(initialSubscriptions + 2 + (activateEvaluationWriter ? 1 : 0), "exposure transport, exposure context, and an active evaluation writer subscribe to settings");
+        subscribers.Count.Should().Be(initialSubscriptions + 2 + (activateEvaluationWriter ? 2 : 0), "each track subscribes for its transport and context/admission");
         UpdateSettings("before-disposal", new Uri("http://127.0.0.1:18126/updated/"));
 
-        var factory = (IApiRequestFactory)factoryField.GetValue(transport)!;
+        var factory = (IApiRequestFactory)factoryProperty.GetValue(endpointField.GetValue(transport))!;
         factory.GetEndpoint("evp_proxy/v2/api/v2/exposures").Should().Be(new Uri("http://127.0.0.1:18126/updated/evp_proxy/v2/api/v2/exposures"));
         var context = (Dictionary<string, string>)contextField.GetValue(api)!;
         context["service"].Should().Be("before-disposal");
@@ -106,7 +143,7 @@ public class FeatureFlagsModuleTests
         subscribers.Count.Should().Be(initialSubscriptions, "module disposal must remove all event settings subscriptions");
         module.EvaluationWriter.Should().BeNull();
         UpdateSettings("after-disposal", new Uri("http://127.0.0.1:28126/ignored/"));
-        factoryField.GetValue(transport).Should().BeSameAs(factory);
+        factoryProperty.GetValue(endpointField.GetValue(transport)).Should().BeSameAs(factory);
         contextField.GetValue(api).Should().BeSameAs(context);
 
         void UpdateSettings(string service, Uri agentUri)

@@ -280,6 +280,11 @@ namespace Datadog.Trace
         internal const string NetworkPeerAddress = "network.peer.address";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention peer port of the network connection.
+        /// </summary>
+        internal const string NetworkPeerPort = "network.peer.port";
+
+        /// <summary>
         /// The ASP.NET routing template.
         /// </summary>
         internal const string AspNetRoute = "aspnet.route";
