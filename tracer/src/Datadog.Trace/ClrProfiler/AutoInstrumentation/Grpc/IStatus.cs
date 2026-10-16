@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 #nullable enable
 
@@ -13,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
     /// Duck type for Grpc.Core.Status
     /// Same as <see cref="StatusStruct"/>, but an interface for use in constraints
     /// </summary>
+    [DuckType("Grpc.Core.Status", "Grpc.Core.Api")]
     internal interface IStatus
     {
         public int StatusCode { get; }

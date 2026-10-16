@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <remarks>
 /// https://github.com/HangfireIO/Hangfire/blob/96c5d825ab3ee6f123f9e041ac301881e168e508/src/Hangfire.Core/BackgroundJob.cs
 /// </remarks>
+[DuckType("Hangfire.BackgroundJob", "Hangfire.Core")]
 public interface IBackgroundJobProxy : IDuckType
 {
     /// <summary>

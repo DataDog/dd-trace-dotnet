@@ -7,8 +7,11 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection;
 
+[DuckType("Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions", "Microsoft.AspNetCore.Server.Kestrel.Core")]
 internal interface IKestrelServerOptions
 {
     public IServiceProvider ApplicationServices { get; set; }

@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 /// <summary>
 /// ModelBase interface for duck typing
 /// </summary>
+[DuckType("RabbitMQ.Client.Impl.Channel", "RabbitMQ.Client")]
 internal interface IModelBase : IDuckType
 {
     /// <summary>

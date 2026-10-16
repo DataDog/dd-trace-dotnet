@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Collections;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     /// <summary>
     /// PublishRequest interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.SimpleNotificationService.Model.PublishBatchRequest", "AWSSDK.SimpleNotificationService")]
     internal interface IPublishBatchRequest : IAmazonSNSRequestWithTopicArn
     {
         /// <summary>

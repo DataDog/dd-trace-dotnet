@@ -5,11 +5,14 @@
 
 #nullable  enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase;
 
 /// <summary>
 /// Ducktyping of Couchbase.IO.IConnectionPool
 /// </summary>
+[DuckType("Couchbase.IO.SharedConnectionPool`1[[Couchbase.IO.MultiplexingConnection, Couchbase.NetClient]]", "Couchbase.NetClient")]
 internal interface IConnectionPool
 {
     IPoolConfiguration Configuration { get; }

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 /// Session interface for duck typing
 /// </summary>
 [DuckCopy]
+[DuckCopy("RabbitMQ.Client.Impl.Session", "RabbitMQ.Client")]
 internal struct ISession
 {
     /// <summary>

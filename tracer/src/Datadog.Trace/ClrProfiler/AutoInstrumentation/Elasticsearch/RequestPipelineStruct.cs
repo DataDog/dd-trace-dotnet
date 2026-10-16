@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
     /// Duck-copy struct for RequestPipeline
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Elasticsearch.Net.RequestPipeline", "Elasticsearch.Net")]
     internal struct RequestPipelineStruct
     {
         public object RequestParameters;

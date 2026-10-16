@@ -8,6 +8,7 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 [DuckTyping.DuckCopy]
+[DuckTyping.DuckCopy("Microsoft.AspNetCore.Mvc.ObjectResult", "Microsoft.AspNetCore.Mvc.Core", IncludeDerivedTypes = true)]
 internal struct ObjectResult
 {
     public object? Value;

@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// model binding result duck type
     /// </summary>
     [DuckTyping.DuckCopy]
+    [DuckTyping.DuckCopy("Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult", "Microsoft.AspNetCore.Mvc.Abstractions")]
     internal struct ModelBindingResult
     {
         /// <summary>

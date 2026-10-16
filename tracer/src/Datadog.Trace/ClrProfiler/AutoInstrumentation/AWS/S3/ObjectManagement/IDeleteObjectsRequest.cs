@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 /// DeleteObjectsRequest interface for ducktyping.
 /// Mirrors Amazon.S3.Model.DeleteObjectsRequest with unused values removed.
 /// </summary>
+[DuckType("Amazon.S3.Model.DeleteObjectsRequest", "AWSSDK.S3")]
 internal interface IDeleteObjectsRequest : IDuckType
 {
     /// <summary>

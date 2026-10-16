@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 #nullable enable
 using System.ComponentModel;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
+[DuckType("Microsoft.AspNetCore.Session.SessionFeature", "Microsoft.AspNetCore.Session")]
+[DuckType("Microsoft.AspNetCore.Http.Features.ISessionFeature", "Microsoft.AspNetCore.Http.Features", IncludeDerivedTypes = true)]
 public interface ISessionFeature
 {
     /// <summary>

@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
     /// <summary>
     /// log4net.Core.LoggingEvent interface for ducktyping
     /// </summary>
+    [DuckType("log4net.Core.LoggingEvent", "log4net")]
     internal interface ILoggingEvent : IDuckType
     {
         /// <summary>

@@ -749,6 +749,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Http.DefaultHttpContext", "Microsoft.AspNetCore.Http")]
         internal struct HttpRequestInStartStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
@@ -756,6 +757,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Http.DefaultHttpContext", "Microsoft.AspNetCore.Http")]
         internal struct HttpRequestInStopStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
@@ -763,6 +765,9 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Hosting.HostingApplicationDiagnostics+UnhandledExceptionData", "Microsoft.AspNetCore.Hosting")]
+        [DuckCopy("<>f__AnonymousType0`2[[Microsoft.AspNetCore.Http.HttpContext, Microsoft.AspNetCore.Http.Abstractions],[System.Exception, System.Private.CoreLib]]", "Microsoft.AspNetCore.Diagnostics")]
+        [DuckCopy("<>f__AnonymousType1`3[[Microsoft.AspNetCore.Http.HttpContext, Microsoft.AspNetCore.Http.Abstractions],[System.Int64, System.Private.CoreLib],[System.Exception, System.Private.CoreLib]]", "Microsoft.AspNetCore.Hosting")]
         internal struct UnhandledExceptionStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
@@ -773,6 +778,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Mvc.Diagnostics.BeforeActionEventData", "Microsoft.AspNetCore.Mvc.Core")]
         internal struct BeforeActionStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
@@ -789,6 +795,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.Core/src/Controllers/ControllerActionDescriptor.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor", "Microsoft.AspNetCore.Mvc.Core")]
         internal struct ControllerActionDescriptorStruct
         {
             [Duck]
@@ -802,6 +809,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/CompiledPageActionDescriptor.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Mvc.RazorPages.CompiledPageActionDescriptor", "Microsoft.AspNetCore.Mvc.RazorPages")]
         internal struct CompiledPageActionDescriptorStruct
         {
             [Duck]
@@ -815,6 +823,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/Infrastructure/HandlerMethodDescriptor.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure.HandlerMethodDescriptor", "Microsoft.AspNetCore.Mvc.RazorPages")]
         internal struct HandlerMethodDescriptorStruct
         {
             [Duck]
@@ -825,6 +834,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
+        [DuckCopy("System.InvalidOperationException", "System.Private.CoreLib")]
         internal struct BadHttpRequestExceptionStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
@@ -832,6 +842,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Http.DefaultHttpContext", "Microsoft.AspNetCore.Http")]
         internal struct HttpRequestInEndpointMatchedStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
@@ -849,6 +860,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Http.DefaultHttpRequest", "Microsoft.AspNetCore.Http")]
         internal struct HttpRequestStruct
         {
             public string Method;
@@ -860,6 +872,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Proxy for https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternPathSegment.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Routing.Patterns.RoutePatternPathSegment", "Microsoft.AspNetCore.Routing")]
         internal struct RoutePatternPathSegmentStruct
         {
             public IEnumerable Parts;
@@ -870,6 +883,8 @@ namespace Datadog.Trace.DiagnosticListeners
         /// and https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternSeparatorPart.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Routing.Patterns.RoutePatternLiteralPart", "Microsoft.AspNetCore.Routing")]
+        [DuckCopy("Microsoft.AspNetCore.Routing.Patterns.RoutePatternParameterPart", "Microsoft.AspNetCore.Routing")]
         internal struct RoutePatternContentPartStruct
         {
             public string Content;
@@ -879,6 +894,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Proxy for https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternParameterPart.cs
         /// </summary>
         [DuckCopy]
+        [DuckCopy("Microsoft.AspNetCore.Routing.Patterns.RoutePatternParameterPart", "Microsoft.AspNetCore.Routing")]
         internal struct RoutePatternParameterPartStruct
         {
             public string Name;

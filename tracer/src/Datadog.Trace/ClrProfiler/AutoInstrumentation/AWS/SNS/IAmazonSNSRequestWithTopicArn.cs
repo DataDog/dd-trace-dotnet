@@ -5,11 +5,15 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     /// <summary>
     /// Interface for ducktyping AmazonSNSRequest implementations with the TopicArn property
     /// </summary>
+    [DuckType("Amazon.SimpleNotificationService.Model.PublishBatchRequest", "AWSSDK.SimpleNotificationService")]
+    [DuckType("Amazon.SimpleNotificationService.Model.PublishRequest", "AWSSDK.SimpleNotificationService")]
     internal interface IAmazonSNSRequestWithTopicArn
     {
         /// <summary>

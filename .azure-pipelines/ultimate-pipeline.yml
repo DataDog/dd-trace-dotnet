@@ -2408,6 +2408,14 @@ stages:
         command: "CheckBuildLogsForErrors"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+    # The duck typing mappings the integration tests recorded must be declared, so NativeAOT builds generate them without a
+    # recorded map (see docs/development/NativeAOT.md).
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckAotDuckTypeDeclarations"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
   - job: DockerTest
     timeoutInMinutes: 60 #default value
     strategy:
@@ -2521,6 +2529,14 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    # The duck typing mappings the integration tests recorded must be declared, so NativeAOT builds generate them without a
+    # recorded map (see docs/development/NativeAOT.md).
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckAotDuckTypeDeclarations"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: Serverless
@@ -2704,6 +2720,14 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    # The duck typing mappings the integration tests recorded must be declared, so NativeAOT builds generate them without a
+    # recorded map (see docs/development/NativeAOT.md).
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckAotDuckTypeDeclarations"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: integration_tests_linux_debugger
