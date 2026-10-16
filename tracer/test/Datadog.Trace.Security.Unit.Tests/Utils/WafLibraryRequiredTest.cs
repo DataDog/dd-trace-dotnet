@@ -102,7 +102,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         var binPayload = SerializePayload(payload);
         var rcPathTxt = $"datadog/00/ASM/{id}/config";
         var rcPath = RemoteConfigurationPath.FromPath(rcPathTxt);
-        var rc = new RemoteConfiguration(rcPath, binPayload, binPayload.Length, new(), 1);
+        var rc = new RemoteConfiguration(rcPath, binPayload, 1);
         var product = RcmProducts.Asm;
         var remoteConfigs = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
         var removeList = CreateRemoteRemovedConfigsByProduct(product, removeIds);
@@ -120,7 +120,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         var binPayload = SerializePayload(payload);
         var rcPathTxt = $"datadog/00/ASM_DATA/{id}/config";
         var rcPath = RemoteConfigurationPath.FromPath(rcPathTxt);
-        var rc = new RemoteConfiguration(rcPath, binPayload, binPayload.Length, new(), 1);
+        var rc = new RemoteConfiguration(rcPath, binPayload, 1);
         var product = RcmProducts.AsmData;
         var remoteConfigs = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
         var removeList = CreateRemoteRemovedConfigsByProduct(product, removeIds);
@@ -138,7 +138,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         var binPayload = SerializePayload(payload);
         var rcPathTxt = $"datadog/00/ASM_DD/{id}/config";
         var rcPath = RemoteConfigurationPath.FromPath(rcPathTxt);
-        var rc = new RemoteConfiguration(rcPath, binPayload, binPayload.Length, new(), 1);
+        var rc = new RemoteConfiguration(rcPath, binPayload, 1);
         var product = RcmProducts.AsmDd;
         var remoteConfigs = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
         var removeList = CreateRemoteRemovedConfigsByProduct(product, removeIds);

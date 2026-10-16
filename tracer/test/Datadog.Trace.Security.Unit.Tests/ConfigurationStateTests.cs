@@ -303,7 +303,7 @@ public class ConfigurationStateTests
         var ruleSetJson = new JObject { ["version"] = "2.2" };
         var bytes = Encoding.UTF8.GetBytes(ruleSetJson.ToString());
         var rcPath = RemoteConfigurationPath.FromPath(path);
-        var rc = new RemoteConfiguration(rcPath, bytes, bytes.Length, new(), 1);
+        var rc = new RemoteConfiguration(rcPath, bytes, 1);
         return new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.AsmDd, new List<RemoteConfiguration> { rc } } };
     }
 
@@ -312,7 +312,7 @@ public class ConfigurationStateTests
         var featuresJson = new JObject { ["asm"] = new JObject { ["enabled"] = enabled } };
         var bytes = Encoding.UTF8.GetBytes(featuresJson.ToString());
         var rcPath = RemoteConfigurationPath.FromPath(AsmFeaturesPath);
-        var rc = new RemoteConfiguration(rcPath, bytes, bytes.Length, new(), 1);
+        var rc = new RemoteConfiguration(rcPath, bytes, 1);
         return new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.AsmFeatures, new List<RemoteConfiguration> { rc } } };
     }
 
@@ -322,7 +322,7 @@ public class ConfigurationStateTests
         var payload = new JObject { ["exclusions"] = new JArray() };
         var bytes = Encoding.UTF8.GetBytes(payload.ToString());
         var rcPath = RemoteConfigurationPath.FromPath(path);
-        var rc = new RemoteConfiguration(rcPath, bytes, bytes.Length, new(), 1);
+        var rc = new RemoteConfiguration(rcPath, bytes, 1);
         return new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.Asm, new List<RemoteConfiguration> { rc } } };
     }
 
@@ -331,7 +331,7 @@ public class ConfigurationStateTests
         var payload = new JObject { ["rules_data"] = new JArray() };
         var bytes = Encoding.UTF8.GetBytes(payload.ToString());
         var rcPath = RemoteConfigurationPath.FromPath(path);
-        var rc = new RemoteConfiguration(rcPath, bytes, bytes.Length, new(), 1);
+        var rc = new RemoteConfiguration(rcPath, bytes, 1);
         return new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.AsmData, new List<RemoteConfiguration> { rc } } };
     }
 

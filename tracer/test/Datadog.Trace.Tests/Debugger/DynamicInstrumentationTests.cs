@@ -355,7 +355,7 @@ public class DynamicInstrumentationTests
     private static RemoteConfiguration CreateRemoteConfiguration(string path, string json)
     {
         var content = Encoding.UTF8.GetBytes(json);
-        return new RemoteConfiguration(RemoteConfigurationPath.FromPath(path), content, content.Length, [], version: 1);
+        return new RemoteConfiguration(RemoteConfigurationPath.FromPath(path), content, 1);
     }
 
     public class ProbeFileLoadingTests : IDisposable
@@ -1357,14 +1357,10 @@ public class DynamicInstrumentationTests
             throw new NotImplementedException();
         }
 
-        public byte[] GetCapabilities()
-        {
-            throw new NotImplementedException();
-        }
+        public bool Poll(Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory, RcmClientTracer tracer, RemoteConfigEndpoint endpoint, string[]? extraServices) => true;
 
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
+        public void Cancel()
         {
-            throw new NotImplementedException();
         }
     }
 

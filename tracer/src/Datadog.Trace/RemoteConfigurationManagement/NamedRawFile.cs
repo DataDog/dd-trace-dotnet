@@ -13,7 +13,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal readonly struct NamedRawFile
     {
-        public NamedRawFile(RemoteConfigurationPath path, byte[] value)
+        public NamedRawFile(RemoteConfigurationPath path, RemoteConfigurationContent value)
         {
             Path = path;
             RawFile = value;
@@ -21,11 +21,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public RemoteConfigurationPath Path { get; }
 
-        public byte[] RawFile { get; }
+        public RemoteConfigurationContent RawFile { get; }
 
         public NamedTypedFile<T?> Deserialize<T>()
         {
-            using var stream = new MemoryStream(RawFile);
+            using var stream = RawFile.OpenStream();
             using var streamReader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(streamReader)
             {

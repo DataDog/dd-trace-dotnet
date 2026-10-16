@@ -264,6 +264,16 @@ namespace Datadog.Trace
             try
             {
                 oldManager._settingSubscription.Dispose();
+
+                // First (before the new manager is started), so that only the new remote configuration manager polls
+                // with the client they share, except for a poll in progress
+                var configurationManagerReplaced = false;
+                if (oldManager.RemoteConfigurationManager != newManager.RemoteConfigurationManager && oldManager.RemoteConfigurationManager is not null)
+                {
+                    configurationManagerReplaced = true;
+                    oldManager.RemoteConfigurationManager.Dispose();
+                }
+
                 var agentWriterReplaced = false;
                 if (oldManager.AgentWriter != newManager.AgentWriter && oldManager.AgentWriter is not null)
                 {
@@ -300,13 +310,6 @@ namespace Datadog.Trace
                 {
                     dataStreamsReplaced = true;
                     await oldManager.DataStreamsManager.DisposeAsync().ConfigureAwait(false);
-                }
-
-                var configurationManagerReplaced = false;
-                if (oldManager.RemoteConfigurationManager != newManager.RemoteConfigurationManager && oldManager.RemoteConfigurationManager is not null)
-                {
-                    configurationManagerReplaced = true;
-                    oldManager.RemoteConfigurationManager.Dispose();
                 }
 
                 var dynamicConfigurationManagerReplaced = false;
@@ -893,7 +896,12 @@ namespace Datadog.Trace
             OtelProcessContextAnnouncer.Announce(tracerSettings);
         }
 
-        private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
+        private static Task RunShutdownTasksAsync(Exception ex)
+        {
+            // The remote configuration client outlives the tracer managers. Don't wait for a pending request, e.g. when the AppDomain is unloaded
+            RcmSubscriptionManager.Instance.Cancel();
+            return RunShutdownTasksAsync(_instance, _heartbeatTimer);
+        }
 
         private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer)
         {
