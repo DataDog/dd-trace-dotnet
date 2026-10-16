@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -40,9 +41,10 @@ internal readonly struct Location
 
     public Location(StackFrame? stackFrame, StackTrace? stack, string? stackId, ulong? spanId)
     {
-        var method = stackFrame?.GetMethod();
-        Class = method?.DeclaringType?.FullName;
-        Method = method?.Name;
+        // NativeAOT: the methods without reflection metadata come from the stack trace data.
+        StackFrameMethod.TryGet(stackFrame, out var method);
+        Class = method.TypeFullName;
+        Method = method.Name;
         var line = stackFrame?.GetFileLineNumber();
         Line = line > 0 ? line : null;
         Path = GetFileName(stackFrame?.GetFileName());

@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -48,6 +49,10 @@ internal static class StackWalker
         "Azure."
     };
 
+    // .NET 8 NativeAOT has no assembly in its stack trace data: the namespace of the type stands for it, so the names above
+    // are prefixes of the full names of their types (Datadog.Trace.Iast.IastModule is in Datadog.Trace).
+    private static readonly string[] TypePrefixesToSkip = AssemblyNamesToSkip.Select(name => name.EndsWith(".") ? name : name + ".").Distinct().ToArray();
+
     private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();
 
     /// <summary>
@@ -69,18 +74,21 @@ internal static class StackWalker
         var frames = stackTrace.GetFrames() ?? [];
         foreach (var frame in frames)
         {
-            var declaringType = frame?.GetMethod()?.DeclaringType;
+            // NativeAOT: the methods without reflection metadata come from the stack trace data.
+            if (!StackFrameMethod.TryGet(frame, out var method))
+            {
+                continue;
+            }
 
             foreach (var excludeType in ExcludeSpanGenerationTypes)
             {
-                if (excludeType == declaringType?.FullName)
+                if (excludeType == method.TypeFullName)
                 {
                     return false;
                 }
             }
 
-            var assembly = declaringType?.Assembly.GetName().Name;
-            if (assembly != null && !MustSkipAssembly(assembly))
+            if (!MustSkip(method))
             {
                 targetFrame = frame;
                 break;
@@ -88,6 +96,33 @@ internal static class StackWalker
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Whether the method of a frame is in an excluded assembly, or for the frames without assembly (.NET 8 NativeAOT), in a
+    /// namespace of one.
+    /// </summary>
+    internal static bool MustSkip(in StackFrameMethod method)
+    {
+        if (method.AssemblyName is { } assembly)
+        {
+            return MustSkipAssembly(assembly);
+        }
+
+        if (method.TypeFullName is not { } typeFullName)
+        {
+            return true;
+        }
+
+        foreach (var prefix in TypePrefixesToSkip)
+        {
+            if (typeFullName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static bool MustSkipAssembly(string assembly)
