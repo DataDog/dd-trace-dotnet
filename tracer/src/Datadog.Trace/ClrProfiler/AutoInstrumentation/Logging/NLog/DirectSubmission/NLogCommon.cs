@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
@@ -39,6 +40,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         private static readonly Func<object>? _createLoggingRuleFunc;
         // ReSharper restore InconsistentNaming
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+        [UnconditionalSuppressMessage("Trimming", "IL2080", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         static NLogCommon()
         {
             try
@@ -468,6 +471,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         }
 
         [TestingAndPrivateOnly]
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         internal static void TryGetMdcProxy(
             Assembly nlogAssembly,
             out bool haveMdcProxy,
@@ -506,6 +510,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         }
 
         [TestingAndPrivateOnly]
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         internal static void TryGetMdlcProxy(
             Assembly nlogAssembly,
             out bool haveMdlcProxy,
@@ -544,6 +549,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         }
 
         [TestingAndPrivateOnly]
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         internal static Func<object> CreateLoggingRuleActivator(Assembly nlogAssembly)
         {
             var activator = new ActivatorHelper(nlogAssembly.GetType("NLog.Config.LoggingRule")!);
