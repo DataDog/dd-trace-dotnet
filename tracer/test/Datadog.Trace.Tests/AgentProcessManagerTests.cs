@@ -196,7 +196,7 @@ public class AgentProcessManagerTests
             {
                 await server.WaitForConnectionAsync();
                 var buffer = new byte[1024];
-                await server.ReadAsync(buffer, 0, buffer.Length);
+                (await server.ReadAsync(buffer, 0, buffer.Length)).Should().BeGreaterThan(0); // the request
                 var response = Encoding.ASCII.GetBytes("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
                 await server.WriteAsync(response, 0, response.Length);
             });
@@ -227,7 +227,7 @@ public class AgentProcessManagerTests
         // The probe closed its connection: the server's next read ends instead of waiting forever
         await connected;
         var buffer = new byte[1024];
-        await server.ReadAsync(buffer, 0, buffer.Length); // the request
+        (await server.ReadAsync(buffer, 0, buffer.Length)).Should().BeGreaterThan(0); // the request
         var closed = await ReadUntilClosedAsync(server, TimeSpan.FromSeconds(10));
         closed.Should().BeTrue();
     }
