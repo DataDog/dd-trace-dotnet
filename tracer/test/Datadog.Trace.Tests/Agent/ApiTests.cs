@@ -99,6 +99,51 @@ namespace Datadog.Trace.Tests.Agent
 #endif
 
         [Theory]
+        [CombinatorialData]
+        public async Task SendWithExternalEnv(
+            [CombinatorialValues(null, "", "it-false,cn-weblog,pu-75a2b6d5-3949-4afb-ad0d-92ff0674e759")]
+            string externalEnv,
+            bool sendStats)
+        {
+            var responseMock = new Mock<IApiResponse>();
+            responseMock.Setup(x => x.StatusCode).Returns(200);
+
+            var savedHeaders = new Dictionary<string, string>();
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.AddHeader(It.IsAny<string>(), It.IsAny<string>())).Callback((string k, string v) => savedHeaders.Add(k, v));
+
+            var factoryMock = new Mock<IApiRequestFactory>();
+            factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+            factoryMock.Setup(x => x.GetEndpoint(It.IsAny<string>())).Returns(new Uri("http://localhost/"));
+
+            var containerMetadata = new ContainerMetadata(containerId: null, entityId: null, externalEnv);
+
+            var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, containerMetadata, updateSampleRates: null, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
+
+            if (sendStats)
+            {
+                var statsBuffer = new StatsBuffer.DatadogStatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance), initialTimestampNs: 0);
+                await api.SendStatsAsync(statsBuffer, 1, 0);
+            }
+            else
+            {
+                await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), numberOfTraces: 1, statsComputationEnabled: false, numberOfDroppedP0Traces: 0, numberOfDroppedP0Spans: 0, apmTracingEnabled: false);
+            }
+
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
+
+            if (string.IsNullOrEmpty(externalEnv))
+            {
+                savedHeaders.Should().NotContainKey(AgentHttpHeaderNames.ExternalEnv);
+            }
+            else
+            {
+                savedHeaders.Should().Contain(AgentHttpHeaderNames.ExternalEnv, externalEnv);
+            }
+        }
+
+        [Theory]
         [InlineData(429)]
         [InlineData(413)]
         [InlineData(408)]

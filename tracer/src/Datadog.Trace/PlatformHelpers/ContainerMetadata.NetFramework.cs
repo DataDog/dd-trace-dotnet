@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Threading;
 using Datadog.Trace.Logging;
 
@@ -19,14 +20,18 @@ internal sealed class ContainerMetadata
 {
     public static readonly ContainerMetadata Instance = new();
 
+    private readonly Lazy<string?> _externalEnv;
+
     private ContainerMetadata()
     {
+        _externalEnv = new Lazy<string?>(ContainerMetadataHelper.GetExternalEnvFromEnvironment, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     // For use in tests only
-    public ContainerMetadata(string containerId, string entityId)
+    public ContainerMetadata(string? containerId, string? entityId, string? externalEnv = null)
     {
-        // nothing to do, just to match the other version
+        // containerId and entityId are not supported on .NET Framework, they're only here to match the other version
+        _externalEnv = new Lazy<string?>(() => ContainerMetadataHelper.NormalizeExternalEnv(externalEnv));
     }
 
     /// <summary>
@@ -48,5 +53,14 @@ internal sealed class ContainerMetadata
     /// </summary>
     /// <value>The entity id or <c>null</c>.</value>
     public string? EntityId => null;
+
+    /// <summary>
+    /// Gets the origin detection information injected by the Datadog Cluster Agent Admission Controller
+    /// in the <c>DD_EXTERNAL_ENV</c> environment variable,
+    /// e.g. <c>it-false,cn-nginx-webserver,pu-75a2b6d5-3949-4afb-ad0d-92ff0674e759</c>.
+    /// Return <c>null</c> if the variable is not set or is empty.
+    /// </summary>
+    /// <value>The external env or <c>null</c>.</value>
+    public string? ExternalEnv => _externalEnv.Value;
 }
 #endif
