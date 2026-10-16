@@ -266,16 +266,15 @@ namespace Datadog.Trace
                                         {
                                             // The process we started exited after its startup window: back off like any other failure.
                                             // Only the first retry in a run of failures is logged above Debug.
-                                            var message = "{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).";
-                                            var args = new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures };
                                             if (metadata.SequentialFailures == 1)
                                             {
-                                                Log.Warning(message, args);
+                                                Log.Warning("{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
                                             }
                                             else
                                             {
-                                                Log.Debug(message, args);
+                                                Log.Debug("{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
                                             }
+
                                             await Task.Delay(startDelay).ConfigureAwait(false);
                                             metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
                                         }
@@ -296,17 +295,16 @@ namespace Datadog.Trace
                                             // A restart counts as a failure, so an agent that never becomes healthy backs off too
                                             metadata.SequentialFailures++;
                                             var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
-                                            var message = "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).";
-                                            var args = new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures };
                                             if (metadata.SequentialFailures == 1)
                                             {
-                                                Log.Warning(message, args);
+                                                Log.Warning("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
                                             }
                                             else
                                             {
                                                 // Later restarts in the same run of failures are intermediate retries
-                                                Log.Debug(message, args);
+                                                Log.Debug("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
                                             }
+
                                             await Task.Delay(delay).ConfigureAwait(false);
                                             metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
                                         }
@@ -409,6 +407,7 @@ namespace Datadog.Trace
                                             {
                                                 Log.Warning("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
                                             }
+
                                             ForgetOwnProcess(metadata);
                                             metadata.ProcessState = ProcessState.Faulted;
                                             break;
@@ -419,16 +418,15 @@ namespace Datadog.Trace
 
                                     if (metadata.ProcessState == ProcessState.ReadyToStart)
                                     {
-                                        var message = "{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).";
-                                        var args = new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure };
                                         if (isRetry)
                                         {
-                                            Log.Debug(message, args);
+                                            Log.Debug("{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
                                         }
                                         else
                                         {
-                                            Log.Warning(message, args);
+                                            Log.Warning("{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
                                         }
+
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                     }
                                 }
