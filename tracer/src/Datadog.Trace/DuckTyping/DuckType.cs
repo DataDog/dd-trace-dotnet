@@ -150,7 +150,13 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static CreateTypeResult GetOrCreateProxyType(Type proxyType, Type targetType, bool reverse)
         {
-            // The engine owns its caches (one per direction); per proxy definition fast paths live in CreateCache<T>.
+            // The engines own their caches; per proxy definition fast paths live in CreateCache<T>. Without dynamic code
+            // (NativeAOT), only the AOT engine can work: a constant for ILC, which leaves the dynamic engine out.
+            if (!DuckTypeAotEngine.IsDynamicCodeSupported || EnsureRuntimeModeIsInitialized() == DuckTypeRuntimeMode.Aot)
+            {
+                return reverse ? DuckTypeAotEngine.GetOrCreateReverseProxyType(proxyType, targetType) : DuckTypeAotEngine.GetOrCreateProxyType(proxyType, targetType);
+            }
+
             return reverse ? GetOrCreateDynamicReverseProxyType(proxyType, targetType) : GetOrCreateDynamicProxyType(proxyType, targetType);
         }
 
@@ -164,6 +170,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     var dryResult = CreateProxyType(key.ProxyDefinitionType, key.TargetType, true);
                     var result = dryResult.CanCreate() ? CreateProxyType(key.ProxyDefinitionType, key.TargetType, false) : dryResult;
+                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: false, result.CanCreate());
                     return result;
                 }))
                 .Value;
@@ -179,6 +186,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     var dryResult = CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, true);
                     var result = dryResult.CanCreate() ? CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, false) : dryResult;
+                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: true, result.CanCreate());
                     return result;
                 }))
                 .Value;
@@ -1863,6 +1871,12 @@ namespace Datadog.Trace.DuckTyping
                 if (activator is null)
                 {
                     ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                }
+
+                // The cast of the typed activator to CreateProxyInstance<T> (the message of CoreCLR's, which names both types).
+                if (activator is not CreateProxyInstance<T>)
+                {
+                    DuckTypeAotEngine.ThrowActivatorInvalidCast(activator, typeof(CreateProxyInstance<T>));
                 }
 
                 return ((CreateProxyInstance<T>)activator)(instance);
