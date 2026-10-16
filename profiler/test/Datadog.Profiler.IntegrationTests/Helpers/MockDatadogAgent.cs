@@ -30,6 +30,11 @@ namespace Datadog.Profiler.IntegrationTests
         public event EventHandler<EventArgs<int>> EventsSent;
         public event EventHandler<EventArgs<int>> ProfilerUnregistered;
 
+        // Exceptions thrown by test event handlers while dispatching a request.
+        // They are recorded instead of being rethrown so a buggy handler cannot
+        // kill the listener thread (and with it the whole test host).
+        public ConcurrentQueue<Exception> HandlerExceptions { get; } = new();
+
         public int NbCallsOnProfilingEndpoint => Volatile.Read(ref _nbCallsOnProfilingEndpoint);
         public int ProfiledProcessId { get; set; }
 
@@ -153,20 +158,33 @@ namespace Datadog.Profiler.IntegrationTests
                     try
                     {
                         var ctx = _listener.GetContext();
-                        if (ctx.Request.RawUrl == ProfilesEndpoint)
+                        // An exception escaping a subscriber's handler would propagate out of this
+                        // loop and kill the listener thread, taking down the whole test host and
+                        // aborting the entire test run. Record it instead, keep serving requests,
+                        // and still send the normal response.
+                        try
                         {
-                            OnProfilesRequestReceived(ctx);
-                            Interlocked.Increment(ref _nbCallsOnProfilingEndpoint);
-                        }
+                            if (ctx.Request.RawUrl == ProfilesEndpoint)
+                            {
+                                // Increment before dispatching so a throwing handler cannot skip
+                                // the count and mislead tests that assert on NbCallsOnProfilingEndpoint.
+                                Interlocked.Increment(ref _nbCallsOnProfilingEndpoint);
+                                OnProfilesRequestReceived(ctx);
+                            }
 
-                        if (ctx.Request.RawUrl == TracesEndpoint)
-                        {
-                            OnTracesRequestReceived(ctx);
-                        }
+                            if (ctx.Request.RawUrl == TracesEndpoint)
+                            {
+                                OnTracesRequestReceived(ctx);
+                            }
 
-                        if (ctx.Request.RawUrl == TelemetryMetricsEndpoint)
+                            if (ctx.Request.RawUrl == TelemetryMetricsEndpoint)
+                            {
+                                OnTelemetryMetricsReceived(ctx);
+                            }
+                        }
+                        catch (Exception ex)
                         {
-                            OnTelemetryMetricsReceived(ctx);
+                            HandlerExceptions.Enqueue(ex);
                         }
 
                         // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
