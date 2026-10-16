@@ -724,7 +724,10 @@ void CorProfilerCallback::InitializeServices()
         }
     }
 
-    _pSamplesCollector = RegisterService<SamplesCollector>(
+    // This is temporary until we have refactored all of this.
+    // Hack: we first create the samples collector instance and populate the _pSamplesCollector pointer.
+    // ...
+    _pSamplesCollector = std::make_unique<SamplesCollector>(
         _pConfiguration.get(),
         _pThreadsCpuManager,
         _pExporter.get(),
@@ -733,7 +736,7 @@ void CorProfilerCallback::InitializeServices()
     // Raw samples waiting in the providers. Must stay close to zero: a growing value means samples are
     // created but never drained by the SamplesCollector, i.e. unbounded memory growth (SCP-1413).
     _pendingSamplesMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_pending_raw_samples", [this]() {
-        return (_pSamplesCollector != nullptr) ? static_cast<double>(_pSamplesCollector->GetPendingSamplesCount()) : 0.0;
+        return static_cast<double>(_pSamplesCollector->GetPendingSamplesCount());
     });
 
     if (_pConfiguration->IsThreadLifetimeEnabled())
@@ -828,7 +831,6 @@ void CorProfilerCallback::InitializeServices()
     }
 }
 
-
 // Stable Configuration as manual or Single Step Instrumentation heuristics are triggered so profiling can start
 void CorProfilerCallback::OnStartDelayedProfiling()
 {
@@ -839,6 +841,13 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     }
 
     auto started = StartServices();
+
+    // Hack: ...Start samples collector last AND only if all services started correctly.
+    if (started)
+    {
+        started &= _pSamplesCollector->Start();
+    }
+
     if (!started)
     {
         Log::Error("One or multiple services failed to start after a delay. Stopping all services.");
@@ -853,6 +862,9 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         // That's a known hack/issue. Accepted for now until the refactoring @gleocadie
         StopEventSources();
         StopServices();
+        // No need to stop the samples collector, either it failed to start either one service failed to start earlier.
+        // The application will run with the profiler disabled. Drain the samples to avoid using memory.
+        _pSamplesCollector->DrainSamples();
 
         Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler.");
     }
@@ -1053,11 +1065,19 @@ bool CorProfilerCallback::StartServices()
 
 bool CorProfilerCallback::DisposeServices()
 {
+    // All services are stopped in reverse order of their creation.
     bool result = StopServices();
 
-    // Delete all services instances in reverse order of their creation
-    // to avoid using a deleted service...
+    // Hack: SamplesCollector is not part of the services. We must stop it last (only if started),
+    // to make sure that in normal shutdown, a last profiler is generated and sent.
+    // In case of the profiler failed to correctly start all services, the samples collector won't be started,
+    // so no last pprof will be generated and sent (in all cases, the pprof would not contains useful data)
+    if (_pSamplesCollector->IsStarted())
+    {
+        result &= _pSamplesCollector->Stop();
+    }
 
+    // Delete all services instances to avoid using a deleted service...
     _services.clear();
 
     _pThreadsCpuManager = nullptr;
@@ -1886,13 +1906,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         return S_OK;
     }
 
-    if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation &&
-        _pConfiguration->GetEnablementStatus() != EnablementStatus::ManuallyEnabled)
-    {
-        // TODO: check we this is needed under these conditions (for example, should do nothing if disabled)
-        _pSamplesCollector->Start();
-    }
-
     // if the profiler is not enabled (either manually or via SSI), nothing is profiled
     if (!_pSsiManager->IsProfilerEnabled())
     {
@@ -1905,10 +1918,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
     {
         auto started = StartServices();
+
+        // Hack: ...Start samples collector last AND only if all services started correctly.
+        if (started)
+        {
+            started &= _pSamplesCollector->Start();
+        }
+
         if (!started)
         {
             Log::Error("One or multiple services failed to start. Stopping all services.");
             StopServices();
+
+            // No need to stop the samples collector, either it failed to start either one service failed to start earlier.
 
             Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
             return E_FAIL;
@@ -1954,9 +1976,6 @@ if (_pCpuProfiler != nullptr)
     LogServiceStop(success, _pCpuProfiler->GetName());
 }
 #endif
-    // TODO: maybe move the following 2 lines AFTER stopping the providers
-    // --> to ensure that the last samples are collected
-    _pSamplesCollector->Stop();
 
     _pSsiManager->ProcessEnd();
 
@@ -2107,7 +2126,6 @@ if (_pCpuProfiler != nullptr)
         {
             // This is mainly for tests where no profile is sent (SSI + failing service)
             // We want to know what the metrics at shutdow to check if there is anything wrong (ex: pending samples)
-            // In a normal setup (started correctly, shutdown normally), pending samples metric should be 0.
             Log::Debug("=== Profiler Metrics at Shutdown ===");
             for (auto const& [name, value] : _metricsRegistry.Collect())
             {
@@ -2427,6 +2445,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 
     EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
+    {
+        return S_OK;
+    }
+
+    // Prevent from adding new threads in managed thread lists to avoid leaking memory/handles.
+    // ThreadDestroyed is not changed to allow cleaning thread metadata.
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
     {
         return S_OK;
     }
@@ -2928,6 +2953,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider)
 {
+    if (_pSsiManager->IsProfilingPermanentlyDisabled())
+    {
+        return S_OK;
+    }
+
     if (_pCorProfilerInfoEvents == nullptr)
     {
         return S_OK;

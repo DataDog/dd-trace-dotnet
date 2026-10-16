@@ -234,7 +234,7 @@ public:
     //IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
-    SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
+    SamplesCollector* GetSamplesCollector() { return _pSamplesCollector.get(); }
     void TraceContextHasBeenSet() { _pSsiManager->OnSpanCreated(); }
 
     // when the delayed start fails, the services (including the SamplesCollector) are stopped and will never
@@ -276,7 +276,7 @@ private :
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     AllocationsProvider* _pAllocationsProvider = nullptr;
     ContentionProvider* _pContentionProvider = nullptr;
-    SamplesCollector* _pSamplesCollector = nullptr;
+    std::unique_ptr<SamplesCollector> _pSamplesCollector = nullptr;
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;

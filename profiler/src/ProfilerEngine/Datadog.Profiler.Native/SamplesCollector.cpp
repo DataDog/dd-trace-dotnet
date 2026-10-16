@@ -184,3 +184,18 @@ void SamplesCollector::SendHeartBeatMetric(bool success)
         _metricsSender->Counter(SuccessfulExportsMetricName, 1, {{"success", success ? "1" : "0"}});
     }
 }
+
+void SamplesCollector::DrainSamples()
+{
+    std::lock_guard lock(_exportLock);
+
+    for (auto& samplesProvider : _samplesProviders)
+    {
+        (void)samplesProvider.first->GetSamples();
+    }
+
+    for (auto& batchedSamplesProvider : _batchedSamplesProviders)
+    {
+        (void)batchedSamplesProvider.first->GetSamples();
+    }
+}
