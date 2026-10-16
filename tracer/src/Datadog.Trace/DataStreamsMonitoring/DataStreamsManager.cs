@@ -34,6 +34,12 @@ internal sealed class DataStreamsManager
     /// </summary>
     internal const int MaxEdgeTagCacheSize = 1000;
 
+    /// <summary>
+    /// Maximum number of edge-tag arrays whose node hash is cached.
+    /// Once reached, node hashes for new arrays are computed on every call without caching.
+    /// </summary>
+    internal const int MaxNodeHashCacheSize = 1000;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
@@ -43,9 +49,11 @@ internal sealed class DataStreamsManager
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
     private readonly bool _isInDefaultState;
-    // Keyed by string[] identity (reference equality) — safe because TagCache holds strong
-    // references to the cached arrays (bounded by MaxEdgeTagCacheSize).
+    // Keyed by string[] identity (reference equality). Callers don't always pass a stable array
+    // (TagCache returns a fresh one once full, and the manual API allocates one per call),
+    // so the cache must be bounded explicitly (MaxNodeHashCacheSize).
     private readonly ConcurrentDictionary<string[], NodeHash> _nodeHashCache = new();
+    private int _nodeHashCacheCount;
 
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
@@ -126,6 +134,7 @@ internal sealed class DataStreamsManager
             ref _nodeHashBase,
             unchecked((long)value.Value)); // reinterpret as a long
         _nodeHashCache.Clear();
+        Interlocked.Exchange(ref _nodeHashCacheCount, 0);
     }
 
     public static DataStreamsManager Create(
@@ -319,7 +328,13 @@ internal sealed class DataStreamsManager
             // Fast path: hash already cached for current base (cleared on settings updates).
             if (!_nodeHashCache.TryGetValue(edgeTags, out var nodeHash))
             {
-                nodeHash = _nodeHashCache.GetOrAdd(edgeTags, tags => HashHelper.CalculateNodeHash(nodeHashBase, tags));
+                nodeHash = HashHelper.CalculateNodeHash(nodeHashBase, edgeTags);
+                // Soft limit: may overshoot by O(concurrent threads), same as TagCache.
+                if (Volatile.Read(ref _nodeHashCacheCount) < MaxNodeHashCacheSize
+                 && _nodeHashCache.TryAdd(edgeTags, nodeHash))
+                {
+                    Interlocked.Increment(ref _nodeHashCacheCount);
+                }
             }
 
             var parentHash = previousContext?.Hash ?? default;
