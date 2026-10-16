@@ -60,9 +60,17 @@
     <ClCompile Include="AdaptiveSamplerTest.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
+    <ClCompile Include="AddressSpaceMapTest.cpp" />
     <ClCompile Include="CallstackTest.cpp" />
+    <ClCompile Include="CdacDescriptorTest.cpp" />
+    <ClCompile Include="CdacGCContractTest.cpp" />
     <ClCompile Include="ClrEventsParserTest.cpp" />
+    <ClCompile Include="CommittedMemoryProbeTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
+    <ClCompile Include="DacNativeHeapEnumeratorTest.cpp" />
+    <ClCompile Include="EEHeapReporterTest.cpp" />
+    <ClCompile Include="InProcessMemoryReaderTest.cpp" />
+    <ClCompile Include="MemoryBreakdownProviderTest.cpp" />
     <ClCompile Include="CoreLibModuleProviderTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="CpuSamplePRoviderTest.cpp" />
@@ -74,6 +82,7 @@
     <ClCompile Include="EtwEventsManagerTest.cpp" />
     <ClCompile Include="ExporterTest.cpp" />
     <ClCompile Include="FakeSamples.cpp" />
+    <ClCompile Include="FfiHelperTest.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="InlineVTCacheTest.cpp" />
@@ -112,6 +121,7 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp" />
     <ClInclude Include="AppDomainStoreHelper.h" />
+    <ClInclude Include="EEHeapTestHelpers.h" />
     <ClInclude Include="CoreLibMockProfilerInfo.h" />
     <ClInclude Include="EnvironmentHelper.h" />
     <ClInclude Include="FakeSamples.h" />

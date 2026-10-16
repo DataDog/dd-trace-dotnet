@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>eeheapCat.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EEHeapModel\EEHeapModel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="eeheapCat.ico" />
+    <Resource Include="eeheapCat.png" />
+  </ItemGroup>
+
+</Project>

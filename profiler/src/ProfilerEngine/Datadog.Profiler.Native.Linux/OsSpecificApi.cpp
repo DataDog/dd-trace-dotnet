@@ -5,12 +5,18 @@
 
 #include "OsSpecificApi.h"
 
+#include "AddressSpaceMap.h"
+
+#include <algorithm>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <chrono>
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -434,6 +440,139 @@ double GetProcessLifetime()
     std::chrono::seconds now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());
     auto startTimeIsSeconds = now.count() - (machineBootTime.count() + processStartTimeSinceBoot.count());
     return startTimeIsSeconds;
+}
+
+size_t GetSystemPageSize()
+{
+    long pageSize = sysconf(_SC_PAGESIZE);
+    return pageSize > 0 ? static_cast<size_t>(pageSize) : 4096;
+}
+
+namespace {
+
+// Leaf name (after the last '/') of a mapping pathname.
+std::string LeafName(const std::string& path)
+{
+    auto pos = path.find_last_of('/');
+    return pos == std::string::npos ? path : path.substr(pos + 1);
+}
+
+RegionCategory CategorizeLinux(const std::string& path, const char* perms)
+{
+    if (path == "[heap]")
+    {
+        return RegionCategory::Heap;
+    }
+    if (path == "[stack]" || path.rfind("[stack:", 0) == 0)
+    {
+        return RegionCategory::Stack;
+    }
+    if (!path.empty() && path[0] == '/')
+    {
+        // A file-backed mapping. All segments of a shared object/executable (r-x, r--, rw-) share the
+        // same pathname, so keying by the path leaf collapses them into one module.
+        return RegionCategory::Image;
+    }
+    if (path.rfind("[anon:", 0) == 0 || path.empty() || path == "[anon]")
+    {
+        return RegionCategory::PrivateData;
+    }
+    // [vdso], [vvar], [vsyscall], named regions...
+    return RegionCategory::Other;
+}
+
+} // namespace
+
+std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap()
+{
+    std::vector<AddressRegion> regions;
+
+    std::ifstream smaps("/proc/self/smaps");
+    if (!smaps.is_open())
+    {
+        return std::make_unique<AddressSpaceMap>(std::move(regions), /*providesCommitted*/ false, /*providesRss*/ true);
+    }
+
+    std::string line;
+    bool haveCurrent = false;
+    AddressRegion current;
+
+    auto flush = [&]() {
+        if (haveCurrent)
+        {
+            regions.push_back(std::move(current));
+            current = AddressRegion{};
+            haveCurrent = false;
+        }
+    };
+
+    while (std::getline(smaps, line))
+    {
+        unsigned long long start = 0;
+        unsigned long long stop = 0;
+        char perms[8] = {0};
+        unsigned long long offset = 0;
+        char dev[16] = {0};
+        unsigned long long inode = 0;
+        int pathPos = 0;
+
+        // Header line: "start-end perms offset dev inode pathname"
+        if (std::sscanf(line.c_str(), "%llx-%llx %7s %llx %15s %llu %n",
+                        &start, &stop, perms, &offset, dev, &inode, &pathPos) >= 6)
+        {
+            flush();
+
+            std::string path;
+            if (pathPos > 0 && static_cast<size_t>(pathPos) <= line.size())
+            {
+                path = line.substr(static_cast<size_t>(pathPos));
+                // trim trailing whitespace
+                while (!path.empty() && (path.back() == ' ' || path.back() == '\t' || path.back() == '\r' || path.back() == '\n'))
+                {
+                    path.pop_back();
+                }
+            }
+
+            current = AddressRegion{};
+            current.Address = static_cast<uintptr_t>(start);
+            current.Size = static_cast<uint64_t>(stop - start);
+            current.Protection.assign(perms, perms[0] ? std::min<size_t>(3, strlen(perms)) : 0);
+            // Accessible (committed, in the eeheap sense) when not PROT_NONE ("---p").
+            const bool accessible = !(perms[0] == '-' && perms[1] == '-' && perms[2] == '-');
+            current.Committed = accessible ? current.Size : 0;
+            current.Category = CategorizeLinux(path, perms);
+            if (current.Category == RegionCategory::Image)
+            {
+                current.ModuleName = LeafName(path);
+            }
+            else if (current.Category == RegionCategory::Other && !path.empty())
+            {
+                current.ModuleName = path;
+            }
+            haveCurrent = true;
+            continue;
+        }
+
+        if (!haveCurrent)
+        {
+            continue;
+        }
+
+        // Detail line: "Key:            123 kB"
+        unsigned long long kb = 0;
+        char key[64] = {0};
+        if (std::sscanf(line.c_str(), "%63[^:]: %llu kB", key, &kb) == 2)
+        {
+            if (std::strcmp(key, "Rss") == 0)
+            {
+                current.Rss = kb * 1024ull;
+            }
+        }
+    }
+
+    flush();
+
+    return std::make_unique<AddressSpaceMap>(std::move(regions), /*providesCommitted*/ false, /*providesRss*/ true);
 }
 
 } // namespace OsSpecificApi

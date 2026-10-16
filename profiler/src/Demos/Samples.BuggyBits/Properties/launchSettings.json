@@ -2,13 +2,19 @@
   "profiles": {
     "BuggyBits-Alone": {
       "commandName": "Project",
+      "commandLineArgs": "--scenario 8192 --with-idle-threads 64 --urls http://localhost:5500",
       "launchBrowser": true,
+      "environmentVariables": {
+        "COMPlus_EnableDiagnostics": "1",
+        "DOTNET_gcServer=": "1",
+        "DOTNET_GCHeapCount": "3"
+      },
       "nativeDebugging": true,
       "applicationUrl": "http://localhost:5500"
     },
     "BuggyBits+Profiler": {
       "commandName": "Project",
-      "commandLineArgs": "--timeout 180",
+      "commandLineArgs": "--scenario 8192 --with-idle-threads 64 --urls http://localhost:5500",
       "launchBrowser": true,
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
@@ -22,17 +28,34 @@
         "CORECLR_PROFILER_PATH_32": "$(BuildOutputRoot)\\bin\\$(Configuration)-x86\\profiler\\src\\ProfilerEngine\\Datadog.Profiler.Native.Windows\\Datadog.Profiler.Native.dll",
 
         "COMPlus_EnableDiagnostics": "1",
+        "DOTNET_gcServer=": "1",
+        "DOTNET_GCHeapCount": "3",
 
+        "DD_TRACE_ENABLED": "0",
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "0",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1",
+        "DD_PROFILING_LOCK_ENABLED": "1",
+        "DD_PROFILING_ALLOCATION_ENABLED": "1",
+        "DD_PROFILING_HEAP_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_HTTP_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING": "1",
+        "DD_PROFILING_HEAPSNAPSHOT_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED": "1",
+
+        "DD_PROFILING_GC_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED": "1",
+
+        "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
         "DD_TRACE_DEBUG": "1",
 
-        "DD_PROFILING_ENABLED": "1",
-        "DD_PROFILING_CPU_ENABLED": "0",
-        "DD_PROFILING_EXCEPTION_ENABLED": "0",
-        "DD_PROFILING_ALLOCATION_ENABLED": "0",
-        "DD_INTERNAL_PROFILING_HTTP_ENABLED": "1",
-        "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
+        "DD_RUNTIME_METRICS_ENABLED": "0",
+        "DD_ENV": "apm-profiling-local",
+        "DD_SERVICE": "dd-dotnet-steady",
 
-        "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true",
+        "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "false",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "nativeDebugging": true,
@@ -40,7 +63,38 @@
     },
     "BuggyBits+Tracer": {
       "commandName": "Project",
-      "commandLineArgs": "--scenario 512 --urls http://localhost:5500",
+      "commandLineArgs": "--scenario 8192 --with-idle-threads 64 --urls http://localhost:5500",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+
+        "COMPlus_EnableDiagnostics": "1",
+        "DOTNET_gcServer=": "1",
+        "DOTNET_GCHeapCount": "3",
+
+        "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "0",
+        "DD_PROFILING_ENABLED": "0",
+
+        "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
+        "DD_TRACE_DEBUG": "1",
+
+        "DD_RUNTIME_METRICS_ENABLED": "0",
+        "DD_ENV": "apm-profiling-local",
+        "DD_SERVICE": "dd-dotnet-steady",
+
+        "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "false",
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "nativeDebugging": true,
+      "applicationUrl": "http://localhost:5500"
+    },
+    "BuggyBits+Tracer+Profiler": {
+      "commandName": "Project",
+      "commandLineArgs": "--scenario 8192 --with-idle-threads 64 --urls http://localhost:5500",
       "launchBrowser": true,
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
@@ -57,13 +111,14 @@
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
         "DD_PROFILING_WALLTIME_ENABLED": "1",
-        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1",
         "DD_PROFILING_LOCK_ENABLED": "1",
         "DD_PROFILING_ALLOCATION_ENABLED": "1",
         "DD_PROFILING_HEAP_ENABLED": "1",
         "DD_INTERNAL_PROFILING_HTTP_ENABLED": "1",
         "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING": "1",
         "DD_PROFILING_HEAPSNAPSHOT_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED": "1",
 
         "DD_PROFILING_GC_ENABLED": "1",
         "DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED": "1",
@@ -71,9 +126,9 @@
         "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
         "DD_TRACE_DEBUG": "1",
 
-        "DD_RUNTIME_METRICS_ENABLED": "1",
+        "DD_RUNTIME_METRICS_ENABLED": "0",
         "DD_ENV": "apm-profiling-local",
-        "DD_SERVICE": "dd-dotnet-http",
+        "DD_SERVICE": "dd-dotnet-steady",
 
         "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "false",
         "ASPNETCORE_ENVIRONMENT": "Development"

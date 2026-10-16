@@ -27,6 +27,8 @@
 #include "dd_profiler_version.h"
 #include "IHeapSnapshotManager.h"
 #include "IGcSettingsProvider.h"
+#include "IEEHeapReporter.h"
+#include "IClrNativeHeapSnapshot.h"
 #include "MetadataProvider.h"
 
 #include <cassert>
@@ -86,7 +88,9 @@ ProfileExporter::ProfileExporter(
     IMetadataProvider* metadataProvider,
     ISsiManager* ssiManager,
     IAllocationsRecorder* allocationsRecorder,
-    IHeapSnapshotManager* heapSnapshotManager)
+    IHeapSnapshotManager* heapSnapshotManager,
+    IEEHeapReporter* eeHeapReporter,
+    IClrNativeHeapSnapshot* clrNativeHeapSnapshot)
     :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
@@ -97,7 +101,9 @@ ProfileExporter::ProfileExporter(
     _runtimeInfo{runtimeInfo},
     _ssiManager{ssiManager},
     ProviderList{GetEnabledProfilers(enabledProfilers)},
-    _heapSnapshotManager{heapSnapshotManager}
+    _heapSnapshotManager{heapSnapshotManager},
+    _eeHeapReporter{eeHeapReporter},
+    _clrNativeHeapSnapshot{clrNativeHeapSnapshot}
 {
     _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -619,6 +625,17 @@ bool ProfileExporter::Export(bool lastCall)
     auto referenceTreeFiles = (_heapSnapshotManager != nullptr)
         ? _heapSnapshotManager->GetAndClearReferenceTreeContent()
         : std::vector<IHeapSnapshotManager::FileEntry>{};
+    auto eeHeapContent = (_eeHeapReporter != nullptr)
+        ? _eeHeapReporter->GetAndClearEEHeapContent()
+        : std::string{};
+
+    // Both consumers (process samples above + eeheap JSON) have now read the shared CLR/OS snapshot for
+    // this export; invalidate it so the next export re-captures. The process samples are already built
+    // into shared_ptr<Sample>, so this does not affect what gets added to each profile below.
+    if (_clrNativeHeapSnapshot != nullptr)
+    {
+        _clrNativeHeapSnapshot->Invalidate();
+    }
 
     for (auto& runtimeId : keys)
     {
@@ -707,6 +724,14 @@ bool ProfileExporter::Export(bool lastCall)
             Log::Debug("Attaching file: ", filename, " (", content.size(), " bytes)");
             filesToSend.emplace_back(filename, std::move(content));
             additionalTags.Add("profile_has_reference_tree", "true");
+        }
+
+        if (!eeHeapContent.empty())
+        {
+            Log::Debug("Attaching file: eeheap.json (", eeHeapContent.size(), " bytes)");
+            filesToSend.emplace_back("eeheap.json",
+                std::vector<uint8_t>(eeHeapContent.begin(), eeHeapContent.end()));
+            additionalTags.Add("profile_has_eeheap", "true");
         }
 
         std::string metadataJson = GetMetadataJson();
