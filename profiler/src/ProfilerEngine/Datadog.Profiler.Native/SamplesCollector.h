@@ -41,6 +41,8 @@ public:
 
     inline static constexpr std::chrono::nanoseconds CollectingPeriod = 60ms;
 
+    void DrainSamples() override;
+
 private:
     bool StartImpl() override;
     bool StopImpl() override;

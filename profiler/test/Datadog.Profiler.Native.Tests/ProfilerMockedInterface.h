@@ -148,6 +148,7 @@ class MockSamplesCollector : public ISamplesCollector
 public:
     MOCK_METHOD(void, Register, (ISamplesProvider* sampleProvider), (override));
     MOCK_METHOD(void, RegisterBatchedProvider, (IBatchedSamplesProvider* sampleProvider), (override));
+    MOCK_METHOD(void, DrainSamples, (), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider
