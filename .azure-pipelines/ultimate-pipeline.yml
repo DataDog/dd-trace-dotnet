@@ -413,7 +413,7 @@ stages:
       matrix:
         x64:
           nativeBaseImage: ubuntu
-          managedBaseImage: debian
+          managedBaseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           nativeBaseImage: alpine
@@ -496,7 +496,7 @@ stages:
           parameters:
             build: true
             target: builder
-            baseImage: debian
+            baseImage: ubuntu
             command: "Clean CompileManagedLoader"
             retryCountForRunCommand: 1
             timeoutInMinutesForRunCommand: 10
@@ -513,7 +513,7 @@ stages:
         - template: steps/run-in-docker.yml
           parameters:
             target: builder
-            baseImage: debian
+            baseImage: ubuntu
             command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
             retryCountForRunCommand: 1
             timeoutInMinutesForRunCommand: 20
@@ -655,7 +655,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
@@ -814,7 +814,7 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
+        baseImage: ubuntu
         command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 20
@@ -939,7 +939,7 @@ stages:
     strategy:
       matrix:
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -1200,7 +1200,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: debian # cannot build it on ubuntu. We still need to target older glibc version.
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
@@ -1248,7 +1248,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: debian # cannot build it on ubuntu. We still need to older glibc version.
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -1297,7 +1297,7 @@ stages:
       matrix:
         x64:
           nativeBaseImage: ubuntu
-          managedBaseImage: debian
+          managedBaseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           nativeBaseImage: alpine
@@ -1370,7 +1370,7 @@ stages:
         parameters:
           build: true
           target: builder
-          baseImage: debian
+          baseImage: ubuntu
           command: "Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
           retryCountForRunCommand: 1
           timeoutInMinutesForRunCommand: 30
@@ -2079,7 +2079,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    baseImage: "debian"
+    baseImage: "ubuntu"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2573,7 +2573,7 @@ stages:
     variables:
       TestAllPackageVersions: false
       IncludeMinorPackageVersions:  false
-      baseImage: "debian"
+      baseImage: "ubuntu"
       artifactSuffix: "linux-x64"
 
     strategy:
@@ -3195,7 +3195,7 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
+        baseImage: ubuntu
         command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
@@ -3275,7 +3275,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
+        baseImage: ubuntu
         command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
@@ -3332,7 +3332,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
+        baseImage: ubuntu
         command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
@@ -3392,7 +3392,7 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
+        baseImage: ubuntu
         command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
@@ -4220,7 +4220,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-x64
           poolName: $(linuxX64Pool)
           targetArch: x64
@@ -4230,7 +4230,7 @@ stages:
           poolName: $(linuxX64Pool)
           targetArch: x64
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
           artifactSuffix: linux-arm64
           poolname: $(linuxArm64Pool)
           targetArch: arm64
