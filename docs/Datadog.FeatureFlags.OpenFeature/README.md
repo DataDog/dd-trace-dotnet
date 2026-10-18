@@ -142,6 +142,9 @@ Only boolean `true` suppresses new Datadog evaluation metrics and automatic flag
 span annotations. Missing values, strings, numbers, null, and boolean `false`
 preserve telemetry. The provider does not currently produce evaluation EVP events.
 
+The attribute remains available to targeting rules and exposure reporting, with activation enabled or disabled.
+Changing it follows normal targeting and exposure deduplication rules.
+
 Flag results, randomization, experiment exposures, exposure deduplication, and
 application hooks remain unchanged. Previously recorded telemetry remains available.
 The asynchronous client uses the merged evaluation context, including successful

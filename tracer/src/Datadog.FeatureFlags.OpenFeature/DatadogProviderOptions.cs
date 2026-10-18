@@ -14,6 +14,7 @@ public sealed class DatadogProviderOptions
     /// If unset, uses <c>DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED</c> at construction.
     /// An explicit value overrides the environment. Disabled by default. Other context values preserve telemetry.
     /// Flag results, experiment exposures, application hooks, and previously recorded telemetry remain unchanged.
+    /// The attribute remains available to targeting rules and exposure reporting.
     /// </summary>
     public bool? EnableEvaluationTelemetryOptOutParameter { get; set; }
 }

@@ -93,6 +93,27 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
         Assert.Equal(emissions, harness.Metrics.Count);
         Assert.Equal(emissions, harness.SpanCalls.Count);
         Assert.Single(harness.Exposures);
+        Assert.Equal(true, harness.Exposures.Single().Subject.Attributes[Parameter]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ParameterRemainsAvailableToTargetingAndExposures(bool enabled)
+    {
+        using var harness = new Harness(new DatadogProviderOptions { EnableEvaluationTelemetryOptOutParameter = enabled }, targetOptOut: true);
+        var client = await harness.CreateClient();
+
+        var matched = await client.GetBooleanDetailsAsync(harness.FlagKey, false, Context(true));
+        var unmatched = await client.GetBooleanDetailsAsync(harness.FlagKey, false, Context(false));
+
+        Assert.True(matched.Value);
+        Assert.Equal("on", matched.Variant);
+        Assert.False(unmatched.Value);
+        Assert.Single(harness.Exposures);
+        Assert.Equal(true, harness.Exposures.Single().Subject.Attributes[Parameter]);
+        Assert.Equal(enabled ? 1 : 2, harness.Metrics.Count);
+        Assert.Equal(enabled ? 1 : 2, harness.SpanCalls.Count);
     }
 
     [Theory]
@@ -569,7 +590,7 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
         private readonly TracerFlags.Exposure.ExposureCache _exposureCache = new(100);
         private int _evaluationCount;
 
-        public Harness(DatadogProviderOptions? options = null, bool randomized = false)
+        public Harness(DatadogProviderOptions? options = null, bool randomized = false, bool targetOptOut = false)
         {
             var configuration = new TracerModel.ServerConfiguration
             {
@@ -585,6 +606,14 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
                     },
                 },
             };
+            if (targetOptOut)
+            {
+                configuration.Flags[FlagKey].Allocations![0].Rules =
+                [
+                    new([new() { Attribute = Parameter, Operator = TracerModel.ConditionOperator.MATCHES, Value = "^true$" }]),
+                ];
+            }
+
             if (randomized)
             {
                 var flag = configuration.Flags[FlagKey];
