@@ -20,6 +20,7 @@ using Datadog.Trace.Security.Unit.Tests.Iast;
 namespace Benchmarks.Trace.Iast;
 
 [MemoryDiagnoser]
+[GcForce(true)]
 [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 [IterationTime(500)]
@@ -70,12 +71,8 @@ public class StringAspectsBenchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
-    }
-
-    [IterationSetup(Target = nameof(StringConcatBenchmark))]
-    public void InitTaintedContextWhenFalse()
-    {
         _initTaintedContextFalse = InitTaintedContext(10, false);
+        _initTaintedContextTrue = InitTaintedContext(10, true);
     }
 
     [Benchmark]
@@ -92,12 +89,6 @@ public class StringAspectsBenchmark
         System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
     }
 
-    [IterationSetup(Target = nameof(StringConcatAspectBenchmark))]
-    public void InitTaintedContextWhenTrue()
-    {
-        _initTaintedContextTrue = InitTaintedContext(10, true);
-    }
-
     [Benchmark]
     public void StringConcatAspectBenchmark()
     {
@@ -112,8 +103,8 @@ public class StringAspectsBenchmark
         System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
     }
 
-    [IterationCleanup]
-    public void Cleanup()
+    [GlobalCleanup]
+    public void GlobalCleanup()
     {
         Tracer.Instance?.ActiveScope?.Close();
         Datadog.Trace.Iast.Iast.Instance = null;
