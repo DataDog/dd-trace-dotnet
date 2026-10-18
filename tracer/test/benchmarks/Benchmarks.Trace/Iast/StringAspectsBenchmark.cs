@@ -71,6 +71,16 @@ public class StringAspectsBenchmark
     [GlobalSetup]
     public void GlobalSetup()
     {
+        // Swap in the inert tracer (dummy agent writer, no telemetry, no remote config).
+        // The measured operation is a tainted string call, which never touches the writer,
+        // so the default production stack only adds background noise here. Using the inert
+        // tracer also removes the CI accident of writer retry storms against the absent
+        // agent, plus agentless telemetry being sent to the real intake. The tracer instance
+        // only provides the fake request span the IAST taint context hangs off (created below
+        // by InitTaintedContext), so this does not change what is measured: the same tainted
+        // strings go through the same StringAspects.Concat propagation path.
+        TracerHelper.SetGlobalTracer();
+
         _initTaintedContextFalse = InitTaintedContext(10, false);
         _initTaintedContextTrue = InitTaintedContext(10, true);
     }
