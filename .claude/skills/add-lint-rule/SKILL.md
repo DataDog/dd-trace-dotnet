@@ -1,9 +1,7 @@
 ---
 name: add-lint-rule
 description: >-
-  Add or change lint rules and static analysis in dd-trace-dotnet. Prefer Roslyn
-  analyzers for managed C#. Native code uses CppCheck (tracer/loader) and
-  Clang-Tidy plus CppCheck (profiler). Use when adding a lint rule, Roslyn
+  Add or change lint rules and static analysis in dd-trace-dotnet. Use when adding a lint rule, Roslyn
   analyzer, diagnostic, BannedSymbols entry, StyleCop/editorconfig severity,
   CppCheck suppression, or Clang-Tidy check, or when the user asks how to
   enforce a coding convention at compile time.
