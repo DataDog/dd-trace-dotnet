@@ -4236,7 +4236,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: ubuntu
+          baseImage: debian
           artifactSuffix: linux-x64
           poolName: $(linuxX64Pool)
           targetArch: x64
@@ -4246,7 +4246,7 @@ stages:
           poolName: $(linuxX64Pool)
           targetArch: x64
         arm64:
-          baseImage: ubuntu
+          baseImage: debian
           artifactSuffix: linux-arm64
           poolname: $(linuxArm64Pool)
           targetArch: arm64
