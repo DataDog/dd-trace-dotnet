@@ -1,0 +1,485 @@
+// <copyright file="AotInstrumentProcessor.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using Datadog.InstrumentedAssemblyVerification;
+#if NET6_0_OR_GREATER
+using Datadog.Trace.Tools.Runner.Aot.CallTarget;
+using dnlib.DotNet.Pdb;
+#endif
+using Datadog.Trace.Tools.Runner.Aot.Native;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using dnlib.DotNet;
+
+namespace Datadog.Trace.Tools.Runner.Aot;
+
+/// <summary>
+/// Implements <c>dd-trace aot instrument</c>.
+/// </summary>
+internal static class AotInstrumentProcessor
+{
+    // InstrumentationCategory of Datadog.Trace
+    private const uint IastCategory = 4;
+    private const uint RaspCategory = 8;
+
+    internal static int Process(AotInstrumentOptions options)
+    {
+#if NET6_0_OR_GREATER
+        AotLog.Verbose = options.Verbose;
+        NativeStubDiagnostics.Reset();
+        var report = new AotInstrumentReport();
+        try
+        {
+            Validate(options);
+            if (Environment.Version.Major != options.RuntimeVersion.Major)
+            {
+                // The DuckType AOT registry generator loads the application's assemblies (see AotRuntimeSelector).
+                AotLog.Warn($"The instrumentation runs on .NET {Environment.Version.ToString(2)} and the application targets .NET {options.RuntimeVersion.ToString(2)}: duck typing mappings may be missing or differ from the application's. Install the .NET {options.RuntimeVersion.Major} runtime where the application is published.");
+            }
+
+            using var host = NativeTracerHost.Create(options.NativeTracerPath, options.RuntimeVersion, Path.Combine(options.OutputDirectory, "logs"), options.Verbose);
+
+            if (options.UseEmbeddedDefinitions)
+            {
+                report.EmbeddedDefinitions = host.EnableEmbeddedDefinitions(options.Categories, options.TargetFramework);
+
+                // IAST and RASP also rewrite call sites (aspects), like Instrumentation.EnableCallSiteInstrumentations.
+                var callSiteCategories = options.Categories & (IastCategory | RaspCategory);
+                if (callSiteCategories != 0)
+                {
+                    report.EmbeddedCallSites = host.EnableEmbeddedCallSites(callSiteCategories, options.TargetFramework);
+                    AotLog.Info($"Call site aspects: {report.EmbeddedCallSites}");
+                }
+            }
+
+            if (options.DefinitionsAssembly is { } definitionsAssembly && options.DefinitionsMethod is { } definitionsMethod)
+            {
+                var separator = definitionsMethod.IndexOf("::", StringComparison.Ordinal);
+                host.InvokeDefinitionsMethod(options.DatadogTracePath, definitionsAssembly, definitionsMethod.Substring(0, separator), definitionsMethod.Substring(separator + 2));
+            }
+
+            // CLR load order: CoreLib first (the native tracer captures the corlib reference from it), then
+            // Datadog.Trace (read-only: its rewrites target the runtime host, not the application), then the assemblies.
+            var corlib = options.ReferenceDirectories.Select(d => Path.Combine(d, "System.Private.CoreLib.dll")).First(File.Exists);
+            host.LoadModule(corlib, writable: false);
+            host.LoadModule(options.DatadogTracePath, writable: false);
+            if (!StringUtil.IsNullOrEmpty(options.TraceMethods))
+            {
+                host.InitializeTraceMethods(AssemblyName.GetAssemblyName(options.DatadogTracePath).FullName, options.TraceMethods);
+                AotLog.Info($"Trace methods: {options.TraceMethods}");
+            }
+
+            // An assembly can be given twice (the .NET 11 SDK also passes the application as a reference): the first one is
+            // instrumented, a second one would overwrite its output without the application's module initializer.
+            var fileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var assembly in options.Assemblies.Select(Path.GetFullPath))
+            {
+                // The compiler's references can have native libraries: nothing to instrument there.
+                if (!EmulatedRuntime.IsManagedAssembly(assembly))
+                {
+                    AotLog.Debug($"Skipping {assembly}: it isn't a .NET assembly");
+                    continue;
+                }
+
+                if (fileNames.Add(Path.GetFileName(assembly)))
+                {
+                    host.LoadModule(assembly, writable: true);
+                }
+                else
+                {
+                    AotLog.Debug($"Skipping {assembly}: an assembly with the same file name is already instrumented");
+                }
+            }
+
+            var probeDirectories = options.Assemblies.Select(a => Path.GetDirectoryName(Path.GetFullPath(a))!)
+                                          .Concat(options.ReferenceDirectories)
+                                          .Distinct(StringComparer.Ordinal)
+                                          .ToList();
+            host.LoadReferenceClosure(probeDirectories);
+            if (report.EmbeddedCallSites > 0)
+            {
+                foreach (var module in host.Runtime.Modules.Where(m => m.Writable).ToList())
+                {
+                    report.CallSiteMethods += host.ProcessCallSites(module);
+                }
+
+                AotLog.Info($"Methods processed for call sites: {report.CallSiteMethods}");
+            }
+
+            // IAST's hardcoded secrets: the string literals the native tracer collected from those methods.
+            List<(string Location, string Value)>? userStrings = null;
+            if ((options.Categories & IastCategory) != 0)
+            {
+                userStrings = host.TakeUserStrings();
+                report.UserStrings = userStrings.Count;
+                AotLog.Info($"String literals for the hardcoded secrets analysis: {userStrings.Count}");
+            }
+
+            report.ReJitProcessed = host.ProcessReJitRequests(TimeSpan.FromSeconds(1));
+
+            Directory.CreateDirectory(options.OutputDirectory);
+            var modules = host.Runtime.Modules;
+            var datadogTrace = modules.First(m => !m.Writable && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.DatadogTracePath), StringComparison.Ordinal)).Module;
+            var typeResolver = new LoadedModulesTypeResolver(modules.Select(m => m.Module));
+
+            // What doesn't depend on the application: computed once per build of Datadog.Trace (dd-trace aot prepare).
+            var analysis = DatadogTraceAnalysis.Get(datadogTrace, options.DatadogTracePath);
+
+            // The models Datadog.Trace (de)serializes with Newtonsoft by reflection, which ILC must keep.
+            report.JsonModels = analysis.WriteJsonModels(Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.linker.xml"), Path.Combine(options.OutputDirectory, "Datadog.Trace.Json.rd.xml"));
+            AotLog.Info($"JSON models of Datadog.Trace preserved: {report.JsonModels}");
+
+            // The types of the application its integrations find by name, then use by reflection.
+            report.ReflectionRoots = ReflectionRootDescriptor.Write(analysis.ReflectionTypeNames.Select(n => (n.Name, n.Assembly)).ToList(), datadogTrace, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Reflection.linker.xml"));
+            AotLog.Info($"Types of the application Datadog.Trace finds by name preserved: {report.ReflectionRoots}");
+
+            // The delegate wrappers DelegateInstrumentation instantiates at runtime with MakeGenericType.
+            report.DelegateWrappers = analysis.WriteDelegateWrappers(Path.Combine(options.OutputDirectory, "Datadog.Trace.Delegates.rd.xml"));
+            AotLog.Info($"Delegate instrumentation wrappers preserved: {report.DelegateWrappers}");
+
+            // The facades the libraries resolve the type names they store through.
+            report.Facades = FacadeDirectives.Write(modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Facades.rd.xml"));
+            AotLog.Info($"Facades preserved: {report.Facades}");
+
+            // What the instrumented libraries use by reflection, without which they don't run in NativeAOT.
+            report.LibraryDescriptors = LibraryDescriptors.Write(modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.Libraries.linker.xml"));
+            AotLog.Info($"Libraries whose reflection is preserved: {report.LibraryDescriptors}");
+
+            // The instantiations the .NET 8 polyfill of the System.Runtime meter makes with MakeGenericMethod.
+            report.RuntimeMetricsInstantiations = RuntimeMetricsDirectives.Write(modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), Path.Combine(options.OutputDirectory, "Datadog.Trace.RuntimeMetrics.rd.xml"));
+            AotLog.Info($"Runtime metrics instantiations preserved: {report.RuntimeMetricsInstantiations}");
+
+            // Only the assemblies the native tracer rewrote are written: the others (most of the framework references a
+            // publish passes) are left as they are.
+            var application = modules.FirstOrDefault(m => m.Writable && options.Assemblies.Count > 0 && string.Equals(Path.GetFullPath(m.Path), Path.GetFullPath(options.Assemblies[0]), StringComparison.Ordinal));
+            var writableModules = modules.Where(m => m.Writable && (m.NewBodies.Count > 0 || (m == application && options.GenerateCallTargetRegistry))).ToList();
+            AotLog.Info($"{writableModules.Count}/{modules.Count(m => m.Writable)} assemblies instrumented");
+            var rewrittenByModule = writableModules.ToDictionary(m => m, MethodBodies.ApplyNewBodies);
+
+            // The composite interfaces of the reverse proxies of Datadog.Trace, which dynamic duck typing emits at runtime.
+            var compositeCount = 0;
+            var compositeInterfaces = application is null ? null : CompositeInterfaceAssembly.Write(datadogTrace, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module).ToList(), application.Module, options.OutputDirectory, out compositeCount);
+            report.CompositeInterfaces = compositeCount;
+            AotLog.Info($"Composite interfaces of duck typing reverse proxies: {report.CompositeInterfaces}");
+
+            // Code Origin for spans: the source locations of the endpoint methods, which the PDBs give at runtime otherwise.
+            var codeOriginLocations = new List<string>();
+            foreach (var module in modules.Where(m => m.Writable))
+            {
+                report.CodeOriginLocations += CodeOriginLocations.Collect(module.Module, module.Path, codeOriginLocations);
+            }
+
+            AotLog.Info($"Source locations of endpoint methods for Code Origin: {report.CodeOriginLocations}");
+
+            // The proxies of the duck typing constraints go to a DuckType AOT registry generated first (C1): the adapters
+            // create them directly.
+            CallTargetDuckTypeRegistry? duckTypeRegistry = null;
+            Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>? instantiations = null;
+            GenericInstantiationDiscovery.Statistics? discovery = null;
+            if (options.GenerateCallTargetRegistry)
+            {
+                // The mappings Datadog's assemblies declare ([DuckType], [DuckReverseDelegation]...).
+                var declaredMappings = ReadDeclaredDuckTypeMappings(analysis, options.DatadogTracePath, modules.Select(m => (m.AssemblyName, m.Path)), report);
+                var modulesByAssembly = modules.GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First().Module, StringComparer.OrdinalIgnoreCase);
+                dnlib.DotNet.TypeDef? FindType(string assembly, string typeName) => modulesByAssembly.TryGetValue(assembly, out var module) ? module.Find(typeName, isReflectionName: true) : null;
+                var genericDuckTypeTargets = GenericDuckTypeTargets.Find(declaredMappings, FindType);
+
+                // The instantiations come from all the given assemblies (the application creates the framework's generic types):
+                // the ones of the instrumented generic methods, and the ones of the open generic targets of duck typing mappings.
+                var genericRewritten = rewrittenByModule.Values.SelectMany(m => m).Where(m => m.HasGenericParameters || m.DeclaringType.HasGenericParameters).ToList();
+                var genericDuckTypeSeeds = GenericDuckTypeTargets.Seeds(genericDuckTypeTargets.Keys).ToList();
+                var found = new Dictionary<dnlib.DotNet.MethodDef, List<GenericInstantiationDiscovery.Instantiation>>();
+                if (genericRewritten.Count + genericDuckTypeSeeds.Count > 0)
+                {
+                    found = GenericInstantiationDiscovery.Discover(modules.Where(m => m.Writable).Select(m => (dnlib.DotNet.ModuleDef)m.Module), genericRewritten.Concat(genericDuckTypeSeeds).Distinct().ToList(), typeResolver.Resolve, out var statistics, options.MaxGenericContexts);
+                    discovery = statistics;
+                    AotLog.Info($"Search of generic instantiations: {statistics.RelevantMembers} generic types and methods lead to instrumented ones, {statistics.ClosedReferences} closed references, {statistics.Contexts} generic contexts followed");
+                }
+
+                var genericRewrittenSet = new HashSet<dnlib.DotNet.MethodDef>(genericRewritten);
+                instantiations = found.Where(f => genericRewrittenSet.Contains(f.Key)).ToDictionary(f => f.Key, f => f.Value);
+                AotLog.Info($"Closed instantiations of generic instrumented methods: {instantiations.Values.Sum(i => i.Count)} for {instantiations.Count} methods");
+                // The default delivery handler of Kafka producers over value types (MakeGenericType of DeliveryReport<TKey, TValue>).
+                report.KafkaDeliveryReports = KafkaDeliveryReportDirectives.Write(found, typeResolver.Resolve, Path.Combine(options.OutputDirectory, "Datadog.Trace.Kafka.rd.xml"));
+                AotLog.Info($"Kafka delivery reports over value types preserved: {report.KafkaDeliveryReports}");
+                var valueTypeTargets = GenericDuckTypeTargets.ValueTypeInstantiations(genericDuckTypeTargets, found);
+                AotLog.Info($"Instantiations over value types of the open generic targets of duck typing mappings: {valueTypeTargets.Select(t => t.Target.FullName).Distinct().Count()} for {genericDuckTypeTargets.Count} targets");
+                var derivedTargets = DerivedDuckTypeTargets.Find(declaredMappings, modules.Select(m => (dnlib.DotNet.ModuleDef)m.Module), FindType, typeResolver.Resolve);
+                AotLog.Info($"Classes deriving from the targets of derived-types duck typing mappings that bind them differently: {derivedTargets.Select(t => t.Target.FullName).Distinct().Count()}");
+                var collector = new DuckProxyRequestCollector();
+                foreach (var rewritten in rewrittenByModule.Values)
+                {
+                    CallTargetRegistryGenerator.CollectProxyRequests(rewritten, typeResolver.Resolve, collector, instantiations);
+                }
+
+                AotLog.Info($"Duck typing proxies needed by the CallTarget adapters: {collector.Requests.Count} (+{collector.RuntimeRequests.Count} looked up at runtime)");
+                // The declared mappings, then the recorded ones.
+                var mapFileMappings = ReadDuckTypeMaps(options.DuckTypeMaps, report);
+                var recordedMappings = declaredMappings.Concat(mapFileMappings).ToList();
+                var undeclaredMappings = new List<string>();
+                if (mapFileMappings.Count > 0)
+                {
+                    undeclaredMappings = CallTargetDuckTypeRegistry.FindUndeclared(
+                        collector.Requests,
+                        collector.RuntimeRequests,
+                        declaredMappings,
+                        mapFileMappings,
+                        FindType,
+                        typeResolver.Resolve);
+                }
+
+                if (collector.Requests.Count + collector.RuntimeRequests.Count + recordedMappings.Count > 0)
+                {
+                    var registryName = $"Datadog.Trace.DuckType.AotRegistry.{Path.GetFileNameWithoutExtension(options.Assemblies[0])}";
+                    var assemblyPaths = modules.Where(m => !StringUtil.IsNullOrEmpty(m.Path))
+                                               .GroupBy(m => m.AssemblyName, StringComparer.OrdinalIgnoreCase)
+                                               .ToDictionary(g => g.Key, g => Path.GetFullPath(g.First().Path), StringComparer.OrdinalIgnoreCase);
+                    if (compositeInterfaces is not null)
+                    {
+                        assemblyPaths[CompositeInterfaceAssembly.AssemblyName] = compositeInterfaces;
+                    }
+
+                    duckTypeRegistry = CallTargetDuckTypeRegistry.Build(collector.Requests, collector.RuntimeRequests, recordedMappings, valueTypeTargets.Concat(derivedTargets), assemblyPaths, options.OutputDirectory, registryName, options.DatadogTracePath, typeResolver.Resolve);
+                    if (duckTypeRegistry is not null)
+                    {
+                        report.DuckTypeRegistry = new AotInstrumentReport.DuckTypeRegistryResult { Path = duckTypeRegistry.AssemblyPath, Mappings = duckTypeRegistry.Mappings, Compatible = duckTypeRegistry.Compatible, ReplayedFailures = duckTypeRegistry.ReplayedFailures, Warnings = duckTypeRegistry.Warnings.ToList() };
+                        AotLog.Info($"DuckType AOT registry: {duckTypeRegistry.Compatible}/{duckTypeRegistry.Mappings} proxies -> {duckTypeRegistry.AssemblyPath}");
+                    }
+                }
+
+                // A recorded mapping dynamic duck typing doesn't create (e.g. a probe of an application's type) fails without
+                // its declaration too: only the ones with a proxy are missing.
+                report.UndeclaredDuckTypeMappings = undeclaredMappings.Where(key => duckTypeRegistry?.CreatesProxy(key) == true).ToList();
+                if (report.UndeclaredDuckTypeMappings.Count > 0)
+                {
+                    AotLog.Warn($"{report.UndeclaredDuckTypeMappings.Count} recorded duck typing mappings of Datadog's proxies aren't declared (see the report): without the recording, the build wouldn't generate them. Declare them with [DuckType] next to the proxy.");
+                }
+            }
+
+            foreach (var module in writableModules)
+            {
+                var output = Path.Combine(options.OutputDirectory, Path.GetFileName(module.Path));
+                var rewritten = rewrittenByModule[module];
+                var rewrittenMethods = rewritten.Select(DescribeForVerification).ToList();
+                CallTargetRegistryResult? registry = null;
+                if (options.GenerateCallTargetRegistry)
+                {
+                    // The PDB isn't there at runtime: its SourceLink document gives the git metadata.
+                    var sourceLink = module == application && module.Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault() is { } link
+                                         ? Encoding.UTF8.GetString(link.FileBlob)
+                                         : null;
+                    registry = CallTargetRegistryGenerator.Generate(module.Module, rewritten, datadogTrace, typeResolver.Resolve, duckTypeRegistry, instantiations, isApplication: module == application, userStrings, sourceLink, codeOriginLocations);
+                    AotLog.Info($"{module.AssemblyName}: {registry.Registrations} CallTarget registrations ({registry.Bound} bound, {registry.NoMethod} without integration method, {registry.Failures} failures, {registry.Deferred} deferred, {registry.ContinuationFactories} continuation factories); {registry.Instantiations} instantiations of deferred generic shapes ({registry.InstantiationBound} bound, {registry.InstantiationDeferred} still deferred)");
+                    foreach (var detail in registry.Details)
+                    {
+                        AotLog.Debug(detail);
+                    }
+                }
+
+                MethodBodies.Neutralize(module, options.Neutralize);
+                var writeErrors = MethodBodies.Save(module, output);
+                report.Errors.AddRange(writeErrors.Take(10).Select(error => $"{module.AssemblyName} can't be written: {error}"));
+                if (options.Verify && rewrittenMethods.Count > 0 && writeErrors.Count == 0)
+                {
+                    var outcome = new VerificationsRunner(output, module.Path, rewrittenMethods, options.ReferenceDirectories.Concat(new[] { Path.GetDirectoryName(module.Path)!, Path.GetFullPath(options.OutputDirectory) }).ToList(), failOnVerificationError: true).Run();
+                    if (!outcome.IsValid)
+                    {
+                        report.Errors.Add($"Verification failed for {module.AssemblyName}: {outcome.FailureReason}");
+                    }
+                }
+
+                report.Assemblies.Add(new AotInstrumentReport.AssemblyResult { Name = module.AssemblyName, Path = output, RewrittenMethods = module.NewBodies.Count, CallTarget = registry });
+                AotLog.Info($"{module.AssemblyName}: {module.NewBodies.Count} methods instrumented -> {output}");
+            }
+
+            if (discovery is not null)
+            {
+                ReportGenericInstantiations(report, discovery, options);
+            }
+        }
+        catch (Exception ex)
+        {
+            report.Errors.Add(ex.ToString());
+            AotLog.Error($"NativeAOT instrumentation failed: {ex}");
+        }
+        finally
+        {
+            NativeObjectRoots.Clear();
+        }
+
+        report.NotImplemented = NativeStubDiagnostics.NotImplementedCallCounts.OrderBy(p => p.Key, StringComparer.Ordinal).ToDictionary(p => p.Key, p => p.Value);
+        report.Errors.AddRange(NativeStubDiagnostics.Errors);
+        if (options.ReportPath is { } reportPath)
+        {
+            File.WriteAllText(reportPath, JsonConvert.SerializeObject(report, Formatting.Indented));
+        }
+
+        return report.Errors.Count == 0 ? 0 : 1;
+#else
+        AotLog.Error("NativeAOT instrumentation requires the .NET 6+ build of dd-trace.");
+        return 1;
+#endif
+    }
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// The instrumented generic methods whose integrations need the closed instantiations of their generic context: when the
+    /// search of instantiations was cut, some may be missing, and the integrations wouldn't trace those calls (H-76).
+    /// </summary>
+    private static void ReportGenericInstantiations(AotInstrumentReport report, GenericInstantiationDiscovery.Statistics discovery, AotInstrumentOptions options)
+    {
+        var results = report.Assemblies.Select(a => a.CallTarget).OfType<CallTargetRegistryResult>().ToList();
+        var deferred = results.SelectMany(r => r.DeferredGenericMethods).ToList();
+        var uninstantiated = results.SelectMany(r => r.UninstantiatedGenericMethods).ToList();
+        report.GenericInstantiations = new AotInstrumentReport.GenericInstantiationsResult
+        {
+            RelevantMembers = discovery.RelevantMembers,
+            ClosedReferences = discovery.ClosedReferences,
+            Contexts = discovery.Contexts,
+            DepthCuts = discovery.DepthCuts,
+            LimitReached = discovery.LimitReached,
+            DeferredMethods = deferred,
+            UninstantiatedMethods = uninstantiated,
+        };
+
+        if (!discovery.Truncated || deferred.Count == 0)
+        {
+            if (uninstantiated.Count > 0)
+            {
+                // The application doesn't instantiate them (e.g. the ASP.NET Core Identity user events of an application without Identity).
+                AotLog.Info($"Instrumented generic methods the application doesn't instantiate: {string.Join(", ", uninstantiated)}");
+            }
+
+            return;
+        }
+
+        var reason = discovery.LimitReached
+                         ? $"limit of {options.MaxGenericContexts} generic contexts reached"
+                         : $"{discovery.DepthCuts} instantiations nested deeper than {GenericInstantiationDiscovery.MaxGenericDepth} generic arguments left out";
+        var message = $"The search of generic instantiations was cut ({reason}): {deferred.Count} instrumented generic methods may miss some, and their integrations wouldn't trace those calls: {string.Join(", ", deferred.Take(5))}{(deferred.Count > 5 ? ", ..." : string.Empty)}. See the report ({nameof(AotInstrumentReport.GenericInstantiations)}).";
+        AotLog.BuildWarning("DDAOT001", message);
+        if (options.FailOnIncompleteGenericInstantiations)
+        {
+            report.Errors.Add(message);
+        }
+    }
+
+    private static (string Type, string Method) DescribeForVerification(dnlib.DotNet.MethodDef method)
+        => (method.DeclaringType.ReflectionFullName, $"{method.Name}({string.Join(",", method.Parameters.Where(p => !p.IsHiddenThisParameter).Select(p => p.Type.FullName))})");
+
+    /// <summary>
+    /// The duck typing mappings Datadog's assemblies declare with attributes: the proxies of the library types integrations
+    /// only know at runtime, which travel with the proxies (see docs/development/NativeAOT.md).
+    /// </summary>
+    private static List<DuckTypeAot.DuckTypeAotMapping> ReadDeclaredDuckTypeMappings(DatadogTraceAnalysis analysis, string datadogTracePath, IEnumerable<(string AssemblyName, string Path)> modules, AotInstrumentReport report)
+    {
+        var paths = new List<string> { Path.GetFullPath(datadogTracePath) };
+        foreach (var (assemblyName, path) in modules)
+        {
+            if (assemblyName.StartsWith("Datadog.", StringComparison.Ordinal) && !StringUtil.IsNullOrEmpty(path))
+            {
+                var fullPath = Path.GetFullPath(path);
+                if (!paths.Contains(fullPath, StringComparer.Ordinal) && !string.Equals(assemblyName, "Datadog.Trace", StringComparison.Ordinal))
+                {
+                    paths.Add(fullPath);
+                }
+            }
+        }
+
+        // Datadog.Trace's from its analysis, then the other assemblies' like DuckTypeAotAttributeDiscovery merges them.
+        var mappings = new Dictionary<string, DuckTypeAot.DuckTypeAotMapping>(StringComparer.Ordinal);
+        foreach (var mapping in analysis.DuckTypeMappings.Select(m => m.ToMapping()))
+        {
+            mappings[mapping.Key] = mapping;
+        }
+
+        report.Errors.AddRange(analysis.DuckTypeErrors);
+        if (paths.Count > 1)
+        {
+            var result = DuckTypeAot.DuckTypeAotAttributeDiscovery.Discover(paths.Skip(1).ToList());
+            report.Errors.AddRange(result.Errors);
+            foreach (var mapping in result.Mappings)
+            {
+                mappings[mapping.Key] = mappings.TryGetValue(mapping.Key, out var existing) && existing.IncludesDerivedTypes ? existing : mapping;
+            }
+        }
+
+        report.DeclaredDuckTypeMappings = mappings.Count;
+        AotLog.Info($"Duck typing mappings declared by Datadog's assemblies: {mappings.Count} ({mappings.Values.Count(m => m.IncludesDerivedTypes)} for derived types too)");
+        return mappings.Values.ToList();
+    }
+
+    /// <summary>
+    /// The mappings of the ducktype-aot map files recorded at runtime (C6).
+    /// </summary>
+    private static List<DuckTypeAot.DuckTypeAotMapping> ReadDuckTypeMaps(IReadOnlyList<string> paths, AotInstrumentReport report)
+    {
+        var mappings = new List<DuckTypeAot.DuckTypeAotMapping>();
+        foreach (var path in paths)
+        {
+            var result = DuckTypeAot.DuckTypeAotMapFileParser.Parse(path);
+            report.Errors.AddRange(result.Errors.Select(e => $"{path}: {e}"));
+            mappings.AddRange(result.Mappings);
+            AotLog.Info($"{path}: {result.Mappings.Count} recorded duck typing mappings");
+        }
+
+        return mappings;
+    }
+#endif
+
+    private static void Validate(AotInstrumentOptions options)
+    {
+        foreach (var path in new[] { options.NativeTracerPath, options.DatadogTracePath }.Concat(options.Assemblies))
+        {
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"File not found: {path}", path);
+            }
+        }
+
+        if (!options.ReferenceDirectories.Any(d => File.Exists(Path.Combine(d, "System.Private.CoreLib.dll"))))
+        {
+            throw new ArgumentException("No reference directory contains System.Private.CoreLib.dll.");
+        }
+
+        // A NativeAOT application contains a single Datadog.Trace: the one of this version (the native tracer's). An application
+        // that references the Datadog.Trace package of an older major version brings its own (the whole tracer of that version).
+        var version = AssemblyName.GetAssemblyName(options.DatadogTracePath).Version;
+        var expected = typeof(Tracer).Assembly.GetName().Version;
+        if (version is not null && expected is not null && version.ToString(3) != expected.ToString(3))
+        {
+            throw new InvalidOperationException(
+                $"The application references Datadog.Trace {version.ToString(3)} ({options.DatadogTracePath}), but a NativeAOT application can only contain one Datadog.Trace, the version of the instrumentation ({expected.ToString(3)}). Reference the Datadog.Trace {expected.ToString(3)} package (the manual instrumentation API) instead.");
+        }
+
+        // The duck typing generator checks the mappings of the application's Datadog.Trace with dynamic duck typing, which runs on
+        // the runner's: another build of the same version is only checked against its metadata, which is much slower and may
+        // differ from dynamic duck typing.
+        if (ReadModuleVersionId(options.DatadogTracePath) is { } mvid && mvid != typeof(Tracer).Assembly.ManifestModule.ModuleVersionId)
+        {
+            AotLog.Warn($"'{options.DatadogTracePath}' isn't the build of Datadog.Trace the runner runs on: the duck typing mappings are checked against its metadata only (slower, and they may differ from dynamic duck typing). Use the runner of the same build.");
+        }
+    }
+
+    private static Guid? ReadModuleVersionId(string path)
+    {
+        try
+        {
+            using var module = ModuleDefMD.Load(path);
+            return module.Mvid;
+        }
+        catch (Exception ex) when (ex is IOException or BadImageFormatException)
+        {
+            return null;
+        }
+    }
+}
