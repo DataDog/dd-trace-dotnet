@@ -335,7 +335,7 @@ namespace Datadog.Trace.FeatureFlags
 
                 // Skips telemetry: this is customer configuration, not a tracer bug, and the specific
                 // cause has already been logged where it was discovered.
-                _log.ErrorSkipTelemetry("Feature Flags: provider failed to initialize: {Reason}", exception.Message);
+                _log.ErrorSkipTelemetry(exception, "Feature Flags: provider failed to initialize");
                 throw exception;
             }
 

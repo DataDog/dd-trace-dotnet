@@ -149,15 +149,18 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     /// </summary>
     internal void UpdateEnvironment(string? environment)
     {
-        var target = new RequestTarget(_endpoint, environment);
-        var previous = Interlocked.Exchange(ref _requestTarget, target);
-
-        // Every settings change lands here, so only a change to what is actually sent is reported.
-        // A configured base URL never sends an environment, so it never reports one either.
-        if (!string.Equals(previous.Environment, target.Environment, StringComparison.Ordinal))
+        // Every settings change lands here, so the target is only rebuilt, and the change reported,
+        // when what is actually sent changes. The URI is derived from the normalized environment
+        // alone, so comparing that is enough. A configured base URL never sends an environment, so
+        // it never gets past this check.
+        var requested = _endpoint.RequestEnvironment(environment);
+        if (string.Equals(Volatile.Read(ref _requestTarget).Environment, requested, StringComparison.Ordinal))
         {
-            _log.Debug<string>("Feature Flags: agentless configuration source now requests env={RequestedEnvironment}", target.Environment ?? "none");
+            return;
         }
+
+        Volatile.Write(ref _requestTarget, new RequestTarget(_endpoint, environment));
+        _log.Debug<string>("Feature Flags: agentless configuration source now requests env={RequestedEnvironment}", requested ?? "none");
     }
 
     /// <summary>
