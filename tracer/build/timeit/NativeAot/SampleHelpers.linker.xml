@@ -1,0 +1,22 @@
+<linker>
+  <!-- Execution benchmarks: the types Samples.Shared's SampleHelpers reaches by reflection. -->
+  <assembly fullname="Datadog.Trace">
+    <type fullname="Datadog.Trace.AppSec.EventTrackingSdk" preserve="all" />
+    <type fullname="Datadog.Trace.Ci.Ipc.IpcClient" preserve="all" />
+    <type fullname="Datadog.Trace.ClrProfiler.Instrumentation" preserve="all" />
+    <type fullname="Datadog.Trace.ClrProfiler.NativeMethods" preserve="all" />
+    <type fullname="Datadog.Trace.Configuration.TracerSettings" preserve="all" />
+    <type fullname="Datadog.Trace.LifetimeManager" preserve="all" />
+    <type fullname="Datadog.Trace.Scope" preserve="all" />
+    <type fullname="Datadog.Trace.Span" preserve="all" />
+    <type fullname="Datadog.Trace.SpanContext" preserve="all" />
+    <type fullname="Datadog.Trace.SpanContextExtractor" preserve="all" />
+    <type fullname="Datadog.Trace.SpanContextInjector" preserve="all" />
+    <type fullname="Datadog.Trace.SpanCreationSettings" preserve="all" />
+    <type fullname="Datadog.Trace.SpanExtensions" preserve="all" />
+    <type fullname="Datadog.Trace.Tracer" preserve="all" />
+    <type fullname="Datadog.Trace.TracerConstants" preserve="all" />
+    <type fullname="Datadog.Trace.UserDetails" preserve="all" />
+    <type fullname="Datadog.Trace.Util.ProcessHelpers" preserve="all" />
+  </assembly>
+</linker>

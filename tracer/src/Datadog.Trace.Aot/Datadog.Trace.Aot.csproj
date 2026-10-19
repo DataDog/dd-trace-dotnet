@@ -1,0 +1,125 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Unconditionally add a prerelease suffix to the package while NativeAOT support is a preview. -->
+    <Version Condition="!$(Version.EndsWith('-prerelease'))">$(Version)-prerelease</Version>
+    <!-- Pull request builds add their Azure Pipelines build id: NuGet keeps the first package of a version it extracts, so
+         testing another build of the same version would use the old one. -->
+    <Version Condition="'$(BUILD_REASON)' == 'PullRequest' and '$(BUILD_BUILDID)' != ''">$(Version).$(BUILD_BUILDID)</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PublishBuildOutput>false</PublishBuildOutput>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <PackageId>Datadog.Trace.Aot</PackageId>
+    <Title>Datadog APM NativeAOT Support</Title>
+    <Description>Instruments .NET applications published with NativeAOT (PublishAot=true) with the Datadog tracer at build time.</Description>
+    <PackageTags>$(PackageTags);NativeAOT;AOT</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- No lib: the package only brings MSBuild targets and the build-time tools. -->
+    <NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    The build-time tools, built by the repository (Nuke) or given explicitly:
+      DatadogAotRunnerDirectory   the dd-trace runner (net8.0 tool build output)
+      DatadogAotDatadogTrace      the full Datadog.Trace.dll (net6.0), which ILC compiles
+      DatadogAotMonitoringHome    a tracer home with the native libraries of every platform (CI): the items below come from it
+      DatadogAotNativeTracer      items: the Datadog.Tracer.Native library of each build host, with the Rid metadata
+      DatadogAotRuntimeNative     items: the native libraries Datadog.Trace loads at runtime (libdatadog) for each target,
+                                  with the Rid metadata and the PackageFileName its P/Invokes import (LibDatadog.so/.dll/.dylib)
+  -->
+  <PropertyGroup>
+    <_DatadogAotArtifacts>$(MSBuildThisFileDirectory)..\..\..\artifacts\</_DatadogAotArtifacts>
+    <DatadogAotRunnerDirectory Condition="'$(DatadogAotRunnerDirectory)' == ''">$(_DatadogAotArtifacts)bin\Datadog.Trace.Tools.Runner.Tool\release_net8.0\</DatadogAotRunnerDirectory>
+    <DatadogAotDatadogTrace Condition="'$(DatadogAotDatadogTrace)' == ''">$(_DatadogAotArtifacts)bin\Datadog.Trace\release_net6.0\Datadog.Trace.dll</DatadogAotDatadogTrace>
+    <_DatadogAotHome Condition="'$(DatadogAotMonitoringHome)' != ''">$([MSBuild]::EnsureTrailingSlash('$(DatadogAotMonitoringHome)'))</_DatadogAotHome>
+  </PropertyGroup>
+
+  <!-- The tracer home of CI: <rid>/ for Windows and Linux, osx/ for macOS (universal binaries, packed once: the targets look
+       for the host's in tools/native/osx, and NuGet resolves runtimes/osx for osx-x64 and osx-arm64). -->
+  <ItemGroup Condition="'@(DatadogAotNativeTracer)' == '' and '$(_DatadogAotHome)' != ''">
+    <DatadogAotNativeTracer Include="$(_DatadogAotHome)win-x64\Datadog.Tracer.Native.dll" Rid="win-x64" />
+    <DatadogAotNativeTracer Include="$(_DatadogAotHome)win-x86\Datadog.Tracer.Native.dll" Rid="win-x86" />
+    <DatadogAotNativeTracer Include="$(_DatadogAotHome)linux-x64\Datadog.Tracer.Native.so" Rid="linux-x64" />
+    <DatadogAotNativeTracer Include="$(_DatadogAotHome)linux-arm64\Datadog.Tracer.Native.so" Rid="linux-arm64" />
+    <DatadogAotNativeTracer Include="$(_DatadogAotHome)linux-musl-x64\Datadog.Tracer.Native.so" Rid="linux-musl-x64" />
+    <DatadogAotNativeTracer Include="$(_DatadogAotHome)linux-musl-arm64\Datadog.Tracer.Native.so" Rid="linux-musl-arm64" />
+    <DatadogAotNativeTracer Include="$(_DatadogAotHome)osx\Datadog.Tracer.Native.dylib" Rid="osx" />
+    <DatadogAotRuntimeNative Include="$(_DatadogAotHome)win-x64\datadog_profiling_ffi.dll" Rid="win-x64" PackageFileName="LibDatadog.dll" />
+    <DatadogAotRuntimeNative Include="$(_DatadogAotHome)win-x86\datadog_profiling_ffi.dll" Rid="win-x86" PackageFileName="LibDatadog.dll" />
+    <DatadogAotRuntimeNative Include="$(_DatadogAotHome)linux-x64\libdatadog_profiling.so" Rid="linux-x64" PackageFileName="LibDatadog.so" />
+    <DatadogAotRuntimeNative Include="$(_DatadogAotHome)linux-arm64\libdatadog_profiling.so" Rid="linux-arm64" PackageFileName="LibDatadog.so" />
+    <DatadogAotRuntimeNative Include="$(_DatadogAotHome)linux-musl-x64\libdatadog_profiling.so" Rid="linux-musl-x64" PackageFileName="LibDatadog.so" />
+    <DatadogAotRuntimeNative Include="$(_DatadogAotHome)linux-musl-arm64\libdatadog_profiling.so" Rid="linux-musl-arm64" PackageFileName="LibDatadog.so" />
+    <DatadogAotRuntimeNative Include="$(_DatadogAotHome)osx\libdatadog_profiling.dylib" Rid="osx" PackageFileName="LibDatadog.dylib" />
+  </ItemGroup>
+
+  <!-- Local builds: the native tracer and libdatadog of this machine. -->
+  <ItemGroup Condition="'@(DatadogAotNativeTracer)' == '' and Exists('$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so')">
+    <DatadogAotNativeTracer Include="$(_DatadogAotArtifacts)native-bin\Datadog.Tracer.Native\Datadog.Tracer.Native.so" Rid="$(NETCoreSdkRuntimeIdentifier)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'@(DatadogAotRuntimeNative)' == '' and Exists('$(_DatadogAotArtifacts)native-obj\libdatadog-install\lib\libdatadog_profiling.so')">
+    <DatadogAotRuntimeNative Include="$(_DatadogAotArtifacts)native-obj\libdatadog-install\lib\libdatadog_profiling.so" Rid="$(NETCoreSdkRuntimeIdentifier)" PackageFileName="LibDatadog.so" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Keep in sync with LibDdwafVersion in tracer/build/_build/Build.Steps.cs -->
+    <DatadogAotLibDdwafVersion Condition="'$(DatadogAotLibDdwafVersion)' == ''">2.0.1</DatadogAotLibDdwafVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The only dependency: the WAF native library of AppSec, which a RID-specific publish copies next to the application. -->
+    <PackageReference Include="libddwaf" Version="$(DatadogAotLibDdwafVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build\Datadog.Trace.Aot.targets" Pack="true" PackagePath="build\;buildTransitive\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <!-- The duck typing mappings of Datadog.Trace looked up from runtime types (recorded, C6), served by default. -->
+    <None Include="$(DatadogAotRunnerDirectory)**\*" Exclude="$(DatadogAotRunnerDirectory)**\*.pdb;$(DatadogAotRunnerDirectory)Datadog.Trace.dll" Pack="true" PackagePath="tools\runner\" Visible="false" />
+    <!-- One build of Datadog.Trace for the runner and the application (builds of the same sources at different times differ):
+         the duck typing generator checks the application's mappings with dynamic duck typing, on the runner's. -->
+    <None Include="$(DatadogAotDatadogTrace)" Pack="true" PackagePath="tools\runner\;tools\datadog-trace\" Visible="false" />
+  </ItemGroup>
+
+  <!-- The analyses of Datadog.Trace that don't depend on the application (dd-trace aot prepare), packed next to it: the
+       instrumentation of each application reads them instead of scanning the IL of Datadog.Trace again. -->
+  <Target Name="_DatadogAotPrepareAnalysis" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <_DatadogAotAnalysis>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'datadog-trace', 'Datadog.Trace.aot.json'))</_DatadogAotAnalysis>
+      <_DatadogAotDotnet>$(DOTNET_HOST_PATH)</_DatadogAotDotnet>
+      <_DatadogAotDotnet Condition="'$(_DatadogAotDotnet)' == ''">dotnet</_DatadogAotDotnet>
+    </PropertyGroup>
+    <Exec Command="&quot;$(_DatadogAotDotnet)&quot; &quot;$(DatadogAotRunnerDirectory)Datadog.Trace.Tools.Runner.dll&quot; aot prepare --datadog-trace &quot;$(DatadogAotDatadogTrace)&quot; --output &quot;$(_DatadogAotAnalysis)&quot;"
+          EnvironmentVariables="DOTNET_ROLL_FORWARD=LatestMajor;DOTNET_ROLL_FORWARD_TO_PRERELEASE=1" />
+    <ItemGroup>
+      <None Include="$(_DatadogAotAnalysis)" Pack="true" PackagePath="tools\datadog-trace" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+  <!-- In a target: the package path of each native library comes from its own Rid (batching). -->
+  <Target Name="_DatadogAotPackNativeTracers" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="@(DatadogAotNativeTracer)" Pack="true" PackagePath="tools\native\%(DatadogAotNativeTracer.Rid)" Visible="false" />
+      <!-- NuGet copies runtimes/<RID>/native next to a RID-specific publish. -->
+      <None Include="@(DatadogAotRuntimeNative)" Pack="true" PackagePath="runtimes\%(DatadogAotRuntimeNative.Rid)\native\%(DatadogAotRuntimeNative.PackageFileName)" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_DatadogAotCheckPackageInputs" BeforeTargets="GenerateNuspec">
+    <Error Condition="!Exists('$(DatadogAotRunnerDirectory)Datadog.Trace.Tools.Runner.dll')" Text="The dd-trace runner wasn't built: $(DatadogAotRunnerDirectory)" />
+    <Error Condition="!Exists('$(DatadogAotDatadogTrace)')" Text="Datadog.Trace.dll wasn't built: $(DatadogAotDatadogTrace)" />
+    <!-- A tracer home must have all the platforms: a package without one would silently skip its builds. -->
+    <Error Condition="'$(_DatadogAotHome)' != '' and !Exists('%(DatadogAotNativeTracer.FullPath)')" Text="The tracer home doesn't have the native tracer of %(DatadogAotNativeTracer.Rid): %(DatadogAotNativeTracer.FullPath)" />
+    <Error Condition="'$(_DatadogAotHome)' != '' and !Exists('%(DatadogAotRuntimeNative.FullPath)')" Text="The tracer home doesn't have libdatadog for %(DatadogAotRuntimeNative.Rid): %(DatadogAotRuntimeNative.FullPath)" />
+    <Warning Condition="'@(DatadogAotNativeTracer)' == ''" Text="No native tracer is packed: the package needs DatadogAotNativeTracerPath." />
+  </Target>
+
+</Project>
