@@ -7,7 +7,9 @@
 
 using System;
 using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags;
 using FluentAssertions;
@@ -17,6 +19,42 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsSettingsTests
 {
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    [InlineData("1", true)]
+    [InlineData("yes", true)]
+    [InlineData("invalid", false)]
+    public void ReadsEvaluationTelemetryOptOutFromConfiguration(string? value, bool expected)
+    {
+        var key = ConfigurationKeys.FeatureFlags.EvaluationTelemetryPerSubjectOptOutEnabled;
+        var telemetry = new ConfigurationTelemetry();
+        var source = new NameValueConfigurationSource(new NameValueCollection { [key] = value });
+
+        var settings = new FeatureFlagsSettings(source, telemetry);
+
+        settings.EvaluationTelemetryPerSubjectOptOutEnabled.Should().Be(expected);
+        telemetry.GetQueueForTesting().Where(entry => entry.Key == key)
+                 .OrderByDescending(entry => entry.SeqId).First().BoolValue.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ReadsEvaluationTelemetryOptOutFromJson(bool enabled)
+    {
+        var key = ConfigurationKeys.FeatureFlags.EvaluationTelemetryPerSubjectOptOutEnabled;
+        var telemetry = new ConfigurationTelemetry();
+        var source = new JsonConfigurationSource($"{{\"{key}\":{(enabled ? "true" : "false")}}}", ConfigurationOrigins.Code);
+
+        var settings = new FeatureFlagsSettings(source, telemetry);
+
+        settings.EvaluationTelemetryPerSubjectOptOutEnabled.Should().Be(enabled);
+        telemetry.GetQueueForTesting().Where(entry => entry.Key == key)
+                 .Should().ContainSingle(entry => entry.BoolValue == enabled && entry.Origin == ConfigurationOrigins.Code);
+    }
+
     // The source-selection contract is shared across tracers, so these cases mirror the
     // system-tests parametric suite (tests/parametric/test_ffe/test_configuration_sources.py).
     // Where configuration would come from and whether Feature Flags run are asserted separately:

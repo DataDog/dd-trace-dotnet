@@ -48,7 +48,7 @@ Internal callbacks replace only the evaluator and span-accumulator connections m
 by the native profiler. These tests do not prove native CallTarget loading.
 
 When opt-out is enabled, `GetProviderHooks` creates wrappers for each evaluation.
-Each wrapper captures its provider Before context. OpenFeature 2.3.0 supplies the
+Each wrapper captures its provider Before context. OpenFeature versions before 2.5.0 supply the
 original context to Finally, which can differ from the context used for evaluation.
 Fresh wrappers isolate nested and concurrent calls. The synchronous methods also
 request fresh wrappers, but use their supplied context because they skip Before.
@@ -56,12 +56,16 @@ Disabled providers continue to return their cached hooks.
 
 The nullable provider option distinguishes an omitted value from explicit `false`.
 An omitted value reads `DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED` once at construction.
-The provider links the tracer's boolean parser without taking a dependency on the tracer assembly.
-Tests cover configuration precedence, invalid values, snapshots, and both assemblies' parser behavior.
+The native integration returns the tracer's resolved configuration, including file and stable configuration sources.
+Without instrumentation, the provider uses its environment fallback and the tracer's linked boolean parser.
+Tests cover configuration precedence, parser aliases, invalid values, snapshots, and configuration telemetry.
 
-The suite records the upstream limitation when a Before hook changes the context
-and a later Before hook throws. The provider never receives the replacement context.
-Setting opt-out in the supplied context covers this aborted evaluation path.
+Before OpenFeature 2.5.0, the provider cannot see a replacement context when a later Before hook throws.
+Setting opt-out in the supplied context covers this aborted evaluation path on those versions.
+The suite checks both this limitation and the corrected behavior in newer OpenFeature versions.
+
+`EvaluationTelemetryOptOutAllTargetsTests` covers asynchronous and synchronous span suppression
+on every test target, including the provider's `netstandard2.0` build.
 
 ## Instrumented coverage
 

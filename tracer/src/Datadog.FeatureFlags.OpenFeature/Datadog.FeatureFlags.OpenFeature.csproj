@@ -18,7 +18,7 @@
     <!-- OpenFeature v2.3.0  = Datadog.FeatureFlags.OpenFeature 2.3.1 (patch release)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.100 (Open Feature patch)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.101 (Open Feature patch + dd patch)-->    
-    <Version>2.3.2</Version>
+    <Version>2.3.3</Version>
     <!-- These target frameworks should match the values exposed in the OpenFeature package referenced below-->
     <TargetFrameworks>net462;netstandard2.0;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
@@ -38,6 +38,11 @@
   <ItemGroup>
      <!-- If you update this version, be sure to update the TargetFrameworks element above-->
     <PackageReference Include="OpenFeature" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <!-- FlagEvalMetrics needs DiagnosticSource 9; newer OpenFeature versions do not bring it transitively. -->
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -43,6 +43,10 @@ internal sealed class FeatureFlagsSettings
         source ??= NullConfigurationSource.Instance;
         var config = new ConfigurationBuilder(source, telemetry);
 
+        EvaluationTelemetryPerSubjectOptOutEnabled = config
+                                                   .WithKeys(ConfigurationKeys.FeatureFlags.EvaluationTelemetryPerSubjectOptOutEnabled)
+                                                   .AsBool(false);
+
         // Read as nullable: the precedence rules distinguish "explicitly provided" from "left unset",
         // so a default value here would erase the difference the legacy key depends on.
         var enabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsEnabled).AsBool();
@@ -133,6 +137,11 @@ internal sealed class FeatureFlagsSettings
     /// which says where configuration would come from.
     /// </summary>
     public bool Enabled { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether subjects can opt out of evaluation telemetry through their evaluation context.
+    /// </summary>
+    public bool EvaluationTelemetryPerSubjectOptOutEnabled { get; }
 
     /// <summary>
     /// Gets the configured override for the agentless endpoint, or <c>null</c> to derive it from the site.

@@ -14,7 +14,7 @@ using OpenFeature.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature;
 
-// One wrapper belongs to one evaluation. OpenFeature 2.3.0 passes the final merged context to
+// One wrapper belongs to one evaluation. OpenFeature versions before 2.5.0 pass the final merged context to
 // provider Before hooks, but passes the original context to Finally. Never share this decision
 // between evaluations, even when their immutable contexts or provider are shared.
 internal sealed class EvaluationTelemetryOptOutHook(Hook inner) : Hook

@@ -75,7 +75,8 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
     [InlineData("true", null, 0)]
     [InlineData("false", null, 1)]
     [InlineData("invalid", null, 1)]
-    [InlineData("", null, 1)]
+    [InlineData("1", null, 0)]
+    [InlineData("yes", null, 0)]
     [InlineData("true", false, 1)]
     [InlineData("false", true, 0)]
     [InlineData("invalid", true, 0)]
@@ -523,13 +524,15 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
     }
 
     [Fact]
-    public async Task BeforeFailureHidesEarlierReplacementContext()
+    public async Task BeforeFailureUsesTheContextExposedByOpenFeature()
     {
         using var harness = new Harness();
         var client = await harness.CreateClient();
+        EvaluationContext? finallyContext = null;
         client.AddHooks([
             new RecordingHook(_ => Task.FromResult<EvaluationContext?>(Context(true))),
             new RecordingHook(failureStage: "Before"),
+            new RecordingHook(onFinally: context => finallyContext = context),
         ]);
 
         var result = await client.GetBooleanDetailsAsync(harness.FlagKey, false, Context(false));
@@ -538,13 +541,14 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
         Assert.Equal(ErrorType.General, result.ErrorType);
         Assert.Equal(0, harness.EvaluationCount);
         Assert.Empty(harness.Exposures);
-        // OpenFeature 2.3.0 does not expose the first hook's replacement context after the second
-        // hook throws. Provider Before/resolution never run; Error/Finally receive the original
-        // context. Set opt-out in the supplied context to suppress this aborted evaluation's
-        // error metric and runtime-default annotation. This test records the upstream limitation.
-        Assert.Single(harness.Metrics);
-        Assert.Single(harness.SpanCalls);
-        Assert.NotNull(harness.SpanState.BuildSpanTags().RuntimeDefaults);
+        // Before OpenFeature 2.5.0, Finally receives the original context when an application
+        // Before hook throws. HookRunner preserves successful replacements in newer versions.
+        // Verify suppression against the context actually supplied by the installed OpenFeature version.
+        Assert.NotNull(finallyContext);
+        var preservesReplacement = finallyContext.GetValue(Parameter).AsBoolean == true;
+        Assert.Equal(preservesReplacement ? 0 : 1, harness.Metrics.Count);
+        Assert.Equal(preservesReplacement ? 0 : 1, harness.SpanCalls.Count);
+        Assert.Equal(!preservesReplacement, harness.SpanState.BuildSpanTags().RuntimeDefaults is not null);
     }
 
     [Fact]
@@ -697,7 +701,7 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
         }
     }
 
-    private sealed class RecordingHook(Func<EvaluationContext, Task<EvaluationContext?>>? before = null, string? failureStage = null, Action? after = null, Func<Task>? afterAsync = null) : Hook
+    private sealed class RecordingHook(Func<EvaluationContext, Task<EvaluationContext?>>? before = null, string? failureStage = null, Action? after = null, Func<Task>? afterAsync = null, Action<EvaluationContext>? onFinally = null) : Hook
     {
         public ConcurrentQueue<string> Stages { get; } = new();
 
@@ -726,6 +730,7 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
         public override ValueTask FinallyAsync<T>(HookContext<T> context, FlagEvaluationDetails<T> details, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
         {
             Record("Finally");
+            onFinally?.Invoke(context.EvaluationContext);
             return default;
         }
 

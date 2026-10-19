@@ -134,9 +134,12 @@ var enabled = await OpenFeature.Api.Instance.GetClient()
 
 Alternatively, set `DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED=true`
 and use `new DatadogProvider()` without an explicit option.
-An explicit `true` or `false` option overrides the environment setting.
-An unset option uses the environment. Missing or invalid environment values disable the parameter.
-The provider copies the resolved setting at construction. Later environment or option changes do not affect it.
+An explicit `true` or `false` option overrides tracer configuration.
+An unset option uses the tracer's normal configuration sources, including environment variables,
+`datadog.json`, application configuration, and stable configuration.
+Without instrumentation, the provider reads the process environment only.
+Missing or invalid values disable the parameter.
+The provider copies the resolved setting at construction. Later configuration or option changes do not affect it.
 Activation alone does not suppress telemetry; each subject must supply the boolean context value.
 Only boolean `true` suppresses new Datadog evaluation metrics and automatic flag
 span annotations. Missing values, strings, numbers, null, and boolean `false`
@@ -150,12 +153,13 @@ application hooks remain unchanged. Previously recorded telemetry remains availa
 The asynchronous client uses the merged evaluation context, including successful
 Before hook changes. Experimental synchronous methods use only their supplied context.
 
-OpenFeature 2.3.0 has one error-path limitation. If one application Before hook
+OpenFeature versions before 2.5.0 have one error-path limitation. If one application Before hook
 changes the context and a later Before hook throws, the provider receives only
 the original context. Evaluation does not run and no exposure is produced.
 An error metric and runtime-default span annotation can still be recorded if
 the original context did not opt out. Set opt-out in the supplied evaluation
-context when you need suppression on this path.
+context when you need suppression on this path. OpenFeature 2.5.0 and later preserve
+the replacement context, so suppression also covers this path.
 
 ## Get in touch
 
