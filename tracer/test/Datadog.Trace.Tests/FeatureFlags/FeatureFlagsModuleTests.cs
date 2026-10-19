@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,12 +23,15 @@ using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 using FeatureFlagsValueType = Datadog.Trace.FeatureFlags.ValueType;
@@ -753,15 +757,75 @@ public class FeatureFlagsModuleTests
         module.GetExposureApi().Should().BeNull();
     }
 
+    [Fact]
+    public void Evaluate_DoesNotLogTheTargetingContext()
+    {
+        const string targetingKey = "targeting-key-marker";
+        const string attribute = "attribute-marker";
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        var conditions = new List<ConditionConfiguration>
+        {
+            new ConditionConfiguration { Operator = ConditionOperator.ONE_OF, Attribute = "plan", Value = new[] { "premium" } },
+        };
+        var allocation = new Allocation
+        {
+            Key = "plan-allocation",
+            Rules = [new Rule(conditions)],
+            Splits = [new Split { Shards = [], VariationKey = "on" }],
+            DoLog = false,
+        };
+        module.ApplyConfiguration(new ServerConfiguration
+        {
+            Flags = new FlagCollection
+            {
+                ["plan-flag"] = new Flag
+                {
+                    Key = "plan-flag",
+                    Enabled = true,
+                    VariationType = FeatureFlagsValueType.Boolean,
+                    Variations = new Dictionary<string, Variant> { ["on"] = new Variant { Key = "on", Value = true } },
+                    Allocations = [allocation],
+                }
+            }
+        }).Should().BeTrue();
+
+        // The comparison converts the attribute to a string, and the exception that throws is not a
+        // FormatException, so the evaluator's general handler copies its message, attribute included,
+        // into the evaluation's error. Only the error code may be logged.
+        var result = module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, targetingKey, new Dictionary<string, object?> { ["plan"] = new ThrowingAttribute(attribute) });
+
+        result.Error.Should().Contain(attribute, "otherwise this test would not detect the error being logged");
+        var logged = LoggedValues(logger);
+        logged.Should().Contain("GENERAL");
+        logged.OfType<string>().Should().NotContain(v => v.Contains(targetingKey) || v.Contains(attribute));
+    }
+
     // Creates the module for settings that enable Feature Flags, and returns it as non-nullable so
     // tests can use it directly. Throwing rather than asserting keeps the compiler's nullable analysis
     // satisfied without a null-forgiving operator.
     private static FeatureFlagsModule CreateModule(
         TracerSettings settings,
         IRcmSubscriptionManager rcmSubscriptionManager,
-        Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
-        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager, agentlessSourceFactory)
+        Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
+        IDatadogLogger? logger = null)
+        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager, agentlessSourceFactory, logger: logger)
         ?? throw new InvalidOperationException("Feature Flags are enabled, but no module was created.");
+
+    private static Mock<IDatadogLogger> CreateDebugLogger()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+        return logger;
+    }
+
+    // Every value handed to the logger, whatever the message says, so these tests survive rewording.
+    private static List<object> LoggedValues(Mock<IDatadogLogger> logger)
+        => logger.Invocations
+                 .SelectMany(i => i.Method.GetParameters().Zip(i.Arguments, (parameter, argument) => (parameter.Name, argument)))
+                 .Where(p => p.Name is not ("sourceLine" or "sourceFile"))
+                 .Select(p => p.argument)
+                 .ToList();
 
     private static TracerSettings CreateSettings(params (string Key, string Value)[] settings)
     {
@@ -785,6 +849,12 @@ public class FeatureFlagsModuleTests
 
     private static TracerSettings CreateAgentlessSettings()
         => CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"));
+
+    // An attribute whose string conversion fails with a message that quotes it back.
+    private sealed class ThrowingAttribute(string value)
+    {
+        public override string ToString() => throw new InvalidOperationException($"Cannot convert {value}");
+    }
 
     // Records what the module does with a delivery source, which the real one cannot report without
     // issuing requests.

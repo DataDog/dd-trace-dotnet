@@ -22,6 +22,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -44,6 +45,9 @@ namespace Datadog.Trace.FeatureFlags
         private readonly object _evaluationLock = new();
 
         private readonly FeatureFlagsSettings _settings;
+
+        // Injectable so tests can assert the onboarding diagnostics without a global log sink.
+        private readonly IDatadogLogger _log;
 
         // The agentless source targets flags by environment, which customers can change in code
         // after startup, so it needs the manager rather than a captured value.
@@ -90,19 +94,24 @@ namespace Datadog.Trace.FeatureFlags
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
             Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
-            IDiscoveryService? discoveryService = null)
+            IDiscoveryService? discoveryService = null,
+            IDatadogLogger? logger = null)
         {
+            _log = logger ?? Log;
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _tracerSettings = settings;
             _agentlessSourceFactory = agentlessSourceFactory
-                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration));
+                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration, module._log));
             _rcmSubscriptionManager = rcmSubscriptionManager;
             _discoveryService = discoveryService ?? NullDiscoveryService.Instance;
 
-            Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
+            _log.Debug<FeatureFlagsSource, double>(
+                "Feature Flags: enabled with configuration source {Source} (initialization timeout {TimeoutMs}ms)",
+                _settings.Source,
+                _settings.InitializationTimeout.TotalMilliseconds);
         }
 
         /// <summary>
@@ -128,14 +137,16 @@ namespace Datadog.Trace.FeatureFlags
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
             Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
-            IDiscoveryService? discoveryService = null)
+            IDiscoveryService? discoveryService = null,
+            IDatadogLogger? logger = null)
         {
             if (!settings.FeatureFlags.Enabled)
             {
+                (logger ?? Log).Debug("Feature Flags: disabled; set DD_FEATURE_FLAGS_ENABLED=true to enable");
                 return null;
             }
 
-            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService, logger);
 
             // Subscribing from here rather than the constructor, so the callback can only ever reach
             // a fully constructed module.
@@ -193,6 +204,10 @@ namespace Datadog.Trace.FeatureFlags
                 _evpTransport = null;
             }
 
+            // Only what stops is reported: the evaluator is kept, so an evaluation that still reaches
+            // this module resolves against the last applied configuration.
+            _log.Debug("Feature Flags: shutting down; configuration delivery and exposure reporting stop");
+
             // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
             var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
             _ = FinishDisposalAsync(close, evaluationTransport, settingsSubscription, discoveryCallback, subscription, agentlessSource, exposureApi, evpTransport);
@@ -235,6 +250,9 @@ namespace Datadog.Trace.FeatureFlags
 
                 switch (_settings.Source)
                 {
+                    case FeatureFlagsSource.Offline:
+                        _log.Debug("Feature Flags: configuration source is offline; no configuration is fetched and evaluations return default values");
+                        break;
                     case FeatureFlagsSource.Agentless:
                         // Polling is billable, so it starts here rather than at construction.
                         var source = _agentlessSourceFactory(this);
@@ -283,6 +301,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (_firstConfigReceived.Task.IsCompleted)
             {
+                _log.Debug("Feature Flags: provider initialized successfully (configuration already received)");
                 return;
             }
 
@@ -304,8 +323,15 @@ namespace Datadog.Trace.FeatureFlags
             // and an error event without taking the application down.
             if (!deliveryStarted)
             {
-                throw new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
+                var exception = new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
+
+                // Skips telemetry: this is customer configuration, not a tracer bug, and the specific
+                // cause has already been logged where it was discovered.
+                _log.ErrorSkipTelemetry("Feature Flags: provider failed to initialize: {Reason}", exception.Message);
+                throw exception;
             }
+
+            _log.Debug<double>("Feature Flags: waiting up to {TimeoutMs}ms for provider initialization...", _settings.InitializationTimeout.TotalMilliseconds);
 
             // The caller's cancellation is turned into a completed task rather than passed to anything
             // that throws on it, because an exception on this path can crash buggy runtimes.
@@ -321,10 +347,19 @@ namespace Datadog.Trace.FeatureFlags
             if (completed != timeout)
             {
                 timeoutCancellation.Cancel();
+
+                if (completed == _firstConfigReceived.Task)
+                {
+                    _log.Debug("Feature Flags: provider initialized successfully");
+                }
+                else
+                {
+                    _log.Debug("Feature Flags: provider initialization was cancelled before configuration arrived");
+                }
             }
             else
             {
-                Log.Warning<double>(
+                _log.Warning<double>(
                     "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
                     _settings.InitializationTimeout.TotalMilliseconds);
             }
@@ -364,7 +399,7 @@ namespace Datadog.Trace.FeatureFlags
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
             {
-                Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
+                _log.Debug<string>("FeatureFlagsModule::Evaluate -> Evaluated {FlagKey}: no configuration received yet, returning the default value (PROVIDER_NOT_READY)", flagKey);
                 return new Evaluation(
                     flagKey,
                     defaultValue,
@@ -376,8 +411,25 @@ namespace Datadog.Trace.FeatureFlags
                     });
             }
 
-            Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
-            return evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
+            var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
+
+            // Every evaluation passes through here, so the metadata lookups are skipped unless the line
+            // is actually written. The value and the targeting context are left out: the variant
+            // identifies the value, and the context may carry personal data. The error code is logged
+            // rather than the error, because the error can be an exception message that quotes a
+            // context attribute back.
+            if (_log.IsEnabled(LogEventLevel.Debug))
+            {
+                _log.Debug<string, EvaluationReason, string?, string?, string?>(
+                    "FeatureFlagsModule::Evaluate -> Evaluated {FlagKey}: reason={Reason}, variant={Variant}, allocation={Allocation}, error={ErrorCode}",
+                    flagKey,
+                    evaluation.Reason,
+                    evaluation.Variant,
+                    FeatureFlagsEvaluator.AllocationKey(evaluation),
+                    FeatureFlagsEvaluator.ErrorCode(evaluation));
+            }
+
+            return evaluation;
         }
 
         [TestingAndPrivateOnly]
@@ -390,7 +442,7 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
+                _log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
                 return false;
             }
 
@@ -633,7 +685,7 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (Exception ex)
             {
-                Log.Warning<string>(ex, "FeatureFlagsModule::{Caller} -> Error in the configuration event handler", caller);
+                _log.Warning<string>(ex, "FeatureFlagsModule::{Caller} -> Error in the configuration event handler", caller);
             }
         }
 
@@ -655,7 +707,7 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (!_isRemoteConfigurationAvailable)
                 {
-                    Log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
+                    _log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
                     _deliveryUnavailableReason = "the Remote Configuration source is selected, but Remote Configuration is not available in this environment";
                     return;
                 }
@@ -665,19 +717,28 @@ namespace Datadog.Trace.FeatureFlags
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
                 _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
                 _deliveryStarted = true;
-                Log.Debug("FeatureFlagsModule::SubscribeToRemoteConfiguration -> Remote Configuration source subscribed");
+                _log.Debug("FeatureFlagsModule::SubscribeToRemoteConfiguration -> Starting remote_config configuration source (Agent Remote Configuration)");
             }
         }
 
         private void ApplyRemoteConfigurations(List<KeyValuePair<string, ServerConfiguration>> list)
         {
-            Log.Debug<int>("FeatureFlagsModule::ApplyRemoteConfigurations -> New config received. {Count}", list.Count);
+            _log.Debug<int>("FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration received ({FileCount} file(s))", list.Count);
             try
             {
                 if (list.Count > 0)
                 {
                     var selectedConfig = MergeConfigs(list);
-                    ApplyConfiguration(selectedConfig);
+
+                    // Logged only once applied: "applied" must not be reported for a configuration
+                    // the evaluator rejected, which ApplyConfiguration already warns about.
+                    if (ApplyConfiguration(selectedConfig))
+                    {
+                        _log.Debug<int, string>(
+                            "FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration applied successfully ({FlagCount} flag(s), configuration env={Environment})",
+                            selectedConfig.Flags?.Count ?? 0,
+                            selectedConfig.Environment?.Name ?? "unset");
+                    }
                 }
                 else
                 {
@@ -685,12 +746,13 @@ namespace Datadog.Trace.FeatureFlags
                     // from here on. The handler is notified either way, and reads HasConfiguration to
                     // tell a withdrawal from an update.
                     Interlocked.Exchange(ref _evaluator, null);
+                    _log.Debug("FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration removed; evaluations return default values until a new configuration is applied");
                     NotifyNewConfiguration("ApplyRemoteConfigurations");
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "FeatureFlagsModule::ApplyRemoteConfigurations -> Error processing new config");
+                _log.Warning(ex, "FeatureFlagsModule::ApplyRemoteConfigurations -> Error processing new config");
             }
 
             static ServerConfiguration MergeConfigs(List<KeyValuePair<string, ServerConfiguration>> list)

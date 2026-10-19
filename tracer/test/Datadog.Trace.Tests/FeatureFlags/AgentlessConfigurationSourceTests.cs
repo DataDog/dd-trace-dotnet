@@ -15,8 +15,11 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
@@ -241,10 +244,48 @@ public class AgentlessConfigurationSourceTests
         factory.RequestsSent.Should().HaveCount(3);
     }
 
+    [Fact]
+    public async Task ReportsTheNormalizedEnvironmentThatWasRequested()
+    {
+        var logger = CreateDebugLogger();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: BodyFor("configured-env")));
+        using var source = CreateSource(factory, [], environment: "Production", logger: logger.Object);
+
+        await source.PollAsync();
+
+        // The raw setting is normalized before it is sent, so reporting it as written would show a
+        // mismatch with the payload's environment that does not exist.
+        LoggedValues(logger).Should().Contain("production").And.NotContain("Production");
+    }
+
+    [Fact]
+    public async Task ReportsTheEnvironmentOfTheRequestThatProducedTheConfiguration()
+    {
+        var logger = CreateDebugLogger();
+        AgentlessConfigurationSource? sourceRef = null;
+        var factory = new TestRequestFactory(uri => new EnvironmentChangingApiRequest(uri, BodyFor("configured-env")) { Source = sourceRef });
+        using var source = CreateSource(factory, [], environment: "production", logger: logger.Object);
+        sourceRef = source;
+
+        await source.PollAsync();
+
+        // The environment changed to staging while the request was in flight, but the response is
+        // still the configuration served for the environment that request sent.
+        LoggedValues(logger).Should().Contain("production");
+    }
+
+    [Theory]
+    [InlineData("https://user:token@example.com/signed-token/ufc?sig=secret", "https://example.com")]
+    [InlineData("http://localhost:8080/path", "http://localhost:8080")]
+    [InlineData(EndpointUrl, "https://ufc-server.ff-cdn.datadoghq.com")]
+    public void RedactedOriginKeepsOnlySchemeHostAndPort(string url, string expected)
+        => AgentlessConfigurationSource.RedactedOrigin(new Uri(url)).Should().Be(expected);
+
     private static AgentlessConfigurationSource CreateSource(
         TestRequestFactory factory,
         List<ServerConfiguration> applied,
-        string? environment = null)
+        string? environment = null,
+        IDatadogLogger? logger = null)
         => new(
             CreateEndpoint(),
             factory,
@@ -255,7 +296,25 @@ public class AgentlessConfigurationSourceTests
                 return true;
             },
             environment,
-            waitAsync: NoWait);
+            waitAsync: NoWait,
+            logger: logger);
+
+    private static Mock<IDatadogLogger> CreateDebugLogger()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+        return logger;
+    }
+
+    // Every value handed to the logger, whatever the message says, so these tests survive rewording.
+    private static List<object> LoggedValues(Mock<IDatadogLogger> logger)
+        => logger.Invocations
+                 .SelectMany(i => i.Method.GetParameters().Zip(i.Arguments, (parameter, argument) => (parameter.Name, argument)))
+                 .Where(p => p.Name is not ("sourceLine" or "sourceFile"))
+                 .Select(p => p.argument)
+                 .ToList();
+
+    private static string BodyFor(string environmentName) => Body.Replace("\"production\"", $"\"{environmentName}\"");
 
     private static AgentlessEndpoint CreateEndpoint()
     {
@@ -306,6 +365,19 @@ public class AgentlessConfigurationSourceTests
 
             compressed.Position = 0;
             return Task.FromResult<Stream>(compressed);
+        }
+    }
+
+    private class EnvironmentChangingApiRequest(Uri endpoint, string body) : TestApiRequest(endpoint, responseContent: body)
+    {
+        public AgentlessConfigurationSource? Source { get; set; }
+
+        public override Task<IApiResponse> GetAsync()
+        {
+            var response = base.GetAsync();
+            // Simulate the environment being changed in code while this request is in flight.
+            Source?.UpdateEnvironment("staging");
+            return response;
         }
     }
 

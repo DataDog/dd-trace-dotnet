@@ -25,6 +25,7 @@ namespace Datadog.Trace.FeatureFlags
     internal sealed class FeatureFlagsEvaluator
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
+        internal const string MetadataErrorCode = "errorCode";
 
         internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
         internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
@@ -615,7 +616,7 @@ namespace Datadog.Trace.FeatureFlags
             return int.Parse(Convert.ToString(value)!, CultureInfo.InvariantCulture);
         }
 
-        private static string? AllocationKey(Evaluation evaluation)
+        internal static string? AllocationKey(Evaluation evaluation)
         {
             if (evaluation.FlagMetadata == null)
             {
@@ -623,6 +624,21 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return evaluation.FlagMetadata.TryGetValue(MetadataAllocationKey, out var key) ? key : null;
+        }
+
+        /// <summary>
+        /// Returns the structured error code, which is always one of a fixed set. Unlike
+        /// <see cref="Evaluation.Error"/>, which can carry an exception message, it never holds
+        /// anything derived from the evaluation context, so it is what diagnostics may log.
+        /// </summary>
+        internal static string? ErrorCode(Evaluation evaluation)
+        {
+            if (evaluation.FlagMetadata == null)
+            {
+                return null;
+            }
+
+            return evaluation.FlagMetadata.TryGetValue(MetadataErrorCode, out var code) ? code : null;
         }
 
         internal static IDictionary<string, object?> FlattenContext(EvaluationContext? context)
