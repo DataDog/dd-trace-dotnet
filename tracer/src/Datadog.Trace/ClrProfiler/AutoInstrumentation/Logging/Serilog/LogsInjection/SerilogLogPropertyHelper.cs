@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Emit;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.CompilerServices;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         // ReSharper disable once StaticMemberInGenericType
         private static readonly Func<string, object> CreateScalarValueWith;
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         static SerilogLogPropertyHelper()
         {
             // Initialize delegate for creating a MessageAttributeValue object

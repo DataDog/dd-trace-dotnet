@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Logging;
 
@@ -16,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         private const string TraceAttributeFullName = "Datadog.Trace.Annotations.TraceAttribute";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TraceAnnotationInfoFactory));
 
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Without the property getters (NativeAOT), the names are read from the attribute's CustomAttributeData.")]
         public static TraceAnnotationInfo Create(MethodBase? method)
         {
             if (method is null)

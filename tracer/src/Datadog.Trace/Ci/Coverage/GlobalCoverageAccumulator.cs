@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -59,6 +60,7 @@ internal sealed class GlobalCoverageAccumulator
     private static bool ShouldSuppressGlobalCoverage(Exception exception)
         => exception is OutOfMemoryException or OverflowException or GlobalCoverageLimitException or GlobalCoverageMetadataException;
 
+    [UnconditionalSuppressMessage("SingleFile", "IL3002", Justification = "Code coverage instruments the assemblies' files, which NativeAOT and single-file applications don't have.")]
     private static GlobalCoverageInfo Materialize(CoverageState coverage)
     {
         var globalCoverage = new GlobalCoverageInfo();
