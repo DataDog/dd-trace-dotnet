@@ -7,8 +7,11 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.AppSec.ApiSec.DuckType;
 
+[DuckType("Microsoft.AspNetCore.Routing.HttpMethodMetadata", "Microsoft.AspNetCore.Routing")]
 internal interface IHttpMethodMetadata
 {
     public System.Collections.Generic.IReadOnlyList<string> HttpMethods { get; }

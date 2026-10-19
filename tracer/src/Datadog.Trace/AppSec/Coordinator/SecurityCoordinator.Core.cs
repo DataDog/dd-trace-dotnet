@@ -32,7 +32,12 @@ internal readonly partial struct SecurityCoordinator
         Reporter = new SecurityReporter(_localRootSpan, transport, true);
     }
 
+    // Without ASP.NET Core (a NativeAOT application without its assemblies), there's no request context. The context is in
+    // another method: ILC compiles a method with a local of a type it can't load to throw, even when the code is left out.
     internal static SecurityCoordinator? TryGet(Security security, Span span)
+        => AspNetCoreAvailabilityChecker.IsSupported ? TryGetFromHttpContext(security, span) : null;
+
+    private static SecurityCoordinator? TryGetFromHttpContext(Security security, Span span)
     {
         var context = CoreHttpContextStore.Instance.Get();
         if (context is null)

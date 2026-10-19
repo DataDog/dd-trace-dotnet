@@ -66,6 +66,14 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, string? sessionId = null, string? raspAddress = null)
     {
+#if !NETFRAMEWORK
+        // Without ASP.NET Core (a NativeAOT application without its assemblies), there's no coordinator (TryGet).
+        if (!AspNetCoreAvailabilityChecker.IsSupported)
+        {
+            return null;
+        }
+#endif
+
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
 

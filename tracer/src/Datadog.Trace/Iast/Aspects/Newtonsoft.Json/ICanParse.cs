@@ -5,8 +5,13 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
+[DuckType("Newtonsoft.Json.Linq.JToken", "Newtonsoft.Json")]
+[DuckType("Newtonsoft.Json.Linq.JObject", "Newtonsoft.Json")]
+[DuckType("Newtonsoft.Json.Linq.JArray", "Newtonsoft.Json")]
 internal interface ICanParse
 {
     object Parse(string json);

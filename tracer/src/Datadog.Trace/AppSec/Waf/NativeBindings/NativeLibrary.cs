@@ -8,6 +8,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+#if NETCOREAPP3_0_OR_GREATER
+using RuntimeNativeLibrary = System.Runtime.InteropServices.NativeLibrary;
+#endif
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -26,6 +29,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 #endif
 #pragma warning restore CA1805
+
+#if NETCOREAPP3_0_OR_GREATER
+        // Without the native tracer (an application compiled with NativeAOT: nothing rewrites the DllImports of NonWindows),
+        // the libraries are loaded, resolved and closed by the runtime
+        private static bool _useRuntimeLoader;
+#endif
 
         [Flags]
         public enum FORMAT_MESSAGE : int
@@ -80,6 +89,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     return false;
                 }
 
+#if NETCOREAPP3_0_OR_GREATER
+                if (_useRuntimeLoader)
+                {
+                    RuntimeNativeLibrary.Free(library);
+                    return true;
+                }
+#endif
+
                 if (isPosixLike)
                 {
                     var result = NonWindows.dddlclose(library);
@@ -124,6 +141,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static IntPtr GetExport(IntPtr handle, string name)
         {
+#if NETCOREAPP3_0_OR_GREATER
+            if (_useRuntimeLoader)
+            {
+                return RuntimeNativeLibrary.TryGetExport(handle, name, out var export) ? export : IntPtr.Zero;
+            }
+#endif
+
             if (isPosixLike)
             {
                 var exportPtr = NonWindows.dddlsym(handle, name);
@@ -143,6 +167,28 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         private static IntPtr LoadPosixLibrary(string path)
+        {
+#if NETCOREAPP3_0_OR_GREATER
+            if (!_useRuntimeLoader)
+            {
+                try
+                {
+                    return LoadPosixLibraryWithNativeTracer(path);
+                }
+                catch (DllNotFoundException ex)
+                {
+                    Log.Debug(ex, "The native tracer is not available, {LibraryPath} is loaded by the runtime", path);
+                    _useRuntimeLoader = true;
+                }
+            }
+
+            return RuntimeNativeLibrary.Load(path);
+#else
+            return LoadPosixLibraryWithNativeTracer(path);
+#endif
+        }
+
+        private static IntPtr LoadPosixLibraryWithNativeTracer(string path)
         {
             const int RTLD_NOW = 2;
             var addr = NonWindows.dddlopen(path, RTLD_NOW);
