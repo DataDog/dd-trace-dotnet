@@ -73,8 +73,10 @@ sentence. Never use a speculative perf claim to choose `Error`.
 Cheapest fit wins:
 
 1. **Ban a specific API** → add a line to repo-root `BannedSymbols.txt`
-   (`RS0030` is already error). Message must state the replacement and the
-   real reason (correctness, config, or a **clear** perf win).
+   (`RS0030` is already error). This file is currently supplied only to
+   `Datadog.Trace.csproj`; for another project, include it as `AdditionalFiles`
+   there or choose a custom analyzer. Message must state the replacement and
+   the real reason (correctness, config, or a **clear** perf win).
 2. **Ban a pattern** (syntax, types, logging templates, `WithKeys` arguments)
    → custom analyzer under `tracer/src/Datadog.Trace.Tools.Analyzers/`.
 3. **Existing StyleCop / IDE diagnostic, new severity** → `.editorconfig`
