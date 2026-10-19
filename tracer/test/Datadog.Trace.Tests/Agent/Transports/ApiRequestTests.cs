@@ -193,15 +193,27 @@ public class ApiRequestTests
         }
     }
 
+#if NETFRAMEWORK || NET9_0_OR_GREATER
+    // Before .NET 9, HttpWebRequest on .NET Core always buffers the request body in memory
+    // (AllowWriteStreamBuffering is ignored), so a write can never block on the connection.
     [Fact]
     public async Task ApiWebRequest_PostAsync_AbortedWhileBlockedWritingRequestStream_ThrowsOperationCanceledException()
     {
-        // Make sure that request is aborted when the producer is blocked writing to the request stream
-        // BlackHoleTcpListener never reads from the socket, so a large enough write blocks once the OS send buffer fills.
+        // Make sure the request is aborted when the producer is blocked writing to the request stream.
+        // ApiWebRequest currently uses the default buffered request stream, where writes never touch the
+        // socket, but we want to stay safe if that changes. Disable buffering so writes go straight to the
+        // connection: BlackHoleTcpListener never reads from the socket, so once the OS buffers fill, a
+        // write stays pending.
         using var listener = new BlackHoleTcpListener();
         using var cts = new CancellationTokenSource();
-        var request = CreateWebRequest(listener.Port);
-        var bytes = new byte[10 * 1024 * 1024];
+        var httpWebRequest = (HttpWebRequest)WebRequest.Create($"http://127.0.0.1:{listener.Port}/");
+        httpWebRequest.SendChunked = true;
+        httpWebRequest.AllowWriteStreamBuffering = false;
+        var request = new ApiWebRequest(httpWebRequest);
+
+        var chunk = new byte[64 * 1024];
+        var writeBlocked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var producerFinished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         try
         {
@@ -211,28 +223,46 @@ public class ApiRequestTests
                 null,
                 async stream =>
                 {
-                    // Write in chunks so the write genuinely blocks on the full send buffer instead
-                    // of buffering the whole payload in one WriteAsync call.
-                    const int chunkSize = 64 * 1024;
-                    for (var offset = 0; offset < bytes.Length; offset += chunkSize)
+                    try
                     {
-                        var count = Math.Min(chunkSize, bytes.Length - offset);
-                        await stream.WriteAsync(bytes, offset, count);
+                        // Keep writing until a write doesn't complete promptly, which means it's blocked on the
+                        // full send buffer. Bounded so we fail rather than hang if writes never block.
+                        for (var i = 0; i < 1024; i++)
+                        {
+                            var writeTask = stream.WriteAsync(chunk, 0, chunk.Length);
+                            if (await Task.WhenAny(writeTask, Task.Delay(100)) != writeTask)
+                            {
+                                writeBlocked.TrySetResult(true);
+                            }
+
+                            await writeTask;
+                        }
+                    }
+                    finally
+                    {
+                        producerFinished.TrySetResult(true);
                     }
                 },
                 cts);
 
-            await listener.Accepted;
+            var first = await Task.WhenAny(writeBlocked.Task, producerFinished.Task, pending);
+            first.Should().BeSameAs(writeBlocked.Task, "the producer should be blocked mid-write");
+
             cts.Cancel();
 
             Func<Task> act = () => pending;
             await act.Should().ThrowAsync<OperationCanceledException>();
+
+            // Abort() should also unblock the stalled write itself, rather than leaving it pending forever
+            var finished = await Task.WhenAny(producerFinished.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            finished.Should().BeSameAs(producerFinished.Task, "aborting the request should fault the blocked write");
         }
         finally
         {
             listener.Release();
         }
     }
+#endif
 
 #if NETCOREAPP3_1_OR_GREATER
 
