@@ -36,6 +36,11 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static bool IsSpanEnrichmentEnabled() => false;
 
+    /// <summary>Gets a value indicating whether per-subject evaluation telemetry opt-out is enabled.</summary>
+    /// <returns>The tracer configuration, or the process environment when instrumentation is unavailable.</returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool IsEvaluationTelemetryOptOutEnabled() => ProviderEnvironmentConfiguration.IsEvaluationTelemetryOptOutEnabled();
+
     /// <summary>
     /// Gets a value indicating whether flag configuration is currently held, so the provider can
     /// resolve flags. Goes back to <c>false</c> when configuration is withdrawn.

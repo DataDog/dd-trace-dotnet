@@ -3193,6 +3193,17 @@ supportedConfigurations:
       Feature Flags only contact Datadog once application code initializes the provider, so enabling
       this alone does not start requesting flag configuration.
       This supersedes <see cref="ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled"/>.
+  DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: FeatureFlags
+    documentation: |-
+      Enables per-subject evaluation telemetry opt-out in the OpenFeature provider.
+      The provider reads this setting at construction unless an explicit option overrides it.
+      Only boolean true at the context key dd_evaluation_telemetry_opt_out suppresses evaluation telemetry.
+      Flag results and experiment exposures remain unchanged.
   DD_FEATURE_FLAGS_CONFIGURATION_SOURCE:
   - implementation: A
     scope: managed
