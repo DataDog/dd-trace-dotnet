@@ -600,6 +600,7 @@ partial class Build
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
             const string serverless = "Serverless";
+            const string featureFlags = "Feature Flags";
             const string dsm = "Data Streams Monitoring";
 
             var nextVersion = FullVersion;
@@ -692,6 +693,7 @@ partial class Build
                     { "area:profiler", profiler },
                     { "area:debugger", debugger },
                     { "area:serverless", serverless },
+                    { "area:ffe", featureFlags },
                     { "area:data-streams-monitoring", dsm },
                 };
 
@@ -738,8 +740,9 @@ partial class Build
                 profiler => 3,
                 debugger => 4,
                 serverless => 5,
-                fixes => 6,
-                _ => 7
+                featureFlags => 6,
+                fixes => 7,
+                _ => 8
             };
         });
 
