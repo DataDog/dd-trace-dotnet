@@ -56,9 +56,9 @@ internal sealed class EdgeTags
     // Immutable so that the base and hash are always read together
     private sealed class NodeHashSnapshot
     {
-        public NodeHashSnapshot(ulong @base, NodeHash hash)
+        public NodeHashSnapshot(ulong nodeHashBase, NodeHash hash)
         {
-            Base = @base;
+            Base = nodeHashBase;
             Hash = hash;
         }
 

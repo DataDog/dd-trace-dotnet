@@ -29,6 +29,7 @@ internal sealed class TagCache<TKey, TValue>
     private long _nextEvictionCheck;
 
     // A monotonic clock with second precision avoids shared writes on every cache hit.
+    // The optional clock lets tests advance time without waiting a real minute; production uses Stopwatch.
     internal TagCache(int capacity, Func<long>? getTimestampSeconds = null)
     {
         if (capacity <= 0)
