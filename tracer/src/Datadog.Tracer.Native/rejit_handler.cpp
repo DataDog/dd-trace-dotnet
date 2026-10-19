@@ -6,6 +6,8 @@
 #include "stats.h"
 #include "function_control_wrapper.h"
 
+#include <algorithm>
+
 namespace trace
 {
 
@@ -44,14 +46,6 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
     m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
-bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
-{
-    std::vector<RejitRequest> requests;
-    const auto processed = GetRejitRequestsForInlinersInModule(moduleId, requests);
-    m_module->GetHandler()->EnqueueForRejit(std::move(requests));
-    return processed;
-}
-
 bool RejitHandlerModuleMethod::GetRejitRequestsForInlinersInModule(ModuleID moduleId,
                                                                    std::vector<RejitRequest>& rejitRequests)
 {
@@ -72,7 +66,7 @@ bool RejitHandlerModuleMethod::GetRejitRequestsForInlinersInModule(ModuleID modu
 
 #if DEBUG
     // We generate this log hundreds of times, and isn't typically useful in escalations
-    Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ", "[ModuleInliner=", moduleId,
+    Logger::Debug("RejitHandlerModuleMethod::GetRejitRequestsForInlinersInModule for ", "[ModuleInliner=", moduleId,
                   ", ModuleId=", currentModuleId, ", MethodDef=", currentMethodDef, "]");
 #endif
 
@@ -239,33 +233,46 @@ std::vector<RejitHandlerModuleMethod*> RejitHandlerModule::TakeNewMethods()
     return newMethods;
 }
 
-void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
+void RejitHandlerModule::GetRejitRequestsForInlinersInModules(const std::vector<ModuleID>& inlinerModules,
+                                                              const std::vector<RejitHandlerModuleMethod*>& newMethods,
+                                                              std::vector<RejitRequest>& rejitRequests)
 {
     std::lock_guard<std::mutex> moduleGuard(m_ngenProcessedInlinerModulesLock);
-
-    // We check first if we already processed this module to skip it.
-    auto find_res = m_ngenProcessedInlinerModules.find(moduleId);
-    if (find_res != m_ngenProcessedInlinerModules.end())
+    for (const auto inlinerModule : inlinerModules)
     {
-        return;
-    }
-
-    std::lock_guard<std::mutex> methodsGuard(m_methods_lock);
-    bool success = true;
-    for (const auto& method : m_methods)
-    {
-        success = success && method.second.get()->RequestRejitForInlinersInModule(moduleId);
-        // If we fail to process a method, we stop the processing and try again in another call.
-        if (!success)
+        // A module already checked against this NGen module only has to check the methods created since then.
+        if (m_ngenProcessedInlinerModules.find(inlinerModule) != m_ngenProcessedInlinerModules.end())
         {
-            break;
-        }
-    }
+            for (const auto method : newMethods)
+            {
+                if (!method->GetRejitRequestsForInlinersInModule(inlinerModule, rejitRequests))
+                {
+                    // Check every method again in another call.
+                    m_ngenProcessedInlinerModules.erase(inlinerModule);
+                    break;
+                }
+            }
 
-    if (success)
-    {
-        // We mark module as processed.
-        m_ngenProcessedInlinerModules[moduleId] = true;
+            continue;
+        }
+
+        std::lock_guard<std::mutex> methodsGuard(m_methods_lock);
+        bool success = true;
+        for (const auto& method : m_methods)
+        {
+            success = method.second->GetRejitRequestsForInlinersInModule(inlinerModule, rejitRequests);
+            // If we fail to process a method, we stop the processing and try again in another call.
+            if (!success)
+            {
+                break;
+            }
+        }
+
+        if (success)
+        {
+            // We mark module as processed.
+            m_ngenProcessedInlinerModules[inlinerModule] = true;
+        }
     }
 }
 
@@ -747,15 +754,25 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
         return;
     }
 
+    std::vector<RejitRequest> rejitRequests;
     Rejitter* prev = nullptr;
     for (size_t x = 0; x < m_rejittersCount; x++)
     {
         const auto current = m_rejitters[x];
         if (current != prev)
         {
-            current->AddNGenInlinerModule(moduleId);
+            current->AddNGenInlinerModule(moduleId, rejitRequests);
         }
     }
+
+    // Every RequestReJIT suspends the runtime on .NET Framework, so request the inliners found by every rejitter
+    // at once, and only once each: a method can inline several instrumented methods.
+    std::sort(rejitRequests.begin(), rejitRequests.end());
+    rejitRequests.erase(std::unique(rejitRequests.begin(), rejitRequests.end(),
+                                    [](const RejitRequest& lhs, const RejitRequest& rhs)
+                                    { return !(lhs < rhs) && !(rhs < lhs); }),
+                        rejitRequests.end());
+    EnqueueForRejit(std::move(rejitRequests));
 }
 
 void RejitHandler::SetRejitTracking(bool enabled) {
