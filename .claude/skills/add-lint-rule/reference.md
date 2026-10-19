@@ -26,7 +26,7 @@ Closest copies:
 - Analyzer only: `PrimaryConstructorAnalyzer/DoNotCapturePrimaryConstructorParametersAnalyzer.cs` (`DD0003`)
 - Analyzer + code fix + tests: `DuckTypeAnalyzer/` (`DDDUCK001`)
 - Banned API with a real perf reason: `Environment.Version` in `BannedSymbols.txt`
-- Performance claimed, **not** blocking: `SealedAnalyzer` (`DDSEAL001`, `Info`)
+- Legacy `Info` (ignored; do not copy): `SealedAnalyzer` (`DDSEAL001`)
 
 ## Diagnostic IDs
 
@@ -63,7 +63,7 @@ public sealed class YourAnalyzer : DiagnosticAnalyzer
         title: "Short title",
         messageFormat: "What is wrong and what to do instead",
         category: "Usage", // Usage | CodeQuality | Maintainability | Performance (rare)
-        defaultSeverity: DiagnosticSeverity.Error,
+        defaultSeverity: DiagnosticSeverity.Error, // new rules: Error only. Info is legacy and ignored.
         isEnabledByDefault: true,
         description: "One-sentence why. No speculative perf claims.");
 
@@ -179,11 +179,12 @@ Do not duplicate StyleCop with a custom analyzer.
 | Tracer native CppCheck | Nuke `CppCheckNativeSrc` in `Build.Steps.cs` | Stage `static_analysis_checks_tracer` |
 | Native loader CppCheck | Nuke `CppCheckNativeLoader` in `Build.Shared.Steps.cs` | same |
 | Profiler CppCheck | `profiler/cppcheck-suppressions.txt`; `--inline-suppr` | `CheckCppCheckResults` (severity=`error`) |
-| Profiler Clang-Tidy | `ClangTidyChecks` in `Build.Profiler.Steps.cs` | `CheckClangTidyResults` (line contains ` error:`) |
+| Profiler Clang-Tidy | `profiler/.clang-tidy` plus appended `ClangTidyChecks` in `Build.Profiler.Steps.cs` | `CheckClangTidyResults` (line contains ` error:`) |
 
-Current profiler Clang-Tidy set (do not add style checks by default):
-
-`clang-analyzer-*,-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements`
+Profiler Clang-Tidy is the merge of both sources. `profiler/.clang-tidy`
+enables `readability-*`, `clang-analyzer-*`, and `cppcoreguidelines-*`.
+Command-line `-checks` is appended to that (it does not replace it). Do not
+add style checks by default; read both files before changing the set.
 
 `.clang-format` is not a CI gate.
 

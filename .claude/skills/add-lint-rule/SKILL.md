@@ -24,6 +24,10 @@ Still add unit tests for the analyzer itself under
 `Datadog.Trace.Tools.Analyzers.Tests` — that is testing the rule, not
 enforcing it on test code.
 
+**New rules are introduced as `Error`.** `Info` diagnostics are **legacy**:
+they are IDE-only, they are ignored, and they must not be used for new rules.
+If the rule is not worth `Error`, do not add it.
+
 Read [reference.md](reference.md) for file layout, ID allocation, and copy-paste
 templates. Stay in this file until the rule is classified.
 
@@ -32,12 +36,12 @@ templates. Stay in this file until the rule is classified.
 Pick **one** primary category. Do not mix them in the diagnostic title, category,
 or PR description.
 
-| Category | What it is | Typical severity | Typical mechanism |
+| Category | What it is | Severity (new rules) | Typical mechanism |
 |---|---|---|---|
 | **Correctness / safety** | Wrong code, security, config-key misuse, infinite-loop hazard | `Error` | Custom Roslyn analyzer |
-| **Product convention** | Must use a helper, logging shape, duck-type null check | `Error` or `Warning` | Analyzer or `BannedSymbols.txt` |
-| **Style** | Naming, usings, headers, layout, “looks nicer” | Existing StyleCop / `.editorconfig`. New custom style rules: default `Info` or do not add | StyleCop, editorconfig |
-| **Performance** | Proven hot-path win | Only `Error`/`Warning` if the win is **clear**. Otherwise `Info` or do not add | Analyzer or Banned API, with an evidence-backed message |
+| **Product convention** | Must use a helper, logging shape, duck-type null check | `Error` | Analyzer or `BannedSymbols.txt` |
+| **Style** | Naming, usings, headers, layout, “looks nicer” | `Error`, or do not add. Prefer existing StyleCop / `.editorconfig` | StyleCop, editorconfig, or analyzer |
+| **Performance** | Proven hot-path win | `Error` only if the win is **clear**. Otherwise do not add | Analyzer or Banned API, with an evidence-backed message |
 
 If the same idea is both “style” and “maybe faster”, it is **style**. Do not
 rebrand it as performance to justify blocking PRs.
@@ -57,14 +61,14 @@ is true:
 
 Not enough:
 
-- “Sealing types can improve performance” as a reason to fail CI (`DDSEAL001`
-  is `Info` for this reason).
+- “Sealing types can improve performance” as a reason to add a rule
+  (`DDSEAL001` is a **legacy `Info`** diagnostic; do not copy it).
 - Micro-optimizations outside bootstrap/hot paths in `AGENTS.md`.
 - Style preferences (braces, `var`, usings, `is not null`) dressed up as perf.
 - “Might help the JIT / inlining / virtual dispatch” without a measured case.
 
-If unsure, ship as **style** at `Info`, or as a convention without a perf
-sentence. Never use a speculative perf claim to choose `Error`.
+If the case is not strong enough for `Error`, **do not add the rule**. Never
+use a speculative perf claim to justify shipping it.
 
 ## 3. Choose the mechanism
 
@@ -111,24 +115,29 @@ new native rule and existing noise is acceptable.
   `CppCheckNativeSrc` / `CppCheckNativeLoader` Nuke targets.
 - Profiler CppCheck: `profiler/cppcheck-suppressions.txt` (`--inline-suppr`
   is enabled).
-- Profiler Clang-Tidy checks: `ClangTidyChecks` in
-  `tracer/build/_build/Build.Profiler.Steps.cs`. Many style checks are already
-  disabled. Adding a check is opt-in and will fail the profiler analysis
-  stage on `error:`.
+- Profiler Clang-Tidy: base set is `profiler/.clang-tidy`. CI `-checks`
+  (`ClangTidyChecks` in `Build.Profiler.Steps.cs`) is **appended**, not a
+  replacement. Do not add style checks by default; a new check is opt-in and
+  fails the profiler analysis stage on ` error:`.
 - `.clang-format` is local style only; CI does not verify it.
 
 ## 4. Severity (managed)
 
-`TreatWarningsAsErrors` is true for tracer projects, so **`Warning` fails the
-build**. Use:
+Introduce every new diagnostic as **`Error`**. Set
+`defaultSeverity: DiagnosticSeverity.Error`.
 
-- `Error` — must not merge (correctness, required convention)
-- `Warning` — same as error here; prefer `Error` unless you need Warning for
-  IDE presentation
-- `Info` — does **not** block PRs (`DDSEAL001`)
+- **`Error`** — the only acceptable severity for a new rule. Fails the build
+  and blocks the PR.
+- **`Warning`** — not a softer landing. `TreatWarningsAsErrors` is true, so
+  it already fails the build. Do not use it as the final state.
+- **`Info`** — **legacy only** (`DDSEAL001`). IDE-only, ignored in CI, and
+  ignored in practice. Do not add new `Info` rules. Do not “try Info first
+  and bump later.”
 
-Match `category` to the classification in §1 (`Usage`, `CodeQuality`,
-`Maintainability`, `Performance` only when §2 is satisfied).
+If cleanup is large, use **stacked PRs** to fix hits, then enable the rule
+as `Error`. If it is not worth that, do not add it. Match `category` to §1
+(`Usage`, `CodeQuality`, `Maintainability`, `Performance` only when §2 is
+satisfied).
 
 ## 5. Implementation workflow (managed)
 
@@ -136,9 +145,9 @@ Match `category` to the classification in §1 (`Usage`, `CodeQuality`,
 2. Grep `DiagnosticId` under `tracer/src/Datadog.Trace.Tools.Analyzers` for the
    next `DDxxxx` or start `DD<AREA>001` for a family (`DDLOG`, `DDDUCK`).
 3. Follow [reference.md](reference.md): analyzer, tests, optional code fix.
-4. For `Error`/`Warning`, clean up **all** current hits in the same PR, or
-   the tree will not compile (`TreatWarningsAsErrors`). Prefer real fixes
-   over `#pragma` / `GlobalSuppressions`. `Info` does not fail the build.
+4. Clean up **all** current hits in the same PR (or in stacked PRs before
+   enabling `Error`), or the tree will not compile. Prefer real fixes over
+   `#pragma` / `GlobalSuppressions`.
 5. Tests: `Datadog.Trace.Tools.Analyzers.Tests` via
    `CSharpAnalyzerVerifier` / `CSharpCodeFixVerifier`.
 6. Compile: `CompileManagedSrc` or `BuildAndRunManagedUnitTests` with a filter
@@ -161,7 +170,7 @@ claim runtime impact.
 - [ ] Enforcement is **"core"** production code only; analyzer unit tests still added
 - [ ] Managed: Roslyn analyzer or `BannedSymbols.txt`, not a new CI job
 - [ ] Native: CppCheck and/or existing Clang-Tidy surface only
-- [ ] Severity matches whether the rule should block PRs
+- [ ] Introduced as `Error` (`Info` is legacy and will be ignored)
 - [ ] Analyzer tests cover a flag case and a no-flag case
 - [ ] Existing violations fixed in the same change
 - [ ] Generated-code analysis left `None`; concurrent execution enabled
