@@ -103,11 +103,11 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             module.Activate();
             var writer = module.EvaluationWriter!;
             writer.Should().NotBeNull();
-            UpdateSettings(settings, updated.Port, "new-env");
+            var updatedExporter = UpdateSettings(settings, updated.Port, "new-env");
             module.EvaluationWriter.Should().BeNull("the original Agent's capabilities do not apply at the new address");
             discovery.Publish(settings.Manager.InitialExporterSettings);
             module.EvaluationWriter.Should().BeNull("an in-flight old discovery response must not reopen admission");
-            discovery.Publish(Settings(updated.Port, "remote_config").Manager.InitialExporterSettings);
+            discovery.Publish(updatedExporter);
             module.EvaluationWriter.Should().BeSameAs(writer, "changing the Agent must not relabel the writer's events");
             discovery.Publish(settings.Manager.InitialExporterSettings);
             module.EvaluationWriter.Should().BeSameAs(writer, "late responses from the old Agent must not invalidate the new Agent's discovery");
@@ -115,7 +115,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             await module.FlushAsync();
             JObject.Parse(received.Single().BodyInJson)["context"]!["env"]!.Value<string>().Should().Be("unknown");
 
-            discovery.Publish(Settings(updated.Port, "remote_config").Manager.InitialExporterSettings, endpoint: null);
+            discovery.Publish(updatedExporter, endpoint: null);
             module.EvaluationWriter.Should().BeNull("withdrawn EVP support closes admission");
         }
         finally
@@ -181,6 +181,35 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             module.EvaluationWriter.Should().BeNull();
             UpdateSettings(settings, 8126, "original-agent");
             module.EvaluationWriter.Should().BeNull("returning to an earlier address still requires discovery for the new settings");
+        }
+        finally
+        {
+            await module.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DelayedDiscoveryFromEarlierVisitCannotChangeCurrentAdmission(bool currentAgentSupportsEvp)
+    {
+        var settings = Settings(8126, "remote_config");
+        var originalExporter = settings.Manager.InitialExporterSettings;
+        var discovery = new FlagEvaluationTestDiscovery();
+        var staleEndpoint = currentAgentSupportsEvp ? null : "evp_proxy/v2";
+        discovery.Publish(originalExporter, staleEndpoint);
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), discoveryService: discovery)!;
+        try
+        {
+            module.Activate();
+            UpdateSettings(settings, 18126, "other-agent");
+            var currentExporter = UpdateSettings(settings, 8126, "original-agent");
+            discovery.Publish(currentExporter, currentAgentSupportsEvp ? "evp_proxy/v2" : null);
+            (module.EvaluationWriter is not null).Should().Be(currentAgentSupportsEvp);
+
+            // Replay a callback captured during the first visit after the new discovery completed.
+            discovery.Publish(originalExporter, staleEndpoint);
+            (module.EvaluationWriter is not null).Should().Be(currentAgentSupportsEvp, "the same address does not make an old exporter generation current");
         }
         finally
         {
@@ -332,8 +361,8 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                 UpdateSettings(settings, original.Port, "before");
             }
 
-            UpdateSettings(settings, updated.Port, "before");
-            discovery.Publish(Settings(updated.Port, "remote_config").Manager.InitialExporterSettings);
+            var updatedExporter = UpdateSettings(settings, updated.Port, "before");
+            discovery.Publish(updatedExporter);
             module.Activate();
             var writer = module.EvaluationWriter!;
             writer.TryEnqueue(Observation()).Should().BeTrue();
@@ -345,8 +374,8 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             initialContext["service"]!.Value<string>().Should().Be("updated-service");
             initialContext["version"]!.Value<string>().Should().Be("2");
 
-            UpdateSettings(settings, original.Port, "after");
-            discovery.Publish(settings.Manager.InitialExporterSettings);
+            var returnedExporter = UpdateSettings(settings, original.Port, "after");
+            discovery.Publish(returnedExporter);
             module.EvaluationWriter.Should().BeSameAs(writer);
             writer.TryEnqueue(Observation()).Should().BeTrue();
             await module.FlushAsync();
@@ -379,7 +408,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         {
             module.Activate();
             var writer = module.EvaluationWriter!;
-            UpdateSettings(settings, agent.Port, "after-activation");
+            UpdateSettings(settings, agent.Port, "after-activation").Should().BeSameAs(settings.Manager.InitialExporterSettings);
             module.EvaluationWriter.Should().BeSameAs(writer, "service-only updates do not invalidate Agent discovery");
             writer.TryEnqueue(Observation()).Should().BeTrue();
             UpdateSettings(settings, agent.Port, "while-buffered");
@@ -445,8 +474,11 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         }
     }
 
-    private static void UpdateSettings(TracerSettings settings, int port, string env)
-        => settings.Manager.UpdateManualConfigurationSettings(
+    private static ExporterSettings UpdateSettings(TracerSettings settings, int port, string env)
+    {
+        var exporter = settings.Manager.InitialExporterSettings;
+        using var subscription = settings.Manager.SubscribeToChanges(changes => exporter = changes.UpdatedExporter ?? changes.PreviousExporter);
+        settings.Manager.UpdateManualConfigurationSettings(
             new ManualInstrumentationConfigurationSource(
                 new Dictionary<string, object?>
                 {
@@ -457,11 +489,13 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
                 },
                 useDefaultSources: true),
             NullConfigurationTelemetry.Instance);
+        return exporter;
+    }
 
     private static TracerSettings Settings(int port, string source) => new(new NameValueConfigurationSource(new NameValueCollection
     {
         [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = source,
-        [ConfigurationKeys.AgentUri] = $"http://127.0.0.1:{port}",
+        [ConfigurationKeys.AgentUri] = $"http://127.0.0.1:{port}/",
         [ConfigurationKeys.ApiKey] = "config-only-secret",
         [ConfigurationKeys.ServiceName] = "module-test",
     }));

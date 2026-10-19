@@ -529,12 +529,9 @@ namespace Datadog.Trace.FeatureFlags
 
             bool MatchesCurrentAgent(AgentConfiguration? configuration)
             {
-                var discovered = configuration?.DiscoverySettings;
-                return discovered is not null
-                    && discovered.TracesTransport == exporter.TracesTransport
-                    && discovered.AgentUri == exporter.AgentUri
-                    && discovered.TracesPipeName == exporter.TracesPipeName
-                    && discovered.TracesUnixDomainSocketPath == exporter.TracesUnixDomainSocketPath;
+                // Returning to the same address creates a new exporter generation. A delayed
+                // callback from an earlier visit must not change the current admission state.
+                return ReferenceEquals(configuration?.DiscoverySettings, exporter);
             }
         }
 
