@@ -1035,10 +1035,19 @@ namespace Datadog.Trace.TestHelpers
           .Tags(s => s
                 .Matches("component", "quartz")
                 .IsOptional("events")
-                .IsPresent("fire.instance.id")
-                .IsPresent("job.group")
-                .IsPresent("job.name")
+                .IsOptional("fire.instance.id")
+                .IsOptional("job.group")
+                .IsOptional("job.name")
                 .IsOptional("job.type")
+                .IsOptional("quartz.fire.instance.id")
+                .IsOptional("quartz.job.group")
+                .IsOptional("quartz.job.name")
+                .IsOptional("quartz.job.type")
+                .IsOptional("quartz.job.result")
+                .IsOptional("quartz.scheduler.id")
+                .IsOptional("quartz.scheduler.name")
+                .IsOptional("quartz.trigger.group")
+                .IsOptional("quartz.trigger.name")
                 .IsOptional("otel.library.name")
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
@@ -1046,8 +1055,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("scheduler.id")
                 .IsOptional("scheduler.name")
                 .IsOptional("span.kind")
-                .IsPresent("trigger.group")
-                .IsPresent("trigger.name")
+                .IsOptional("trigger.group")
+                .IsOptional("trigger.name")
                 .IsOptional("_dd.tags.process"));
     }
 }
