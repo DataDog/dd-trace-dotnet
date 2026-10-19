@@ -142,7 +142,18 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (!settings.FeatureFlags.Enabled)
             {
-                (logger ?? Log).Debug("Feature Flags: disabled; set DD_FEATURE_FLAGS_ENABLED=true to enable");
+                var log = logger ?? Log;
+
+                // Offline is resolved to disabled by the settings, so no module exists for Activate to report it from.
+                if (settings.FeatureFlags.Source == FeatureFlagsSource.Offline)
+                {
+                    log.Debug("Feature Flags: disabled because the configuration source is offline; set DD_FEATURE_FLAGS_CONFIGURATION_SOURCE to agentless or remote_config to receive configuration");
+                }
+                else
+                {
+                    log.Debug("Feature Flags: disabled; set DD_FEATURE_FLAGS_ENABLED=true to enable");
+                }
+
                 return null;
             }
 
@@ -250,9 +261,6 @@ namespace Datadog.Trace.FeatureFlags
 
                 switch (_settings.Source)
                 {
-                    case FeatureFlagsSource.Offline:
-                        _log.Debug("Feature Flags: configuration source is offline; no configuration is fetched and evaluations return default values");
-                        break;
                     case FeatureFlagsSource.Agentless:
                         // Polling is billable, so it starts here rather than at construction.
                         var source = _agentlessSourceFactory(this);
