@@ -652,25 +652,30 @@ public class DataStreamsManagerTests
         }
     }
 
-    [Fact]
-    public void GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacityWithActiveEntries()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GetOrCreateTags_BypassesCache_WhenAtConfiguredCapacityWithActiveEntries(bool backlog)
     {
         var dsm = GetDataStreamManager(true, out _);
+        Func<int, object> getTags = backlog
+                                       ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey(value), static k => $"tag:{k.Value}")
+                                       : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey(value), static k => [$"tag:{k.Value}"]);
 
-        // OverflowTestKey has its own shared cache, isolated from the production key types.
+        // OverflowTestKey has its own shared caches, isolated from the production key types.
         // Every entry stays active for the duration of the test, so none can be evicted.
-        var cached = new EdgeTags[DataStreamsManager.MaxEdgeTagCacheSize];
+        var cached = new object[GlobalSettings.Instance.DataStreamsTagCacheSize];
         for (var i = 0; i < cached.Length; i++)
         {
-            cached[i] = dsm.GetOrCreateEdgeTags(new OverflowTestKey(i), static k => [$"tag:{k.Value}"]);
+            cached[i] = getTags(i);
+            getTags(i).Should().BeSameAs(cached[i]);
         }
 
-        var overflowKey = new OverflowTestKey(DataStreamsManager.MaxEdgeTagCacheSize);
-        var first = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
-        var second = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
+        var first = getTags(cached.Length);
+        var second = getTags(cached.Length);
 
         second.Should().NotBeSameAs(first);
-        dsm.GetOrCreateEdgeTags(new OverflowTestKey(0), static k => [$"tag:{k.Value}"]).Should().BeSameAs(cached[0]);
+        getTags(0).Should().BeSameAs(cached[0]);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -704,7 +709,7 @@ public class DataStreamsManagerTests
     }
 
     /// <summary>
-    /// Key type used exclusively by <see cref="GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacityWithActiveEntries"/>,
+    /// Key type used exclusively by <see cref="GetOrCreateTags_BypassesCache_WhenAtConfiguredCapacityWithActiveEntries"/>,
     /// so that it gets its own isolated shared cache.
     /// </summary>
     private readonly struct OverflowTestKey : IEquatable<OverflowTestKey>

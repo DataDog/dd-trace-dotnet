@@ -27,13 +27,6 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// </summary>
 internal sealed class DataStreamsManager
 {
-    /// <summary>
-    /// Maximum number of distinct keys stored in a single per-type edge-tag cache.
-    /// When the limit is reached, the least recently used idle entry can be evicted
-    /// to make room for new keys. Active entries are preserved to avoid cache thrashing.
-    /// </summary>
-    internal const int MaxEdgeTagCacheSize = 1000;
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
@@ -371,7 +364,7 @@ internal sealed class DataStreamsManager
     /// Returns cached edge tags for the given key, creating and caching them on first use.
     /// On cache hits, zero heap allocations occur, and the node hash memoized on the returned
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
+    /// Once the cache reaches the capacity configured by <see cref="GlobalSettings.DataStreamsTagCacheSize"/>, new keys replace
     /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
@@ -385,7 +378,7 @@ internal sealed class DataStreamsManager
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
     /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
-    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries, new keys replace
+    /// Once the cache reaches the capacity configured by <see cref="GlobalSettings.DataStreamsTagCacheSize"/>, new keys replace
     /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
@@ -420,6 +413,6 @@ internal sealed class DataStreamsManager
     private static class SharedTagCache<TKey, TValue>
         where TKey : IEquatable<TKey>
     {
-        internal static readonly TagCache<TKey, TValue> Cache = new(MaxEdgeTagCacheSize);
+        internal static readonly TagCache<TKey, TValue> Cache = new(GlobalSettings.Instance.DataStreamsTagCacheSize);
     }
 }

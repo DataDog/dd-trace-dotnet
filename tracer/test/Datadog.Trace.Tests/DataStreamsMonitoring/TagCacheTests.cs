@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using FluentAssertions;
 using Xunit;
@@ -18,7 +19,7 @@ public class TagCacheTests
     public void FullCache_PreservesActiveEntries_WhenWorkingSetExceedsCapacity()
     {
         long now = 0;
-        var cache = new TagCache<int, object>(DataStreamsManager.MaxEdgeTagCacheSize, () => now);
+        var cache = new TagCache<int, object>(GlobalSettings.DefaultDataStreamsTagCacheSize, () => now);
         var results = new object[1200];
         for (var i = 0; i < results.Length; i++)
         {
@@ -32,7 +33,7 @@ public class TagCacheTests
             for (var i = 0; i < results.Length; i++)
             {
                 var tags = GetTags(cache, i);
-                if (i < DataStreamsManager.MaxEdgeTagCacheSize)
+                if (i < GlobalSettings.DefaultDataStreamsTagCacheSize)
                 {
                     tags.Should().BeSameAs(results[i]);
                 }
@@ -76,8 +77,8 @@ public class TagCacheTests
     public void ConcurrentInsertionsAndIdleEvictions_KeepCapacityAvailable()
     {
         long now = 0;
-        var cache = new TagCache<int, object>(DataStreamsManager.MaxEdgeTagCacheSize, () => Volatile.Read(ref now));
-        var results = new object[DataStreamsManager.MaxEdgeTagCacheSize];
+        var cache = new TagCache<int, object>(GlobalSettings.DefaultDataStreamsTagCacheSize, () => Volatile.Read(ref now));
+        var results = new object[GlobalSettings.DefaultDataStreamsTagCacheSize];
         Parallel.For(0, results.Length, i => results[i] = GetTags(cache, i));
         for (var i = 0; i < results.Length; i++)
         {

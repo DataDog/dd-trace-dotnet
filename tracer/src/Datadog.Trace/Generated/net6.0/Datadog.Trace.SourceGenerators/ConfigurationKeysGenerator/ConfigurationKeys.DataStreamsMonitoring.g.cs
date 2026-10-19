@@ -31,6 +31,14 @@ internal static partial class ConfigurationKeys
         public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";
 
         /// <summary>
+        /// Maximum number of entries in each process-wide Data Streams Monitoring edge-tag or backlog-tag cache.
+        /// Read once at startup. Must be a positive integer; invalid values fall back to 1000.
+        /// This is a per-cache limit, not a combined limit across integrations. Restart the process to change it.
+        /// <see cref="Datadog.Trace.Configuration.GlobalSettings.DataStreamsTagCacheSize"/>
+        /// </summary>
+        public const string TagCacheSize = "DD_DATA_STREAMS_TAG_CACHE_SIZE";
+
+        /// <summary>
         /// Configuration key for transaction extractors in Data Streams Monitoring.
         /// <see cref="Datadog.Trace.Configuration.TracerSettings.DataStreamsTransactionExtractors"/>
         /// </summary>

@@ -52,6 +52,26 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(null, 1000)]
+        [InlineData("", 1000)]
+        [InlineData(" ", 1000)]
+        [InlineData("invalid", 1000)]
+        [InlineData("0", 1000)]
+        [InlineData("-1", 1000)]
+        [InlineData("2147483648", 1000)]
+        [InlineData("1", 1)]
+        [InlineData("25", 25)]
+        [InlineData("5000", 5000)]
+        [InlineData("2147483647", int.MaxValue)]
+        public void DataStreamsTagCacheSize(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.TagCacheSize, value));
+            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+
+            settings.DataStreamsTagCacheSize.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void DiagnosticSourceEnabled(string value, bool expected)
         {
