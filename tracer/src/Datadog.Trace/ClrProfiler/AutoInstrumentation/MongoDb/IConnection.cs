@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// <summary>
     /// MongoDB.Driver.Core.IConnection interface for duck-typing
     /// </summary>
+    [DuckType("MongoDB.Driver.Core.Connections.IConnection", "MongoDB.Driver")]
     internal interface IConnection : IDuckType
     {
         /// <summary>

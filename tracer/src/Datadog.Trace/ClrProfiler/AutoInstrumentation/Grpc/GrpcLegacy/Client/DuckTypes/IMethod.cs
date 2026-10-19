@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     /// Interface for use in constraints
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core.Api/Method.cs
     /// </summary>
+    [DuckType("Grpc.Core.IMethod", "Grpc.Core.Api", IncludeDerivedTypes = true)]
     internal interface IMethod
     {
         public string? ServiceName { get; }

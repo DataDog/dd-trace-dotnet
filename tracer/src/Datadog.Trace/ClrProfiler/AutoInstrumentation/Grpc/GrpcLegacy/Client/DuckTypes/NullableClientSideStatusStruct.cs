@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     /// Duck type for Nullable{Grpc.Core.Internal.ClientSideStatus}
     /// </summary>
     [DuckCopy]
+    [DuckCopy("System.Nullable`1[[Grpc.Core.Internal.ClientSideStatus, Grpc.Core]]", "System.Private.CoreLib")]
     internal struct NullableClientSideStatusStruct
     {
         public ClientSideStatusStruct Value;

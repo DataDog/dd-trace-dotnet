@@ -5,11 +5,15 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
     /// Connection multiplexer ducktype structure
     /// </summary>
+    [DuckType("StackExchange.Redis.ConnectionMultiplexer", "StackExchange.Redis")]
+    [DuckType("StackExchange.Redis.ConnectionMultiplexer", "StackExchange.Redis.StrongName")]
     internal interface IConnectionMultiplexer
     {
         /// <summary>

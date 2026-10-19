@@ -12,6 +12,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// IBindingSourceValueProvider
     /// </summary>
     [DuckTyping.DuckCopy]
+    [DuckTyping.DuckCopy("Microsoft.AspNetCore.Mvc.ModelBinding.FormValueProvider", "Microsoft.AspNetCore.Mvc.Core")]
+    [DuckTyping.DuckCopy("Microsoft.AspNetCore.Mvc.ModelBinding.QueryStringValueProvider", "Microsoft.AspNetCore.Mvc.Core")]
+    [DuckTyping.DuckCopy("Microsoft.AspNetCore.Mvc.ModelBinding.RouteValueProvider", "Microsoft.AspNetCore.Mvc.Core")]
     internal struct BindingSourceValueProvider
     {
         /// <summary>

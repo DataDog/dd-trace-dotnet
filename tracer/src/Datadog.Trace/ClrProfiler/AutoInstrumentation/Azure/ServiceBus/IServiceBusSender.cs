@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
+[DuckType("Azure.Messaging.ServiceBus.ServiceBusSender", "Azure.Messaging.ServiceBus")]
 internal interface IServiceBusSender : ITransportSender
 {
     [DuckField(Name = "_connection")]
@@ -19,6 +20,7 @@ internal interface IServiceBusSender : ITransportSender
     object InnerSender { get; }
 }
 
+[DuckType("Azure.Messaging.ServiceBus.ServiceBusConnection", "Azure.Messaging.ServiceBus")]
 internal interface IServiceBusConnection
 {
     Uri ServiceEndpoint { get; }

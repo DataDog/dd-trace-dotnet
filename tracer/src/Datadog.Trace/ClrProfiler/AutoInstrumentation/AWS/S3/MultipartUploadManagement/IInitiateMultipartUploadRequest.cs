@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadMa
 /// InitiateMultipartUploadRequest interface for ducktyping.
 /// Mirrors Amazon.S3.Model.InitiateMultipartUploadRequest with unused values removed.
 /// </summary>
+[DuckType("Amazon.S3.Model.InitiateMultipartUploadRequest", "AWSSDK.S3")]
 internal interface IInitiateMultipartUploadRequest : IDuckType
 {
     /// <summary>

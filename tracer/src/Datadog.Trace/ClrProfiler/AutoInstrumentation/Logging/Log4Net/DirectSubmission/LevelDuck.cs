@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     /// Duck type for Level
     /// </summary>
     [DuckCopy]
+    [DuckCopy("log4net.Core.Level", "log4net")]
     internal struct LevelDuck
     {
         /// <summary>

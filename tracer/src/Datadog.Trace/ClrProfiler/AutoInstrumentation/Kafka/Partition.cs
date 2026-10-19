@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// Partition for duck-typing
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Confluent.Kafka.Partition", "Confluent.Kafka")]
     internal struct Partition
     {
         /// <summary>

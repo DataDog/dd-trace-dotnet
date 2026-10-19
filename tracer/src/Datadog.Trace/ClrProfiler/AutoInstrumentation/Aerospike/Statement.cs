@@ -8,6 +8,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
     [DuckCopy]
+    [DuckCopy("Aerospike.Client.Statement", "AerospikeClient")]
     internal struct Statement
     {
         [DuckField(Name = "setName")]

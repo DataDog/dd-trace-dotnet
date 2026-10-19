@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 /// Proxy for calling the static LogLevel properties
 /// </summary>
 [DuckCopy]
+[DuckCopy("NLog.LogLevel", "NLog")]
 internal struct LogLevelStaticsProxy
 {
     public object MaxLevel;

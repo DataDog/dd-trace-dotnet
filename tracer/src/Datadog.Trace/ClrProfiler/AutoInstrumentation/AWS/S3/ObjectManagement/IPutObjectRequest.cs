@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 /// PutObjectRequest interface for ducktyping.
 /// Mirrors Amazon.S3.Model.PutObjectRequest with unused values removed.
 /// </summary>
+[DuckType("Amazon.S3.Model.PutObjectRequest", "AWSSDK.S3")]
 internal interface IPutObjectRequest : IDuckType
 {
     /// <summary>

@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// HotChocolate.NameString interface for ducktyping
     /// </summary>
     [DuckCopy]
+    [DuckCopy("HotChocolate.NameString", "HotChocolate.Abstractions")]
     internal struct NameStringProxy
     {
         public string Value;
@@ -20,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// nullable structs need an explicit proxy
     /// </summary>
     [DuckCopy]
+    [DuckCopy("System.Nullable`1[[HotChocolate.NameString, HotChocolate.Abstractions]]", "System.Private.CoreLib")]
     internal struct NullableNameStringProxy
     {
         public NameStringProxy Value;

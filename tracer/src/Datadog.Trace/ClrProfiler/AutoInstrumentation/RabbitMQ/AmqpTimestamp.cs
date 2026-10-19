@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     [DuckCopy]
+    [DuckCopy("RabbitMQ.Client.AmqpTimestamp", "RabbitMQ.Client")]
     internal struct AmqpTimestamp
     {
         [DuckPropertyOrField]

@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
@@ -12,6 +13,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 /// DuckType for BasicProperties which can also be used for generic IReadOnlyBasicProperties implementations
 /// i.e. the headers aren't settable
 /// </summary>
+[DuckType("RabbitMQ.Client.BasicProperties", "RabbitMQ.Client")]
+[DuckType("RabbitMQ.Client.IReadOnlyBasicProperties", "RabbitMQ.Client")]
+[DuckType("RabbitMQ.Client.Impl.EmptyBasicProperty", "RabbitMQ.Client")]
+[DuckType("RabbitMQ.Client.ReadOnlyBasicProperties", "RabbitMQ.Client")]
+[DuckType("RabbitMQ.Client.Framing.BasicProperties", "RabbitMQ.Client")]
 internal interface IReadOnlyBasicProperties
 {
     /// <summary>

@@ -6,9 +6,11 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection;
 
+[DuckType("Microsoft.Extensions.DependencyInjection.ServiceLookup.ServiceProviderEngineScope", "Microsoft.Extensions.DependencyInjection")]
 internal interface IServiceProvider
 {
     object? GetService(Type serviceType);

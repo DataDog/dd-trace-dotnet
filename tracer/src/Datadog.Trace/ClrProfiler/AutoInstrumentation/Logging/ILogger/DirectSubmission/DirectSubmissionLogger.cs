@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// An implementation of ILogger for use with direct log submission
     /// </summary>
+    [DuckReverseDelegation("Microsoft.Extensions.Logging.ILogger", "Microsoft.Extensions.Logging.Abstractions")]
     internal sealed class DirectSubmissionLogger
     {
         private readonly string _name;

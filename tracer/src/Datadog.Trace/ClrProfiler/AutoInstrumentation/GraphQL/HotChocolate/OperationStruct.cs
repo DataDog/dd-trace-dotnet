@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// proxy for ducktyping HotChocolate.Resolvers.IOperation
     /// </summary>
     [DuckCopy]
+    [DuckCopy("HotChocolate.Execution.Processing.Operation", "HotChocolate.Execution")]
     internal struct OperationStruct
     {
         ///// <summary>

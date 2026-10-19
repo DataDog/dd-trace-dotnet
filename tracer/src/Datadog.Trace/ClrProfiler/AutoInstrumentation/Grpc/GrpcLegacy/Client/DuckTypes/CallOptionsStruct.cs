@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     /// https://github.com/grpc/grpc/blob/master/src/csharp/Grpc.Core.Api/CallOptions.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.Core.CallOptions", "Grpc.Core.Api")]
     internal struct CallOptionsStruct
     {
         public IMetadata? Headers;

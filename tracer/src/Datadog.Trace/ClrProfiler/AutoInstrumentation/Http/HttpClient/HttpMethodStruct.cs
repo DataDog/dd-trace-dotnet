@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
     /// Http method struct copy target for ducktyping
     /// </summary>
     [DuckCopy]
+    [DuckCopy("System.Net.Http.HttpMethod", "System.Net.Http")]
     internal struct HttpMethodStruct
     {
         /// <summary>

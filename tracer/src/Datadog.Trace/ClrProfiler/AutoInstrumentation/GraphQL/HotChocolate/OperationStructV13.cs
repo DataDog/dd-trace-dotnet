@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// https://github.com/ChilliCream/graphql-platform/blob/35301472065248ce4e2f34894041f39124e3c7b8/src/HotChocolate/Core/src/Types/Execution/Processing/IOperation.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("HotChocolate.Execution.Processing.Operation", "HotChocolate.Execution")]
     internal struct OperationStructV13
     {
         ///// <summary>

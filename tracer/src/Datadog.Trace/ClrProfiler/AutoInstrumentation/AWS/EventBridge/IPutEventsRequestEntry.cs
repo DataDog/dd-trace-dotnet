@@ -5,12 +5,15 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
     /// <summary>
     /// PutEventsRequestEntry interface for ducktyping.
     /// Mirrors Amazon.EventBridge.Model.PutEventsRequestEntry, with unused properties removed.
     /// </summary>
+    [DuckType("Amazon.EventBridge.Model.PutEventsRequestEntry", "AWSSDK.EventBridge")]
     internal interface IPutEventsRequestEntry
     {
         string? Detail { get; set; }

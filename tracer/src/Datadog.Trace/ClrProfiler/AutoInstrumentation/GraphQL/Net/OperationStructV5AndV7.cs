@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
     /// https://github.com/graphql-dotnet/parser/blob/efb83a9f4054c0752cfeaac1e3c6b7cde5fa5607/src/GraphQLParser/AST/Definitions/GraphQLOperationDefinition.cs
     /// </summary>
     [DuckCopy]
+    [DuckCopy("GraphQLParser.AST.GraphQLOperationDefinitionWithLocation", "GraphQLParser")]
     internal struct OperationStructV5AndV7
     {
         public GraphQLNameStructV5AndV7 Name;

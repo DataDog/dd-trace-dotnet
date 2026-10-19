@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
     /// Duck type for Grpc.Core.Method{TRequest, TResponse}
     /// </summary>
     [DuckCopy]
+    [DuckCopy("Grpc.Core.IMethod", "Grpc.Core.Api", IncludeDerivedTypes = true)]
     internal struct MethodStruct
     {
         public string? ServiceName;

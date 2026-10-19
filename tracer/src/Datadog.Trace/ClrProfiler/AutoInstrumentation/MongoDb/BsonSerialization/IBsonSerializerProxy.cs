@@ -11,6 +11,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 /// <summary>
 /// Proxy for https://github.com/mongodb/mongo-csharp-driver/blob/4027d482d14960364c14be1ca59f7f6e350042a3/src/MongoDB.Bson/Serialization/IBsonSerializer.cs#L23
 /// </summary>
+[DuckType("MongoDB.Bson.Serialization.Serializers.BsonDocumentSerializer", "MongoDB.Bson")]
+[DuckType("MongoDB.Bson.Serialization.Serializers.StringSerializer", "MongoDB.Bson")]
 internal interface IBsonSerializerProxy
 {
     [Duck(ParameterTypeNames = ["MongoDB.Bson.Serialization.BsonSerializationContext, MongoDB.Bson", "MongoDB.Bson.Serialization.BsonSerializationArgs, MongoDB.Bson", ClrNames.Object])]

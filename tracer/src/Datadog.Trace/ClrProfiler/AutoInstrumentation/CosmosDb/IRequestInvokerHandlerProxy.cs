@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// <remarks>
     /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Handler/RequestInvokerHandler.cs
     /// </remarks>
+    [DuckType("Microsoft.Azure.Cosmos.Handlers.RequestInvokerHandler", "Microsoft.Azure.Cosmos.Client")]
     internal interface IRequestInvokerHandlerProxy : IDuckType
     {
         [DuckField(Name = "client")]

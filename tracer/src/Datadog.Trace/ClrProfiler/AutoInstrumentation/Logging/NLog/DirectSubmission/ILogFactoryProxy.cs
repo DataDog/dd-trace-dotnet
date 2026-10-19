@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
 {
+    [DuckType("NLog.LogFactory", "NLog")]
     internal interface ILogFactoryProxy : ILogFactoryPre43Proxy
     {
         [DuckField(Name = "_config")]
