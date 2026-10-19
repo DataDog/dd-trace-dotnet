@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using Quartz;
+#if !QUARTZ_4_0
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
+#endif
 using QuartzSampleApp.Infrastructure;
 using QuartzSampleApp.Jobs;
 
@@ -28,8 +30,12 @@ public class Program
         //                          })
         //                         .Build();
 
+#if QUARTZ_4_0
+        var scheduler = await QuartzSchedulerBuilder.Create().BuildScheduler();
+#else
         var factory = new StdSchedulerFactory();
         var scheduler = await factory.GetScheduler();
+#endif
         SchedulerHolder.Scheduler = scheduler;
 
         // Register listeners for all jobs
@@ -39,11 +45,19 @@ public class Program
 
         scheduler.ListenerManager.AddJobListener(
             new FinalJobListener(helloKey, JobCompletion.HelloTcs),
+#if QUARTZ_4_0
+            Matchers.Key(helloKey));
+#else
             KeyMatcher<JobKey>.KeyEquals(helloKey));
+#endif
 
         scheduler.ListenerManager.AddJobListener(
             new FinalJobListener(exceptionKey, JobCompletion.ExceptionTcs),
+#if QUARTZ_4_0
+            Matchers.Key(exceptionKey));
+#else
             KeyMatcher<JobKey>.KeyEquals(exceptionKey));
+#endif
 
         // Add trigger listener for veto functionality
         scheduler.ListenerManager.AddTriggerListener(
@@ -87,10 +101,12 @@ public class Program
 
         await scheduler.ScheduleJob(vetoableJob, vetoableTrigger);
 
-        // Wait for all jobs to finish (success, failure, or veto)
+        // Wait for the listeners to report success, failure, or veto.
         await Task.WhenAll(JobCompletion.HelloTcs.Task, JobCompletion.ExceptionTcs.Task, JobCompletion.VetoTcs.Task);
 
-        await scheduler.Shutdown(); // or Shutdown(waitForJobsToComplete: true)
+        // Listener callbacks run before the workers finish their job-store work.
+        // Wait for the workers so their completion spans are emitted before the process exits.
+        await scheduler.Shutdown(waitForJobsToComplete: true);
         // tracerProvider?.Dispose();
     }
 }
