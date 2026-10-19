@@ -1,4 +1,4 @@
-﻿// <copyright file="ApiWebRequest.cs" company="Datadog">
+// <copyright file="ApiWebRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -24,13 +25,15 @@ namespace Datadog.Trace.Agent.Transports
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
+        private readonly TimeSpan? _asyncTimeout;
 
         private byte[] _boundarySeparatorInBytes;
         private byte[] _boundaryTrailerInBytes;
 
-        public ApiWebRequest(HttpWebRequest request)
+        public ApiWebRequest(HttpWebRequest request, TimeSpan? asyncTimeout = null)
         {
             _request = request;
+            _asyncTimeout = asyncTimeout;
         }
 
         public void AddHeader(string name, string value)
@@ -38,11 +41,11 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public Task<IApiResponse> GetAsync()
+        public async Task<IApiResponse> GetAsync()
         {
             ResetRequest(method: "GET", contentType: null, contentEncoding: null);
-
-            return FinishAndGetResponse();
+            using var timeout = StartAsyncTimeout();
+            return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
@@ -51,6 +54,7 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             ResetRequest(method: "POST", contentType, contentEncoding);
+            using var timeout = StartAsyncTimeout();
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
@@ -72,6 +76,7 @@ namespace Datadog.Trace.Agent.Transports
             }
 
             ResetRequest(method: "POST", contentType: MimeTypes.Json, contentEncoding: contentEncoding);
+            using var timeout = StartAsyncTimeout();
 
             using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
@@ -84,6 +89,7 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
         {
             ResetRequest(method: "POST", ContentTypeHelper.GetContentType(contentType, multipartBoundary), contentEncoding);
+            using var timeout = StartAsyncTimeout();
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
@@ -110,6 +116,7 @@ namespace Datadog.Trace.Agent.Transports
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
             ResetRequest(method: "POST", contentType: "multipart/form-data; boundary=" + Boundary, contentEncoding: multipartCompression == MultipartCompression.GZip ? "gzip" : null);
+            using var timeout = StartAsyncTimeout();
             using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 if (multipartCompression == MultipartCompression.GZip)
@@ -181,6 +188,13 @@ namespace Datadog.Trace.Agent.Transports
                 await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
             }
         }
+
+        // HttpWebRequest.Timeout does not apply to asynchronous sends on .NET Framework.
+        // Opt-in callers abort the outstanding operation; other products keep their existing behavior.
+        private Timer StartAsyncTimeout()
+            => _asyncTimeout is { } timeout
+                   ? new Timer(static request => ((HttpWebRequest)request).Abort(), _request, timeout, Timeout.InfiniteTimeSpan)
+                   : null;
 
         private void ResetRequest(string method, string contentType, string contentEncoding)
         {

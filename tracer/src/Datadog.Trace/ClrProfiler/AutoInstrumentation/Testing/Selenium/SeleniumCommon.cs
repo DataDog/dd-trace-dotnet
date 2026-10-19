@@ -117,10 +117,10 @@ internal static class SeleniumCommon
                     tags.BrowserVersion = browserVersion;
                 }
 
-                // Add an action when the test close to flush the RUM data
-                // in case the test never calls to driver.Close() or driver.Quit()
+                // Flush RUM data when test execution finishes, even if final retry tags are still pending
+                // and the test never called driver.Close() or driver.Quit().
                 // CloseAndFlush can be called multiple times.
-                test.AddOnCloseAction(t => CloseAndFlush(instance, t));
+                test.AddOnExecutionCompletedAction(t => CloseAndFlush(instance, t));
             }
         }
         else
