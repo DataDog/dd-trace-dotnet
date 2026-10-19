@@ -101,7 +101,9 @@ Habits:
 ## Tests
 
 `Datadog.Trace.Tools.Analyzers.Tests` uses
-`Microsoft.CodeAnalysis.CSharp.Testing`. Analyzer-only:
+`Microsoft.CodeAnalysis.CSharp.Testing`. The source snippet must compile
+except for the diagnostic under test (`CSharpAnalyzerVerifier` fails on
+CS* errors). Analyzer-only:
 
 ```csharp
 using System.Threading.Tasks;
@@ -120,6 +122,7 @@ public class YourAnalyzerTests
         var source = """
             class C
             {
+                void BadCall() { }
                 void M() => [|BadCall()|];
             }
             """;
@@ -132,6 +135,7 @@ public class YourAnalyzerTests
         var source = """
             class C
             {
+                void GoodCall() { }
                 void M() => GoodCall();
             }
             """;
