@@ -15,6 +15,17 @@ This repo has **no** `dotnet format` or `clang-format --check` CI job. Managed
 enforcement is compile-time Roslyn (`TreatWarningsAsErrors=true`). Do not add a
 new pipeline stage for a C# rule.
 
+**Scope:** *enforcement* of rules and scripts applies only to **"core"**
+production code for now (`Datadog.Trace` and other `tracer/src` libraries;
+native tracer/loader/profiler product code). Do **not** apply new analyzers,
+Banned APIs, CppCheck/Clang-Tidy tightenings, or helper scripts to tests,
+helpers, samples, or test-applications unless the user explicitly asks to
+expand scope.
+
+Still add unit tests for the analyzer itself under
+`Datadog.Trace.Tools.Analyzers.Tests` — that is testing the rule, not
+enforcing it on test code.
+
 Read [reference.md](reference.md) for file layout, ID allocation, and copy-paste
 templates. Stay in this file until the rule is classified.
 
@@ -73,9 +84,15 @@ Cheapest fit wins:
 4. Do **not** enable `EnableNETAnalyzers` / `EnforceCodeStyleInBuild` globally.
    Built-in .NET analyzers are off on purpose (`shared/CodeAnalysis.props`).
 
-Analyzers are already referenced from `tracer/src/Directory.Build.props` as
-`OutputItemType="Analyzer"`. New `[DiagnosticAnalyzer]` types are picked up
-with no CI YAML changes.
+Custom analyzers are referenced only from `tracer/src/Directory.Build.props`
+as `OutputItemType="Analyzer"`. New `[DiagnosticAnalyzer]` types are picked
+up with no CI YAML changes. `BannedSymbols.txt` is an `AdditionalFiles` item
+on `Datadog.Trace.csproj` (core), not on test projects.
+
+StyleCop and `.editorconfig` are broader (they include tests). Do not raise
+a StyleCop/IDE diagnostic severity repo-wide as a way to lint test code, and
+do not treat that existing breadth as a reason to extend custom rules or
+scripts beyond core.
 
 ### Native C/C++ (light)
 
@@ -119,8 +136,9 @@ Match `category` to the classification in §1 (`Usage`, `CodeQuality`,
 2. Grep `DiagnosticId` under `tracer/src/Datadog.Trace.Tools.Analyzers` for the
    next `DDxxxx` or start `DD<AREA>001` for a family (`DDLOG`, `DDDUCK`).
 3. Follow [reference.md](reference.md): analyzer, tests, optional code fix.
-4. Clean up **all** current hits in the same PR, or the tree will not compile.
-   Prefer real fixes over `#pragma` / `GlobalSuppressions`.
+4. For `Error`/`Warning`, clean up **all** current hits in the same PR, or
+   the tree will not compile (`TreatWarningsAsErrors`). Prefer real fixes
+   over `#pragma` / `GlobalSuppressions`. `Info` does not fail the build.
 5. Tests: `Datadog.Trace.Tools.Analyzers.Tests` via
    `CSharpAnalyzerVerifier` / `CSharpCodeFixVerifier`.
 6. Compile: `CompileManagedSrc` or `BuildAndRunManagedUnitTests` with a filter
@@ -140,6 +158,7 @@ claim runtime impact.
 
 - [ ] Category is explicit; style is not labeled Performance
 - [ ] Perf claims meet §2; otherwise no perf language in the diagnostic
+- [ ] Enforcement is **"core"** production code only; analyzer unit tests still added
 - [ ] Managed: Roslyn analyzer or `BannedSymbols.txt`, not a new CI job
 - [ ] Native: CppCheck and/or existing Clang-Tidy surface only
 - [ ] Severity matches whether the rule should block PRs

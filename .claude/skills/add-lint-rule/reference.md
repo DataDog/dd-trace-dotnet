@@ -16,9 +16,9 @@ tracer/test/Datadog.Trace.Tools.Analyzers.Tests/<Area>/
 
 Wiring already in place:
 
-- `tracer/src/Directory.Build.props` — project-references both analyzer projects as analyzers
+- `tracer/src/Directory.Build.props` — project-references both analyzer projects as analyzers (**core** `tracer/src` only for now; not tests/helpers)
 - `tracer/Directory.Build.props` — `StyleCop.Analyzers` + `BannedApiAnalyzers`
-- Repo-root `BannedSymbols.txt` — linked from `Datadog.Trace.csproj`
+- Repo-root `BannedSymbols.txt` — `AdditionalFiles` on `Datadog.Trace.csproj` (core)
 - `.editorconfig` — `dotnet_diagnostic.RS0030.severity = error`
 
 Closest copies:
@@ -96,7 +96,7 @@ Habits:
 - Enable concurrent execution
 - Use the Apache 2 / Datadog copyright header used by neighboring files
 - Look up types with `GetTypeByMetadataName` / `WellKnownTypeProvider`; do not
-  load customer assemblies
+  load application assemblies from disk
 
 ## Tests
 
@@ -140,10 +140,8 @@ public class YourAnalyzerTests
 }
 ```
 
-With a code fix, use `extern alias AnalyzerCodeFixes` and
-`CSharpCodeFixVerifier<Analyzer, AnalyzerCodeFixes::...CodeFixProvider, DefaultVerifier>`.
-See `DuckTypeAnalyzers/DuckTypeNullCheckAnalyzerTests.cs` (`{|#0:...|}` markup
-+ `DiagnosticResult` + `fixedSource`).
+If you add a code fix, copy an existing code-fix test such as
+`DuckTypeAnalyzers/DuckTypeNullCheckAnalyzerTests.cs`.
 
 Run:
 
@@ -162,7 +160,7 @@ T:Namespace.Type;Do not use this type
 ```
 
 `RS0030` is error in `.editorconfig` (vendored code is excepted). The message
-is customer-facing in the IDE; keep it accurate.
+is shown in the IDE; keep it accurate.
 
 ## StyleCop / editorconfig
 
