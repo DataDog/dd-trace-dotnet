@@ -224,6 +224,7 @@ public class SynchronousHookTests
     private static IEnumerable<Hook> BuiltInHooks()
     {
         yield return new SpanEnrichmentHook();
+        yield return new FlagEvalEVPHook();
 #if NET6_0_OR_GREATER
         yield return new FlagEvalMetricsHook();
 #endif
