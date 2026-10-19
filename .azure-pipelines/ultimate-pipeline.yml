@@ -4303,7 +4303,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "BuildAndRunDdDotnetArtifactTests --framework net11.0"
+        command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
