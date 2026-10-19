@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using Datadog.Trace.Tools.Analyzers.LogAnalyzer.Helpers;
 
 namespace Datadog.Trace.Tools.Analyzers.LogAnalyzer;
@@ -128,9 +129,9 @@ static class AnalyzingMessageTemplateParser
             if (lastDash > 0)
                 return new MessageTemplateDiagnostic(first + propertyNameAndDestructuring.Length + 2 + lastDash, 1, "'-' character must be the first in alignment");
 
-            var width = lastDash == -1 ?
-                            int.Parse(alignment) :
-                            int.Parse(alignment.Substring(1));
+            var widthText = lastDash == -1 ? alignment : alignment.Substring(1);
+            if (!int.TryParse(widthText, NumberStyles.None, CultureInfo.InvariantCulture, out var width))
+                return new MessageTemplateDiagnostic(first + propertyNameAndDestructuring.Length + 2, alignment.Length, "Found invalid width in alignment");
 
             if (width == 0)
                 return new MessageTemplateDiagnostic(first + propertyNameAndDestructuring.Length + 2, alignment.Length, "Found zero size alignment");
