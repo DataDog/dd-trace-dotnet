@@ -52,6 +52,16 @@ namespace Datadog.Trace.Pdb
                 return false;
             }
 
+#if NETCOREAPP3_0_OR_GREATER
+            // NativeAOT applications have neither the assemblies' files nor their PDBs: a constant for ILC, which leaves the
+            // PDB reader out of them.
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                methodSymbol = default;
+                return false;
+            }
+#endif
+
             try
             {
                 // Try to load ModuleDefMD from cache
