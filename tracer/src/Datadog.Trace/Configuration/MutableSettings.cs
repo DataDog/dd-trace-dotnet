@@ -916,7 +916,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // DD_SERVICE has precedence over DD_TAGS
         serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName, telemetry);
 
-        if (tracerSettings.IsRunningInCiVisibility)
+        if (TestOptimizationAvailability.IsSupported && tracerSettings.IsRunningInCiVisibility)
         {
             // Set the service name if not set
             var isUserProvidedTestServiceTag = true;

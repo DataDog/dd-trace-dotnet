@@ -23,7 +23,12 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         var returnType = typeof(TReturn);
         try
         {
-            if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType) is { } dynMethod)
+            if (CallTargetAot<TIntegration, InvokeDelegate>.TryGet(out var aotCallback, out _))
+            {
+                // NativeAOT: the registry bound the integration method at build time (null when it has none).
+                _invokeDelegate = aotCallback;
+            }
+            else if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType) is { } dynMethod)
             {
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }
@@ -33,9 +38,18 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
             throw new CallTargetInvokerException(ex);
         }
 
-        if (returnType.IsGenericType)
+        if (CallTargetAotContinuation<TIntegration, TTarget, TReturn>.TryGet(out var aotGeneratorFactory))
         {
-            if (typeof(Task).IsAssignableFrom(returnType))
+            // NativeAOT: the registry creates the continuation generator, which needs MakeGenericType otherwise.
+            _continuationGenerator = aotGeneratorFactory?.Invoke();
+        }
+        else if (returnType.IsGenericType)
+        {
+            if (!IntegrationMapper.IsSupported)
+            {
+                // NativeAOT without a registered generator: MakeGenericType needs dynamic code.
+            }
+            else if (typeof(Task).IsAssignableFrom(returnType))
             {
                 // The type is a Task<>
                 _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>?)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));

@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class TestExtensionsAddBenchmarkDataIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TTest, TStats>(TTest test, BenchmarkMeasureType measureType, string info, in TStats statistics)
+    internal static CallTargetState OnMethodBegin<TTarget, TTest, TStats>(TTest test, BenchmarkMeasureType measureType, string info, TStats statistics)
         where TStats : IBenchmarkDiscreteStats
     {
         // Test is an ITest, so it could be something arbitrary - if so, we just ignore it.

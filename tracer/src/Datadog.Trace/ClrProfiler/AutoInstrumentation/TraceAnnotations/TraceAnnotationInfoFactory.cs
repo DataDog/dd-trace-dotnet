@@ -38,6 +38,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                         }
                         catch (Exception ex)
                         {
+                            // NativeAOT: the getters of the attribute may not be invokable by reflection, but its metadata
+                            // has the named arguments ([Trace(OperationName = ..., ResourceName = ...)]).
+                            if (FromAttributeData(method, defaultResourceName) is { } info)
+                            {
+                                return info;
+                            }
+
                             Log.Error(ex, "Unable to access properties on type {AssemblyQualifiedName}", attrType.AssemblyQualifiedName);
                         }
                     }
@@ -45,6 +52,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 
                 return new TraceAnnotationInfo(resourceName: defaultResourceName, operationName: TraceAnnotationInfo.DefaultOperationName);
             }
+        }
+
+        private static TraceAnnotationInfo? FromAttributeData(MethodBase method, string defaultResourceName)
+        {
+            try
+            {
+                foreach (var data in method.GetCustomAttributesData())
+                {
+                    if (data.AttributeType.FullName != TraceAttributeFullName)
+                    {
+                        continue;
+                    }
+
+                    string? resourceName = null;
+                    string? operationName = null;
+                    foreach (var argument in data.NamedArguments)
+                    {
+                        switch (argument.MemberName)
+                        {
+                            case "ResourceName":
+                                resourceName = argument.TypedValue.Value as string;
+                                break;
+                            case "OperationName":
+                                operationName = argument.TypedValue.Value as string;
+                                break;
+                        }
+                    }
+
+                    return new TraceAnnotationInfo(resourceName ?? defaultResourceName, operationName ?? TraceAnnotationInfo.DefaultOperationName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Unable to read the attribute data of {Method}", method.Name);
+            }
+
+            return null;
         }
     }
 }
