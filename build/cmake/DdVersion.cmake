@@ -27,13 +27,28 @@ set(DD_VERSION "${CMAKE_MATCH_1}" CACHE INTERNAL "The three-part Datadog SDK ver
 message(STATUS "Datadog SDK version: ${DD_VERSION}")
 
 # The generated header carries the four-part version and the full semver, including any -dev
-# suffix. It is produced by the Nuke `GenerateVersionFiles` target; CMake deliberately does not
-# re-implement the resolution, so fail loudly rather than silently compiling a stale version in.
+# suffix. CMake deliberately does not re-implement the resolution - that would be a second
+# generator free to drift from the first - so if the header is missing it invokes the real one.
+# This is what lets `cmake -B build -S .` work on a fresh clone without running Nuke first.
 set(DD_VERSION_HEADER "${DD_REPO_ROOT}/shared/src/native-src/dd_version.g.h")
 if(NOT EXISTS "${DD_VERSION_HEADER}")
-    message(FATAL_ERROR
-        "${DD_VERSION_HEADER} is missing.\n"
-        "Run './tracer/build.sh GenerateVersionFiles' (or build.ps1 on Windows) to generate it.")
+    message(STATUS "Generating ${DD_VERSION_HEADER}")
+    execute_process(
+        COMMAND dotnet msbuild "${DD_REPO_ROOT}/build/Version.proj" -t:DD_GenerateVersionFiles -v:quiet
+        WORKING_DIRECTORY "${DD_REPO_ROOT}"
+        RESULT_VARIABLE _dd_version_generate_result
+        OUTPUT_VARIABLE _dd_version_generate_output
+        ERROR_VARIABLE _dd_version_generate_output)
+
+    if(NOT EXISTS "${DD_VERSION_HEADER}")
+        message(FATAL_ERROR
+            "${DD_VERSION_HEADER} is missing and could not be generated "
+            "(exit code ${_dd_version_generate_result}):\n${_dd_version_generate_output}\n"
+            "Run './tracer/build.sh GenerateVersionFiles' (or build.ps1 on Windows) to generate it.")
+    endif()
+
+    unset(_dd_version_generate_result)
+    unset(_dd_version_generate_output)
 endif()
 
 unset(_dd_version_props_content)

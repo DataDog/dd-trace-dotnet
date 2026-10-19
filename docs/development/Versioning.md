@@ -39,13 +39,13 @@ existed.
 `build/Version.props` derives these from the prefix, the suffix and the revision. Pick the right one
 for the job - the distinctions are load-bearing.
 
-| Property | Release | Dev | Use for |
-|---|---|---|---|
-| `DD_ThreePartVersion` | `3.56.0` | `3.56.0` | CMake `project(VERSION)`, MSI `InstallerVersion`, native `PROFILER_VERSION` |
-| `DD_FourPartVersion` | `3.56.0.0` | `3.56.0.7124` | `AssemblyVersion`/`FileVersion`, the strong name the loader and the native tracer resolve, Win32 `FILEVERSION` |
-| `DD_SemVer` | `3.56.0` | `3.56.0-dev.g1a2b3c4d` | NuGet versions, `InformationalVersion`, Win32 `ProductVersion`, package file names |
-| `DD_RpmVersion` | `3.56.0` | `3.56.0~dev.g1a2b3c4d` | deb/rpm only |
-| `DD_ReportedVersion` | `3.56.0.0` | `3.56.0-dev.g1a2b3c4d` | the version reported to Datadog |
+| Property | Release | Dev (CI) | Dev (local) | Use for |
+|---|---|---|---|---|
+| `DD_ThreePartVersion` | `3.56.0` | `3.56.0` | `3.56.0` | CMake `project(VERSION)`, MSI `InstallerVersion`, native `PROFILER_VERSION` |
+| `DD_FourPartVersion` | `3.56.0.0` | `3.56.0.7124` | `3.56.0.0` | `AssemblyVersion`/`FileVersion`, the strong name the loader and the native tracer resolve, Win32 `FILEVERSION` |
+| `DD_SemVer` | `3.56.0` | `3.56.0-dev.g1a2b3c4d` | `3.56.0-dev.g1a2b3c4d` | NuGet versions, `InformationalVersion`, Win32 `ProductVersion`, package file names |
+| `DD_RpmVersion` | `3.56.0` | `3.56.0~dev.g1a2b3c4d` | `3.56.0~dev.g1a2b3c4d` | deb/rpm only |
+| `DD_ReportedVersion` | `3.56.0.0` | `3.56.0-dev.g1a2b3c4d` | `3.56.0-dev.g1a2b3c4d` | the version reported to Datadog |
 
 **The invariant:** anything that is an assembly identity, a Win32 numeric resource field, a CMake
 `project()` version or an MSI `ProductVersion` uses a `*ThreePart*` or `*FourPart*` shape and can
@@ -63,15 +63,31 @@ what keeps the following correct without per-site special casing:
 
 ## The assembly version revision
 
-On a dev build the 4th field is the commit height, so two dev builds have distinct assembly
-identities and can, for example, coexist in the GAC. On a release build it is `0`.
+On a **CI** dev build the 4th field is the commit height, so two dev builds have distinct assembly
+identities and can, for example, coexist in the GAC. On a release build, and on any local build, it
+is `0`.
 
 Commit height rather than a CI build id, because the field is a `USHORT` and Azure DevOps build ids
 for this repository are long past 65535, and because GitLab builds the same commit independently of
 Azure DevOps, so a per-pipeline number would give one commit two different assembly versions.
 
-Be clear about what it does not buy: two branches at the same height collide, and the number carries
-no commit traceability. The semver suffix is what actually identifies a build.
+### Why local builds keep `.0`
+
+This is deliberate, and the reason matters if you are ever tempted to change it. The native tracer
+and the managed loader both resolve `Datadog.Trace` by its exact strong name, and
+`ManagedProfilerAssemblyResolver` returns `null` on any mismatch. If the revision moved with `HEAD`
+locally, then committing and rebuilding only the managed side - `CompileManagedSrc`, or a plain
+`dotnet build` - would leave a monitoring home whose native half looks for `3.56.0.<N>` while the
+managed half is `3.56.0.<N+1>`. The tracer would simply fail to load, with nothing but a debug log
+to say why.
+
+Keeping it at `0` locally means `dotnet build`, a partial Nuke build and a full Nuke build all agree
+on the assembly version, so they can be mixed freely. CI always builds from clean, so it cannot hit
+that problem. Either way the semver still carries the commit SHA, which is what actually identifies
+the build.
+
+Be clear about what the revision does not buy even on CI: two branches at the same height collide,
+and the number carries no commit traceability.
 
 ## Changing the version without a commit
 
@@ -101,8 +117,24 @@ into its build container.
 5. `build/cmake/DdVersion.cmake` reads `version.props` for the numeric triple, and fails loudly if
    the generated header is missing rather than compiling a stale version in.
 
-A bare `dotnet build` or an IDE build on a tree where Nuke has never run falls back to the plain
-release shape.
+## Building without Nuke
+
+`dotnet build` and IDE builds work without Nuke ever having run:
+
+- `build/Version.targets` is reached through the `Directory.Build.targets` chain, so any project
+  that compiles generates what it needs. A managed build writes `dd_version.g.h` as well, since the
+  target also hooks `CoreCompile`.
+- With no `artifacts/version/Version.g.props`, `build/Version.props` falls back to the plain release
+  shape - `3.56.0`, assembly version `3.56.0.0` - which is identical to what the repository produced
+  before any of this existed, and to what a local Nuke build produces.
+- `cmake -B build -S .` on a fresh clone invokes the generator itself rather than failing, so a
+  CMake-driven native build does not require Nuke first. (It does still require the managed loader
+  to have been built, which was already true.)
+
+The one thing to know: after a Nuke build has written `Version.g.props`, a later `dotnet build`
+picks up that file, so it will reuse the suffix resolved at that point rather than re-deriving it
+from the current `HEAD`. Run `GenerateVersionFiles` if you want it refreshed. This only affects the
+`-dev.<sha>` suffix, never the assembly version, so it cannot break a partial rebuild.
 
 The managed constants are generated by an MSBuild target rather than a source generator because
 `Datadog.Trace.csproj` sets `EmitCompilerGeneratedFiles` with `CompilerGeneratedFilesOutputPath`

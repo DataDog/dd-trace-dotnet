@@ -111,11 +111,28 @@ namespace PrepareRelease
                 suffix = $"-dev.{GetDevToken(repoRoot)}";
             }
 
-            // Keyed on the channel rather than on whether a suffix was supplied, so that a
-            // release - including an X.Y.Z-prerelease one - always keeps the .0 revision it has
-            // always had, and so that a caller who overrides only the suffix still gets a
-            // revision consistent with the channel.
-            var revision = isReleaseChannel ? 0 : GetCommitHeight(repoRoot);
+            // A build-specific assembly version only on a CI dev build. Two reasons it is not
+            // applied locally:
+            //
+            //  - It would make partial rebuilds silently produce a broken tracer home. The native
+            //    tracer and the managed loader both resolve Datadog.Trace by its exact strong name,
+            //    and ManagedProfilerAssemblyResolver returns null on any mismatch. So if the
+            //    revision moved with HEAD, then committing and rebuilding only the managed side -
+            //    `CompileManagedSrc`, or a plain `dotnet build` - would leave a monitoring home
+            //    whose native half looks for 3.56.0.<N> while the managed half is 3.56.0.<N+1>,
+            //    and the tracer would fail to load with nothing but a debug log to say why.
+            //  - It is what the revision is *for*: letting published artifacts that share a version
+            //    number be told apart, and coexist in the GAC. A local build is not published.
+            //
+            // CI always builds from clean, so a partial rebuild cannot happen there. Either way the
+            // semver still carries the commit SHA, which is what actually identifies the build.
+            //
+            // Note this also means the GitLab branch builds get 0: that job runs in a container
+            // with none of the CI variables forwarded (see .gitlab-ci.yml), and its clone may be
+            // shallow, so the height would not be trustworthy there anyway.
+            var revision = !isReleaseChannel && IsContinuousIntegration()
+                               ? GetCommitHeight(repoRoot)
+                               : 0;
 
             return new DdVersion(prefix, isPrerelease, latestReleased, suffix, revision, isReleaseChannel);
         }
@@ -270,6 +287,12 @@ namespace PrepareRelease
                 || reference.StartsWith("hotfix/", StringComparison.Ordinal)
                 || reference.StartsWith("refs/tags/v", StringComparison.Ordinal);
         }
+
+        /// <summary>
+        /// Gets a value indicating whether this is a CI build. A machine with none of these
+        /// variables set is a developer's machine.
+        /// </summary>
+        private static bool IsContinuousIntegration() => GetCiReference() is not null;
 
         /// <summary>
         /// Gets the branch or tag being built, or null when not on CI. Note that for an Azure
