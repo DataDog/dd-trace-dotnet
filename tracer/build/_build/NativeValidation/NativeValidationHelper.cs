@@ -31,24 +31,24 @@ public class NativeValidationHelper
         string snapshotPrefix,
         IEnumerable<string> allowedSymbols = null)
     {
-        ValidateNoForbiddenDynamicExports(libraryPath);
-        ValidateNativeLibraryGlibcCompatibility(libraryPath, maximumAllowedGlibcVersion, allowedSymbols);
+        var symbols = ReadDynamicSymbols(libraryPath, includeSymbolVersions: true);
+        ValidateNoForbiddenDynamicExports(symbols, libraryPath);
+        ValidateNativeLibraryGlibcCompatibility(symbols, libraryPath, maximumAllowedGlibcVersion, allowedSymbols);
 
         if (IsAlpine)
         {
-            ValidateNativeSymbolsCore(libraryPath, snapshotPrefix);
+            ValidateNativeSymbolsCore(symbols, libraryPath, snapshotPrefix);
         }
-
     }
 
     void ValidateNativeLibraryGlibcCompatibility(
+        IReadOnlyList<NmSymbol> symbols,
         AbsolutePath libraryPath,
         Version maximumAllowedGlibcVersion,
         IEnumerable<string> allowedSymbols = null)
     {
         var filename = Path.GetFileNameWithoutExtension(libraryPath);
-        var output = Nm.Value($"--with-symbol-versions -D {libraryPath}").Select(x => x.Text).ToList();
-        var scanResult = GlibcSymbolVersionChecker.Scan(output, allowedSymbols);
+        var scanResult = GlibcSymbolVersionChecker.Scan(symbols, allowedSymbols);
         var maximumRequiredVersion = GlibcSymbolVersionChecker.GetMaximumVersion(scanResult);
 
         Logger.Information("Maximum required glibc version for {Filename} is {GlibcVersion}", filename, maximumRequiredVersion);
@@ -62,14 +62,26 @@ public class NativeValidationHelper
 
     public void ValidateNativeSymbols(AbsolutePath libraryPath, string snapshotNamePrefix)
     {
-        ValidateNoForbiddenDynamicExports(libraryPath);
-        ValidateNativeSymbolsCore(libraryPath, snapshotNamePrefix);
+        var symbols = ReadDynamicSymbols(libraryPath, includeSymbolVersions: false);
+        ValidateNoForbiddenDynamicExports(symbols, libraryPath);
+        ValidateNativeSymbolsCore(symbols, libraryPath, snapshotNamePrefix);
     }
 
-    void ValidateNoForbiddenDynamicExports(AbsolutePath libraryPath)
+    IReadOnlyList<NmSymbol> ReadDynamicSymbols(AbsolutePath libraryPath, bool includeSymbolVersions)
     {
-        var output = Nm.Value($"-D --defined-only {libraryPath}").Select(x => x.Text);
-        var forbiddenExports = NativeExportChecker.FindForbiddenExports(output, ForbiddenDynamicExports);
+        var symbolVersionArgument = includeSymbolVersions ? "--with-symbol-versions " : string.Empty;
+        var output = Nm.Value($"{symbolVersionArgument}-D \"{libraryPath}\"", logOutput: false)
+                       .Where(x => x.Type == OutputType.Std)
+                       .Select(x => x.Text)
+                       .ToList();
+
+        Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
+        return NmSymbolParser.Parse(output);
+    }
+
+    void ValidateNoForbiddenDynamicExports(IReadOnlyList<NmSymbol> symbols, AbsolutePath libraryPath)
+    {
+        var forbiddenExports = NativeExportChecker.FindForbiddenExports(symbols, ForbiddenDynamicExports);
         if (forbiddenExports.Count == 0)
         {
             return;
@@ -81,10 +93,11 @@ public class NativeValidationHelper
           + string.Join(Environment.NewLine, forbiddenExports.Select(x => $"  {x}")));
     }
 
-    void ValidateNativeSymbolsCore(AbsolutePath libraryPath, string snapshotNamePrefix)
+    void ValidateNativeSymbolsCore(
+        IReadOnlyList<NmSymbol> dynamicSymbols,
+        AbsolutePath libraryPath,
+        string snapshotNamePrefix)
     {
-        var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
-
         // Gives output similar to this:
         // 0000000000006bc8 D DdDotnetFolder
         // 0000000000006bd0 D DdDotnetMuslFolder
@@ -109,17 +122,14 @@ public class NativeValidationHelper
         //
         // We only care about the Undefined symbols - we don't want to accidentally add more of them.
         // Newer nm (binutils >= 2.35) prints ELF version tags by default (@GLIBC_2.17, @GCC_3.3);
-        // older nm does not. Strip them so snapshots and the musl allowlist always use bare names.
-        // The glibc compatibility ceiling check still uses --with-symbol-versions.
+        // older nm does not. NmSymbolParser exposes both bare and versioned names, so snapshots
+        // and the musl allowlist use bare names while the glibc ceiling check uses versions.
 
-        Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
-
-        var symbols = output
-                     .Select(x => x.Trim())
-                     .Where(x => x.StartsWith("U "))
-                     .Select(x => StripElfSymbolVersion(x.TrimStart("U ")))
-                     .Distinct()
-                     .OrderBy(x => x)
+        var symbols = dynamicSymbols
+                     .Where(x => x.Type == 'U')
+                     .Select(x => x.Name)
+                     .Distinct(StringComparer.Ordinal)
+                     .OrderBy(x => x, StringComparer.Ordinal)
                      .ToList();
 
         var libraryName = Path.GetFileNameWithoutExtension(libraryPath);
@@ -198,14 +208,5 @@ public class NativeValidationHelper
 
             return false;
         }
-    }
-
-    // Newer nm (binutils >= 2.35) prints ELF symbol versions by default
-    // (e.g. "malloc@GLIBC_2.2.5", "_Unwind_Resume@GCC_3.0"). Strip the
-    // @VERSION suffix so we always compare bare symbol names.
-    static string StripElfSymbolVersion(string symbol)
-    {
-        var at = symbol.IndexOf('@');
-        return at >= 0 ? symbol.Substring(0, at) : symbol;
     }
 }
