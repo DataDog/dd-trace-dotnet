@@ -909,6 +909,12 @@ partial class Build
                 var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
                 helper.ValidateNativeLibraryCompatibility(dest, maximumAllowedGlibcVersion, snapshotPrefix, allowedSymbols);
             }
+
+            var profilerPath = ProfilerDeployDirectory / arch / $"{FileNames.NativeProfiler}.{extension}";
+            var dynamicSection = ReadElf.Value($"--wide --dynamic {profilerPath}", logOutput: false)
+                                        .Where(x => x.Type == OutputType.Std)
+                                        .Select(x => x.Text);
+            ElfRuntimeSearchPathChecker.Validate(dynamicSection, "$ORIGIN", FileNames.NativeProfiler);
         });
 
     enum SanitizerKind
