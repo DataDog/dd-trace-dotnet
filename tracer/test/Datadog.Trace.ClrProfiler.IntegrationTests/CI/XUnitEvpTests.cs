@@ -782,6 +782,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var unresolvedCoverageReferences = new List<string>();
         var evpRequests = new List<string>();
         var skippableRequestBodies = new List<string>();
+        var settingsRequestBodies = new List<string>();
 
         InjectSession(
             out var sessionId,
@@ -831,6 +832,11 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
             if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
             {
+                lock (settingsRequestBodies)
+                {
+                    settingsRequestBodies.Add(e.Value.BodyInJson);
+                }
+
                 e.Value.Response = new MockTracerResponse("""{"data":{"id":"b5a855bffe6c0b2ae5d150fb6ad674363464c816","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}} """, 200);
                 return;
             }
@@ -915,6 +921,15 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         {
             receivedSkippableRequestBodies = skippableRequestBodies.ToArray();
         }
+
+        string[] receivedSettingsRequestBodies;
+        lock (settingsRequestBodies)
+        {
+            receivedSettingsRequestBodies = settingsRequestBodies.ToArray();
+        }
+
+        receivedSettingsRequestBodies.Should().NotBeEmpty("received EVP requests: {0}", string.Join(", ", receivedEvpRequests));
+        receivedSettingsRequestBodies.Should().OnlyContain(body => JObject.Parse(body)["data"]!["attributes"]!["test_level"]!.Value<string>() == "test");
 
         var skippableRequestBody = receivedSkippableRequestBodies.Should().ContainSingle("received EVP requests: {0}", string.Join(", ", receivedEvpRequests)).Subject;
         var skippableRequest = JObject.Parse(skippableRequestBody);
