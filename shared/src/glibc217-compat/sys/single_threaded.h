@@ -12,7 +12,11 @@
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
+extern __attribute__((visibility("hidden"))) char __libc_single_threaded;
+#else
 extern char __libc_single_threaded;
+#endif
 
 #ifdef __cplusplus
 }

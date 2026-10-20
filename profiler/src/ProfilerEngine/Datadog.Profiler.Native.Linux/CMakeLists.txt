@@ -177,11 +177,6 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
 
-if (USE_GLIBC217_SYSROOT)
-    target_link_libraries(${PROFILER_STATIC_LIB_NAME} glibc217-compat)
-    add_dependencies(${PROFILER_STATIC_LIB_NAME} glibc217-compat)
-endif()
-
 # ******************************************************
 # Define shared target
 # ******************************************************
@@ -201,3 +196,8 @@ target_link_libraries(${PROFILER_SHARED_LIB_NAME}
     -Wl,--whole-archive $<TARGET_FILE:${PROFILER_STATIC_LIB_NAME}> -Wl,--no-whole-archive
     -Wl,-rpath,'$ORIGIN'
     ${PROFILER_STATIC_LIB_NAME})
+
+if (USE_GLIBC217_SYSROOT)
+    target_link_libraries(${PROFILER_SHARED_LIB_NAME} glibc217-compat)
+    add_dependencies(${PROFILER_SHARED_LIB_NAME} glibc217-compat)
+endif()
