@@ -212,49 +212,49 @@ stages:
     # Allow opting out of CI for a PR (e.g. for large stacks of PRs) by adding the 'skip-ci' label or
     # '[skip-ci]' or '[skip ci]' (case-insensitive) anywhere in the title. AzDO doesn't expose labels or title as variables, so we query GitHub.
     # Every stage depends on this one, so failing here stops the whole pipeline. Any error fails open.
-    - template: steps/create-github-app-token.yml
-      parameters:
-        continueOnError: true
-    - bash: |
-        AUTH_HEADER=()
-        if [[ -n "$GITHUB_TOKEN" && "$GITHUB_TOKEN" != '$('* ]]; then
-          AUTH_HEADER=(-H "Authorization: token $GITHUB_TOKEN")
-        else
-          echo "No GitHub token available, querying anonymously"
-        fi
+    - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+      - template: steps/create-github-app-token.yml
+        parameters:
+          continueOnError: true
+      - bash: |
+          AUTH_HEADER=()
+          if [[ -n "$GITHUB_TOKEN" && "$GITHUB_TOKEN" != '$('* ]]; then
+            AUTH_HEADER=(-H "Authorization: token $GITHUB_TOKEN")
+          else
+            echo "No GitHub token available, querying anonymously"
+          fi
 
-        if ! PR_JSON=$(curl -sf $(CURL_RETRY_FLAGS) "${AUTH_HEADER[@]}" -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$PR_NUMBER"); then
-          echo "##vso[task.logissue type=warning]Unable to fetch details for PR #$PR_NUMBER, running CI"
-          exit 0
-        fi
+          if ! PR_JSON=$(curl -sf $(CURL_RETRY_FLAGS) "${AUTH_HEADER[@]}" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$PR_NUMBER"); then
+            echo "##vso[task.logissue type=warning]Unable to fetch details for PR #$PR_NUMBER, running CI"
+            exit 0
+          fi
 
-        if ! SKIP=$(echo "$PR_JSON" | jq -r 'any(.labels[]?; .name == "skip-ci") or ((.title // "") | ascii_downcase | contains("[skip-ci]") or contains("[skip ci]"))'); then
-          echo "##vso[task.logissue type=warning]Unable to parse details for PR #$PR_NUMBER, running CI"
-          exit 0
-        fi
+          if ! SKIP=$(echo "$PR_JSON" | jq -r 'any(.labels[]?; .name == "skip-ci") or ((.title // "") | ascii_downcase | contains("[skip-ci]") or contains("[skip ci]"))'); then
+            echo "##vso[task.logissue type=warning]Unable to parse details for PR #$PR_NUMBER, running CI"
+            exit 0
+          fi
 
-        if [[ "$SKIP" != "true" ]]; then
-          echo "PR #$PR_NUMBER has not opted out of CI, running CI"
-          exit 0
-        fi
+          if [[ "$SKIP" != "true" ]]; then
+            echo "PR #$PR_NUMBER has not opted out of CI, running CI"
+            exit 0
+          fi
 
-        echo "##vso[task.logissue type=warning]PR #$PR_NUMBER has the 'skip-ci' label or '[skip-ci]'/'[skip ci]' in the title, so cancelling CI. To run CI, remove it and then either comment '/azp run' on the PR or retry this build in Azure DevOps"
-        curl -s $(CURL_RETRY_FLAGS) -o /dev/null -X PATCH \
-          -H "Authorization: Bearer $SYSTEM_ACCESSTOKEN" \
-          -H "Content-Type: application/json" \
-          -d '{"status":"cancelling"}' \
-          "$(System.CollectionUri)$(System.TeamProject)/_apis/build/builds/$(Build.BuildId)?api-version=7.1" \
-          || echo "Unable to cancel the build"
+          echo "##vso[task.logissue type=warning]PR #$PR_NUMBER has the 'skip-ci' label or '[skip-ci]'/'[skip ci]' in the title, so cancelling CI. To run CI, remove it and then either comment '/azp run' on the PR or retry this build in Azure DevOps"
+          curl -s $(CURL_RETRY_FLAGS) -o /dev/null -X PATCH \
+            -H "Authorization: Bearer $SYSTEM_ACCESSTOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"status":"cancelling"}' \
+            "$(System.CollectionUri)$(System.TeamProject)/_apis/build/builds/$(Build.BuildId)?api-version=7.1" \
+            || echo "Unable to cancel the build"
 
-        # Also fail the job, so dependent stages are skipped even if the cancellation is slow or not permitted
-        exit 1
-      displayName: Check for skip-ci opt out
-      condition: eq(variables.isPullRequest, true)
-      env:
-        GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
-        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
-        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          # Also fail the job, so dependent stages are skipped even if the cancellation is slow or not permitted
+          exit 1
+        displayName: Check for skip-ci opt out
+        env:
+          GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
+          PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     - bash: |
         TARGET_BRANCH=$SYSTEM_PULLREQUEST_TARGETBRANCH
         echo "SYSTEM_PULLREQUEST_TARGETBRANCH=$TARGET_BRANCH"
