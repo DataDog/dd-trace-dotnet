@@ -284,6 +284,459 @@ void RejitHandlerModule::RemoveProcessedInlinerModule(ModuleID moduleId)
 }
 
 //
+// NGenInlinerTracker
+//
+
+namespace
+{
+bool IsUnloaded(const ModuleIDWithLifetime& module)
+{
+    return module.lifetime == nullptr || module.lifetime->IsUnloading();
+}
+
+void SortAndDeduplicate(std::vector<RejitRequest>& rejitRequests)
+{
+    std::sort(rejitRequests.begin(), rejitRequests.end());
+    rejitRequests.erase(std::unique(rejitRequests.begin(), rejitRequests.end(),
+                                    [](const RejitRequest& lhs, const RejitRequest& rhs)
+                                    { return !(lhs < rhs) && !(rhs < lhs); }),
+                        rejitRequests.end());
+}
+} // namespace
+
+NGenInlinerTracker::NGenInlinerTracker(RejitHandler* handler) : m_handler(handler)
+{
+}
+
+void NGenInlinerTracker::RecordModule(const ModuleIDWithLifetime& module)
+{
+    std::lock_guard<std::mutex> inboxGuard(m_inboxLock);
+    m_pendingModules.push_back(module);
+    m_hasPending = true;
+}
+
+void NGenInlinerTracker::RecordMethod(const ModuleIDWithLifetime& module, mdMethodDef methodDef)
+{
+    std::lock_guard<std::mutex> inboxGuard(m_inboxLock);
+    m_pendingMethods.push_back({module, methodDef});
+    m_hasPending = true;
+}
+
+void NGenInlinerTracker::OnModuleUnloading()
+{
+    m_unloadEpoch++;
+}
+
+std::optional<std::future<void>> NGenInlinerTracker::EnqueueAfterModuleLoad(bool loadContributed)
+{
+    // A load that recorded no NGen module and instrumented nothing added no pair to check, so it has nothing to wait
+    // for. Work pending from elsewhere is left to the next lookup.
+    if (!loadContributed)
+    {
+        return std::nullopt;
+    }
+
+    // Blocking is fine: ModuleLoadFinished runs without runtime locks, and the caller holds no module_ids or lease.
+    std::lock_guard<std::mutex> lookupGuard(m_lookupLock);
+    auto rejitRequests = LookUpInliners();
+    if (rejitRequests.empty() && m_inlinerBatchesInFlight == 0)
+    {
+        // Every caller found so far was requested, including any that another thread found from this load's records.
+        return std::nullopt;
+    }
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    if (!rejitRequests.empty())
+    {
+        EnqueueInliners(std::move(rejitRequests), promise);
+    }
+    else
+    {
+        // Another thread may have drained this load's records. It counted and enqueued their callers before releasing
+        // m_lookupLock (or the .NET Core worker added them to the batch it is running), and the worker runs items in
+        // order, so this marker completes after them.
+        m_handler->Enqueue(std::make_unique<RejitWorkItem>([promise] { promise->set_value(); },
+                                                           [promise] { promise->set_value(); }));
+    }
+
+    return future;
+}
+
+void NGenInlinerTracker::TryEnqueue()
+{
+    // The runtime may hold JIT locks during JITCachedFunctionSearchStarted, its hottest NGen path: one atomic load
+    // when nothing is pending, and never wait for another lookup. Skipped work stays pending.
+    if (!m_hasPending)
+    {
+        return;
+    }
+
+    std::unique_lock<std::mutex> lookupGuard(m_lookupLock, std::try_to_lock);
+    if (!lookupGuard.owns_lock())
+    {
+        return;
+    }
+
+    auto rejitRequests = LookUpInliners();
+    if (!rejitRequests.empty())
+    {
+        // Enqueued before releasing m_lookupLock, so an end-of-load marker queues behind these callers.
+        EnqueueInliners(std::move(rejitRequests), nullptr);
+    }
+}
+
+bool NGenInlinerTracker::AppendInliners(std::vector<RejitRequest>& rejitRequests)
+{
+    if (!m_hasPending)
+    {
+        return false;
+    }
+
+    std::vector<RejitRequest> inliners;
+    {
+        // Released before the ReJIT: the callers are in the batch the worker is running, ahead of any marker.
+        std::lock_guard<std::mutex> lookupGuard(m_lookupLock);
+        inliners = LookUpInliners();
+        if (inliners.empty())
+        {
+            return false;
+        }
+
+        m_inlinerBatchesInFlight++;
+    }
+
+    // One RequestReJIT for the batch and its callers, since each call can suspend the runtime. On .NET Framework the
+    // worker can't look up, so EnqueueAfterModuleLoad requests the callers in a batch of their own.
+    rejitRequests.insert(rejitRequests.end(), inliners.begin(), inliners.end());
+    SortAndDeduplicate(rejitRequests);
+    return true;
+}
+
+void NGenInlinerTracker::OnAppendedInlinersRequested()
+{
+    m_inlinerBatchesInFlight--;
+}
+
+// Under m_lookupLock, so a load whose lookup finds nothing sees these callers counted.
+void NGenInlinerTracker::EnqueueInliners(std::vector<RejitRequest> inliners,
+                                         std::shared_ptr<std::promise<void>> promise)
+{
+    m_inlinerBatchesInFlight++;
+    const auto requested = [this, promise]
+    {
+        m_inlinerBatchesInFlight--;
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+    };
+
+    m_handler->Enqueue(std::make_unique<RejitWorkItem>(
+        [this, requested, inliners = std::move(inliners)]() mutable
+        {
+            m_handler->RequestRejit(std::move(inliners));
+            requested();
+        },
+        requested));
+}
+
+// The only caller of EnumNgenModuleMethodsInliningThisMethod, under m_lookupLock. Allowed in CLR callbacks on both
+// runtimes, and on the ReJIT worker on .NET Core. Never on the .NET Framework worker: without a current AppDomain,
+// the CLR can crash resolving an inline record instead of returning an error. Managed threads outside a callback get
+// CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
+std::vector<RejitRequest> NGenInlinerTracker::LookUpInliners()
+{
+    if (m_handler->IsShutdownRequested())
+    {
+        return {};
+    }
+
+    m_hasPending = false;
+    std::vector<ModuleIDWithLifetime> newModules;
+    std::vector<MethodEntry> newMethods;
+    {
+        std::lock_guard<std::mutex> inboxGuard(m_inboxLock);
+        newModules.swap(m_pendingModules);
+        newMethods.swap(m_pendingMethods);
+    }
+
+    const uint32_t unloadEpoch = m_unloadEpoch;
+    if (unloadEpoch != m_seenUnloadEpoch)
+    {
+        PurgeUnloadedModules();
+        m_seenUnloadEpoch = unloadEpoch;
+    }
+
+    for (auto& module : newModules)
+    {
+        if (module.id == 0)
+        {
+            Logger::Warn("NGEN:: EnumNgenModuleMethodsInliningThisMethod call skipped by invalid data.");
+        }
+        else if (!IsUnloaded(module))
+        {
+            m_ngenModules.push_back({std::move(module), 0, {}});
+        }
+    }
+
+    for (auto& method : newMethods)
+    {
+        if (method.module.id == 0 || method.methodDef == 0 || method.methodDef == mdMethodDefNil)
+        {
+            Logger::Warn("NGEN:: EnumNgenModuleMethodsInliningThisMethod call skipped by invalid data.");
+        }
+        else if (!IsUnloaded(method.module))
+        {
+            m_methods.push_back(std::move(method));
+        }
+    }
+
+    // Leases are only tried, never waited for: a lookup holds several, and an unload waiting for one of them must not
+    // block it. Each lifetime is tried once per lookup: same-module inlining is common, and shared locks must not be
+    // taken recursively. Holding them makes RemoveModule wait until the CLR calls using their ModuleIDs return.
+    enum class LeaseState
+    {
+        Held,
+        Contended,
+        Unloading
+    };
+    std::unordered_map<ModuleLifetime*, LeaseState> leaseStates;
+    std::vector<ReadLock> leases;
+    const auto lease = [&](const ModuleIDWithLifetime& module)
+    {
+        const auto [leaseState, inserted] = leaseStates.emplace(module.lifetime.get(), LeaseState::Held);
+        if (inserted)
+        {
+            auto lifetimeLock = module.lifetime->TryAcquireNoWait();
+            if (lifetimeLock.has_value())
+            {
+                leases.push_back(std::move(lifetimeLock.value()));
+            }
+            else
+            {
+                leaseState->second = module.lifetime->IsUnloading() ? LeaseState::Unloading : LeaseState::Contended;
+            }
+        }
+
+        return leaseState->second;
+    };
+
+    enum class PairResult
+    {
+        Checked,
+        Retry,
+        Abort
+    };
+    ICorProfilerInfo7* pInfo = m_handler->GetCorProfilerInfo();
+    std::vector<MethodIdentifier> inliners;
+    bool contended = false;
+    const auto checkPair = [&](const NGenModuleEntry& ngenModule, const MethodEntry& method)
+    {
+        const auto inlineeLease = lease(method.module);
+        if (inlineeLease == LeaseState::Unloading)
+        {
+            return PairResult::Checked;
+        }
+
+        if (inlineeLease == LeaseState::Contended)
+        {
+            contended = true;
+            return PairResult::Retry;
+        }
+
+#if DEBUG
+        // We generate this log hundreds of times, and isn't typically useful in escalations
+        Logger::Debug("NGenInlinerTracker::LookUpInliners for ", "[ModuleInliner=", ngenModule.module.id,
+                      ", ModuleId=", method.module.id, ", MethodDef=", method.methodDef, "]");
+#endif
+
+        BOOL incompleteData = false;
+        ComPtr<ICorProfilerMethodEnum> methodEnum;
+        const HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(
+            ngenModule.module.id, method.module.id, method.methodDef, &incompleteData, methodEnum.GetAddressOf());
+        if (SUCCEEDED(hr))
+        {
+            // Every caller is requested, even one ReJITed before: its new code may have inlined this method if the
+            // method was instrumented after that ReJIT.
+            COR_PRF_METHOD inliner;
+            unsigned int total = 0;
+            while (methodEnum->Next(1, &inliner, nullptr) == S_OK)
+            {
+                DBG("NGEN:: Asking rewrite for inliner [ModuleId=", inliner.moduleId, ",MethodDef=", inliner.methodId,
+                    "]");
+                inliners.emplace_back(inliner.moduleId, inliner.methodId);
+                total++;
+            }
+
+            if (total > 0)
+            {
+                Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", method.module.id,
+                              ",MethodDef=", method.methodDef, "]");
+            }
+
+            // Some callers are in modules that aren't loaded yet. The callers found so far are still requested, and
+            // the pair is checked again by the next lookup.
+            if (incompleteData)
+            {
+                Logger::Warn("NGen inliner data for module '", ngenModule.module.id, "' is incomplete.");
+                return PairResult::Retry;
+            }
+
+            return PairResult::Checked;
+        }
+
+        std::ostringstream hexValue;
+        hexValue << std::hex << hr;
+        if (hr == CORPROF_E_DATAINCOMPLETE)
+        {
+            // Returned while either module is being unloaded, or when the NGen image has no inline tracking map:
+            // neither changes while both modules are loaded.
+            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", method.module.id, ",MethodDef=",
+                         method.methodDef, ", HR=", hexValue.str(), "]");
+            return PairResult::Checked;
+        }
+
+        // A property of the calling thread, not of the pair: stop, and leave everything to a lookup on a supported
+        // thread.
+        if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
+        {
+            if (!m_unsupportedThreadLogged)
+            {
+                m_unsupportedThreadLogged = true;
+                Logger::Warn("NGen inliner lookup skipped on an unsupported thread; it will be retried.");
+            }
+
+            return PairResult::Abort;
+        }
+
+        // Other failures don't change on a later call, so the pair counts as checked.
+        if (hr == E_INVALIDARG)
+        {
+            Logger::Info("NGEN:: Error Invalid arguments in [ModuleId=", method.module.id, ",MethodDef=",
+                         method.methodDef, ", HR=", hexValue.str(), "]");
+        }
+        else
+        {
+            Logger::Info("NGEN:: Error in [ModuleId=", method.module.id, ",MethodDef=", method.methodDef,
+                         ", HR=", hexValue.str(), "]");
+        }
+
+        return PairResult::Checked;
+    };
+
+    bool aborted = false;
+    for (size_t index = 0; index < m_ngenModules.size() && !aborted;)
+    {
+        auto& ngenModule = m_ngenModules[index];
+        if (ngenModule.retry.empty() && ngenModule.checkedUpTo == m_methods.size())
+        {
+            index++;
+            continue;
+        }
+
+        const auto ngenModuleLease = lease(ngenModule.module);
+        if (ngenModuleLease == LeaseState::Unloading)
+        {
+            m_ngenModules.erase(m_ngenModules.begin() + index);
+            continue;
+        }
+
+        if (ngenModuleLease == LeaseState::Contended)
+        {
+            contended = true;
+            index++;
+            continue;
+        }
+
+        std::vector<MethodEntry> retry;
+        retry.swap(ngenModule.retry);
+        for (auto& method : retry)
+        {
+            if (!aborted)
+            {
+                const auto result = checkPair(ngenModule, method);
+                aborted = result == PairResult::Abort;
+                if (result == PairResult::Checked)
+                {
+                    continue;
+                }
+            }
+
+            ngenModule.retry.push_back(std::move(method));
+        }
+
+        for (; !aborted && ngenModule.checkedUpTo < m_methods.size(); ngenModule.checkedUpTo++)
+        {
+            const auto& method = m_methods[ngenModule.checkedUpTo];
+            const auto result = checkPair(ngenModule, method);
+            if (result == PairResult::Abort)
+            {
+                // checkedUpTo stays on this method.
+                aborted = true;
+                break;
+            }
+
+            if (result == PairResult::Retry)
+            {
+                ngenModule.retry.push_back(method);
+            }
+        }
+
+        index++;
+    }
+
+    // Resolve each caller's own module: in composite ReadyToRun images, a caller can be in another module than the
+    // one searched. Done under the leases, so the searched modules' IDs can't be reused meanwhile.
+    auto rejitRequests = m_handler->GetRejitRequests(inliners);
+    leases.clear();
+    SortAndDeduplicate(rejitRequests);
+
+    if (aborted || contended)
+    {
+        m_hasPending = true;
+    }
+
+    return rejitRequests;
+}
+
+void NGenInlinerTracker::PurgeUnloadedModules()
+{
+    // Each checkedUpTo must keep counting the same checked methods: keptBefore[i] is the number of methods kept among
+    // the first i. A module can start unloading meanwhile, so its state is read once per method.
+    std::vector<size_t> keptBefore(m_methods.size() + 1);
+    size_t kept = 0;
+    for (size_t index = 0; index < m_methods.size(); index++)
+    {
+        keptBefore[index] = kept;
+        if (!IsUnloaded(m_methods[index].module))
+        {
+            if (kept != index)
+            {
+                m_methods[kept] = std::move(m_methods[index]);
+            }
+
+            kept++;
+        }
+    }
+
+    keptBefore[m_methods.size()] = kept;
+    m_methods.erase(m_methods.begin() + kept, m_methods.end());
+
+    // A reused ModuleID has a new lifetime, so its new module is recorded and checked from scratch.
+    m_ngenModules.erase(std::remove_if(m_ngenModules.begin(), m_ngenModules.end(),
+                                       [](const NGenModuleEntry& entry) { return IsUnloaded(entry.module); }),
+                        m_ngenModules.end());
+    for (auto& ngenModule : m_ngenModules)
+    {
+        ngenModule.checkedUpTo = keptBefore[ngenModule.checkedUpTo];
+        ngenModule.retry.erase(std::remove_if(ngenModule.retry.begin(), ngenModule.retry.end(),
+                                              [](const MethodEntry& entry) { return IsUnloaded(entry.module); }),
+                               ngenModule.retry.end());
+    }
+}
+
+//
 // RejitHandler
 //
 
@@ -404,13 +857,15 @@ void RejitHandler::EnqueueRequestRejit(std::vector<RejitRequest> rejitRequests,
     EnqueueForRejit(std::move(rejitRequests), promise, callRevertExplicitly);
 }
 
-RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
-    m_profilerInfo(pInfo), m_profilerInfo10(nullptr), m_work_offloader(work_offloader)
+RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader,
+                           bool isDesktopClr) :
+    m_isDesktopClr(isDesktopClr), m_profilerInfo(pInfo), m_profilerInfo10(nullptr), m_work_offloader(work_offloader)
 {
 }
 
-RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
-    m_profilerInfo(pInfo), m_profilerInfo10(pInfo), m_work_offloader(work_offloader)
+RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader,
+                           bool isDesktopClr) :
+    m_isDesktopClr(isDesktopClr), m_profilerInfo(pInfo), m_profilerInfo10(pInfo), m_work_offloader(work_offloader)
 {
 }
 

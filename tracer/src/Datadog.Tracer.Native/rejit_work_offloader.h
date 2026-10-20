@@ -6,6 +6,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -45,6 +46,8 @@ private:
 
     std::unique_ptr<shared::UniqueBlockingQueue<RejitWorkItem>> m_offloader_queue;
     std::unique_ptr<std::thread> m_offloader_queue_thread;
+    // Copied because join() resets the thread object's id while other threads may still ask.
+    const std::thread::id m_offloader_queue_thread_id;
 
     static void EnqueueThreadLoop(RejitWorkOffloader* offloader);
 
@@ -53,6 +56,7 @@ public:
 
     void Enqueue(std::unique_ptr<RejitWorkItem>&& item);
     bool WaitForTermination();
+    bool IsWorkerThread() const;
 };
 
 } // namespace trace

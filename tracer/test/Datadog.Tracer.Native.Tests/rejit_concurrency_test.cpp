@@ -9,6 +9,7 @@
 #include <chrono>
 #include <deque>
 #include <future>
+#include <map>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -27,7 +28,7 @@ public:
 
     RejitHandlerContext() :
         offloader(std::make_shared<RejitWorkOffloader>(&profilerInfo)),
-        handler(std::make_unique<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader))
+        handler(std::make_unique<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false))
     {
     }
 
@@ -272,6 +273,96 @@ public:
     }
 };
 
+using NGenPair = std::pair<ModuleID, mdMethodDef>;
+
+enum class NGenLookupResult
+{
+    Complete,
+    IncompleteData,
+    DataIncomplete,
+    UnsupportedCallSequence
+};
+
+// Inlinee method M is inlined by method M + 10 of every NGen module, unless a test queues another result for that
+// (NGen module, inlinee method) pair. The ReJIT worker writes requestedBatches: read it only after WaitForRejitWorker.
+class NGenTrackerProfilerInfo : public MockCorProfilerInfo
+{
+public:
+    std::map<NGenPair, std::deque<NGenLookupResult>> queuedResults;
+    std::vector<NGenPair> lookups;
+    std::deque<SingleMethodEnum> inlinerEnums;
+    std::vector<std::vector<NGenPair>> requestedBatches;
+
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(
+        ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData,
+        ICorProfilerMethodEnum** ppEnum) override
+    {
+        const auto& lookup = lookups.emplace_back(inlinersModuleId, inlineeMethodId);
+        auto result = NGenLookupResult::Complete;
+        auto queued = queuedResults.find(lookup);
+        if (queued != queuedResults.end() && !queued->second.empty())
+        {
+            result = queued->second.front();
+            queued->second.pop_front();
+        }
+
+        if (result == NGenLookupResult::DataIncomplete)
+        {
+            return CORPROF_E_DATAINCOMPLETE;
+        }
+
+        if (result == NGenLookupResult::UnsupportedCallSequence)
+        {
+            return CORPROF_E_UNSUPPORTED_CALL_SEQUENCE;
+        }
+
+        auto& inliners = inlinerEnums.emplace_back();
+        inliners.method = {inlinersModuleId, inlineeMethodId + 10};
+        *incompleteData = result == NGenLookupResult::IncompleteData;
+        *ppEnum = &inliners;
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE RequestReJIT(ULONG cFunctions, ModuleID moduleIds[], mdMethodDef methodIds[]) override
+    {
+        auto& batch = requestedBatches.emplace_back();
+        for (ULONG i = 0; i < cFunctions; i++)
+        {
+            batch.emplace_back(moduleIds[i], methodIds[i]);
+        }
+
+        return S_OK;
+    }
+};
+
+// Blocks the first NGen inliner lookup until released.
+class BlockingNGenTrackerProfilerInfo : public NGenTrackerProfilerInfo
+{
+private:
+    std::shared_future<void> m_release;
+
+public:
+    explicit BlockingNGenTrackerProfilerInfo(std::shared_future<void> release) : m_release(std::move(release))
+    {
+    }
+
+    std::promise<void> lookupEntered;
+
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(
+        ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData,
+        ICorProfilerMethodEnum** ppEnum) override
+    {
+        if (lookups.empty())
+        {
+            lookupEntered.set_value();
+            m_release.wait();
+        }
+
+        return NGenTrackerProfilerInfo::EnumNgenModuleMethodsInliningThisMethod(
+            inlinersModuleId, inlineeModuleId, inlineeMethodId, incompleteData, ppEnum);
+    }
+};
+
 class ObservableTracerRejitPreprocessor : public TracerRejitPreprocessor
 {
 public:
@@ -428,7 +519,7 @@ TEST(ModuleLifetime, UnloadWaitsForNGenReplayAfterShutdownStarts)
     BlockingNGenProfilerInfo profilerInfo(releaseEnumeration.get_future().share());
     auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     auto removeEnteredFuture = preprocessor.removeEntered.get_future();
     auto removeReturnedFuture = preprocessor.removeReturned.get_future();
@@ -509,7 +600,7 @@ TEST(ModuleLifetime, ReusedNGenInlinerModuleIdIsEnumeratedAgain)
 {
     CountingNGenProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     TracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -691,7 +782,7 @@ TEST(RejitPreprocessor, NewMethodGetsNGenInlinersFromAlreadyCheckedModule)
 {
     NGenInlinerProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -738,7 +829,7 @@ TEST(RejitPreprocessor, IncompleteNGenDataForNewMethodIsRetriedByReplay)
 {
     NGenInlinerProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -778,7 +869,7 @@ TEST(RejitPreprocessor, DesktopNewMethodNGenInlinersAreDeferredToReplay)
 {
     DesktopNGenInlinerProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, true);
     ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -822,7 +913,7 @@ TEST(RejitPreprocessor, DesktopReplayChecksOnlyNewMethodsAndRequestsInlinersInOn
 {
     RecordingDesktopNGenProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, true);
     ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -864,7 +955,7 @@ TEST(RejitPreprocessor, DesktopIncompleteNGenDataForNewMethodRechecksModule)
 {
     RecordingDesktopNGenProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, true);
     ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -899,7 +990,7 @@ TEST(RejitHandler, NGenReplaySendsOneBatchForAllRejitters)
 {
     RecordingNGenProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     TracerRejitPreprocessor firstPreprocessor(nullptr, handler);
     TracerRejitPreprocessor secondPreprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
@@ -928,7 +1019,7 @@ TEST(RejitHandler, DesktopNGenInlinerLookupRequestsInlinersInOneBatchWithoutWait
 {
     RecordingDesktopNGenProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, true);
     TracerRejitPreprocessor firstPreprocessor(nullptr, handler);
     TracerRejitPreprocessor secondPreprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
@@ -972,7 +1063,7 @@ TEST(RejitHandler, DesktopNGenInlinerLookupSkipsWithoutNewMethods)
 {
     RecordingDesktopNGenProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, true);
     TracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -1006,7 +1097,7 @@ TEST(RejitHandler, DesktopNGenInlinerLookupChecksMethodsCreatedDuringLookupNextT
     DesktopClrProfilerInfo<BlockingRecordingNGenProfilerInfo> profilerInfo(releaseEnumeration.get_future().share());
     auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, true);
     TracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -1042,7 +1133,7 @@ TEST(RejitHandler, NGenInlinerLookupIsLeftToReJitWorkerOnCoreClr)
 {
     RecordingNGenProfilerInfo profilerInfo;
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     TracerRejitPreprocessor preprocessor(nullptr, handler);
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
@@ -1066,7 +1157,7 @@ TEST(ModuleLifetime, UnloadWaitsForNewMethodNGenCheck)
     BlockingNGenProfilerInfo profilerInfo(releaseEnumeration.get_future().share());
     auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     auto removeEnteredFuture = preprocessor.removeEntered.get_future();
     auto removeReturnedFuture = preprocessor.removeReturned.get_future();
@@ -1130,7 +1221,7 @@ TEST(ModuleLifetime, UnloadWaitsForNGenInlinerLookup)
         DesktopClrProfilerInfo<BlockingNGenProfilerInfo> profilerInfo(releaseEnumeration.get_future().share());
         auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
         auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-        auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+        auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, true);
         ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
         auto removeEnteredFuture = preprocessor.removeEntered.get_future();
         auto removeReturnedFuture = preprocessor.removeReturned.get_future();
@@ -1167,13 +1258,395 @@ TEST(ModuleLifetime, UnloadWaitsForNGenInlinerLookup)
     }
 }
 
+TEST(NGenInlinerTracker, ChecksEachMethodAndNGenModulePairOnce)
+{
+    NGenTrackerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+    const auto inlineeModule = handler->RegisterModule(41);
+
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordMethod(inlineeModule, 1);
+    tracker.RecordMethod(inlineeModule, 2);
+    tracker.TryEnqueue();
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}}), profilerInfo.lookups);
+
+    // A new NGen module is checked against every method.
+    tracker.RecordModule(handler->RegisterModule(43));
+    tracker.TryEnqueue();
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}}), profilerInfo.lookups);
+
+    // A new method is checked against every NGen module.
+    tracker.RecordMethod(inlineeModule, 3);
+    tracker.TryEnqueue();
+    tracker.TryEnqueue();
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}, {42, 3}, {43, 3}}), profilerInfo.lookups);
+    EXPECT_EQ((std::vector<std::vector<NGenPair>>{{{42, 11}, {42, 12}}, {{43, 11}, {43, 12}}, {{42, 13}, {43, 13}}}),
+              profilerInfo.requestedBatches);
+
+    handler->Shutdown();
+}
+
+TEST(NGenInlinerTracker, IncompleteDataRetriesOnlyThatPairAfterTheNextRecord)
+{
+    NGenTrackerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+    const auto inlineeModule = handler->RegisterModule(41);
+    profilerInfo.queuedResults[{42, 2}] = {NGenLookupResult::IncompleteData};
+
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordMethod(inlineeModule, 1);
+    tracker.RecordMethod(inlineeModule, 2);
+    tracker.TryEnqueue();
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}}), profilerInfo.lookups);
+
+    // Only a module load can complete the data, so the pair alone doesn't keep the lookup pending.
+    tracker.TryEnqueue();
+    EXPECT_EQ(2u, profilerInfo.lookups.size());
+
+    tracker.RecordModule(handler->RegisterModule(43));
+    tracker.TryEnqueue();
+    tracker.TryEnqueue();
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {42, 2}, {43, 1}, {43, 2}}), profilerInfo.lookups);
+    EXPECT_EQ((std::vector<std::vector<NGenPair>>{{{42, 11}, {42, 12}}, {{42, 12}, {43, 11}, {43, 12}}}),
+              profilerInfo.requestedBatches);
+
+    handler->Shutdown();
+}
+
+TEST(NGenInlinerTracker, DataIncompleteErrorCountsAsChecked)
+{
+    NGenTrackerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+    const auto inlineeModule = handler->RegisterModule(41);
+    profilerInfo.queuedResults[{42, 2}] = {NGenLookupResult::DataIncomplete};
+
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordMethod(inlineeModule, 1);
+    tracker.RecordMethod(inlineeModule, 2);
+    tracker.TryEnqueue();
+    tracker.RecordModule(handler->RegisterModule(43));
+    tracker.TryEnqueue();
+    WaitForRejitWorker(*handler);
+
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}}), profilerInfo.lookups);
+    EXPECT_EQ((std::vector<std::vector<NGenPair>>{{{42, 11}}, {{43, 11}, {43, 12}}}), profilerInfo.requestedBatches);
+
+    handler->Shutdown();
+}
+
+TEST(NGenInlinerTracker, UnsupportedCallSequenceStopsLookupAndKeepsWorkPending)
+{
+    NGenTrackerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+    const auto inlineeModule = handler->RegisterModule(41);
+    profilerInfo.queuedResults[{42, 2}] = {NGenLookupResult::IncompleteData, NGenLookupResult::UnsupportedCallSequence};
+    profilerInfo.queuedResults[{43, 3}] = {NGenLookupResult::UnsupportedCallSequence};
+
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordModule(handler->RegisterModule(43));
+    tracker.RecordMethod(inlineeModule, 1);
+    tracker.RecordMethod(inlineeModule, 2);
+    tracker.TryEnqueue();
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}}), profilerInfo.lookups);
+
+    // Stops while retrying (42, 2), before checking the new method.
+    tracker.RecordMethod(inlineeModule, 3);
+    tracker.TryEnqueue();
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}, {42, 2}}), profilerInfo.lookups);
+
+    // Stops on (43, 3), but still requests the callers it found before.
+    tracker.TryEnqueue();
+    tracker.TryEnqueue();
+    tracker.TryEnqueue();
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}, {42, 2}, {42, 2}, {42, 3}, {43, 3}, {43, 3}}),
+              profilerInfo.lookups);
+    EXPECT_EQ((std::vector<std::vector<NGenPair>>{
+                  {{42, 11}, {42, 12}, {43, 11}, {43, 12}}, {{42, 12}, {42, 13}}, {{43, 13}}}),
+              profilerInfo.requestedBatches);
+
+    handler->Shutdown();
+}
+
+TEST(NGenInlinerTracker, NoLookupForUnloadingModules)
+{
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID ngenModuleId = 42;
+    for (const auto unloadedModuleId : {inlineeModuleId, ngenModuleId})
+    {
+        SCOPED_TRACE(unloadedModuleId);
+        NGenTrackerProfilerInfo profilerInfo;
+        auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+        auto handler =
+            std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+        NGenInlinerTracker tracker(handler.get());
+        const auto inlineeModule = handler->RegisterModule(inlineeModuleId);
+
+        tracker.RecordModule(handler->RegisterModule(ngenModuleId));
+        tracker.RecordMethod(inlineeModule, 1);
+        tracker.TryEnqueue();
+        EXPECT_EQ((std::vector<NGenPair>{{42, 1}}), profilerInfo.lookups);
+
+        // The lease check alone keeps the unloading ModuleID from the CLR, before a lookup purges its entries.
+        handler->RemoveModule(unloadedModuleId);
+        tracker.RecordMethod(inlineeModule, 2);
+        tracker.RecordModule(handler->RegisterModule(43));
+        tracker.TryEnqueue();
+        const auto expectedAfterUnload = unloadedModuleId == inlineeModuleId
+                                             ? std::vector<NGenPair>{{42, 1}}
+                                             : std::vector<NGenPair>{{42, 1}, {43, 1}, {43, 2}};
+        EXPECT_EQ(expectedAfterUnload, profilerInfo.lookups);
+
+        tracker.OnModuleUnloading();
+        tracker.RecordModule(handler->RegisterModule(44));
+        tracker.TryEnqueue();
+        const auto expectedAfterPurge = unloadedModuleId == inlineeModuleId
+                                            ? std::vector<NGenPair>{{42, 1}}
+                                            : std::vector<NGenPair>{{42, 1}, {43, 1}, {43, 2}, {44, 1}, {44, 2}};
+        EXPECT_EQ(expectedAfterPurge, profilerInfo.lookups);
+
+        handler->Shutdown();
+    }
+}
+
+TEST(NGenInlinerTracker, UnloadWaitsForInFlightLookup)
+{
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID ngenModuleId = 42;
+
+    // The lookup passes both ModuleIDs to the CLR.
+    for (const auto unloadedModuleId : {inlineeModuleId, ngenModuleId})
+    {
+        SCOPED_TRACE(unloadedModuleId);
+        std::promise<void> releaseLookup;
+        BlockingNGenTrackerProfilerInfo profilerInfo(releaseLookup.get_future().share());
+        auto lookupEnteredFuture = profilerInfo.lookupEntered.get_future();
+        auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+        auto handler =
+            std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+        NGenInlinerTracker tracker(handler.get());
+        tracker.RecordModule(handler->RegisterModule(ngenModuleId));
+        tracker.RecordMethod(handler->RegisterModule(inlineeModuleId), 1);
+
+        std::thread lookup([&] { tracker.TryEnqueue(); });
+        const auto lookupEntered = lookupEnteredFuture.wait_for(1s) == std::future_status::ready;
+        EXPECT_TRUE(lookupEntered);
+        if (!lookupEntered)
+        {
+            releaseLookup.set_value();
+            lookup.join();
+            handler->Shutdown();
+            continue;
+        }
+
+        std::promise<void> unloadFinished;
+        auto unloadFinishedFuture = unloadFinished.get_future();
+        std::thread unload(
+            [&]
+            {
+                handler->RemoveModule(unloadedModuleId);
+                unloadFinished.set_value();
+            });
+
+        // ModuleUnloadStarted must remain blocked while the CLR can still dereference the module.
+        EXPECT_TRUE(WaitUntil([&] { return handler->GetModuleWithLifetime(unloadedModuleId).lifetime == nullptr; }));
+        EXPECT_EQ(std::future_status::timeout, unloadFinishedFuture.wait_for(100ms));
+
+        releaseLookup.set_value();
+        lookup.join();
+        unload.join();
+
+        handler->Shutdown();
+    }
+}
+
+TEST(NGenInlinerTracker, ReusedModuleIdsAreCheckedFromScratch)
+{
+    NGenTrackerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordModule(handler->RegisterModule(43));
+    tracker.RecordMethod(handler->RegisterModule(41), 1);
+    tracker.RecordMethod(handler->RegisterModule(44), 2);
+    tracker.TryEnqueue();
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}}), profilerInfo.lookups);
+
+    // The CLR hands the unloaded ModuleIDs to new modules.
+    handler->RemoveModule(41);
+    tracker.OnModuleUnloading();
+    handler->RemoveModule(42);
+    tracker.OnModuleUnloading();
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordMethod(handler->RegisterModule(41), 3);
+    tracker.TryEnqueue();
+    tracker.TryEnqueue();
+    WaitForRejitWorker(*handler);
+
+    // NGen module 43 only checks the new method. The new NGen module 42 checks every method still loaded.
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}, {43, 1}, {43, 2}, {43, 3}, {42, 2}, {42, 3}}),
+              profilerInfo.lookups);
+    EXPECT_EQ((std::vector<std::vector<NGenPair>>{
+                  {{42, 11}, {42, 12}, {43, 11}, {43, 12}}, {{42, 12}, {42, 13}, {43, 13}}}),
+              profilerInfo.requestedBatches);
+
+    handler->Shutdown();
+}
+
+TEST(NGenInlinerTracker, ContendedLeaseNeverBlocksLookup)
+{
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID ngenModuleId = 42;
+    for (const auto contendedModuleId : {inlineeModuleId, ngenModuleId})
+    {
+        SCOPED_TRACE(contendedModuleId);
+        NGenTrackerProfilerInfo profilerInfo;
+        auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+        auto handler =
+            std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+        NGenInlinerTracker tracker(handler.get());
+        tracker.RecordModule(handler->RegisterModule(ngenModuleId));
+        tracker.RecordMethod(handler->RegisterModule(inlineeModuleId), 1);
+
+        // An unload waits for a lease held elsewhere.
+        const auto contendedModule = handler->GetModuleWithLifetime(contendedModuleId);
+        auto heldLease = contendedModule.TryAcquire();
+        ASSERT_TRUE(heldLease.has_value());
+        std::thread unload([&] { handler->RemoveModule(contendedModuleId); });
+
+        // Only Windows' SRWLOCK makes new readers wait behind a queued writer.
+        const auto contended =
+            WaitUntil([&] { return !contendedModule.lifetime->TryAcquireNoWait().has_value(); });
+#ifdef _WIN32
+        EXPECT_TRUE(contended);
+#endif
+
+        std::promise<void> lookupReturned;
+        auto lookupReturnedFuture = lookupReturned.get_future();
+        std::thread lookup(
+            [&]
+            {
+                tracker.TryEnqueue();
+                lookupReturned.set_value();
+            });
+        EXPECT_EQ(std::future_status::ready, lookupReturnedFuture.wait_for(1s));
+
+        heldLease.reset();
+        lookup.join();
+        unload.join();
+
+        // A contended pair stays pending, and is dropped once its module is unloading.
+        tracker.TryEnqueue();
+        EXPECT_EQ(contended ? 0u : 1u, profilerInfo.lookups.size());
+
+        handler->Shutdown();
+    }
+}
+
+TEST(NGenInlinerTracker, CachedFunctionSearchNeverWaitsForAnotherLookup)
+{
+    std::promise<void> releaseLookup;
+    BlockingNGenTrackerProfilerInfo profilerInfo(releaseLookup.get_future().share());
+    auto lookupEnteredFuture = profilerInfo.lookupEntered.get_future();
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+    const auto inlineeModule = handler->RegisterModule(41);
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordMethod(inlineeModule, 1);
+
+    std::thread lookup([&] { tracker.TryEnqueue(); });
+    const auto lookupEntered = lookupEnteredFuture.wait_for(1s) == std::future_status::ready;
+    EXPECT_TRUE(lookupEntered);
+
+    tracker.RecordMethod(inlineeModule, 2);
+    std::promise<void> searchReturned;
+    auto searchReturnedFuture = searchReturned.get_future();
+    std::thread search(
+        [&]
+        {
+            tracker.TryEnqueue();
+            searchReturned.set_value();
+        });
+    EXPECT_EQ(std::future_status::ready, searchReturnedFuture.wait_for(1s));
+
+    releaseLookup.set_value();
+    lookup.join();
+    search.join();
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}}), profilerInfo.lookups);
+
+    // The skipped method stays pending. Once it is checked, nothing is left to look up.
+    tracker.TryEnqueue();
+    tracker.TryEnqueue();
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}, {42, 2}}), profilerInfo.lookups);
+
+    handler->Shutdown();
+}
+
+TEST(NGenInlinerTracker, ModuleLoadWaitsOnlyForCallersNotYetRequested)
+{
+    NGenTrackerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+    tracker.RecordModule(handler->RegisterModule(42));
+    tracker.RecordMethod(handler->RegisterModule(41), 1);
+
+    // Work pending from other loads is left to the next lookup.
+    EXPECT_FALSE(tracker.EnqueueAfterModuleLoad(false).has_value());
+    EXPECT_TRUE(profilerInfo.lookups.empty());
+
+    auto rejit = tracker.EnqueueAfterModuleLoad(true);
+    ASSERT_TRUE(rejit.has_value());
+    ASSERT_EQ(std::future_status::ready, rejit->wait_for(1s));
+    EXPECT_EQ((std::vector<NGenPair>{{42, 1}}), profilerInfo.lookups);
+    EXPECT_EQ((std::vector<std::vector<NGenPair>>{{{42, 11}}}), profilerInfo.requestedBatches);
+
+    // Nothing left to look up and every caller was requested, so the load doesn't wait, even behind a busy worker.
+    std::promise<void> releaseWorker;
+    ASSERT_TRUE(handler->Enqueue(std::make_unique<RejitWorkItem>(
+        [releaseWorkerFuture = releaseWorker.get_future().share()] { releaseWorkerFuture.wait(); })));
+    EXPECT_FALSE(tracker.EnqueueAfterModuleLoad(true).has_value());
+    EXPECT_EQ(1u, profilerInfo.lookups.size());
+
+    releaseWorker.set_value();
+    handler->Shutdown();
+}
+
+TEST(NGenInlinerTracker, ModuleLoadDoesNotWaitWithoutInstrumentedMethods)
+{
+    NGenTrackerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
+    NGenInlinerTracker tracker(handler.get());
+    tracker.RecordModule(handler->RegisterModule(42));
+
+    EXPECT_FALSE(tracker.EnqueueAfterModuleLoad(true).has_value());
+    EXPECT_TRUE(profilerInfo.lookups.empty());
+
+    handler->Shutdown();
+}
+
 TEST(RejitHandler, RequestRejitKeepsAllModuleGenerationsAliveThroughClrCalls)
 {
     std::promise<void> releaseRequest;
     BlockingRejitProfilerInfo profilerInfo(releaseRequest.get_future().share());
     auto requestEnteredFuture = profilerInfo.requestEntered.get_future();
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
-    auto handler = std::make_unique<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    auto handler = std::make_unique<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader, false);
     constexpr ModuleID firstModuleId = 41;
     constexpr ModuleID secondModuleId = 42;
     handler->RegisterModule(firstModuleId);

@@ -92,13 +92,19 @@ RejitWorkOffloader::RejitWorkOffloader(ICorProfilerInfo7* pInfo) :
         {
             Threads::SetNativeThreadName(WStr("DD_rejit"));
             EnqueueThreadLoop(this);
-        }))
+        })),
+    m_offloader_queue_thread_id(m_offloader_queue_thread->get_id())
 {
 }
 
 void RejitWorkOffloader::Enqueue(std::unique_ptr<RejitWorkItem>&& item)
 {
     m_offloader_queue->push(std::move(item));
+}
+
+bool RejitWorkOffloader::IsWorkerThread() const
+{
+    return std::this_thread::get_id() == m_offloader_queue_thread_id;
 }
 
 bool RejitWorkOffloader::WaitForTermination()

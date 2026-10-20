@@ -174,8 +174,8 @@ TEST(DataflowTests, StaleGenerationDoesNotResolveModule)
     MockCorProfilerInfo mockProfiler;
     auto runtimeInfo = MakeTestRuntimeInformation();
     auto offloader = std::make_shared<RejitWorkOffloader>(&mockProfiler);
-    auto handler =
-        std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&mockProfiler), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&mockProfiler), offloader,
+                                                  runtimeInfo.is_desktop());
     auto dataflow = std::make_unique<iast::Dataflow>(&mockProfiler, handler, std::vector<ModuleID>{}, runtimeInfo);
 
     const auto module = handler->RegisterModule(99);
@@ -203,8 +203,8 @@ TEST_F(DataflowMetadataTests, InliningDecisionRequestsRejitAfterReleasingTheData
     mockProfiler.metadataImport = metadata_import_;
     auto runtimeInfo = MakeTestRuntimeInformation();
     auto offloader = std::make_shared<RejitWorkOffloader>(&mockProfiler);
-    auto handler =
-        std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&mockProfiler), offloader);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&mockProfiler), offloader,
+                                                  runtimeInfo.is_desktop());
     auto dataflow =
         std::make_unique<AspectInjectingDataflow>(&mockProfiler, handler, std::vector<ModuleID>{}, runtimeInfo);
 

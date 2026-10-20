@@ -175,8 +175,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     auto work_offloader = std::make_shared<RejitWorkOffloader>(pInfo);
 
     rejit_handler = info10 != nullptr
-                        ? std::make_shared<RejitHandler>(info10, work_offloader)
-                        : std::make_shared<RejitHandler>(this->info_, work_offloader);
+                        ? std::make_shared<RejitHandler>(info10, work_offloader, runtime_information_.is_desktop())
+                        : std::make_shared<RejitHandler>(this->info_, work_offloader, runtime_information_.is_desktop());
     rejit_handler->SetRejitTracking(runtime_information_.is_core());
 
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler);
