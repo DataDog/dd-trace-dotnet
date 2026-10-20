@@ -78,7 +78,7 @@ internal sealed partial class TestOptimizationClient
             new Data<SettingsQuery>(
                 _commitSha,
                 SettingsType,
-                new SettingsQuery(_serviceName, _environment, _repositoryUrl, _branchName, _commitSha, GetTestConfigurations(skipFrameworkInfo), SkippableTestsRequestScope.TestLevel)),
+                new SettingsQuery(_serviceName, _environment, _repositoryUrl, _branchName, _commitSha, GetTestConfigurations(skipFrameworkInfo))),
             null);
 
         var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
@@ -164,7 +164,7 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("configurations")]
         public readonly TestsConfigurations Configurations;
 
-        public SettingsQuery(string service, string environment, string repositoryUrl, string branch, string sha, TestsConfigurations configurations, string testLevel)
+        public SettingsQuery(string service, string environment, string repositoryUrl, string branch, string sha, TestsConfigurations configurations)
         {
             Service = service;
             Environment = environment;
@@ -172,7 +172,7 @@ internal sealed partial class TestOptimizationClient
             Branch = branch;
             Sha = sha;
             Configurations = configurations;
-            TestLevel = testLevel;
+            TestLevel = "test";
         }
     }
 
