@@ -5,8 +5,11 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
+[DuckType("Newtonsoft.Json.Linq.JToken", "Newtonsoft.Json", IncludeDerivedTypes = true)]
 internal interface IJToken
 {
     public JTokenTypeProxy Type { get; }

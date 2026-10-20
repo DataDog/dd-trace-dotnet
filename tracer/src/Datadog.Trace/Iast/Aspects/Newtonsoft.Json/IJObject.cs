@@ -6,9 +6,11 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
 
+[DuckType("Newtonsoft.Json.Linq.JObject", "Newtonsoft.Json")]
 internal interface IJObject
 {
     public IEnumerable<object> Properties();

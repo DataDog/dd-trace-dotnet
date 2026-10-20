@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -31,6 +32,34 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             // we check twice to make sure that the cache does not change the outcome
             StackWalker.MustSkipAssembly(assemblyName).Should().Be(outcome);
             StackWalker.MustSkipAssembly(assemblyName).Should().Be(outcome);
+        }
+
+        // .NET 8 NativeAOT: the frames have no assembly, so the namespace of their type stands for it.
+        [Theory]
+        [InlineData("Datadog.Trace.Iast.IastModule.GetScope(String, IntegrationId) + 0x1f", true)]
+        [InlineData("System.IO.File.ReadAllText(String) + 0x9", true)]
+        [InlineData("Microsoft.AspNetCore.Routing.EndpointMiddleware.Invoke(HttpContext httpContext) + 0x39c", true)]
+        [InlineData("MySqlConnector.MySqlCommand.ExecuteReader() + 0x5", true)]
+        [InlineData("Program.<>c.<<Main>$>b__0_1(String) + 0x5", false)]
+        [InlineData("SystemOfGame.Player.Run() + 0x1", false)]
+        [InlineData("MySqlHelper.Query.Run() + 0x1", false)]
+        public void CheckFrameExclusionWithoutAssembly(string frameText, bool outcome)
+        {
+            StackFrameMethod.TryParse(frameText, out var method).Should().BeTrue();
+            method.AssemblyName.Should().BeNull();
+            StackWalker.MustSkip(method).Should().Be(outcome);
+        }
+
+        // JIT and .NET 9+ NativeAOT: the assembly decides, not the namespace.
+        [Theory]
+        [InlineData("Datadog.Trace.Iast.IastModule", "Datadog.Trace", true)]
+        [InlineData("System.Lazy`1", "System.Private.CoreLib", true)]
+        [InlineData("Program+<>c", "App", false)]
+        [InlineData("System.Extensions.Helper", "App", false)]
+        public void CheckFrameExclusionWithAssembly(string declaringTypeName, string assemblyName, bool outcome)
+        {
+            StackFrameMethod.TryCreate(declaringTypeName, "Run", assemblyName, out var method).Should().BeTrue();
+            StackWalker.MustSkip(method).Should().Be(outcome);
         }
 
         [Fact]

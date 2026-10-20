@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -23,6 +24,10 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
     private const int UserStringsArraySize = 100;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
     private static HardcodedSecretsAnalyzer? _instance;
+
+    // Applications instrumented at build time (NativeAOT) have no native tracer: the string literals it collects from the
+    // methods it analyzes come from the build, through the module initializer of the instrumented application.
+    private static ConcurrentQueue<KeyValuePair<string, string>>? _buildTimeUserStrings;
 
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly TimeSpan _regexTimeout;
@@ -47,48 +52,28 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
             {
                 if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
-                    int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
-                    Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());
-                    if (userStringLen > 0)
+                    if (_buildTimeUserStrings is { } buildTimeUserStrings)
                     {
-                        for (int x = 0; x < userStringLen; x++)
+                        while (buildTimeUserStrings.TryDequeue(out var userString))
                         {
-                            try
-                            {
-                                var value = Marshal.PtrToStringUni(userStrings[x].Value);
-                                if (string.IsNullOrEmpty(value))
-                                {
-                                    continue;
-                                }
-
-                                var match = CheckSecret(value);
-                                if (!string.IsNullOrEmpty(match))
-                                {
-                                    var location = Marshal.PtrToStringUni(userStrings[x].Location);
-                                    if (string.IsNullOrEmpty(location))
-                                    {
-                                        Log.Warning("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret with empty (unknown) location", match);
-                                        location = "Unknown";
-                                    }
-
-                                    Log.Debug("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret", match);
-                                    IastModule.OnHardcodedSecret(new Vulnerability(
-                                        VulnerabilityTypeUtils.HardcodedSecret,
-                                        (VulnerabilityTypeUtils.HardcodedSecret + ":" + location! + ":" + match!).GetStaticHashCode(),
-                                        new Location(location!),
-                                        new Evidence(match!),
-                                        IntegrationId.HardcodedSecret));
-                                }
-                            }
-                            catch (Exception err) when (!(err is OperationCanceledException))
-                            {
-                                Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread loop.");
-                            }
+                            ProcessUserString(userString.Value, userString.Key);
                         }
-
-                        if (userStringLen == userStrings.Length)
+                    }
+                    else
+                    {
+                        int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
+                        Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());
+                        if (userStringLen > 0)
                         {
-                            continue; // Skip wait time if array came full
+                            for (int x = 0; x < userStringLen; x++)
+                            {
+                                ProcessUserString(Marshal.PtrToStringUni(userStrings[x].Value), Marshal.PtrToStringUni(userStrings[x].Location));
+                            }
+
+                            if (userStringLen == userStrings.Length)
+                            {
+                                continue; // Skip wait time if array came full
+                            }
                         }
                     }
                 }
@@ -104,6 +89,19 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
         Log.Debug("HardcodedSecretsAnalyzer polling thread -> Exit");
     }
 
+    /// <summary>
+    /// Called by the module initializer of an application instrumented at build time (NativeAOT) with the string literals
+    /// of its instrumented assemblies: location (method), then value, for each.
+    /// </summary>
+    internal static void AddBuildTimeUserStrings(string[] locationsAndValues)
+    {
+        var userStrings = _buildTimeUserStrings ?? Interlocked.CompareExchange(ref _buildTimeUserStrings, new(), null) ?? _buildTimeUserStrings!;
+        for (var i = 0; i + 1 < locationsAndValues.Length; i += 2)
+        {
+            userStrings.Enqueue(new KeyValuePair<string, string>(locationsAndValues[i], locationsAndValues[i + 1]));
+        }
+    }
+
     internal static void Initialize(TimeSpan regexTimeout)
     {
         lock (Log)
@@ -113,6 +111,39 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
                 _instance = new HardcodedSecretsAnalyzer(regexTimeout);
                 LifetimeManager.Instance.AddShutdownTask(_ => _instance.Dispose());
             }
+        }
+    }
+
+    private void ProcessUserString(string? value, string? location)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+
+            var match = CheckSecret(value!);
+            if (!string.IsNullOrEmpty(match))
+            {
+                if (string.IsNullOrEmpty(location))
+                {
+                    Log.Warning("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret with empty (unknown) location", match);
+                    location = "Unknown";
+                }
+
+                Log.Debug("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret", match);
+                IastModule.OnHardcodedSecret(new Vulnerability(
+                    VulnerabilityTypeUtils.HardcodedSecret,
+                    (VulnerabilityTypeUtils.HardcodedSecret + ":" + location! + ":" + match!).GetStaticHashCode(),
+                    new Location(location!),
+                    new Evidence(match!),
+                    IntegrationId.HardcodedSecret));
+            }
+        }
+        catch (Exception err) when (!(err is OperationCanceledException))
+        {
+            Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread loop.");
         }
     }
 

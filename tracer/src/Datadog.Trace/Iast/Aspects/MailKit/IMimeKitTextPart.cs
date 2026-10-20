@@ -10,6 +10,7 @@ namespace Datadog.Trace.Iast.Aspects;
 
 #nullable enable
 
+[DuckType("MimeKit.TextPart", "MimeKit")]
 internal interface IMimeKitTextPart
 {
     string Text { get; set; }
