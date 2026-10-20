@@ -5,7 +5,10 @@ add_library(glibc217-compat OBJECT
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/glibc217-compat/glibc217-compat.c
 )
 
-set_target_properties(glibc217-compat PROPERTIES POSITION_INDEPENDENT_CODE 1)
+set_target_properties(glibc217-compat PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+        C_VISIBILITY_PRESET hidden
+)
 
 # PRIVATE: -std=c11 is for this C file only, not for C++ consumers that link it.
 target_compile_options(glibc217-compat PRIVATE
