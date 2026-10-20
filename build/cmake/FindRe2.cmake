@@ -31,6 +31,22 @@ if (ISMACOS)
     set_property(TARGET re2 PROPERTY JOB_SERVER_AWARE TRUE)
 
 elseif(ISLINUX)
+    set(RE2_CXXFLAGS "-O3 -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
+    set(RE2_TOOLCHAIN_ENV)
+
+    if (USE_GLIBC217_SYSROOT)
+        # ExternalProject does not automatically inherit CMake's toolchain flags.
+        # Preserve the glibc217 C++ include paths and compiler target, and make any
+        # executable/shared-library links performed by re2 use the frozen sysroot.
+        set(RE2_CFLAGS "${CMAKE_C_FLAGS} --target=${CMAKE_C_COMPILER_TARGET} -O3 -g -fPIC")
+        set(RE2_CXXFLAGS "${CMAKE_CXX_FLAGS} --target=${CMAKE_CXX_COMPILER_TARGET} ${RE2_CXXFLAGS}")
+        string(STRIP "${RE2_CFLAGS}" RE2_CFLAGS)
+        string(STRIP "${RE2_CXXFLAGS}" RE2_CXXFLAGS)
+        list(APPEND RE2_TOOLCHAIN_ENV
+            "CFLAGS=${RE2_CFLAGS}"
+            "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}")
+    endif()
+
     # Pass CC/CXX explicitly — re2's Makefile doesn't inherit the compiler from CMake.
     ExternalProject_Add(re2
         DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
@@ -39,7 +55,13 @@ elseif(ISLINUX)
         CONFIGURE_COMMAND ""
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE TRUE
-        BUILD_COMMAND ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env
+                      "CC=${CMAKE_C_COMPILER}"
+                      "CXX=${CMAKE_CXX_COMPILER}"
+                      "ARFLAGS=-r -s -c"
+                      "CXXFLAGS=${RE2_CXXFLAGS}"
+                      ${RE2_TOOLCHAIN_ENV}
+                      $(MAKE) -j
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )
 endif()
