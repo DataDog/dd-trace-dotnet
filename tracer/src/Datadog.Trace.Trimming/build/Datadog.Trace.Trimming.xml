@@ -727,6 +727,7 @@
       <type fullname="System.EventHandler" />
       <type fullname="System.EventHandler`1" />
       <type fullname="System.Exception" />
+      <type fullname="System.FieldAccessException" />
       <type fullname="System.FlagsAttribute" />
       <type fullname="System.FormatException" />
       <type fullname="System.FormattableString" />
@@ -776,6 +777,7 @@
       <type fullname="System.IO.File" />
       <type fullname="System.IO.FileAccess" />
       <type fullname="System.IO.FileInfo" />
+      <type fullname="System.IO.FileLoadException" />
       <type fullname="System.IO.FileMode" />
       <type fullname="System.IO.FileNotFoundException" />
       <type fullname="System.IO.FileOptions" />
@@ -804,7 +806,9 @@
       <type fullname="System.Memory`1" />
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
+      <type fullname="System.MissingFieldException" />
       <type fullname="System.MissingMemberException" />
+      <type fullname="System.MissingMethodException" />
       <type fullname="System.MulticastDelegate" />
       <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
@@ -973,6 +977,7 @@
       <type fullname="System.StringComparison" />
       <type fullname="System.StringSplitOptions" />
       <type fullname="System.Text.Decoder" />
+      <type fullname="System.Text.DecoderFallbackException" />
       <type fullname="System.Text.Encoder" />
       <type fullname="System.Text.EncoderFallbackException" />
       <type fullname="System.Text.Encoding" />
@@ -1227,6 +1232,7 @@
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">
       <type fullname="System.Threading.ThreadPool" />
+      <type fullname="System.Threading.WaitCallback" />
    </assembly>
    <assembly fullname="System.Threading.Timer">
       <type fullname="System.Threading.Timer" />

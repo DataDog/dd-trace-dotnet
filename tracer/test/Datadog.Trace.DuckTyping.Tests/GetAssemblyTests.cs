@@ -75,6 +75,13 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void VisibleTargetsFromTheSameAssemblyShareTheDynamicModuleBuilder()
         {
+            // AOT proxies come from the generated registry, so no dynamic assembly is created. Return instead of skipping:
+            // the full-suite parity check runs this suite in both modes and requires identical outcomes.
+            if (DuckType.RuntimeMode == DuckTypeRuntimeMode.Aot)
+            {
+                return;
+            }
+
             // Replaces the exact global assembly count, which depended on the whole test inventory:
             // proxies for visible targets must reuse their target assembly's module builder instead of
             // creating a dynamic assembly each.
