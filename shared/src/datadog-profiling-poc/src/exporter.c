@@ -23,6 +23,13 @@ struct ddog_prof_exporter {
     ddog_vec_tag tags;      // owned deep copy of the tags passed to _new
     uint64_t timeout_ms;
     CURL* curl; // reused across send_blocking calls
+    // Non-NULL (and url == "http://localhost/profiling/v1/input") when the
+    // agent endpoint was a "unix://<socket path>" URL: the profiling traffic
+    // then goes over a Unix domain socket instead of TCP. See the AGENT branch
+    // of ddog_prof_exporter_new() - matches libdatadog's handling of unix://
+    // agent URLs (its connector decodes the socket path from the internal URL
+    // and connects over it, while the request targets /profiling/v1/input).
+    char* unix_socket_path; // owned, NUL-terminated
 };
 
 // libcurl needs curl_global_init() once per process before any use. Not
@@ -84,23 +91,61 @@ ddog_error_code ddog_prof_exporter_new(ddog_charslice profiling_library_name, dd
     if (endpoint->kind == DDOG_POC_PROF_ENDPOINT_AGENT)
     {
         ddog_charslice base = endpoint->url_or_site;
-        size_t base_len = base.len;
-        if (base_len > 0 && base.ptr[base_len - 1] == '/')
-        {
-            base_len -= 1;
-        }
 
-        static const char* suffix = "/profiling/v1/input";
-        size_t suffix_len = strlen(suffix);
-        exp->url = (char*)malloc(base_len + suffix_len + 1);
-        if (exp->url == NULL)
+        // "unix://<absolute socket path>" (as produced by the profiler, e.g.
+        // "unix:///var/run/datadog/apm.socket" or DD_TRACE_AGENT_URL): connect
+        // to the Unix domain socket instead of TCP. libcurl supports this via
+        // CURLOPT_UNIX_SOCKET_PATH, but still requires a well-formed HTTP URL
+        // for the request - the host is never resolved or connected to, so use
+        // "localhost" as a placeholder and send the request to the normal
+        // profiling path, exactly like libdatadog's UDS connector does.
+        static const char* unix_prefix = "unix://";
+        size_t unix_prefix_len = strlen(unix_prefix);
+        if (base.len >= unix_prefix_len && memcmp(base.ptr, unix_prefix, unix_prefix_len) == 0)
         {
-            ddog_prof_exporter_drop((ddog_prof_exporter*)exp);
-            return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build agent url");
+            size_t path_len = base.len - unix_prefix_len;
+            exp->unix_socket_path = (char*)malloc(path_len + 1);
+            if (exp->unix_socket_path == NULL)
+            {
+                ddog_prof_exporter_drop((ddog_prof_exporter*)exp);
+                return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to copy the agent unix socket path");
+            }
+            if (path_len > 0)
+            {
+                memcpy(exp->unix_socket_path, base.ptr + unix_prefix_len, path_len);
+            }
+            exp->unix_socket_path[path_len] = '\0';
+
+            static const char* uds_url = "http://localhost/profiling/v1/input";
+            size_t uds_url_len = strlen(uds_url);
+            exp->url = (char*)malloc(uds_url_len + 1);
+            if (exp->url == NULL)
+            {
+                ddog_prof_exporter_drop((ddog_prof_exporter*)exp);
+                return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build agent url");
+            }
+            memcpy(exp->url, uds_url, uds_url_len + 1);
         }
-        memcpy(exp->url, base.ptr, base_len);
-        memcpy(exp->url + base_len, suffix, suffix_len);
-        exp->url[base_len + suffix_len] = '\0';
+        else
+        {
+            size_t base_len = base.len;
+            if (base_len > 0 && base.ptr[base_len - 1] == '/')
+            {
+                base_len -= 1;
+            }
+
+            static const char* suffix = "/profiling/v1/input";
+            size_t suffix_len = strlen(suffix);
+            exp->url = (char*)malloc(base_len + suffix_len + 1);
+            if (exp->url == NULL)
+            {
+                ddog_prof_exporter_drop((ddog_prof_exporter*)exp);
+                return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build agent url");
+            }
+            memcpy(exp->url, base.ptr, base_len);
+            memcpy(exp->url + base_len, suffix, suffix_len);
+            exp->url[base_len + suffix_len] = '\0';
+        }
     }
     else // DDOG_POC_PROF_ENDPOINT_AGENTLESS
     {
@@ -174,6 +219,7 @@ void ddog_prof_exporter_drop(ddog_prof_exporter* exporter)
         curl_easy_cleanup(exp->curl);
     }
     free(exp->url);
+    free(exp->unix_socket_path);
     free(exp->api_key);
     free(exp->library_name);
     free(exp->library_version);
@@ -470,6 +516,12 @@ ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, d
     curl_easy_setopt(exp->curl, CURLOPT_USERAGENT, user_agent);
     curl_easy_setopt(exp->curl, CURLOPT_TIMEOUT_MS, (long)exp->timeout_ms);
     curl_easy_setopt(exp->curl, CURLOPT_NOSIGNAL, 1L);
+    if (exp->unix_socket_path != NULL)
+    {
+        // unix:// agent endpoint: route the connection to the Unix domain
+        // socket instead of TCP (the URL host is a placeholder, see _new).
+        curl_easy_setopt(exp->curl, CURLOPT_UNIX_SOCKET_PATH, exp->unix_socket_path);
+    }
 
     CURLcode res = curl_easy_perform(exp->curl);
 
