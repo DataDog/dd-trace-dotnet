@@ -83,7 +83,7 @@ public:
     auto& GetExplorationTestLineProbes(const WSTRING& filename);
     DebuggerRejitPreprocessor* GetPreprocessor();
     ModuleLoadProbeTransaction BeginModuleLoadProbeTransaction();
-    void RequestRejitForLoadedModule(const ModuleIDWithLifetime& module, ModuleLoadProbeTransaction transaction);
+    ULONG RequestRejitForLoadedModule(const ModuleIDWithLifetime& module, ModuleLoadProbeTransaction transaction);
 
     void ModuleLoadFinished_AddMetadataToModule(const ModuleIDWithLifetime& module);
 

@@ -204,7 +204,6 @@ public:
     FunctionInfo* GetFunctionInfo();
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
-    bool GetRejitRequestsForInlinersInModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests);
     MethodRewriter* GetMethodRewriter();
 
     virtual ~RejitHandlerModuleMethod() = default;
@@ -226,10 +225,6 @@ private:
     std::unique_ptr<ModuleMetadata> m_metadata;
     std::mutex m_methods_lock;
     std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
-    std::vector<RejitHandlerModuleMethod*> m_newMethods;
-
-    std::mutex m_ngenProcessedInlinerModulesLock;
-    std::unordered_map<ModuleID, bool> m_ngenProcessedInlinerModules;
 
     RejitHandler* m_handler;
 
@@ -245,13 +240,6 @@ public:
                                  RejitHandlerModuleMethodUpdaterFunc updater);
     bool ContainsMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
-    std::vector<RejitHandlerModuleMethod*> TakeNewMethods();
-
-    // newMethods must belong to this module.
-    void GetRejitRequestsForInlinersInModules(const std::vector<ModuleID>& inlinerModules,
-                                              const std::vector<RejitHandlerModuleMethod*>& newMethods,
-                                              std::vector<RejitRequest>& rejitRequests);
-    void RemoveProcessedInlinerModule(ModuleID moduleId);
 };
 
 class Rejitter;
@@ -269,16 +257,13 @@ private:
     std::atomic_bool m_shutdown = {false};
     Lock m_shutdown_lock;
 
-    // Set after a method is added to a RejitHandlerModule's new methods, so EnqueueRejitForNGenInliners can skip
-    // the NGen lookup when nothing was instrumented since its last call.
-    std::atomic_bool m_hasNewMethods = {false};
-
     AssemblyProperty* m_pCorAssemblyProperty = nullptr;
 
     ICorProfilerInfo7* m_profilerInfo;
     ICorProfilerInfo10* m_profilerInfo10;
 
     std::shared_ptr<RejitWorkOffloader> m_work_offloader;
+    NGenInlinerTracker m_ngenInliners;
 
     std::mutex m_module_cleanup_lock;
     Lock m_module_lifetimes_lock;
@@ -295,9 +280,6 @@ private:
     std::vector<std::tuple<ModuleID, mdMethodDef>> m_rejit_history;
     bool enable_rejit_tracking = false;
 
-    void EnqueueNGenInlinersForRejit(std::vector<RejitRequest> rejitRequests,
-                                     std::shared_ptr<std::promise<void>> promise = nullptr);
-
 public:
     RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader, bool isDesktopClr);
     RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader, bool isDesktopClr);
@@ -309,7 +291,7 @@ public:
     bool GetEnableCallTargetStateByRef();
     bool GetEnableByRefInstrumentation();
 
-    void RequestRejit(const std::vector<RejitRequest>& rejitRequests, bool callRevertExplicitly = false);
+    void RequestRejit(std::vector<RejitRequest> rejitRequests, bool callRevertExplicitly = false);
     bool Enqueue(std::unique_ptr<RejitWorkItem>&& item);
     void EnqueueForRejit(std::vector<RejitRequest> rejitRequests,
                          std::shared_ptr<std::promise<void>> promise = nullptr,
@@ -335,12 +317,11 @@ public:
 
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
     void RemoveModule(ModuleID moduleId);
-    void AddNGenInlinerModule(ModuleID moduleId);
-    // Desktop CLR only, and only from a CLR callback: the ReJIT worker has no AppDomain, and the CLR rejects the
-    // lookup on other managed threads with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE. Looks up the NGen inliners of the
-    // methods instrumented since the last NGen inliner replay, and enqueues one ReJIT for them. The future is set
-    // once that ReJIT was requested.
-    std::optional<std::future<void>> EnqueueRejitForNGenInliners();
+
+    // See NGenInlinerTracker.
+    void RecordNGenModule(const ModuleIDWithLifetime& module);
+    std::optional<std::future<void>> EnqueueNGenInlinersAfterModuleLoad(bool loadContributed);
+    void TryEnqueueNGenInliners();
 
     void SetRejitTracking(bool enabled);
     bool HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef);

@@ -689,7 +689,7 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
     std::vector<RejitRequest> rejitRequests;
     const auto module = m_rejitHandler->GetModuleWithLifetime(calleeModuleId);
     auto method = JITProcessMethod(calleeModuleId, calleeMethodId, nullptr, &module, &rejitRequests);
-    m_rejitHandler->RequestRejit(rejitRequests);
+    m_rejitHandler->RequestRejit(std::move(rejitRequests));
     if (method)
     {
         return method->IsInlineEnabled();
@@ -710,7 +710,7 @@ bool Dataflow::JITCompilationStarted(const trace::ModuleIDWithLifetime& module, 
         method = JITProcessMethod(module.id, methodId, nullptr, &module, &rejitRequests);
     }
 
-    m_rejitHandler->RequestRejit(rejitRequests);
+    m_rejitHandler->RequestRejit(std::move(rejitRequests));
     return method != nullptr;
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId,
@@ -847,12 +847,6 @@ bool Dataflow::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
     return false;
 }
 void Dataflow::RemoveModule(ModuleID moduleId)
-{
-}
-void Dataflow::AddNGenInlinerModule(ModuleID moduleId, std::vector<trace::RejitRequest>& rejitRequests)
-{
-}
-void Dataflow::GetNGenInlinerRejitRequests(std::vector<trace::RejitRequest>& rejitRequests)
 {
 }
 

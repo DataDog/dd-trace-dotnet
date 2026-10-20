@@ -42,8 +42,6 @@ public:
     virtual RejitHandlerModule* GetOrAddModule(ModuleID moduleId) = 0;
     virtual bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) = 0;
     virtual void RemoveModule(ModuleID moduleId) = 0;
-    virtual void AddNGenInlinerModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests) = 0;
-    virtual void GetNGenInlinerRejitRequests(std::vector<RejitRequest>& rejitRequests) = 0;
 
     virtual HRESULT RejitMethod(FunctionControlWrapper& functionControl) = 0;
 };
@@ -58,7 +56,6 @@ class RejitPreprocessor : public Rejitter
 protected:
     CorProfiler* m_corProfiler;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
-    const bool m_isDesktopClr;
 
     void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                             ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
@@ -98,14 +95,9 @@ protected:
                                   const std::vector<RejitRequestDefinition>& definitions,
                                   std::vector<RejitRequest>& rejitRequests);
 
-    // The caller must hold the lifetime of moduleId.
-    void GetNGenInlinerRejitRequestsForNewMethods(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests);
-
 protected:
     std::mutex m_modules_lock;
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
-    std::mutex m_ngenInlinersModules_lock;
-    std::vector<ModuleID> m_ngenInlinersModules;
 
 public:
     RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
@@ -115,8 +107,6 @@ public:
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId) override;
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
     void RemoveModule(ModuleID moduleId) override;
-    void AddNGenInlinerModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests) override;
-    void GetNGenInlinerRejitRequests(std::vector<RejitRequest>& rejitRequests) override;
     HRESULT RejitMethod(FunctionControlWrapper& functionControl) override;
 
     void EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,

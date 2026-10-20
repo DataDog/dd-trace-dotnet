@@ -527,11 +527,12 @@ void __stdcall CorProfiler::NativeLog(int32_t level, const WCHAR* message, int32
     }
 }
 
-void WaitForPendingRejit(std::optional<std::future<ULONG>>& pending_rejit)
+// Returns whether the batch requested a method, or may have (on timeout).
+bool WaitForPendingRejit(std::optional<std::future<ULONG>>& pending_rejit)
 {
     if (!pending_rejit.has_value())
     {
-        return;
+        return false;
     }
 
     const auto status = pending_rejit->wait_for(200ms);
@@ -540,11 +541,13 @@ void WaitForPendingRejit(std::optional<std::future<ULONG>>& pending_rejit)
     {
         const auto& numReJITs = pending_rejit->get();
         DBG("Total number of ReJIT Requested: ", numReJITs);
+        return numReJITs > 0;
     }
     else
     {
         Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue "
                      "asynchronously, but some initial calls may not be instrumented");
+        return true;
     }
 }
 
@@ -595,6 +598,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     std::vector<ModuleID> deferred_module_ids;
     std::optional<std::future<ULONG>> module_rejit;
     std::optional<std::future<ULONG>> deferred_modules_rejit;
+    bool load_contributed = false;
     ModuleIDWithLifetime module{module_id, nullptr};
 
     {
@@ -612,6 +616,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         if (module.lifetime == nullptr)
         {
             return S_OK;
+        }
+
+        // Records the module without a lookup: lookups never run under module_ids. Done before this module's
+        // batches are enqueued, so the .NET Core worker checks it in them. Only the flags are read: GetModuleInfo
+        // fails for paths longer than its buffer, and those images can inline instrumented methods too.
+        DWORD module_flags = 0;
+        if (SUCCEEDED(this->info_->GetModuleInfo2(module_id, nullptr, 0, nullptr, nullptr, nullptr, &module_flags)) &&
+            (module_flags & COR_PRF_MODULE_NGEN) != 0)
+        {
+            rejit_handler->RecordNGenModule(module);
+            load_contributed = true;
         }
 
         if (debugger_instrumentation_requester != nullptr)
@@ -662,16 +677,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     if (debugger_instrumentation_requester != nullptr && debuggerProbeTransaction.has_value())
     {
-        debugger_instrumentation_requester->RequestRejitForLoadedModule(
-            module, std::move(*debuggerProbeTransaction));
+        load_contributed |= debugger_instrumentation_requester->RequestRejitForLoadedModule(
+                                module, std::move(*debuggerProbeTransaction)) > 0;
     }
 
-    WaitForPendingRejit(module_rejit);
-    WaitForPendingRejit(deferred_modules_rejit);
+    // This module's own batches first: they request its methods before its code runs, and they record the
+    // instrumented methods whose precompiled callers the lookup below finds.
+    load_contributed |= WaitForPendingRejit(module_rejit);
+    load_contributed |= WaitForPendingRejit(deferred_modules_rejit);
 
-    // On .NET Core, the worker adds the precompiled inliners of the methods instrumented above to their batch, so
-    // the waits above cover them. On .NET Framework it can't look them up, so wait for their ReJIT here instead.
-    const auto ngen_inliners_rejit = rejit_handler->EnqueueRejitForNGenInliners();
+    // Then the callers. A CLR callback, so the lookup is allowed here on both runtimes; outside module_ids and any
+    // lease, so it may wait for another lookup.
+    const auto ngen_inliners_rejit = rejit_handler->EnqueueNGenInlinersAfterModuleLoad(load_contributed);
     if (ngen_inliners_rejit.has_value() && ngen_inliners_rejit->wait_for(200ms) == std::future_status::timeout)
     {
         Logger::Warn("Timeout while waiting for the rejit requests of NGen inliners to be processed. Rejit will "
@@ -743,13 +760,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, std::boolalpha,
         " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
         " | IsResource = ", module_info.IsResource(), std::noboolalpha);
-
-    if (module_info.IsNGEN())
-    {
-        // We check if the Module contains NGEN images and added to the
-        // rejit handler list to verify the inlines.
-        rejit_handler->AddNGenInlinerModule(module_id);
-    }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
 
@@ -4495,6 +4505,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    // Looks up the precompiled callers of methods instrumented after the callers' module loaded, and finishes
+    // lookups that stopped early. A CLR callback, so the lookup is allowed, but it never waits: the runtime may hold
+    // JIT locks here. Modules aren't recorded here: each NGen or ReadyToRun module was recorded when it loaded.
+    if (rejit_handler != nullptr)
+    {
+        rejit_handler->TryEnqueueNGenInliners();
+    }
+
     // Extract Module metadata
     ModuleID module_id;
     mdToken function_token = mdTokenNil;
@@ -4527,13 +4545,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     auto& modules = modulesOpt.value();
-
-    // Call RequestRejitOrRevert for register inliners and current NGEN module.
-    if (rejit_handler != nullptr)
-    {
-        // Process the current module to detect inliners.
-        rejit_handler->AddNGenInlinerModule(module_id);
-    }
 
     // Check for Dataflow call site instrumentation
     if (_dataflow != nullptr && !_dataflow->IsInlineEnabled(module_id, function_token))

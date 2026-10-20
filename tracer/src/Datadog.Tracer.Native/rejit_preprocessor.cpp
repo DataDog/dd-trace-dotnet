@@ -33,8 +33,7 @@ RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corPro
                                                              RejitterPriority priority) :
     Rejitter(rejit_handler, priority),
     m_corProfiler(corProfiler),
-    m_rejit_handler(std::move(rejit_handler)),
-    m_isDesktopClr(GetRuntimeInformation(m_rejit_handler->GetCorProfilerInfo()).is_desktop())
+    m_rejit_handler(std::move(rejit_handler))
 {
 }
 
@@ -44,10 +43,8 @@ void RejitPreprocessor<RejitRequestDefinition>::Shutdown()
     DBG("RejitPreprocessor::Shutdown");
 
     std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
-    std::lock_guard<std::mutex> ngenModuleGuard(m_ngenInlinersModules_lock);
 
     m_modules.clear();
-    m_ngenInlinersModules.clear();
 }
 
 template <class RejitRequestDefinition>
@@ -92,123 +89,9 @@ bool RejitPreprocessor<RejitRequestDefinition>::HasModuleAndMethod(ModuleID modu
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
 {
-    // No shutdown early return: AddNGenInlinerModule and GetNGenInlinerRejitRequests hold both locks while passing
-    // every cached ModuleID to the CLR, so taking them here is what keeps an unloading module out of an in-flight
-    // replay.
-
     // Removes the RejitHandlerModule instance
     std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
     m_modules.erase(moduleId);
-
-    // Desktop CLR can reuse the ModuleID for a different NGen image, whose inliners have not been enumerated yet.
-    for (const auto& mod : m_modules)
-    {
-        mod.second->RemoveProcessedInlinerModule(moduleId);
-    }
-
-    // Removes the moduleID from the inliners vector
-    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
-    m_ngenInlinersModules.erase(std::remove(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId),
-                                m_ngenInlinersModules.end());
-}
-
-template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID moduleId,
-                                                                     std::vector<RejitRequest>& rejitRequests)
-{
-    if (m_rejit_handler->IsShutdownRequested())
-    {
-        // If the shutdown was requested, we return.
-        return;
-    }
-
-    // Process the inliner module list ( to catch any incomplete data module )
-    // and also check if the module is already in the inliners list
-    std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
-    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
-
-    if (std::find(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId) == m_ngenInlinersModules.end())
-    {
-        m_ngenInlinersModules.push_back(moduleId);
-    }
-
-    for (const auto& mod : m_modules)
-    {
-        // GetNGenInlinerRejitRequestsForNewMethods leaves Desktop CLR's new methods to this replay.
-        const auto newMethods =
-            m_isDesktopClr ? mod.second->TakeNewMethods() : std::vector<RejitHandlerModuleMethod*>();
-        mod.second->GetRejitRequestsForInlinersInModules(m_ngenInlinersModules, newMethods, rejitRequests);
-    }
-}
-
-// The AddNGenInlinerModule replay without a new NGen module, for the methods ModuleLoadFinished instrumented after
-// its replay. On CoreCLR, GetNGenInlinerRejitRequestsForNewMethods already added their inliners to their own batch.
-template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequests(std::vector<RejitRequest>& rejitRequests)
-{
-    if (!m_isDesktopClr || m_rejit_handler->IsShutdownRequested())
-    {
-        return;
-    }
-
-    std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
-    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
-
-    for (const auto& mod : m_modules)
-    {
-        mod.second->GetRejitRequestsForInlinersInModules(m_ngenInlinersModules, mod.second->TakeNewMethods(),
-                                                         rejitRequests);
-    }
-}
-
-// On CoreCLR, the AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so
-// it never sees methods created afterwards. Add their inliners to the caller's batch so a method and its
-// precompiled callers are rejitted together. On Desktop CLR, the replay checks them instead.
-template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNewMethods(
-    ModuleID moduleId, std::vector<RejitRequest>& rejitRequests)
-{
-    if (m_isDesktopClr)
-    {
-        // Desktop CLR's NGen dependency lookup uses the current AppDomain. The native ReJIT worker has none,
-        // even after InitializeCurrentThread, and can crash in Module::FindDomainFile. AddNGenInlinerModule takes
-        // the new methods in ModuleLoadFinished/JITCachedFunctionSearchStarted instead, and
-        // GetNGenInlinerRejitRequests after ModuleLoadFinished's ReJIT.
-        return;
-    }
-
-    RejitHandlerModule* moduleHandler = nullptr;
-    {
-        std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
-        const auto find_res = m_modules.find(moduleId);
-        if (find_res == m_modules.end())
-        {
-            return;
-        }
-
-        moduleHandler = find_res->second.get();
-    }
-
-    const auto newMethods = moduleHandler->TakeNewMethods();
-    if (newMethods.empty())
-    {
-        return;
-    }
-
-    // AddNGenInlinerModule and RemoveModule change the NGen module list under this lock, so it has to be held while
-    // iterating it. RemoveModule erases an unloading ModuleID, so it also has to be held across the CLR calls.
-    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
-    for (const auto method : newMethods)
-    {
-        for (const auto& inlinerModule : m_ngenInlinersModules)
-        {
-            if (!method->GetRejitRequestsForInlinersInModule(inlinerModule, rejitRequests))
-            {
-                // Let the next AddNGenInlinerModule replay retry the incomplete data.
-                moduleHandler->RemoveProcessedInlinerModule(inlinerModule);
-            }
-        }
-    }
 }
 
 template <class RejitRequestDefinition>
@@ -522,7 +405,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<RejitRe
     {
         if (enqueueInSameThread)
         {
-            m_rejit_handler->RequestRejit(rejitRequests, callRevertExplicitly);
+            m_rejit_handler->RequestRejit(std::move(rejitRequests), callRevertExplicitly);
         }
         else
         {
@@ -646,7 +529,6 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
     }
 
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
-    std::vector<RejitRequest> ngenInlinerRequests;
 
     for (const auto& moduleWithLifetime : modules)
     {
@@ -948,17 +830,9 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
         {
             rejitRequests.emplace_back(moduleWithLifetime, request.methodToken);
         }
-
-        if (!moduleRejitRequests.empty())
-        {
-            GetNGenInlinerRejitRequestsForNewMethods(module, ngenInlinerRequests);
-        }
     }
 
-    const auto rejitCount = (ULONG) rejitRequests.size();
-    rejitRequests.insert(rejitRequests.end(), ngenInlinerRequests.begin(), ngenInlinerRequests.end());
-
-    return rejitCount;
+    return (ULONG) rejitRequests.size();
 }
 
 template <class RejitRequestDefinition>

@@ -911,13 +911,13 @@ DebuggerProbesInstrumentationRequester::BeginModuleLoadProbeTransaction()
     return transaction;
 }
 
-void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(
+ULONG DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(
     const ModuleIDWithLifetime& module, ModuleLoadProbeTransaction transaction)
 {
     if (transaction.methodProbes.empty())
     {
         Logger::Debug("[Debugger] There are no Method Probes");
-        return;
+        return 0;
     }
 
     // The transaction keeps add/remove operations serialized through synchronous preprocessing. RequestReJIT is
@@ -927,6 +927,7 @@ void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(
     // TODO do it also for line probes (scenario: module loaded (line probe request arrived) & unloaded & loaded)
 
     Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
+    return numReJITs;
 }
 
 void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule(const ModuleIDWithLifetime& module)

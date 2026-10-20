@@ -46,97 +46,6 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
     m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
-bool RejitHandlerModuleMethod::GetRejitRequestsForInlinersInModule(ModuleID moduleId,
-                                                                   std::vector<RejitRequest>& rejitRequests)
-{
-    // Enumerate all inliners
-    ModuleID currentModuleId = m_module->GetModuleId();
-    mdMethodDef currentMethodDef = m_methodDef;
-
-    // Let's validate the vars before calling `EnumNgenModuleMethodsInliningThisMethod`
-    if (currentModuleId == NULL ||
-        moduleId == NULL ||
-        currentMethodDef == NULL ||
-        currentMethodDef == mdMethodDefNil)
-    {
-        // we just return true to avoid the retry by the handler.
-        Logger::Warn("NGEN:: EnumNgenModuleMethodsInliningThisMethod call skipped by invalid data.");
-        return true;
-    }
-
-#if DEBUG
-    // We generate this log hundreds of times, and isn't typically useful in escalations
-    Logger::Debug("RejitHandlerModuleMethod::GetRejitRequestsForInlinersInModule for ", "[ModuleInliner=", moduleId,
-                  ", ModuleId=", currentModuleId, ", MethodDef=", currentMethodDef, "]");
-#endif
-
-    RejitHandler* handler = m_module->GetHandler();
-    ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();
-    if (pInfo != nullptr)
-    {
-        // Now we enumerate all methods that inline the current methodDef
-        BOOL incompleteData = false;
-        ComPtr<ICorProfilerMethodEnum> methodEnum;
-
-        HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
-                                                                    &incompleteData, methodEnum.GetAddressOf());
-        std::ostringstream hexValue;
-        hexValue << std::hex << hr;
-        if (SUCCEEDED(hr))
-        {
-            COR_PRF_METHOD method;
-            unsigned int total = 0;
-            std::vector<MethodIdentifier> methods;
-            while (methodEnum->Next(1, &method, nullptr) == S_OK)
-            {
-                DBG("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId, ",MethodDef=", method.methodId, "]");
-                methods.emplace_back(method.moduleId, method.methodId);
-                total++;
-            }
-
-            if (total > 0)
-            {
-                const auto requests = handler->GetRejitRequests(methods);
-                rejitRequests.insert(rejitRequests.end(), requests.begin(), requests.end());
-                Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                              ",MethodDef=", currentMethodDef, "]");
-            }
-
-            if (incompleteData)
-            {
-                Logger::Warn("NGen inliner data for module '", moduleId, "' is incomplete.");
-                return false;
-            }
-        }
-        else if (hr == E_INVALIDARG)
-        {
-            Logger::Info("NGEN:: Error Invalid arguments in [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, ", HR=", hexValue.str(), "]");
-        }
-        else if (hr == CORPROF_E_DATAINCOMPLETE)
-        {
-            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                         ", HR=", hexValue.str(), "]");
-
-            return false;
-        }
-        else if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
-        {
-            Logger::Info("NGEN:: Unsupported call sequence error in [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, ", HR=", hexValue.str(), "]");
-        }
-        else
-        {
-            Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                         ", HR=", hexValue.str(), "]");
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
 MethodRewriter* RejitHandlerModuleMethod::GetMethodRewriter()
 {
     return m_methodRewriter.get();
@@ -200,8 +109,7 @@ bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
 
     auto newModuleInfo = creator(methodDef, this);
     updater(newModuleInfo.get());
-    m_newMethods.push_back(newModuleInfo.get());
-    m_handler->m_hasNewMethods = true;
+    m_handler->m_ngenInliners.RecordMethod(m_handler->GetModuleWithLifetime(m_moduleId), methodDef);
     m_methods[methodDef] = std::move(newModuleInfo);
     return true;
 }
@@ -224,63 +132,6 @@ bool RejitHandlerModule::ContainsMethod(mdMethodDef methodDef)
 {
     std::lock_guard<std::mutex> guard(m_methods_lock);
     return m_methods.find(methodDef) != m_methods.end();
-}
-
-std::vector<RejitHandlerModuleMethod*> RejitHandlerModule::TakeNewMethods()
-{
-    std::vector<RejitHandlerModuleMethod*> newMethods;
-    std::lock_guard<std::mutex> guard(m_methods_lock);
-    newMethods.swap(m_newMethods);
-    return newMethods;
-}
-
-void RejitHandlerModule::GetRejitRequestsForInlinersInModules(const std::vector<ModuleID>& inlinerModules,
-                                                              const std::vector<RejitHandlerModuleMethod*>& newMethods,
-                                                              std::vector<RejitRequest>& rejitRequests)
-{
-    std::lock_guard<std::mutex> moduleGuard(m_ngenProcessedInlinerModulesLock);
-    for (const auto inlinerModule : inlinerModules)
-    {
-        // A module already checked against this NGen module only has to check the methods created since then.
-        if (m_ngenProcessedInlinerModules.find(inlinerModule) != m_ngenProcessedInlinerModules.end())
-        {
-            for (const auto method : newMethods)
-            {
-                if (!method->GetRejitRequestsForInlinersInModule(inlinerModule, rejitRequests))
-                {
-                    // Check every method again in another call.
-                    m_ngenProcessedInlinerModules.erase(inlinerModule);
-                    break;
-                }
-            }
-
-            continue;
-        }
-
-        std::lock_guard<std::mutex> methodsGuard(m_methods_lock);
-        bool success = true;
-        for (const auto& method : m_methods)
-        {
-            success = method.second->GetRejitRequestsForInlinersInModule(inlinerModule, rejitRequests);
-            // If we fail to process a method, we stop the processing and try again in another call.
-            if (!success)
-            {
-                break;
-            }
-        }
-
-        if (success)
-        {
-            // We mark module as processed.
-            m_ngenProcessedInlinerModules[inlinerModule] = true;
-        }
-    }
-}
-
-void RejitHandlerModule::RemoveProcessedInlinerModule(ModuleID moduleId)
-{
-    std::lock_guard<std::mutex> moduleGuard(m_ngenProcessedInlinerModulesLock);
-    m_ngenProcessedInlinerModules.erase(moduleId);
 }
 
 //
@@ -740,11 +591,22 @@ void NGenInlinerTracker::PurgeUnloadedModules()
 // RejitHandler
 //
 
-void RejitHandler::RequestRejit(const std::vector<RejitRequest>& rejitRequests, bool callRevertExplicitly)
+void RejitHandler::RequestRejit(std::vector<RejitRequest> rejitRequests, bool callRevertExplicitly)
 {
     if (IsShutdownRequested() || rejitRequests.empty())
     {
         return;
+    }
+
+    // On the .NET Core worker, the precompiled callers of newly instrumented methods join this batch, so both take one
+    // RequestReJIT. Before taking any lease: m_lookupLock is never acquired while holding one. Other threads skip
+    // this: the .NET Framework worker has no AppDomain to look up in (ModuleLoadFinished requests the callers in a
+    // batch of their own), JIT callbacks must not wait for a lookup, and managed threads would get
+    // CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
+    bool appendedInliners = false;
+    if (!m_isDesktopClr && m_work_offloader->IsWorkerThread())
+    {
+        appendedInliners = m_ngenInliners.AppendInliners(rejitRequests);
     }
 
     std::vector<ModuleID> modulesVector;
@@ -848,6 +710,11 @@ void RejitHandler::RequestRejit(const std::vector<RejitRequest>& rejitRequests, 
             Logger::Warn("Error requesting ReJIT for ", modulesVector.size(), " methods");
         }
     }
+
+    if (appendedInliners)
+    {
+        m_ngenInliners.OnAppendedInlinersRequested();
+    }
 }
 
 void RejitHandler::EnqueueRequestRejit(std::vector<RejitRequest> rejitRequests,
@@ -859,13 +726,21 @@ void RejitHandler::EnqueueRequestRejit(std::vector<RejitRequest> rejitRequests,
 
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader,
                            bool isDesktopClr) :
-    m_isDesktopClr(isDesktopClr), m_profilerInfo(pInfo), m_profilerInfo10(nullptr), m_work_offloader(work_offloader)
+    m_isDesktopClr(isDesktopClr),
+    m_profilerInfo(pInfo),
+    m_profilerInfo10(nullptr),
+    m_work_offloader(work_offloader),
+    m_ngenInliners(this)
 {
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader,
                            bool isDesktopClr) :
-    m_isDesktopClr(isDesktopClr), m_profilerInfo(pInfo), m_profilerInfo10(pInfo), m_work_offloader(work_offloader)
+    m_isDesktopClr(isDesktopClr),
+    m_profilerInfo(pInfo),
+    m_profilerInfo10(pInfo),
+    m_work_offloader(work_offloader),
+    m_ngenInliners(this)
 {
 }
 
@@ -904,7 +779,7 @@ void RejitHandler::EnqueueForRejit(std::vector<RejitRequest> rejitRequests,
     std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise,
                                     callRevertExplicitly = callRevertExplicitly]() mutable {
         // Request ReJIT
-        RequestRejit(requests, callRevertExplicitly);
+        RequestRejit(std::move(requests), callRevertExplicitly);
 
         // Resolve promise
         if (localPromise != nullptr)
@@ -1182,16 +1057,16 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         }
     }
 
+    // NGen inliner lookups and RequestRejit hold leases while passing ModuleIDs to the CLR, so the write lock keeps
+    // ModuleUnloadStarted from returning until they are done.
     std::optional<WriteLock> lifetimeLock;
     if (moduleLifetime != nullptr)
     {
         lifetimeLock.emplace(moduleLifetime->m_lock);
         moduleLifetime->m_unloading = true;
+        m_ngenInliners.OnModuleUnloading();
     }
 
-    // Also required after shutdown is published: an NGen inliner replay that passed its shutdown check can still
-    // be passing this ModuleID to the CLR under the rejitter's module locks. Only the rejitter's RemoveModule
-    // blocks on those locks, which keeps ModuleUnloadStarted from returning until the replay is done.
     Rejitter* prev = nullptr;
     for (size_t x = 0; x < m_rejittersCount; x++)
     {
@@ -1203,67 +1078,19 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
     }
 }
 
-void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
+void RejitHandler::RecordNGenModule(const ModuleIDWithLifetime& module)
 {
-    if (IsShutdownRequested())
-    {
-        return;
-    }
-
-    std::vector<RejitRequest> rejitRequests;
-    Rejitter* prev = nullptr;
-    for (size_t x = 0; x < m_rejittersCount; x++)
-    {
-        const auto current = m_rejitters[x];
-        if (current != prev)
-        {
-            current->AddNGenInlinerModule(moduleId, rejitRequests);
-        }
-    }
-
-    EnqueueNGenInlinersForRejit(std::move(rejitRequests));
+    m_ngenInliners.RecordModule(module);
 }
 
-std::optional<std::future<void>> RejitHandler::EnqueueRejitForNGenInliners()
+std::optional<std::future<void>> RejitHandler::EnqueueNGenInlinersAfterModuleLoad(bool loadContributed)
 {
-    if (!m_hasNewMethods.exchange(false))
-    {
-        return std::nullopt;
-    }
-
-    std::vector<RejitRequest> rejitRequests;
-    Rejitter* prev = nullptr;
-    for (size_t x = 0; x < m_rejittersCount; x++)
-    {
-        const auto current = m_rejitters[x];
-        if (current != prev)
-        {
-            current->GetNGenInlinerRejitRequests(rejitRequests);
-        }
-    }
-
-    if (rejitRequests.empty())
-    {
-        return std::nullopt;
-    }
-
-    auto promise = std::make_shared<std::promise<void>>();
-    auto future = promise->get_future();
-    EnqueueNGenInlinersForRejit(std::move(rejitRequests), std::move(promise));
-    return future;
+    return m_ngenInliners.EnqueueAfterModuleLoad(loadContributed);
 }
 
-void RejitHandler::EnqueueNGenInlinersForRejit(std::vector<RejitRequest> rejitRequests,
-                                               std::shared_ptr<std::promise<void>> promise)
+void RejitHandler::TryEnqueueNGenInliners()
 {
-    // Every RequestReJIT suspends the runtime on .NET Framework, so request the inliners found by every rejitter
-    // at once, and only once each: a method can inline several instrumented methods.
-    std::sort(rejitRequests.begin(), rejitRequests.end());
-    rejitRequests.erase(std::unique(rejitRequests.begin(), rejitRequests.end(),
-                                    [](const RejitRequest& lhs, const RejitRequest& rhs)
-                                    { return !(lhs < rhs) && !(rhs < lhs); }),
-                        rejitRequests.end());
-    EnqueueForRejit(std::move(rejitRequests), std::move(promise));
+    m_ngenInliners.TryEnqueue();
 }
 
 void RejitHandler::SetRejitTracking(bool enabled) {

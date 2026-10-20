@@ -30,7 +30,6 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
     auto pCorAssemblyProperty = m_rejit_handler->GetCorAssemblyProperty();
     auto enable_by_ref_instrumentation = m_rejit_handler->GetEnableByRefInstrumentation();
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
-    std::vector<RejitRequest> ngenInlinerRequests;
 
     for (const auto& moduleWithLifetime : modules)
     {
@@ -153,17 +152,9 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
         {
             rejitRequests.emplace_back(moduleWithLifetime, request.methodToken);
         }
-
-        if (!moduleRejitRequests.empty())
-        {
-            GetNGenInlinerRejitRequestsForNewMethods(module, ngenInlinerRequests);
-        }
     }
 
-    const auto rejitCount = (ULONG) rejitRequests.size();
-    rejitRequests.insert(rejitRequests.end(), ngenInlinerRequests.begin(), ngenInlinerRequests.end());
-
-    return rejitCount;
+    return (ULONG) rejitRequests.size();
 }
 
 void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
