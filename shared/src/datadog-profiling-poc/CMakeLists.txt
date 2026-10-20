@@ -75,7 +75,15 @@ if(NOT curl_POPULATED)
   set(HTTP_ONLY ON)            # disables FTP/LDAP/SMTP/etc - overrides all CURL_DISABLE_* options
   set(CURL_USE_LIBPSL OFF)     # cookie public-suffix-list matching - unused, avoids another dependency
   set(CURL_USE_LIBSSH2 OFF)    # SCP/SFTP - unused
-  set(CURL_ZLIB OFF)           # response content-encoding decompression - unused, we ignore response bodies
+  # Remove dependency to libz.
+  # Use to decompress HTTP payload by curl but not needed for profiler.
+  set(CURL_ZSTD OFF CACHE STRING "" FORCE)
+  set(CURL_BROTLI OFF CACHE STRING "" FORCE)
+
+  # Hack to make sure that the library's glibc requirement is 2.17 (matching
+  # Datadog.Profiler.Native.so, which this is linked next to - see
+  # ValidateNativeProfilerGlibcCompatibility in the nuke build).
+  set(HAVE_FILE_OFFSET_BITS 0 CACHE INTERNAL "curl test: forced off to keep glibc target at 2.17" FORCE)
   set(CURL_DISABLE_INSTALL ON)
   add_subdirectory(${curl_SOURCE_DIR} ${curl_BINARY_DIR})
 endif()
