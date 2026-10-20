@@ -889,12 +889,9 @@ partial class Build
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
 
-            // If we need to increase this version on arm64 later, that is ok as long
-            // as it doesn't go above 2.23. Just update the version below. We must
-            // NOT increase it beyond 2.23, or increase the version on x64.
-            //
-            // See also the ValidateNativeTracerGlibcCompatibility Nuke task and the checks
-            // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
+            // These are compatibility ceilings, not expected exact values. Requiring an
+            // older version is fine; requiring anything newer than the ceiling is not.
+            // See also ValidateNativeTracerGlibcCompatibility.
 
             // On Alpine/aarch64, libdatadog requires those two symbols (they are defined as weak with no implementation).
             // Since the CLR requires them too, it seems safe to accept them.
@@ -902,15 +899,15 @@ partial class Build
             var libdatadogAllowedSymbols = IsArm64 && IsAlpine ? new[] { "__register_frame_info@GLIBC_2.0", "__deregister_frame_info@GLIBC_2.0" } : null;
             var filesAndVersion = new []
             {
-                (FileNames.NativeProfiler, IsArm64 ? new Version(2, 17) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
+                (FileNames.NativeProfiler, new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
                 ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
             var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
-            foreach (var (file, expectedGlibcVersion, allowedSymbols, snapshotPrefix) in filesAndVersion)
+            foreach (var (file, maximumAllowedGlibcVersion, allowedSymbols, snapshotPrefix) in filesAndVersion)
             {
                 var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
-                helper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, snapshotPrefix, allowedSymbols);
+                helper.ValidateNativeLibraryCompatibility(dest, maximumAllowedGlibcVersion, snapshotPrefix, allowedSymbols);
             }
         });
 
