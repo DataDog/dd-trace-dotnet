@@ -17,6 +17,30 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsSettingsTests
 {
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    [InlineData("0", false)]
+    [InlineData("1", true)]
+    [InlineData("not-a-boolean", true)]
+    public void EvaluationEventsUseIndependentDefaultOnKillSwitch(string? configured, bool expected)
+    {
+        var values = new NameValueCollection
+        {
+            [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = "remote_config",
+        };
+        if (configured is not null)
+        {
+            values[ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled] = configured;
+        }
+
+        var settings = new FeatureFlagsSettings(new NameValueConfigurationSource(values), NullConfigurationTelemetry.Instance);
+        settings.EvaluationEventsEnabled.Should().Be(expected);
+        settings.Enabled.Should().BeTrue();
+        settings.Source.Should().Be(FeatureFlagsSource.RemoteConfig);
+    }
+
     // The source-selection contract is shared across tracers, so these cases mirror the
     // system-tests parametric suite (tests/parametric/test_ffe/test_configuration_sources.py).
     // Where configuration would come from and whether Feature Flags run are asserted separately:

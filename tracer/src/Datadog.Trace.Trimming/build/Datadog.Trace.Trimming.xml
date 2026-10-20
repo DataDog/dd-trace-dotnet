@@ -10,6 +10,8 @@
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="AWSSDK.StepFunctions" />
+   <assembly fullname="Azure.Messaging.EventGrid" />
+   <assembly fullname="Azure.Messaging.EventGrid.Namespaces" />
    <assembly fullname="Azure.Messaging.EventHubs" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
@@ -1183,6 +1185,7 @@
    </assembly>
    <assembly fullname="System.Threading">
       <type fullname="System.Threading.AbandonedMutexException" />
+      <type fullname="System.Threading.AsyncFlowControl" />
       <type fullname="System.Threading.AsyncLocal`1" />
       <type fullname="System.Threading.AsyncLocalValueChangedArgs`1" />
       <type fullname="System.Threading.AutoResetEvent" />

@@ -263,4 +263,28 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     public void RecordCountIastSuppressedVulnerabilities(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
     }
+
+    public void RecordCountFlagEvaluationRowsDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationDropReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountFlagEvaluationRowsDegraded(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationDegradeReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountFlagEvaluationPayloadSplits(int increment = 1)
+    {
+    }
+
+    public void RecordCountFlagEvaluationContextTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationContextReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountFlagEvaluationTargetingKeyOmitted(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationTargetingReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountFlagEvaluationHookErrors(int increment = 1)
+    {
+    }
 }

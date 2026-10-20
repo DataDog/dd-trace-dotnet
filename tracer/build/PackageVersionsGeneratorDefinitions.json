@@ -15,13 +15,14 @@
     "SampleProjectName": "Samples.Quartz",
     "NugetPackageSearchName": "Quartz",
     "MinVersion": "3.1.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "4.0.0",
-      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0", "net11.0"]
+      "IncludeOnlyTargetFrameworks": ["net10.0", "net11.0"]
     }]
   },
   {
@@ -603,17 +604,22 @@
     "SampleProjectName": "Samples.NUnitTests",
     "NugetPackageSearchName": "NUnit",
     "MinVersion": "3.6.0",
-    "MaxVersionExclusive": "5.0.0",
+    "MaxVersionExclusive": "6.0.0",
     "SpecificVersions": [
       "3.6.*",
       "3.10.*",
       "3.*.*",
-      "4.*.*"
+      "4.*.*",
+      "5.*.*"
     ],
     "VersionConditions": [
       {
         "MinVersion": "4.0.0",
         "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      },
+      {
+        "MinVersion": "5.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0" ]
       }
     ]
   },
@@ -644,17 +650,22 @@
     "SampleProjectName": "Samples.NUnitTestsRetries",
     "NugetPackageSearchName": "NUnit",
     "MinVersion": "3.6.0",
-    "MaxVersionExclusive": "5.0.0",
+    "MaxVersionExclusive": "6.0.0",
     "SpecificVersions": [
       "3.6.*",
       "3.10.*",
       "3.*.*",
-      "4.*.*"
+      "4.*.*",
+      "5.*.*"
     ],
     "VersionConditions": [
       {
         "MinVersion": "4.0.0",
         "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      },
+      {
+        "MinVersion": "5.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0" ]
       }
     ]
   },
@@ -1001,6 +1012,28 @@
     "SpecificVersions": [
       "5.11.*",
       "5.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "SampleProjectName": "Samples.AzureEventGrid",
+    "NugetPackageSearchName": "Azure.Messaging.EventGrid",
+    "MinVersion": "4.0.0",
+    "MaxVersionExclusive": "6.0.0",
+    "SpecificVersions": [
+      "4.0.*",
+      "5.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "AzureEventGridNamespaces",
+    "SampleProjectName": "Samples.AzureEventGridNamespaces",
+    "NugetPackageSearchName": "Azure.Messaging.EventGrid.Namespaces",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.0.*",
+      "1.*.*"
     ]
   },
   {

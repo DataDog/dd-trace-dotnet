@@ -54,6 +54,8 @@ namespace Datadog.Trace.FeatureFlags
 
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
+            // Capture before evaluating: even an exception after a configuration update keeps this consent.
+            var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
             try
             {
                 var config = _config;
@@ -66,7 +68,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "PROVIDER_NOT_READY",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "PROVIDER_NOT_READY"
+                            ["errorCode"] = "PROVIDER_NOT_READY",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -81,7 +84,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "FLAG_NOT_FOUND",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "FLAG_NOT_FOUND"
+                            ["errorCode"] = "FLAG_NOT_FOUND",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -94,7 +98,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "PARSE_ERROR",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "PARSE_ERROR"
+                            ["errorCode"] = "PARSE_ERROR",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -103,7 +108,11 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.Disabled);
+                        EvaluationReason.Disabled,
+                        metadata: new Dictionary<string, string>
+                        {
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        });
                 }
 
                 if (flag.VariationType != resultType)
@@ -115,7 +124,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "TYPE_MISMATCH",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "TYPE_MISMATCH"
+                            ["errorCode"] = "TYPE_MISMATCH",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -124,7 +134,11 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.Default);
+                        EvaluationReason.Default,
+                        metadata: new Dictionary<string, string>
+                        {
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        });
                 }
 
                 var now = DateTime.UtcNow;
@@ -187,7 +201,7 @@ namespace Datadog.Trace.FeatureFlags
                                            : hadShards ? EvaluationReason.Split
                                            : EvaluationReason.Static;
 
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent);
                             }
                         }
                     }
@@ -197,7 +211,11 @@ namespace Datadog.Trace.FeatureFlags
                 return new Evaluation(
                     flagKey,
                     defaultValue,
-                    EvaluationReason.Default);
+                    EvaluationReason.Default,
+                    metadata: new Dictionary<string, string>
+                    {
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                    });
             }
             catch (FormatException ex)
             {
@@ -209,7 +227,8 @@ namespace Datadog.Trace.FeatureFlags
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = ex.Message
+                        ["message"] = ex.Message,
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
             catch (MissingTargetingKeyException)
@@ -221,7 +240,8 @@ namespace Datadog.Trace.FeatureFlags
                     error: "TARGETING_KEY_MISSING",
                     metadata: new Dictionary<string, string>
                     {
-                        ["errorCode"] = "TARGETING_KEY_MISSING"
+                        ["errorCode"] = "TARGETING_KEY_MISSING",
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
             catch (Exception ex)
@@ -234,7 +254,8 @@ namespace Datadog.Trace.FeatureFlags
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "GENERAL",
-                        ["message"] = ex.Message
+                        ["message"] = ex.Message,
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
         }
@@ -672,7 +693,8 @@ namespace Datadog.Trace.FeatureFlags
             Allocation allocation,
             EvaluationReason reason,
             DateTime evalTime,
-            EvaluationContext? context)
+            EvaluationContext? context,
+            string consent)
         {
             var variationKey = split.VariationKey!;
 
@@ -696,6 +718,7 @@ namespace Datadog.Trace.FeatureFlags
             var metadata = new Dictionary<string, string>
             {
                 [MetadataAllocationKey] = allocation.Key,
+                [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
             };
 
             // do_log and the split serial id are only consumed by APM span enrichment, so emit them
@@ -735,7 +758,8 @@ namespace Datadog.Trace.FeatureFlags
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = error
+                        ["message"] = error,
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
         }
