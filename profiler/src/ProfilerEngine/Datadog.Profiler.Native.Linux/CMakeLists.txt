@@ -171,7 +171,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     spdlog-headers
     -static-libgcc
     -static-libstdc++
-    -lstdc++fs
+    ${DD_CXX_FILESYSTEM_LIBRARIES}
     -pthread
     -ldl
     -Wl,--build-id=sha1
