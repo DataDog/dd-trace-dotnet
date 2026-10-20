@@ -1,4 +1,4 @@
-// <copyright file="Tags.cs" company="Datadog">
+﻿// <copyright file="Tags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -642,25 +642,34 @@ namespace Datadog.Trace
         /// </summary>
         internal const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 
-        /// <summary>
-        /// The type of trigger for an azure function
-        /// </summary>
-        internal const string AzureFunctionTriggerType = "aas.function.trigger";
+        // NOTE: unlike every other tag in this file, the four Azure Functions constants below are
+        // key *suffixes*, not complete tag keys. They are combined with an environment-dependent
+        // prefix ("aas." in Azure App Service, "aca." in Azure Container Apps) by AzureFunctionsTags.
+        // Never use them directly as tag keys - doing so emits an unprefixed tag.
 
         /// <summary>
-        /// The UI name of the azure function
+        /// The type of trigger for an azure function.
+        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
         /// </summary>
-        internal const string AzureFunctionName = "aas.function.name";
+        internal const string AzureFunctionTriggerType = "function.trigger";
 
         /// <summary>
-        /// The full method name of the azure function
+        /// The UI name of the azure function.
+        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
         /// </summary>
-        internal const string AzureFunctionMethod = "aas.function.method";
+        internal const string AzureFunctionName = "function.name";
 
         /// <summary>
-        /// The literal type of the binding for the azure function trigger
+        /// The full method name of the azure function.
+        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
         /// </summary>
-        internal const string AzureFunctionBindingSource = "aas.function.binding";
+        internal const string AzureFunctionMethod = "function.method";
+
+        /// <summary>
+        /// The literal type of the binding for the azure function trigger.
+        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
+        /// </summary>
+        internal const string AzureFunctionBindingSource = "function.binding";
 
         /// <summary>
         /// Configures the origin of the trace. This tag is added during MessagePack serialization

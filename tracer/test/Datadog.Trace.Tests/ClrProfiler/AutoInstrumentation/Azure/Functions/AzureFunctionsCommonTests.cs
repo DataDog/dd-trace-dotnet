@@ -1,4 +1,4 @@
-// <copyright file="AzureFunctionsCommonTests.cs" company="Datadog">
+﻿// <copyright file="AzureFunctionsCommonTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -31,6 +36,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
 #pragma warning restore SA1403
 
+    [TracerRestorer]
     public class AzureFunctionsCommonTests
     {
         [Fact]
@@ -131,6 +137,33 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         public void DurableEnsureTraceParentSampledFlag_PreservesOtherFlagsAndInvalidInput(string traceParent, string expected)
         {
             AzureFunctionsDurablePropagation.EnsureTraceParentSampledFlag(traceParent).Should().Be(expected);
+        }
+
+        // Guards the wiring between TracerSettings.IsRunningInAzureContainerApps and the tag
+        // prefix actually emitted. The tag-level tests take the bool directly, so without this a
+        // refactor could disconnect detection from construction and both suites would still pass.
+        [Theory]
+        [InlineData(null, "aas.")]
+        [InlineData("my-container-app", "aca.")]
+        public async Task OnIsolatedFunctionBegin_TagPrefixFollowsContainerAppsDetection(string? containerAppName, string prefix)
+        {
+            var collection = new NameValueCollection { { PlatformKeys.AzureAppService.ContainerAppName, containerAppName } };
+            var settings = new TracerSettings(new NameValueConfigurationSource(collection));
+
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            var functionContext = CreateMockFunctionContext("httpTrigger");
+
+            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(functionContext);
+
+            var scope = state.Scope;
+            scope.Should().NotBeNull();
+
+            var tags = scope!.Span.Tags;
+            tags.GetTag(prefix + "function.name").Should().Be("TestFunction");
+            tags.GetTag(prefix + "function.method").Should().Be("Tests.TestFunction.Run");
+            tags.GetTag(prefix + "function.trigger").Should().Be("Http");
         }
 
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)

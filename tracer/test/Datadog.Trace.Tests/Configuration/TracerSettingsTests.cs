@@ -841,6 +841,18 @@ namespace Datadog.Trace.Tests.Configuration
             settings.IsRunningInAzureFunctions.Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData("my-container-app", true)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        public void IsRunningInAzureContainerApps(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.ContainerAppName, value));
+            var settings = new TracerSettings(source);
+
+            settings.IsRunningInAzureContainerApps.Should().Be(expected);
+        }
+
         // The HttpClientExcludedUrlSubstrings tests rely on Lambda.Create() which uses environment variables
         // See TracerSettingsServerlessTests for tests which rely on environment variables
 

@@ -20,28 +20,12 @@ namespace Datadog.Trace.Tagging
         // InstrumentationNameBytes = MessagePack.Serialize("component");
         private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
 
-        // ShortNameBytes = MessagePack.Serialize("aas.function.name");
-        private static ReadOnlySpan<byte> ShortNameBytes => [177, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101];
-
-        // FullNameBytes = MessagePack.Serialize("aas.function.method");
-        private static ReadOnlySpan<byte> FullNameBytes => [179, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 109, 101, 116, 104, 111, 100];
-
-        // BindingSourceBytes = MessagePack.Serialize("aas.function.binding");
-        private static ReadOnlySpan<byte> BindingSourceBytes => [180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103];
-
-        // TriggerTypeBytes = MessagePack.Serialize("aas.function.trigger");
-        private static ReadOnlySpan<byte> TriggerTypeBytes => [180, 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114];
-
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "aas.function.name" => ShortName,
-                "aas.function.method" => FullName,
-                "aas.function.binding" => BindingSource,
-                "aas.function.trigger" => TriggerType,
                 _ => base.GetTag(key),
             };
         }
@@ -50,18 +34,6 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aas.function.name": 
-                    ShortName = value;
-                    break;
-                case "aas.function.method": 
-                    FullName = value;
-                    break;
-                case "aas.function.binding": 
-                    BindingSource = value;
-                    break;
-                case "aas.function.trigger": 
-                    TriggerType = value;
-                    break;
                 case "span.kind": 
                 case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AzureFunctionsTags));
@@ -84,26 +56,6 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (ShortName is not null)
-            {
-                processor.Process(new TagItem<string>("aas.function.name", ShortName, ShortNameBytes));
-            }
-
-            if (FullName is not null)
-            {
-                processor.Process(new TagItem<string>("aas.function.method", FullName, FullNameBytes));
-            }
-
-            if (BindingSource is not null)
-            {
-                processor.Process(new TagItem<string>("aas.function.binding", BindingSource, BindingSourceBytes));
-            }
-
-            if (TriggerType is not null)
-            {
-                processor.Process(new TagItem<string>("aas.function.trigger", TriggerType, TriggerTypeBytes));
-            }
-
             base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
@@ -120,34 +72,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
-                  .Append(',');
-            }
-
-            if (ShortName is not null)
-            {
-                sb.Append("aas.function.name (tag):")
-                  .Append(ShortName)
-                  .Append(',');
-            }
-
-            if (FullName is not null)
-            {
-                sb.Append("aas.function.method (tag):")
-                  .Append(FullName)
-                  .Append(',');
-            }
-
-            if (BindingSource is not null)
-            {
-                sb.Append("aas.function.binding (tag):")
-                  .Append(BindingSource)
-                  .Append(',');
-            }
-
-            if (TriggerType is not null)
-            {
-                sb.Append("aas.function.trigger (tag):")
-                  .Append(TriggerType)
                   .Append(',');
             }
 

@@ -92,6 +92,10 @@ namespace Datadog.Trace.Configuration
 
             LambdaMetadata = LambdaMetadata.Create();
 
+            IsRunningInAzureContainerApps = config
+                               .WithKeys(PlatformKeys.AzureAppService.ContainerAppName)
+                               .AsString() is { Length: > 0 };
+
             if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, telemetry);
@@ -1452,6 +1456,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the rare sampler is enabled or not.
         /// </summary>
         internal bool IsRareSamplerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in AzureContainerApps (ACA).
+        /// </summary>
+        internal bool IsRunningInAzureContainerApps { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in AzureAppServices (AAS).

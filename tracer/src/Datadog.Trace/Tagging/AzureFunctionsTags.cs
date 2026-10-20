@@ -9,11 +9,27 @@ namespace Datadog.Trace.Tagging
 {
     internal sealed partial class AzureFunctionsTags : InstrumentationTags
     {
+        private const string AasPrefix = "aas.";
+        private const string AcaPrefix = "aca.";
         private const string ComponentName = nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions);
-        private const string ShortNameTagName = Trace.Tags.AzureFunctionName;
-        private const string FullNameTagName = Trace.Tags.AzureFunctionMethod;
-        private const string BindingSourceTagName = Trace.Tags.AzureFunctionBindingSource;
-        private const string TriggerTypeTagName = Trace.Tags.AzureFunctionTriggerType;
+        // Tag keys carry an environment-dependent prefix, so they can't be [Tag] attributes
+        // (those require compile-time constants). These flow through the base tag dictionary.
+        private readonly string _shortNameTagName;
+        private readonly string _fullNameTagName;
+        private readonly string _bindingSourceTagName;
+        private readonly string _triggerTypeTagName;
+
+        public AzureFunctionsTags(bool isContainerApps)
+        {
+            var prefix = isContainerApps ? AcaPrefix : AasPrefix;
+
+            _shortNameTagName = prefix + Trace.Tags.AzureFunctionName;
+            _fullNameTagName = prefix + Trace.Tags.AzureFunctionMethod;
+            _bindingSourceTagName = prefix + Trace.Tags.AzureFunctionBindingSource;
+            _triggerTypeTagName = prefix + Trace.Tags.AzureFunctionTriggerType;
+
+            TriggerType = "Unknown";
+        }
 
         [Tag(Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
@@ -21,20 +37,33 @@ namespace Datadog.Trace.Tagging
         [Tag(Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
-        [Tag(ShortNameTagName)]
-        public string ShortName { get; set; }
+        public string ShortName
+        {
+            get => GetTag(_shortNameTagName);
+            set => SetTag(_shortNameTagName, value);
+        }
 
-        [Tag(FullNameTagName)]
-        public string FullName { get; set; }
+        public string FullName
+        {
+            get => GetTag(_fullNameTagName);
+            set => SetTag(_fullNameTagName, value);
+        }
 
-        [Tag(BindingSourceTagName)]
-        public string BindingSource { get; set; }
+        public string BindingSource
+        {
+            get => GetTag(_bindingSourceTagName);
+            set => SetTag(_bindingSourceTagName, value);
+        }
 
-        [Tag(TriggerTypeTagName)]
-        public string TriggerType { get; set; } = "Unknown";
+        public string TriggerType
+        {
+            get => GetTag(_triggerTypeTagName);
+            set => SetTag(_triggerTypeTagName, value);
+        }
 
         internal static void SetRootSpanTags(
             ITags tags,
+            bool isContainerApps,
             string shortName,
             string fullName,
             string bindingSource,
@@ -59,10 +88,12 @@ namespace Datadog.Trace.Tagging
             }
             else
             {
-                tags.SetTag(ShortNameTagName, shortName);
-                tags.SetTag(FullNameTagName, fullName);
-                tags.SetTag(BindingSourceTagName, bindingSource);
-                tags.SetTag(TriggerTypeTagName, triggerType);
+                var prefix = isContainerApps ? AcaPrefix : AasPrefix;
+
+                tags.SetTag(prefix + Trace.Tags.AzureFunctionName, shortName);
+                tags.SetTag(prefix + Trace.Tags.AzureFunctionMethod, fullName);
+                tags.SetTag(prefix + Trace.Tags.AzureFunctionBindingSource, bindingSource);
+                tags.SetTag(prefix + Trace.Tags.AzureFunctionTriggerType, triggerType);
             }
         }
     }
