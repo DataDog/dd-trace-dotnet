@@ -41,10 +41,14 @@ public static class NUnitCompositeWorkItemSetSkippedResultIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : ICompositeWorkItem, IDuckType
     {
-        if (exception is null && state.State.TryDuckCast<ITestResult>(out var result) &&
-            result.Test.Instance.TryDuckCast<ITestWithDependency>(out var dependency) && dependency.DependantTest?.Instance is not null)
+        // This integration only binds to NUnit 5, so a duck typing failure bubbles up and disables it.
+        if (exception is null && state.State is { } resultInstance)
         {
-            NUnitIntegration.ReportDependencySkip(instance, result);
+            var result = resultInstance.DuckCast<ITestResult>();
+            if (result.Test.Instance.DuckCast<TestWithDependencyStruct>().DependantTest?.Instance is not null)
+            {
+                NUnitIntegration.ReportDependencySkip(instance, result);
+            }
         }
 
         return CallTargetReturn.GetDefault();

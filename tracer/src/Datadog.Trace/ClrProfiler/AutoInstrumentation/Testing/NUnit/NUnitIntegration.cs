@@ -219,7 +219,7 @@ internal static class NUnitIntegration
     internal static bool HasDependencies(ITest currentTest)
     {
         // Older NUnit versions do not expose a dependency graph.
-        if (!currentTest.Instance.TryDuckCast<ITestWithDependency>(out _))
+        if (!currentTest.Instance.TryDuckCast<TestWithDependencyStruct>(out _))
         {
             return false;
         }
@@ -227,7 +227,7 @@ internal static class NUnitIntegration
         var test = currentTest;
         while (test?.Instance is { } instance)
         {
-            if (instance.TryDuckCast<ITestWithDependency>(out var dependency) && dependency.DependantTest?.Instance is not null)
+            if (instance.TryDuckCast<TestWithDependencyStruct>(out var dependency) && dependency.DependantTest?.Instance is not null)
             {
                 return true;
             }
@@ -253,7 +253,7 @@ internal static class NUnitIntegration
         var currentTest = result.Test;
 
         // Older NUnit versions do not expose a dependency graph.
-        if (currentTest.Instance is { } currentInstance && currentInstance.TryDuckCast<ITestWithDependency>(out _))
+        if (currentTest.Instance is { } currentInstance && currentInstance.TryDuckCast<TestWithDependencyStruct>(out _))
         {
             var isFailure = result.ResultState.Status == TestStatus.Failed;
             var test = currentTest;
@@ -306,7 +306,7 @@ internal static class NUnitIntegration
         {
             foreach (var child in children)
             {
-                if (child.TryDuckCast<ITestWithDependency>(out var dependency) && dependency.DependantTest?.Instance is { } prerequisite)
+                if (child.TryDuckCast<TestWithDependencyStruct>(out var dependency) && dependency.DependantTest?.Instance is { } prerequisite)
                 {
                     prerequisites.Add(prerequisite);
                 }
