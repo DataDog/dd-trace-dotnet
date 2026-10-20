@@ -9,7 +9,7 @@ Where code belongs, who owns state, and API and type shape.
 ## 1. Settings and state ownership
 
 ### DES-1.1: Read DD_ENV, DD_SITE, and DD_API_KEY from the tracer's settings objects, not from `IConfigurationSource`
-- Flag: a new settings class or component calls `config.WithKeys(ConfigurationKeys.Environment|Site|ApiKey)` (or another key the tracer already extracts) itself, or native code re-reads an env var (e.g. `DD_PROFILING_ENABLED`) that the managed side already resolves.
+- Flag: a new settings class or component calls `config.WithKeys(ConfigurationKeys.Environment|Site|ApiKey)` (or another key the tracer already extracts) itself, or native code re-reads an env var (e.g. `DD_PROFILING_ENABLED`) that the managed side already resolves. If the key isn't on the shared settings yet (today `DD_SITE` and `DD_API_KEY`), the fix is to extract it there once and pass it in, not to add another independent read.
 - ❌ `Env = config.WithKeys(ConfigurationKeys.Environment).AsString();`
 - ✅ `Env = mutableSettings.Environment;`
 

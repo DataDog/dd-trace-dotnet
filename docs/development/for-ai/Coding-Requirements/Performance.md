@@ -90,7 +90,8 @@ Allocations and CPU cost on hot paths (span creation and finish, tagging, propag
 - ✅ `scope = tracer.InternalActiveScope;`
 
 ### PERF-3.5: Match small fixed key sets with an `is "a" or "b"` pattern instead of a `HashSet`
-- Flag: a `HashSet<string>` lookup over a handful of constants on a per-read or per-call path.
+- Flag: a `HashSet<string>` with the default (ordinal) comparer, used to look up a handful of constants on a per-read or per-call path.
+- Not when: the set uses a non-ordinal comparer (for example, `StringComparer.OrdinalIgnoreCase`), unless the replacement can use equivalent explicit comparisons.
 - ❌ `static readonly HashSet<string> Keys = new() { "A", "B" }; ... Keys.Contains(key)`
 - ✅ `key is "A" or "B"`
 

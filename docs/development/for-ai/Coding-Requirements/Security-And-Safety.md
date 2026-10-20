@@ -26,9 +26,10 @@ Secrets and sensitive configuration, CI and supply chain, PII, and safety inside
 - ❌ `uses: actions/checkout@v4`
 - ✅ `uses: actions/checkout@<40-char-sha> # v4.2.2`
 
-### SEC-2.2: Grant only `id-token: write` when a job gets its token from dd-octo-sts
-- Flag: job/workflow `permissions:` entries (`contents`, `actions`, `pull-requests`, …) beyond what the job uses, especially alongside a dd-octo-sts token step.
-- ❌ `permissions: { id-token: write, actions: read, contents: read }`
+### SEC-2.2: Grant a job only the `GITHUB_TOKEN` permissions its steps use when it gets its token from dd-octo-sts
+- Flag: job/workflow `permissions:` entries (`contents`, `actions`, `pull-requests`, …) that no step uses, for example permissions left over after switching to a dd-octo-sts token.
+- Not when: another step still uses `GITHUB_TOKEN` for that permission (for example, `actions/checkout` needs `contents: read`).
+- ❌ `permissions: { id-token: write, actions: read, contents: read } # only the dd-octo-sts step needs a token`
 - ✅ `permissions: { id-token: write }`
 
 ### SEC-2.3: Pin CI and benchmark images to immutable tags or digests and automate the bumps

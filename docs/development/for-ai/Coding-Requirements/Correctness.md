@@ -42,7 +42,7 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 ### COR-3.1: Use `Tracer.Instance.CurrentTraceSettings` / `SettingsManager.SubscribeToChanges`, not `Manager.Initial*Settings`
 - Flag: `Settings.Manager.InitialMutableSettings` or `InitialExporterSettings` read outside startup, or used to compute a value (env, endpoint, exporter mode) cached for the process lifetime.
 - ❌ `if (Tracer.Settings.Manager.InitialExporterSettings.IsOtlpTraceExport) { ... }`
-- ✅ `settingsManager.SubscribeToChanges(changes => { if (changes.UpdatedExporter is { } e) { _isOtlp = e.IsOtlpTraceExport; } });`
+- ✅ `_isOtlp = settingsManager.InitialExporterSettings.IsOtlpTraceExport; settingsManager.SubscribeToChanges(changes => { if (changes.UpdatedExporter is { } e) { Volatile.Write(ref _isOtlp, e.IsOtlpTraceExport); } });`
 
 ### COR-3.2: When a mode forces one setting, also force off every setting that would contradict it, even if explicitly enabled
 - Flag: `if (ModeEnabled) { A = ...; }` in `TracerSettings` while a related user-controllable setting (e.g. `ExpandRouteTemplatesEnabled`, peer-service/V1 tags) can still undo or contradict the forced behaviour.
@@ -68,8 +68,8 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 - ❌ `var dir = _outputPath ?? Environment.CurrentDirectory;`
 - ✅ `var dir = StringUtil.IsNullOrEmpty(_outputPath) ? Environment.CurrentDirectory : _outputPath;`
 
-### COR-5.2: Wrap every stream layer in `using` and pass `leaveOpen: true` so the chain disposes exactly once
-- Flag: `GZipStream`/`StreamReader` built over another stream without `using` on each layer, or disposed manually in some branches only.
+### COR-5.2: Give each stream layer one owner: `using` the layers you create, and `leaveOpen: true` on wrappers over a stream something else disposes
+- Flag: `GZipStream`/`StreamReader` built over another stream without `using` on each layer you create, disposed manually in some branches only, or a wrapper that disposes a stream another layer (or the caller) also disposes.
 - ❌ `var reader = new StreamReader(new GZipStream(stream, CompressionMode.Decompress));`
 - ✅ `using var decompressed = new GZipStream(stream, CompressionMode.Decompress); using var reader = new StreamReader(decompressed, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);`
 
