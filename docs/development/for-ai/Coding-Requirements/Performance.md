@@ -43,7 +43,7 @@ Allocations and CPU cost on hot paths (span creation and finish, tagging, propag
 ### PERF-2.1: Use `stackalloc` (≤ 512 bytes) or `ArrayPool<T>.Shared` for temporary arrays
 - Flag: `new T[]`/`ToArray()` for a scratch buffer discarded before the method returns, or a `stackalloc` threshold above 512 bytes.
 - ❌ `var sorted = ids.ToArray(); Array.Sort(sorted);`
-- ✅ `Span<long> sorted = count <= 32 ? stackalloc long[count] : (rented = ArrayPool<long>.Shared.Rent(count));`
+- ✅ `if(count <= 32) {sorted = stackalloc long[count];} else { rented = ArrayPool<long>.Shared.Rent(count); sorted = rented.AsSpan(0, count);}`
 
 ### PERF-2.2: Deserialize JSON from the response stream straight into the target type
 - Flag: reading a response body into a `string`, or parsing into `JToken`/`JObject`, before extracting the part you need.

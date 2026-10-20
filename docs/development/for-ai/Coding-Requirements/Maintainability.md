@@ -31,7 +31,7 @@ Duplication, dead code, comments, naming, and test value.
 ### MAINT-2.1: Delete unused constants, empty `Dispose` implementations and `Debug.WriteLine` calls when touching the file
 - Flag: a constant/field nothing reads, a type implementing `IDisposable` with an empty `Dispose()`, or `Debug.WriteLine` in a catch block (compiled out of release builds).
 - Note: consider committing the cleanup as a stacked PR.
-- Not when: the file would not otherwise be touched by the current work stream.
+- Not when: the file would not otherwise be touched by the current work stream, or the empty disposal member is required by an interface or base-class contract.
 - ❌ `public void Dispose() { }`
 - ✅ `// remove IDisposable and the Dispose() call sites`
 

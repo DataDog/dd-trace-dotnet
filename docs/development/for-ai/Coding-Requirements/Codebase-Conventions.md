@@ -34,7 +34,8 @@ Repo-specific idioms: configuration, logging, shared helpers, test patterns, and
 ## 2. Logging and errors
 
 ### CONV-2.1: Log unexpected exceptions with `Log.Error`; expected environmental failures with `Log.Warning`/`ErrorSkipTelemetry`
-- Flag: `Log.Warning`/`Log.Information` in a catch for a failure with no known cause, or `Log.Error` for HTTP status/network failures from an external endpoint. See [AGENTS.md logging](../../../../AGENTS.md#logging-guidelines).
+- Flag: `Log.Warning`/`Log.Information` in a catch for a failure with no known cause, or `Log.Error` for expected environmental failures such as network connectivity issues or endpoint unavailability. See [AGENTS.md logging](../../../../AGENTS.md#logging-guidelines).
+- Not when: an HTTP failure indicates a tracer or payload bug (for example, HTTP 400 Bad Request); preserve `Log.Error` and its telemetry.
 - ❌ `catch (Exception ex) { Log.Warning(ex, "Failed to publish context"); }`
 - ✅ `catch (Exception ex) { Log.Error(ex, "Failed to publish context"); }`
 
@@ -85,6 +86,7 @@ Repo-specific idioms: configuration, logging, shared helpers, test patterns, and
 
 ### CONV-3.8: Pass `in` at the call site for `in` parameters
 - Flag: a call to a method with an `in` parameter that omits `in` on the argument.
+- Not when: the argument requires an implicit temporary (for example, a property, method result, constructor expression, or implicit conversion), so adding explicit `in` would not compile.
 - ❌ `WarnFailure(result, attempts: 1);`
 - ✅ `WarnFailure(in result, attempts: 1);`
 
