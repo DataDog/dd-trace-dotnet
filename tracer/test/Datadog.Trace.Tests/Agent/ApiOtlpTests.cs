@@ -50,8 +50,10 @@ public class ApiOtlpTests
     [Fact]
     public async Task SendStatsAsync_WhenSpanMetricsEnabled_PostsToMetricsEndpoint()
     {
+        // gRPC, the default protocol, isn't supported for OTLP trace export
         var source = BuildSource(
             "OTEL_TRACES_EXPORTER:otlp",
+            "OTEL_EXPORTER_OTLP_PROTOCOL:http/protobuf",
             "OTEL_TRACES_SPAN_METRICS_ENABLED:true");
 
         var settings = new TracerSettings(source);

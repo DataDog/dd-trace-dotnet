@@ -3827,10 +3827,10 @@ supportedConfigurations:
       Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipe\name` for Windows Named Pipes.
       Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/logs
   OTEL_EXPORTER_OTLP_LOGS_PROTOCOL:
-  - implementation: D
+  - implementation: C
     scope: managed
     type: string
-    default: http/protobuf
+    default: grpc
     product: OpenTelemetry
     aliases:
     - OTEL_EXPORTER_OTLP_PROTOCOL
@@ -3891,10 +3891,10 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_METRICS_PROTOCOL:
-  - implementation: B
+  - implementation: C
     scope: managed
     type: string
-    default: http/protobuf
+    default: grpc
     product: OpenTelemetry
     aliases:
     - OTEL_EXPORTER_OTLP_PROTOCOL
@@ -3902,7 +3902,7 @@ supportedConfigurations:
     documentation: |-
       Configuration key to set the OTLP protocol for metrics export.
       Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-      Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
+      Valid values: grpc, http/protobuf, http/json, defaults to grpc, or http/protobuf on .NET Framework and .NET Standard 2.0.
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE:
   - implementation: A
     scope: managed
@@ -3929,16 +3929,16 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
       Default value is 10000ms.
   OTEL_EXPORTER_OTLP_PROTOCOL:
-  - implementation: A
+  - implementation: C
     scope: managed
     type: string
-    default: http/protobuf
+    default: grpc
     product: OpenTelemetry
     const_name: ExporterOtlpProtocol
     documentation: |-
       Configuration key to set the OTLP protocol (fallback for metrics-specific protocol).
       Used when <see cref="ExporterOtlpMetricsProtocol"/> is not set.
-      Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
+      Valid values: grpc, http/protobuf, http/json, defaults to grpc, or http/protobuf on .NET Framework and .NET Standard 2.0.
   OTEL_EXPORTER_OTLP_TIMEOUT:
   - implementation: A
     scope: managed
@@ -3981,7 +3981,7 @@ supportedConfigurations:
   - implementation: C
     scope: managed
     type: string
-    default: http/protobuf
+    default: grpc
     product: OpenTelemetry
     aliases:
     - OTEL_EXPORTER_OTLP_PROTOCOL
@@ -3989,7 +3989,8 @@ supportedConfigurations:
     documentation: |-
       Configuration key to set the OTLP protocol for traces export.
       Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-      Valid values: http/json, http/protobuf. Default: http/protobuf
+      Valid values: grpc, http/protobuf, http/json. Default: grpc, or http/protobuf on .NET Framework and .NET Standard 2.0.
+      gRPC is not yet supported for traces export: when it is selected, traces are sent to the Datadog Agent using the Datadog format.
   OTEL_EXPORTER_OTLP_TRACES_TIMEOUT:
   - implementation: B
     scope: managed

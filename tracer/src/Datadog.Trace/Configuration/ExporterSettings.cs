@@ -50,8 +50,6 @@ namespace Datadog.Trace.Configuration
         internal const string DefaultMetricsUnixDomainSocket = "/var/run/datadog/dsd.socket";
         internal const string UdpPrefix = "udp://";
 
-        private const OtlpProtocol DefaultOtlpGeneralProtocol = OtlpProtocol.HttpProtobuf;
-
         [TestingOnly]
         internal ExporterSettings()
             : this(source: null, File.Exists, new ConfigurationTelemetry())
@@ -315,7 +313,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the OTLP protocol for emitting logs.
-        /// Default is <c>http/protobuf</c>
+        /// Default is <c>grpc</c>, or <c>http/protobuf</c> on .NET Framework and .NET Standard 2.0
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
@@ -375,12 +373,12 @@ namespace Datadog.Trace.Configuration
             var protocol = ParseOtlpProtocol(generalProtocol);
             if (protocol is null)
             {
-                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, GetOtlpProtocolName(DefaultOtlpGeneralProtocol), recordValue: true, ConfigurationOrigins.Default);
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, GetOtlpProtocolName(DefaultOtlpProtocol), recordValue: true, ConfigurationOrigins.Default);
             }
 
             if (StringUtil.IsNullOrEmpty(generalEndpoint))
             {
-                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, $"{GetDefaultOtlpBaseUri(protocol ?? DefaultOtlpGeneralProtocol, agentHost)}/", recordValue: true, ConfigurationOrigins.Default);
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, $"{GetDefaultOtlpBaseUri(protocol ?? DefaultOtlpProtocol, agentHost)}/", recordValue: true, ConfigurationOrigins.Default);
             }
         }
 
