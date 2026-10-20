@@ -6,6 +6,20 @@ instruction_files:
   - .claude/skills/bump-libdatadog/SKILL.md
   - .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh
 
+# Complete guidance inventory for setup comparison; instruction-change targeting above is unchanged.
+# The platform currently supports inventory/selection planning with --comparison setup --dry-run.
+# .claude/settings.json contains telemetry attributes only and is retained as common configuration.
+# Personal settings.local.json must be excluded from both variants by the isolated runner.
+setup:
+  files:
+    - CLAUDE.md
+    - AGENTS.md
+  directories:
+    - .claude/skills/add-lint-rule
+    - .claude/skills/analyze-azdo-build
+    - .claude/skills/azure-functions
+    - .claude/skills/bump-libdatadog
+
 default_level: gate
 presets:
   gate:
