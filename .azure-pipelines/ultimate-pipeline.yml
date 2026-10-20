@@ -5684,7 +5684,7 @@ stages:
             done
 
             echo "Sending initialisation request"
-            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) "http://localhost:8126$(START_ENDPOINT)"
+            $(CURL_COMMAND) --fail "http://localhost:8126$(START_ENDPOINT)"
           displayName: run test agent
           env:
             ENABLED_CHECKS: trace_count_header,meta_tracer_version_header,trace_content_length
@@ -5713,18 +5713,17 @@ stages:
           displayName: Run the app
 
         - script: |
-            set -e
             echo "Dumping traces"
-            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) -o $(snapshotOutputDir)/smoke_test_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
+            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
 
             echo "Dumping stats"
-            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) -o $(snapshotOutputDir)/smoke_test_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
+            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
 
             echo "Dumping all requests"
-            $(CURL_COMMAND) --fail $(CURL_RETRY_FLAGS) -o $(snapshotOutputDir)/smoke_test_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
+            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
 
             echo "Verifying snapshot session (fail on mis-match)"
-            $(CURL_COMMAND) --fail-with-body $(CURL_RETRY_FLAGS) "http://localhost:8126$(VERIFY_ENDPOINT)"
+            $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
           displayName: check snapshots
 
         - publish: artifacts/build_data
