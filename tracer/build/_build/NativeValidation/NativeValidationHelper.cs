@@ -12,6 +12,8 @@ namespace NativeValidation;
 
 public class NativeValidationHelper
 {
+    static readonly string[] ForbiddenDynamicExports = { "__libc_single_threaded" };
+
     public NativeValidationHelper(Lazy<Tool> nm, bool isAlpine, AbsolutePath buildProjectDirectory)
     {
         Nm = nm;
@@ -29,11 +31,12 @@ public class NativeValidationHelper
         string snapshotPrefix,
         IEnumerable<string> allowedSymbols = null)
     {
+        ValidateNoForbiddenDynamicExports(libraryPath);
         ValidateNativeLibraryGlibcCompatibility(libraryPath, maximumAllowedGlibcVersion, allowedSymbols);
 
         if (IsAlpine)
         {
-            ValidateNativeSymbols(libraryPath, snapshotPrefix);
+            ValidateNativeSymbolsCore(libraryPath, snapshotPrefix);
         }
 
     }
@@ -58,6 +61,27 @@ public class NativeValidationHelper
     }
 
     public void ValidateNativeSymbols(AbsolutePath libraryPath, string snapshotNamePrefix)
+    {
+        ValidateNoForbiddenDynamicExports(libraryPath);
+        ValidateNativeSymbolsCore(libraryPath, snapshotNamePrefix);
+    }
+
+    void ValidateNoForbiddenDynamicExports(AbsolutePath libraryPath)
+    {
+        var output = Nm.Value($"-D --defined-only {libraryPath}").Select(x => x.Text);
+        var forbiddenExports = NativeExportChecker.FindForbiddenExports(output, ForbiddenDynamicExports);
+        if (forbiddenExports.Count == 0)
+        {
+            return;
+        }
+
+        var filename = Path.GetFileNameWithoutExtension(libraryPath);
+        throw new InvalidOperationException(
+            $"{filename} exports internal compatibility symbols that must remain hidden:{Environment.NewLine}"
+          + string.Join(Environment.NewLine, forbiddenExports.Select(x => $"  {x}")));
+    }
+
+    void ValidateNativeSymbolsCore(AbsolutePath libraryPath, string snapshotNamePrefix)
     {
         var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
 

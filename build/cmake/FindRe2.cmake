@@ -61,7 +61,10 @@ elseif(ISLINUX)
                       "ARFLAGS=-r -s -c"
                       "CXXFLAGS=${RE2_CXXFLAGS}"
                       ${RE2_TOOLCHAIN_ENV}
-                      $(MAKE) -j
+                      # Only the static archive is consumed. Building re2's default target also
+                      # links an unused shared library, which cannot resolve our hidden
+                      # __libc_single_threaded compatibility definition.
+                      $(MAKE) -j obj/libre2.a
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )
 endif()
