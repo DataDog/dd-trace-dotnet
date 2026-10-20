@@ -622,7 +622,7 @@ internal sealed class TestOptimization : ITestOptimization
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
 
                     Log.Information("TestOptimization: Calling the configuration api again.");
-                    remoteSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                    remoteSettings = await client.GetSettingsAsync().ConfigureAwait(false);
                 }
 
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
