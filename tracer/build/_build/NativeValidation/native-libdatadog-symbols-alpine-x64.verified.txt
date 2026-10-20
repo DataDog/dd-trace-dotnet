@@ -1,9 +1,3 @@
-__environ
-__errno_location
-__stack_chk_fail
-__tls_get_addr
-__xpg_strerror_r
-_exit
 _Unwind_Backtrace
 _Unwind_DeleteException
 _Unwind_FindEnclosingFunction
@@ -18,6 +12,12 @@ _Unwind_RaiseException
 _Unwind_Resume
 _Unwind_SetGR
 _Unwind_SetIP
+__environ
+__errno_location
+__stack_chk_fail
+__tls_get_addr
+__xpg_strerror_r
+_exit
 abort
 accept4
 bcmp

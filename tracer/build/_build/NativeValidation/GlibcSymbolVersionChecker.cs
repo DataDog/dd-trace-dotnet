@@ -11,11 +11,11 @@ namespace NativeValidation;
 
 internal static class GlibcSymbolVersionChecker
 {
-    private const string GlibcVersionPrefix = "@GLIBC_";
-    private const string GlibcPrivateVersion = "@GLIBC_PRIVATE";
+    private const string GlibcVersionPrefix = "GLIBC_";
+    private const string GlibcPrivateVersion = "GLIBC_PRIVATE";
 
     public static ScanResult Scan(
-        IEnumerable<string> nmOutput,
+        IEnumerable<NmSymbol> symbols,
         IEnumerable<string> allowedSymbols = null)
     {
         var requirements = new List<Requirement>();
@@ -23,34 +23,34 @@ internal static class GlibcSymbolVersionChecker
         var malformedSymbols = new List<string>();
         var allowedSymbolList = allowedSymbols?.ToList();
 
-        foreach (var line in nmOutput)
+        foreach (var symbol in symbols)
         {
-            if (!TryGetUndefinedSymbol(line, out var symbol)
-             || IsAllowed(symbol, allowedSymbolList))
+            if (!symbol.IsUndefined
+             || IsAllowed(symbol.VersionedName, allowedSymbolList))
             {
                 continue;
             }
 
-            if (symbol.IndexOf(GlibcPrivateVersion, StringComparison.Ordinal) >= 0)
+            if (string.Equals(symbol.VersionName, GlibcPrivateVersion, StringComparison.Ordinal))
             {
-                privateSymbols.Add(symbol);
+                privateSymbols.Add(symbol.VersionedName);
                 continue;
             }
 
-            var versionIndex = symbol.IndexOf(GlibcVersionPrefix, StringComparison.Ordinal);
-            if (versionIndex < 0)
+            if (symbol.VersionName is null
+             || !symbol.VersionName.StartsWith(GlibcVersionPrefix, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            var versionText = symbol.Substring(versionIndex + GlibcVersionPrefix.Length);
+            var versionText = symbol.VersionName.Substring(GlibcVersionPrefix.Length);
             if (!Version.TryParse(versionText, out var version))
             {
-                malformedSymbols.Add(symbol);
+                malformedSymbols.Add(symbol.VersionedName);
                 continue;
             }
 
-            requirements.Add(new Requirement(symbol, version));
+            requirements.Add(new Requirement(symbol.VersionedName, version));
         }
 
         return new ScanResult(requirements, privateSymbols, malformedSymbols);
@@ -114,33 +114,6 @@ internal static class GlibcSymbolVersionChecker
                 $"{filename} imports glibc symbols newer than the allowed maximum {maximumAllowedVersion}:{Environment.NewLine}"
               + FormatSymbols(incompatibleSymbols));
         }
-    }
-
-    private static bool TryGetUndefinedSymbol(string line, out string symbol)
-    {
-        symbol = null;
-
-        if (string.IsNullOrWhiteSpace(line))
-        {
-            return false;
-        }
-
-        var trimmed = line.Trim();
-        if (trimmed.Length < 3 || trimmed[1] != ' ')
-        {
-            return false;
-        }
-
-        // GNU nm uses U for a regular undefined symbol and lowercase w/v for
-        // undefined weak function/object symbols. Uppercase W/V are definitions.
-        var symbolType = trimmed[0];
-        if (symbolType is not ('U' or 'w' or 'v'))
-        {
-            return false;
-        }
-
-        symbol = trimmed.Substring(2).TrimStart();
-        return symbol.Length > 0;
     }
 
     private static bool IsAllowed(string symbol, IReadOnlyCollection<string> allowedSymbols)
