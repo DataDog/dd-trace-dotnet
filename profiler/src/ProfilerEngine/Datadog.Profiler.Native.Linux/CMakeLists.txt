@@ -175,6 +175,23 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib datadog_profiling_poc libunwind-lib coreclr spdlog-headers PPDB)
 
+# The profiler links datadog_profiling_poc as a SHARED library, so the final
+# Datadog.Profiler.Native.so gets a DT_NEEDED entry for
+# libdatadog_profiling_poc.so and resolves it at load time through the
+# $ORIGIN rpath set on the shared target below. Redirect the poc .so into
+# the profiler deploy directory (next to Datadog.Profiler.Native.so and
+# libdatadog_profiling.so) so that:
+#   * local/test runs launched from the DDProf-Deploy directory find it, and
+#   * PublishProfilerLinux can copy it from there into the monitoring home
+#     alongside the other profiler libraries.
+# Without this it lands in a scratch output directory (PPDB_build, inherited
+# from FindPPDB.cmake's CMAKE_LIBRARY_OUTPUT_DIRECTORY) and loading
+# Datadog.Profiler.Native.so fails with "libdatadog_profiling_poc.so:
+# cannot open shared object file" - the profiler then never starts and no
+# profile ever reaches the agent.
+set_target_properties(datadog_profiling_poc PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${DEPLOY_DIR})
+
 # ******************************************************
 # Define shared target
 # ******************************************************

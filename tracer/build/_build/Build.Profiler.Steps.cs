@@ -262,7 +262,13 @@ partial class Build
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so" };
+            // libdatadog_profiling_poc.so is the C replacement for libdatadog's
+            // profile-upload path (see shared/src/datadog-profiling-poc/README.md).
+            // Datadog.Profiler.Native.so links it as a shared library (its glibc
+            // requirements prevent statically linking it into the profiler), so it
+            // must be shipped in the monitoring home next to the profiler, like
+            // libdatadog_profiling.so.
+            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so", "libdatadog_profiling_poc.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
