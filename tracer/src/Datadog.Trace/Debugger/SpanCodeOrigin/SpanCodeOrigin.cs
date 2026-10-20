@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -23,6 +24,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
     internal sealed class SpanCodeOrigin
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
+
+        // Applications instrumented at build time (NativeAOT), whose PDBs aren't there at runtime: the source locations of
+        // the endpoint methods of each assembly (by assembly name), keyed by GetBuildTimeKey.
+        private static readonly Dictionary<string, Dictionary<string, CachedSequencePoint>> BuildTimeLocations = new(StringComparer.OrdinalIgnoreCase);
 
         // ConditionalWeakTable keys are weak, so a collectible AssemblyLoadContext can unload without being rooted by this cache.
         // Per-assembly Lazy<T> deduplicates concurrent first-touches on the *same* assembly while allowing *different* assemblies to scan in parallel.
@@ -43,6 +48,103 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         }
 
         internal DebuggerSettings Settings { get; }
+
+        /// <summary>
+        /// Called by the module initializer of an application instrumented at build time (NativeAOT) with the source locations
+        /// of the endpoint methods of its assemblies, which their PDBs give at runtime otherwise: assembly name, method key
+        /// (see <see cref="GetBuildTimeKey"/>), file, line and column, for each.
+        /// </summary>
+        internal static void AddBuildTimeLocations(string[] entries)
+        {
+            lock (BuildTimeLocations)
+            {
+                for (var i = 0; i + 4 < entries.Length; i += 5)
+                {
+                    if (!BuildTimeLocations.TryGetValue(entries[i], out var locations))
+                    {
+                        locations = new Dictionary<string, CachedSequencePoint>(StringComparer.Ordinal);
+                        BuildTimeLocations[entries[i]] = locations;
+                    }
+
+                    locations[entries[i + 1]] = new CachedSequencePoint(entries[i + 2], entries[i + 3], entries[i + 4]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the key of a method in the build-time locations: its declaring type, name and parameter type names (dd-trace
+        /// computes the same key from the metadata of the assemblies it instruments).
+        /// </summary>
+        internal static string? GetBuildTimeKey(MethodBase method)
+        {
+            var declaringType = method.DeclaringType;
+            if (declaringType is null)
+            {
+                return null;
+            }
+
+            if (declaringType.IsGenericType && !declaringType.IsGenericTypeDefinition)
+            {
+                declaringType = declaringType.GetGenericTypeDefinition();
+            }
+
+            var parameters = method.GetParameters();
+            var builder = StringBuilderCache.Acquire();
+            builder.Append(declaringType.FullName).Append("::").Append(method.Name).Append('(');
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append(',');
+                }
+
+                builder.Append(parameters[i].ParameterType.Name);
+            }
+
+            return StringBuilderCache.GetStringAndRelease(builder.Append(')'));
+        }
+
+        /// <summary>
+        /// Gets the source locations of the endpoint methods of an assembly, by method token.
+        /// </summary>
+        internal static Dictionary<int, CachedSequencePoint> GetEndpointSequencePoints(DatadogMetadataReader reader, string? assemblyName)
+        {
+            var sequencePoints = new Dictionary<int, CachedSequencePoint>();
+            var consumer = new SequencePointTokenConsumer(reader, sequencePoints, assemblyName);
+            EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
+            return sequencePoints;
+        }
+
+        /// <summary>
+        /// Gets the sequence points of the endpoint methods from the PDB of an assembly. NativeAOT applications have no assembly
+        /// or PDB files: their locations come from the build (see <see cref="AddBuildTimeLocations"/>).
+        /// </summary>
+        private static Dictionary<int, CachedSequencePoint>? GetPdbEndpointSequencePoints(Assembly assembly)
+        {
+#if NET6_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                return null;
+            }
+#endif
+
+            try
+            {
+                // metadataOnly: true avoids PrefetchEntireImage, which would otherwise read the full DLL into memory.
+                // We only need MetadataReader (for type/method enumeration) and the PDB reader (for sequence points).
+                using var reader = DatadogMetadataReader.CreatePdbReader(assembly, metadataOnly: true);
+                if (reader is { IsPdbExist: true })
+                {
+                    return GetEndpointSequencePoints(reader, assembly.FullName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error while getting endpoints for {AssemblyName} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+            }
+
+            return null;
+        }
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
@@ -258,26 +360,17 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     return AssemblyAnalysis.Skipped;
                 }
 
-                Dictionary<int, CachedSequencePoint>? sequencePoints = null;
-                try
+                var sequencePoints = GetPdbEndpointSequencePoints(assembly);
+                Dictionary<string, CachedSequencePoint>? buildTimeLocations = null;
+                if (sequencePoints is null)
                 {
-                    // metadataOnly: true avoids PrefetchEntireImage, which would otherwise read the full DLL into memory.
-                    // We only need MetadataReader (for type/method enumeration) and the PDB reader (for sequence points).
-                    using var reader = DatadogMetadataReader.CreatePdbReader(assembly, metadataOnly: true);
-                    if (reader is { IsPdbExist: true })
+                    lock (BuildTimeLocations)
                     {
-                        sequencePoints = new Dictionary<int, CachedSequencePoint>();
-                        var consumer = new SequencePointTokenConsumer(reader, sequencePoints, assembly);
-                        EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
+                        BuildTimeLocations.TryGetValue(assembly.GetName().Name ?? string.Empty, out buildTimeLocations);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "Error while getting endpoints for {AssemblyName} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
-                    sequencePoints = null;
-                }
 
-                return new AssemblyAnalysis(shouldSkip: false, sequencePoints);
+                return new AssemblyAnalysis(shouldSkip: false, sequencePoints, buildTimeLocations);
             }
             catch (Exception ex)
             {
@@ -290,7 +383,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         {
             if (analysis.SequencePoints is null)
             {
-                return null;
+                return analysis is { BuildTimeLocations: { } locations, BuildTimeLocationsByMethod: { } byMethod } ? TryGetBuildTimeLocation(locations, byMethod, method) : null;
             }
 
             int metadataToken;
@@ -310,6 +403,31 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             return null;
+        }
+
+        // Without metadata tokens (NativeAOT), by key: computed once per method.
+        private CachedSequencePoint? TryGetBuildTimeLocation(Dictionary<string, CachedSequencePoint> locations, ConcurrentDictionary<MethodInfo, CachedSequencePoint?> byMethod, MethodInfo method)
+        {
+            if (byMethod.TryGetValue(method, out var cached))
+            {
+                return cached;
+            }
+
+            CachedSequencePoint? location = null;
+            try
+            {
+                if (GetBuildTimeKey(method) is { } key && locations.TryGetValue(key, out var found))
+                {
+                    location = found;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error getting the build-time source location of {MethodName}", method.Name);
+            }
+
+            byMethod.TryAdd(method, location);
+            return location;
         }
 
         private void AddExitSpanTags(Span span)
@@ -402,19 +520,19 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
 
-        private readonly record struct CachedSequencePoint(string Url, string Line, string Column);
+        internal readonly record struct CachedSequencePoint(string Url, string Line, string Column);
 
         private readonly struct SequencePointTokenConsumer : EndpointDetector.IEndpointMethodTokenConsumer
         {
             private readonly DatadogMetadataReader _reader;
             private readonly Dictionary<int, CachedSequencePoint> _sequencePoints;
-            private readonly Assembly _assembly;
+            private readonly string? _assemblyName;
 
-            public SequencePointTokenConsumer(DatadogMetadataReader reader, Dictionary<int, CachedSequencePoint> sequencePoints, Assembly assembly)
+            public SequencePointTokenConsumer(DatadogMetadataReader reader, Dictionary<int, CachedSequencePoint> sequencePoints, string? assemblyName)
             {
                 _reader = reader;
                 _sequencePoints = sequencePoints;
-                _assembly = assembly;
+                _assemblyName = assemblyName;
             }
 
             public void OnEndpointMethodToken(int token)
@@ -444,7 +562,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, _assembly.FullName);
+                    Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, _assemblyName);
                 }
             }
         }
@@ -453,17 +571,24 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         {
             // Singleton for "skipped" assemblies: no sequence points to remember, just the skip flag.
             // Reuse one instance per filter decision to avoid an allocation per skipped assembly cache entry.
-            internal static readonly AssemblyAnalysis Skipped = new(shouldSkip: true, sequencePoints: null);
+            internal static readonly AssemblyAnalysis Skipped = new(shouldSkip: true, sequencePoints: null, buildTimeLocations: null);
 
-            internal AssemblyAnalysis(bool shouldSkip, Dictionary<int, CachedSequencePoint>? sequencePoints)
+            internal AssemblyAnalysis(bool shouldSkip, Dictionary<int, CachedSequencePoint>? sequencePoints, Dictionary<string, CachedSequencePoint>? buildTimeLocations)
             {
                 ShouldSkip = shouldSkip;
                 SequencePoints = sequencePoints;
+                BuildTimeLocations = buildTimeLocations;
+                BuildTimeLocationsByMethod = buildTimeLocations is null ? null : new();
             }
 
             internal bool ShouldSkip { get; }
 
             internal Dictionary<int, CachedSequencePoint>? SequencePoints { get; }
+
+            // NativeAOT: the locations the build recorded (see AddBuildTimeLocations), and the result for each method.
+            internal Dictionary<string, CachedSequencePoint>? BuildTimeLocations { get; }
+
+            internal ConcurrentDictionary<MethodInfo, CachedSequencePoint?>? BuildTimeLocationsByMethod { get; }
         }
 
         /// <summary>
