@@ -903,7 +903,15 @@ partial class Build
             var filesAndVersion = new []
             {
                 (FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
-                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
+                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}"),
+                // The C replacement for libdatadog's profiling-upload path
+                // (shared/src/datadog-profiling-poc). Its glibc requirement is 2.17 on both
+                // architectures (its only >= 2.16 symbol is clock_gettime@GLIBC_2.17; on arm64
+                // everything else maps to the aarch64 glibc 2.17 baseline). The vendored curl
+                // must NOT define _FILE_OFFSET_BITS (it would redirect fcntl to
+                // fcntl64@GLIBC_2.28) and must not link zlib/brotli/zstd - see the PoC's
+                // CMakeLists.txt, which forces those curl options off at the cache level.
+                ("libdatadog_profiling_poc", new Version(2, 17), null, $"native-libdatadog-poc-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
             var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);

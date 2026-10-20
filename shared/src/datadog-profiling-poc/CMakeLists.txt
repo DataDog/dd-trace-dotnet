@@ -77,6 +77,21 @@ if(NOT curl_POPULATED)
   set(CURL_USE_LIBSSH2 OFF)    # SCP/SFTP - unused
   # Remove dependency to libz.
   # Use to decompress HTTP payload by curl but not needed for profiler.
+  # NOTE: these MUST be forced CACHE entries (not plain `set()`): curl's
+  # curl_dependency_option() macro initializes CURL_ZLIB/CURL_ZSTD/CURL_BROTLI
+  # with `set(<opt> "AUTO" CACHE STRING ...)`, which on a FRESH configure
+  # discards any plain variable of the same name inherited from this scope -
+  # curl then runs find_package(ZLIB), finds the system zlib in the build
+  # containers (zlib1g-dev / zlib-devel are installed there), and statically
+  # links it into curl. libdatadog_profiling_poc.so would then carry a
+  # DT_NEEDED libz.so.1, which breaks loading the profiler on minimal
+  # runtime images that don't ship zlib (e.g. the .NET noble/chiseled smoke
+  # test images). A reconfigure of an existing build dir keeps a plain `set()`
+  # working (the cache set() becomes a no-op), so this only reproduces from a
+  # clean build directory - exactly what CI does. FORCE wins on every
+  # configure. (CURL_ZLIB was accidentally dropped when this fix was first
+  # committed - do not remove it again.)
+  set(CURL_ZLIB OFF CACHE STRING "" FORCE)
   set(CURL_ZSTD OFF CACHE STRING "" FORCE)
   set(CURL_BROTLI OFF CACHE STRING "" FORCE)
 
@@ -99,6 +114,8 @@ file(GLOB POC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 # both files) - compiled directly into the Windows .vcxproj instead, never
 # through this CMakeLists.txt (see README "Windows").
 list(REMOVE_ITEM POC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/exporter_win.c")
+
+# TODO rename datadog_profiling_poc to a better suited name
 add_library(datadog_profiling_poc SHARED ${POC_SOURCES})
 target_include_directories(datadog_profiling_poc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(datadog_profiling_poc PRIVATE CURL::libcurl libzstd_static m)
