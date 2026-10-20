@@ -412,6 +412,49 @@ static bool add_file_part(curl_mime* mime, ddog_charslice name, const void* data
     return add_part(mime, name_buf, name_buf, NULL, data, len);
 }
 
+// libdatadog's http client (libdd-http-client RetryConfig) retries transient
+// failures: 3 retries, 100ms initial delay, exponential backoff with jitter,
+// and every error except configuration errors is retryable - including
+// "broken pipe"-style I/O errors, which curl reports as CURLE_SEND_ERROR
+// ("Failed sending data to the peer", e.g. when the agent closes the
+// connection while the multi-megabyte profile body is still being written).
+// A single racy failure must not surface as an error to the profiler, where
+// libdatadog would have silently retried and succeeded.
+static bool is_retryable_curl_error(CURLcode res)
+{
+    switch (res)
+    {
+        case CURLE_SEND_ERROR:          // failed sending the request
+        case CURLE_RECV_ERROR:          // failed reading the response
+        case CURLE_COULDNT_CONNECT:     // connection refused/failed
+        case CURLE_OPERATION_TIMEDOUT:  // timed out
+        case CURLE_COULDNT_RESOLVE_HOST:
+        case CURLE_COULDNT_RESOLVE_PROXY:
+        case CURLE_SSL_CONNECT_ERROR:
+        case CURLE_GOT_NOTHING:          // no response at all
+            return true;
+        default:
+            return false;
+    }
+}
+
+static void sleep_backoff_ms(int attempt)
+{
+    // Same shape as libdatadog's exponential backoff with jitter:
+    // base = 100ms * 2^attempt, +/- 25% jitter from a monotonic-clock source.
+    long base_ms = 100L << attempt;
+    long jitter = base_ms / 4;
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    long delay_ms = base_ms - jitter + (long)((now.tv_nsec / 1000) % (unsigned long)(2 * jitter + 1));
+
+    struct timespec ts;
+    ts.tv_sec = delay_ms / 1000;
+    ts.tv_nsec = (delay_ms % 1000) * 1000000L;
+    nanosleep(&ts, NULL);
+}
+
 ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, ddog_prof_encoded_profile* profile,
                                                   const ddog_prof_exporter_file* files_to_compress, size_t files_to_compress_len,
                                                   const ddog_vec_tag* optional_additional_tags,
@@ -523,7 +566,18 @@ ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, d
         curl_easy_setopt(exp->curl, CURLOPT_UNIX_SOCKET_PATH, exp->unix_socket_path);
     }
 
-    CURLcode res = curl_easy_perform(exp->curl);
+    // 1 initial attempt + up to 3 retries on transient transport errors,
+    // like libdatadog's RetryConfig::default (see is_retryable_curl_error).
+    CURLcode res = CURLE_OK;
+    for (int attempt = 0; ; attempt++)
+    {
+        res = curl_easy_perform(exp->curl);
+        if (res == CURLE_OK || attempt >= 3 || !is_retryable_curl_error(res))
+        {
+            break;
+        }
+        sleep_backoff_ms(attempt);
+    }
 
     ddog_error_code rc = DDOG_OK;
     if (res != CURLE_OK)
