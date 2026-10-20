@@ -657,6 +657,7 @@ namespace Datadog.Trace.DuckTyping
                  || attributeType == typeof(DuckCopyAttribute)
                  || attributeType == typeof(DuckTypeAttribute)
                  || attributeType == typeof(DuckReverseAttribute)
+                 || attributeType == typeof(DuckReverseDelegationAttribute)
                  || attributeType == typeof(DuckFieldAttribute)
                  || attributeType == typeof(DuckIgnoreAttribute)
                  || attributeType == typeof(DuckIncludeAttribute)
