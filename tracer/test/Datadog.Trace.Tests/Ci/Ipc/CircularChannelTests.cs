@@ -65,6 +65,40 @@ public class CircularChannelTests
         writer.TryWrite(in valueSegment).Should().BeFalse();
     }
 
+    [Fact]
+    public void ReaderReleasesAnAbandonedMutexBeforeReceivingMoreMessages()
+    {
+        var name = nameof(ReaderReleasesAnAbandonedMutexBeforeReceivingMoreMessages) + "-" + Guid.NewGuid().ToString("n");
+        using var channel = new CircularChannel(name, new CircularChannelSettings { PollingInterval = 10, MutexTimeout = 200 });
+        using var writer = channel.GetWriter();
+        var message = new ArraySegment<byte>([1]);
+        writer.TryWrite(in message).Should().BeTrue();
+
+        // A terminated owner makes the reader's next WaitOne acquire the mutex and throw.
+        var mutexName = FrameworkDescription.Instance.IsWindows() ? @"Global\" + name : name;
+        var owner = new Thread(() =>
+        {
+            using var mutex = new Mutex(initiallyOwned: false, mutexName);
+            mutex.WaitOne();
+        });
+        owner.Start();
+        owner.Join(5_000).Should().BeTrue();
+
+        using var firstMessageReceived = new ManualResetEventSlim();
+        using var messagesReceived = new CountdownEvent(2);
+        using var reader = channel.GetReader();
+        reader.SetCallback(_ =>
+        {
+            messagesReceived.Signal();
+            firstMessageReceived.Set();
+        });
+
+        firstMessageReceived.Wait(5_000).Should().BeTrue();
+        // Receiving the first message alone can hide a recursive mutex acquisition leak.
+        writer.TryWrite(in message).Should().BeTrue("the reader must release ownership before another thread can send");
+        messagesReceived.Wait(5_000).Should().BeTrue();
+    }
+
     [Collection(nameof(HighConcurrencyTestCollection))]
     public class ConcurrencyTests
     {

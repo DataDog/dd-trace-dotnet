@@ -9,16 +9,19 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -36,6 +39,10 @@ namespace Datadog.Trace.FeatureFlags
         // which covers activation and disposal: a configuration event must not wait on either.
         private readonly object _handlerLock = new();
 
+        // Settings callbacks run under the settings manager's lock. They must not take
+        // _stateLock, which is held while activation subscribes and receives settings replay.
+        private readonly object _evaluationLock = new();
+
         private readonly FeatureFlagsSettings _settings;
 
         // The agentless source targets flags by environment, which customers can change in code
@@ -46,6 +53,7 @@ namespace Datadog.Trace.FeatureFlags
         // ExposureApi reads only settings.Manager but takes TracerSettings. Held so the API can be
         // built on the first exposure instead of at startup.
         private readonly TracerSettings _tracerSettings;
+        private readonly IDiscoveryService _discoveryService;
 
         // A factory rather than the static Create, so a test can supply a source that records what the
         // module does with it: whether it is started before activation, and whether it is disposed.
@@ -53,6 +61,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -66,6 +75,11 @@ namespace Datadog.Trace.FeatureFlags
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
+        private FeatureFlagsEvpTransport? _evaluationTransport;
+        private FlagEvaluationWriter? _evaluationWriter;
+        private FlagEvaluationWriter? _availableEvaluationWriter;
+        private IDisposable? _evaluationSettingsSubscription;
+        private Action<AgentConfiguration>? _evaluationDiscoveryCallback;
         private FeatureFlagsEvpTransport? _evpTransport;
         private string? _deliveryUnavailableReason;
         private bool _activated;
@@ -75,7 +89,8 @@ namespace Datadog.Trace.FeatureFlags
         internal FeatureFlagsModule(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
-            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
+            IDiscoveryService? discoveryService = null)
         {
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
@@ -85,6 +100,7 @@ namespace Datadog.Trace.FeatureFlags
             _agentlessSourceFactory = agentlessSourceFactory
                                    ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration));
             _rcmSubscriptionManager = rcmSubscriptionManager;
+            _discoveryService = discoveryService ?? NullDiscoveryService.Instance;
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
         }
@@ -104,17 +120,22 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal bool HasConfiguration => Volatile.Read(ref _evaluator) is not null;
 
+        internal FlagEvaluationWriter? EvaluationWriter => Volatile.Read(ref _availableEvaluationWriter);
+
+        internal bool EvaluationEventsEnabled => _settings.EvaluationEventsEnabled;
+
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
-            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
+            IDiscoveryService? discoveryService = null)
         {
             if (!settings.FeatureFlags.Enabled)
             {
                 return null;
             }
 
-            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory, discoveryService);
 
             // Subscribing from here rather than the constructor, so the callback can only ever reach
             // a fully constructed module.
@@ -126,18 +147,24 @@ namespace Datadog.Trace.FeatureFlags
             return module;
         }
 
-        public void Dispose()
+        public void Dispose() => _ = DisposeAsync();
+
+        internal Task DisposeAsync()
         {
             ISubscription? subscription;
             IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
+            FlagEvaluationWriter? writer;
+            FeatureFlagsEvpTransport? evaluationTransport;
+            IDisposable? settingsSubscription;
+            Action<AgentConfiguration>? discoveryCallback;
             FeatureFlagsEvpTransport? evpTransport;
 
             lock (_stateLock)
             {
                 if (_disposed)
                 {
-                    return;
+                    return _disposeCompletion.Task;
                 }
 
                 _disposed = true;
@@ -145,25 +172,35 @@ namespace Datadog.Trace.FeatureFlags
                 subscription = _rcmSubscription;
                 agentlessSource = _agentlessSource;
                 exposureApi = _exposureApi;
+                lock (_evaluationLock)
+                {
+                    writer = _evaluationWriter;
+                    evaluationTransport = _evaluationTransport;
+                    Volatile.Write(ref _availableEvaluationWriter, null);
+                    Volatile.Write(ref _evaluationWriter, null);
+                    _evaluationTransport = null;
+                }
+
+                settingsSubscription = _evaluationSettingsSubscription;
+                discoveryCallback = _evaluationDiscoveryCallback;
                 evpTransport = _evpTransport;
 
                 _rcmSubscription = null;
                 _agentlessSource = null;
                 Volatile.Write(ref _exposureApi, null);
+                _evaluationSettingsSubscription = null;
+                _evaluationDiscoveryCallback = null;
                 _evpTransport = null;
             }
 
-            // Released the lock first: disposal is not state mutation, and holding it here would
-            // block an activation or an exposure for the duration.
-            if (subscription is not null)
-            {
-                _rcmSubscriptionManager.Unsubscribe(subscription);
-            }
-
-            agentlessSource?.Dispose();
-            exposureApi?.Dispose();
-            evpTransport?.Dispose();
+            // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
+            var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
+            _ = FinishDisposalAsync(close, evaluationTransport, settingsSubscription, discoveryCallback, subscription, agentlessSource, exposureApi, evpTransport);
+            return _disposeCompletion.Task;
         }
+
+        // Drain already accepted events even if an Agent change has closed admission.
+        internal Task FlushAsync() => Volatile.Read(ref _evaluationWriter)?.FlushAsync() ?? Task.CompletedTask;
 
         /// <summary>
         /// Signals that application code initialized the provider. Idempotent.
@@ -193,7 +230,8 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _activated = true;
+                SubscribeToEvaluationDelivery();
+                Volatile.Write(ref _activated, true);
 
                 switch (_settings.Source)
                 {
@@ -327,7 +365,15 @@ namespace Datadog.Trace.FeatureFlags
             if (evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(flagKey, defaultValue, EvaluationReason.Error, null, "PROVIDER_NOT_READY");
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "PROVIDER_NOT_READY",
+                    metadata: new Dictionary<string, string>
+                    {
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
+                    });
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
@@ -351,6 +397,192 @@ namespace Datadog.Trace.FeatureFlags
             NotifyNewConfiguration("ApplyConfiguration");
 
             return true;
+        }
+
+        private static Dictionary<string, string> CreateEvaluationContext(MutableSettings settings)
+        {
+            return new Dictionary<string, string>
+            {
+                ["service"] = settings.DefaultServiceName,
+                ["env"] = settings.Environment ?? "unknown",
+                ["version"] = settings.ServiceVersion ?? "unknown",
+            };
+        }
+
+        private void SubscribeToEvaluationDelivery()
+        {
+            if (!_settings.EvaluationEventsEnabled)
+            {
+                return;
+            }
+
+            // Each track owns an instance: an evaluation delivery failure must not change
+            // exposure routing or disposal. Both instances reuse the same transport policy.
+            var transport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
+            _evaluationTransport = transport;
+            var exporter = _settingsManager.InitialExporterSettings;
+            var context = CreateEvaluationContext(_settingsManager.InitialMutableSettings);
+            AgentConfiguration? agent = null;
+            AgentConfiguration? pendingAgent = null;
+            _evaluationSettingsSubscription = _settingsManager.SubscribeToChanges(changes =>
+            {
+                lock (_evaluationLock)
+                {
+                    if (Volatile.Read(ref _disposed))
+                    {
+                        return;
+                    }
+
+                    // Replay supplies the current values even when only one setting changed.
+                    exporter = changes.UpdatedExporter ?? changes.PreviousExporter;
+                    // Discovery receives settings before this module and can respond first.
+                    // Reconcile that response only with its exact exporter snapshot, not
+                    // capabilities retained from an earlier visit to the same address.
+                    if (ReferenceEquals(pendingAgent?.DiscoverySettings, exporter))
+                    {
+                        agent = pendingAgent;
+                    }
+                    else if (!MatchesCurrentAgent(agent))
+                    {
+                        agent = null;
+                    }
+
+                    pendingAgent = null;
+                    if (_evaluationWriter is null)
+                    {
+                        context = CreateEvaluationContext(changes.UpdatedMutable ?? changes.PreviousMutable);
+                    }
+
+                    if (_settings.Source == FeatureFlagsSource.RemoteConfig && changes.UpdatedExporter is not null)
+                    {
+                        Volatile.Write(ref _availableEvaluationWriter, null);
+                    }
+
+                    UpdateAvailability();
+                }
+            });
+
+            if (_settings.Source != FeatureFlagsSource.RemoteConfig)
+            {
+                // Agentless collection does not wait for a route. The bounded worker sends
+                // through the transport's existing discovery/fallback policy.
+                lock (_evaluationLock)
+                {
+                    UpdateAvailability();
+                }
+
+                return;
+            }
+
+            _evaluationDiscoveryCallback = configuration =>
+            {
+                lock (_evaluationLock)
+                {
+                    if (Volatile.Read(ref _disposed))
+                    {
+                        return;
+                    }
+
+                    if (!MatchesCurrentAgent(configuration))
+                    {
+                        // This may precede its settings callback or be a late old response.
+                        // Keep at most one pending capability snapshot; do not change current
+                        // admission until the matching settings update confirms it.
+                        pendingAgent = configuration;
+                        return;
+                    }
+
+                    agent = configuration;
+                    UpdateAvailability();
+                }
+            };
+            _discoveryService.SubscribeToChanges(_evaluationDiscoveryCallback);
+
+            // Called only under _evaluationLock. Remote Config retains its Agent capability gate.
+            // Agentless uses the existing bounded queue while the transport chooses a route.
+            void UpdateAvailability()
+            {
+                if (_settings.Source == FeatureFlagsSource.RemoteConfig
+                 && (StringUtil.IsNullOrEmpty(agent?.EventPlatformProxyEndpoint) || !MatchesCurrentAgent(agent)))
+                {
+                    Volatile.Write(ref _availableEvaluationWriter, null);
+                    return;
+                }
+
+                if (_evaluationWriter is null)
+                {
+                    try
+                    {
+                        // Keep tags for this writer's lifetime; changing the Agent must not
+                        // relabel observations that have already been accepted.
+                        var writer = new FlagEvaluationWriter(transport.SendFlagEvaluationsAsync, context);
+                        Volatile.Write(ref _evaluationWriter, writer);
+                    }
+                    catch (Exception)
+                    {
+                        Log.Debug("FeatureFlags flagevaluation writer could not be started.");
+                    }
+                }
+
+                Volatile.Write(ref _availableEvaluationWriter, _evaluationWriter);
+            }
+
+            bool MatchesCurrentAgent(AgentConfiguration? configuration)
+            {
+                // Returning to the same address creates a new exporter generation. A delayed
+                // callback from an earlier visit must not change the current admission state.
+                return ReferenceEquals(configuration?.DiscoverySettings, exporter);
+            }
+        }
+
+        private async Task FinishDisposalAsync(
+            Task close,
+            FeatureFlagsEvpTransport? evaluationTransport,
+            IDisposable? settingsSubscription,
+            Action<AgentConfiguration>? discoveryCallback,
+            ISubscription? subscription,
+            IFeatureFlagsDeliverySource? agentlessSource,
+            ExposureApi? exposureApi,
+            FeatureFlagsEvpTransport? evpTransport)
+        {
+            try
+            {
+                settingsSubscription?.Dispose();
+                if (discoveryCallback is not null)
+                {
+                    _discoveryService.RemoveSubscription(discoveryCallback);
+                }
+
+                if (subscription is not null)
+                {
+                    _rcmSubscriptionManager.Unsubscribe(subscription);
+                }
+
+                agentlessSource?.Dispose();
+                exposureApi?.Dispose();
+            }
+            catch (Exception)
+            {
+                Log.Debug("FeatureFlags cleanup failed; continuing bounded flagevaluation shutdown.");
+            }
+            finally
+            {
+                try
+                {
+                    await close.ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    Log.Debug("FeatureFlags flagevaluation shutdown failed.");
+                }
+                finally
+                {
+                    // Dispose stops new sends but preserves any request still live after the deadline.
+                    evaluationTransport?.Dispose();
+                    evpTransport?.Dispose();
+                    _disposeCompletion.TrySetResult(true);
+                }
+            }
         }
 
         /// <summary>
@@ -468,7 +700,9 @@ namespace Datadog.Trace.FeatureFlags
                     return list[0].Value;
                 }
 
-                var res = new ServerConfiguration();
+                // Recompute from the active files, not the previous merged result. Seeding
+                // from the first file keeps the configuration's default consent false.
+                var res = new ServerConfiguration { ObserveFullEvaluationData = list[0].Value.ObserveFullEvaluationData };
                 foreach (var conf in list)
                 {
                     res.Merge(conf.Value);
@@ -508,7 +742,7 @@ namespace Datadog.Trace.FeatureFlags
                 if (exposureApi is null)
                 {
                     // Keep the HTTP client and its settings subscription lazy with the first exposure.
-                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings);
+                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
                     exposureApi = new ExposureApi(_tracerSettings, _evpTransport);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }

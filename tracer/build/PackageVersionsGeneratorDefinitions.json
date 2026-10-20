@@ -15,13 +15,14 @@
     "SampleProjectName": "Samples.Quartz",
     "NugetPackageSearchName": "Quartz",
     "MinVersion": "3.1.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "4.0.0",
-      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0", "net11.0"]
+      "IncludeOnlyTargetFrameworks": ["net10.0", "net11.0"]
     }]
   },
   {
@@ -678,6 +679,8 @@
       "2.0.*",
       "2.*.*",
       "3.*.*",
+      "4.3.3",
+      "4.4.0",
       "4.*.*"
     ],
     "VersionConditions": [{
@@ -695,6 +698,8 @@
       "2.0.*",
       "2.*.*",
       "3.*.*",
+      "4.3.3",
+      "4.4.0",
       "4.*.*"
     ],
     "VersionConditions": [{
@@ -714,6 +719,8 @@
       "3.7.*",
       "3.8.*",
       "3.*.*",
+      "4.3.3",
+      "4.4.0",
       "4.*.*"
     ],
     "VersionConditions": [{
@@ -1005,6 +1012,28 @@
     "SpecificVersions": [
       "5.11.*",
       "5.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "SampleProjectName": "Samples.AzureEventGrid",
+    "NugetPackageSearchName": "Azure.Messaging.EventGrid",
+    "MinVersion": "4.0.0",
+    "MaxVersionExclusive": "6.0.0",
+    "SpecificVersions": [
+      "4.0.*",
+      "5.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "AzureEventGridNamespaces",
+    "SampleProjectName": "Samples.AzureEventGridNamespaces",
+    "NugetPackageSearchName": "Azure.Messaging.EventGrid.Namespaces",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.0.*",
+      "1.*.*"
     ]
   },
   {

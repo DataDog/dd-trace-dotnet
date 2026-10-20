@@ -6,7 +6,7 @@ public class VetoableJob : IJob
 {
     // Quartz 4x uses ValueTask instead of Task
 #if QUARTZ_4_0
-    async ValueTask IJob.Execute(IJobExecutionContext context)
+    async ValueTask IJob.Execute(IJobExecutionContext context, CancellationToken cancellationToken)
 #else
     async Task IJob.Execute(IJobExecutionContext context)
 #endif

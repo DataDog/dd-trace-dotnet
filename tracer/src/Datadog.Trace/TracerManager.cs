@@ -96,7 +96,7 @@ namespace Datadog.Trace
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
             TraceProcessors = traceProcessors ?? [];
-            QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex, isDefaultPattern: !settings.ObfuscationQueryStringRegexWasConfigured);
+            QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
             {
@@ -930,10 +930,10 @@ namespace Datadog.Trace
                     Log.Debug("Disposing RemoteConfigurationManager");
                     instance.RemoteConfigurationManager?.Dispose();
                     Log.Debug("Disposing FeatureFlagsManager");
-                    instance.FeatureFlags?.Dispose();
+                    var featureFlagsTask = instance.FeatureFlags?.DisposeAsync() ?? Task.CompletedTask;
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask, featureFlagsTask).ConfigureAwait(false);
 
                     Log.Debug("Disposing Telemetry");
                     if (instance.Telemetry is { })

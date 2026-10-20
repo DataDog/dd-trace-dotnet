@@ -472,6 +472,10 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
 
+            AzureEventGridBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureEventGridBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
             AgentFeaturePollingEnabled = config
                                         .WithKeys(ConfigurationKeys.AgentFeaturePollingEnabled)
                                         .AsBool(defaultValue: true);
@@ -492,11 +496,9 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
                                       .AsBool(defaultValue: false);
 
-            var obfuscationRegexResult = config
-                                        .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                        .AsStringResult();
-            ObfuscationQueryStringRegex = obfuscationRegexResult.WithDefault(new DefaultResult<string>(TracerSettingsConstants.DefaultObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex));
-            ObfuscationQueryStringRegexWasConfigured = obfuscationRegexResult.ConfigurationResult.IsPresent;
+            ObfuscationQueryStringRegex = config
+                                         .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
+                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -1197,6 +1199,12 @@ namespace Datadog.Trace.Configuration
         public bool AzureEventHubsBatchLinksEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether span links should be created for Azure Event Grid batch operations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureEventGridBatchLinksEnabled"/>
+        public bool AzureEventGridBatchLinksEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the agent discovery service is enabled.
         /// When disabled, the tracer will not query the agent for available endpoints.
         /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
@@ -1235,11 +1243,6 @@ namespace Datadog.Trace.Configuration
         /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the query string obfuscation regex was explicitly configured, including an empty value.
-        /// </summary>
-        internal bool ObfuscationQueryStringRegexWasConfigured { get; }
 
         /// <summary>
         /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
