@@ -31,6 +31,9 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool IsAvailable() => false;
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static string? GetExperimentationOptOutMode() => null;
+
     /// <summary>Gets a value indicating whether APM span enrichment is enabled.</summary>
     /// <returns> True when the span-enrichment gate is on </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -88,6 +91,18 @@ internal static class FeatureFlagsSdk
         return null;
     }
 
+    // A tracer without this bridge returns no evaluation, never an unprotected assignment.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static IEvaluation? EvaluateWithExperimentationOptOut(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool immediate)
+    {
+        if (flagKey is null)
+        {
+            throw new ArgumentNullException(nameof(flagKey));
+        }
+
+        return null;
+    }
+
     /// <summary>Accumulates a single flag evaluation into the active root span's FFE span-enrichment state.</summary>
     /// <param name="serialId"> Split serial id, or null when absent </param>
     /// <param name="doLog"> Whether the allocation authorizes subject logging </param>
@@ -100,12 +115,14 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool experimentationOptOutImmediate = false)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
         var evaluation = evaluate is null
-                             ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
+                             ? experimentationOptOutImmediate
+                                 ? EvaluateWithExperimentationOptOut(flagKey, targetType, defaultValue, context?.TargetingKey, attributes, true)
+                                 : Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
         var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);

@@ -52,7 +52,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
-        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool experimentationOptOutImmediate = false)
         {
             // Capture before evaluating: even an exception after a configuration update keeps this consent.
             var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
@@ -69,6 +69,21 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "PROVIDER_NOT_READY",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        });
+                }
+
+                var excludeExperiments = false;
+                if (experimentationOptOutImmediate && !ExperimentationOptOut.TryExclude(context?.Attributes, out excludeExperiments))
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "INVALID_CONTEXT",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "INVALID_CONTEXT",
                             [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
@@ -146,6 +161,11 @@ namespace Datadog.Trace.FeatureFlags
 
                 foreach (var allocation in flag.Allocations)
                 {
+                    if (excludeExperiments && allocation.DoLog != false)
+                    {
+                        continue;
+                    }
+
                     if (!IsAllocationActive(allocation, now))
                     {
                         continue;

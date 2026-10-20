@@ -33,6 +33,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     private static Action? _onNewConfig = null;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
+    private readonly bool _experimentationOptOutImmediate;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
@@ -51,7 +52,15 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
+        : this(ExperimentationOptOutMode.Default)
     {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="DatadogProvider"/> class with an experimentation opt-out mode override.</summary>
+    /// <param name="experimentationOptOutMode">Default reads central SDK configuration. Disabled and Immediate override it.</param>
+    public DatadogProvider(ExperimentationOptOutMode experimentationOptOutMode)
+    {
+        _experimentationOptOutImmediate = ResolveExperimentationOptOutMode(experimentationOptOutMode);
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
 #if NET6_0_OR_GREATER
         _metricsHook = new FlagEvalMetricsHook();
@@ -79,6 +88,32 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     /// <summary> Gets a value indicating whether the Datadog's provider is instrumented and available  </summary>
     public static bool IsAvailable => FeatureFlagsSdk.IsAvailable();
+
+    internal static bool ResolveExperimentationOptOutMode(ExperimentationOptOutMode mode, string? configured = null)
+    {
+        switch (mode)
+        {
+            case ExperimentationOptOutMode.Disabled:
+                return false;
+            case ExperimentationOptOutMode.Immediate:
+                return true;
+            case ExperimentationOptOutMode.Default:
+                var value = (configured ?? FeatureFlagsSdk.GetExperimentationOptOutMode() ?? "disabled").Trim();
+                if (value.Length == 0 || value.Equals("disabled", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                if (value.Equals("immediate", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                throw new ArgumentException("DD_FEATURE_FLAGS_EXPERIMENTATION_OPT_OUT_MODE must be disabled or immediate");
+            default:
+                throw new ArgumentOutOfRangeException(nameof(mode));
+        }
+    }
 
     /// <summary> Notifies when a new config is available </summary>
     /// <param name="onNewConfig"> Action to be called </param>
@@ -233,7 +268,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate, _evpHook);
+        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate, _evpHook, _experimentationOptOutImmediate);
         return Task.FromResult(res);
     }
 
@@ -246,7 +281,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate, _evpHook);
+        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate, _evpHook, _experimentationOptOutImmediate);
         return Task.FromResult(res);
     }
 
@@ -259,7 +294,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate, _evpHook);
+        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate, _evpHook, _experimentationOptOutImmediate);
         return Task.FromResult(res);
     }
 
@@ -272,7 +307,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate, _evpHook);
+        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate, _evpHook, _experimentationOptOutImmediate);
         return Task.FromResult(res);
     }
 
@@ -285,7 +320,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate, _evpHook);
+        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate, _evpHook, _experimentationOptOutImmediate);
         return Task.FromResult(res);
     }
 

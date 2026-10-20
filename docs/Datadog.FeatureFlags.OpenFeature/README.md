@@ -110,6 +110,48 @@ exception behavior.
 These APIs report diagnostic `DDFF001`; suppress it explicitly to opt in. Older
 compilers may not enforce this diagnostic. Existing async calls require no opt-in.
 
+## Per-subject experimentation opt-out
+
+Set this environment variable before starting the application:
+
+```sh
+DD_FEATURE_FLAGS_EXPERIMENTATION_OPT_OUT_MODE=immediate
+```
+
+Pass the customer's stored opt-out time in each subject's evaluation context:
+
+```csharp
+var provider = new DatadogProvider();
+await OpenFeature.Api.Instance.SetProviderAsync(provider);
+var client = OpenFeature.Api.Instance.GetClient();
+var context = EvaluationContext.Builder()
+    .SetTargetingKey("athlete-123")
+    .Set("dd_experimentation_opt_out_at", "2026-10-19T12:00:00Z")
+    .Build();
+bool enabled = await client.GetBooleanValueAsync("new-route-planner", false, context);
+```
+
+The default mode is `disabled`. In `immediate` mode, a valid RFC3339 timestamp
+excludes the subject from allocations that record experiment exposures.
+Evaluation continues through ordinary feature allocations. If none match, the
+provider returns the application's default value.
+
+Omit the attribute for subjects who can participate. Null, malformed, and
+non-string values return the application's default with `InvalidContext`.
+A future timestamp takes effect immediately; it does not schedule exclusion.
+Disabled mode ignores the attribute.
+
+The provider resolves the mode at construction. An explicit enum overrides central
+configuration, for example `new DatadogProvider(ExperimentationOptOutMode.Disabled)`.
+Unsupported configuration values cause construction to fail.
+
+Update both the automatic tracer and the `Datadog.FeatureFlags.OpenFeature` package
+to versions that support this setting. Immediate mode does not fall back to
+ordinary evaluation when the installed tracer lacks the required integration.
+
+This setting does not change evaluation telemetry. Immediate withdrawal can change
+an enrolled subject's experience. Account for that change in experiment analysis.
+
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).

@@ -42,6 +42,9 @@ internal sealed class FeatureFlagsSettings
     {
         source ??= NullConfigurationSource.Instance;
         var config = new ConfigurationBuilder(source, telemetry);
+        ExperimentationOptOutMode = config
+                                  .WithKeys(ConfigurationKeys.FeatureFlags.ExperimentationOptOutMode)
+                                  .AsString("disabled");
 
         // Read as nullable: the precedence rules distinguish "explicitly provided" from "left unset",
         // so a default value here would erase the difference the legacy key depends on.
@@ -131,6 +134,9 @@ internal sealed class FeatureFlagsSettings
     /// Gets the resolved delivery source. <see cref="FeatureFlagsSource.Offline"/> means nothing is contacted.
     /// </summary>
     public FeatureFlagsSource Source { get; }
+
+    /// <summary>Gets the raw opt-out mode. The provider validates it after applying its override.</summary>
+    public string ExperimentationOptOutMode { get; }
 
     /// <summary>
     /// Gets a value indicating whether Feature Flags run at all. Independent of <see cref="Source"/>,

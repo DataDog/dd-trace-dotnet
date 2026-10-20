@@ -42,31 +42,44 @@ public class CanonicalFixtureTests
 
         foreach (var resource in resources)
         {
-            var cases = JsonLinq.JArray.Parse(ReadResource(resource));
+            using var reader = new Json.JsonTextReader(new StringReader(ReadResource(resource))) { DateParseHandling = Json.DateParseHandling.None };
+            var cases = JsonLinq.JArray.Load(reader);
             Assert.NotEmpty(cases);
             for (var index = 0; index < cases.Count; index++)
             {
                 var description = $"{resource.Substring(CasesPrefix.Length)}[{index}]";
                 var json = cases[index].ToString(Json.Formatting.None);
-                yield return [description, json, false];
-                yield return [description, json, true];
+                yield return [description, json, false, false];
+                yield return [description, json, true, false];
+                if (cases[index]["capabilities"]?["experimentationOptOutImmediate"] is not null)
+                {
+                    yield return [description + " immediate", json, false, true];
+                    yield return [description + " immediate", json, true, true];
+                }
             }
         }
     }
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public async Task PublicProviderMethodsMatchCanonicalFixtures(string description, string json, bool useAsync)
+    public async Task PublicProviderMethodsMatchCanonicalFixtures(string description, string json, bool useAsync, bool immediate)
     {
         Assert.False(string.IsNullOrEmpty(description));
-        var testCase = JsonLinq.JObject.Parse(json);
+        using var reader = new Json.JsonTextReader(new StringReader(json)) { DateParseHandling = Json.DateParseHandling.None };
+        var testCase = JsonLinq.JObject.Load(reader);
+        if (immediate)
+        {
+            testCase["result"] = testCase["capabilities"]!["experimentationOptOutImmediate"]!.DeepClone();
+        }
+
         var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, Configuration);
         using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
             new EvaluationAdapter(evaluator.Evaluate(
                 key,
                 (TracerFlags.ValueType)type,
                 fallback,
-                new TracerFlags.EvaluationContext(targetingKey, attributes))));
+                new TracerFlags.EvaluationContext(targetingKey, attributes),
+                immediate)));
 
         var builder = EvaluationContext.Builder();
         foreach (var attribute in ((JsonLinq.JObject)testCase["attributes"]!).Properties())

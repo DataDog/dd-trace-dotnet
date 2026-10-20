@@ -3180,6 +3180,14 @@ supportedConfigurations:
       caller's default value until the configuration arrives.
       The application is blocked for up to this long, because the OpenFeature SDK awaits provider
       initialization, so keep it below the budget the application's readiness probe allows.
+  DD_FEATURE_FLAGS_EXPERIMENTATION_OPT_OUT_MODE:
+  - implementation: A
+    scope: managed
+    type: string
+    default: disabled
+    product: FeatureFlags
+    documentation: |-
+      Controls per-subject exclusion from experimentation. Supported values are disabled and immediate.
   DD_FEATURE_FLAGS_ENABLED:
   - implementation: A
     scope: managed
