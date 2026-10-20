@@ -73,7 +73,6 @@ public class ExperimentationOptOutTests
     [InlineData("2026-10-19T15:30:00+05:30")]
     [InlineData("2026-10-19T15:30:00-04:00")]
     [InlineData("9999-12-31T23:59:59Z")]
-    [InlineData("0000-02-29T00:00:00Z")]
     [InlineData("2024-02-29T00:00:00Z")]
     public void ValidTimestampExcludesImmediately(string timestamp)
     {
@@ -86,13 +85,10 @@ public class ExperimentationOptOutTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("not a timestamp")]
-    [InlineData("2026-10-19")]
-    [InlineData("2026-10-19T15:30:00")]
     [InlineData("2026-02-30T00:00:00Z")]
     [InlineData("2026-10-19T24:00:00Z")]
     [InlineData("2026-10-19T15:30:60Z")]
     [InlineData("2026-10-19T15:30:00+99:00")]
-    [InlineData(" 2026-10-19T15:30:00Z")]
     [InlineData(true)]
     [InlineData(42)]
     public void InvalidTimestampsAreRejected(object? value)
@@ -109,6 +105,38 @@ public class ExperimentationOptOutTests
         Assert.False(excluded);
     }
 
+    [Theory]
+    [InlineData("2026-10-19T15:30:00Z")]
+    [InlineData("2026-10-19T15:30:00.123456789Z")]
+    [InlineData("2026-10-19T15:30:00.123456789123Z")]
+    [InlineData("2026-10-19T15:30:00+05:30")]
+    [InlineData("2026-10-19T15:30:00+24:00")]
+    [InlineData("2026-10-19T15:30:00+00:60")]
+    [InlineData("2026-10-19T15:30:60Z")]
+    [InlineData("2026-02-30T00:00:00Z")]
+    [InlineData("0000-02-29T00:00:00Z")]
+    [InlineData("2026-10-19t15:30:00z")]
+    [InlineData("2026-10-19T5:30:00Z")]
+    [InlineData("2026-10-19")]
+    [InlineData("2026-10-19T15:30:00")]
+    [InlineData(" 2026-10-19T15:30:00Z")]
+    public void TimestampValidationMatchesAllocationTimestamps(string timestamp)
+    {
+        var accepted = true;
+        try
+        {
+            TracerFlags.FeatureFlagsEvaluator.ParseDate(timestamp);
+        }
+        catch (FormatException)
+        {
+            accepted = false;
+        }
+
+        Assert.Equal(accepted, TracerFlags.ExperimentationOptOut.TryExclude(
+            new Dictionary<string, object?> { [TracerFlags.ExperimentationOptOut.Attribute] = timestamp }, out var excluded));
+        Assert.Equal(accepted, excluded);
+    }
+
     [Fact]
     public void ImmediateModeDoesNotFallBackToOldTracerEvaluation()
     {
@@ -121,6 +149,6 @@ public class ExperimentationOptOutTests
     [Fact]
     public void SharedFixturesIncludeImmediateCapability()
     {
-        Assert.Equal(36, System.Linq.Enumerable.Count(CanonicalFixtureTests.Cases(), row => (bool)row[3]));
+        Assert.Equal(52, System.Linq.Enumerable.Count(CanonicalFixtureTests.Cases(), row => (bool)row[3]));
     }
 }

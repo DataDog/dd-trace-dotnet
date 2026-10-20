@@ -179,7 +179,10 @@ public class CanonicalFixtureTests
             _ => throw new InvalidOperationException($"Unsupported fixture errorCode: {errorCode}"),
         };
         Assert.Equal(expectedError, actual.ErrorType);
-        Assert.Equal(errorCode, actual.ErrorMessage);
+        var expectedMessage = expectedError == ErrorType.InvalidContext
+            ? "dd_experimentation_opt_out_at must be an RFC3339 timestamp string; supply a valid timestamp to opt out, or omit the attribute to permit experimentation"
+            : errorCode;
+        Assert.Equal(expectedMessage, actual.ErrorMessage);
     }
 
     private static string ReadResource(string name)

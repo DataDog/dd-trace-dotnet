@@ -168,13 +168,16 @@ internal static class FeatureFlagsSdk
         var value = errorType != ErrorType.None
                         ? defaultValue
                         : typeof(T) == typeof(Value) ? (T)(object)JsonToValue(evaluation.Value) : (T)evaluation.Value!;
+        var errorMessage = errorType == ErrorType.InvalidContext
+            ? "dd_experimentation_opt_out_at must be an RFC3339 timestamp string; supply a valid timestamp to opt out, or omit the attribute to permit experimentation"
+            : evaluation.Error;
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
             value,
             errorType,
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
-            evaluation.Error,
+            errorMessage,
             ToMetadata(evaluation.FlagMetadata, evalTimeMs));
         return res;
     }

@@ -493,7 +493,7 @@ namespace Datadog.Trace.FeatureFlags
             return (int)(intFromHash % totalShards);
         }
 
-        private static DateTime? ParseDate(string? dateString)
+        internal static DateTime? ParseDate(string? dateString)
         {
             if (dateString == null)
             {

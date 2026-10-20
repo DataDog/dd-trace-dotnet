@@ -131,6 +131,7 @@ var context = EvaluationContext.Builder()
 bool enabled = await client.GetBooleanValueAsync("new-route-planner", false, context);
 ```
 
+Timestamp validation uses the same parser as allocation `startAt` and `endAt` timestamps.
 The default mode is `disabled`. In `immediate` mode, a valid RFC3339 timestamp
 excludes the subject from allocations that record experiment exposures.
 Evaluation continues through ordinary feature allocations. If none match, the
