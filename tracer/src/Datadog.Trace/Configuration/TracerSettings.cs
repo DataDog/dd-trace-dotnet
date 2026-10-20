@@ -832,7 +832,7 @@ namespace Datadog.Trace.Configuration
 
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
-                .AsBool(defaultValue: false);
+                .AsBool(defaultValue: true);
 
             if (OtelSemanticsEnabled)
             {

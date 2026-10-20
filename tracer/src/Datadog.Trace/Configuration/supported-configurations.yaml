@@ -3366,7 +3366,7 @@ supportedConfigurations:
   - implementation: A
     scope: managed
     type: boolean
-    default: 'false'
+    default: 'true'
     product: OpenTelemetry
     const_name: OtelThreadContextEnabled
     documentation: |-
