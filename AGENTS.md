@@ -268,6 +268,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/InstrumentationGenerator.md` — GUI and CLI instrumentation generator tools
 - `docs/development/for-ai/InstrumentationGenerator-CLI.md` — LLM reference for the CLI (commands, JSON schemas, error handling)
 - `docs/development/DuckTyping.md` — Duck typing guide
+- `docs/development/NativeAOT.md` — NativeAOT instrumentation at build time (`Datadog.Trace.Aot`, `dd-trace aot instrument`): architecture, runtime and testing
 - `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive

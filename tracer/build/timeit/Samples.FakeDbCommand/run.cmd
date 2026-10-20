@@ -6,6 +6,8 @@ IF EXIST results_Samples.FakeDbCommand.windows.net48.json DEL /F results_Samples
 IF EXIST results_Samples.FakeDbCommand.windows.netcoreapp31.json DEL /F results_Samples.FakeDbCommand.windows.netcoreapp31.json
 IF EXIST results_Samples.FakeDbCommand.windows.net60.json DEL /F results_Samples.FakeDbCommand.windows.net60.json
 IF EXIST results_Samples.FakeDbCommand.windows.net80.json DEL /F results_Samples.FakeDbCommand.windows.net80.json
+IF EXIST results_Samples.FakeDbCommand.windows.net80.nativeaot.json DEL /F results_Samples.FakeDbCommand.windows.net80.nativeaot.json
+IF EXIST results_Samples.FakeDbCommand.windows.net100.nativeaot.json DEL /F results_Samples.FakeDbCommand.windows.net100.nativeaot.json
 
 REM =====================
 REM Handle log artifact directory
@@ -69,6 +71,26 @@ IF ERRORLEVEL 1 (
     set FAILED=1
 )
 call :CopyLogs net8.0
+
+echo *********************
+echo .NET 8.0 NativeAOT
+echo *********************
+dotnet timeit Samples.FakeDbCommand.windows.net80.nativeaot.json
+IF ERRORLEVEL 1 (
+    echo ❌ .NET 8.0 NativeAOT benchmark FAILED
+    set FAILED=1
+)
+call :CopyLogs net8.0-nativeaot
+
+echo *********************
+echo .NET 10.0 NativeAOT
+echo *********************
+dotnet timeit Samples.FakeDbCommand.windows.net100.nativeaot.json
+IF ERRORLEVEL 1 (
+    echo ❌ .NET 10.0 NativeAOT benchmark FAILED
+    set FAILED=1
+)
+call :CopyLogs net10.0-nativeaot
 
 IF "!FAILED!"=="1" (
     echo =====================
