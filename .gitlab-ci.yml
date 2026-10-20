@@ -50,6 +50,28 @@ variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
     LLMVAL_PLATFORM_REF: "1bf238d3f9885071787f62ff52e2423b4ee5a963"   # platform PR #48 (must match include ref above)
 
+# Exercise the setup planner even when the instruction-change gate skips.
+# Inherit the approved image, identity, and platform pin; replace evaluation and telemetry scripts.
+"llm validation (setup plan)":
+  extends: "llm validation"
+  timeout: 20m
+  needs: []
+  rules:
+    - if: '$CI_EXTERNAL_PULL_REQUEST_IID || $CI_PIPELINE_SOURCE == "external_pull_request_event" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: on_success
+    - if: '$CI_COMMIT_REF_NAME == $LLMVAL_BASE_REF'
+      when: never
+    # DDCI also uses branch pipelines without explicit PR metadata.
+    - when: on_success
+  script:
+    - bash "$CI_PROJECT_DIR/.gitlab/llm-setup-plan.sh"
+  artifacts:
+    when: always
+    paths:
+      - setup-plan.json
+      - setup-plan.log
+    expire_in: 1 month
+
 build-windows-ci-image:
   stage: build
   timeout: 2h
