@@ -25,11 +25,11 @@ public class NativeValidationHelper
 
     public void ValidateNativeLibraryCompatibility(
         AbsolutePath libraryPath,
-        Version expectedGlibcVersion,
+        Version maximumAllowedGlibcVersion,
         string snapshotPrefix,
         IEnumerable<string> allowedSymbols = null)
     {
-        ValidateNativeLibraryGlibcCompatibility(libraryPath, expectedGlibcVersion, allowedSymbols);
+        ValidateNativeLibraryGlibcCompatibility(libraryPath, maximumAllowedGlibcVersion, allowedSymbols);
 
         if (IsAlpine)
         {
@@ -40,52 +40,21 @@ public class NativeValidationHelper
 
     void ValidateNativeLibraryGlibcCompatibility(
         AbsolutePath libraryPath,
-        Version expectedGlibcVersion,
+        Version maximumAllowedGlibcVersion,
         IEnumerable<string> allowedSymbols = null)
     {
         var filename = Path.GetFileNameWithoutExtension(libraryPath);
-        var glibcVersion = FindMaxGlibcVersion(libraryPath, allowedSymbols);
+        var output = Nm.Value($"--with-symbol-versions -D {libraryPath}").Select(x => x.Text).ToList();
+        var scanResult = GlibcSymbolVersionChecker.Scan(output, allowedSymbols);
+        var maximumRequiredVersion = GlibcSymbolVersionChecker.GetMaximumVersion(scanResult);
 
-        Logger.Information("Maximum required glibc version for {Filename} is {GlibcVersion}", filename, glibcVersion);
+        Logger.Information("Maximum required glibc version for {Filename} is {GlibcVersion}", filename, maximumRequiredVersion);
 
-        if (IsAlpine && glibcVersion is not null)
-        {
-            throw new Exception($"Alpine build of {filename} should not have glibc symbols in the binary, but found {glibcVersion}");
-        }
-        else if (!IsAlpine && glibcVersion != expectedGlibcVersion)
-        {
-            throw new Exception($"{filename} should have a maximum required glibc version of {expectedGlibcVersion} but has {glibcVersion}");
-        }
-        
-        Version FindMaxGlibcVersion(AbsolutePath libraryPath, IEnumerable<string> allowedSymbols)
-        {
-            var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ").Select(x => x.Text).ToList();
-
-            // Gives output similar to this:
-            // 0000000000170498 T SetGitMetadataForApplication
-            // 000000000016f944 T ThreadsCpuManager_Map
-            //                  w __cxa_finalize@GLIBC_2.17
-            //                  U __cxa_thread_atexit_impl@GLIBC_2.18
-            //                  U __duplocale@GLIBC_2.17
-            //                  U __environ@GLIBC_2.17
-            //                  U __errno_location@GLIBC_2.17
-            //                  U __freelocale@GLIBC_2.17
-            //                  U __fxstat@GLIBC_2.17
-            //                  U __fxstat64@GLIBC_2.17
-            //                  U __getdelim@GLIBC_2.17
-            //                  w __gmon_start__
-            //                  U __iswctype_l@GLIBC_2.17
-            //                  U __lxstat@GLIBC_2.17
-            //                  U __newlocale@GLIBC_2.17
-            //
-            // We only care about the Undefined symbols that are in glibc
-            // In this example, we will return 2.18
-
-            return output
-                  .Where(x => x.Contains("@GLIBC_") && allowedSymbols?.Any(y => x.Contains(y)) != true)
-                  .Select(x => Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
-                  .Max();
-        }
+        GlibcSymbolVersionChecker.Validate(
+            scanResult,
+            maximumAllowedGlibcVersion,
+            IsAlpine,
+            filename);
     }
 
     public void ValidateNativeSymbols(AbsolutePath libraryPath, string snapshotNamePrefix)
@@ -117,7 +86,7 @@ public class NativeValidationHelper
         // We only care about the Undefined symbols - we don't want to accidentally add more of them.
         // Newer nm (binutils >= 2.35) prints ELF version tags by default (@GLIBC_2.17, @GCC_3.3);
         // older nm does not. Strip them so snapshots and the musl allowlist always use bare names.
-        // The glibc floor check (FindMaxGlibcVersion) still uses --with-symbol-versions.
+        // The glibc compatibility ceiling check still uses --with-symbol-versions.
 
         Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
 

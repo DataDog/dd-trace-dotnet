@@ -314,18 +314,13 @@ partial class Build
             var (arch, extension) = GetUnixArchitectureAndExtension();
             var dest = MonitoringHomeDirectory / arch / $"{NativeTracerProject.Name}.{extension}";
 
-            // If we need to increase this version on arm64 later, that is ok as long
-            // as it doesn't go above 2.23. Just update the version below. We must
-            // NOT increase it beyond 2.23, or increase the version on x64.
-            //
-            // See also the ValidateNativeProfilerGlibcCompatibility Nuke task and the checks
-            // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
-            var expectedGlibcVersion = IsArm64
-                ? new Version(2, 17)
-                : new Version(2, 17);
+            // This is a compatibility ceiling, not an expected exact value. Requiring an
+            // older version is fine; requiring anything newer than 2.17 is not.
+            // See also ValidateNativeProfilerGlibcCompatibility.
+            var maximumAllowedGlibcVersion = new Version(2, 17);
 
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
-            nativeLibHelper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
+            nativeLibHelper.ValidateNativeLibraryCompatibility(dest, maximumAllowedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
         });
 
     Target ValidateNativeConfigurations => _ => _
