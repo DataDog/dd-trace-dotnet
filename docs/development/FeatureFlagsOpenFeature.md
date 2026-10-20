@@ -17,6 +17,37 @@ registered on the OpenFeature API or client. Callers supply the complete context
 The normal asynchronous client continues to own its hook lifecycle, avoiding
 duplicate metrics and span enrichment.
 
+EVP captures the targeting key and consented, bounded attributes in provider
+resolution, before customer After hooks run. OpenFeature 2.3.0 passes the original
+context to Finally even when Before hooks changed the evaluated context. A
+provider-hook-local weak association keyed by the result metadata carries the
+capture to Finally, which removes it even when delivery is rejected. If OpenFeature
+replaces the result after a hook failure, the weak association can be collected.
+No full evaluation context is retained or added to public flag metadata.
+
+## Evaluation event delivery
+
+Both event tracks use `FeatureFlagsEvpTransport`, with separate instances so
+evaluation fallback and disposal do not change exposure routing.
+
+- **Remote Config:** provider activation subscribes to shared Agent discovery.
+  The evaluation writer starts after discovery confirms EVP support at the
+  configured address. Until then, evaluations work, but the hook skips context
+  capture and queueing. Agent-address changes close admission until the new
+  address is discovered. Delivery uses the existing fixed v2 route without
+  direct-intake fallback.
+- **Agentless:** provider activation starts the bounded evaluation writer without
+  waiting for discovery. The transport chooses an identity-preserving Agent route
+  or direct intake using the existing exposure fallback policy. It does not replay
+  a batch whose delivery is uncertain. If neither route is available, events are
+  dropped best-effort; flag evaluation is not blocked on network delivery.
+
+Service tags remain fixed for a writer's lifetime. Privacy filtering, aggregation
+and payload limits happen before transport, which sends the already-compressed
+bytes unchanged. Requests have a five-second deadline, including socket/pipe
+connections that succeed but never receive a response. Explicit evaluation flush
+and shutdown retain their bounded, best-effort waits.
+
 ## Focused tests
 
 Use the SDK pinned in `global.json`:

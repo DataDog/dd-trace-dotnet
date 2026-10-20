@@ -36,6 +36,22 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static bool IsSpanEnrichmentEnabled() => false;
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool IsEvaluationEventsEnabled() => false;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool CanEnqueueEVP() => false;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void EnqueueEVP(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int flags)
+    {
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void RecordEVPHookError()
+    {
+    }
+
     /// <summary>
     /// Gets a value indicating whether flag configuration is currently held, so the provider can
     /// resolve flags. Goes back to <c>false</c> when configuration is withdrawn.
@@ -84,13 +100,16 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null)
     {
+        long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
         var evaluation = evaluate is null
                              ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
-        return GetResolutionDetails(flagKey, defaultValue, evaluation);
+        var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
+        evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
+        return resolution;
     }
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
@@ -112,7 +131,7 @@ internal static class FeatureFlagsSdk
         _ => value.AsObject,
     };
 
-    private static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
+    internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs)
     {
         // OpenFeature substitutes the caller's default only when a provider throws. This provider
         // reports errors as details instead, so every error must carry the default itself.
@@ -125,7 +144,7 @@ internal static class FeatureFlagsSdk
                         default,
                         default,
                         "FeatureFlagsSdk is disabled",
-                        null);
+                        ToMetadata(null, evalTimeMs));
         }
 
         var errorType = ToErrorType(evaluation.Reason, evaluation.Error);
@@ -139,7 +158,7 @@ internal static class FeatureFlagsSdk
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
-            ToMetadata(evaluation.FlagMetadata));
+            ToMetadata(evaluation.FlagMetadata, evalTimeMs));
         return res;
     }
 
@@ -174,9 +193,28 @@ internal static class FeatureFlagsSdk
         _ => "unknown"
     };
 
-    private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
+    private static ImmutableMetadata? ToMetadata(IDictionary<string, string>? metadata, long? evalTimeMs)
     {
+        if (metadata is null && evalTimeMs is null)
+        {
+            return null;
+        }
+
         var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
+        if (evalTimeMs is { } time)
+        {
+            dic[FeatureFlagMetadataKeys.ObserveFullEvaluationData] =
+                metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.ObserveFullEvaluationData, out var consent) && consent == "true";
+            // OpenFeature exposes numeric metadata as int or double. Epoch milliseconds are exact as a double.
+            dic[FeatureFlagMetadataKeys.EvaluationTimestampMs] = (double)time;
+        }
+        else
+        {
+            // The evaluator still captures consent, but no EVP hook consumes these private fields.
+            dic.Remove(FeatureFlagMetadataKeys.ObserveFullEvaluationData);
+            dic.Remove(FeatureFlagMetadataKeys.EvaluationTimestampMs);
+        }
+
         return new ImmutableMetadata(dic);
     }
 

@@ -1185,6 +1185,7 @@
    </assembly>
    <assembly fullname="System.Threading">
       <type fullname="System.Threading.AbandonedMutexException" />
+      <type fullname="System.Threading.AsyncFlowControl" />
       <type fullname="System.Threading.AsyncLocal`1" />
       <type fullname="System.Threading.AsyncLocalValueChangedArgs`1" />
       <type fullname="System.Threading.AutoResetEvent" />

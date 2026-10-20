@@ -7,8 +7,10 @@
 
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <future>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 using namespace trace;
@@ -167,7 +169,8 @@ public:
     }
 };
 
-class DesktopNGenInlinerProfilerInfo : public NGenInlinerProfilerInfo
+template <class ProfilerInfo>
+class DesktopClrProfilerInfo : public ProfilerInfo
 {
 public:
     HRESULT STDMETHODCALLTYPE GetRuntimeInformation(USHORT* pClrInstanceId, COR_PRF_RUNTIME_TYPE* pRuntimeType,
@@ -183,6 +186,45 @@ public:
         return S_OK;
     }
 };
+
+using DesktopNGenInlinerProfilerInfo = DesktopClrProfilerInfo<NGenInlinerProfilerInfo>;
+
+// The ReJIT worker writes requestedBatches: read it only after WaitForRejitWorker.
+class RecordingNGenProfilerInfo : public MockCorProfilerInfo
+{
+public:
+    std::unordered_map<mdMethodDef, mdMethodDef> inlinerOf;
+    mdMethodDef incompleteOnceMethod = mdMethodDefNil;
+    std::deque<SingleMethodEnum> inlinerEnums;
+    std::vector<mdMethodDef> enumeratedMethods;
+    std::vector<std::vector<mdMethodDef>> requestedBatches;
+
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(
+        ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData,
+        ICorProfilerMethodEnum** ppEnum) override
+    {
+        enumeratedMethods.push_back(inlineeMethodId);
+        if (inlineeMethodId == incompleteOnceMethod)
+        {
+            incompleteOnceMethod = mdMethodDefNil;
+            return CORPROF_E_DATAINCOMPLETE;
+        }
+
+        auto& inliners = inlinerEnums.emplace_back();
+        inliners.method = {inlinersModuleId, inlinerOf[inlineeMethodId]};
+        *incompleteData = false;
+        *ppEnum = &inliners;
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE RequestReJIT(ULONG cFunctions, ModuleID moduleIds[], mdMethodDef methodIds[]) override
+    {
+        requestedBatches.emplace_back(methodIds, methodIds + cFunctions);
+        return S_OK;
+    }
+};
+
+using RecordingDesktopNGenProfilerInfo = DesktopClrProfilerInfo<RecordingNGenProfilerInfo>;
 
 class CountingNGenProfilerInfo : public MockCorProfilerInfo
 {
@@ -214,6 +256,28 @@ public:
         removeReturned.set_value();
     }
 };
+
+void CreateMethod(RejitHandlerModule* module, mdMethodDef methodId)
+{
+    module->CreateMethodIfNotExists(
+        methodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+}
+
+// The worker runs work items in order, so every request enqueued before this call has reached the CLR when it
+// returns. Waiting through Shutdown instead could drop them, because queued requests are skipped after shutdown.
+void WaitForRejitWorker(RejitHandler& handler)
+{
+    auto processed = std::make_shared<std::promise<void>>();
+    auto processedFuture = processed->get_future();
+    ASSERT_TRUE(handler.Enqueue(std::make_unique<RejitWorkItem>([processed] { processed->set_value(); })));
+    processedFuture.wait();
+}
 } // namespace
 
 TEST(ModuleLifetime, UnloadWaitsForActiveLeaseAndInvalidatesSnapshots)
@@ -718,6 +782,112 @@ TEST(RejitPreprocessor, DesktopNewMethodNGenInlinersAreDeferredToReplay)
     handler->AddNGenInlinerModule(inlinersModuleId);
 
     EXPECT_EQ(1, profilerInfo.enumerations);
+
+    handler->Shutdown();
+}
+
+TEST(RejitPreprocessor, DesktopReplayChecksOnlyNewMethodsAndRequestsInlinersInOneBatch)
+{
+    RecordingDesktopNGenProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    profilerInfo.inlinerOf = {{1, 11}, {2, 12}, {3, 12}};
+    const auto inlineeModule = handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    CreateMethod(module, 1);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ(std::vector<mdMethodDef>{1}, profilerInfo.enumeratedMethods);
+    EXPECT_EQ((std::vector<std::vector<mdMethodDef>>{{11}}), profilerInfo.requestedBatches);
+
+    CreateMethod(module, 2);
+    CreateMethod(module, 3);
+    {
+        auto moduleLifetime = inlineeModule.TryAcquire();
+        std::vector<RejitRequest> requests;
+        preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
+        EXPECT_TRUE(requests.empty());
+    }
+
+    // Method 1 was already checked against the NGen module, and inliner 12 inlines both new methods.
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ((std::vector<mdMethodDef>{1, 2, 3}), profilerInfo.enumeratedMethods);
+    EXPECT_EQ((std::vector<std::vector<mdMethodDef>>{{11}, {12}}), profilerInfo.requestedBatches);
+
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ((std::vector<mdMethodDef>{1, 2, 3}), profilerInfo.enumeratedMethods);
+    EXPECT_EQ((std::vector<std::vector<mdMethodDef>>{{11}, {12}}), profilerInfo.requestedBatches);
+
+    handler->Shutdown();
+}
+
+TEST(RejitPreprocessor, DesktopIncompleteNGenDataForNewMethodRechecksModule)
+{
+    RecordingDesktopNGenProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    profilerInfo.inlinerOf = {{1, 11}, {2, 12}};
+    profilerInfo.incompleteOnceMethod = 2;
+    handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    CreateMethod(module, 1);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    CreateMethod(module, 2);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ((std::vector<mdMethodDef>{1, 2}), profilerInfo.enumeratedMethods);
+    EXPECT_EQ((std::vector<std::vector<mdMethodDef>>{{11}}), profilerInfo.requestedBatches);
+
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ(4u, profilerInfo.enumeratedMethods.size());
+    EXPECT_EQ((std::vector<std::vector<mdMethodDef>>{{11}, {11, 12}}), profilerInfo.requestedBatches);
+
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ(4u, profilerInfo.enumeratedMethods.size());
+    EXPECT_EQ((std::vector<std::vector<mdMethodDef>>{{11}, {11, 12}}), profilerInfo.requestedBatches);
+
+    handler->Shutdown();
+}
+
+TEST(RejitHandler, NGenReplaySendsOneBatchForAllRejitters)
+{
+    RecordingNGenProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    TracerRejitPreprocessor firstPreprocessor(nullptr, handler);
+    TracerRejitPreprocessor secondPreprocessor(nullptr, handler);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    profilerInfo.inlinerOf = {{1, 11}, {2, 12}, {3, 12}};
+    handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    auto firstModule = firstPreprocessor.GetOrAddModule(inlineeModuleId);
+    CreateMethod(firstModule, 1);
+    CreateMethod(firstModule, 2);
+    auto secondModule = secondPreprocessor.GetOrAddModule(inlineeModuleId);
+    CreateMethod(secondModule, 1);
+    CreateMethod(secondModule, 3);
+
+    // Both rejitters find inliner 11, and inliner 12 inlines two instrumented methods.
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    WaitForRejitWorker(*handler);
+    EXPECT_EQ(4u, profilerInfo.enumeratedMethods.size());
+    EXPECT_EQ((std::vector<std::vector<mdMethodDef>>{{11, 12}}), profilerInfo.requestedBatches);
 
     handler->Shutdown();
 }

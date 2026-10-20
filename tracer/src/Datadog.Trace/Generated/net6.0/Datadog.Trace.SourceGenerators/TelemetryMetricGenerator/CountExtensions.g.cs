@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 63;
+    public const int Length = 69;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -85,6 +85,12 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "executed.sink",
             Datadog.Trace.Telemetry.Metrics.Count.IastRequestTainted => "request.tainted",
             Datadog.Trace.Telemetry.Metrics.Count.IastSuppressedVulnerabilities => "suppressed.vulnerabilities",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationRowsDropped => "flagevaluation.rows.dropped",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationRowsDegraded => "flagevaluation.rows.degraded",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationPayloadSplits => "flagevaluation.payload.splits",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationContextTruncated => "flagevaluation.context.truncated",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationTargetingKeyOmitted => "flagevaluation.targeting_key.omitted",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationHookErrors => "flagevaluation.hook.errors",
             _ => null!,
         };
 

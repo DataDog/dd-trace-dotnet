@@ -15,13 +15,14 @@
     "SampleProjectName": "Samples.Quartz",
     "NugetPackageSearchName": "Quartz",
     "MinVersion": "3.1.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "4.0.0",
-      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0", "net11.0"]
+      "IncludeOnlyTargetFrameworks": ["net10.0", "net11.0"]
     }]
   },
   {

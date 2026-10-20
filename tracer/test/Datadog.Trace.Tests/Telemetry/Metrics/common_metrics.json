@@ -114,6 +114,54 @@
     }
   },
   "tracers": {
+    "flagevaluation.rows.dropped": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations dropped locally, by fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.rows.degraded": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations degraded to omit identity and context, by fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.payload.splits": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "payloads",
+      "description": "Additional payloads created to respect the uncompressed size limit.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.context.truncated": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations with context omissions, once per fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.targeting_key.omitted": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations with an invalid targeting key omitted.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.hook.errors": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "errors",
+      "description": "Unexpected hook errors isolated from customer evaluations.",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "integration_errors": {
       "tags": [
         "integration_name",

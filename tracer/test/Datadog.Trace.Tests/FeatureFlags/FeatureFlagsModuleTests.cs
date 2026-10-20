@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class FeatureFlagsModuleTests
 {
     [Fact]
-    public void AgentlessModuleUsesSharedDiscoveryForEventDelivery()
+    public async Task AgentlessModuleUsesSharedDiscoveryForEventDelivery()
     {
         var rcmManager = new MockRcmSubscriptionManager();
         var discovery = new DiscoveryServiceMock();
@@ -63,6 +63,8 @@ public class FeatureFlagsModuleTests
             module.Activate();
             module.Activate();
             source.Started.Should().Be(1);
+            discovery.Callbacks.Should().HaveCount(2, "exposures and evaluations own separate transports");
+            await module.DisposeAsync();
         }
 
         discovery.Callbacks.Should().BeEmpty();
@@ -103,15 +105,23 @@ public class FeatureFlagsModuleTests
                                   .GetValue(module).Should().BeNull();
     }
 
-    [Fact]
-    public void ExposureSettingsUpdateUntilModuleDisposalRemovesBothSubscriptions()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExposureSettingsUpdateUntilModuleDisposalRemovesSubscriptions(bool activateEvaluationWriter)
     {
         var settings = CreateSettings();
         var subscribers = (ICollection)typeof(TracerSettings.SettingsManager)
                                      .GetField("_subscribers", BindingFlags.Instance | BindingFlags.NonPublic)!
                                      .GetValue(settings.Manager)!;
         var initialSubscriptions = subscribers.Count;
-        using var module = CreateModule(settings, new MockRcmSubscriptionManager());
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), discoveryService: FlagEvaluationTestDiscovery.Available(settings))!;
+        if (activateEvaluationWriter)
+        {
+            module.Activate();
+            module.EvaluationWriter.Should().NotBeNull();
+        }
+
         var api = module.GetExposureApi()!;
         var transport = (FeatureFlagsEvpTransport)typeof(FeatureFlagsModule)
                                                 .GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
@@ -120,7 +130,7 @@ public class FeatureFlagsModuleTests
         var factoryProperty = endpointField.FieldType.GetProperty("Factory")!;
         var contextField = typeof(ExposureApi).GetField("_context", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-        subscribers.Count.Should().Be(initialSubscriptions + 2, "both the sender and exposure context subscribe to settings");
+        subscribers.Count.Should().Be(initialSubscriptions + 2 + (activateEvaluationWriter ? 2 : 0), "each track subscribes for its transport and context/admission");
         UpdateSettings("before-disposal", new Uri("http://127.0.0.1:18126/updated/"));
 
         var factory = (IApiRequestFactory)factoryProperty.GetValue(endpointField.GetValue(transport))!;
@@ -128,9 +138,10 @@ public class FeatureFlagsModuleTests
         var context = (Dictionary<string, string>)contextField.GetValue(api)!;
         context["service"].Should().Be("before-disposal");
 
-        module.Dispose();
+        await module.DisposeAsync();
 
-        subscribers.Count.Should().Be(initialSubscriptions, "module disposal must remove both settings subscriptions");
+        subscribers.Count.Should().Be(initialSubscriptions, "module disposal must remove all event settings subscriptions");
+        module.EvaluationWriter.Should().BeNull();
         UpdateSettings("after-disposal", new Uri("http://127.0.0.1:28126/ignored/"));
         factoryProperty.GetValue(endpointField.GetValue(transport)).Should().BeSameAs(factory);
         contextField.GetValue(api).Should().BeSameAs(context);
@@ -241,6 +252,67 @@ public class FeatureFlagsModuleTests
                 [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
             };
         }
+    }
+
+    [Fact]
+    public void UpdateRemoteConfig_RecomputesConsentFromActiveFilesAfterUpdatesAndRemovals()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager);
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+        var firstPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/first/config");
+        var secondPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/second/config");
+
+        AssertConsent("false");
+        Update(firstPath, false);
+        Update(secondPath, true);
+        AssertConsent("false");
+
+        // Refreshing either path must not change consent just by changing merge order.
+        Update(firstPath, false);
+        AssertConsent("false");
+        Update(secondPath, true);
+        AssertConsent("false");
+
+        // Replacing the nonconsenting file must discard its old consent, not latch false.
+        Update(firstPath, true);
+        AssertConsent("true");
+
+        Update(firstPath, false);
+        AssertConsent("false");
+        Remove(firstPath);
+        AssertConsent("true");
+        Remove(secondPath);
+        AssertConsent("false");
+        module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+              .Error.Should().Be("PROVIDER_NOT_READY");
+
+        void AssertConsent(string expected)
+            => module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+                     .FlagMetadata![FeatureFlagMetadataKeys.ObserveFullEvaluationData].Should().Be(expected);
+
+        void Update(RemoteConfigurationPath path, bool consent)
+        {
+            var flag = FeatureFlagsHelpers.CreateExposureFlag();
+            flag.Allocations![0].DoLog = false;
+            var json = JsonConvert.SerializeObject(new ServerConfiguration
+            {
+                ObserveFullEvaluationData = consent,
+                Flags = new FlagCollection { ["flag"] = flag },
+            });
+            subscription.Invoke(
+                new Dictionary<string, List<RemoteConfiguration>>
+                {
+                    [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)],
+                },
+                null);
+            module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+                  .Value.Should().Be("tracked-value");
+        }
+
+        void Remove(RemoteConfigurationPath path)
+            => subscription.Invoke([], new Dictionary<string, List<RemoteConfigurationPath>> { [RcmProducts.FfeFlags] = [path] });
     }
 
     [Fact]

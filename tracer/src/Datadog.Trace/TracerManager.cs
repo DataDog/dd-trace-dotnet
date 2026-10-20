@@ -930,10 +930,10 @@ namespace Datadog.Trace
                     Log.Debug("Disposing RemoteConfigurationManager");
                     instance.RemoteConfigurationManager?.Dispose();
                     Log.Debug("Disposing FeatureFlagsManager");
-                    instance.FeatureFlags?.Dispose();
+                    var featureFlagsTask = instance.FeatureFlags?.DisposeAsync() ?? Task.CompletedTask;
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask, featureFlagsTask).ConfigureAwait(false);
 
                     Log.Debug("Disposing Telemetry");
                     if (instance.Telemetry is { })

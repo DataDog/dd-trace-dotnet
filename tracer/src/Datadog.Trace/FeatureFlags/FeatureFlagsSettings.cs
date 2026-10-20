@@ -92,6 +92,10 @@ internal sealed class FeatureFlagsSettings
         // set, which is exactly the case where the product runs on its default.
         telemetry.Record(ConfigurationKeys.FeatureFlags.FeatureFlagsEnabled, Enabled, ConfigurationOrigins.Calculated);
 
+        EvaluationEventsEnabled = config
+                                 .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled)
+                                 .AsBool(true);
+
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
                                 .AsRedactedString();
@@ -133,6 +137,12 @@ internal sealed class FeatureFlagsSettings
     /// which says where configuration would come from.
     /// </summary>
     public bool Enabled { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether flagevaluation track EVP events are enabled.
+    /// Independent of flag evaluation, configuration fetching, exposures, and span enrichment.
+    /// </summary>
+    public bool EvaluationEventsEnabled { get; }
 
     /// <summary>
     /// Gets the configured override for the agentless endpoint, or <c>null</c> to derive it from the site.
