@@ -53,8 +53,11 @@ public class AssemblyLoadContextTests
         AssemblyLoadContext.GetLoadContext(typeof(DuckType).Assembly).Should().BeSameAs(defaultContext);
         AssemblyLoadContext.GetLoadContext(typeof(ITargetProxy).Assembly).Should().BeSameAs(defaultContext);
         AssemblyLoadContext.GetLoadContext(defaultSharedAssembly).Should().BeSameAs(defaultContext);
-        AppDomain.CurrentDomain.GetAssemblies().Should().NotContain(
-            assembly => AssemblyLoadContext.GetLoadContext(assembly) == defaultContext && assembly.GetName().Name == TargetAssemblyName);
+        if (DuckType.RuntimeMode == DuckTypeRuntimeMode.Dynamic)
+        {
+            AppDomain.CurrentDomain.GetAssemblies().Should().NotContain(
+                assembly => AssemblyLoadContext.GetLoadContext(assembly) == defaultContext && assembly.GetName().Name == TargetAssemblyName);
+        }
 
         // The target field and the generated proxy resolve the same dependency identity in different contexts,
         // matching Azure Functions where Event Grid has a separate Azure.Core copy in its load context.
@@ -72,7 +75,7 @@ public class AssemblyLoadContextTests
         field!.Value.Should().Be(FieldValue.ExpectedValue);
 
         var proxyType = proxy.GetType();
-        proxyType.Assembly.IsDynamic.Should().BeTrue();
+        proxyType.Assembly.IsDynamic.Should().Be(DuckType.RuntimeMode == DuckTypeRuntimeMode.Dynamic);
         AssemblyLoadContext.GetLoadContext(proxyType.Assembly).Should().BeSameAs(targetContext);
     }
 
@@ -120,6 +123,7 @@ public class AssemblyLoadContextTests
         targetSharedAssembly = targetContext.LoadFromAssemblyPath(sharedAssemblyPath);
         var targetAssembly = targetContext.LoadFromAssemblyPath(targetAssemblyPath);
         AssemblyLoadContext.GetLoadContext(targetAssembly).Should().BeSameAs(targetContext);
+        DuckTypeTestRuntimeBootstrap.InitializeInAssemblyLoadContext(targetContext);
         return targetAssembly.GetType(TargetTypeName, throwOnError: true)!;
     }
 
