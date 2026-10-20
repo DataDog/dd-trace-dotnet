@@ -45,7 +45,7 @@ AZDO_ARTIFACT_UNAVAILABLE=2 # download_azure_artifact: build finished, artifact 
 AZDO_MAX_BUILD_ATTEMPTS=3
 AZDO_DOWNLOAD_ATTEMPTS=3 # retries for the final curl+unzip step, unrelated to the polling timeout above
 AZDO_TRIED_BUILDS="" # space-separated build ids resolve_azure_build_id should no longer offer
-AZDO_CURL_RETRY_FLAGS=(--retry 5 --retry-delay 2 --retry-connrefused) # transient errors only (5xx, 429, timeouts); a 404 is not retried
+AZDO_CURL_RETRY_FLAGS="--retry 5 --retry-delay 2 --retry-connrefused" # transient errors only (5xx, 429, timeouts); a 404 is not retried. Use unquoted.
 
 # Curls $1 (an Azure DevOps builds-list URL) and echoes the response, or a `{"value":[]}`
 # placeholder (with a warning to stderr) if the request still fails after retries - so a
@@ -54,7 +54,7 @@ AZDO_CURL_RETRY_FLAGS=(--retry 5 --retry-delay 2 --retry-connrefused) # transien
 _azure_curl_builds_or_empty() {
   local url="$1"
   local response
-  if ! response=$(curl -fsS "${AZDO_CURL_RETRY_FLAGS[@]}" "$url"); then
+  if ! response=$(curl -fsS $AZDO_CURL_RETRY_FLAGS "$url"); then
     echo "  WARNING: failed to query Azure DevOps builds - treating as no results for this tier" >&2
     echo '{"value":[]}'
     return
@@ -142,7 +142,7 @@ resolve_azure_build_id() {
 azure_build_state() {
   local buildId="$1"
   local response
-  if ! response=$(curl -fsS "${AZDO_CURL_RETRY_FLAGS[@]}" "${AZDO_API}/builds/${buildId}?api-version=7.1"); then
+  if ! response=$(curl -fsS $AZDO_CURL_RETRY_FLAGS "${AZDO_API}/builds/${buildId}?api-version=7.1"); then
     echo "  WARNING: failed to query status for build $buildId" >&2
     AZDO_BUILD_STATUS="unknown"
     AZDO_BUILD_RESULT="unknown"
@@ -159,7 +159,7 @@ azure_build_state() {
 _azure_fetch_artifacts_response() {
   local url="$1"
   local response
-  if ! response=$(curl -fsS "${AZDO_CURL_RETRY_FLAGS[@]}" "$url"); then
+  if ! response=$(curl -fsS $AZDO_CURL_RETRY_FLAGS "$url"); then
     echo ""
     return
   fi
@@ -245,7 +245,7 @@ download_azure_artifact() {
   # a "genuine timeout" and doesn't warrant discarding the build and starting over.
   local downloadAttempt
   for (( downloadAttempt = 1; downloadAttempt <= AZDO_DOWNLOAD_ATTEMPTS; downloadAttempt++ )); do
-    if curl -fsS "${AZDO_CURL_RETRY_FLAGS[@]}" -o "$targetDir/artifact.zip" "$downloadUrl" && unzip -o "$targetDir/artifact.zip" -d "$targetDir"; then
+    if curl -fsS $AZDO_CURL_RETRY_FLAGS -o "$targetDir/artifact.zip" "$downloadUrl" && unzip -o "$targetDir/artifact.zip" -d "$targetDir"; then
       rm -f "$targetDir/artifact.zip"
       return 0
     fi
