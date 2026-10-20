@@ -69,6 +69,15 @@ namespace Datadog.Profiler.IntegrationTests
             _etwProxy.StartServer();
         }
 
+        public void ThrowIfHandlerFailed()
+        {
+            var exceptions = HandlerExceptions.ToArray();
+            if (exceptions.Length > 0)
+            {
+                throw new AggregateException("Mock agent request handlers failed.", exceptions);
+            }
+        }
+
         public virtual void Dispose()
         {
             _cancellationTokenSource.Cancel();
