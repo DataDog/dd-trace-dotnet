@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -11,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// Timestamp struct for duck-typing
     /// Requires boxing, but necessary as we need to duck-type <see cref="Type"/> too
     /// </summary>
+    [DuckType("Confluent.Kafka.Timestamp", "Confluent.Kafka")]
     internal interface ITimestamp
     {
         /// <summary>

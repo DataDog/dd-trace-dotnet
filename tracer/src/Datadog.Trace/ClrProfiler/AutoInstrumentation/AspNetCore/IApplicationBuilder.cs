@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [DuckType("Microsoft.AspNetCore.Builder.ApplicationBuilder", "Microsoft.AspNetCore.Http")]
     public interface IApplicationBuilder
     {
         /// <summary>

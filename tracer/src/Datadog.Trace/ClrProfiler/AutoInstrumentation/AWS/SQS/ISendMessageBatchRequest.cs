@@ -5,12 +5,14 @@
 
 #nullable enable
 using System.Collections;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     /// <summary>
     /// SendMessageBatchRequest interface for ducktyping
     /// </summary>
+    [DuckType("Amazon.SQS.Model.SendMessageBatchRequest", "AWSSDK.SQS")]
     internal interface ISendMessageBatchRequest : IAmazonSQSRequestWithQueueUrl
     {
         /// <summary>

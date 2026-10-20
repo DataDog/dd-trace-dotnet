@@ -13,6 +13,9 @@ namespace Datadog.Trace.DiagnosticListeners.DuckTypes;
 /// <summary>
 /// Ducktyping for DiagnosticListener
 /// </summary>
+[DuckType("Microsoft.Data.SqlClient.Diagnostics.SqlDiagnosticListener", "Microsoft.Data.SqlClient")]
+[DuckType("Microsoft.Data.SqlClient.SqlDiagnosticListener", "Microsoft.Data.SqlClient")]
+[DuckType("System.Diagnostics.DiagnosticListener", "System.Diagnostics.DiagnosticSource")]
 public interface IDiagnosticListener : IDuckType
 {
      /// <summary>

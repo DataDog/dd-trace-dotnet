@@ -10,6 +10,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.Activity.DuckTypes
 {
     [DuckCopy]
+    [DuckCopy("System.Diagnostics.ActivitySource", "System.Diagnostics.DiagnosticSource")]
     internal struct ActivitySource
     {
         public string Name;

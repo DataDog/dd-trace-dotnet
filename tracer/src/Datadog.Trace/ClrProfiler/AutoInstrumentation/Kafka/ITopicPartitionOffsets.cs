@@ -3,8 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
+[DuckType("System.Collections.Generic.List`1[[Confluent.Kafka.TopicPartitionOffset, Confluent.Kafka]]", "System.Private.CoreLib")]
+[DuckType("System.Collections.Generic.List`1[[Confluent.Kafka.TopicPartitionOffsetError, Confluent.Kafka]]", "System.Private.CoreLib")]
 internal interface ITopicPartitionOffsets
 {
     /// <summary>

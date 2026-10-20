@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// <summary>
     /// TypedDeliveryHandlerShim_Action for duck-typing
     /// </summary>
+    [DuckType("Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action[[System.String, System.Private.CoreLib],[System.String, System.Private.CoreLib]]", "Confluent.Kafka")]
     internal interface ITypedDeliveryHandlerShimAction
     {
         /// <summary>

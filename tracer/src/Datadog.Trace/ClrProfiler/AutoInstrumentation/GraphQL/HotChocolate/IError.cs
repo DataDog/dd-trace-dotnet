@@ -6,12 +6,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
     /// HotChocolate.IError interface for ducktyping
     /// </summary>
+    [DuckType("HotChocolate.Error", "HotChocolate.Execution.Abstractions")]
+    [DuckType("HotChocolate.Error", "HotChocolate.Abstractions")]
     internal interface IError
     {
         /// <summary>

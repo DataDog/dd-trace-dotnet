@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.IO;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
@@ -11,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// Interface that contains the response for an invocation of an AWS Lambda function.
 /// This is the DuckType for Amazon.Lambda.RuntimeSupport.InvocationResponse
 /// </summary>
+[DuckType("Amazon.Lambda.RuntimeSupport.InvocationResponse", "Amazon.Lambda.RuntimeSupport")]
 internal interface IInvocationResponse
 {
     /// <summary>

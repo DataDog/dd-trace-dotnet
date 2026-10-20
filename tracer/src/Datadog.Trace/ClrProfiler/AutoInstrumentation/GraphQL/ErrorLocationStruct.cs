@@ -11,6 +11,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     /// GraphQL.ErrorLocation interface for ducktyping
     /// </summary>
     [DuckCopy]
+    [DuckCopy("GraphQL.ErrorLocation", "GraphQL")]
+    [DuckCopy("GraphQLParser.Location", "GraphQLParser")]
+    [DuckCopy("HotChocolate.Location", "HotChocolate.Execution.Abstractions")]
+    [DuckCopy("HotChocolate.Location", "HotChocolate.Abstractions")]
     internal struct ErrorLocationStruct
     {
         /// <summary>

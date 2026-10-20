@@ -9,6 +9,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
+[DuckType("Azure.Messaging.ServiceBus.ServiceBusSender", "Azure.Messaging.ServiceBus")]
 internal interface ITransportSender
 {
     string EntityPath { get; }

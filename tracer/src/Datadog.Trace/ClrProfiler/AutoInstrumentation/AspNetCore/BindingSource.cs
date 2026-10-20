@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// duck copy of bindingsource
     /// </summary>
     [DuckTyping.DuckCopy]
+    [DuckTyping.DuckCopy("Microsoft.AspNetCore.Mvc.ModelBinding.BindingSource", "Microsoft.AspNetCore.Mvc.Abstractions")]
     internal struct BindingSource
     {
         /// <summary>

@@ -8,12 +8,14 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
 /// <summary>
 /// Duck type interface for accessing Meter.Tags (available in .NET 8+)
 /// </summary>
+[DuckType("System.Diagnostics.Metrics.Meter", "System.Diagnostics.DiagnosticSource", IncludeDerivedTypes = true)]
 internal interface IMeterDuck
 {
     IEnumerable<KeyValuePair<string, object?>>? Tags { get; }

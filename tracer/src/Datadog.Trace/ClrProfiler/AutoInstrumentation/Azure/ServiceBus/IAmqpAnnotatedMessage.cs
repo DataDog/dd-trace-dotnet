@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 /// <summary>
 /// Duck type interface for Azure.Core.Amqp.AmqpAnnotatedMessage
 /// </summary>
+[DuckType("Azure.Core.Amqp.AmqpAnnotatedMessage", "Azure.Core.Amqp")]
 internal interface IAmqpAnnotatedMessage : IDuckType
 {
     IDictionary<string, object>? ApplicationProperties { get; }
