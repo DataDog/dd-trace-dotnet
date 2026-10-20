@@ -98,7 +98,12 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
             case ExperimentationOptOutMode.Immediate:
                 return true;
             case ExperimentationOptOutMode.Default:
-                var value = (configured ?? FeatureFlagsSdk.GetExperimentationOptOutMode() ?? "disabled").Trim();
+                // Older tracers do not implement the configuration bridge. Honor the environment
+                // in that case so immediate mode cannot silently use their ordinary evaluator.
+                var value = (configured
+                          ?? FeatureFlagsSdk.GetExperimentationOptOutMode()
+                          ?? Environment.GetEnvironmentVariable("DD_FEATURE_FLAGS_EXPERIMENTATION_OPT_OUT_MODE")
+                          ?? "disabled").Trim();
                 if (value.Length == 0 || value.Equals("disabled", StringComparison.OrdinalIgnoreCase))
                 {
                     return false;

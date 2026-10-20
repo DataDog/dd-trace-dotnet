@@ -16,6 +16,7 @@ using TracerFlags = Tracer::Datadog.Trace.FeatureFlags;
 
 namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
+[Collection("Environment configuration")]
 public class ExperimentationOptOutTests
 {
     [Theory]
@@ -45,6 +46,25 @@ public class ExperimentationOptOutTests
     {
         Assert.Throws<ArgumentException>(() => DatadogProvider.ResolveExperimentationOptOutMode(ExperimentationOptOutMode.Default, "unsupported"));
         Assert.Throws<ArgumentOutOfRangeException>(() => new DatadogProvider((ExperimentationOptOutMode)99));
+    }
+
+    [Fact]
+    public void EnvironmentIsNotIgnoredWithoutTheTracerBridge()
+    {
+        const string key = "DD_FEATURE_FLAGS_EXPERIMENTATION_OPT_OUT_MODE";
+        var previous = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "immediate");
+            Assert.True(DatadogProvider.ResolveExperimentationOptOutMode(ExperimentationOptOutMode.Default));
+            Assert.False(DatadogProvider.ResolveExperimentationOptOutMode(ExperimentationOptOutMode.Disabled));
+            Environment.SetEnvironmentVariable(key, "unsupported");
+            Assert.Throws<ArgumentException>(() => new DatadogProvider());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, previous);
+        }
     }
 
     [Theory]
