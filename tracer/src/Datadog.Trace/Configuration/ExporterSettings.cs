@@ -50,7 +50,7 @@ namespace Datadog.Trace.Configuration
         internal const string DefaultMetricsUnixDomainSocket = "/var/run/datadog/dsd.socket";
         internal const string UdpPrefix = "udp://";
 
-        private const OtlpProtocol DefaultOtlpGeneralProtocol = OtlpProtocol.Grpc;
+        private const OtlpProtocol DefaultOtlpGeneralProtocol = OtlpProtocol.HttpProtobuf;
 
         [TestingOnly]
         internal ExporterSettings()
@@ -315,7 +315,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the OTLP protocol for emitting logs.
-        /// Default is <c>grpc</c>
+        /// Default is <c>http/protobuf</c>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
