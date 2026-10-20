@@ -50,6 +50,7 @@ memcpy
 memmove
 memrchr
 memset
+nanosleep
 ntohs
 open
 poll
