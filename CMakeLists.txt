@@ -39,8 +39,15 @@ endif()
 # already controls header search and linking; -stdlib=libstdc++ on top triggers warnings).
 if (USE_GLIBC217_SYSROOT)
     set(DD_CXX_STDLIB_COMPILE_OPTIONS "")
+    # Developer Toolset 10/11 provide std::filesystem in libstdc++.a. Do not
+    # request the legacy libstdc++fs.a: it is not harvested and the linker could
+    # silently fall back to the Ubuntu host toolchain's archive.
+    set(DD_CXX_FILESYSTEM_LIBRARIES "")
 else()
     set(DD_CXX_STDLIB_COMPILE_OPTIONS -stdlib=libstdc++)
+    # Preserve support for older non-sysroot toolchains where filesystem was
+    # still shipped as a separate archive.
+    set(DD_CXX_FILESYSTEM_LIBRARIES stdc++fs)
 endif()
 
 if (CMAKE_TOOLCHAIN_FILE)

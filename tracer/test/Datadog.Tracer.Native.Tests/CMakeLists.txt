@@ -69,7 +69,7 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   gtest_main
   -static-libgcc
   -static-libstdc++
-  -lstdc++fs
+  ${DD_CXX_FILESYSTEM_LIBRARIES}
   -Wc++20-extensions
 )
 
