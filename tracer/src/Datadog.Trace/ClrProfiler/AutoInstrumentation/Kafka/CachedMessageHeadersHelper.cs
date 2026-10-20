@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 
@@ -13,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     {
         private static readonly ActivatorHelper HeadersActivator;
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         static CachedMessageHeadersHelper()
         {
             HeadersActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("Confluent.Kafka.Headers"));

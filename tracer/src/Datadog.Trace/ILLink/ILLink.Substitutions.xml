@@ -1,0 +1,34 @@
+<linker>
+  <!-- NativeAOT applications without the ASP.NET Core assemblies: the Datadog.Trace.Aot targets set the feature switch, so ILC
+       leaves out the code that uses them (see AspNetCoreAvailabilityChecker.IsSupported). -->
+  <assembly fullname="Datadog.Trace">
+    <type fullname="Datadog.Trace.AspNetCoreAvailabilityChecker" feature="Datadog.Trace.AspNetCore.IsSupported" featurevalue="false">
+      <method signature="System.Boolean get_IsSupported()" body="stub" value="false" />
+    </type>
+    <!-- NativeAOT applications, which Test Optimization (CI Visibility) doesn't support yet: the Datadog.Trace.Aot targets set the
+         feature switch, so ILC leaves its code out (see TestOptimizationAvailability.IsSupported). -->
+    <type fullname="Datadog.Trace.Ci.TestOptimizationAvailability" feature="Datadog.Trace.TestOptimization.IsSupported" featurevalue="false">
+      <method signature="System.Boolean get_IsSupported()" body="stub" value="false" />
+    </type>
+    <!-- Without dynamic code (NativeAOT, which sets the feature switch): these properties return
+         RuntimeFeature.IsDynamicCodeSupported, a constant ILC 9+ propagates through them but ILC 8 doesn't. -->
+    <type fullname="Datadog.Trace.DuckTyping.Aot.DuckTypeAotEngine" feature="System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported" featurevalue="false">
+      <method signature="System.Boolean get_IsDynamicCodeSupported()" body="stub" value="false" />
+    </type>
+    <type fullname="Datadog.Trace.Debugger.DebuggerManager" feature="System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported" featurevalue="false">
+      <method signature="System.Boolean get_RuntimeDebuggerProductsSupported()" body="stub" value="false" />
+    </type>
+    <type fullname="Datadog.Trace.ClrProfiler.CallTarget.Handlers.IntegrationMapper" feature="System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported" featurevalue="false">
+      <method signature="System.Boolean get_IsSupported()" body="stub" value="false" />
+    </type>
+    <!-- C# dynamic needs dynamic code, which NativeAOT doesn't have: Newtonsoft.Json's support of dynamic objects would keep the
+         binder of Microsoft.CSharp, found by name (Datadog.Trace doesn't serialize dynamic objects). -->
+    <type fullname="Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.DynamicUtils/BinderWrapper" feature="System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported" featurevalue="false">
+      <method signature="System.Void Init()" body="remove" />
+    </type>
+    <type fullname="Datadog.Trace.Vendors.Newtonsoft.Json.Serialization.JsonDynamicContract" feature="System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported" featurevalue="false">
+      <method signature="System.Runtime.CompilerServices.CallSite`1&lt;System.Func`3&lt;System.Runtime.CompilerServices.CallSite,System.Object,System.Object&gt;&gt; CreateCallSiteGetter(System.String)" body="remove" />
+      <method signature="System.Runtime.CompilerServices.CallSite`1&lt;System.Func`4&lt;System.Runtime.CompilerServices.CallSite,System.Object,System.Object,System.Object&gt;&gt; CreateCallSiteSetter(System.String)" body="remove" />
+    </type>
+  </assembly>
+</linker>

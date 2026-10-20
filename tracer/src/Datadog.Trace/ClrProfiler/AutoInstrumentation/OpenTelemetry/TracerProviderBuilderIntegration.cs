@@ -67,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             return CallTargetState.GetDefault();
         }
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The generic arguments are reference types: the instantiation runs the shared code.")]
         private static Func<object, object, object> CreateAddProcessorDelegate()
         {
             Type builderExtensionsType = Type.GetType("OpenTelemetry.Trace.TracerProviderBuilderExtensions, OpenTelemetry", throwOnError: false);

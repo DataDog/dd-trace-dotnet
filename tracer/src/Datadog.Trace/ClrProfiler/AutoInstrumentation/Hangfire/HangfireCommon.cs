@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Configuration;
@@ -60,6 +61,7 @@ internal static class HangfireCommon
         jobParams[key] = value;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
     internal static void CreateDatadogFilter(out object? serverFilter, out object? clientFilter)
     {
         serverFilter = null;

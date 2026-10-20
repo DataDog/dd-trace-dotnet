@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 #if NETCOREAPP3_0_OR_GREATER
@@ -35,6 +36,8 @@ internal static class DelegateInstrumentation
         where TCallbacks : struct, ICallbacks
         => (TDelegate)Wrap<TCallbacks>(target, typeof(TDelegate), callbacks);
 
+    [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = "Delegate types keep their Invoke method.")]
+    [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
     public static Delegate Wrap<TCallbacks>(Delegate? target, Type targetType, TCallbacks callbacks)
         where TCallbacks : struct, ICallbacks
     {
@@ -220,6 +223,7 @@ internal static class DelegateInstrumentation
         public Wrapper<TCallbacks> CreateInstance(Delegate? target, TCallbacks callbacks)
             => _activator(target, callbacks);
 
+        [UnconditionalSuppressMessage("Trimming", "IL2077", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
         private Wrapper<TCallbacks> DefaultActivator(Delegate? target, TCallbacks callbacks)
             => (Wrapper<TCallbacks>)Activator.CreateInstance(_wrapperType, target, callbacks)!;
 
@@ -288,6 +292,7 @@ internal static class DelegateInstrumentation
         {
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
         protected override Delegate GetHandler()
         {
             return Delegate.CreateDelegate(typeof(TDelegate), this, "Invoke");
@@ -299,6 +304,7 @@ internal static class DelegateInstrumentation
     {
         private static readonly Type? ReturnInnerType;
 
+        [UnconditionalSuppressMessage("AotAnalysis", "IL3050", Justification = "The NativeAOT build generates the wrappers of the delegates the application instruments, with their members (DelegateWrapperDirectives).")]
         static Wrapper()
         {
             var returnType = typeof(TReturn);

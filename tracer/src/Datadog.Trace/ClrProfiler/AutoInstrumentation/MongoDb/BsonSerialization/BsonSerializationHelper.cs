@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -132,6 +133,8 @@ internal static class BsonSerializationHelper
             IsV3Bson = isV3Bson;
         }
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+        [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
         public static BsonHelper? Create()
         {
             // Resolving these types once on app startup.

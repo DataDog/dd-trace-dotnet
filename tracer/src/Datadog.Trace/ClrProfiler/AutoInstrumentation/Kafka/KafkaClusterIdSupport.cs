@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
@@ -25,6 +26,8 @@ internal static class KafkaClusterIdSupport
     public static Type? GetDescribeClusterOptionsType(Assembly kafkaAssembly) =>
         OptionsTypes.GetValue(kafkaAssembly, static assembly => new Lazy<Type?>(() => GetSupportedOptionsType(assembly))).Value;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "The NativeAOT build keeps the types looked up by constant names, with all their members (ReflectionRootDescriptor).")]
     private static Type? GetSupportedOptionsType(Assembly kafkaAssembly)
     {
         try

@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         [TestingAndPrivateOnly]
         internal static readonly Type? ProviderInterfaces;
 
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The NativeAOT build keeps the types Datadog.Trace looks up by name (ReflectionRootDescriptor).")]
+        [UnconditionalSuppressMessage("Trimming", "IL2090", Justification = "Without the metadata of CreateLogger, the abstractions assembly is found through ILogger, which the NativeAOT build keeps.")]
         static LoggerFactoryIntegrationCommon()
         {
             try
