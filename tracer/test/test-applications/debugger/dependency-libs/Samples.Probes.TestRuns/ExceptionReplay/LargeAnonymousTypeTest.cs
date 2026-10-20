@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 namespace Samples.Probes.TestRuns.ExceptionReplay
 {
     /// <summary>
-    /// The throwing frame holds a local whose type is an anonymous type with 300 DateTime properties, i.e. a generic
-    /// instantiation (about 3 bytes per type argument) whose signature is far larger than the 500 bytes the native debugger tokens used to allow.
-    /// Rewriting such a method used to overflow a stack buffer in the native tracer and fail fast the process.
+    /// Uses an anonymous type with 300 DateTime properties, i.e. a generic instantiation (about 3 bytes per type argument)
+    /// whose signature is far larger than the 500 byte buffers the native tracer used to copy it into.
+    /// <see cref="ThrowWithLargeLocal"/> holds it as a local and the lambda that throws returns it, so Exception Replay
+    /// rewrites one method with a large local and one with a large return type. Either used to overflow a stack buffer
+    /// in the native tracer and fail fast the process.
     /// No probe or ExceptionReplay attributes: ProbesTests skips it, and it stays out of the snapshot suite.
     /// </summary>
-    public class LargeAnonymousTypeLocalTest : IAsyncRun
+    public class LargeAnonymousTypeTest : IAsyncRun
     {
         public Task RunAsync()
         {
@@ -327,8 +329,13 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
             };
 
             Consume(large.P0.Year + large.P299.Month);
-            throw new ExceptionReplayIntentionalException("large anonymous type local");
+
+            var throwingFactory = AsFactory(large, () => throw new ExceptionReplayIntentionalException("large anonymous type"));
+            throwingFactory();
         }
+
+        // Infers T from the prototype so the lambda passed in returns the anonymous type
+        private static Func<T> AsFactory<T>(T prototype, Func<T> factory) => factory;
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void Consume(int value)
