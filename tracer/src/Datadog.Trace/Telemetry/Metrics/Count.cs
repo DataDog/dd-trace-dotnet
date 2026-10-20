@@ -211,47 +211,47 @@ internal enum Count
     [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors", isCommon: false)] DirectLogApiErrors,
 
 #endregion
-#region Live Debugger Namespace
+#region Debugger Namespace
 
     /// <summary>
     /// The number of Dynamic Instrumentation memory-pressure state transitions, tagged by state and the signal that triggered entry.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureTrigger>("memory_pressure.transitions", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureTransitions,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureTrigger>("memory_pressure.transitions", isCommon: true, NS.Debugger)] DebuggerMemoryPressureTransitions,
 
     /// <summary>
     /// The number of times the Dynamic Instrumentation memory-pressure monitor disabled itself, tagged by reason.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDisabled,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.Debugger)] DebuggerMemoryPressureDisabled,
 
     /// <summary>
     /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by memory load percentage bucket at the transition.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureMemoryBucket>("memory_pressure.memory_usage_pct", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureMemoryUsagePct,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureMemoryBucket>("memory_pressure.memory_usage_pct", isCommon: true, NS.Debugger)] DebuggerMemoryPressureMemoryUsagePct,
 
     /// <summary>
     /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by GC activity bucket at the transition.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGcBucket>("memory_pressure.gc_activity", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureGcActivity,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGcBucket>("memory_pressure.gc_activity", isCommon: true, NS.Debugger)] DebuggerMemoryPressureGcActivity,
 
     /// <summary>
     /// Count of Dynamic Instrumentation high-memory-pressure periods, incremented once on exit and tagged by duration bucket.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDuration,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.Debugger)] DebuggerMemoryPressureDuration,
 
     /// <summary>
     /// The number of debugger events skipped before capture, tagged by reason and event type.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerEventsSkippedReason, MetricTags.DebuggerEventType>("events.skipped", isCommon: true, NS.LiveDebugger)] DebuggerEventsSkipped,
+    [TelemetryMetric<MetricTags.DebuggerEventsSkippedReason, MetricTags.DebuggerEventType>("events.skipped", isCommon: true, NS.Debugger)] DebuggerEventsSkipped,
 
     /// <summary>
     /// The number of debugger events dropped after capture, tagged by reason and event type.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerEventsDroppedReason, MetricTags.DebuggerCaptureEventType>("events.dropped", isCommon: true, NS.LiveDebugger)] DebuggerEventsDropped,
+    [TelemetryMetric<MetricTags.DebuggerEventsDroppedReason, MetricTags.DebuggerCaptureEventType>("events.dropped", isCommon: true, NS.Debugger)] DebuggerEventsDropped,
 
     /// <summary>
     /// The number of incomplete debugger captures, tagged by event type and reason.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerCaptureEventType, MetricTags.DebuggerCaptureIncompleteReason>("capture.incomplete", isCommon: true, NS.LiveDebugger)] DebuggerCaptureIncomplete,
+    [TelemetryMetric<MetricTags.DebuggerCaptureEventType, MetricTags.DebuggerCaptureIncompleteReason>("capture.incomplete", isCommon: true, NS.Debugger)] DebuggerCaptureIncomplete,
 #endregion
 #region AppSec Namespace
 

@@ -14367,6 +14367,33 @@
   {
     "IntegrationName": "NUnit",
     "AssemblyName": "nunit.framework",
+    "TargetTypeName": "NUnit.Framework.Internal.Execution.CompositeWorkItem",
+    "TargetMethodName": "SetChildWorkItemSkippedResult",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "NUnit.Framework.Internal.TestResult",
+      "NUnit.Framework.Interfaces.ResultState",
+      "System.String",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSetSkippedResultIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "NUnit",
+    "AssemblyName": "nunit.framework",
     "TargetTypeName": "NUnit.Framework.Internal.Execution.SimpleWorkItem",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
@@ -14381,7 +14408,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14428,7 +14455,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14450,7 +14477,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14472,7 +14499,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14498,7 +14525,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
