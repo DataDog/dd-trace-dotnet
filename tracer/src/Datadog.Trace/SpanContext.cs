@@ -172,7 +172,7 @@ namespace Datadog.Trace
             // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
             // tag if the CI Visibility mode is running to ensure the correct propagation
             // to children spans and distributed trace.
-            if (TestOptimization.Instance.IsRunning)
+            if (TestOptimizationAvailability.IsSupported && TestOptimization.Instance.IsRunning)
             {
                 Origin = Ci.Tags.TestTags.CIAppTestOriginName;
             }

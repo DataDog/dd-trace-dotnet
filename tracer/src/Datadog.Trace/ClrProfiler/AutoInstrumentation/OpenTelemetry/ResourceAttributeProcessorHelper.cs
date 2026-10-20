@@ -7,6 +7,9 @@
 
 using System;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.DuckTyping;
@@ -24,9 +27,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 
         public static void OnStart(object processor, object activityData)
         {
+            if (processor.TryDuckCast<BaseProcessorStruct>(out var baseProcessor))
+            {
+                AddResourceAttributes(baseProcessor, activityData);
+            }
+        }
+
+        internal static void AddResourceAttributes(BaseProcessorStruct baseProcessor, object activityData)
+        {
             if (_getResourceDelegate is null
-                || !activityData.TryDuckCast<IActivity>(out var activity)
-                || !processor.TryDuckCast<BaseProcessorStruct>(out var baseProcessor))
+                || !activityData.TryDuckCast<IActivity>(out var activity))
             {
                 return;
             }
@@ -101,6 +111,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return null;
             }
 
+#if NETCOREAPP3_0_OR_GREATER
+            if (!RuntimeFeature.IsDynamicCodeSupported)
+            {
+                // Without dynamic code (NativeAOT): a reflection call.
+                return provider => targetGetResourceMethod.Invoke(null, new[] { provider })!;
+            }
+
+#endif
             // Create a Delegate that accepts its inputs and outputs as object
             // and will handle converting to/from object
             DynamicMethod dynMethod = new DynamicMethod(

@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class TestExtensionsSetParametersIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TTest, TParameters>(TTest test, in TParameters parameters)
+    internal static CallTargetState OnMethodBegin<TTarget, TTest, TParameters>(TTest test, TParameters parameters)
         where TParameters : ITestParameters
     {
         // Test is an ITest, so it could be something arbitrary - if so, we just ignore it.

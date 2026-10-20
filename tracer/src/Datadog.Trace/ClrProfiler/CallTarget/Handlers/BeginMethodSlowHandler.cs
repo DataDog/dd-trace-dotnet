@@ -17,6 +17,13 @@ internal static class BeginMethodSlowHandler<TIntegration, TTarget>
     {
         try
         {
+            if (CallTargetAot<TIntegration, InvokeDelegate>.TryGet(out var aotCallback, out _))
+            {
+                // NativeAOT: the registry bound the integration method at build time (null when it has none).
+                _invokeDelegate = aotCallback!;
+                return;
+            }
+
             if (IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget)) is { } dynMethod)
             {
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
