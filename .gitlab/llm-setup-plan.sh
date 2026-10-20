@@ -51,10 +51,15 @@ if ! command -v dotnet >/dev/null; then
   export PATH="/usr/local/dotnet:$PATH"
 fi
 export DOTNET_ROLL_FORWARD=Major
-dotnet --version
-dotnet build "$platform_directory/src/Datadog.LlmValidation.Cli/Datadog.LlmValidation.Cli.csproj" -c Release
-dotnet "$platform_directory/src/Datadog.LlmValidation.Cli/bin/Release/net8.0/Datadog.LlmValidation.Cli.dll" \
-  run --repo "$CI_PROJECT_DIR" --comparison setup --dry-run --level full > setup-plan.json
+# SDK selection follows the working directory, even when the project path is absolute.
+# Build/run from the platform checkout so the consumer's global.json cannot select its SDK.
+(
+  cd "$platform_directory"
+  dotnet --version
+  dotnet build src/Datadog.LlmValidation.Cli/Datadog.LlmValidation.Cli.csproj -c Release
+  dotnet src/Datadog.LlmValidation.Cli/bin/Release/net8.0/Datadog.LlmValidation.Cli.dll \
+    run --repo "$CI_PROJECT_DIR" --comparison setup --dry-run --level full > "$CI_PROJECT_DIR/setup-plan.json"
+)
 
 # A successful process alone does not establish that the intended full-suite plan was produced.
 consumer_commit="$(git rev-parse HEAD)"
