@@ -10,9 +10,13 @@ using Logger = Serilog.Log;
 
 namespace NativeValidation;
 
+/// <summary>
+/// Helper class for validating native libraries. We keep the check on __libc_single_threaded to make sure
+/// that we don't accidentally use a newer version of the glibc (appeared in 2.32).
+/// </summary>
 public class NativeValidationHelper
 {
-    static readonly string[] ForbiddenDynamicExports = { "__libc_single_threaded" };
+    static readonly string[] ForbiddenDynamicSymbols = { "__libc_single_threaded" };
 
     public NativeValidationHelper(Lazy<Tool> nm, bool isAlpine, AbsolutePath buildProjectDirectory)
     {
@@ -32,7 +36,7 @@ public class NativeValidationHelper
         IEnumerable<string> allowedSymbols = null)
     {
         var symbols = ReadDynamicSymbols(libraryPath, includeSymbolVersions: true);
-        ValidateNoForbiddenDynamicExports(symbols, libraryPath);
+        ValidateNoForbiddenDynamicSymbols(symbols, libraryPath);
         ValidateNativeLibraryGlibcCompatibility(symbols, libraryPath, maximumAllowedGlibcVersion, allowedSymbols);
 
         if (IsAlpine)
@@ -63,7 +67,7 @@ public class NativeValidationHelper
     public void ValidateNativeSymbols(AbsolutePath libraryPath, string snapshotNamePrefix)
     {
         var symbols = ReadDynamicSymbols(libraryPath, includeSymbolVersions: false);
-        ValidateNoForbiddenDynamicExports(symbols, libraryPath);
+        ValidateNoForbiddenDynamicSymbols(symbols, libraryPath);
         ValidateNativeSymbolsCore(symbols, libraryPath, snapshotNamePrefix);
     }
 
@@ -79,18 +83,18 @@ public class NativeValidationHelper
         return NmSymbolParser.Parse(output);
     }
 
-    void ValidateNoForbiddenDynamicExports(IReadOnlyList<NmSymbol> symbols, AbsolutePath libraryPath)
+    void ValidateNoForbiddenDynamicSymbols(IReadOnlyList<NmSymbol> symbols, AbsolutePath libraryPath)
     {
-        var forbiddenExports = NativeExportChecker.FindForbiddenExports(symbols, ForbiddenDynamicExports);
-        if (forbiddenExports.Count == 0)
+        var forbiddenSymbols = NativeExportChecker.FindForbiddenSymbols(symbols, ForbiddenDynamicSymbols);
+        if (forbiddenSymbols.Count == 0)
         {
             return;
         }
 
         var filename = Path.GetFileNameWithoutExtension(libraryPath);
         throw new InvalidOperationException(
-            $"{filename} exports internal compatibility symbols that must remain hidden:{Environment.NewLine}"
-          + string.Join(Environment.NewLine, forbiddenExports.Select(x => $"  {x}")));
+            $"{filename} imports or exports symbols that are forbidden by the target libc contract:{Environment.NewLine}"
+          + string.Join(Environment.NewLine, forbiddenSymbols.Select(x => $"  {x}")));
     }
 
     void ValidateNativeSymbolsCore(
