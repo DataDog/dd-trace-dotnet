@@ -483,6 +483,11 @@ public class ProbesTests : TestHelper
         }
 
         SetEnvironmentVariable(ConfigurationKeys.TraceMethods, "Samples.Probes.Unreferenced.External.NGenInlinedTarget[Target]");
+        // The native log only reports the NGen callers it found in debug mode.
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        var logDirectory = Path.Combine(LogDirectory, nameof(NGenInlinerOnFirstCallAfterModuleLoadInNetFrameworkTest));
+        Directory.CreateDirectory(logDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDirectory);
         var externalAssemblyPath = Path.Combine(Path.GetDirectoryName(EnvironmentHelper.GetSampleApplicationPath()), "Samples.Probes.Unreferenced.External.dll");
         NgenHelper.InstallToNativeImageCache(Output, externalAssemblyPath);
         try
@@ -501,6 +506,8 @@ public class ProbesTests : TestHelper
             {
                 await sample.StopSample();
             }
+
+            PrecompiledInliners.ShouldHaveBeenFound(logDirectory, sample.Process.Id, "Samples.Probes.Unreferenced.External");
         }
         finally
         {

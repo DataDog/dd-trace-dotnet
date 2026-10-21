@@ -1835,6 +1835,7 @@ partial class Build
             {
                 (project: "Samples.Trimming",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
                 (project: "Samples.ManualInstrumentation",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
+                (project: "ReadyToRunInliner",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP3_1), r2r: true),
             };
             // These are sample projects, looked up in SamplesSolution (the default Solution is now Datadog.Trace.Build.g.sln, which excludes samples).
             var projectsToPublish = trimmingSamples
