@@ -11,7 +11,7 @@ namespace NativeValidation;
 
 internal static class NativeExportChecker
 {
-    public static IReadOnlyList<string> FindForbiddenExports(
+    public static IReadOnlyList<string> FindForbiddenSymbols(
         IEnumerable<NmSymbol> symbols,
         IEnumerable<string> forbiddenSymbols)
     {
@@ -20,10 +20,9 @@ internal static class NativeExportChecker
 
         foreach (var symbol in symbols)
         {
-            if (!symbol.IsUndefined
-             && forbidden.Contains(symbol.Name))
+            if (forbidden.Contains(symbol.Name))
             {
-                found.Add(symbol.Name);
+                found.Add(symbol.VersionedName);
             }
         }
 

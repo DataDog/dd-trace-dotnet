@@ -36,15 +36,16 @@ elseif(ISLINUX)
 
     if (USE_GLIBC217_SYSROOT)
         # ExternalProject does not automatically inherit CMake's toolchain flags.
-        # Preserve the glibc217 C++ include paths and compiler target, and make any
-        # executable/shared-library links performed by re2 use the frozen sysroot.
-        set(RE2_CFLAGS "${CMAKE_C_FLAGS} --target=${CMAKE_C_COMPILER_TARGET} -O3 -g -fPIC")
-        set(RE2_CXXFLAGS "${CMAKE_CXX_FLAGS} --target=${CMAKE_CXX_COMPILER_TARGET} ${RE2_CXXFLAGS}")
+        # Preserve the glibc217 C/C++ headers, C++ include paths, compiler target,
+        # and linker root.
+        set(RE2_SYSROOT_FLAG "--sysroot=${CMAKE_SYSROOT}")
+        set(RE2_CFLAGS "${CMAKE_C_FLAGS} ${RE2_SYSROOT_FLAG} --target=${CMAKE_C_COMPILER_TARGET} -O3 -g -fPIC")
+        set(RE2_CXXFLAGS "${CMAKE_CXX_FLAGS} ${RE2_SYSROOT_FLAG} --target=${CMAKE_CXX_COMPILER_TARGET} ${RE2_CXXFLAGS}")
         string(STRIP "${RE2_CFLAGS}" RE2_CFLAGS)
         string(STRIP "${RE2_CXXFLAGS}" RE2_CXXFLAGS)
         list(APPEND RE2_TOOLCHAIN_ENV
             "CFLAGS=${RE2_CFLAGS}"
-            "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}")
+            "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS} ${RE2_SYSROOT_FLAG}")
     endif()
 
     # Pass CC/CXX explicitly — re2's Makefile doesn't inherit the compiler from CMake.
@@ -61,9 +62,8 @@ elseif(ISLINUX)
                       "ARFLAGS=-r -s -c"
                       "CXXFLAGS=${RE2_CXXFLAGS}"
                       ${RE2_TOOLCHAIN_ENV}
-                      # Only the static archive is consumed. Building re2's default target also
-                      # links an unused shared library, which cannot resolve our hidden
-                      # __libc_single_threaded compatibility definition.
+                      # Only the static archive is consumed, so do not build re2's
+                      # default target and its unused shared library.
                       $(MAKE) -j obj/libre2.a
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )

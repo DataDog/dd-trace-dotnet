@@ -3,9 +3,8 @@
 # released for aarch64). See glibc217-sysroot.harvest.dockerfile (single file, both arches,
 # selected via --platform + the DEVTOOLSET_VERSION build arg).
 #
-# Does NOT set CMAKE_SYSROOT: C headers stay on the build host (safe - glibc symbol versions
-# are a link-time property). C++ headers and libraries are redirected to devtoolset-10
-# (harvested from CentOS 7 aarch64, targeting glibc 2.17).
+# C headers and glibc libraries come from the CentOS 7 sysroot. C++ headers and runtime
+# libraries come from devtoolset-10, also harvested from CentOS 7.
 
 # Overridable for local repros: cmake -DGLIBC217_SYSROOT=/path/to/harvested/sysroot ...
 set(GLIBC217_SYSROOT "/sysroot/aarch64-glibc217" CACHE PATH
@@ -13,7 +12,10 @@ set(GLIBC217_SYSROOT "/sysroot/aarch64-glibc217" CACHE PATH
 set(glibc217_sysroot ${GLIBC217_SYSROOT})
 
 # Forward to try_compile() sub-projects (they don't inherit the outer cache).
-list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES GLIBC217_SYSROOT)
+list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
+    GLIBC217_SYSROOT
+    CMAKE_SYSROOT
+    CMAKE_FIND_ROOT_PATH)
 set(devtoolset10_dir ${glibc217_sysroot}/devtoolset10)
 
 if (NOT EXISTS ${glibc217_sysroot})
@@ -29,6 +31,11 @@ if (NOT EXISTS ${devtoolset10_dir})
                          "libstdc++/libgcc and C++ headers")
 endif()
 
+if (NOT EXISTS ${glibc217_sysroot}/usr/include/features.h)
+    message(FATAL_ERROR "The glibc 2.17 sysroot at ${glibc217_sysroot} does not contain "
+                        "the harvested CentOS 7 C headers. Refresh the complete sysroot archive.")
+endif()
+
 # Selecting this toolchain file IS the opt-in — no separate -DUSE_GLIBC217_SYSROOT needed.
 set(USE_GLIBC217_SYSROOT ON)
 
@@ -41,13 +48,15 @@ set(triple aarch64-unknown-linux-gnu)
 set(CMAKE_C_COMPILER_TARGET ${triple})
 set(CMAKE_CXX_COMPILER_TARGET ${triple})
 
-# Toolchain files run before project(), so use CMAKE_CURRENT_LIST_DIR (not CMAKE_SOURCE_DIR)
-get_filename_component(glibc217_compat_include_dir "${CMAKE_CURRENT_LIST_DIR}/../../shared/src/glibc217-compat" ABSOLUTE)
+set(CMAKE_SYSROOT ${glibc217_sysroot})
+set(CMAKE_FIND_ROOT_PATH ${glibc217_sysroot})
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-# -isystem: shadow the host's <sys/single_threaded.h> with our stub (see glibc217-compat.c);
-#   libstdc++'s <ext/atomicity.h> would otherwise pull in __libc_single_threaded (glibc 2.32+).
-# -nostdinc++ + -cxx-isystem: redirect C++ headers to devtoolset-10 (C headers stay on host).
-set(CMAKE_CXX_FLAGS_INIT "-isystem ${glibc217_compat_include_dir} -nostdinc++ -cxx-isystem ${devtoolset10_dir}/include/10 -cxx-isystem ${devtoolset10_dir}/include/10/aarch64-redhat-linux")
+# Redirect C++ headers to devtoolset-10. C headers are resolved through CMAKE_SYSROOT.
+set(CMAKE_CXX_FLAGS_INIT "-nostdinc++ -cxx-isystem ${devtoolset10_dir}/include/10 -cxx-isystem ${devtoolset10_dir}/include/10/aarch64-redhat-linux")
 
 # --sysroot: glibc's .so files are linker scripts with absolute paths from CentOS 7;
 #   --sysroot makes the linker resolve them relative to the sysroot.
@@ -58,7 +67,7 @@ set(CMAKE_CXX_FLAGS_INIT "-isystem ${glibc217_compat_include_dir} -nostdinc++ -c
 #   headers (mscoree.lib), which doesn't exist on Linux; disable it.
 # -Wno-unused-command-line-argument: on link flags only — CMake passes -nostdinc++ to
 #   the linker too, which triggers a spurious warning.
-set(glibc217_link_flags "-fuse-ld=lld-16 -Wno-unused-command-line-argument -Wl,--no-dependent-libraries -static-libgcc -static-libstdc++ -B${devtoolset10_dir}/lib -L${devtoolset10_dir}/lib -Wl,--sysroot=${glibc217_sysroot} -B${glibc217_sysroot}/usr/lib64 -B${glibc217_sysroot}/lib64 -L${glibc217_sysroot}/usr/lib64 -L${glibc217_sysroot}/lib64 -Wl,-rpath-link=${glibc217_sysroot}/lib64:${glibc217_sysroot}/usr/lib64")
+set(glibc217_link_flags "-fuse-ld=lld-16 -Wno-unused-command-line-argument -Wl,--no-dependent-libraries -static-libgcc -static-libstdc++ -B${devtoolset10_dir}/lib -L${devtoolset10_dir}/lib -B${glibc217_sysroot}/usr/lib64 -B${glibc217_sysroot}/lib64 -L${glibc217_sysroot}/usr/lib64 -L${glibc217_sysroot}/lib64 -Wl,-rpath-link=${glibc217_sysroot}/lib64:${glibc217_sysroot}/usr/lib64")
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${glibc217_link_flags}")
 set(CMAKE_SHARED_LINKER_FLAGS_INIT "${glibc217_link_flags}")
