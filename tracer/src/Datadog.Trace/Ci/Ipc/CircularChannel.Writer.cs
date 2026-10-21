@@ -42,8 +42,7 @@ internal partial class CircularChannel
                 return false;
             }
 
-            var hasHandle = channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-            if (!hasHandle)
+            if (!channel.TryAcquireMutex())
             {
                 Log.Error("CircularChannel.Writer: Failed to acquire mutex within the time limit.");
                 return false;

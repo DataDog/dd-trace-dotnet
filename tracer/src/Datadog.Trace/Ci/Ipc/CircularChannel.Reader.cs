@@ -68,18 +68,11 @@ internal partial class CircularChannel
 
             try
             {
-                var hasHandle = _channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-                if (!hasHandle)
+                if (!_channel.TryAcquireMutex())
                 {
                     Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
                     return;
                 }
-            }
-            catch (AbandonedMutexException ex)
-            {
-                // WaitOne grants ownership even when the previous owner abandoned the mutex.
-                // Continue through the finally below so other processes can send messages.
-                Log.Warning(ex, "CircularChannel.Reader: Mutex was abandoned. Continuing with ownership.");
             }
             catch (ObjectDisposedException ex)
             {

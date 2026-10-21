@@ -76,8 +76,7 @@ internal sealed partial class CircularChannel : IChannel
             initiallyOwned: false,
             FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}");
 
-        var hasHandle = _mutex.WaitOne(_settings.MutexTimeout);
-        if (!hasHandle)
+        if (!TryAcquireMutex())
         {
             throw new TimeoutException("CircularChannel: Failed to acquire mutex within the time limit.");
         }
@@ -137,5 +136,23 @@ internal sealed partial class CircularChannel : IChannel
         _reader?.Dispose();
         _mmf.Dispose();
         _mutex.Dispose();
+    }
+
+    /// <summary>
+    /// Waits for the channel mutex. WaitOne grants ownership even when the previous owner abandoned the mutex,
+    /// so an abandoned mutex counts as acquired and the caller must release it as usual.
+    /// </summary>
+    /// <returns>False when the mutex wasn't acquired within the configured timeout.</returns>
+    private bool TryAcquireMutex()
+    {
+        try
+        {
+            return _mutex.WaitOne(_settings.MutexTimeout);
+        }
+        catch (AbandonedMutexException ex)
+        {
+            Log.Warning(ex, "CircularChannel: Mutex was abandoned. Continuing with ownership.");
+            return true;
+        }
     }
 }
