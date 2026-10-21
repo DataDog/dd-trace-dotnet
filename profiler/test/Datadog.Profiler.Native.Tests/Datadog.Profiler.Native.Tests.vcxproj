@@ -57,6 +57,8 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\ManagedCodeCache.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\CodeRangeTrie.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\EpochReclaimer.cpp" />
     <ClCompile Include="AdaptiveSamplerTest.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
@@ -83,6 +85,7 @@
     <ClCompile Include="LinuxStackFramesCollectorTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
     <ClCompile Include="ManagedCodeCacheTest.cpp" />
+    <ClCompile Include="CodeRangeTrieTest.cpp" />
     <ClCompile Include="ManagedThreadListTest.cpp" />
     <ClCompile Include="MetricsRegistryTest.cpp" />
     <ClCompile Include="OpSysToolsTest.cpp" />

@@ -64,11 +64,10 @@
 // thread, and the handler tries to take the lock too). Bounded
 // try_lock_for/try_lock_shared_for calls turn that
 // scenario into "handler gives up after the timeout" rather than "hang
-// forever", which is the same trade-off already made by ManagedCodeCache
-// today. If true reentrancy-proof behavior is required, combine this with
-// blocking the relevant signals for the duration of the write (see
-// ScopedProfilerSignalBlocker in ManagedCodeCache.cpp) or avoid the lock
-// entirely on the read path (we could seek for a lock-free append-only design).
+// forever". If true reentrancy-proof behavior is required, combine this with
+// blocking the relevant signals for the duration of the write, or avoid the
+// lock entirely on the read path (as ManagedCodeCache does with CodeRangeTrie
+// and EpochReclaimer, see profiler/docs/ManagedCodeCache.md).
 class ReaderWriterSpinningMutex
 {
 public:
