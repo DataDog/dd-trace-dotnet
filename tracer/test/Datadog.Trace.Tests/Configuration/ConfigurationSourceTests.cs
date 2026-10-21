@@ -10,7 +10,6 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -253,13 +252,12 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(ConfigurationKeys.ServiceName, "", true)]
         public void EnvironmentConfigurationSource_EmptyOtelValueIsUnset(string key, string value, bool expectedFound)
         {
-            // Windows removes a variable set to an empty value
-            SkipOn.Platform(SkipOn.PlatformValue.Windows);
-
             var original = Environment.GetEnvironmentVariable(key);
             try
             {
                 Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+                // Windows and .NET 8 or earlier remove a variable set to an empty value
+                Skip.If(value.Length == 0 && Environment.GetEnvironmentVariable(key) is null, "This runtime removes environment variables set to an empty value.");
                 IConfigurationSource source = new EnvironmentConfigurationSource();
 
                 var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
