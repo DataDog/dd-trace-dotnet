@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
-# Static inventory/selection validation only: no agents, judges, gateway auth, or quality verdict.
+# Validate the full inventory/selection, then run one live minimal/default setup case.
+# Initial runs=1; the consumer's confirm-on-fail policy may add trials.
 set -euo pipefail
 set +x
 
 : "${CI_PROJECT_DIR:?Consumer checkout is required}"
 : "${LLMVAL_PLATFORM_PROJECT:?Platform project is required}"
 : "${LLMVAL_PLATFORM_REF:?Pinned platform SHA is required}"
+: "${LLMVAL_SETUP_CLAUDE_VERSION:?Pinned Claude CLI version is required}"
 [[ "$LLMVAL_PLATFORM_REF" =~ ^[0-9a-f]{40}$ ]] || {
-  echo "Setup planning requires an immutable platform commit SHA." >&2
+  echo "Setup smoke requires an immutable platform commit SHA." >&2
   exit 2
 }
 cd "$CI_PROJECT_DIR"
 # Keep diagnostics separate so the JSON artifact always contains only the plan.
-exec > >(tee setup-plan.log) 2>&1
-echo "=== LLM setup plan: platform $LLMVAL_PLATFORM_REF ==="
+exec > >(tee setup-smoke.log) 2>&1
+echo "=== LLM setup smoke: platform $LLMVAL_PLATFORM_REF ==="
 
 if ! command -v git >/dev/null || ! command -v curl >/dev/null || ! command -v jq >/dev/null; then
   apt-get update
@@ -70,4 +72,51 @@ jq -e --arg commit "$consumer_commit" '
 ' setup-plan.json >/dev/null
 jq '{Status, Coverage, Preset, Runs, SelectedCases, ModeExcludedCases,
      SetupFileCount: (.Inventory.Files | length), Commit: .Inventory.Commit}' setup-plan.json
-echo "Setup plan validated. No model evaluation or quality verdict was produced."
+echo "Full setup plan validated. Starting the one-case live smoke (subset coverage)."
+
+# Match the existing gate's toolchain/authentication, with a fixed CLI version for pilot reproducibility.
+if ! command -v node >/dev/null || ! command -v npm >/dev/null; then
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  apt-get install -y nodejs
+fi
+npm install -g "@anthropic-ai/claude-code@$LLMVAL_SETUP_CLAUDE_VERSION"
+claude --version
+gateway_header="$(authanywhere --audience rapid-ai-platform)"
+export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-https://ai-gateway.us1.ddbuild.io}"
+export ANTHROPIC_CUSTOM_HEADERS="source: claude-code
+org-id: 2
+provider: anthropic
+claude-code: true
+${gateway_header}"
+unset gateway_header
+
+setup_exit=0
+(
+  cd "$platform_directory" || exit 2
+  dotnet src/Datadog.LlmValidation.Cli/bin/Release/net8.0/Datadog.LlmValidation.Cli.dll \
+    run --repo "$CI_PROJECT_DIR" --comparison setup \
+    --case dotnet-tracer-repo-nav-integration-001 --runs 1 --concurrency 2 --require-complete \
+    --out "$CI_PROJECT_DIR/setup-results.json" \
+    --details "$CI_PROJECT_DIR/setup-details.json" \
+    --report "$CI_PROJECT_DIR/setup-report.md"
+) || setup_exit=$?
+unset ANTHROPIC_CUSTOM_HEADERS
+
+# Preserve execution/incompleteness errors; a complete quality FAIL (1) still has reviewable artifacts.
+if [ "$setup_exit" -ne 0 ] && [ "$setup_exit" -ne 1 ]; then
+  exit "$setup_exit"
+fi
+jq -e --arg commit "$consumer_commit" '
+  .Setup.Complete == true and .Setup.Simulated == false and .Setup.Coverage == "subset"
+  and .Setup.Inventory.Commit == $commit and .SelectedCaseCount == 1 and .Runs == 1
+  and (.InfrastructureErrors | length == 0)
+' setup-results.json >/dev/null
+jq -e '
+  (.Cases | length == 1) and .Cases[0].CaseId == "dotnet-tracer-repo-nav-integration-001"
+  and (.Cases[0].Runs | length > 0)
+  and ([.Cases[0].Runs[] |
+    (.Inconclusive == false and (.Pairwise | length == 2)
+      and (.Baseline.Text | length > 0) and (.Candidate.Text | length > 0))] | all)
+' setup-details.json >/dev/null
+echo "Live setup smoke completed. Review setup-report.md and setup-details.json; this is not full-suite evaluation."
+exit "$setup_exit"
