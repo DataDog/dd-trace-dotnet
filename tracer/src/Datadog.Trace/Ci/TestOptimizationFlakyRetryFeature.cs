@@ -38,16 +38,10 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
 
         if (Enabled && settings.DynamicFlakyRetryEnabled)
         {
-            _dynamicRetryCounts = settings.DynamicFlakyRetryCounts ?? GetSlowTestRetryCounts(clientSettingsResponse.EarlyFlakeDetection.SlowTestRetries);
-            if (_dynamicRetryCounts is { } counts)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityDynamicAtrRetriesEnabled(settings.DynamicFlakyRetryCounts is null ? MetricTags.CIVisibilityDynamicFlakyRetryBuckets.Default : MetricTags.CIVisibilityDynamicFlakyRetryBuckets.Custom);
-                Log.Information<int, int, int, int, int>("TestOptimizationFlakyRetryFeature: Dynamic flaky retries is enabled. [RetryCounts: {Under5s}, {Under10s}, {Under30s}, {Under5m}, {Slower}]", counts[0], counts[1], counts[2], counts[3], counts[4]);
-            }
-            else
-            {
-                Log.Information("TestOptimizationFlakyRetryFeature: Dynamic flaky retries is disabled because the settings have no slow test retries.");
-            }
+            var counts = settings.DynamicFlakyRetryCounts ?? GetSlowTestRetryCounts(clientSettingsResponse.EarlyFlakeDetection.SlowTestRetries);
+            _dynamicRetryCounts = counts;
+            TelemetryFactory.Metrics.RecordCountCIVisibilityDynamicAtrRetriesEnabled(settings.DynamicFlakyRetryCounts is null ? MetricTags.CIVisibilityDynamicFlakyRetryBuckets.Default : MetricTags.CIVisibilityDynamicFlakyRetryBuckets.Custom);
+            Log.Information<int, int, int, int, int>("TestOptimizationFlakyRetryFeature: Dynamic flaky retries is enabled. [RetryCounts: {UpTo5s}, {UpTo10s}, {UpTo30s}, {UpTo5m}, {Slower}]", counts[0], counts[1], counts[2], counts[3], counts[4]);
         }
     }
 
@@ -63,35 +57,27 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
     public int GetFlakyRetryCount(TimeSpan firstExecutionDuration)
         => _dynamicRetryCounts?[GetDurationBucket(firstExecutionDuration)] ?? FlakyRetryCount;
 
-    // The bucket limits are the Early Flake Detection ones in Common.GetNumberOfExecutionsForDuration. That method is not
-    // shared because it skips buckets that the backend leaves empty, while dynamic retries use one count per bucket.
+    // The buckets are the Early Flake Detection ones in Common.GetNumberOfExecutionsForDuration, but with inclusive upper
+    // limits: a first execution of exactly 5s is in the first bucket.
     private static int GetDurationBucket(TimeSpan duration)
         => duration.TotalSeconds switch
         {
-            < 5 => 0,
-            < 10 => 1,
-            < 30 => 2,
-            < 300 => 3,
+            <= 5 => 0,
+            <= 10 => 1,
+            <= 30 => 2,
+            <= 300 => 3,
             _ => 4,
         };
 
-    // Without any slow test retries there is nothing to derive the counts from, so FlakyRetryCount stays. That is the case
-    // for settings not fetched from the backend, such as in child processes of `dd-trace ci run` that skip the request.
-    private static int[]? GetSlowTestRetryCounts(TestOptimizationClient.SlowTestRetriesSettingsResponse slowTestRetries)
-    {
-        if (slowTestRetries is { FiveSeconds: null, TenSeconds: null, ThirtySeconds: null, FiveMinutes: null })
-        {
-            return null;
-        }
-
-        // Every bucket keeps at least one retry, including tests slower than five minutes, which EFD never retries.
-        return
+    // Buckets the settings leave empty use the default slow test retries, and every bucket keeps at least one retry,
+    // including tests slower than five minutes, which EFD never retries.
+    private static int[] GetSlowTestRetryCounts(TestOptimizationClient.SlowTestRetriesSettingsResponse slowTestRetries)
+        =>
         [
-            Math.Max(slowTestRetries.FiveSeconds ?? 0, 1),
-            Math.Max(slowTestRetries.TenSeconds ?? 0, 1),
-            Math.Max(slowTestRetries.ThirtySeconds ?? 0, 1),
-            Math.Max(slowTestRetries.FiveMinutes ?? 0, 1),
+            Math.Max(slowTestRetries.FiveSeconds ?? 10, 1),
+            Math.Max(slowTestRetries.TenSeconds ?? 5, 1),
+            Math.Max(slowTestRetries.ThirtySeconds ?? 3, 1),
+            Math.Max(slowTestRetries.FiveMinutes ?? 2, 1),
             1,
         ];
-    }
 }

@@ -2558,14 +2558,14 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     [Theory]
     [InlineData("true", null, "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
     [InlineData("false", "true", "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
-    [InlineData("true", "true", null, new[] { 4, 1, 2, 1, 1 }, false)]
+    [InlineData("true", "true", null, new[] { 4, 5, 2, 1, 1 }, false)]
     [InlineData("true", "1", " 3, 2,1,1 ,20", new[] { 3, 2, 1, 1, 20 }, true)]
-    [InlineData("true", "true", "", new[] { 4, 1, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,1,1", new[] { 4, 1, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,1,1,1,1", new[] { 4, 1, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,a,1,1", new[] { 4, 1, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,0,1,1", new[] { 4, 1, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,21,1,1", new[] { 4, 1, 2, 1, 1 }, false)]
+    [InlineData("true", "true", "", new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "true", "3,2,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "true", "3,2,1,1,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "true", "3,2,a,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "true", "3,2,0,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "true", "3,2,21,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
     public async Task FlakyRetryCountDependsOnFirstExecutionDurationWhenDynamicRetriesAreEnabled(string flakyRetryEnabled, string dynamicFlakyRetryEnabled, string dynamicFlakyRetryBuckets, int[] expectedRetryCounts, bool? expectedCustomBuckets)
     {
         var settings = CreateSettings(
@@ -2593,8 +2593,8 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         {
             var flakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
 
-            // One first execution per bucket: under 5s, 10s, 30s, 5m, and slower. The upper limits are exclusive.
-            TimeSpan[] firstExecutionDurations = [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(299), TimeSpan.FromMinutes(5)];
+            // The slowest first execution of each bucket: up to 5s, 10s, 30s, 5m, and slower. The upper limits are inclusive.
+            TimeSpan[] firstExecutionDurations = [TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5) + TimeSpan.FromTicks(1)];
             firstExecutionDurations.Select(flakyRetryFeature.GetFlakyRetryCount).Should().Equal(expectedRetryCounts);
 
             collector.AggregateMetrics();
@@ -2616,9 +2616,9 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Theory]
-    [InlineData(null, 7)]
+    [InlineData(null, 10)]
     [InlineData("4,1,1,1,1", 4)]
-    public void DynamicFlakyRetriesNeedCustomBucketsWhenSettingsHaveNoSlowTestRetries(string dynamicFlakyRetryBuckets, int expectedRetryCount)
+    public void DynamicFlakyRetriesUseDefaultCountsWhenSettingsHaveNoSlowTestRetries(string dynamicFlakyRetryBuckets, int expectedRetryCount)
     {
         var settings = CreateSettings(
             (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"),

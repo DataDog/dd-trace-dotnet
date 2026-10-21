@@ -86,7 +86,7 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key for the dynamic automatic test retries counts: five comma-separated integers from 1 to 20, for first
-        /// executions under 5s, 10s, 30s, 5m, and longer. Defaults to the Early Flake Detection slow test retries.
+        /// executions of up to 5s, 10s, 30s, 5m, and longer. Defaults to the Early Flake Detection slow test retries.
         /// </summary>
         public const string DynamicFlakyRetryBuckets = "DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS";
 
