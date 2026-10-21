@@ -411,12 +411,10 @@ stages:
     strategy:
       matrix:
         x64:
-          nativeBaseImage: ubuntu
-          managedBaseImage: ubuntu
+          baseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
-          nativeBaseImage: alpine
-          managedBaseImage: alpine
+          baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
       name: $(linuxX64Pool)
@@ -431,27 +429,11 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: $(managedBaseImage)
-        command: "Clean CompileManagedLoader"
-        retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 10
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
-        baseImage: $(nativeBaseImage)
-        command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
+        baseImage: $(baseImage)
+        command: "Clean CompileManagedLoader BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        target: builder
-        baseImage: $(managedBaseImage)
-        command: "BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
-        retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 20
+        timeoutInMinutesForRunCommand: 40
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -496,26 +478,10 @@ stages:
             build: true
             target: builder
             baseImage: ubuntu
-            command: "Clean CompileManagedLoader"
-            retryCountForRunCommand: 1
-            timeoutInMinutesForRunCommand: 10
-
-        - template: steps/run-in-docker.yml
-          parameters:
-            build: true
-            target: builder
-            baseImage: ubuntu
-            command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
+            command: "Clean CompileManagedLoader BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests BuildManagedTracerHomeR2R ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
             retryCountForRunCommand: 1
             apiKey: $(DD_LOGGER_DD_API_KEY)
-
-        - template: steps/run-in-docker.yml
-          parameters:
-            target: builder
-            baseImage: ubuntu
-            command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
-            retryCountForRunCommand: 1
-            timeoutInMinutesForRunCommand: 20
+            timeoutInMinutesForRunCommand: 40
 
         - publish: $(monitoringHome)
           displayName: Uploading linux tracer home artifact
@@ -592,11 +558,9 @@ stages:
       matrix:
         x64:
           baseImage: ubuntu
-          managedBaseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
-          managedBaseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
       name: $(linuxX64Pool)
@@ -613,18 +577,9 @@ stages:
         target: builder
         baseImage: $(baseImage)
         # We only need the native wrapper for the unit tests but we do not want to publish it (universal binary)
-        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
+        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
-
-    # We have to run these in a separate stage because the version of nm included with centos7 is insufficient to validate the glibc version
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
-        baseImage: $(managedBaseImage)
-        command: "ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
-        retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
@@ -1295,12 +1250,10 @@ stages:
     strategy:
       matrix:
         x64:
-          nativeBaseImage: ubuntu
-          managedBaseImage: ubuntu
+          baseImage: ubuntu
           artifactSuffix: linux-x64
         alpine:
-          nativeBaseImage: alpine
-          managedBaseImage: alpine
+          baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
       name: $(linuxX64Pool)
@@ -1315,27 +1268,10 @@ stages:
         parameters:
           build: true
           target: builder
-          baseImage: $(managedBaseImage)
-          command: "Clean CompileManagedLoader -buildConfiguration Debug"
+          baseImage: $(baseImage)
+          command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux -buildConfiguration Debug"
           retryCountForRunCommand: 1
-          timeoutInMinutesForRunCommand: 10
-
-      - template: steps/run-in-docker.yml
-        parameters:
-          build: true
-          target: builder
-          baseImage: $(nativeBaseImage)
-          command: "BuildNativeTracerHome -buildConfiguration Debug"
-          retryCountForRunCommand: 1
-          timeoutInMinutesForRunCommand: 15
-
-      - template: steps/run-in-docker.yml
-        parameters:
-          target: builder
-          baseImage: $(managedBaseImage)
-          command: "BuildManagedTracerHome ExtractDebugInfoLinux -buildConfiguration Debug"
-          retryCountForRunCommand: 1
-          timeoutInMinutesForRunCommand: 20
+          timeoutInMinutesForRunCommand: 40
 
   - job: windows
     timeoutInMinutes: 60 #default value
