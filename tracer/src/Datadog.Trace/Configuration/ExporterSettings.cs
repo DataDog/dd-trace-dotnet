@@ -114,6 +114,10 @@ namespace Datadog.Trace.Configuration
                 {
                     OtlpProtocol.HttpProtobuf => TracesEncoding.OtlpProtobuf,
                     OtlpProtocol.HttpJson => TracesEncoding.OtlpJson,
+#if NETCOREAPP3_1_OR_GREATER
+                    // gRPC calls send the same protobuf messages as HTTP requests, see OtlpGrpcRequestFactory
+                    OtlpProtocol.Grpc => TracesEncoding.OtlpProtobuf,
+#endif
                     _ => TracesEncoding.DatadogV0_4,
                 };
 
