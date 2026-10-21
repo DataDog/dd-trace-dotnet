@@ -151,6 +151,8 @@ namespace Datadog.Trace.Configuration
             OtlpLogsEndpoint = otlpLogsSettings.OtlpSignalEndpoint;
             OtlpLogsProtocol = otlpLogsSettings.OtlpProtocol;
 
+            RecordOtlpGeneralDefaults(rawSettings.OtlpProtocol, rawSettings.OtlpEndpoint, rawSettings.TraceAgentHost);
+
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
 
@@ -363,6 +365,24 @@ namespace Datadog.Trace.Configuration
             }
 
             return resolved;
+        }
+
+        private void RecordOtlpGeneralDefaults(string? generalProtocol, string? generalEndpoint, string? agentHost)
+        {
+            // Configured values are already recorded by the ConfigurationBuilder read in Raw
+            if (StringUtil.IsNullOrEmpty(generalProtocol))
+            {
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, "grpc", recordValue: true, ConfigurationOrigins.Default);
+            }
+
+            if (StringUtil.IsNullOrEmpty(generalEndpoint))
+            {
+                var isHttp = string.Equals(generalProtocol, "http/protobuf", StringComparison.OrdinalIgnoreCase)
+                          || string.Equals(generalProtocol, "http/json", StringComparison.OrdinalIgnoreCase);
+                var host = StringUtil.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
+                var port = isHttp ? DefaultOtlpHttpPort : DefaultOtlpGrpcPort;
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, $"http://{host}:{port}/", recordValue: true, ConfigurationOrigins.Default);
+            }
         }
 
         private MetricsTransportSettings ConfigureMetricsTransport(string? metricsUrl, string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)

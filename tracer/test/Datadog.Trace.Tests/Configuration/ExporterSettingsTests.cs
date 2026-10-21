@@ -499,6 +499,63 @@ namespace Datadog.Trace.Tests.Configuration
                      .StringValue.Should().Be(expectedEndpoint);
         }
 
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, null, "grpc", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "http/json", "http/protobuf", ConfigurationOrigins.Calculated)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "http/json", null, "http/protobuf", ConfigurationOrigins.Calculated)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "invalid", "grpc", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "http/protobuf", "grpc", "http/protobuf", ConfigurationOrigins.Code)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "invalid", "grpc", "grpc", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, null, null, "http/protobuf", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, null, "grpc", "grpc", ConfigurationOrigins.Calculated)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, null, "http/json", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
+        public void OtlpProtocolTelemetry(string signalProtocolKey, string signalProtocol, string generalProtocol, string expectedProtocol, ConfigurationOrigins expectedOrigin)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol },
+                { signalProtocolKey, signalProtocol },
+            });
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ExporterSettings(source, NoFile(), telemetry);
+
+            var entry = telemetry.GetQueueForTesting()
+                                 .Where(e => e.Key == signalProtocolKey)
+                                 .OrderByDescending(e => e.SeqId)
+                                 .First();
+            entry.StringValue.Should().Be(expectedProtocol);
+            entry.Origin.Should().Be(expectedOrigin);
+        }
+
+        [Theory]
+        [InlineData(null, null, null, "grpc", ConfigurationOrigins.Default, "http://localhost:4317/", ConfigurationOrigins.Default)]
+        [InlineData(null, null, "agent", "grpc", ConfigurationOrigins.Default, "http://agent:4317/", ConfigurationOrigins.Default)]
+        [InlineData("http/protobuf", null, null, "http/protobuf", ConfigurationOrigins.Code, "http://localhost:4318/", ConfigurationOrigins.Default)]
+        [InlineData("http/json", "http://base:4333/mycollector", null, "http/json", ConfigurationOrigins.Code, "http://base:4333/mycollector", ConfigurationOrigins.Code)]
+        public void OtlpGeneralTelemetry(string generalProtocol, string generalEndpoint, string agentHost, string expectedProtocol, ConfigurationOrigins expectedProtocolOrigin, string expectedEndpoint, ConfigurationOrigins expectedEndpointOrigin)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, generalEndpoint },
+                { ConfigurationKeys.AgentHost, agentHost },
+            });
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ExporterSettings(source, NoFile(), telemetry);
+
+            var entries = telemetry.GetQueueForTesting().OrderByDescending(e => e.SeqId).ToList();
+            var protocolEntry = entries.First(e => e.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol);
+            protocolEntry.StringValue.Should().Be(expectedProtocol);
+            protocolEntry.Origin.Should().Be(expectedProtocolOrigin);
+            var endpointEntry = entries.First(e => e.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint);
+            endpointEntry.StringValue.Should().Be(expectedEndpoint);
+            endpointEntry.Origin.Should().Be(expectedEndpointOrigin);
+        }
+
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)
         {
             return new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);
