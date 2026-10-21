@@ -50,6 +50,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// </summary>
         private readonly double _emaAlpha;
         private readonly object _maintenanceLock = new();
+        private TimeSpan _windowDuration;
         private int _samplesPerWindow;
 
         private Counts _countsRef;
@@ -78,6 +79,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             int budgetLookback,
             Action? rollWindowCallback)
         {
+            _windowDuration = windowDuration;
             _timer = new Timer(state => RollWindow(), state: null, windowDuration, windowDuration);
             _totalCountRunningAverage = 0;
             _rollWindowCallback = rollWindowCallback;
@@ -106,6 +108,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 _timer.Change(windowDuration, windowDuration);
             }
         }
+
+        internal TimeSpan WindowDuration => _windowDuration;
 
         public bool Sample()
         {
@@ -149,8 +153,92 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 return;
             }
 
-            Interlocked.Exchange(ref _timer, null)?.Dispose();
-            _rollWindowCallback = null;
+            // Detach under the maintenance lock so SetSnapshotsPerSecond cannot Change a timer
+            // that Dispose is releasing. Dispose the timer outside the lock: its callback takes
+            // that lock, and Timer.Dispose waits for an in-flight callback.
+            Timer? timer;
+            lock (_maintenanceLock)
+            {
+                timer = _timer;
+                _timer = null;
+                _rollWindowCallback = null;
+            }
+
+            timer?.Dispose();
+        }
+
+        // The sampler admits a whole number of snapshots per window. Use the shortest window
+        // from 1 to 10 seconds that represents the rate as an integer count, so 0.5 is one
+        // snapshot per two seconds and 2.5 is five per two seconds. Integer rates stay on a
+        // one-second window. Rates that do not divide any of those windows use a 10-second
+        // window and round half away from zero; below 0.05 that rounds to 0 and blocks captures.
+        internal static int GetSamplesPerWindow(double snapshotsPerSecond, out TimeSpan windowDuration)
+        {
+            windowDuration = TimeSpan.FromSeconds(1);
+
+            if (double.IsNaN(snapshotsPerSecond) || snapshotsPerSecond <= 0)
+            {
+                return 0;
+            }
+
+            if (snapshotsPerSecond >= int.MaxValue)
+            {
+                return int.MaxValue;
+            }
+
+            const int maxWindowSeconds = 10;
+            for (var seconds = 1; seconds <= maxWindowSeconds; seconds++)
+            {
+                var scaled = snapshotsPerSecond * seconds;
+                var rounded = Math.Round(scaled, MidpointRounding.AwayFromZero);
+                if (rounded > int.MaxValue)
+                {
+                    break;
+                }
+
+                if (Math.Abs(scaled - rounded) <= 0.000001d)
+                {
+                    windowDuration = TimeSpan.FromSeconds(seconds);
+                    return (int)rounded;
+                }
+            }
+
+            windowDuration = TimeSpan.FromSeconds(maxWindowSeconds);
+            var fallback = Math.Round(snapshotsPerSecond * maxWindowSeconds, MidpointRounding.AwayFromZero);
+            if (fallback >= int.MaxValue)
+            {
+                return int.MaxValue;
+            }
+
+            if (fallback <= 0)
+            {
+                return 0;
+            }
+
+            return (int)fallback;
+        }
+
+        internal void SetSnapshotsPerSecond(double snapshotsPerSecond)
+        {
+            var samplesPerWindow = GetSamplesPerWindow(snapshotsPerSecond, out var windowDuration);
+            lock (_maintenanceLock)
+            {
+                var windowChanged = windowDuration != _windowDuration;
+                ApplySamplesPerWindow(samplesPerWindow);
+                if (!windowChanged)
+                {
+                    return;
+                }
+
+                // Counts and averages are per window. A new duration makes the old EMA incomparable.
+                _windowDuration = windowDuration;
+                _totalCountRunningAverage = 0;
+                _avgSamples = 0;
+                _probability = 1;
+                _countsSlots[0].Reset();
+                _countsSlots[1].Reset();
+                _timer?.Change(windowDuration, windowDuration);
+            }
         }
 
         private double ComputeIntervalAlpha(int lookback)
@@ -162,9 +250,14 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             lock (_maintenanceLock)
             {
-                _samplesPerWindow = samplesPerWindow;
-                Volatile.Write(ref _samplesBudget, samplesPerWindow + ((long)_budgetLookback * samplesPerWindow));
+                ApplySamplesPerWindow(samplesPerWindow);
             }
+        }
+
+        private void ApplySamplesPerWindow(int samplesPerWindow)
+        {
+            _samplesPerWindow = samplesPerWindow;
+            Volatile.Write(ref _samplesBudget, samplesPerWindow + ((long)_budgetLookback * samplesPerWindow));
         }
 
         private long CalculateBudgetEma(long sampledCount)

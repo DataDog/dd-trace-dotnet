@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Threading;
 
 namespace Datadog.Trace.Debugger.RateLimiting
@@ -15,11 +14,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private const int AverageLookback = 180;
         private const int BudgetLookback = 16;
 
-        private static readonly TimeSpan WindowDuration = TimeSpan.FromSeconds(1);
-
-        public static IAdaptiveSampler Create(int samplesPerSecond)
+        public static IAdaptiveSampler Create(double snapshotsPerSecond)
         {
-            return new AdaptiveSampler(WindowDuration, samplesPerSecond, AverageLookback, BudgetLookback, rollWindowCallback: null);
+            var samplesPerWindow = AdaptiveSampler.GetSamplesPerWindow(snapshotsPerSecond, out var windowDuration);
+            return new AdaptiveSampler(windowDuration, samplesPerWindow, AverageLookback, BudgetLookback, rollWindowCallback: null);
         }
 
         public static void Replace(ref IAdaptiveSampler sampler, IAdaptiveSampler replacement)

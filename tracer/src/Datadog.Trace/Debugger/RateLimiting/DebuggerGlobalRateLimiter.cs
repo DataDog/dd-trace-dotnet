@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerGlobalRateLimiter));
         private static readonly Lazy<DebuggerGlobalRateLimiter> InstanceLazy = new(() => new DebuggerGlobalRateLimiter());
 
-        private readonly Func<int, IAdaptiveSampler> _samplerFactory;
+        private readonly Func<double, IAdaptiveSampler> _samplerFactory;
         private readonly ILogRateLimiter _logRateLimiter;
         private readonly object _lifetimeLock = new();
 
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
         }
 
-        internal DebuggerGlobalRateLimiter(Func<int, IAdaptiveSampler> samplerFactory, ILogRateLimiter logRateLimiter)
+        internal DebuggerGlobalRateLimiter(Func<double, IAdaptiveSampler> samplerFactory, ILogRateLimiter logRateLimiter)
         {
             _samplerFactory = samplerFactory ?? throw new ArgumentNullException(nameof(samplerFactory));
             _logRateLimiter = logRateLimiter ?? throw new ArgumentNullException(nameof(logRateLimiter));
@@ -88,8 +88,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     return;
                 }
 
-                var configuredRate = Math.Max((int)samplesPerSecond.Value, 0);
-                ReplaceSampler(configuredRate);
+                ReplaceSampler(samplesPerSecond.Value);
             }
         }
 
@@ -120,7 +119,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
-        private void ReplaceSampler(int snapshotSamplesPerSecond)
+        private void ReplaceSampler(double snapshotSamplesPerSecond)
         {
             AdaptiveSamplerLifetime.Replace(ref _snapshotSampler, _samplerFactory(snapshotSamplesPerSecond));
         }
