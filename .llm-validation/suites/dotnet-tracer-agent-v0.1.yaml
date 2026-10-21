@@ -192,12 +192,19 @@ cases:
     expected_criteria:
       - Locates source declarations in InstrumentMethod attributes under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/. Generated definitions may be used as a cross-check; listing every generated artifact is not required.
       - Places per-method rewrite evidence in the native tracer log, not the managed log. Managed initialization messages can provide context but do not prove that a specific method was rewritten.
-      - Explains the limits of the relevant method's native-log evidence. "Method enqueued for ReJIT" indicates selection/enqueue; "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer. The later ApplyChanges call submits the replacement IL to the CLR and can still fail. Correctly challenges the premise that either line alone proves runtime instrumentation was applied; claiming CLR acceptance requires additional evidence. Equivalent explanations are acceptable without exact log wording or internal API names, and neither line alone proves the method executed or produced a span.
+      - >-
+        Explains the limits of the relevant method's native-log evidence. "Method enqueued for ReJIT" indicates selection/enqueue;
+        "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer.
+        The later ApplyChanges call submits the replacement IL to the CLR and can still fail.
+        Neither line, even without a ReJITError log, proves CLR acceptance, method execution, or span production.
+        Tentative inference is acceptable if the answer makes clear that further verification is needed.
+        Equivalent explanations are acceptable without exact log wording or internal API names.
       - If citing tracer/build/supported_calltargets.g.json, treats it as a valid build-generated enumeration of instrumented targets, not hand-authored configuration. Reading it is valid; it may need to be generated before it exists in a clean checkout. The answer need not mention this optional artifact.
     bad_signals:
       - Claims a managed initialization log proves that a specific method's JIT/ReJIT instrumentation replacement succeeded.
       - Presents a hand-authored configuration file as the authoritative list of instrumented methods or recommends hand-editing generated definitions. Merely pointing to a generated enumeration, including tracer/build/supported_calltargets.g.json, does not trigger this signal.
       - Claims enqueueing alone proves a successful rewrite, that an enqueue/rewrite-completion log alone proves the CLR accepted the replacement IL, or that either line alone proves the method executed or a span was produced.
+      - Claims absence of ReJITError, alone or combined with a rewrite-completion log, proves the CLR accepted the replacement IL. A qualified inference that explicitly requires further verification does not trigger this signal.
 
   - id: dotnet-tracer-debug-logging-in-prod-012
     files: [AGENTS.md]
