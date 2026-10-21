@@ -264,10 +264,10 @@ internal static class OtlpMapper
             {
                 var samplingRateTagName = samplingMechanism switch
                 {
-                    SamplingMechanism.AgentRate => Trace.Metrics.SamplingAgentDecision,                 // "_dd.agent_psr"
-                    SamplingMechanism.LocalTraceSamplingRule => Trace.Metrics.SamplingRuleDecision,     // "_dd.rule_psr"
-                    SamplingMechanism.RemoteAdaptiveSamplingRule => Trace.Metrics.SamplingRuleDecision, // "_dd.rule_psr"
-                    SamplingMechanism.RemoteUserSamplingRule => Trace.Metrics.SamplingRuleDecision,     // "_dd.rule_psr"
+                    SamplingMechanism.AgentRate => Trace.Metrics.SamplingAgentDecision, // "_dd.agent_psr"
+                    SamplingMechanism.LocalTraceSamplingRule
+                        or SamplingMechanism.RemoteAdaptiveSamplingRule
+                        or SamplingMechanism.RemoteUserSamplingRule => Trace.Metrics.SamplingRuleDecision, // "_dd.rule_psr"
                     _ => null
                 };
 
