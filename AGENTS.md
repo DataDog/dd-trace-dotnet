@@ -277,6 +277,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
 - `docs/development/FeatureFlagsOpenFeature.md` — OpenFeature provider sync APIs, provider hook rules, and focused tests
+- `docs/development/for-ai/Coding-Requirements/` — Per-lens rules for planning changes and for code review
 
 **CI & Testing:**
 - `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps
@@ -317,3 +318,7 @@ Common acronyms used in this repository:
 - **RID** — Runtime Identifier
 - **TFM** — Target Framework Moniker
 - **WAF** — Web Application Firewall
+
+## Code Review Rules
+
+Before pushing code or creating a pull request, you must run the [sdk-review](./.claude/skills/sdk-review/SKILL.md) skill on the committed changes unless the user specifically says not to. You must also do a standard self review (using the /review skill if available). All other required publication checks still apply.
