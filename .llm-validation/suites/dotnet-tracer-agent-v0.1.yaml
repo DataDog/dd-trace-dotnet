@@ -22,13 +22,16 @@ cases:
       - Implement OnMethodBegin and OnMethodEnd / OnAsyncMethodEnd handlers.
       - Tests under tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests with sample apps in tracer/test/test-applications/integrations.
       - >-
-        Mentions the instrumentation generator to scaffold boilerplate. Three valid alternatives are
+        Mentions the instrumentation generator to scaffold boilerplate. Valid alternatives include
         ./tracer/build.ps1 RunInstrumentationGenerator (GUI),
         ./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method> (Nuke CLI wrapper),
         and dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options] (direct CLI).
         The wrapper is defined in tracer/build/_build/Build.Utilities.cs and documented in AGENTS.md;
         it translates --assembly-path, --type-name, and --method-name into the direct CLI's generate <dll> --type <type> --method <method> arguments.
-        docs/development/for-ai/InstrumentationGenerator-CLI.md also documents inspect <assembly-path> --list-methods <type-full-name> --json for discovery.
+        tracer/build.sh and tracer/build.cmd also invoke the wrapper. It accepts --output-path <file> (forwarded as --output),
+        --overload-index <n>, and --parameter-types "<type1> <type2>" for overload selection; the direct CLI accepts the latter two flags as well.
+        The CLI project declares dd-autoinstrumentation as its installed tool command; direct CLI --type/--method also accept -t/-m.
+        docs/development/for-ai/InstrumentationGenerator-CLI.md documents dd-autoinstrumentation inspect <assembly-path> --list-methods <type-full-name> --json for discovery.
         Do not penalize choosing the wrapper instead of the direct CLI, or omitting alternative invocations and the optional discovery step.
         Still assess whether the supplied arguments and instructions are correct and actionable; materially better scaffolding or test guidance can justify a preference.
         The generator produces source-code scaffolding, not a finished integration. The GUI displays code to copy;
