@@ -901,7 +901,9 @@ internal partial class ProbeExpressionParser<T>
             return true;
         }
 
-        if (type == typeof(IDictionary) || type.GetInterface(nameof(IDictionary)) != null)
+        if (IsSupportedGenericDictionary(type) ||
+            type == typeof(IDictionary) ||
+            type.GetInterface(nameof(IDictionary)) != null)
         {
             assignableFrom = typeof(IDictionary);
             return true;
