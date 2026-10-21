@@ -3274,6 +3274,75 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_DoesNotEnumerateCustomDictionaryBehindIDictionaryLocal()
+        {
+            var customDictionary = new EnumeratorTrackingDictionary { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("UnsafeDictionaryLocal", typeof(IDictionary), customDictionary, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""UnsafeDictionaryLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            customDictionary.GetEnumeratorCallCount.Should().Be(0);
+            result.Template.Should().Contain("GetEnumeratorCallCount");
+            result.Template.Should().NotContain("[password,");
+            result.Template.Should().NotContain("[public,");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_DoesNotEnumerateCustomDictionaryBehindIDictionaryField()
+        {
+            var customDictionary = new EnumeratorTrackingDictionary { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
+            var holder = new DumpCustomIDictionaryFieldHolder(customDictionary);
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpCustomIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            customDictionary.GetEnumeratorCallCount.Should().Be(0);
+            result.Template.Should().Contain("customMap=");
+            result.Template.Should().NotContain("[password,");
+            result.Template.Should().NotContain("[public,");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_EnumeratesMicrosoftDictionaryBehindIDictionaryLocal()
+        {
+            IDictionary dictionary = new Hashtable { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("SafeDictionaryLocal", typeof(IDictionary), dictionary, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""SafeDictionaryLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("[password, {redacted}]");
+            result.Template.Should().Contain("[public, hello]");
+            result.Template.Should().NotContain("TOP_SECRET_VALUE");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_SpanDecorationDump_RedactsSensitiveObjectFields()
         {
             const string passwordSecret = "DD_PASSWORD_SECRET";
@@ -4163,6 +4232,69 @@ namespace Datadog.Trace.Tests.Debugger
                     { "public", publicValue },
                 };
             }
+        }
+
+        private sealed class DumpCustomIDictionaryFieldHolder
+        {
+            private readonly IDictionary customMap;
+
+            public DumpCustomIDictionaryFieldHolder(IDictionary customMap)
+            {
+                this.customMap = customMap;
+            }
+        }
+
+        private sealed class EnumeratorTrackingDictionary : IDictionary
+        {
+            // No Microsoft dictionary/collection instance fields — DumpFields must not reach entries
+            // through nested safe collections when the custom enumerator is skipped.
+            public int GetEnumeratorCallCount { get; private set; }
+
+            public int Count => 0;
+
+            public bool IsFixedSize => false;
+
+            public bool IsReadOnly => false;
+
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => this;
+
+            public ICollection Keys => Array.Empty<object>();
+
+            public ICollection Values => Array.Empty<object>();
+
+            public object this[object key]
+            {
+                get => null;
+                set { }
+            }
+
+            public void Add(object key, object value)
+            {
+            }
+
+            public void Clear()
+            {
+            }
+
+            public bool Contains(object key) => false;
+
+            public void CopyTo(Array array, int index)
+            {
+            }
+
+            public void Remove(object key)
+            {
+            }
+
+            public IDictionaryEnumerator GetEnumerator()
+            {
+                GetEnumeratorCallCount++;
+                return new Hashtable().GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         private sealed class ThrowingGetTypeAssembly : Assembly

@@ -121,7 +121,7 @@ internal partial class ProbeExpressionParser<T>
         Expression dumpExpression;
         if (IsSafeNonGenericDictionary(expression.Type))
         {
-            dumpExpression = DumpDictionaryExpression(expression);
+            dumpExpression = DumpDictionaryExpression(expression, scopeMembers);
         }
         else if (IsSafeCollection(expression.Type))
         {
@@ -135,13 +135,31 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
     }
 
-    private MethodCallExpression DumpDictionaryExpression(Expression dictionary)
+    private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
     {
-        return Expression.Call(
+        // Declared type may be IDictionary (Microsoft) while the runtime value is a custom dictionary.
+        // Capture once, then decide from the runtime type whether enumeration is safe.
+        var value = Expression.Variable(typeof(object), "dictionaryDumpValue");
+        scopeMembers.Add(value);
+
+        var assignValue = Expression.Assign(value, Expression.Convert(dictionary, typeof(object)));
+        var isSafe = Expression.Call(
+            Expression.Constant(this),
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsSafeDictionaryValue), [typeof(object)]),
+            value);
+        var dumpEntries = Expression.Call(
             Expression.Constant(this),
             GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(Type)]),
-            Expression.Convert(dictionary, typeof(object)),
+            value,
             Expression.Constant(typeof(IDictionary)));
+        var dumpFields = DumpFieldsExpression(Expression.Convert(value, dictionary.Type), scopeMembers);
+
+        return Expression.Block(assignValue, Expression.Condition(isSafe, dumpEntries, dumpFields));
+    }
+
+    private bool IsSafeDictionaryValue(object value)
+    {
+        return value != null && IsSafeNonGenericDictionary(value.GetType());
     }
 
     private BlockExpression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
@@ -310,7 +328,12 @@ internal partial class ProbeExpressionParser<T>
         // only one level depth of collection
         if (depth == 0 && IsTypeSupportIndex(type, out var assignableFrom))
         {
-            return DumpCollection(value, assignableFrom);
+            // IDictionary fields use the declared type for IsTypeSupportIndex; require a Microsoft
+            // runtime implementation before enumerating so custom dictionaries stay on field/type dump.
+            if (assignableFrom != typeof(IDictionary) || value is null || IsSafeDictionaryValue(value))
+            {
+                return DumpCollection(value, assignableFrom);
+            }
         }
 
         if (hasName)
