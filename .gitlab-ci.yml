@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: 3c2867023920dc33744b52c4dae43f8655a38af9   # platform PR #48 (isolated setup pilot)
+    ref: fc8d058e328f4594472e1a6f7f3ba637e4c2e030   # platform PR #48 (isolated setup pilot)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -48,8 +48,8 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "3c2867023920dc33744b52c4dae43f8655a38af9"   # platform PR #48 (must match include ref above)
-    # Temporary live verification of the shared bootstrap; remove after both modes pass.
+    LLMVAL_PLATFORM_REF: "fc8d058e328f4594472e1a6f7f3ba637e4c2e030"   # platform PR #48 (must match include ref above)
+    # Temporary live verification of shared selection/Git code; remove after both modes pass.
     LLMVAL_REQUIRE_COMPLETE: "true"
     LLMVAL_CASES: "dotnet-tracer-repo-nav-integration-001"
     LLMVAL_RUNS: "1"
