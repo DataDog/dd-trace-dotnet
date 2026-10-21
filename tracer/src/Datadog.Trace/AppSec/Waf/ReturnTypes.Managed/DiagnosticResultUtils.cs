@@ -17,6 +17,47 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 internal static class DiagnosticResultUtils
 {
+    /// <summary>
+    /// Counts the errors the WAF reported while loading a single configuration: one per top-level or
+    /// per-section "error", plus one per distinct message in each section's "errors" map.
+    /// </summary>
+    internal static int CountConfigErrors(in DdwafObjectStruct diagObject)
+    {
+        if (diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        try
+        {
+            foreach (var entry in diagObject.DecodeMap())
+            {
+                if (entry.Key == "error")
+                {
+                    count += entry.Value is string { Length: > 0 } ? 1 : 0;
+                }
+                else if (entry.Value is Dictionary<string, object> section)
+                {
+                    if (section.TryGetValue("error", out var error) && error is string { Length: > 0 })
+                    {
+                        count++;
+                    }
+                    else if (section.TryGetValue("errors", out var errors) && errors is Dictionary<string, object> errorsByMessage)
+                    {
+                        count += errorsByMessage.Count;
+                    }
+                }
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "AppSec could not count the Waf configuration errors");
+        }
+
+        return count;
+    }
+
     internal static ReportedDiagnostics ExtractReportedDiagnostics(in DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
     {
         WafStats rules = new(); // Rules only stats
