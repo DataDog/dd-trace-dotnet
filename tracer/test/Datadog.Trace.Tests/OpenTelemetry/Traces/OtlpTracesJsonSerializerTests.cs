@@ -10,6 +10,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
@@ -218,6 +219,29 @@ public class OtlpTracesJsonSerializerTests
         // to a no-op when the message is omitted, making the assertion vacuous.
         var actualMessage = json["status"]!["message"]?.Value<string>();
         actualMessage.Should().Be(expectedMessage);
+    }
+
+    [Theory]
+    [InlineData(2, 1)]   // user-keep
+    [InlineData(1, 1)]   // auto-keep
+    [InlineData(0, 0)]   // auto-reject
+    [InlineData(-1, 0)]  // user-reject
+    public void WriteSpan_LocalSpanSamplingPriority_EmitsFlagsFromTraceChunk(int samplingPriority, int expectedFlags)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.TraceContext.SetSamplingPriority(samplingPriority, SamplingMechanism.Manual);
+
+        var json = WriteSpan(ddSpan);
+
+        json["flags"]!.Value<int>().Should().Be(expectedFlags);
+    }
+
+    [Fact]
+    public void WriteSpan_WithoutSamplingPriority_OmitsFlags()
+    {
+        var json = WriteSpan(CreateSpan());
+
+        json["flags"].Should().BeNull();
     }
 
     private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)

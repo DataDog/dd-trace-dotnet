@@ -466,6 +466,108 @@ public class OtlpMapperTests
         dropped.Should().BeGreaterOrEqualTo(5, "the five customer tags all spill once the three enrichment slots are taken");
     }
 
+    [Theory]
+    [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, Trace.Metrics.SamplingAgentDecision)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, Trace.Metrics.SamplingRuleDecision)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteUserSamplingRule, Trace.Metrics.SamplingRuleDecision)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteAdaptiveSamplingRule, Trace.Metrics.SamplingRuleDecision)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual, null)]
+    public void EmitAttributesFromSpan_EmitsSamplingDecision_OnLocalRoot(int samplingPriority, string mechanism, string? expectedRateKey)
+    {
+        var span = CreateSpan();
+        span.Context.TraceContext.SetSamplingPriority(samplingPriority, mechanism, rate: 0.5, limiterRate: 0.75f);
+
+        var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
+        spanModel.IsLocalRoot.Should().BeTrue();
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128);
+
+        attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingPriority).Which.Value.Should().Be((double)samplingPriority);
+        attributes.Should().ContainSingle(kv => kv.Key == Tags.Propagated.DecisionMaker).Which.Value.Should().Be(mechanism);
+        attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingLimitDecision).Which.Value.Should().Be(0.75);
+
+        if (expectedRateKey is null)
+        {
+            attributes.Should().NotContain(kv => kv.Key == Trace.Metrics.SamplingAgentDecision || kv.Key == Trace.Metrics.SamplingRuleDecision);
+            attributes.Should().NotContain(kv => kv.Key == Tags.Propagated.KnuthSamplingRate);
+        }
+        else
+        {
+            attributes.Should().ContainSingle(kv => kv.Key == expectedRateKey).Which.Value.Should().Be(0.5);
+            attributes.Should().ContainSingle(kv => kv.Key == Tags.Propagated.KnuthSamplingRate).Which.Value.Should().Be("0.5");
+        }
+    }
+
+    [Fact]
+    public void EmitAttributesFromSpan_OmitsSamplingDecision_WhenNoDecision()
+    {
+        var span = CreateSpan();
+        var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128);
+
+        attributes.Should().NotContain(kv => kv.Key == Trace.Metrics.SamplingPriority || kv.Key == Tags.Propagated.DecisionMaker);
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void EmitAttributesFromSpan_PlacesTraceTagsLikeMessagePackFormatter(bool childIsFirstInChunk)
+    {
+        var root = CreateSpan();
+        var traceContext = root.Context.TraceContext;
+        var child = new Span(new SpanContext(root.Context, traceContext, serviceName: null), DateTimeOffset.UtcNow);
+        traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteAdaptiveSamplingRule, rate: 0.1);
+        traceContext.Tags.SetTag("_dd.non_propagated", "value");
+
+        Span[] spans = childIsFirstInChunk ? [child, root] : [root, child];
+        var chunk = new TraceChunkModel(new SpanCollection(spans));
+        var rootModel = chunk.GetSpanModel(childIsFirstInChunk ? 1 : 0);
+        var childModel = chunk.GetSpanModel(childIsFirstInChunk ? 0 : 1);
+        childModel.IsChunkOrphan.Should().BeFalse();
+
+        var rootAttributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => rootAttributes.Add(kv), rootModel, limit: 128);
+        var childAttributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => childAttributes.Add(kv), childModel, limit: 128);
+
+        // local root: priority, sampling rates and non-propagated trace tags
+        rootAttributes.Should().Contain(kv => kv.Key == Trace.Metrics.SamplingPriority);
+        rootAttributes.Should().Contain(kv => kv.Key == Trace.Metrics.SamplingRuleDecision);
+        rootAttributes.Should().Contain(kv => kv.Key == "_dd.non_propagated");
+        childAttributes.Should().NotContain(kv => kv.Key == Trace.Metrics.SamplingPriority || kv.Key == Trace.Metrics.SamplingRuleDecision || kv.Key == "_dd.non_propagated");
+
+        // first span in chunk: propagated ("_dd.p.*") trace tags
+        var first = childIsFirstInChunk ? childAttributes : rootAttributes;
+        var other = childIsFirstInChunk ? rootAttributes : childAttributes;
+        first.Should().ContainSingle(kv => kv.Key == Tags.Propagated.DecisionMaker).Which.Value.Should().Be(SamplingMechanism.RemoteAdaptiveSamplingRule);
+        other.Should().NotContain(kv => kv.Key == Tags.Propagated.DecisionMaker);
+    }
+
+    [Fact]
+    public void EmitAttributesFromSpan_SamplingDecisionIsWrittenBeforeSpanTags()
+    {
+        // OTel semantics skips the service/operation/etc. block, so the sampling attributes are emitted first
+        // and are not the ones dropped when the attribute limit is reached.
+        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+        span.SetTag("customer.tag", "v");
+        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+        var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
+
+        // exactly enough slots for the trace tags and "_sampling_priority_v1": the span tag must spill.
+        var limit = spanModel.TraceChunk.Tags!.Count + 1;
+
+        var attributes = new List<KeyValue>();
+        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit);
+
+        attributes.Should().HaveCount(limit);
+        attributes.Should().Contain(kv => kv.Key == Tags.Propagated.DecisionMaker);
+        attributes.Should().Contain(kv => kv.Key == Trace.Metrics.SamplingPriority);
+        attributes.Should().NotContain(kv => kv.Key == "customer.tag");
+        dropped.Should().BeGreaterOrEqualTo(1);
+    }
+
     private static Span CreateSpan(string? origin = null, bool openTelemetrySemanticsEnabled = false)
     {
         var traceContext = new TraceContext(new StubDatadogTracer());

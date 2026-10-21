@@ -489,7 +489,8 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
 
         // flags (optional)
-        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
+        // Local spans carry the sampling decision on the trace chunk, not on their own context.
+        if ((spanModel.TraceChunk.SamplingPriority ?? spanModel.Span.Context.SamplingPriority) is int samplingPriority)
         {
             writer.WritePropertyName("flags");
             writer.WriteValue(SamplingPriorityValues.IsKeep(samplingPriority) ? 1 : 0);
