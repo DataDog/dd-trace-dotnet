@@ -93,8 +93,7 @@ internal sealed class OtlpGrpcRequestFactory : IApiRequestFactory
         // Without TLS, .NET Core 3.1 only sends HTTP/2 requests, which gRPC requires, when this switch is enabled.
         // Each handler reads the switch once, when it's created, so only enable it while creating this handler
         // to leave the application's own handlers unaffected.
-        // This build also runs on .NET 5, which ignores the switch: there, gRPC without TLS requires a request
-        // version policy that this build can't set, so only gRPC with TLS works.
+        // This build also runs on .NET 5, which ignores the switch and relies on the request's version policy instead, see OtlpGrpcRequest.
         lock (Http2UnencryptedSupportLock)
         {
             var isSwitchSet = AppContext.TryGetSwitch(PlatformKeys.AppContextHttp2UnencryptedSupport, out var previousValue);

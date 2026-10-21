@@ -37,7 +37,8 @@ public class OtlpGrpcRequestTests
         request.Method.Should().Be(HttpMethod.Post);
         request.RequestUri.Should().Be(Endpoint);
         request.Version.Should().Be(HttpVersion.Version20);
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
+        // Set with reflection by the .NET Core 3.1 build of the tracer, which .NET 5 uses
         request.VersionPolicy.Should().Be(HttpVersionPolicy.RequestVersionExact);
 #endif
         request.Headers.TE.Should().ContainSingle(x => x.Value == "trailers");

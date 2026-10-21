@@ -15,6 +15,9 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+#if !NET5_0_OR_GREATER
+using System.Reflection;
+#endif
 
 namespace Datadog.Trace.Agent.Transports;
 
@@ -24,6 +27,12 @@ namespace Datadog.Trace.Agent.Transports;
 /// </summary>
 internal sealed class OtlpGrpcRequest : IApiRequest
 {
+#if !NET5_0_OR_GREATER
+    // This build also runs on .NET 5, where the version policy is set with reflection, as it doesn't exist in .NET Core 3.1
+    private static readonly PropertyInfo? VersionPolicyProperty = typeof(HttpRequestMessage).GetProperty("VersionPolicy");
+    private static readonly object? RequestVersionExactPolicy = GetRequestVersionExactPolicy();
+#endif
+
     private readonly HttpClient _client;
     private readonly HttpRequestMessage _request;
 
@@ -31,9 +40,15 @@ internal sealed class OtlpGrpcRequest : IApiRequest
     {
         _client = client;
         _request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Version = HttpVersion.Version20 };
+
+        // Required to send HTTP/2 requests without TLS since .NET 5
 #if NET5_0_OR_GREATER
-        // Required to send HTTP/2 requests without TLS
         _request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
+#else
+        if (RequestVersionExactPolicy is not null)
+        {
+            VersionPolicyProperty!.SetValue(_request, RequestVersionExactPolicy);
+        }
 #endif
 
         // Some servers abort gRPC calls without this header
@@ -68,6 +83,22 @@ internal sealed class OtlpGrpcRequest : IApiRequest
     public Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary) => throw new NotSupportedException();
 
     public Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None) => throw new NotSupportedException();
+
+#if !NET5_0_OR_GREATER
+    private static object? GetRequestVersionExactPolicy()
+    {
+        try
+        {
+            // HttpVersionPolicy.RequestVersionExact
+            return VersionPolicyProperty is null ? null : Enum.Parse(VersionPolicyProperty.PropertyType, "RequestVersionExact");
+        }
+        catch
+        {
+            // Can't happen with the actual API, but only gRPC with TLS would work then, as on .NET Core 3.1
+            return null;
+        }
+    }
+#endif
 
     /// <summary>
     /// A gRPC length-prefixed message: a compressed flag, the message length as a big-endian 32-bit integer, then the message.

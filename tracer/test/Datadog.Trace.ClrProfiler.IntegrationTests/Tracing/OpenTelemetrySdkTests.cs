@@ -248,13 +248,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var runtimeMajor = Environment.Version.Major;
             var isJson = protocol == "http/json" && datadogTracesEnabled.Equals("true");
 
-#if NETCOREAPP3_1_OR_GREATER
-            if (protocol == "grpc" && runtimeMajor == 5)
-            {
-                // .NET 5 loads the .NET Core 3.1 build of the tracer, which can't send HTTP/2 requests without TLS there
-                throw new SkipException("Unable to send insecure gRPC traces on .NET 5.");
-            }
-#else
+#if !NETCOREAPP3_1_OR_GREATER
             if (protocol == "grpc")
             {
                 throw new SkipException("gRPC requires HTTP/2, which isn't supported on .NET Framework.");
