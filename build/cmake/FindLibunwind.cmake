@@ -10,12 +10,13 @@ if (USE_GLIBC217_SYSROOT)
     # Autoconf probes and the subsequent make do not inherit CMake's toolchain
     # settings. Keep compilation and feature detection on the same compiler target,
     # C++ headers, and glibc217 link sysroot as the parent native build.
-    set(LIBUNWIND_CFLAGS "${CMAKE_C_FLAGS} --target=${CMAKE_C_COMPILER_TARGET} ${LIBUNWIND_CFLAGS}")
-    set(LIBUNWIND_CXXFLAGS "${CMAKE_CXX_FLAGS} --target=${CMAKE_CXX_COMPILER_TARGET} ${LIBUNWIND_CXXFLAGS}")
+    set(LIBUNWIND_SYSROOT_FLAG "--sysroot=${CMAKE_SYSROOT}")
+    set(LIBUNWIND_CFLAGS "${CMAKE_C_FLAGS} ${LIBUNWIND_SYSROOT_FLAG} --target=${CMAKE_C_COMPILER_TARGET} ${LIBUNWIND_CFLAGS}")
+    set(LIBUNWIND_CXXFLAGS "${CMAKE_CXX_FLAGS} ${LIBUNWIND_SYSROOT_FLAG} --target=${CMAKE_CXX_COMPILER_TARGET} ${LIBUNWIND_CXXFLAGS}")
     string(STRIP "${LIBUNWIND_CFLAGS}" LIBUNWIND_CFLAGS)
     string(STRIP "${LIBUNWIND_CXXFLAGS}" LIBUNWIND_CXXFLAGS)
     list(APPEND LIBUNWIND_TOOLCHAIN_CONFIGURE_ARGS
-        "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}")
+        "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS} ${LIBUNWIND_SYSROOT_FLAG}")
 endif()
 
 ExternalProject_Add(libunwind

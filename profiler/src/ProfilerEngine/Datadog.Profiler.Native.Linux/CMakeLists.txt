@@ -4,9 +4,6 @@
 
 project("Datadog.Profiler.Native.Linux" VERSION 3.57.0)
 
-# USE_GLIBC217_SYSROOT links glibc217-compat (not glibc-compat, which conflicts with real
-# glibc's strerror_r). See glibc217-compat.c.
-
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_TSAN "Build with Clang Thread Sanitizer" OFF)
@@ -199,8 +196,3 @@ target_link_options(${PROFILER_SHARED_LIB_NAME} PRIVATE
 target_link_libraries(${PROFILER_SHARED_LIB_NAME}
     -Wl,--whole-archive $<TARGET_FILE:${PROFILER_STATIC_LIB_NAME}> -Wl,--no-whole-archive
     ${PROFILER_STATIC_LIB_NAME})
-
-if (USE_GLIBC217_SYSROOT)
-    target_link_libraries(${PROFILER_SHARED_LIB_NAME} glibc217-compat)
-    add_dependencies(${PROFILER_SHARED_LIB_NAME} glibc217-compat)
-endif()

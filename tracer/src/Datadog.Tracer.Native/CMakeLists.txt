@@ -14,9 +14,6 @@ endif()
 
 project("Datadog.Tracer.Native" VERSION 3.57.0)
 
-# USE_GLIBC217_SYSROOT links glibc217-compat (not glibc-compat, which conflicts with real
-# glibc's strerror_r). See glibc217-compat.c.
-
 # ******************************************************
 # Environment detection
 # ******************************************************
@@ -312,14 +309,6 @@ set_target_properties("Datadog.Tracer.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 target_link_libraries("Datadog.Tracer.Native" "Datadog.Tracer.Native.static")
-
-# Link the compatibility object directly into the final binary. Putting it in the
-# static archive is not sufficient: dependencies such as re2 are linked later and
-# can introduce __libc_single_threaded after the linker has scanned that archive.
-if (USE_GLIBC217_SYSROOT)
-    target_link_libraries("Datadog.Tracer.Native" glibc217-compat)
-    add_dependencies("Datadog.Tracer.Native" glibc217-compat)
-endif()
 
 if (ISLINUX)
     target_link_libraries("Datadog.Tracer.Native" Threads::Threads)
