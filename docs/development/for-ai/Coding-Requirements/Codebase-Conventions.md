@@ -99,6 +99,7 @@ Repo-specific idioms: configuration, logging, shared helpers, test patterns, and
 
 ### CONV-4.2: Run all scenarios in one sample process with one snapshot, not one launch per mode
 - Flag: a sample/test pair that relaunches the sample per operation or test mode instead of running everything once with stable span ordering.
+- Not when: each run of the sample requires different configuration, which requires re-launching the sample.
 
 ### CONV-4.3: Add scrubbers for random values to the shared Verify scrubbers, not per test
 - Flag: a per-test regex/scrubber for a value (e.g. random `server.port`) that other snapshot tests also emit.
