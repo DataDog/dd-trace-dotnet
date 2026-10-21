@@ -3684,6 +3684,131 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberIDictionaryField_RedactsConfiguredRuntimeType()
+        {
+            const string publicValue = "hello";
+            var holder = new DumpIDictionaryFieldHolder(
+                new Hashtable { { "password", "TOP_SECRET_VALUE" }, { "public", publicValue } });
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
+
+            try
+            {
+                Redaction.Instance.ResetInstance();
+                Redaction.Instance.SetConfig(
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new HashSet<string> { "System.Collections.Hashtable" });
+
+                var evaluator = CreateEvaluator(
+                    templates:
+                    [
+                        new DebuggerExpression(
+                            string.Empty,
+                            @"{""getmember"":[{""ref"":""DumpHolderLocal""},""headers""]}",
+                            null)
+                    ],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Be("{redacted}");
+                result.Template.Should().NotContain(publicValue);
+                result.Template.Should().NotContain("TOP_SECRET_VALUE");
+                result.Template.Should().NotContain("[public,");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                Redaction.Instance.ResetInstance();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberIDictionaryField_RedactsConfiguredCustomRuntimeType()
+        {
+            var customDictionary = new EnumeratorTrackingDictionary { { "public", "hello" } };
+            var holder = new DumpCustomIDictionaryFieldHolder(customDictionary);
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpCustomIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
+
+            try
+            {
+                Redaction.Instance.ResetInstance();
+                Redaction.Instance.SetConfig(
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new HashSet<string> { typeof(EnumeratorTrackingDictionary).FullName });
+
+                var evaluator = CreateEvaluator(
+                    templates:
+                    [
+                        new DebuggerExpression(
+                            string.Empty,
+                            @"{""getmember"":[{""ref"":""DumpHolderLocal""},""customMap""]}",
+                            null)
+                    ],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                customDictionary.GetEnumeratorCallCount.Should().Be(0);
+                result.Template.Should().Be("{redacted}");
+                result.Template.Should().NotContain("hello");
+                result.Template.Should().NotContain("GetEnumeratorCallCount");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                Redaction.Instance.ResetInstance();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_IDictionaryField_RedactsConfiguredRuntimeType()
+        {
+            const string publicValue = "hello";
+            var holder = new DumpIDictionaryFieldHolder(
+                new Hashtable { { "password", "TOP_SECRET_VALUE" }, { "public", publicValue } });
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
+
+            try
+            {
+                Redaction.Instance.ResetInstance();
+                Redaction.Instance.SetConfig(
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new HashSet<string> { "System.Collections.Hashtable" });
+
+                var evaluator = CreateEvaluator(
+                    templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Contain("headers={redacted}");
+                result.Template.Should().NotContain(publicValue);
+                result.Template.Should().NotContain("TOP_SECRET_VALUE");
+                result.Template.Should().NotContain("[public,");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                Redaction.Instance.ResetInstance();
+            }
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_SpanDecorationDump_RedactsSensitiveObjectFields()
         {
             const string passwordSecret = "DD_PASSWORD_SECRET";
@@ -4851,6 +4976,16 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly IDictionary<string, string> headers;
 
             public DumpGenericIDictionaryFieldHolder(IDictionary<string, string> headers)
+            {
+                this.headers = headers;
+            }
+        }
+
+        private sealed class DumpIDictionaryFieldHolder
+        {
+            private readonly IDictionary headers;
+
+            public DumpIDictionaryFieldHolder(IDictionary headers)
             {
                 this.headers = headers;
             }
