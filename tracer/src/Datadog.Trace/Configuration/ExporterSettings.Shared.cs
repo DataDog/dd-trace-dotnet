@@ -150,10 +150,10 @@ namespace Datadog.Trace.Configuration
             var configuredProtocol = signalProtocol ?? generalProtocol;
             var protocol = configuredProtocol switch
             {
-                "grpc" => OtlpProtocol.Grpc,
-                "http/protobuf" => OtlpProtocol.HttpProtobuf,
-                "http/json" => OtlpProtocol.HttpJson,
                 null or "" => defaultProtocol,
+                _ when string.Equals(configuredProtocol, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                _ when string.Equals(configuredProtocol, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                _ when string.Equals(configuredProtocol, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
                 _ => UnsupportedOtlpProtocol(signal, configuredProtocol, defaultProtocol),
             };
 

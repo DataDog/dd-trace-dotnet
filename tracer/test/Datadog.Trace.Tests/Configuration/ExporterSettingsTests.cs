@@ -365,6 +365,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("http/protobuf", "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/logs")]
         [InlineData("http/protobuf", "http://base:4333/mycollector/", null, "http://base:4333/mycollector/v1/logs")]
         [InlineData("http/json", "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/logs")]
+        [InlineData("HTTP/PROTOBUF", "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/logs")]
+        [InlineData("GRPC", "http://base:4333/mycollector", null, "http://base:4333/mycollector")]
         [InlineData("http/protobuf", "http://base:4333/mycollector", "http://logs:4444/custom/path", "http://logs:4444/custom/path")]
         public void OtlpLogsEndpoint(string protocol, string generalEndpoint, string logsEndpoint, string expectedEndpoint)
         {
