@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.Grpc;
 using GrpcStatusCode = Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.Grpc.StatusCode;
 
@@ -39,7 +40,7 @@ internal sealed class OtlpGrpcResponse : IApiResponse
         }
 
         var status = GrpcProtocolHelpers.GetResponseStatus(response, response.TrailingHeaders);
-        StatusCode = GetHttpStatusCode(status.StatusCode);
+        StatusCode = GetHttpStatusCode(status.StatusCode, response);
 
         if (status.StatusCode != GrpcStatusCode.OK)
         {
@@ -67,11 +68,11 @@ internal sealed class OtlpGrpcResponse : IApiResponse
     public void Dispose() => _response.Dispose();
 
     // The OTLP specification lists the retryable gRPC status codes, which are mapped to an HTTP status code that ApiOtlp retries.
-    // RESOURCE_EXHAUSTED should only be retried when the server says so, but is retried like the HTTP 429 status code.
-    private static int GetHttpStatusCode(GrpcStatusCode statusCode) => statusCode switch
+    // RESOURCE_EXHAUSTED is only retryable when the server says so, with a RetryInfo in the status details.
+    private static int GetHttpStatusCode(GrpcStatusCode statusCode, HttpResponseMessage response) => statusCode switch
     {
         GrpcStatusCode.OK => 200,
-        GrpcStatusCode.ResourceExhausted => 429,
+        GrpcStatusCode.ResourceExhausted when HasRetryInfo(response) => 429,
         GrpcStatusCode.Cancelled
             or GrpcStatusCode.DeadlineExceeded
             or GrpcStatusCode.Aborted
@@ -80,5 +81,13 @@ internal sealed class OtlpGrpcResponse : IApiResponse
             or GrpcStatusCode.DataLoss => 503,
         _ => 500,
     };
+
+    private static bool HasRetryInfo(HttpResponseMessage response)
+    {
+        // Like the status, the status details are in the headers of trailers-only responses
+        var statusDetails = GrpcProtocolHelpers.GetHeaderValue(response.TrailingHeaders, OtlpGrpcExportClient.GrpcStatusDetailsHeader, first: true)
+                         ?? GrpcProtocolHelpers.GetHeaderValue(response.Headers, OtlpGrpcExportClient.GrpcStatusDetailsHeader, first: true);
+        return GrpcStatusDeserializer.TryGetGrpcRetryDelay(statusDetails) is not null;
+    }
 }
 #endif

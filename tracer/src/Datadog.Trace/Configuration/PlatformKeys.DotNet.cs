@@ -35,13 +35,6 @@ internal static partial class PlatformKeys
     public const string ProgramData = "ProgramData";
 
     /// <summary>
-    /// Names of the .NET Core 3.x setting (env var and <see cref="System.AppContext"/> switch) that lets
-    /// SocketsHttpHandler send HTTP/2 requests without TLS. The <see cref="System.AppContext"/> switch takes precedence.
-    /// </summary>
-    public const string DotNetHttp2UnencryptedSupport = "DOTNET_SYSTEM_NET_HTTP_SOCKETSHTTPHANDLER_HTTP2UNENCRYPTEDSUPPORT";
-    public const string AppContextHttp2UnencryptedSupport = "System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport";
-
-    /// <summary>
     /// Sets the GC's "high memory load" threshold percent (clamped to 99 by the runtime). Parsed as
     /// <b>hexadecimal</b> by the runtime (see <c>GCToEEInterface::GetIntConfigValue</c>), and takes precedence
     /// over the <c>System.GC.HighMemoryPercent</c> runtimeconfig knob, which is parsed using C-style base

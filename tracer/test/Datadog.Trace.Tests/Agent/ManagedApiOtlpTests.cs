@@ -93,7 +93,9 @@ public class ManagedApiOtlpTests
     }
 
     [Theory]
+#if NET6_0_OR_GREATER // See ExporterSettings_WithGrpcProtocolAndUdsEndpoint_FallsBackToDefaultTcpEndpoint otherwise
     [InlineData("grpc")]
+#endif
     [InlineData("http/protobuf")]
     [InlineData("http/json")]
     public void OtlpTracesEndpoint_WithUdsGeneralEndpoint_DoesNotAppendV1TracesPath(string protocol)
@@ -211,6 +213,23 @@ public class ManagedApiOtlpTests
         factory.Should().BeOfType<OtlpGrpcRequestFactory>();
         factory.GetEndpoint(null).Should().Be(new Uri("http://localhost" + OtlpTransportStrategy.TracesGrpcMethodPath));
         factory.Info(factory.GetEndpoint(null)).Should().EndWith("to /var/run/datadog/otlp.socket");
+    }
+#else
+    [Theory]
+    [InlineData("OTEL_EXPORTER_OTLP_ENDPOINT")]
+    [InlineData("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")]
+    public void ExporterSettings_WithGrpcProtocolAndUdsEndpoint_FallsBackToDefaultTcpEndpoint(string endpointKey)
+    {
+        // The .NET Core 3.1 build, also used on .NET 5, doesn't support gRPC over Unix Domain Sockets
+        var source = BuildSource(
+            "OTEL_EXPORTER_OTLP_PROTOCOL:grpc",
+            $"{endpointKey}:unix:///var/run/datadog/otlp.socket",
+            "OTEL_TRACES_EXPORTER:otlp");
+        var exporterSettings = new ExporterSettings(source, _ => true, NullConfigurationTelemetry.Instance);
+
+        exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri("http://localhost:4317"));
+        exporterSettings.ValidationWarnings.Should().Contain(w => w.Contains("doesn't support gRPC over UDS"));
+        OtlpTransportStrategy.GetTraces(exporterSettings).GetEndpoint(null).Should().Be(new Uri("http://localhost:4317" + OtlpTransportStrategy.TracesGrpcMethodPath));
     }
 #endif
 

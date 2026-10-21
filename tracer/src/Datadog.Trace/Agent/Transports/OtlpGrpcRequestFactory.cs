@@ -10,8 +10,11 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
+#if !NET5_0_OR_GREATER
+using System.Reflection;
+using Datadog.Trace.Logging;
+#endif
 
 namespace Datadog.Trace.Agent.Transports;
 
@@ -21,7 +24,7 @@ namespace Datadog.Trace.Agent.Transports;
 internal sealed class OtlpGrpcRequestFactory : IApiRequestFactory
 {
 #if !NET5_0_OR_GREATER
-    private static readonly object Http2UnencryptedSupportLock = new();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OtlpGrpcRequestFactory>();
 #endif
 
     private readonly HttpClient _client;
@@ -87,40 +90,32 @@ internal sealed class OtlpGrpcRequestFactory : IApiRequestFactory
 
     private static SocketsHttpHandler CreateHandler()
     {
-#if NET5_0_OR_GREATER
-        return new SocketsHttpHandler();
-#else
-        // Without TLS, .NET Core 3.1 only sends HTTP/2 requests, which gRPC requires, when this switch is enabled.
-        // Each handler reads the switch once, when it's created, so only enable it while creating this handler
-        // to leave the application's own handlers unaffected.
-        // This build also runs on .NET 5, which ignores the switch and relies on the request's version policy instead, see OtlpGrpcRequest.
-        lock (Http2UnencryptedSupportLock)
-        {
-            var isSwitchSet = AppContext.TryGetSwitch(PlatformKeys.AppContextHttp2UnencryptedSupport, out var previousValue);
-            AppContext.SetSwitch(PlatformKeys.AppContextHttp2UnencryptedSupport, true);
-
-            try
-            {
-                return new SocketsHttpHandler();
-            }
-            finally
-            {
-                // A switch can't be removed, so when the application didn't set it, restore the value that the
-                // runtime would otherwise read from the environment variable.
-                AppContext.SetSwitch(
-                    PlatformKeys.AppContextHttp2UnencryptedSupport,
-                    isSwitchSet ? previousValue : IsHttp2UnencryptedSupportEnabledByEnvironmentVariable());
-            }
-        }
+        var handler = new SocketsHttpHandler();
+#if !NET5_0_OR_GREATER
+        AllowHttp2WithoutTls(handler);
 #endif
+        return handler;
     }
 
 #if !NET5_0_OR_GREATER
-    private static bool IsHttp2UnencryptedSupportEnabledByEnvironmentVariable()
+    /// <summary>
+    /// Without TLS, .NET Core 3.1 only sends HTTP/2 requests, which gRPC requires, when the process-wide
+    /// System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport switch is enabled. Each handler copies it to its
+    /// settings when it's created, so set this setting on this handler only, to leave the application unaffected.
+    /// This build also runs on .NET 5, which doesn't have this setting, and relies on the request's version policy instead, see OtlpGrpcRequest.
+    /// </summary>
+    private static void AllowHttp2WithoutTls(SocketsHttpHandler handler)
     {
-        // Same parsing as SocketsHttpHandler
-        var value = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetHttp2UnencryptedSupport);
-        return value is not null && (value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("1"));
+        try
+        {
+            var settings = typeof(SocketsHttpHandler).GetField("_settings", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(handler);
+            settings?.GetType().GetField("_allowUnencryptedHttp2", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(settings, true);
+        }
+        catch (Exception ex)
+        {
+            // Only gRPC with TLS works then
+            Log.Debug(ex, "Unable to allow HTTP/2 without TLS for OTLP gRPC requests.");
+        }
     }
 #endif
 }

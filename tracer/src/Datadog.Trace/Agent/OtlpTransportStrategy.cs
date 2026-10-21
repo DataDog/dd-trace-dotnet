@@ -105,9 +105,10 @@ internal static class OtlpTransportStrategy
         string grpcMethodPath,
         string productName)
     {
+#if NET5_0_OR_GREATER
+        // ExporterSettings already falls back to TCP on .NET Core 3.1, which doesn't support gRPC over Unix Domain Sockets
         if (signalEndpoint.OriginalString.StartsWith(ExporterSettings.UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
         {
-#if NET5_0_OR_GREATER
             var socketPath = signalEndpoint.PathAndQuery;
             Log.Information<string, string>("Using " + nameof(OtlpGrpcRequestFactory) + " for {ProductName} transport, with Unix Domain Sockets path {Path}.", productName, socketPath);
             // HttpClient only accepts http(s) URIs - use http://localhost and append the gRPC method path
@@ -116,10 +117,8 @@ internal static class OtlpTransportStrategy
                 UriHelpers.Combine(Localhost, grpcMethodPath),
                 headers,
                 timeout);
-#else
-            Log.Error("Using gRPC over Unix Domain Sockets for {ProductName} transport is only supported on .NET 5 and greater. Falling back to default transport.", productName);
-#endif
         }
+#endif
 
         Log.Information("Using " + nameof(OtlpGrpcRequestFactory) + " for {ProductName} transport.", productName);
         // Like OpenTelemetry .NET, append the gRPC method path to the endpoint unless it's already there

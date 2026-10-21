@@ -9,11 +9,11 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -53,7 +53,7 @@ public class OtlpGrpcRequestTests
     [InlineData("0", 200)] // OK
     [InlineData("14", 503)] // UNAVAILABLE, retryable
     [InlineData("4", 503)] // DEADLINE_EXCEEDED, retryable
-    [InlineData("8", 429)] // RESOURCE_EXHAUSTED, retried like an HTTP 429
+    [InlineData("8", 500)] // RESOURCE_EXHAUSTED without RetryInfo, not retryable
     [InlineData("3", 500)] // INVALID_ARGUMENT, not retryable
     [InlineData("12", 500)] // UNIMPLEMENTED, not retryable
     [InlineData(null, 500)] // grpc-status is missing
@@ -64,6 +64,23 @@ public class OtlpGrpcRequestTests
         using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), MimeTypes.XProtobuf);
 
         response.StatusCode.Should().Be(expectedStatusCode);
+    }
+
+    [Fact]
+    public async Task PostAsync_RetriesResourceExhaustedWithRetryInfo()
+    {
+        var handler = new FakeHandler(
+            () =>
+            {
+                var response = CreateResponse(grpcStatus: "8");
+                response.TrailingHeaders.Add("grpc-status-details-bin", CreateStatusDetailsWithRetryInfo());
+                return response;
+            });
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10), handler);
+
+        using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), MimeTypes.XProtobuf);
+
+        response.StatusCode.Should().Be(429);
     }
 
     [Fact]
@@ -123,16 +140,28 @@ public class OtlpGrpcRequestTests
 
 #if !NET6_0_OR_GREATER
     [Fact]
-    public void CreatingFactory_DoesNotChangeHttp2UnencryptedSupport()
+    public void CreatingFactory_DoesNotChangeHttp2UnencryptedSupportSwitch()
     {
-        // .NET Core 3.1 only allows HTTP/2 without TLS for the factory's own handler
-        var wasEnabled = AppContext.TryGetSwitch(PlatformKeys.AppContextHttp2UnencryptedSupport, out var enabled) && enabled;
+        // On .NET Core 3.1, HTTP/2 without TLS is only allowed for the factory's own handler
+        const string switchName = "System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport";
+        var wasSet = AppContext.TryGetSwitch(switchName, out var value);
 
         _ = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10));
 
-        (AppContext.TryGetSwitch(PlatformKeys.AppContextHttp2UnencryptedSupport, out var enabledAfter) && enabledAfter).Should().Be(wasEnabled);
+        AppContext.TryGetSwitch(switchName, out var valueAfter).Should().Be(wasSet);
+        valueAfter.Should().Be(value);
     }
 #endif
+
+    // A google.rpc.Status with a google.rpc.RetryInfo detail, serialized as protobuf and base64-encoded
+    private static string CreateStatusDetailsWithRetryInfo()
+    {
+        byte[] retryInfo = [0x0A, 0x02, 0x08, 0x01]; // retry_delay: { seconds: 1 }
+        var typeUrl = Encoding.UTF8.GetBytes("type.googleapis.com/google.rpc.RetryInfo");
+        byte[] detail = [0x0A, (byte)typeUrl.Length, .. typeUrl, 0x12, (byte)retryInfo.Length, .. retryInfo]; // google.protobuf.Any
+        byte[] status = [0x08, 0x08, 0x1A, (byte)detail.Length, .. detail]; // code: RESOURCE_EXHAUSTED, details: [detail]
+        return Convert.ToBase64String(status);
+    }
 
     private static HttpResponseMessage CreateResponse(string? grpcStatus, string? grpcMessage = null)
     {
