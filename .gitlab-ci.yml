@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: 1707f4c7bf2ea74f877fcfcd761357b2ec1935c3   # platform PR #48 (isolated setup pilot)
+    ref: bd76eb3a7b80e51dfa311d6fe347b987565963f7   # platform PR #48 (isolated setup pilot)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -48,7 +48,7 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "1707f4c7bf2ea74f877fcfcd761357b2ec1935c3"   # platform PR #48 (must match include ref above)
+    LLMVAL_PLATFORM_REF: "bd76eb3a7b80e51dfa311d6fe347b987565963f7"   # platform PR #48 (must match include ref above)
 
 # Exercise one live minimal/default pair even when the instruction-change gate skips.
 # Inherit the approved image, identity, and platform pin; replace evaluation and telemetry scripts.
