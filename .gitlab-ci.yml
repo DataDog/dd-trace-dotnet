@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: bd76eb3a7b80e51dfa311d6fe347b987565963f7   # platform PR #48 (isolated setup pilot)
+    ref: e504c5244eb8fc032d68c684de216efb2c39d6d0   # platform PR #48 (isolated setup pilot)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -48,34 +48,13 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "bd76eb3a7b80e51dfa311d6fe347b987565963f7"   # platform PR #48 (must match include ref above)
+    LLMVAL_PLATFORM_REF: "e504c5244eb8fc032d68c684de216efb2c39d6d0"   # platform PR #48 (must match include ref above)
 
-# Exercise one live minimal/default pair even when the instruction-change gate skips.
-# Inherit the approved image, identity, and platform pin; replace evaluation and telemetry scripts.
+# Reuse the platform's setup smoke with a case from this repository's suite.
 "llm validation (setup smoke)":
-  extends: "llm validation"
-  timeout: 2h
-  needs: []
   variables:
-    LLMVAL_SETUP_CLAUDE_VERSION: "2.1.301"
-  rules:
-    - if: '$CI_EXTERNAL_PULL_REQUEST_IID || $CI_PIPELINE_SOURCE == "external_pull_request_event" || $CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: on_success
-    - if: '$CI_COMMIT_REF_NAME == $LLMVAL_BASE_REF'
-      when: never
-    # DDCI also uses branch pipelines without explicit PR metadata.
-    - when: on_success
-  script:
-    - bash "$CI_PROJECT_DIR/.gitlab/llm-setup-smoke.sh"
-  artifacts:
-    when: always
-    paths:
-      - setup-plan.json
-      - setup-smoke.log
-      - setup-results.json
-      - setup-details.json
-      - setup-report.md
-    expire_in: 1 month
+    LLMVAL_SETUP_ENABLED: "true"
+    LLMVAL_SETUP_CASE: "dotnet-tracer-repo-nav-integration-001"
 
 build-windows-ci-image:
   stage: build
