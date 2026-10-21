@@ -116,7 +116,7 @@ experiments:
               - agg_http_req_duration_p95 < 27399528.29 ns
               # n=601, mean=10621.41, CI=[10487.49, 10755.34]
               - throughput > 9534.08 op/s
-              - agg_http_req_duration_p50 < 11 ms
+              - agg_http_req_duration_p50 < 11210505.68 ns
 
           - name: normal_operation--calltarget_ngen-win
             thresholds:
@@ -124,7 +124,7 @@ experiments:
               - agg_http_req_duration_p95 < 38272009.91 ns
               # n=601, mean=10939.42, CI=[10809.15, 11069.68]
               - throughput > 9826.5 op/s
-              - agg_http_req_duration_p50 < 21 ms
+              - agg_http_req_duration_p50 < 20753714.36 ns
 
           - name: normal_operation--ddtraceenabled_false-win
             thresholds:
@@ -132,7 +132,7 @@ experiments:
               - agg_http_req_duration_p95 < 29313012.11 ns
               # n=601, mean=11054.32, CI=[10890.77, 11217.87]
               - throughput > 9900.7 op/s
-              - agg_http_req_duration_p50 < 17 ms
+              - agg_http_req_duration_p50 < 17484663.4 ns
 
           - name: normal_operation--manual_and_automatic-win
             thresholds:
@@ -140,7 +140,7 @@ experiments:
               - agg_http_req_duration_p95 < 39487829.92 ns
               # n=601, mean=10829.85, CI=[10695.82, 10963.87]
               - throughput > 9723.47 op/s
-              - agg_http_req_duration_p50 < 21 ms
+              - agg_http_req_duration_p50 < 20900787.51 ns
 
           - name: normal_operation--manual_only-win
             thresholds:
@@ -148,7 +148,7 @@ experiments:
               - agg_http_req_duration_p95 < 26598739.9 ns
               # n=601, mean=10856.48, CI=[10717.88, 10995.07]
               - throughput > 9743.53 op/s
-              - agg_http_req_duration_p50 < 12 ms
+              - agg_http_req_duration_p50 < 12161302.02 ns
 
           - name: normal_operation--profiler-win
             thresholds:
@@ -156,7 +156,7 @@ experiments:
               - agg_http_req_duration_p95 < 38225945.59 ns # Manually edited to unblock us
               # n=601, mean=10627.98, CI=[10460.23, 10795.72]
               - throughput > 9509.3 op/s
-              - agg_http_req_duration_p50 < 20 ms
+              - agg_http_req_duration_p50 < 20333363.92 ns
 
           - name: normal_operation--profiler_cpu-win
             thresholds:
@@ -164,7 +164,7 @@ experiments:
               - agg_http_req_duration_p95 < 38133380.7 ns
               # n=601, mean=10838.86, CI=[10679.31, 10998.40]
               - throughput > 9708.46 op/s
-              - agg_http_req_duration_p50 < 19 ms
+              - agg_http_req_duration_p50 < 19129510.31 ns
 
           - name: normal_operation--profiler_cpu_timer_create-win
             thresholds:
@@ -172,7 +172,7 @@ experiments:
               - agg_http_req_duration_p95 < 39021162.23 ns
               # n=601, mean=11006.00, CI=[10872.51, 11139.49]
               - throughput > 9884.1 op/s
-              - agg_http_req_duration_p50 < 24 ms
+              - agg_http_req_duration_p50 < 24264449.73 ns
 
           - name: normal_operation--profiler_exceptions-win
             thresholds:
@@ -180,7 +180,7 @@ experiments:
               - agg_http_req_duration_p95 < 49548656.24 ns
               # n=601, mean=11082.70, CI=[10934.81, 11230.59]
               - throughput > 9940.74 op/s
-              - agg_http_req_duration_p50 < 31 ms
+              - agg_http_req_duration_p50 < 31091030.95 ns
 
           - name: normal_operation--profiler_exceptions_baseline-win
             thresholds:
@@ -188,7 +188,7 @@ experiments:
               - agg_http_req_duration_p95 < 32427753.49 ns
               # n=601, mean=10632.91, CI=[10465.10, 10800.73]
               - throughput > 9513.73 op/s
-              - agg_http_req_duration_p50 < 16 ms
+              - agg_http_req_duration_p50 < 16399777.98 ns
 
           - name: normal_operation--profiler_walltime-win
             thresholds:
@@ -196,7 +196,7 @@ experiments:
               - agg_http_req_duration_p95 < 39422438.59 ns
               # n=601, mean=10896.43, CI=[10763.05, 11029.81]
               - throughput > 9784.59 op/s
-              - agg_http_req_duration_p50 < 20 ms
+              - agg_http_req_duration_p50 < 20464890.52 ns
 
           - name: normal_operation--single_span-win
             thresholds:
@@ -204,7 +204,7 @@ experiments:
               - agg_http_req_duration_p95 < 36492455.39 ns
               # n=601, mean=10801.39, CI=[10635.35, 10967.44]
               - throughput > 9668.5 op/s
-              - agg_http_req_duration_p50 < 20 ms
+              - agg_http_req_duration_p50 < 19953682.53 ns
 
           - name: normal_operation--trace_stats-win
             thresholds:
@@ -212,4 +212,4 @@ experiments:
               - agg_http_req_duration_p95 < 43093333.33 ns
               # n=601, mean=10609.29, CI=[10439.04, 10779.54]
               - throughput > 9490.03 op/s
-              - agg_http_req_duration_p50 < 22 ms
+              - agg_http_req_duration_p50 < 22152740.06 ns
