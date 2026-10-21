@@ -583,6 +583,16 @@ ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, d
         snprintf(header_line, sizeof(header_line), "User-Agent: DDProf/%s\r\n", exp->library_version);
         headers_ok = append_lit(&headers, header_line);
     }
+    // narrow_to_wide() (MultiByteToWideChar with -1) and WinHttpSendRequest()
+    // both expect a NUL-terminated string, but ddog__buf does not terminate
+    // its contents - append the terminator explicitly. Without it the headers
+    // string runs past the end of the buffer until a stray 0 byte happens to
+    // be there, and the resulting garbage/length makes WinHttpSendRequest fail
+    // intermittently with ERROR_INVALID_PARAMETER (87).
+    if (headers_ok)
+    {
+        headers_ok = ddog__buf_append_byte(&headers, '\0');
+    }
 
     ddog_error_code rc = DDOG_OK;
     if (!headers_ok)
