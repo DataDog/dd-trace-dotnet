@@ -96,6 +96,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with samples in `tracer/test/test-applications/integrations`
 - Generate boilerplate (GUI): `./tracer/build.ps1 RunInstrumentationGenerator`
 - Generate boilerplate (CLI): `./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>`
+- Generators only scaffold code: copy GUI output or use CLI `--output-path <file>`, then implement handlers and add samples/tests.
 
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
 - **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
