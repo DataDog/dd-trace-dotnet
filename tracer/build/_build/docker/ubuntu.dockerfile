@@ -111,8 +111,8 @@ RUN set -eux; \
         echo "Skipping glibc217 sysroot fetch - mount your local harvest output at /sysroot/${ARCH}-glibc217 when running this image."; \
     else \
         case "$ARCH" in \
-            x86_64) SYSROOT_SHA512='2e891242b066fe3c7d0c95cc68412a24b4f80bb8ae9d92226877a5c5b84226141425d70e920eeefe5205655f9669de7bb77f529089c72332f3a656fdbc72cc30' ;; \
-            aarch64) SYSROOT_SHA512='c1476e9afb0fd62b3ba19b1dbfcaa46a74a282b90354561bdf1cad24ff2398eb807f05945087473359830473691a26c6ca73855770c8227da682ebf1e4265aba' ;; \
+            x86_64) SYSROOT_SHA512='1a2f92f172d325e17294fcda8a5b76b3ae84e5412702b5dd2492d99413d031a0f6d86416f34863bac2225dc2bccdb9a22cfd8a0bda9dd8cb44f5d0c06e72940d' ;; \
+            aarch64) SYSROOT_SHA512='02b25ea73014c3a3fc2435f43e18d3eb9897e0f20fab1bffb21022a429fa7caba7459da5745695c50606aacb1915b0c64dee2eda0a01a9aaf2bacff7e91f8e22' ;; \
             *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
         esac; \
         curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/glibc217-sysroot-${ARCH}.tar.gz --output glibc217-sysroot.tar.gz; \
