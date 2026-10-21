@@ -147,6 +147,14 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
             OtlpMetricsTimeoutMs = rawSettings.OtlpMetricsTimeoutMs;
 
+            var otlpLogsSettings = GetOtlpLogsTransport(signalEndpoint: rawSettings.OtlpLogsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpLogsProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
+            OtlpLogsEndpoint = otlpLogsSettings.OtlpSignalEndpoint;
+            OtlpLogsProtocol = otlpLogsSettings.OtlpProtocol;
+            if (StringUtil.IsNullOrEmpty(rawSettings.OtlpLogsEndpoint))
+            {
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, OtlpLogsEndpoint.ToString(), recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
 
@@ -304,6 +312,21 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
         internal int OtlpMetricsTimeoutMs { get; }
+
+        /// <summary>
+        /// Gets the OTLP protocol for emitting logs.
+        /// Default is <c>grpc</c>
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpLogsProtocol { get; }
+
+        /// <summary>
+        /// Gets the OTLP endpoint URL for logs export.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
+        internal Uri OtlpLogsEndpoint { get; }
 
         /// <summary>
         /// Gets the agent host to use when <see cref="MetricsTransport"/> is <see cref="TransportType.UDP"/>
@@ -602,6 +625,9 @@ namespace Datadog.Trace.Configuration
                     .Value;
                 OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsRedactedString()?.Trim();
 
+                OtlpLogsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol).AsString()?.Trim();
+                OtlpLogsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint).AsString()?.Trim();
+
                 OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
                 OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
                 OtlpTracesTimeoutMs = config
@@ -734,6 +760,18 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs"/>
             internal int OtlpMetricsTimeoutMs { get; }
+
+            /// <summary>
+            /// Gets the OTLP protocol for logs export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
+            internal string? OtlpLogsProtocol { get; }
+
+            /// <summary>
+            /// Gets the OTLP endpoint URL for logs export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
+            internal string? OtlpLogsEndpoint { get; }
 
             /// <summary>
             /// Gets the OTLP protocol for traces export with fallback behavior.

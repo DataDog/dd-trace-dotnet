@@ -142,6 +142,9 @@ namespace Datadog.Trace.Configuration
         private OtlpTransportSettings GetOtlpMetricsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
             => GetOtlpTransport("metrics", signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
 
+        private OtlpTransportSettings GetOtlpLogsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
+            => GetOtlpTransport("logs", signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.Grpc, agentHost);
+
         private OtlpTransportSettings GetOtlpTransport(string signal, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost)
         {
             var origin = ConfigurationOrigins.Default; // default because only called from constructor

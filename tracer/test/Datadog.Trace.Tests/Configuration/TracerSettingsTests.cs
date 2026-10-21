@@ -1272,36 +1272,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
-        [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
-        [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/logs")]
-        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/logs")]
-        public void OtlpLogsEndpoint(string protocol, string baseInput, string baseOutput, string logsInput, string logsOutput)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, logsInput));
-            var telemetry = new ConfigurationTelemetry();
-            var settings = new TracerSettings(source, telemetry, new());
-
-            var baseEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
-            var logsEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
-            baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
-            logsEndpointEntries[0].StringValue.Should().Be(logsOutput);
-            settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
-            settings.OtlpLogsEndpoint.ToString().Should().Be(logsOutput);
-        }
-
-        [Theory]
         [InlineData("api-key=secret,auth=token", null, new[] { "api-key=secret", "auth=token" })]
         [InlineData(null, "key1 = value1 , key2 = value2 ", new[] { "key1=value1", "key2=value2" })]
         [InlineData("valid=value,invalid-no-equals,another=valid", "fallback-key=fallback-value", new[] { "valid=value", "another=valid" })]

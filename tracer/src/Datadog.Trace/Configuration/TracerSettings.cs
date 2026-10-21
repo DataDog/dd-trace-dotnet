@@ -313,19 +313,6 @@ namespace Datadog.Trace.Configuration
                                   },
                                   validator: null);
 
-            OtlpLogsEndpoint = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint)
-                .GetAs(
-                    defaultValue: new DefaultResult<Uri>(
-                        result: OtlpLogsProtocol switch
-                        {
-                            OtlpProtocol.Grpc => OtlpEndpoint,
-                            _ => new Uri(OtlpEndpoint, "/v1/logs")
-                        },
-                        telemetryValue: $"{OtlpEndpoint}{(!OtlpLogsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/logs" : string.Empty)}"),
-                    validator: null,
-                    converter: uriString => new Uri(uriString));
-
             OtlpLogsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                             .AsRedactedDictionaryResult(separator: '=')
@@ -1077,12 +1064,6 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
         internal OtlpProtocol OtlpLogsProtocol { get; }
-
-        /// <summary>
-        /// Gets the OTLP endpoint URL for logs export fallbacks on <see cref="OtlpEndpoint"/>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
-        internal Uri OtlpLogsEndpoint { get; }
 
         /// <summary>
         /// Gets the OTLP headers for logs export with fallback behavior.
