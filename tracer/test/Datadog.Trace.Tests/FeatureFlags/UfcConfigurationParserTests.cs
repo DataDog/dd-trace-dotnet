@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -132,6 +133,22 @@ public class UfcConfigurationParserTests
         configuration!.Flags.Should().NotBeNull();
         configuration!.Flags!.Should().ContainKey("test-flag");
         configuration!.Flags!["test-flag"].Enabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsolatesMalformedAllocationLoggingInAgentlessConfiguration()
+    {
+        var attributes = ResourceHelper.ReadAllText<FeatureFlagsEvaluatorTests>("ffe_system_test_data.ufc-config.json");
+        var body = "{\"data\":{\"type\":\"universal-flag-configuration\",\"attributes\":" + attributes + "}}";
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags!.Find("invalid-dolog-missing", out _).Should().Be(FlagLookupResult.Invalid);
+        configuration.Flags.Find("invalid-dolog-null", out _).Should().Be(FlagLookupResult.Invalid);
+        configuration.Flags.Find("invalid-dolog-string-true", out _).Should().Be(FlagLookupResult.Invalid);
+        configuration.Flags.Find("valid-flag-after-invalid-config", out _).Should().Be(FlagLookupResult.Found);
+        configuration.Flags.Find("new-user-onboarding", out _).Should().Be(FlagLookupResult.Found);
     }
 
     [Fact]
