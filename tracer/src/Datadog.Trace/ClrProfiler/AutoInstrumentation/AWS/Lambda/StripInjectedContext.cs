@@ -8,8 +8,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 
@@ -34,10 +32,6 @@ internal static class StripInjectedContext
     private const string CarrierKey = "_datadog";
     private const string QuotedCarrierKey = "\"" + CarrierKey + "\"";
 
-    // Environment variables are fixed for the lifetime of the Lambda process, so read once.
-    private static readonly Lazy<bool> IsEnabledLazy = new(
-        () => EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Aws.LambdaStripInjectedContext)?.ToBoolean() ?? false);
-
     private enum CarrierMatch
     {
         /// <summary>The token is not a "_datadog" key with an object value.</summary>
@@ -50,16 +44,12 @@ internal static class StripInjectedContext
         Unclosed,
     }
 
-    internal static bool IsEnabled => IsEnabledLazy.Value;
-
     /// <summary>
-    /// If stripping is enabled and <paramref name="json"/> contains a "_datadog" carrier,
+    /// If <paramref name="enabled"/> is true and <paramref name="json"/> contains a "_datadog" carrier,
     /// returns a new MemoryStream over the stripped payload.
     /// Returns null when disabled, when nothing was removed, or on any error (fail-open),
     /// so the caller keeps the original stream.
     /// </summary>
-    internal static MemoryStream? StripStream(string json) => StripStream(json, IsEnabled);
-
     internal static MemoryStream? StripStream(string json, bool enabled)
     {
         if (!enabled || string.IsNullOrEmpty(json) || json.IndexOf(CarrierKey, StringComparison.Ordinal) < 0)

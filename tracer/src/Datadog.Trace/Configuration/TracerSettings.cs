@@ -125,6 +125,9 @@ namespace Datadog.Trace.Configuration
             SpanPointersEnabled = config
                .WithKeys(ConfigurationKeys.SpanPointersEnabled)
                .AsBool(defaultValue: true);
+            AwsLambdaStripContextEnabled = config
+               .WithKeys(ConfigurationKeys.Aws.LambdaStripContextEnabled)
+               .AsBool(defaultValue: false);
 
             PeerServiceNameMappings = TrimConfigKeysValues(config.WithKeys(ConfigurationKeys.PeerServiceNameMappings));
 
@@ -1540,6 +1543,13 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether to add span pointers on AWS requests.
         /// </summary>
         internal bool SpanPointersEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the _datadog trace context injected into AWS Lambda
+        /// event payloads is removed before the customer handler reads them.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.Aws.LambdaStripContextEnabled"/>
+        internal bool AwsLambdaStripContextEnabled { get; }
 
         /// <summary>
         /// Gets the metadata schema version
