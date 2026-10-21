@@ -2966,6 +2966,40 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Theory]
+        [InlineData(@"{""ref"":""password""}")]
+        [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""password""]}")]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}")]
+        public void ProbeExpressionEvaluator_TemplateRedaction_PreservesRenderedPlaceholderAndError(string json)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("PiiLocal", typeof(object), new object(), ScopeMemberKind.Local));
+            scopeMembers.AddMember(
+                new ScopeMember(
+                    "SafeDictionaryLocal",
+                    typeof(Dictionary<string, string>),
+                    new Dictionary<string, string> { { "password", "TOP_SECRET_VALUE" } },
+                    ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(null, null, "value="),
+                    new DebuggerExpression(string.Empty, json, null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("value={redacted}");
+            var error = result.Errors.Should().ContainSingle().Subject;
+            error.Message.Should().Be("The property or field is redacted.");
+            error.IsTemplateRedaction.Should().BeTrue();
+        }
+
         [Fact]
         public void ProbeExpressionEvaluator_ConditionTimeout_SetsConditionError()
         {

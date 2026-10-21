@@ -63,6 +63,8 @@ namespace Datadog.Trace.Debugger.Models
         public string Expression { get; set; }
 
         public string Message { get; set; }
+
+        internal bool IsTemplateRedaction { get; set; }
     }
 
     internal record struct ProbeLocation
