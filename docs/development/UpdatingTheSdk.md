@@ -26,8 +26,13 @@ Update all references to the SDK version across the repository:
   - `docker-compose.yml`
   - `tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile` - the new version should be built locally pushed, and synced to datadog/images, and used in the new build.
   - `tracer/build/_build/docker/alpine.dockerfile`
-  - `tracer/build/_build/docker/centos7.dockerfile`
+  - `tracer/build/_build/docker/ubuntu.dockerfile`
+  - `tracer/build/_build/docker/universal.dockerfile`
   - `tracer/build/_build/docker/debian.dockerfile`
+
+  The Linux images have different artifact and libc responsibilities. See
+  [Native Linux glibc compatibility builds](NativeLinuxGlibcCompatibility.md)
+  before changing their base image, SDK selection, or native build role.
 - **Build Scripts**:
   - `tracer/build_in_docker.ps1`
   - `tracer/build_in_docker.sh`
