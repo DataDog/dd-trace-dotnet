@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 
 #pragma comment(lib, "winhttp.lib")
@@ -44,6 +45,11 @@ struct ddog_prof_exporter {
     ddog_vec_tag tags;      // owned deep copy of the tags passed to _new
     uint64_t timeout_ms;
     HINTERNET session; // reused across send_blocking calls
+    // Non-NULL when the agent endpoint was a "windows:<pipe path>" URL (the
+    // profiler sends e.g. "windows:\\\\./pipe/\\<name>" when a named pipe is
+    // configured): the upload then speaks plain HTTP/1.1 over the named pipe
+    // instead of WinHTTP-over-TCP. Mirrors libdatadog's named-pipe connector.
+    char* pipe_path; // owned, NUL-terminated
 };
 
 static char* dup_cstr(ddog_charslice s)
@@ -111,23 +117,49 @@ ddog_error_code ddog_prof_exporter_new(ddog_charslice profiling_library_name, dd
     if (endpoint->kind == DDOG_POC_PROF_ENDPOINT_AGENT)
     {
         ddog_charslice base = endpoint->url_or_site;
-        size_t base_len = base.len;
-        if (base_len > 0 && base.ptr[base_len - 1] == '/')
-        {
-            base_len -= 1;
-        }
 
-        static const char* suffix = "/profiling/v1/input";
-        size_t suffix_len = strlen(suffix);
-        exp->url = (char*)malloc(base_len + suffix_len + 1);
-        if (exp->url == NULL)
+        // "windows:<pipe path>" named-pipe agent endpoint (the profiler builds
+        // "windows:\\\\./pipe/\\<name>" from DD_TRACE_PIPE_NAME). Like
+        // libdatadog (which strips the bare "windows:" prefix), everything
+        // after the prefix is the pipe path used verbatim; the HTTP request
+        // itself targets /profiling/v1/input (see send_over_named_pipe).
+        static const char* pipe_prefix = "windows:";
+        size_t pipe_prefix_len = strlen(pipe_prefix);
+        if (base.len >= pipe_prefix_len && memcmp(base.ptr, pipe_prefix, pipe_prefix_len) == 0)
         {
-            ddog_prof_exporter_drop((ddog_prof_exporter*)exp);
-            return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build agent url");
+            size_t path_len = base.len - pipe_prefix_len;
+            exp->pipe_path = (char*)malloc(path_len + 1);
+            if (exp->pipe_path == NULL)
+            {
+                ddog_prof_exporter_drop((ddog_prof_exporter*)exp);
+                return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to copy the agent named pipe path");
+            }
+            if (path_len > 0)
+            {
+                memcpy(exp->pipe_path, base.ptr + pipe_prefix_len, path_len);
+            }
+            exp->pipe_path[path_len] = '\0';
         }
-        memcpy(exp->url, base.ptr, base_len);
-        memcpy(exp->url + base_len, suffix, suffix_len);
-        exp->url[base_len + suffix_len] = '\0';
+        else
+        {
+            size_t base_len = base.len;
+            if (base_len > 0 && base.ptr[base_len - 1] == '/')
+            {
+                base_len -= 1;
+            }
+
+            static const char* suffix = "/profiling/v1/input";
+            size_t suffix_len = strlen(suffix);
+            exp->url = (char*)malloc(base_len + suffix_len + 1);
+            if (exp->url == NULL)
+            {
+                ddog_prof_exporter_drop((ddog_prof_exporter*)exp);
+                return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build agent url");
+            }
+            memcpy(exp->url, base.ptr, base_len);
+            memcpy(exp->url + base_len, suffix, suffix_len);
+            exp->url[base_len + suffix_len] = '\0';
+        }
     }
     else // DDOG_POC_PROF_ENDPOINT_AGENTLESS
     {
@@ -204,6 +236,7 @@ void ddog_prof_exporter_drop(ddog_prof_exporter* exporter)
         WinHttpCloseHandle(exp->session);
     }
     free(exp->url);
+    free(exp->pipe_path);
     free(exp->api_key);
     free(exp->library_name);
     free(exp->library_version);
@@ -438,6 +471,266 @@ static bool build_multipart_body(const ddog__buf* event_json, const struct ddog_
     return append_lit(out, "--") && append_lit(out, MULTIPART_BOUNDARY) && append_lit(out, "--\r\n");
 }
 
+// Formats a Windows error code into its human-readable text (the profiler's
+// smoke tests assert on message strings like "The system cannot find the file
+// specified" when the pipe does not exist, not on numeric codes).
+static char* win_error_message(DWORD err)
+{
+    LPWSTR w = NULL;
+    DWORD n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                                 FORMAT_MESSAGE_IGNORE_INSERTS,
+                             NULL, err, 0, (LPWSTR)&w, 0, NULL);
+    if (n == 0 || w == NULL)
+    {
+        return NULL;
+    }
+    // strip the trailing CR/LF FormatMessage adds
+    while (n > 0 && (w[n - 1] == L'\r' || w[n - 1] == L'\n' || w[n - 1] == L' '))
+    {
+        n--;
+    }
+    int len = WideCharToMultiByte(CP_UTF8, 0, w, (int)n, NULL, 0, NULL, NULL);
+    char* out = NULL;
+    if (len > 0)
+    {
+        out = (char*)malloc((size_t)len + 1);
+        if (out != NULL)
+        {
+            WideCharToMultiByte(CP_UTF8, 0, w, (int)n, out, len, NULL, NULL);
+            out[len] = '\0';
+        }
+    }
+    LocalFree(w);
+    return out;
+}
+
+static ddog_error_code fail_win(const char* what, const char* detail, DWORD err)
+{
+    char* msg = win_error_message(err);
+    ddog_error_code rc = (msg != NULL)
+        ? ddog__fail(DDOG_ERR_TRANSPORT, "%s failed for named pipe '%s': %s", what, detail, msg)
+        : ddog__fail(DDOG_ERR_TRANSPORT, "%s failed for named pipe '%s': error %lu", what, detail, (unsigned long)err);
+    free(msg);
+    return rc;
+}
+
+// Case-insensitive substring search over the response headers region.
+static const char* find_ci(const char* haystack, size_t haystack_len, const char* needle)
+{
+    size_t needle_len = strlen(needle);
+    if (needle_len == 0 || haystack_len < needle_len)
+    {
+        return NULL;
+    }
+    for (size_t i = 0; i + needle_len <= haystack_len; i++)
+    {
+        for (size_t j = 0; j < needle_len; j++)
+        {
+            if (tolower((unsigned char)haystack[i + j]) != tolower((unsigned char)needle[j]))
+            {
+                goto next;
+            }
+        }
+        return haystack + i;
+    next:;
+    }
+    return NULL;
+}
+
+// Sends one HTTP request over a Windows named pipe, mirroring libdatadog's
+// named-pipe connector: the pipe (e.g. \\.\pipe\<name>) is a plain byte
+// transport, and the request is the same HTTP/1.1 POST /profiling/v1/input the
+// TCP path produces. The pipe is opened with SECURITY_ANONYMOUS QoS (like
+// libdatadog, and the managed tracer's TokenImpersonationLevel.Anonymous) so a
+// malicious/squatting pipe server cannot impersonate the profiling client.
+//
+// Known simplification: the exchange is synchronous with no read timeout -
+// the smoke-test agent always responds and closes, and a hung agent would
+// stall the profiler's (already single-threaded) export loop rather than
+// crash anything.
+static ddog_error_code send_over_named_pipe(const struct ddog_prof_exporter* exp, const ddog__buf* body,
+                                             uint16_t* out_http_status)
+{
+    wchar_t* pipe_w = narrow_to_wide(exp->pipe_path);
+    if (pipe_w == NULL)
+    {
+        return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to convert the named pipe path");
+    }
+
+    HANDLE pipe = INVALID_HANDLE_VALUE;
+    for (int attempt = 0;; attempt++)
+    {
+        pipe = CreateFileW(pipe_w, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+                           SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS, NULL);
+        if (pipe != INVALID_HANDLE_VALUE)
+        {
+            break;
+        }
+        DWORD err = GetLastError();
+        if (err == ERROR_PIPE_BUSY && attempt < 10)
+        {
+            // every pipe instance is busy - wait for one to free up and retry
+            WaitNamedPipeW(pipe_w, 100);
+            continue;
+        }
+        free(pipe_w);
+        return fail_win("CreateFile", exp->pipe_path, err);
+    }
+    free(pipe_w);
+
+    // Build the full request: request line + headers + multipart body.
+    ddog__buf req;
+    ddog__buf_init(&req);
+    char header_line[512];
+    bool ok = append_lit(&req, "POST /profiling/v1/input HTTP/1.1\r\n") &&
+              append_lit(&req, "Host: localhost\r\n") &&
+              append_lit(&req, "Content-Type: multipart/form-data; boundary=") &&
+              append_lit(&req, MULTIPART_BOUNDARY) && append_lit(&req, "\r\n") &&
+              append_lit(&req, "Connection: close\r\n");
+    if (ok)
+    {
+        snprintf(header_line, sizeof(header_line), "DD-EVP-ORIGIN: %s\r\n", exp->library_name);
+        ok = append_lit(&req, header_line);
+    }
+    if (ok)
+    {
+        snprintf(header_line, sizeof(header_line), "DD-EVP-ORIGIN-VERSION: %s\r\n", exp->library_version);
+        ok = append_lit(&req, header_line);
+    }
+    if (ok && exp->api_key != NULL)
+    {
+        snprintf(header_line, sizeof(header_line), "dd-api-key: %s\r\n", exp->api_key);
+        ok = append_lit(&req, header_line);
+    }
+    if (ok)
+    {
+        snprintf(header_line, sizeof(header_line), "User-Agent: DDProf/%s\r\n", exp->library_version);
+        ok = append_lit(&req, header_line);
+    }
+    if (ok)
+    {
+        snprintf(header_line, sizeof(header_line), "Content-Length: %zu\r\n\r\n", body->len);
+        ok = append_lit(&req, header_line);
+    }
+    if (ok)
+    {
+        ok = ddog__buf_append(&req, body->data, body->len);
+    }
+
+    ddog_error_code rc = DDOG_OK;
+    if (!ok)
+    {
+        rc = ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build the named pipe request");
+    }
+    else
+    {
+        // WriteFile on a byte-mode pipe can return TRUE having written only
+        // part of the buffer (it fills the pipe's buffer), so loop.
+        size_t off = 0;
+        while (off < req.len)
+        {
+            DWORD written = 0;
+            if (!WriteFile(pipe, req.data + off, (DWORD)(req.len - off), &written, NULL) || written == 0)
+            {
+                rc = fail_win("WriteFile", exp->pipe_path, GetLastError());
+                break;
+            }
+            off += written;
+        }
+    }
+
+    // Read the response. Stop as soon as the response is complete - the
+    // agent keeps the connection open waiting for the next request (only the
+    // client closes, per the "Connection: close" contract), so reading until
+    // EOF would deadlock. Content-Length tells us when the body is done; if
+    // absent, fall back to reading until the peer closes.
+    ddog__buf resp;
+    ddog__buf_init(&resp);
+    if (rc == DDOG_OK)
+    {
+        for (;;)
+        {
+            char chunk[8192];
+            DWORD readn = 0;
+            if (!ReadFile(pipe, chunk, sizeof(chunk), &readn, NULL))
+            {
+                DWORD err = GetLastError();
+                if (err == ERROR_BROKEN_PIPE || err == ERROR_NO_DATA || err == ERROR_PIPE_NOT_CONNECTED)
+                {
+                    break; // the peer closed - end of the response (no Content-Length)
+                }
+                rc = fail_win("ReadFile", exp->pipe_path, err);
+                break;
+            }
+            if (readn == 0)
+            {
+                break;
+            }
+            if (!ddog__buf_append(&resp, chunk, readn))
+            {
+                rc = ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to buffer the named pipe response");
+                break;
+            }
+
+            // headers complete? then honor Content-Length and stop when satisfied
+            const char* hdr_end = NULL;
+            const char* base = (const char*)resp.data;
+            for (size_t i = 0; i + 3 < resp.len; i++)
+            {
+                if (base[i] == '\r' && base[i + 1] == '\n' && base[i + 2] == '\r' && base[i + 3] == '\n')
+                {
+                    hdr_end = base + i + 4;
+                    break;
+                }
+            }
+            if (hdr_end == NULL)
+            {
+                continue; // still reading the response headers
+            }
+            const char* cl = find_ci(base, (size_t)(hdr_end - base), "\r\ncontent-length:");
+            if (cl != NULL)
+            {
+                unsigned long long clen = strtoull(cl + 17, NULL, 10); // 17 = strlen("\r\ncontent-length:")
+                if ((unsigned long long)resp.len >= (unsigned long long)(hdr_end - base) + clen)
+                {
+                    break; // full response received
+                }
+            }
+        }
+    }
+
+    // Parse the status line: "HTTP/1.x NNN ..."
+    if (rc == DDOG_OK)
+    {
+        const char* base = (const char*)resp.data;
+        if (resp.len >= 12 && memcmp(base, "HTTP/1.", 7) == 0 && base[8] == ' ')
+        {
+            long status = strtol(base + 9, NULL, 10);
+            if (status >= 100 && status <= 599)
+            {
+                *out_http_status = (uint16_t)status;
+            }
+            else
+            {
+                rc = ddog__fail(DDOG_ERR_TRANSPORT, "unparseable HTTP status from named pipe response");
+            }
+        }
+        else if (resp.len == 0)
+        {
+            rc = ddog__fail(DDOG_ERR_TRANSPORT, "empty response from named pipe");
+        }
+        else
+        {
+            rc = ddog__fail(DDOG_ERR_TRANSPORT, "unrecognized response from named pipe");
+        }
+    }
+
+    ddog__buf_free(&resp);
+    ddog__buf_free(&req);
+    CloseHandle(pipe);
+    return rc;
+}
+
 ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, ddog_prof_encoded_profile* profile,
                                                   const ddog_prof_exporter_file* files_to_compress, size_t files_to_compress_len,
                                                   const ddog_vec_tag* optional_additional_tags,
@@ -501,6 +794,15 @@ ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, d
     {
         ddog__buf_free(&body);
         return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build multipart body");
+    }
+
+    // Named-pipe agent endpoint (windows:<pipe path>): send over the pipe
+    // instead of WinHTTP-over-TCP.
+    if (exp->pipe_path != NULL)
+    {
+        ddog_error_code pipe_rc = send_over_named_pipe(exp, &body, out_http_status);
+        ddog__buf_free(&body);
+        return pipe_rc;
     }
 
     wchar_t* url_w = narrow_to_wide(exp->url);
