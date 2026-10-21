@@ -147,12 +147,14 @@ namespace Datadog.Trace.Configuration
 
         private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost)
         {
-            var protocol = (signalProtocol ?? generalProtocol) switch
+            var configuredProtocol = signalProtocol ?? generalProtocol;
+            var protocol = configuredProtocol switch
             {
                 "grpc" => OtlpProtocol.Grpc,
                 "http/protobuf" => OtlpProtocol.HttpProtobuf,
                 "http/json" => OtlpProtocol.HttpJson,
-                _ => defaultProtocol,
+                null or "" => defaultProtocol,
+                _ => UnsupportedOtlpProtocol(signal, configuredProtocol, defaultProtocol),
             };
 
             if (!string.IsNullOrEmpty(signalEndpoint))
@@ -189,6 +191,12 @@ namespace Datadog.Trace.Configuration
 
             // we know this URL is valid so don't use TrySet, otherwise can't guarantee _agentUri is non null
             return GetOtlpUri(signal, endpointKey, CreateDefaultOtlpUri(protocol, signal, agentHost), ConfigurationOrigins.Default, protocol, agentHost);
+        }
+
+        private OtlpProtocol UnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol)
+        {
+            ValidationWarnings.Add($"Unsupported OTLP protocol '{configuredProtocol}' for {signal}. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: {defaultProtocol.ToString()}");
+            return defaultProtocol;
         }
 
         private bool TryGetAgentUriAndTransport(string host, int port, out TraceTransportSettings settings)

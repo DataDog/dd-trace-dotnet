@@ -387,6 +387,23 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("http", null)]
+        [InlineData(null, "http")]
+        public void OtlpLogsProtocol_Unsupported_FallsBackToGrpcWithWarning(string logsProtocol, string generalProtocol)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, logsProtocol },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol },
+            });
+
+            var settings = new ExporterSettings(source, NoFile(), NullConfigurationTelemetry.Instance);
+
+            settings.OtlpLogsProtocol.Should().Be(OtlpProtocol.Grpc);
+            settings.ValidationWarnings.Should().ContainMatch($"Unsupported OTLP protocol '{logsProtocol ?? generalProtocol}' for logs*");
+        }
+
+        [Theory]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, null, null, "http://localhost:4318/v1/traces")]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/traces")]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4333/mycollector", "http://traces:4444/custom/path", "http://traces:4444/custom/path")]
