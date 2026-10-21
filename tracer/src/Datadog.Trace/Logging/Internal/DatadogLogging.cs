@@ -30,10 +30,7 @@ namespace Datadog.Trace.Logging
 
             try
             {
-                if (GlobalSettings.Instance.DebugEnabled)
-                {
-                    LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
-                }
+                LoggingLevelSwitch.MinimumLevel = GlobalSettings.Instance.LogLevel;
 
                 var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
 

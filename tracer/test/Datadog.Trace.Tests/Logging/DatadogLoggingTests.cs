@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
@@ -79,6 +80,40 @@ namespace Datadog.Trace.Tests.Logging
             Assert.True(
                 _logEventSink.Events.Count == 2,
                 $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
+        }
+
+        [Theory]
+        [InlineData("debug", 4)]
+        [InlineData("info", 3)]
+        [InlineData("warn", 2)]
+        [InlineData("error", 1)]
+        public void OtelLogLevelFiltersEmittedMessages(string value, int expectedCount)
+        {
+            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.LogLevel, value } });
+            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            DatadogLogging.SetLogLevel(settings.LogLevel);
+
+            _logger.Debug("Debug message");
+            _logger.Information("Information message");
+            _logger.Warning("Warning message");
+            _logger.Error("Error message");
+
+            _logEventSink.Events.Should().HaveCount(expectedCount)
+                         .And.OnlyContain(logEvent => logEvent.Level >= settings.LogLevel);
+        }
+
+        [Fact]
+        public void ProgrammaticDebugToggleResetsToInformation()
+        {
+            DatadogLogging.SetLogLevel(LogEventLevel.Error);
+
+            GlobalSettings.SetDebugEnabled(true);
+            DatadogLogging.LoggingLevelSwitch.MinimumLevel.Should().Be(LogEventLevel.Debug);
+            GlobalSettings.Instance.DebugEnabled.Should().BeTrue();
+
+            GlobalSettings.SetDebugEnabled(false);
+            DatadogLogging.LoggingLevelSwitch.MinimumLevel.Should().Be(LogEventLevel.Information);
+            GlobalSettings.Instance.DebugEnabled.Should().BeFalse();
         }
 
         [Fact]

@@ -114,21 +114,22 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
         [NotNullWhen(true)] out T? value)
         where T : default
     {
-        if (datadogConfigResult.IsPresent && otelConfigResult.IsPresent)
+        if (datadogConfigResult.IsPresent && (otelConfigResult.IsPresent || otelConfigResult.HasInvalidValue))
         {
             LogDuplicateConfiguration(datadogKey, otelKey);
         }
-        else if (otelConfigResult is { IsPresent: true } config)
+        else
         {
-            if (config is { Result: { } openTelemetryValue, IsValid: true })
+            if (otelConfigResult.HasInvalidValue || (otelConfigResult.IsPresent && otelConfigResult is not { Result: { }, IsValid: true }))
             {
-                {
-                    value = openTelemetryValue;
-                    return true;
-                }
+                LogInvalidConfiguration(otelKey);
             }
 
-            LogInvalidConfiguration(otelKey);
+            if (otelConfigResult is { Result: { } openTelemetryValue, IsValid: true })
+            {
+                value = openTelemetryValue;
+                return true;
+            }
         }
 
         value = default;

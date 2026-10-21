@@ -12,6 +12,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
@@ -24,6 +26,137 @@ public class ConfigurationBuilderTests
     public interface IConfigurationSourceFactory
     {
         IConfigurationSource GetSource(IDictionary<string, object> collection);
+    }
+
+    public class StructResultTests
+    {
+        [Theory]
+        [InlineData("string", "invalid", null, false, true)]
+        [InlineData("json", "invalid", null, false, true)]
+        [InlineData("object", "invalid", null, false, true)]
+        [InlineData("string", "", null, false, false)]
+        [InlineData("json", "", null, false, false)]
+        [InlineData("object", "", null, false, false)]
+        [InlineData("string", "invalid", "7", true, true)]
+        [InlineData("json", "invalid", "7", true, true)]
+        [InlineData("object", "invalid", "7", true, true)]
+        [InlineData("string", "", "7", true, false)]
+        [InlineData("json", "", "7", true, false)]
+        [InlineData("object", "", "7", true, false)]
+        public void AsStructResultRetainsInvalidInputAcrossSources(string kind, string value, string fallback, bool valid, bool invalid)
+        {
+            const string key = ConfigurationKeys.OpenTelemetry.LogLevel;
+            IConfigurationSource source = CreateSource(kind, key, value);
+            if (fallback is not null)
+            {
+                source = new CompositeConfigurationSource { source, CreateSource(kind, key, fallback) };
+            }
+
+            var result = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
+                        .WithKeys(key)
+                        .AsStructResult(ParseInt)
+                        .ConfigurationResult;
+
+            result.IsValid.Should().Be(valid);
+            result.IsPresent.Should().Be(valid || invalid);
+            result.HasInvalidValue.Should().Be(invalid);
+            if (valid)
+            {
+                result.Result.Should().Be(7);
+            }
+        }
+
+        [Theory]
+        [InlineData(null, null, 0)]
+        [InlineData(null, "7", 7)]
+        [InlineData("true", "7", 42)]
+        [InlineData("false", "7", 0)]
+        [InlineData("invalid", "7", 0)]
+        [InlineData("", "7", 0)]
+        [InlineData("true", null, 42)]
+        [InlineData("false", null, 0)]
+        public void SelectPreservesBooleanTelemetry(string debugValue, string otelValue, int expected)
+        {
+            var source = new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    { ConfigurationKeys.DebugEnabled, debugValue },
+                    { ConfigurationKeys.OpenTelemetry.LogLevel, otelValue },
+                });
+            var telemetry = new ConfigurationTelemetry();
+            var builder = new ConfigurationBuilder(source, telemetry);
+            var otelConfig = builder.WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel).AsStructResult(ParseInt);
+            var result = builder.WithKeys(ConfigurationKeys.DebugEnabled)
+                                .AsBoolResult()
+                                .Select(enabled => enabled ? 42 : 0, defaultValue: false)
+                                .OverrideWith(in otelConfig, new OverrideErrorLog());
+
+            result.Should().Be(expected);
+            var debugEntries = telemetry.GetQueueForTesting().Where(entry => entry.Key == ConfigurationKeys.DebugEnabled).ToArray();
+            if (debugValue is null && otelValue is not null)
+            {
+                debugEntries.Should().BeEmpty();
+            }
+            else
+            {
+                debugEntries.Last().Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.Bool);
+                debugEntries.Last().BoolValue.Should().Be(expected == 42);
+                if (debugValue is null or "" or "invalid")
+                {
+                    debugEntries.Last().Origin.Should().Be(ConfigurationOrigins.Default);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData("string")]
+        [InlineData("json")]
+        [InlineData("object")]
+        public void ExistingAccessorsKeepTheirDiagnosticBehavior(string kind)
+        {
+            const string key = ConfigurationKeys.OpenTelemetry.LogLevel;
+            var source = new CompositeConfigurationSource
+            {
+                CreateSource(kind, key, "invalid"),
+                CreateSource(kind, key, "7"),
+            };
+            var builder = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
+            var otelConfig = builder.WithKeys(key).AsInt32Result(ParseInt);
+            var errorLog = new OverrideErrorLog();
+            var result = builder.WithKeys(ConfigurationKeys.DebugEnabled).AsInt32Result().OverrideWith(in otelConfig, errorLog, 0);
+
+            result.Should().Be(7);
+            otelConfig.ConfigurationResult.HasInvalidValue.Should().BeFalse();
+            errorLog.ShouldHaveExpectedOtelMetric((int?)null, key.ToLowerInvariant(), ConfigurationKeys.DebugEnabled.ToLowerInvariant());
+        }
+
+        [Fact]
+        public void ExistingNullResultStillReportsInvalidConfiguration()
+        {
+            var errorLog = new OverrideErrorLog();
+            IConfigurationOverrideHandler handler = errorLog;
+            var result = handler.TryHandleOverrides(
+                ConfigurationKeys.DebugEnabled,
+                ConfigurationResult<string>.NotFound(),
+                ConfigurationKeys.OpenTelemetry.LogLevel,
+                ConfigurationResult<string>.Valid(null),
+                out _);
+
+            result.Should().BeFalse();
+            errorLog.ShouldHaveExpectedOtelMetric((int)Count.OpenTelemetryConfigInvalid, ConfigurationKeys.OpenTelemetry.LogLevel.ToLowerInvariant(), ConfigurationKeys.DebugEnabled.ToLowerInvariant());
+        }
+
+        private static IConfigurationSource CreateSource(string kind, string key, string value)
+            => kind switch
+            {
+                "string" => new NameValueConfigurationSource(new NameValueCollection { { key, value } }),
+                "json" => new JsonConfigurationSource(JsonConvert.SerializeObject(new Dictionary<string, string> { [key] = value }), ConfigurationOrigins.Code),
+                "object" => new DictionaryObjectConfigurationSource(new Dictionary<string, object> { [key] = value }),
+                _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+            };
+
+        private static ParsingResult<int> ParseInt(string value)
+            => int.TryParse(value, out var parsed) ? ParsingResult<int>.Success(parsed) : ParsingResult<int>.Failure();
     }
 
     public class RedactedStringTests

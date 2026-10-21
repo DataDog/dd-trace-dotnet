@@ -8,11 +8,8 @@
 using System;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using LogEventLevel = Datadog.Trace.Vendors.Serilog.Events.LogEventLevel;
 
 namespace Datadog.Trace.Configuration
@@ -38,15 +35,17 @@ namespace Datadog.Trace.Configuration
 
             var otelConfig = builder
                             .WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel)
-                            .AsBoolResult(
-                                 value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
-                                              ? ParsingResult<bool>.Success(result: true)
-                                              : ParsingResult<bool>.Failure());
+                            .AsStructResult(ParseLogLevel);
 
-            DebugEnabled = builder
-                                  .WithKeys(ConfigurationKeys.DebugEnabled)
-                                  .AsBoolResult()
-                                  .OverrideWith(in otelConfig, overrideHandler, false);
+            LogLevel = builder
+                      .WithKeys(ConfigurationKeys.DebugEnabled)
+                      .AsBoolResult()
+                      .Select(
+                           enabled => enabled ? LogEventLevel.Debug : LogEventLevel.Information,
+                           defaultValue: false)
+                      .OverrideWith(in otelConfig, overrideHandler);
+
+            DebugEnabled = LogLevel == LogEventLevel.Debug;
 
             DiagnosticSourceEnabled = builder
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
@@ -65,6 +64,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the global settings instance.
         /// </summary>
         internal static GlobalSettings Instance { get; private set; } = CreateFromDefaultSources();
+
+        /// <summary>
+        /// Gets the initial threshold for the managed SDK logger.
+        /// </summary>
+        internal LogEventLevel LogLevel { get; }
 
         /// <summary>
         /// Gets a value indicating whether the use
@@ -93,6 +97,31 @@ namespace Datadog.Trace.Configuration
             }
 
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
+        }
+
+        private static ParsingResult<LogEventLevel> ParseLogLevel(string value)
+        {
+            if (string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParsingResult<LogEventLevel>.Success(LogEventLevel.Debug);
+            }
+
+            if (string.Equals(value, "info", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParsingResult<LogEventLevel>.Success(LogEventLevel.Information);
+            }
+
+            if (string.Equals(value, "warn", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParsingResult<LogEventLevel>.Success(LogEventLevel.Warning);
+            }
+
+            if (string.Equals(value, "error", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParsingResult<LogEventLevel>.Success(LogEventLevel.Error);
+            }
+
+            return ParsingResult<LogEventLevel>.Failure();
         }
 
         private static GlobalSettings CreateFromDefaultSources()
