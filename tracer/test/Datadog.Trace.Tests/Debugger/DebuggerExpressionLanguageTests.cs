@@ -3251,6 +3251,28 @@ namespace Datadog.Trace.Tests.Debugger
             result.Errors.Should().BeNullOrEmpty();
         }
 
+        [Theory]
+        [MemberData(nameof(SupportedSensitiveDictionaries))]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveRootDictionaryValues(object dictionary)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("SafeDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""SafeDictionaryLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("[password, {redacted}]");
+            result.Template.Should().Contain("[public, hello]");
+            result.Template.Should().NotContain("TOP_SECRET_VALUE");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
         [Fact]
         public void ProbeExpressionEvaluator_SpanDecorationDump_RedactsSensitiveObjectFields()
         {
