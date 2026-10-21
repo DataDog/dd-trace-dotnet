@@ -137,25 +137,32 @@ namespace Datadog.Trace.Configuration
         }
 
         private OtlpTransportSettings GetOtlpTracesTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("traces", ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpJson, agentHost); // TODO: Make default HttpProtobuf
+            => GetOtlpTransport("traces", ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpJson, agentHost); // TODO: Make default HttpProtobuf
 
         private OtlpTransportSettings GetOtlpMetricsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("metrics", ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
+            => GetOtlpTransport("metrics", ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
 
         private OtlpTransportSettings GetOtlpLogsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("logs", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.Grpc, agentHost);
+            => GetOtlpTransport("logs", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.Grpc, agentHost);
 
-        private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost)
+        private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string protocolKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost)
         {
             var configuredProtocol = signalProtocol ?? generalProtocol;
-            var protocol = configuredProtocol switch
+            OtlpProtocol? parsedProtocol = configuredProtocol switch
             {
-                null or "" => defaultProtocol,
+                null or "" => null,
                 _ when string.Equals(configuredProtocol, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
                 _ when string.Equals(configuredProtocol, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
                 _ when string.Equals(configuredProtocol, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
                 _ => UnsupportedOtlpProtocol(signal, configuredProtocol, defaultProtocol),
             };
+            var protocol = parsedProtocol ?? defaultProtocol;
+
+            // A signal protocol used as-is was already recorded when it was read
+            if (parsedProtocol is null || signalProtocol is null)
+            {
+                _telemetry.Record(protocolKey, GetOtlpProtocolName(protocol), recordValue: true, parsedProtocol is null ? ConfigurationOrigins.Default : ConfigurationOrigins.Calculated);
+            }
 
             if (!string.IsNullOrEmpty(signalEndpoint))
             {
@@ -193,10 +200,18 @@ namespace Datadog.Trace.Configuration
             return GetOtlpUri(signal, endpointKey, CreateDefaultOtlpUri(protocol, signal, agentHost), ConfigurationOrigins.Default, protocol, agentHost);
         }
 
-        private OtlpProtocol UnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol)
+        private static string GetOtlpProtocolName(OtlpProtocol protocol)
+            => protocol switch
+            {
+                OtlpProtocol.Grpc => "grpc",
+                OtlpProtocol.HttpProtobuf => "http/protobuf",
+                _ => "http/json",
+            };
+
+        private OtlpProtocol? UnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol)
         {
             ValidationWarnings.Add($"Unsupported OTLP protocol '{configuredProtocol}' for {signal}. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: {defaultProtocol.ToString()}");
-            return defaultProtocol;
+            return null;
         }
 
         private bool TryGetAgentUriAndTransport(string host, int port, out TraceTransportSettings settings)

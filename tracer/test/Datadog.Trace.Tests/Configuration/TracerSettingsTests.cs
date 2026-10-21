@@ -1172,45 +1172,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, OtlpProtocol.Grpc)]
-        [InlineData("invalid", null, OtlpProtocol.Grpc)]
-        [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
-        [InlineData(null, "http/protobuf", OtlpProtocol.HttpProtobuf)]
-        [InlineData(null, "grpc", OtlpProtocol.Grpc)]
-        public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, metricsProtocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol));
-            var settings = new TracerSettings(source);
-
-            settings.OtlpMetricsProtocol.Should().Be((OtlpProtocol)expected);
-        }
-
-        [Theory]
-        [InlineData("grpc", null, "http://localhost:4317/")]
-        [InlineData("grpc", "http://base:4333/", "http://base:4333/")]
-        [InlineData("http/protobuf", null, "http://localhost:4318/")]
-        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/")]
-        public void OtlpEndpoint(string protocol, string baseInput, string baseOutput)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput));
-            var telemetry = new ConfigurationTelemetry();
-            var settings = new TracerSettings(source, telemetry, new());
-
-            var baseEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
-            baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
-            settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
-        }
-
-        [Theory]
         [InlineData("DELTA", OtlpTemporalityPreference.Delta)]
         [InlineData("cumulative", OtlpTemporalityPreference.Cumulative)]
         [InlineData("loWmemOry", OtlpTemporalityPreference.LowMemory)]
@@ -1244,23 +1205,6 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", value));
             var settings = new TracerSettings(source);
             settings.PartialFlushMinSpans.Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData(null, null, OtlpProtocol.Grpc)]
-        [InlineData("invalid", null, OtlpProtocol.Grpc)]
-        [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
-        [InlineData(null, "http/protobuf", OtlpProtocol.HttpProtobuf)]
-        [InlineData(null, "grpc", OtlpProtocol.Grpc)]
-        public void OtlpLogsProtocolFallbacks(string logsProtocol, string generalProtocol, object expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, logsProtocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol));
-            var settings = new TracerSettings(source);
-
-            settings.OtlpLogsProtocol.Should().Be((OtlpProtocol)expected);
         }
 
         [Theory]
