@@ -1238,7 +1238,6 @@ partial class Build
         .After(BuildTracerHome, BuildManagedTracerHome, BuildNativeTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
-        .Requires(() => Version)
         .Executes(() =>
         {
             var tar = Tar.Value;

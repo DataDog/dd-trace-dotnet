@@ -1,0 +1,31 @@
+<Project>
+
+  <!--
+    THE version number for the Datadog .NET SDK, and everything derived from it.
+    Always run the UpdateVersion Nuke target to change it; do not edit by hand.
+    Native (.vcxproj) projects import build/DdVersion.props instead, which imports this file.
+
+    Keep exactly one DD_VersionPrefix element in this file, and never write its opening and closing
+    tags anywhere else - not even in a comment. build/cmake/DdVersion.cmake and the UpdateVersion
+    target both locate the version by matching those tags textually, and UpdateVersion rewrites
+    every match, so a second one would be silently rewritten too. Derived properties below are fine:
+    they reference the property, which does not match the tag pattern.
+  -->
+  <PropertyGroup>
+    <!-- The version currently under development on this branch. Three parts, numeric only. -->
+    <DD_VersionPrefix>3.57.0</DD_VersionPrefix>
+
+    <!-- true if this version should publish as X.Y.Z-prerelease. Almost always false. -->
+    <DD_IsPrerelease>false</DD_IsPrerelease>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DD_SemVer>$(DD_VersionPrefix)</DD_SemVer>
+    <DD_SemVer Condition="'$(DD_IsPrerelease)' == 'true'">$(DD_VersionPrefix)-prerelease</DD_SemVer>
+
+    <!-- The native tracer and the managed loader both resolve Datadog.Trace by this exact strong
+         name, so the revision stays at zero. -->
+    <DD_AssemblyVersion>$(DD_VersionPrefix).0</DD_AssemblyVersion>
+  </PropertyGroup>
+
+</Project>

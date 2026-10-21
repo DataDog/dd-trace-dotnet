@@ -3,11 +3,10 @@
   <!-- Follow the instructions in the comments to set the version and the version-date.                                                     -->
   <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
 
-  <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
+  <!-- The version comes from version.props at the repo root. -->
   <PropertyGroup>
-    <ProductVersion>3.57.0</ProductVersion>
+    <ProductVersion>$(DD_VersionPrefix)</ProductVersion>
   </PropertyGroup>
-  <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
 
   <PropertyGroup>
     <ProductSuffix>+$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))</ProductSuffix>

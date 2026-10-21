@@ -23,7 +23,7 @@
 
 .PARAMETER Version
     Optional explicit package version. If not provided, a unique prerelease version is
-    generated from the base version in Directory.Build.props with a timestamp suffix
+    generated from the base version in version.props with a timestamp suffix
     (e.g. 3.38.0-dev20260209143022).
 
 .EXAMPLE
@@ -83,10 +83,10 @@ Write-Verbose "Tracer directory: $tracerDir"
 # Generate package version
 if (-not $Version)
 {
-    # Read the base version from Directory.Build.props
-    $propsPath = "$tracerDir/src/Directory.Build.props"
+    # Read the base version from version.props
+    $propsPath = "$(Split-Path -Parent $tracerDir)/version.props"
     [xml]$propsXml = Get-Content $propsPath
-    $baseVersion = $propsXml.Project.PropertyGroup.Version
+    $baseVersion = $propsXml.Project.PropertyGroup.DD_VersionPrefix | Where-Object { $_ } | Select-Object -First 1
     if (-not $baseVersion)
     {
         throw "Could not read Version from $propsPath"

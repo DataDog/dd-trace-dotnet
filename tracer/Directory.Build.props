@@ -1,4 +1,6 @@
 <Project>
+  <Import Project="$(MSBuildThisFileDirectory)..\version.props" />
+
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -17,6 +19,20 @@
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>$(NoWarn);SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
+
+  <!--
+    The version values that NetEscapades.ProjectInfo echoes into a generated ProjectInfo class,
+    defined once so every project that opts in reports the same thing. The generator itself stays
+    opt-in: each project that needs it adds the PackageReference, so projects without one just carry
+    inert items.
+
+    ProjectInfoUtf8 is deliberately not here - it generates a ReadOnlySpan<byte> member, which the
+    managed loader cannot compile on net461/netcoreapp2.0. It lives in the projects that need it.
+  -->
+  <ItemGroup>
+    <ProjectInfoString Include="AssemblyVersion" Value="$(DD_AssemblyVersion)" />
+    <ProjectInfoString Include="ThreePartVersion" Value="$(DD_VersionPrefix)" />
+  </ItemGroup>
 
   <!-- StyleCop -->
   <ItemGroup>

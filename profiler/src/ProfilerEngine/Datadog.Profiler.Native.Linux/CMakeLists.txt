@@ -2,7 +2,8 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 3.57.0)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../../build/cmake/DdVersion.cmake")
+project("Datadog.Profiler.Native.Linux" VERSION ${DD_VERSION})
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)

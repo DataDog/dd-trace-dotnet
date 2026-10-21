@@ -2,7 +2,8 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Linux.ApiWrapper" VERSION 3.57.0)
+include("${CMAKE_CURRENT_LIST_DIR}/../../../../build/cmake/DdVersion.cmake")
+project("Datadog.Linux.ApiWrapper" VERSION ${DD_VERSION})
 
 # ******************************************************
 # Compiler options

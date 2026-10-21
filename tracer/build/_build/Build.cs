@@ -64,11 +64,12 @@ partial class Build : NukeBuild
     [Parameter("The current latest tracer version")]
     const int LatestMajorVersion = 3;
 
-    [Parameter("The current version of the source and build")]
-    readonly string Version = "3.57.0";
+    /// <summary>Gets the version being built, read from version.props. Three parts, numeric only.</summary>
+    string Version => ProjectInfo.Version;
 
-    [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
-    readonly bool IsPrerelease = false;
+    /// <summary>Gets a value indicating whether this version publishes as X.Y.Z-prerelease.</summary>
+    /// <remarks>Matched the way MSBuild matches it in version.props.</remarks>
+    bool IsPrerelease => string.Equals(ProjectInfo.IsPrerelease, "true", StringComparison.OrdinalIgnoreCase);
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
