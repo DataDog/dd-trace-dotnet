@@ -21,10 +21,22 @@ cases:
       - Decorate with the [InstrumentMethod] attribute (assembly/type/method + version range).
       - Implement OnMethodBegin and OnMethodEnd / OnAsyncMethodEnd handlers.
       - Tests under tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests with sample apps in tracer/test/test-applications/integrations.
-      - Mentions the instrumentation generator to scaffold boilerplate. Both the build.ps1 RunInstrumentationGenerator entry point and the documented CLI are valid. docs/development/for-ai/InstrumentationGenerator-CLI.md documents dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options], including inspect <assembly-path> --list-methods <type-full-name> --json for discovery before generation. The project exists and targets net11.0; these names and flags are not fabricated. Listing every invocation is not required.
+      - >-
+        Mentions the instrumentation generator to scaffold boilerplate. Valid alternatives include
+        ./tracer/build.ps1 RunInstrumentationGenerator (GUI), or the Nuke CLI target
+        RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>
+        via tracer/build.ps1, tracer/build.sh, or tracer/build.cmd. The CLI target is implemented in
+        tracer/build/_build/Build.Utilities.cs and documented in docs/development/InstrumentationGenerator.md;
+        it forwards these parameters to generate <dll> --type <type> --method <method>.
+        Direct invocation is also valid: dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/
+        --framework net11.0 -- generate <dll> -t <type> -m <method>. The -t/-m aliases are implemented in
+        Commands/GenerateCommand.cs in that project. docs/development/for-ai/InstrumentationGenerator-CLI.md
+        also documents inspect <assembly-path> --list-methods <type-full-name> --json for discovery.
+        Any one valid invocation satisfies this criterion; listing all alternatives or optional package-version
+        and CI wiring steps is not required to answer this navigation/scaffolding question.
     bad_signals:
       - Puts the integration under profiler/src.
-      - Invents file paths or test projects that do not exist. The documented tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ project, its net11.0 target, and inspect/--list-methods/--json CLI options are valid and do not trigger this signal.
+      - Invents file paths or test projects that do not exist. The documented tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ project, its net11.0 target, inspect/--list-methods/--json options, generate -t/-m aliases, and RunInstrumentationGeneratorCli Nuke target with --assembly-path/--type-name/--method-name are valid and do not trigger this signal.
       - Tells the user to edit generated (.g.) files by hand.
 
   - id: dotnet-tracer-test-selection-httpclient-002
