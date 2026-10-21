@@ -386,6 +386,31 @@ namespace Datadog.Trace.Tests.Configuration
                      .StringValue.Should().Be(expectedEndpoint);
         }
 
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, null, null, "http://localhost:4318/v1/traces")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/traces")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4333/mycollector", "http://traces:4444/custom/path", "http://traces:4444/custom/path")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, null, null, "http://localhost:4318/v1/metrics")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/metrics")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, "http://base:4333/mycollector", "http://metrics:4444/custom/path", "http://metrics:4444/custom/path")]
+        public void OtlpTracesAndMetricsEndpointTelemetry(string signalEndpointKey, string generalEndpoint, string signalEndpoint, string expectedEndpoint)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, generalEndpoint },
+                { signalEndpointKey, signalEndpoint },
+            });
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ExporterSettings(source, NoFile(), telemetry);
+
+            telemetry.GetQueueForTesting()
+                     .Where(e => e.Key == signalEndpointKey)
+                     .OrderByDescending(e => e.SeqId)
+                     .First()
+                     .StringValue.Should().Be(expectedEndpoint);
+        }
+
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)
         {
             return new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);

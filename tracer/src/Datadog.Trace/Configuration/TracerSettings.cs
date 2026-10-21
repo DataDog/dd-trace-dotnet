@@ -270,19 +270,6 @@ namespace Datadog.Trace.Configuration
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
-            OtlpMetricsEndpoint = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint)
-                .GetAs(
-                    defaultValue: new DefaultResult<Uri>(
-                        result: OtlpMetricsProtocol switch
-                        {
-                            OtlpProtocol.Grpc => OtlpEndpoint,
-                            _ => new Uri(OtlpEndpoint, "/v1/metrics")
-                        },
-                        telemetryValue: $"{OtlpEndpoint}{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/metrics" : string.Empty)}"),
-                    validator: null,
-                    converter: uriString => new Uri(uriString));
-
             OtlpMetricsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
@@ -990,12 +977,6 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
         internal OtlpProtocol OtlpMetricsProtocol { get; }
-
-        /// <summary>
-        /// Gets the OTLP endpoint URL for metrics export fallbacks on <see cref="OtlpEndpoint"/>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint"/>
-        internal Uri OtlpMetricsEndpoint { get; }
 
         /// <summary>
         /// Gets the OTLP base endpoint URL for otlp export.

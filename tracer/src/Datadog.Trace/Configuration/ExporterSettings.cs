@@ -150,10 +150,6 @@ namespace Datadog.Trace.Configuration
             var otlpLogsSettings = GetOtlpLogsTransport(signalEndpoint: rawSettings.OtlpLogsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpLogsProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
             OtlpLogsEndpoint = otlpLogsSettings.OtlpSignalEndpoint;
             OtlpLogsProtocol = otlpLogsSettings.OtlpProtocol;
-            if (StringUtil.IsNullOrEmpty(rawSettings.OtlpLogsEndpoint))
-            {
-                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, OtlpLogsEndpoint.ToString(), recordValue: true, ConfigurationOrigins.Calculated);
-            }
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
