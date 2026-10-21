@@ -118,11 +118,58 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
         }
 
-        var dumpExpression = IsSafeCollection(expression.Type) ?
-                                 DumpCollectionExpression(expression, scopeMembers) :
-                                 DumpFieldsExpression(expression, scopeMembers);
+        Expression dumpExpression;
+        if (IsSafeNonGenericDictionary(expression.Type) || IsSupportedGenericDictionary(expression.Type))
+        {
+            dumpExpression = DumpDictionaryExpression(expression, scopeMembers);
+        }
+        else if (IsSafeCollection(expression.Type))
+        {
+            dumpExpression = DumpCollectionExpression(expression, scopeMembers);
+        }
+        else
+        {
+            dumpExpression = DumpFieldsExpression(expression, scopeMembers);
+        }
 
         return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
+    }
+
+    private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
+    {
+        // Declared type may be IDictionary while the runtime value is a custom dictionary or a redacted type.
+        // Capture once, redact from the runtime type, then enumerate only a Microsoft dictionary.
+        var value = Expression.Variable(typeof(object), "dictionaryDumpValue");
+        scopeMembers.Add(value);
+
+        var assignValue = Expression.Assign(value, Expression.Convert(dictionary, typeof(object)));
+        var isRedacted = Expression.Call(
+            Expression.Constant(this),
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object)]),
+            value);
+        var isSafe = Expression.Call(
+            Expression.Constant(this),
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsSafeDictionaryValue), [typeof(object)]),
+            value);
+        var dumpEntries = Expression.Call(
+            Expression.Constant(this),
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(Type)]),
+            value,
+            Expression.Constant(typeof(IDictionary)));
+        var dumpFields = DumpFieldsExpression(Expression.Convert(value, dictionary.Type), scopeMembers);
+        var dump = Expression.Condition(isSafe, dumpEntries, dumpFields);
+
+        return Expression.Block(assignValue, Expression.Condition(isRedacted, Expression.Constant(RedactedValueDump), dump));
+    }
+
+    private bool IsRedactedRuntimeValue(object value)
+    {
+        return value != null && ShouldRedactDumpValue(null, value.GetType());
+    }
+
+    private bool IsSafeDictionaryValue(object value)
+    {
+        return value != null && IsSafeNonGenericDictionary(value.GetType());
     }
 
     private BlockExpression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
@@ -291,7 +338,18 @@ internal partial class ProbeExpressionParser<T>
         // only one level depth of collection
         if (depth == 0 && IsTypeSupportIndex(type, out var assignableFrom))
         {
-            return DumpCollection(value, assignableFrom);
+            // The declared type may be an interface. Redact from the runtime type before enumerating.
+            if (IsRedactedRuntimeValue(value))
+            {
+                return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
+            }
+
+            // IDictionary fields use the declared type for IsTypeSupportIndex; require a Microsoft
+            // runtime implementation before enumerating so custom dictionaries stay on field/type dump.
+            if (assignableFrom != typeof(IDictionary) || value is null || IsSafeDictionaryValue(value))
+            {
+                return DumpCollection(value, assignableFrom);
+            }
         }
 
         if (hasName)
