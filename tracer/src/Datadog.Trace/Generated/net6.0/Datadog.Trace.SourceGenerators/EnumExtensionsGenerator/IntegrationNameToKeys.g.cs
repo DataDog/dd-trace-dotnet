@@ -250,6 +250,9 @@ namespace Datadog.Trace.Configuration
             "DD_TRACE_AZUREEVENTHUBS_ENABLED", "DD_TRACE_AzureEventHubs_ENABLED", "DD_AzureEventHubs_ENABLED",
             "DD_TRACE_AZUREEVENTHUBS_ANALYTICS_ENABLED", "DD_TRACE_AzureEventHubs_ANALYTICS_ENABLED", "DD_AzureEventHubs_ANALYTICS_ENABLED",
             "DD_TRACE_AZUREEVENTHUBS_ANALYTICS_SAMPLE_RATE", "DD_TRACE_AzureEventHubs_ANALYTICS_SAMPLE_RATE", "DD_AzureEventHubs_ANALYTICS_SAMPLE_RATE", 
+            "DD_TRACE_AZUREEVENTGRID_ENABLED", "DD_TRACE_AzureEventGrid_ENABLED", "DD_AzureEventGrid_ENABLED",
+            "DD_TRACE_AZUREEVENTGRID_ANALYTICS_ENABLED", "DD_TRACE_AzureEventGrid_ANALYTICS_ENABLED", "DD_AzureEventGrid_ANALYTICS_ENABLED",
+            "DD_TRACE_AZUREEVENTGRID_ANALYTICS_SAMPLE_RATE", "DD_TRACE_AzureEventGrid_ANALYTICS_SAMPLE_RATE", "DD_AzureEventGrid_ANALYTICS_SAMPLE_RATE", 
             "DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ENABLED", "DD_TRACE_DatadogTraceVersionConflict_ENABLED", "DD_DatadogTraceVersionConflict_ENABLED",
             "DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ANALYTICS_ENABLED", "DD_TRACE_DatadogTraceVersionConflict_ANALYTICS_ENABLED", "DD_DatadogTraceVersionConflict_ANALYTICS_ENABLED",
             "DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ANALYTICS_SAMPLE_RATE", "DD_TRACE_DatadogTraceVersionConflict_ANALYTICS_SAMPLE_RATE", "DD_DatadogTraceVersionConflict_ANALYTICS_SAMPLE_RATE", 
@@ -259,6 +262,9 @@ namespace Datadog.Trace.Configuration
             "DD_TRACE_OPENFEATURE_ENABLED", "DD_TRACE_OpenFeature_ENABLED", "DD_OpenFeature_ENABLED",
             "DD_TRACE_OPENFEATURE_ANALYTICS_ENABLED", "DD_TRACE_OpenFeature_ANALYTICS_ENABLED", "DD_OpenFeature_ANALYTICS_ENABLED",
             "DD_TRACE_OPENFEATURE_ANALYTICS_SAMPLE_RATE", "DD_TRACE_OpenFeature_ANALYTICS_SAMPLE_RATE", "DD_OpenFeature_ANALYTICS_SAMPLE_RATE", 
+            "DD_TRACE_QUARTZ_ENABLED", "DD_TRACE_Quartz_ENABLED", "DD_Quartz_ENABLED",
+            "DD_TRACE_QUARTZ_ANALYTICS_ENABLED", "DD_TRACE_Quartz_ANALYTICS_ENABLED", "DD_Quartz_ANALYTICS_ENABLED",
+            "DD_TRACE_QUARTZ_ANALYTICS_SAMPLE_RATE", "DD_TRACE_Quartz_ANALYTICS_SAMPLE_RATE", "DD_Quartz_ANALYTICS_SAMPLE_RATE", 
             "DD_TRACE_SERVERLESSCOMPAT_ENABLED", "DD_TRACE_ServerlessCompat_ENABLED", "DD_ServerlessCompat_ENABLED",
             "DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_ENABLED", "DD_TRACE_ServerlessCompat_ANALYTICS_ENABLED", "DD_ServerlessCompat_ANALYTICS_ENABLED",
             "DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_SAMPLE_RATE", "DD_TRACE_ServerlessCompat_ANALYTICS_SAMPLE_RATE", "DD_ServerlessCompat_ANALYTICS_SAMPLE_RATE", 
@@ -348,9 +354,11 @@ namespace Datadog.Trace.Configuration
                 "EmailHtmlInjection" => new("DD_TRACE_EMAILHTMLINJECTION_ENABLED", ["DD_TRACE_EmailHtmlInjection_ENABLED", "DD_EmailHtmlInjection_ENABLED"]),
                 "Protobuf" => new("DD_TRACE_PROTOBUF_ENABLED", ["DD_TRACE_Protobuf_ENABLED", "DD_Protobuf_ENABLED"]),
                 "AzureEventHubs" => new("DD_TRACE_AZUREEVENTHUBS_ENABLED", ["DD_TRACE_AzureEventHubs_ENABLED", "DD_AzureEventHubs_ENABLED"]),
+                "AzureEventGrid" => new("DD_TRACE_AZUREEVENTGRID_ENABLED", ["DD_TRACE_AzureEventGrid_ENABLED", "DD_AzureEventGrid_ENABLED"]),
                 "DatadogTraceVersionConflict" => new("DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ENABLED", ["DD_TRACE_DatadogTraceVersionConflict_ENABLED", "DD_DatadogTraceVersionConflict_ENABLED"]),
                 "Hangfire" => new("DD_TRACE_HANGFIRE_ENABLED", ["DD_TRACE_Hangfire_ENABLED", "DD_Hangfire_ENABLED"]),
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ENABLED", ["DD_TRACE_OpenFeature_ENABLED", "DD_OpenFeature_ENABLED"]),
+                "Quartz" => new("DD_TRACE_QUARTZ_ENABLED", ["DD_TRACE_Quartz_ENABLED", "DD_Quartz_ENABLED"]),
                 "ServerlessCompat" => new("DD_TRACE_SERVERLESSCOMPAT_ENABLED", ["DD_TRACE_ServerlessCompat_ENABLED", "DD_ServerlessCompat_ENABLED"]),
                 _ => GetIntegrationEnabledKeysFallback(integrationName) // we should never get here
             };
@@ -440,9 +448,11 @@ namespace Datadog.Trace.Configuration
                 "EmailHtmlInjection" => new("DD_TRACE_EMAILHTMLINJECTION_ANALYTICS_ENABLED", ["DD_TRACE_EmailHtmlInjection_ANALYTICS_ENABLED", "DD_EmailHtmlInjection_ANALYTICS_ENABLED"]),
                 "Protobuf" => new("DD_TRACE_PROTOBUF_ANALYTICS_ENABLED", ["DD_TRACE_Protobuf_ANALYTICS_ENABLED", "DD_Protobuf_ANALYTICS_ENABLED"]),
                 "AzureEventHubs" => new("DD_TRACE_AZUREEVENTHUBS_ANALYTICS_ENABLED", ["DD_TRACE_AzureEventHubs_ANALYTICS_ENABLED", "DD_AzureEventHubs_ANALYTICS_ENABLED"]),
+                "AzureEventGrid" => new("DD_TRACE_AZUREEVENTGRID_ANALYTICS_ENABLED", ["DD_TRACE_AzureEventGrid_ANALYTICS_ENABLED", "DD_AzureEventGrid_ANALYTICS_ENABLED"]),
                 "DatadogTraceVersionConflict" => new("DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ANALYTICS_ENABLED", ["DD_TRACE_DatadogTraceVersionConflict_ANALYTICS_ENABLED", "DD_DatadogTraceVersionConflict_ANALYTICS_ENABLED"]),
                 "Hangfire" => new("DD_TRACE_HANGFIRE_ANALYTICS_ENABLED", ["DD_TRACE_Hangfire_ANALYTICS_ENABLED", "DD_Hangfire_ANALYTICS_ENABLED"]),
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ANALYTICS_ENABLED", ["DD_TRACE_OpenFeature_ANALYTICS_ENABLED", "DD_OpenFeature_ANALYTICS_ENABLED"]),
+                "Quartz" => new("DD_TRACE_QUARTZ_ANALYTICS_ENABLED", ["DD_TRACE_Quartz_ANALYTICS_ENABLED", "DD_Quartz_ANALYTICS_ENABLED"]),
                 "ServerlessCompat" => new("DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_ENABLED", ["DD_TRACE_ServerlessCompat_ANALYTICS_ENABLED", "DD_ServerlessCompat_ANALYTICS_ENABLED"]),
                 _ => GetIntegrationAnalyticsEnabledKeysFallback(integrationName) // we should never get here
             };
@@ -532,9 +542,11 @@ namespace Datadog.Trace.Configuration
                 "EmailHtmlInjection" => new("DD_TRACE_EMAILHTMLINJECTION_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_EmailHtmlInjection_ANALYTICS_SAMPLE_RATE", "DD_EmailHtmlInjection_ANALYTICS_SAMPLE_RATE"]),
                 "Protobuf" => new("DD_TRACE_PROTOBUF_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_Protobuf_ANALYTICS_SAMPLE_RATE", "DD_Protobuf_ANALYTICS_SAMPLE_RATE"]),
                 "AzureEventHubs" => new("DD_TRACE_AZUREEVENTHUBS_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_AzureEventHubs_ANALYTICS_SAMPLE_RATE", "DD_AzureEventHubs_ANALYTICS_SAMPLE_RATE"]),
+                "AzureEventGrid" => new("DD_TRACE_AZUREEVENTGRID_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_AzureEventGrid_ANALYTICS_SAMPLE_RATE", "DD_AzureEventGrid_ANALYTICS_SAMPLE_RATE"]),
                 "DatadogTraceVersionConflict" => new("DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_DatadogTraceVersionConflict_ANALYTICS_SAMPLE_RATE", "DD_DatadogTraceVersionConflict_ANALYTICS_SAMPLE_RATE"]),
                 "Hangfire" => new("DD_TRACE_HANGFIRE_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_Hangfire_ANALYTICS_SAMPLE_RATE", "DD_Hangfire_ANALYTICS_SAMPLE_RATE"]),
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_OpenFeature_ANALYTICS_SAMPLE_RATE", "DD_OpenFeature_ANALYTICS_SAMPLE_RATE"]),
+                "Quartz" => new("DD_TRACE_QUARTZ_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_Quartz_ANALYTICS_SAMPLE_RATE", "DD_Quartz_ANALYTICS_SAMPLE_RATE"]),
                 "ServerlessCompat" => new("DD_TRACE_SERVERLESSCOMPAT_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_ServerlessCompat_ANALYTICS_SAMPLE_RATE", "DD_ServerlessCompat_ANALYTICS_SAMPLE_RATE"]),
                 _ => GetIntegrationAnalyticsSampleRateKeysFallback(integrationName) // we should never get here
             };

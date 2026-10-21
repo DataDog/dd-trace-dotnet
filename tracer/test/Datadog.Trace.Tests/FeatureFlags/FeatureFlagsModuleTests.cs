@@ -6,17 +6,26 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Evp;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -27,6 +36,130 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    [Fact]
+    public async Task AgentlessModuleUsesSharedDiscoveryForEventDelivery()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var discovery = new DiscoveryServiceMock();
+        var source = new FakeDeliverySource();
+        var collection = new NameValueCollection
+        {
+            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
+            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless" },
+            { ConfigurationKeys.ApiKey, "test-api-key" },
+            { ConfigurationKeys.Site, "datadoghq.com" },
+        };
+        var settings = new TracerSettings(new NameValueConfigurationSource(collection));
+
+        using (var module = FeatureFlagsModule.Create(settings, rcmManager, _ => source, discovery))
+        {
+            module.Should().NotBeNull();
+            source.Started.Should().Be(0);
+            rcmManager.HasAnySubscription.Should().BeFalse();
+            discovery.Callbacks.Should().BeEmpty("event discovery subscriptions start with the first exposure");
+            module!.GetExposureApi().Should().NotBeNull();
+            discovery.Callbacks.Should().ContainSingle();
+
+            module.Activate();
+            module.Activate();
+            source.Started.Should().Be(1);
+            discovery.Callbacks.Should().HaveCount(2, "exposures and evaluations own separate transports");
+            await module.DisposeAsync();
+        }
+
+        discovery.Callbacks.Should().BeEmpty();
+        source.Disposed.Should().Be(1);
+    }
+
+    [Fact]
+    public void DefaultModuleDoesNotCreateExposureTransportUntilFirstUse()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+        var transportField = typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        settings.FeatureFlags.Enabled.Should().BeTrue();
+        module.Should().NotBeNull();
+        transportField.GetValue(module).Should().BeNull("applications that never use exposures need no HTTP client or settings subscription");
+
+        var exposureApi = module!.GetExposureApi();
+        exposureApi.Should().NotBeNull();
+        transportField.GetValue(module).Should().NotBeNull();
+        module.GetExposureApi().Should().BeSameAs(exposureApi);
+
+        module.Dispose();
+        transportField.GetValue(module).Should().BeNull();
+        module.GetExposureApi().Should().BeNull();
+    }
+
+    [Fact]
+    public void DisposingUnusedModuleDoesNotCreateExposureTransport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        module!.Dispose();
+
+        module.GetExposureApi().Should().BeNull();
+        typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                  .GetValue(module).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExposureSettingsUpdateUntilModuleDisposalRemovesSubscriptions(bool activateEvaluationWriter)
+    {
+        var settings = CreateSettings();
+        var subscribers = (ICollection)typeof(TracerSettings.SettingsManager)
+                                     .GetField("_subscribers", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                     .GetValue(settings.Manager)!;
+        var initialSubscriptions = subscribers.Count;
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), discoveryService: FlagEvaluationTestDiscovery.Available(settings))!;
+        if (activateEvaluationWriter)
+        {
+            module.Activate();
+            module.EvaluationWriter.Should().NotBeNull();
+        }
+
+        var api = module.GetExposureApi()!;
+        var transport = (FeatureFlagsEvpTransport)typeof(FeatureFlagsModule)
+                                                .GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                                .GetValue(module)!;
+        var endpointField = typeof(FeatureFlagsEvpTransport).GetField("_localEndpoint", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var factoryProperty = endpointField.FieldType.GetProperty("Factory")!;
+        var contextField = typeof(ExposureApi).GetField("_context", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        subscribers.Count.Should().Be(initialSubscriptions + 2 + (activateEvaluationWriter ? 2 : 0), "each track subscribes for its transport and context/admission");
+        UpdateSettings("before-disposal", new Uri("http://127.0.0.1:18126/updated/"));
+
+        var factory = (IApiRequestFactory)factoryProperty.GetValue(endpointField.GetValue(transport))!;
+        factory.GetEndpoint("evp_proxy/v2/api/v2/exposures").Should().Be(new Uri("http://127.0.0.1:18126/updated/evp_proxy/v2/api/v2/exposures"));
+        var context = (Dictionary<string, string>)contextField.GetValue(api)!;
+        context["service"].Should().Be("before-disposal");
+
+        await module.DisposeAsync();
+
+        subscribers.Count.Should().Be(initialSubscriptions, "module disposal must remove all event settings subscriptions");
+        module.EvaluationWriter.Should().BeNull();
+        UpdateSettings("after-disposal", new Uri("http://127.0.0.1:28126/ignored/"));
+        factoryProperty.GetValue(endpointField.GetValue(transport)).Should().BeSameAs(factory);
+        contextField.GetValue(api).Should().BeSameAs(context);
+
+        void UpdateSettings(string service, Uri agentUri)
+        {
+            settings.Manager.UpdateManualConfigurationSettings(
+                new ManualInstrumentationConfigurationSource(
+                    new Dictionary<string, object?>
+                    {
+                        { TracerSettingKeyConstants.ServiceNameKey, service },
+                        { TracerSettingKeyConstants.AgentUriKey, agentUri },
+                    },
+                    useDefaultSources: false),
+                NullConfigurationTelemetry.Instance).Should().BeTrue();
+        }
+    }
+
     [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {
@@ -119,6 +252,67 @@ public class FeatureFlagsModuleTests
                 [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
             };
         }
+    }
+
+    [Fact]
+    public void UpdateRemoteConfig_RecomputesConsentFromActiveFilesAfterUpdatesAndRemovals()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager);
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+        var firstPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/first/config");
+        var secondPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/second/config");
+
+        AssertConsent("false");
+        Update(firstPath, false);
+        Update(secondPath, true);
+        AssertConsent("false");
+
+        // Refreshing either path must not change consent just by changing merge order.
+        Update(firstPath, false);
+        AssertConsent("false");
+        Update(secondPath, true);
+        AssertConsent("false");
+
+        // Replacing the nonconsenting file must discard its old consent, not latch false.
+        Update(firstPath, true);
+        AssertConsent("true");
+
+        Update(firstPath, false);
+        AssertConsent("false");
+        Remove(firstPath);
+        AssertConsent("true");
+        Remove(secondPath);
+        AssertConsent("false");
+        module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+              .Error.Should().Be("PROVIDER_NOT_READY");
+
+        void AssertConsent(string expected)
+            => module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+                     .FlagMetadata![FeatureFlagMetadataKeys.ObserveFullEvaluationData].Should().Be(expected);
+
+        void Update(RemoteConfigurationPath path, bool consent)
+        {
+            var flag = FeatureFlagsHelpers.CreateExposureFlag();
+            flag.Allocations![0].DoLog = false;
+            var json = JsonConvert.SerializeObject(new ServerConfiguration
+            {
+                ObserveFullEvaluationData = consent,
+                Flags = new FlagCollection { ["flag"] = flag },
+            });
+            subscription.Invoke(
+                new Dictionary<string, List<RemoteConfiguration>>
+                {
+                    [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)],
+                },
+                null);
+            module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+                  .Value.Should().Be("tracked-value");
+        }
+
+        void Remove(RemoteConfigurationPath path)
+            => subscription.Invoke([], new Dictionary<string, List<RemoteConfigurationPath>> { [RcmProducts.FfeFlags] = [path] });
     }
 
     [Fact]
