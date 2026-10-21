@@ -7,8 +7,8 @@ version: "0.1"
 #  - CONTROL cases — out-of-scope questions AGENTS.md does NOT cover (general C#/.NET, answered from the agent's
 #    own knowledge). Tagged `files: [AGENTS.md]` because AGENTS.md is ALWAYS in the agent's context, so a bloated
 #    (even correct) AGENTS.md can degrade these unrelated answers (context saturation) — that's what they catch.
-#    Skills load on-demand (only when invoked), so skill size can't affect unrelated questions → no control cases
-#    for skills. Control cases are `only_warn` while calibrating.
+#    Setup controls measure effects of the whole declared setup, including skill discovery metadata;
+#    they do not establish which individual file caused a difference. Controls are `only_warn` while calibrating.
 # Scale to 25-40 in Phase 4.
 cases:
   - id: dotnet-tracer-repo-nav-integration-001
@@ -28,15 +28,21 @@ cases:
         via tracer/build.ps1, tracer/build.sh, or tracer/build.cmd. The CLI target is implemented in
         tracer/build/_build/Build.Utilities.cs and documented in docs/development/InstrumentationGenerator.md;
         it forwards these parameters to generate <dll> --type <type> --method <method>.
+        The wrapper also accepts --output-path <file> (forwarded as --output), --overload-index <n>,
+        and --parameter-types "<type1> <type2>". The direct CLI accepts the latter two overload-selection flags.
         Direct invocation is also valid: dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/
         --framework net11.0 -- generate <dll> -t <type> -m <method>. The -t/-m aliases are implemented in
         Commands/GenerateCommand.cs in that project. docs/development/for-ai/InstrumentationGenerator-CLI.md
-        also documents inspect <assembly-path> --list-methods <type-full-name> --json for discovery.
+        also documents dd-autoinstrumentation inspect <assembly-path> --list-methods <type-full-name> --json for discovery;
+        dd-autoinstrumentation is the installed tool command declared in the CLI project.
         Any one valid invocation satisfies this criterion; listing all alternatives or optional package-version
         and CI wiring steps is not required to answer this navigation/scaffolding question.
+        The generator provides code scaffolding, not span behavior or test wiring. The GUI displays code to copy;
+        the CLI prints code or writes to an explicit output path, rather than automatically choosing the integration folder.
     bad_signals:
       - Puts the integration under profiler/src.
-      - Invents file paths or test projects that do not exist. The documented tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ project, its net11.0 target, inspect/--list-methods/--json options, generate -t/-m aliases, and RunInstrumentationGeneratorCli Nuke target with --assembly-path/--type-name/--method-name are valid and do not trigger this signal.
+      - Invents file paths, test projects, or commands. The entry points and flags verified above are valid; using a real flag with the wrong entry point can still be an error.
+      - Claims the generator automatically chooses and populates the integration folder or implements span behavior and tests. Saying it generates boilerplate is correct.
       - Tells the user to edit generated (.g.) files by hand.
 
   - id: dotnet-tracer-test-selection-httpclient-002
@@ -213,25 +219,26 @@ cases:
     files: [.claude/skills/bump-libdatadog/SKILL.md, .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh]   # run when the skill (SKILL.md or its helper script) changed
     input: |
       I need to bump the libdatadog native library to a new release version. Walk me
-      through everything I have to update in this repo and how to verify it.
+      through everything I have to update in this repo and how to verify it. Give a
+      plan using local repository evidence; do not edit files, fetch releases, or run builds.
     expected_criteria:
       - Updates BOTH version pins — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
       - FindLibdatadog.cmake uses SHA-256 hashes and a v-prefixed version (e.g. v2.0.0) from DataDog/libdatadog-dotnet — the .NET-specific distribution, NOT upstream DataDog/libdatadog; the vcpkg version-string has NO v prefix.
       - portfile.cmake uses SHA-512 hashes for the Windows x64/x86 builds.
       - Verifies by running the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
-      - Notes Linux/macOS and Windows versions can differ, and the NativeValidation symbol snapshots may need regenerating.
+      - Normally moves Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if exports change.
     bad_signals:
       - Says there is a single version to update / only one file to change.
       - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).
       - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
       - Invents a libdatadog version pin in the root vcpkg.json.
       - Bumps to an upstream DataDog/libdatadog tag/version instead of the DataDog/libdatadog-dotnet release.
-      - Indicates the project's libdatadog skill / instructions are wrong, outdated, or had to be corrected against the actual repo files.
+      - Invents release versions or checksums. Correcting stale guidance using actual repository evidence is acceptable and must not be penalized.
 
   # ---- Control / out-of-scope cases (detect AGENTS.md context saturation) ----
   # General C#/.NET questions AGENTS.md does NOT cover. They should not benefit from AGENTS.md content, but a
   # bloated AGENTS.md (always in context) can degrade them — so a drop here flags collateral, global degradation.
-  # Tagged files:[AGENTS.md] (skills load on-demand, so they can't affect these); only_warn while calibrating.
+# Tagged files:[AGENTS.md] for instruction-change targeting; setup measures the whole inventory.
   - id: dotnet-tracer-control-async-disposal-014
     files: [AGENTS.md]
     only_warn: true
@@ -305,3 +312,71 @@ cases:
       - Claims String.Replace strips or doesn't propagate taint, so nothing is flagged.
       - Requires manual annotation of the source/sink, or invents a non-existent mechanism, flag, or API.
       - Confuses IAST (code-level vulnerability detection) with the WAF / AppSec live-attack (threat) detection.
+
+  # Setup-only additions exercise the other declared skills without external services or repository edits.
+  # Ground truth: analyzer project wiring plus add-lint-rule's explicit repository policy.
+  - id: dotnet-tracer-add-lint-rule-018
+    comparisons: [setup]
+    files: [.claude/skills/add-lint-rule/SKILL.md, .claude/skills/add-lint-rule/reference.md]
+    only_warn: true
+    input: |
+      I want to enforce a new C# product convention in core tracer code with a custom
+      Roslyn analyzer. It is not a performance optimization. Explain where to add the
+      rule and tests, its initial severity and scope, how to handle existing violations,
+      and whether CI needs a new stage. Inspect local files but do not make changes or run builds.
+    expected_criteria:
+      - Uses tracer/src/Datadog.Trace.Tools.Analyzers/ for the analyzer and tracer/test/Datadog.Trace.Tools.Analyzers.Tests/ for its unit tests.
+      - Classifies the rule as a product convention, without unsupported allocation or CPU claims.
+      - Introduces the new rule as DiagnosticSeverity.Error under the repository policy; legacy Info rules are not a model for new rules.
+      - Limits enforcement to core production code; adding analyzer unit tests does not mean enforcing the new rule on tests, helpers, or samples.
+      - Fixes existing violations before enabling the error, in the same change or preparatory changes, and tests both violating and valid examples.
+      - Reuses the analyzer references in tracer/src/Directory.Build.props and compile-time enforcement; no new CI stage is needed.
+    bad_signals:
+      - Recommends a new formatting CI stage or globally enabling built-in .NET analyzers to implement this custom rule.
+      - Recommends Info as the final severity for a new rule, or extends enforcement to tests and samples without being asked.
+      - Claims a performance improvement without evidence or edits files despite the plan-only request.
+
+  # Ground truth: supplied evidence plus Get-AzureDevOpsBuildAnalysis.ps1 and the skill's snapshot guidance.
+  - id: dotnet-tracer-azdo-span-count-019
+    comparisons: [setup]
+    files: [.claude/skills/analyze-azdo-build/SKILL.md]
+    only_warn: true
+    input: |
+      Triage this Azure DevOps failure using only the supplied evidence and local repo files.
+      A task running a SubmitsTraces integration test failed with "Expected 2 spans but got 0".
+      There is no Received/Verified file diff. A separate job is canceled with a timeout message.
+      A teammate suggests updating snapshots and retrying every stage. Give a brief assessment
+      and the next targeted investigation steps. Mention the repo helper for a later analysis
+      once a build ID is available; do not call external services, update files, or retry anything.
+    expected_criteria:
+      - Distinguishes the missing-span assertion from a snapshot-content mismatch; the SubmitsTraces name alone does not justify accepting new snapshots.
+      - Treats the canceled job's supplied timeout message as timeout evidence, separately from the failed test; does not assume every canceled job failed an assertion.
+      - Investigates tracer/sample initialization and instrumentation evidence for the missing spans without claiming the root cause is already proven.
+      - Identifies tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id> as a valid later analysis helper; -IncludeLogs is available for deeper log analysis. Does not invent an actual build ID or fetched results.
+      - Gives focused next steps rather than blanket snapshot updates or retries; preserves the read-only, offline scope.
+    bad_signals:
+      - Recommends updating snapshots to fix the span-count assertion despite the absence of a content diff.
+      - Claims the failure is definitely flaky or infrastructure-only without supporting evidence.
+      - Calls external services, changes snapshots, or retries stages despite the user's explicit constraints.
+
+  # Ground truth: local package/deployment helpers and azure-functions' local-test-only reference policy.
+  - id: dotnet-tracer-azure-functions-local-package-020
+    comparisons: [setup]
+    files: [.claude/skills/azure-functions/SKILL.md]
+    only_warn: true
+    input: |
+      I changed the Datadog.AzureFunctions package and want to test a local development build
+      in my own sample Function App. Give a plan for building the package, making the sample
+      consume it, and deploying later. Explain any temporary project-reference changes and
+      what must not be committed. Use local repo files only; do not build, contact Azure,
+      request credentials, edit files, or deploy anything. Use placeholders for my app details.
+    expected_criteria:
+      - Uses tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <local-feed-directory>; -BuildId can supply missing bundle files, and the script supports a generated prerelease version or an explicit -Version.
+      - Matches the CopyTo destination to the sample's nuget.config local feed and selects the local prerelease in the sample's Datadog.AzureFunctions package reference; a floating dev version or explicit generated version is valid.
+      - For the documented local-test workflow, temporarily replaces the Datadog.Trace.Manual and Datadog.Trace.Annotations project references in tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj with Datadog.Trace and Datadog.Trace.Annotations package references. These substitutions are local-only and must be reverted before committing.
+      - Identifies tracer/tools/Deploy-AzureFunction.ps1 with AppName, ResourceGroup, and SampleAppPath placeholders for a later deployment; does not claim that building the package alone deploys or verifies instrumentation.
+      - Respects the plan-only scope and explains that later verification needs actual function execution and trace/log evidence.
+    bad_signals:
+      - Recommends committing the temporary package-reference substitutions as a production change.
+      - Claims the sample consumes the local package without configuring a matching feed and package version.
+      - Performs builds, external calls, deployment, or edits despite the explicit plan-only request.

@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: 09d7c862d77dd4fd647c03b68dca75d2647cd455   # platform PR #48 (isolated setup pilot)
+    ref: d22c26ed01739fc9014a2fb0e901c2b5c8e4eef8   # platform PR #48 (preset-driven setup evaluation)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -48,18 +48,14 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "09d7c862d77dd4fd647c03b68dca75d2647cd455"   # platform PR #48 (must match include ref above)
-    # Temporary live verification of shared execution; remove after both modes pass.
-    LLMVAL_REQUIRE_COMPLETE: "true"
-    LLMVAL_CASES: "dotnet-tracer-repo-nav-integration-001"
-    LLMVAL_RUNS: "1"
-    LLMVAL_CONCURRENCY: "2"
+    LLMVAL_PLATFORM_REF: "d22c26ed01739fc9014a2fb0e901c2b5c8e4eef8"   # platform PR #48 (must match include ref above)
 
-# Reuse the platform's setup smoke with a case from this repository's suite.
+# The historical job name is retained; the setup preset exercises guidance, all skills, and controls.
 "llm validation (setup smoke)":
   variables:
     LLMVAL_SETUP_ENABLED: "true"
-    LLMVAL_SETUP_CASE: "dotnet-tracer-repo-nav-integration-001"
+    LLMVAL_SETUP_LEVEL: "setup"
+    LLMVAL_SETUP_CONCURRENCY: "2"
 
 build-windows-ci-image:
   stage: build
