@@ -1189,16 +1189,15 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
-        [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
-        [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/metrics")]
-        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/metrics")]
-        public void OtlpMetricsEndpoint(string protocol, string baseInput, string baseOutput, string metricsInput, string metricsOutput)
+        [InlineData("grpc", null, "http://localhost:4317/")]
+        [InlineData("grpc", "http://base:4333/", "http://base:4333/")]
+        [InlineData("http/protobuf", null, "http://localhost:4318/")]
+        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/")]
+        public void OtlpEndpoint(string protocol, string baseInput, string baseOutput)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, metricsInput));
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput));
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new());
 
@@ -1207,15 +1206,8 @@ namespace Datadog.Trace.Tests.Configuration
                                    .OrderByDescending(e => e.SeqId)
                                    .ToList();
 
-            var metricsEndpointEntries = telemetry.GetQueueForTesting()
-                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint })
-                                   .OrderByDescending(e => e.SeqId)
-                                   .ToList();
-
             baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
-            metricsEndpointEntries[0].StringValue.Should().Be(metricsOutput);
             settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
-            settings.OtlpMetricsEndpoint.ToString().Should().Be(metricsOutput);
         }
 
         [Theory]
