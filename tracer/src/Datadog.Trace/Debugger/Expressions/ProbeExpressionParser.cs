@@ -470,6 +470,17 @@ internal partial class ProbeExpressionParser<T>
         (_errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = expression, Message = error });
     }
 
+    private void AddRedactionError(string expression)
+    {
+        (_errors ??= new List<EvaluationError>()).Add(
+            new EvaluationError
+            {
+                Expression = expression,
+                Message = "The property or field is redacted.",
+                IsTemplateRedaction = typeof(T) == typeof(string)
+            });
+    }
+
     private bool ConditionalRead(JsonTextReader reader, bool shouldAdvanceReader)
     {
         return !shouldAdvanceReader || reader.Read();

@@ -491,6 +491,50 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Message_UsesRenderedTemplateForTemplateRedaction()
+        {
+            var captureLimitInfo = CreateCaptureLimitInfo();
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult
+            {
+                Template = "direct={redacted}",
+                Errors =
+                [
+                    new EvaluationError
+                    {
+                        Expression = "password",
+                        Message = "The property or field is redacted.",
+                        IsTemplateRedaction = true
+                    }
+                ]
+            };
+
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+
+            Assert.Equal("direct={redacted}", snapshot["message"]?.Value<string>());
+            Assert.Equal("The property or field is redacted.", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+        }
+
+        [Fact]
         public void ConditionEvaluationErrors_OmitMethodCaptureData()
         {
             var captureLimitInfo = CreateCaptureLimitInfo();

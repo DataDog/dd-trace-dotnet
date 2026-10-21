@@ -736,7 +736,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
         {
             _errors = evaluationResult.Errors;
-            _message = _errors?.FirstOrDefault(error => !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
+            _message = _errors?.FirstOrDefault(error => !error.IsTemplateRedaction && !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
             if (evaluationResult.HasConditionError)
             {
                 _omitCaptureData = true;
