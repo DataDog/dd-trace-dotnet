@@ -1136,8 +1136,25 @@ partial class Build
 
             // Add the dd-dotnet scripts
             CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
-            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyDdDotnetScript(BundleHomeDirectory);
         });
+
+    private void CopyDdDotnetScript(AbsolutePath destination)
+    {
+        const string placeholder = "@DD_VERSION@";
+
+        // Copy first and rewrite in place, so the destination directory and executable bit are handled for us
+        CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", destination, FileExistsPolicy.Overwrite);
+        var script = destination / "dd-dotnet.sh";
+        var original = File.ReadAllText(script);
+        if (!original.Contains(placeholder))
+        {
+            throw new InvalidOperationException($"Expected to find the {placeholder} placeholder in {script}");
+        }
+
+        // Always LF: this is a shell script that ships to Linux.
+        File.WriteAllText(script, original.Replace(placeholder, Version).Replace("\r\n", "\n"));
+    }
 
     Target CreateBenchmarkIntegrationHome => _ => _
         .Unlisted()
@@ -1198,12 +1215,18 @@ partial class Build
         .After(BuildDdDotnet)
         .Executes(() =>
         {
-            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
-            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            if (IsWin)
+            {
+                CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            }
+            else
+            {
+                CopyDdDotnetScript(MonitoringHomeDirectory);
+            }
 
             if (IsLinux)
             {
-                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
+                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / "dd-dotnet.sh");
             }
         });
 

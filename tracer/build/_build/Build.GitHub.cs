@@ -448,8 +448,6 @@ partial class Build
             var expectedFileChanges = new List<string>
             {
                 "version.props",
-                "shared/src/native-src/dd_version.h",
-                "tracer/build/artifacts/dd-dotnet.sh",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",

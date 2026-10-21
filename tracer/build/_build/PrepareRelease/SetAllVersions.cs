@@ -45,11 +45,6 @@ namespace PrepareRelease
 
         public abstract void Run();
 
-        private string FullVersionReplace(string text, string split, string prefix = "")
-        {
-            return Regex.Replace(text, prefix + VersionPattern(split), prefix + VersionString(split), RegexOptions.Singleline);
-        }
-
         private string DatadogTraceBundleNugetDependencyVersionReplace(string text)
         {
             return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
@@ -192,11 +187,6 @@ namespace PrepareRelease
                         text = ReplaceElement(text, "DD_VersionPrefix", VersionString());
                         return ReplaceElement(text, "DD_IsPrerelease", IsPrerelease ? "true" : "false");
                     });
-
-                // A shell script that ships inside the tracer home, so it cannot read anything else.
-                SynchronizeVersion(
-                    "build/artifacts/dd-dotnet.sh",
-                    text => FullVersionReplace(text, "."));
 
                 Console.WriteLine($"Completed synchronizing source versions to {VersionString()}");
             }
