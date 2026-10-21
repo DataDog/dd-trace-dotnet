@@ -279,6 +279,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             if (exception is not null)
             {
                 session.SetErrorInfo(exception);
+
+                // The exit code is 0 when the runner throws, so the session can't be reported as empty.
+                session.RecordExecutedTests(null);
             }
 
             var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
