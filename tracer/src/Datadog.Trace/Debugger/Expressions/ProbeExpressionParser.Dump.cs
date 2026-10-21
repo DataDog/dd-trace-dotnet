@@ -118,11 +118,30 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
         }
 
-        var dumpExpression = IsSafeCollection(expression.Type) ?
-                                 DumpCollectionExpression(expression, scopeMembers) :
-                                 DumpFieldsExpression(expression, scopeMembers);
+        Expression dumpExpression;
+        if (IsSafeNonGenericDictionary(expression.Type))
+        {
+            dumpExpression = DumpDictionaryExpression(expression);
+        }
+        else if (IsSafeCollection(expression.Type))
+        {
+            dumpExpression = DumpCollectionExpression(expression, scopeMembers);
+        }
+        else
+        {
+            dumpExpression = DumpFieldsExpression(expression, scopeMembers);
+        }
 
         return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
+    }
+
+    private MethodCallExpression DumpDictionaryExpression(Expression dictionary)
+    {
+        return Expression.Call(
+            Expression.Constant(this),
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(Type)]),
+            Expression.Convert(dictionary, typeof(object)),
+            Expression.Constant(typeof(IDictionary)));
     }
 
     private BlockExpression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
