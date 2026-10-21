@@ -701,7 +701,7 @@ namespace Datadog.Trace
 
                     if (instanceSettings.OtlpLogsExportEnabled)
                     {
-                        WriteOtlpExporterSettings("LOGS", instanceSettings.OtlpLogsEndpoint, instanceSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
+                        WriteOtlpExporterSettings("LOGS", exporterSettings.OtlpLogsEndpoint, exporterSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
 
                         writer.WritePropertyName("OTEL_BLRP_SCHEDULE_DELAY");
                         writer.WriteValue(instanceSettings.LogSubmissionSettings.BatchPeriod.TotalMilliseconds);

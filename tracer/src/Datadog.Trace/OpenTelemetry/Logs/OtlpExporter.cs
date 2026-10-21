@@ -46,12 +46,12 @@ internal sealed class OtlpExporter : IOtlpExporter
     private readonly OtlpProtocol _protocol;
     private OtlpLogsSerializer.ResourceTags _resourceTags;
 
-    public OtlpExporter(TracerSettings settings, HttpClient? httpClient = null)
+    public OtlpExporter(TracerSettings settings, ExporterSettings exporterSettings, HttpClient? httpClient = null)
     {
-        var endpoint = settings.OtlpLogsEndpoint;
+        var endpoint = exporterSettings.OtlpLogsEndpoint;
         _headers = settings.OtlpLogsHeaders;
         _timeoutMs = settings.OtlpLogsTimeoutMs;
-        _protocol = settings.OtlpLogsProtocol;
+        _protocol = exporterSettings.OtlpLogsProtocol;
         UpdateResourceTags(settings.Manager.InitialMutableSettings);
         settings.Manager.SubscribeToChanges(changes =>
         {

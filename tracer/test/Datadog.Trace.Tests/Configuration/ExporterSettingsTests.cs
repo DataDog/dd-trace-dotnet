@@ -357,6 +357,35 @@ namespace Datadog.Trace.Tests.Configuration
                    .ContainSingle(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.String && x.StringValue == endpoint);
         }
 
+        [Theory]
+        [InlineData(null, null, null, "http://localhost:4317/")]
+        [InlineData("grpc", "http://base:4333/mycollector", null, "http://base:4333/mycollector")]
+        [InlineData("http/protobuf", null, null, "http://localhost:4318/v1/logs")]
+        [InlineData("http/protobuf", "http://base:4333/", null, "http://base:4333/v1/logs")]
+        [InlineData("http/protobuf", "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/logs")]
+        [InlineData("http/protobuf", "http://base:4333/mycollector/", null, "http://base:4333/mycollector/v1/logs")]
+        [InlineData("http/json", "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/logs")]
+        [InlineData("http/protobuf", "http://base:4333/mycollector", "http://logs:4444/custom/path", "http://logs:4444/custom/path")]
+        public void OtlpLogsEndpoint(string protocol, string generalEndpoint, string logsEndpoint, string expectedEndpoint)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, generalEndpoint },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, logsEndpoint },
+            });
+            var telemetry = new ConfigurationTelemetry();
+
+            var settings = new ExporterSettings(source, NoFile(), telemetry);
+
+            settings.OtlpLogsEndpoint.ToString().Should().Be(expectedEndpoint);
+            telemetry.GetQueueForTesting()
+                     .Where(e => e.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint)
+                     .OrderByDescending(e => e.SeqId)
+                     .First()
+                     .StringValue.Should().Be(expectedEndpoint);
+        }
+
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)
         {
             return new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);
