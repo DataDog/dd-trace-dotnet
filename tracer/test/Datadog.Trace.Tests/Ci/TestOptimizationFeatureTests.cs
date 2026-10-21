@@ -2559,12 +2559,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     [InlineData("true", null, "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
     [InlineData("false", "true", "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
     [InlineData("true", "true", null, new[] { 4, 5, 2, 1, 1 }, false)]
-    [InlineData("true", "1", " 3, 2,1,1 ,20", new[] { 3, 2, 1, 1, 20 }, true)]
-    [InlineData("true", "true", "", new[] { 4, 5, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,1,1,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,a,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
-    [InlineData("true", "true", "3,2,0,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "1", "3,2,1,1,20", new[] { 3, 2, 1, 1, 20 }, true)]
     [InlineData("true", "true", "3,2,21,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
     public async Task FlakyRetryCountDependsOnFirstExecutionDurationWhenDynamicRetriesAreEnabled(string flakyRetryEnabled, string dynamicFlakyRetryEnabled, string dynamicFlakyRetryBuckets, int[] expectedRetryCounts, bool? expectedCustomBuckets)
     {

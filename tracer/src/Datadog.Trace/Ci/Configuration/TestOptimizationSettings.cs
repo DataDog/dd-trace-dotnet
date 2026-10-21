@@ -365,16 +365,19 @@ namespace Datadog.Trace.Ci.Configuration
         private static ParsingResult<int[]> ParseDynamicFlakyRetryCounts(string value)
         {
             var values = value.Split(Separators.Comma);
-            var counts = new int[5];
-            var valid = values.Length == counts.Length;
-            for (var i = 0; valid && i < counts.Length; i++)
+            if (values.Length == 5)
             {
-                valid = int.TryParse(values[i], out counts[i]) && counts[i] is >= 1 and <= MaxDynamicFlakyRetryCount;
-            }
+                var counts = new int[5];
+                var valid = true;
+                for (var i = 0; valid && i < counts.Length; i++)
+                {
+                    valid = int.TryParse(values[i], out counts[i]) && counts[i] is >= 1 and <= MaxDynamicFlakyRetryCount;
+                }
 
-            if (valid)
-            {
-                return ParsingResult<int[]>.Success(counts);
+                if (valid)
+                {
+                    return ParsingResult<int[]>.Success(counts);
+                }
             }
 
             // An empty value is the same as an unset one
