@@ -21,10 +21,24 @@ cases:
       - Decorate with the [InstrumentMethod] attribute (assembly/type/method + version range).
       - Implement OnMethodBegin and OnMethodEnd / OnAsyncMethodEnd handlers.
       - Tests under tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests with sample apps in tracer/test/test-applications/integrations.
-      - Mentions the instrumentation generator to scaffold boilerplate. Both the build.ps1 RunInstrumentationGenerator entry point and the documented CLI are valid. docs/development/for-ai/InstrumentationGenerator-CLI.md documents dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options], including inspect <assembly-path> --list-methods <type-full-name> --json for discovery before generation. The project exists and targets net11.0; these names and flags are not fabricated. Listing every invocation is not required.
+      - >-
+        Mentions the instrumentation generator to scaffold boilerplate. Three valid alternatives are
+        ./tracer/build.ps1 RunInstrumentationGenerator (GUI),
+        ./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method> (Nuke CLI wrapper),
+        and dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options] (direct CLI).
+        The wrapper is defined in tracer/build/_build/Build.Utilities.cs and documented in AGENTS.md;
+        it translates --assembly-path, --type-name, and --method-name into the direct CLI's generate <dll> --type <type> --method <method> arguments.
+        docs/development/for-ai/InstrumentationGenerator-CLI.md also documents inspect <assembly-path> --list-methods <type-full-name> --json for discovery.
+        Do not penalize choosing the wrapper instead of the direct CLI, or omitting alternative invocations and the optional discovery step.
+        Still assess whether the supplied arguments and instructions are correct and actionable; materially better scaffolding or test guidance can justify a preference.
+        The generator produces source-code scaffolding, not a finished integration. The GUI displays code to copy;
+        the CLI prints code by default or writes to an explicitly supplied --output-path (wrapper) / --output (direct CLI).
+        Handler behavior and test/sample wiring still need implementation. These details need not all be enumerated,
+        but claims about what the generator automates must respect these limits.
     bad_signals:
       - Puts the integration under profiler/src.
-      - Invents file paths or test projects that do not exist. The documented tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ project, its net11.0 target, and inspect/--list-methods/--json CLI options are valid and do not trigger this signal.
+      - Invents file paths, test projects, or generator commands. The generator entry points and flags listed above are verified exceptions to fabrication claims, not exemptions from checking command correctness. Using a real flag with the wrong entry point can still be an error.
+      - Claims the generator automatically chooses and populates the repository integration folder without copying code or specifying an output path, or creates a complete working integration including span behavior and tests. Merely saying it generates integration boilerplate is correct and does not trigger this signal.
       - Tells the user to edit generated (.g.) files by hand.
 
   - id: dotnet-tracer-test-selection-httpclient-002
@@ -67,7 +81,11 @@ cases:
       - Gives a whole-product disable message using "Datadog SDK", such as "The Datadog SDK has been disabled". A plain message or a logging call is equally acceptable.
       - Explains that bare "Profiler" is ambiguous and should not name the whole SDK in this message; mentioning it to explain why to avoid it is correct.
       - Distinguishes the whole product from individual components. "Instrumentation" names native auto-instrumentation, "Continuous Profiler" names the profiling product, and "Datadog.Trace.dll" names the managed assembly. Advising against these component names for this whole-product message is correct, not a terminology error; an exhaustive component glossary is not required.
-      - If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler". Omitting this optional aside is not a defect in an otherwise correct whole-product message and explanation.
+      - >-
+        If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler".
+        "Avoid Datadog.Trace.dll here because it names only the managed assembly" is correct for a whole-product message,
+        not a rejection of the assembly's preferred name. Omitting this optional aside is not a defect;
+        do not award a pairwise win merely for including it. Incorrect terminology or unresolved contradictions still count against an answer.
     bad_signals:
       - Uses the bare word "Profiler" as the SDK's name in the proposed message, rather than mentioning it as a term to avoid.
       - Endorses "managed profiler" as the managed tracer's name, rather than quoting it as a term to avoid.
