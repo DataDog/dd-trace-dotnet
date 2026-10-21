@@ -34,7 +34,7 @@ move to the **same** version in lockstep. Confirm with the user if they intend o
 ### 1. Linux/macOS — `build/cmake/FindLibdatadog.cmake`
 
 Update these values:
-- `LIBDATADOG_VERSION` — the version tag (e.g. `"v32.0.0"`)
+- `LIBDATADOG_VERSION` — the libdatadog-dotnet version tag (e.g. `"v1.3.5"`)
 - `SHA256_LIBDATADOG_ARM64` — macOS arm64 hash
 - `SHA256_LIBDATADOG_X86_64` — macOS x86_64 hash
 - `SHA256_LIBDATADOG` (aarch64 gnu) — Linux aarch64 glibc hash
