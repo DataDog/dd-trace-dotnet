@@ -119,7 +119,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         Expression dumpExpression;
-        if (IsSafeNonGenericDictionary(expression.Type))
+        if (IsSafeNonGenericDictionary(expression.Type) || IsSupportedGenericDictionary(expression.Type))
         {
             dumpExpression = DumpDictionaryExpression(expression, scopeMembers);
         }

@@ -3343,6 +3343,35 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberGenericIDictionaryField_RedactsSensitiveValues()
+        {
+            var holder = new DumpGenericIDictionaryFieldHolder(
+                new Dictionary<string, string> { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } });
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpGenericIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(
+                        string.Empty,
+                        @"{""getmember"":[{""ref"":""DumpHolderLocal""},""headers""]}",
+                        null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("[password, {redacted}]");
+            result.Template.Should().Contain("[public, hello]");
+            result.Template.Should().NotContain("TOP_SECRET_VALUE");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_SpanDecorationDump_RedactsSensitiveObjectFields()
         {
             const string passwordSecret = "DD_PASSWORD_SECRET";
@@ -4241,6 +4270,16 @@ namespace Datadog.Trace.Tests.Debugger
             public DumpCustomIDictionaryFieldHolder(IDictionary customMap)
             {
                 this.customMap = customMap;
+            }
+        }
+
+        private sealed class DumpGenericIDictionaryFieldHolder
+        {
+            private readonly IDictionary<string, string> headers;
+
+            public DumpGenericIDictionaryFieldHolder(IDictionary<string, string> headers)
+            {
+                this.headers = headers;
             }
         }
 
