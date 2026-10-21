@@ -15,20 +15,26 @@ internal static class ContainerMetadataHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadataHelper));
 
+    /// <summary>
+    /// Maximum length of the <c>DD_EXTERNAL_ENV</c> value that is forwarded in the <c>Datadog-External-Env</c> header.
+    /// Longer values are ignored, as they could cause the whole HTTP request to fail.
+    /// </summary>
+    internal const int MaxExternalEnvLength = 1024;
+
     public static void AddContainerMetadataHeaders(this IApiRequest request, ContainerMetadata containerMetadata)
     {
         // Set additional headers
-        if (containerMetadata.ContainerId != null)
+        if (containerMetadata.ContainerId is not null)
         {
             request.AddHeader(AgentHttpHeaderNames.ContainerId, containerMetadata.ContainerId);
         }
 
-        if (containerMetadata.EntityId != null)
+        if (containerMetadata.EntityId is not null)
         {
             request.AddHeader(AgentHttpHeaderNames.EntityId, containerMetadata.EntityId);
         }
 
-        if (containerMetadata.ExternalEnv != null)
+        if (containerMetadata.ExternalEnv is not null)
         {
             request.AddHeader(AgentHttpHeaderNames.ExternalEnv, containerMetadata.ExternalEnv);
         }
@@ -44,7 +50,8 @@ internal static class ContainerMetadataHelper
 
     /// <summary>
     /// The value is forwarded to the agent unparsed, but we only trim surrounding whitespace and reject values
-    /// that can't be sent in an HTTP header, as adding an invalid header value would cause the whole request to fail.
+    /// that can't be sent in an HTTP header (including values that are too long),
+    /// as adding an invalid header value would cause the whole request to fail.
     /// </summary>
     /// <param name="value">The raw value of the <c>DD_EXTERNAL_ENV</c> environment variable</param>
     /// <returns>The value to send in the header, or <c>null</c> if the header should not be sent.</returns>
@@ -58,6 +65,12 @@ internal static class ContainerMetadataHelper
         value = value.Trim();
         if (value.Length == 0)
         {
+            return null;
+        }
+
+        if (value.Length > MaxExternalEnvLength)
+        {
+            Log.Warning("Ignoring the value of {Key} because it is too long to be sent in an HTTP header", ConfigurationKeys.ExternalEnv);
             return null;
         }
 

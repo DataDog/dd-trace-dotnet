@@ -159,8 +159,9 @@ internal static partial class ConfigurationKeys
     /// <summary>
     /// Origin detection information injected into application containers by the Datadog Cluster Agent Admission Controller,
     /// e.g. <c>it-false,cn-nginx-webserver,pu-75a2b6d5-3949-4afb-ad0d-92ff0674e759</c>.
-    /// When set, the value is forwarded unparsed to the trace agent in the <c>Datadog-External-Env</c> header so that the
-    /// agent can resolve the origin container when the container id or cgroup inode are not available.
+    /// When set, the value is forwarded unparsed in the <c>Datadog-External-Env</c> header on requests to the agent
+    /// (traces, stats, remote configuration) and to the telemetry intake, so that the agent can resolve the origin
+    /// container when the container id or cgroup inode are not available. Empty or invalid values are ignored.
     /// This is not intended to be set manually.
     /// </summary>
     public const string ExternalEnv = "DD_EXTERNAL_ENV";

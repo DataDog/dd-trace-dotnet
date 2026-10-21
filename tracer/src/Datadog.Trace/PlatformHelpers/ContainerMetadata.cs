@@ -57,7 +57,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         // For use in tests only
         [TestingOnly]
-        public ContainerMetadata(string? containerId, string? entityId, string? externalEnv = null)
+        public ContainerMetadata(string? containerId, string? entityId, string? externalEnv)
         {
             _containerId = new Lazy<string?>(() => containerId);
             _entityId = new Lazy<string?>(() => entityId);
@@ -94,7 +94,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// Gets the origin detection information injected by the Datadog Cluster Agent Admission Controller
         /// in the <c>DD_EXTERNAL_ENV</c> environment variable,
         /// e.g. <c>it-false,cn-nginx-webserver,pu-75a2b6d5-3949-4afb-ad0d-92ff0674e759</c>.
-        /// Return <c>null</c> if the variable is not set or is empty.
+        /// Return <c>null</c> if the variable is not set, is empty, or its value cannot be sent in an HTTP header.
         /// </summary>
         /// <value>The external env or <c>null</c>.</value>
         public string? ExternalEnv

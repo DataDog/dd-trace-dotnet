@@ -35,6 +35,16 @@ public class ContainerMetadataHelperTests
         ContainerMetadataHelper.NormalizeExternalEnv(value).Should().Be(expected);
     }
 
+    [Fact]
+    public void NormalizeExternalEnv_RejectsValuesThatAreTooLong()
+    {
+        var maxLength = new string('a', ContainerMetadataHelper.MaxExternalEnvLength);
+        var tooLong = new string('a', ContainerMetadataHelper.MaxExternalEnvLength + 1);
+
+        ContainerMetadataHelper.NormalizeExternalEnv(maxLength).Should().Be(maxLength);
+        ContainerMetadataHelper.NormalizeExternalEnv(tooLong).Should().BeNull();
+    }
+
     [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
