@@ -94,7 +94,7 @@ public sealed class HandlerWrapperSetHandlerIntegration
                 // only the stream the customer handler reads is replaced.
                 try
                 {
-                    var stripped = StripInjectedContext.StripStream(jsonString);
+                    var stripped = StripInjectedContext.StripStream(jsonString, Tracer.Instance.Settings.AwsLambdaStripContextEnabled);
                     if (stripped != null)
                     {
                         proxyInstance.InputStream = stripped;

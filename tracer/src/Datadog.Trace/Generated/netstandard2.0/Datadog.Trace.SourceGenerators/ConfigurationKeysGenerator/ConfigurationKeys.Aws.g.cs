@@ -29,10 +29,10 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// When true, removes the _datadog trace-context carrier injected by Datadog
-        /// into Lambda event payloads (EventBridge detail, SQS body, SNS Message)
+        /// into AWS Lambda event payloads (EventBridge detail, SQS body, SNS Message)
         /// before the customer handler reads them.
         /// Default value is false.
         /// </summary>
-        public const string LambdaStripInjectedContext = "DD_LAMBDA_STRIP_INJECTED_CONTEXT";
+        public const string LambdaStripContextEnabled = "DD_TRACE_AWS_LAMBDA_STRIP_CONTEXT_ENABLED";
     }
 }
