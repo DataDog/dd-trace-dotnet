@@ -612,7 +612,6 @@ public class DataStreamsManagerTests
         var dsm = new DataStreamsManager(settings, new DataStreamsWriterMock(), discovery);
         try
         {
-            // A key type private to this test keeps other tests from filling its shared cache
             var key = new TestEdgeTagCacheKey(1);
             var cached = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.Value}", "type:kafka"]);
             var before = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, cached, payloadSizeBytes: 0, timeInQueueMs: 0);
@@ -653,18 +652,19 @@ public class DataStreamsManagerTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void GetOrCreateTags_BypassesCache_WhenAtConfiguredCapacityWithActiveEntries(bool backlog)
+    [InlineData(false, 1)]
+    [InlineData(false, 2)]
+    [InlineData(true, 1)]
+    [InlineData(true, 2)]
+    public void GetOrCreateTags_BypassesCache_WhenAtConfiguredCapacityWithActiveEntries(bool backlog, int capacity)
     {
-        var dsm = GetDataStreamManager(true, out _);
+        var dsm = GetDataStreamManager(true, out _, capacity);
         Func<int, object> getTags = backlog
                                        ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey(value), static k => $"tag:{k.Value}")
                                        : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey(value), static k => [$"tag:{k.Value}"]);
 
-        // OverflowTestKey has its own shared caches, isolated from the production key types.
         // Every entry stays active for the duration of the test, so none can be evicted.
-        var cached = new object[GlobalSettings.Instance.DataStreamsTagCacheSize];
+        var cached = new object[capacity];
         for (var i = 0; i < cached.Length; i++)
         {
             cached[i] = getTags(i);
@@ -676,6 +676,68 @@ public class DataStreamsManagerTests
 
         second.Should().NotBeSameAs(first);
         getTags(0).Should().BeSameAs(cached[0]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetOrCreateTags_ManagersUseIndependentCachesAndConfiguredCapacities(bool backlog)
+    {
+        var firstManager = GetDataStreamManager(true, out _, tagCacheSize: 1);
+        var secondManager = GetDataStreamManager(true, out _, tagCacheSize: 2);
+        try
+        {
+            var first = GetTags(firstManager, 0);
+            GetTags(firstManager, 0).Should().BeSameAs(first);
+            var uncached = GetTags(firstManager, 1);
+            GetTags(firstManager, 1).Should().NotBeSameAs(uncached);
+
+            var second = GetTags(secondManager, 0);
+            second.Should().NotBeSameAs(first);
+            GetTags(secondManager, 0).Should().BeSameAs(second);
+            var secondEntry = GetTags(secondManager, 1);
+            GetTags(secondManager, 1).Should().BeSameAs(secondEntry);
+            var overflow = GetTags(secondManager, 2);
+            GetTags(secondManager, 2).Should().NotBeSameAs(overflow);
+
+            GetTags(firstManager, 0).Should().BeSameAs(first);
+            GetTags(firstManager, 1).Should().NotBeSameAs(secondEntry);
+        }
+        finally
+        {
+            await firstManager.DisposeAsync();
+            await secondManager.DisposeAsync();
+        }
+
+        object GetTags(DataStreamsManager manager, int value)
+            => backlog
+                   ? manager.GetOrCreateBacklogTags(new OverflowTestKey(value), static k => $"tag:{k.Value}")
+                   : manager.GetOrCreateEdgeTags(new OverflowTestKey(value), static k => [$"tag:{k.Value}"]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetOrCreateTags_ConcurrentFirstAccessReturnsSameCachedValue(bool backlog)
+    {
+        var dsm = GetDataStreamManager(true, out _, tagCacheSize: 1);
+        try
+        {
+            var tasks = Enumerable.Range(0, 16)
+                                  .Select(_ => Task.Run<object>(() => backlog
+                                                                         ? dsm.GetOrCreateBacklogTags(new OverflowTestKey(0), static k => $"tag:{k.Value}")
+                                                                         : dsm.GetOrCreateEdgeTags(new OverflowTestKey(0), static k => [$"tag:{k.Value}"])));
+            var results = await Task.WhenAll(tasks);
+
+            foreach (var result in results)
+            {
+                result.Should().BeSameAs(results[0]);
+            }
+        }
+        finally
+        {
+            await dsm.DisposeAsync();
+        }
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -691,7 +753,7 @@ public class DataStreamsManagerTests
         return [new WeakReference(edgeTags), new WeakReference(edgeTags.Tags)];
     }
 
-    private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)
+    private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer, int tagCacheSize = TracerSettings.DefaultDataStreamsTagCacheSize)
     {
         writer = enabled ? new DataStreamsWriterMock() : null;
         var settings = TracerSettings.Create(
@@ -700,6 +762,7 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.Environment, "foo" },
                 { ConfigurationKeys.ServiceName, "bar" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
+                { ConfigurationKeys.DataStreamsMonitoring.TagCacheSize, tagCacheSize.ToString() },
                 // TODO: inject a deterministic value for process tags instead, to make test closer to reality
                 // there are already tests about process tags, so this one is not required to "prove" it works
                 // but it'd be cleaner not to have exclusions like this
@@ -708,10 +771,6 @@ public class DataStreamsManagerTests
         return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
     }
 
-    /// <summary>
-    /// Key type used exclusively by <see cref="GetOrCreateTags_BypassesCache_WhenAtConfiguredCapacityWithActiveEntries"/>,
-    /// so that it gets its own isolated shared cache.
-    /// </summary>
     private readonly struct OverflowTestKey : IEquatable<OverflowTestKey>
     {
         public readonly int Value;
@@ -725,10 +784,6 @@ public class DataStreamsManagerTests
         public override int GetHashCode() => Value;
     }
 
-    /// <summary>
-    /// Key type used exclusively by <see cref="SetCheckpoint_CachedEdgeTagsReflectConfigurationChanges"/>,
-    /// so that it gets its own isolated shared cache.
-    /// </summary>
     private readonly struct TestEdgeTagCacheKey : IEquatable<TestEdgeTagCacheKey>
     {
         public readonly int Value;

@@ -19,7 +19,7 @@ public class TagCacheTests
     public void FullCache_PreservesActiveEntries_WhenWorkingSetExceedsCapacity()
     {
         long now = 0;
-        var cache = new TagCache<int, object>(GlobalSettings.DefaultDataStreamsTagCacheSize, () => now);
+        var cache = new TagCache<int, object>(TracerSettings.DefaultDataStreamsTagCacheSize, () => now);
         var results = new object[1200];
         for (var i = 0; i < results.Length; i++)
         {
@@ -33,7 +33,7 @@ public class TagCacheTests
             for (var i = 0; i < results.Length; i++)
             {
                 var tags = GetTags(cache, i);
-                if (i < GlobalSettings.DefaultDataStreamsTagCacheSize)
+                if (i < TracerSettings.DefaultDataStreamsTagCacheSize)
                 {
                     tags.Should().BeSameAs(results[i]);
                 }
@@ -77,8 +77,8 @@ public class TagCacheTests
     public void ConcurrentInsertionsAndIdleEvictions_KeepCapacityAvailable()
     {
         long now = 0;
-        var cache = new TagCache<int, object>(GlobalSettings.DefaultDataStreamsTagCacheSize, () => Volatile.Read(ref now));
-        var results = new object[GlobalSettings.DefaultDataStreamsTagCacheSize];
+        var cache = new TagCache<int, object>(TracerSettings.DefaultDataStreamsTagCacheSize, () => Volatile.Read(ref now));
+        var results = new object[TracerSettings.DefaultDataStreamsTagCacheSize];
         Parallel.For(0, results.Length, i => results[i] = GetTags(cache, i));
         for (var i = 0; i < results.Length; i++)
         {

@@ -22,8 +22,6 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public sealed class GlobalSettings
     {
-        internal const int DefaultDataStreamsTagCacheSize = 1000;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="GlobalSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
@@ -53,11 +51,6 @@ namespace Datadog.Trace.Configuration
             DiagnosticSourceEnabled = builder
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
                                      .AsBool(true);
-
-            DataStreamsTagCacheSize = builder
-                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TagCacheSize)
-                                     .AsInt32(DefaultDataStreamsTagCacheSize, static size => size > 0)
-                                     .Value;
         }
 
         /// <summary>
@@ -80,12 +73,6 @@ namespace Datadog.Trace.Configuration
         /// or a configuration file, not through code.
         /// </summary>
         internal bool DiagnosticSourceEnabled { get; }
-
-        /// <summary>
-        /// Gets the maximum number of entries in each process-wide DSM edge-tag or backlog-tag cache.
-        /// Read once at startup; defaults to 1000.
-        /// </summary>
-        internal int DataStreamsTagCacheSize { get; }
 
         /// <summary>
         /// Set whether debug mode is enabled.

@@ -696,10 +696,10 @@ supportedConfigurations:
     product: DataStreamsMonitoring
     const_name: TagCacheSize
     documentation: |-
-      Maximum number of entries in each process-wide Data Streams Monitoring edge-tag or backlog-tag cache.
-      Read once at startup. Must be a positive integer; invalid values fall back to 1000.
-      This is a per-cache limit, not a combined limit across integrations. Restart the process to change it.
-      <see cref="Datadog.Trace.Configuration.GlobalSettings.DataStreamsTagCacheSize"/>
+      Maximum number of entries in each Data Streams Monitoring edge-tag or backlog-tag cache owned by a manager.
+      Read when creating tracer settings. Must be a positive integer; invalid values fall back to 1000.
+      This is a per-cache limit, not a combined limit across integrations. Fixed for the lifetime of the manager.
+      <see cref="Datadog.Trace.Configuration.TracerSettings.DataStreamsTagCacheSize"/>
   DD_DATA_STREAMS_TRANSACTION_EXTRACTORS:
   - implementation: A
     scope: managed

@@ -284,6 +284,9 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 ## Configuration
 
+- Keep product-specific configuration and defaults alongside related settings in `TracerSettings` or the product's settings class. Reserve `GlobalSettings` for settings that apply across the SDK.
+- Pass configuration to the component that owns the configured state. Do not choose a settings class just to accommodate a static cache; check behavior with custom configuration sources and multiple manager instances.
+
 - **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, product categorization, key aliases, deprecations, and default values for all `DD_*` and `OTEL_*` environment variables (also consumed by source generators).
 
 - **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: YAML definitions, source generators, aliases, telemetry normalization, and related analyzers

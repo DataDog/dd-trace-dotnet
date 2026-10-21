@@ -30,6 +30,8 @@ internal sealed class DataStreamsManager
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
+    private readonly ConcurrentDictionary<Type, object> _tagCaches = new();
+    private readonly int _tagCacheSize;
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDiscoveryService _discoveryService;
     private readonly DataStreamsExtractorRegistry _registry;
@@ -48,6 +50,7 @@ internal sealed class DataStreamsManager
         IDataStreamsWriter? writer,
         IDiscoveryService discoveryService)
     {
+        _tagCacheSize = tracerSettings.DataStreamsTagCacheSize;
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
@@ -364,7 +367,7 @@ internal sealed class DataStreamsManager
     /// Returns cached edge tags for the given key, creating and caching them on first use.
     /// On cache hits, zero heap allocations occur, and the node hash memoized on the returned
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
-    /// Once the cache reaches the capacity configured by <see cref="GlobalSettings.DataStreamsTagCacheSize"/>, new keys replace
+    /// Once the cache reaches the capacity configured by <see cref="TracerSettings.DataStreamsTagCacheSize"/>, new keys replace
     /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
@@ -373,12 +376,12 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the edge-tag array from the key on cache miss.</param>
     public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
         where TKey : IEquatable<TKey>
-        => SharedTagCache<TKey, EdgeTags>.Cache.GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)));
+        => GetTagCache<TKey, EdgeTags>().GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)));
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
     /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
-    /// Once the cache reaches the capacity configured by <see cref="GlobalSettings.DataStreamsTagCacheSize"/>, new keys replace
+    /// Once the cache reaches the capacity configured by <see cref="TracerSettings.DataStreamsTagCacheSize"/>, new keys replace
     /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the eviction lock.
     /// </summary>
@@ -387,7 +390,7 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
         where TKey : IEquatable<TKey>
-        => SharedTagCache<TKey, string>.Cache.GetOrCreate(key, factory, static (k, f) => f(k));
+        => GetTagCache<TKey, string>().GetOrCreate(key, factory, static (k, f) => f(k));
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions
@@ -410,9 +413,17 @@ internal sealed class DataStreamsManager
         return false;
     }
 
-    private static class SharedTagCache<TKey, TValue>
+    private TagCache<TKey, TValue> GetTagCache<TKey, TValue>()
         where TKey : IEquatable<TKey>
     {
-        internal static readonly TagCache<TKey, TValue> Cache = new(GlobalSettings.Instance.DataStreamsTagCacheSize);
+        var cacheType = typeof(TagCache<TKey, TValue>);
+        if (_tagCaches.TryGetValue(cacheType, out var cache))
+        {
+            return (TagCache<TKey, TValue>)cache;
+        }
+
+        // Only the first access for a key/value type creates a cache. Concurrent creators
+        // publish a single instance, and subsequent lookups allocate nothing.
+        return (TagCache<TKey, TValue>)_tagCaches.GetOrAdd(cacheType, new TagCache<TKey, TValue>(_tagCacheSize));
     }
 }
