@@ -57,6 +57,7 @@ public class MetricTests
         { "known_tests.response_bytes", ["rs_compressed"] },
         { "test_management_tests.response_bytes", ["rs_compressed"] },
         { "impacted_tests_detection.response_bytes", ["rs_compressed"] },
+        { "dynamic_atr_retries.enabled", ["has_custom_buckets"] },
         { "rasp.rule.eval", ["rule_variant"] },
         { "rasp.rule.match", ["rule_variant"] },
         { "rasp.rule.skipped", ["rule_variant"] },
