@@ -71,11 +71,12 @@ set(CMAKE_CXX_FLAGS_INIT "-nostdinc++ -cxx-isystem ${devtoolset10_dir}/include/1
 #   headers (mscoree.lib), which doesn't exist on Linux; disable it.
 # -Wno-unused-command-line-argument: on link flags only — CMake passes -nostdinc++ to
 #   the linker too, which triggers a spurious warning.
-set(glibc217_link_flags "-fuse-ld=lld-16 -Wno-unused-command-line-argument -Wl,--no-dependent-libraries -static-libgcc -static-libstdc++ -B${devtoolset10_dir}/lib -L${devtoolset10_dir}/lib -B${glibc217_sysroot}/usr/lib64 -B${glibc217_sysroot}/lib64 -L${glibc217_sysroot}/usr/lib64 -L${glibc217_sysroot}/lib64 -Wl,-rpath-link=${glibc217_sysroot}/lib64:${glibc217_sysroot}/usr/lib64")
+set(glibc217_link_flags "-fuse-ld=lld -Wno-unused-command-line-argument -Wl,--no-dependent-libraries -static-libgcc -static-libstdc++ -B${devtoolset10_dir}/lib -L${devtoolset10_dir}/lib -B${glibc217_sysroot}/usr/lib64 -B${glibc217_sysroot}/lib64 -L${glibc217_sysroot}/usr/lib64 -L${glibc217_sysroot}/lib64 -Wl,-rpath-link=${glibc217_sysroot}/lib64:${glibc217_sysroot}/usr/lib64")
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${glibc217_link_flags}")
 set(CMAKE_SHARED_LINKER_FLAGS_INIT "${glibc217_link_flags}")
 
-# lld-16 is versioned (no bare `lld` symlink in ubuntu.dockerfile), matching Glibc217.cmake.x86_64.
+# -fuse-ld=lld resolves /usr/bin/ld.lld, which ubuntu.dockerfile symlinks to ld.lld-21.
+# Clang 21 rejects a versioned name such as -fuse-ld=lld-16.
 
 # To debug linker resolution, add -Wl,-verbose or run ValidateNative*GlibcCompatibility.
