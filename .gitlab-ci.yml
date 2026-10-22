@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: e89a1812d49b23050e2cd429e93a49d1d9fdbdf2   # PR #49: collapsed report preview (immutable SHA)
+    ref: 94f5ea7f69b4f4204242da1d76367270fd9c1296   # PR #50: token retries and diagnostics (immutable SHA)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -48,7 +48,7 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "e89a1812d49b23050e2cd429e93a49d1d9fdbdf2"   # PR #49 (must match include ref above)
+    LLMVAL_PLATFORM_REF: "94f5ea7f69b4f4204242da1d76367270fd9c1296"   # PR #50 (must match include ref above)
 
 build-windows-ci-image:
   stage: build
