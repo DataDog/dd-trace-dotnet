@@ -372,10 +372,10 @@ internal sealed class DataStreamsManager
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
-    /// <param name="factory">A static factory that builds the edge-tag array from the key on cache miss.</param>
-    public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
+    /// <param name="factory">A static factory that builds the edge tags from the key on cache miss.</param>
+    public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, EdgeTags> factory)
         where TKey : IEquatable<TKey>
-        => SharedTagCache<TKey, EdgeTags>.GetCache(_tagCacheSize).GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)));
+        => SharedTagCache<TKey, EdgeTags>.GetCache(_tagCacheSize).GetOrCreate(key, factory);
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
@@ -389,7 +389,7 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
         where TKey : IEquatable<TKey>
-        => SharedTagCache<TKey, string>.GetCache(_tagCacheSize).GetOrCreate(key, factory, static (k, f) => f(k));
+        => SharedTagCache<TKey, string>.GetCache(_tagCacheSize).GetOrCreate(key, factory);
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions

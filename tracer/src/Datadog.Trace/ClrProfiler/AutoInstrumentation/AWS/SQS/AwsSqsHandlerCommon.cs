@@ -68,7 +68,7 @@ internal sealed class AwsSqsHandlerCommon
         {
             var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
                 new SqsEdgeTagCacheKey(queueName, IsConsume: false),
-                static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
+                static k => new EdgeTags(["direction:out", $"topic:{k.QueueName}", "type:sqs"]));
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
         }
 
@@ -87,7 +87,7 @@ internal sealed class AwsSqsHandlerCommon
         var edgeTags = dataStreamsManager is { IsEnabled: true }
                            ? dataStreamsManager.GetOrCreateEdgeTags(
                                new SqsEdgeTagCacheKey(queueName, IsConsume: false),
-                               static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"])
+                               static k => new EdgeTags(["direction:out", $"topic:{k.QueueName}", "type:sqs"]))
                            : EdgeTags.Empty;
         foreach (var e in requestProxy.Entries)
         {
@@ -156,7 +156,7 @@ internal sealed class AwsSqsHandlerCommon
             {
                 var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
                     new SqsEdgeTagCacheKey((string)state.State, IsConsume: true),
-                    static k => ["direction:in", $"topic:{k.QueueName}", "type:sqs"]);
+                    static k => new EdgeTags(["direction:in", $"topic:{k.QueueName}", "type:sqs"]));
                 foreach (var o in response.Messages)
                 {
                     var message = o.DuckCast<IMessage>();

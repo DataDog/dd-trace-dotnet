@@ -298,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         groupId ?? string.Empty,
                         topic ?? string.Empty,
                         consumerClusterId ?? string.Empty);
-                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId));
+                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => new EdgeTags(BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId)));
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
@@ -441,7 +441,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     else
                     {
                         var cacheKey = new ProduceEdgeTagCacheKey(producerClusterId ?? string.Empty, topic ?? string.Empty);
-                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildProduceEdgeTags(k.ClusterId, k.Topic));
+                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => new EdgeTags(BuildProduceEdgeTags(k.ClusterId, k.Topic)));
                     }
 
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);

@@ -144,11 +144,11 @@ public class TagCacheTests
         var existing = GetTags(cache, 0);
         now = TagCache<int, object>.IdleTimeoutSeconds;
 
-        Action create = () => cache.GetOrCreate(1, false, static (_, _) => throw new InvalidOperationException());
+        Action create = () => cache.GetOrCreate(1, static _ => throw new InvalidOperationException());
         create.Should().Throw<InvalidOperationException>();
         GetTags(cache, 0).Should().BeSameAs(existing);
     }
 
     private static object GetTags(TagCache<int, object> cache, int key)
-        => cache.GetOrCreate(key, false, static (k, _) => new EdgeTags([$"tag:{k}"]));
+        => cache.GetOrCreate(key, static k => new EdgeTags([$"tag:{k}"]));
 }

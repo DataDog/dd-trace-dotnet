@@ -41,7 +41,7 @@ internal sealed class TagCache<TKey, TValue>
         _getTimestampSeconds = getTimestampSeconds;
     }
 
-    internal TValue GetOrCreate<TState>(TKey key, TState state, Func<TKey, TState, TValue> factory)
+    internal TValue GetOrCreate(TKey key, Func<TKey, TValue> factory)
     {
         var now = GetTimestampSeconds();
         if (_cache.TryGetValue(key, out var existing))
@@ -50,7 +50,7 @@ internal sealed class TagCache<TKey, TValue>
             return existing.Value;
         }
 
-        var value = factory(key, state);
+        var value = factory(key);
         // A full, active cache bypasses both the eviction lock and the scan on misses.
         if (Volatile.Read(ref _count) >= _capacity && now < Volatile.Read(ref _nextEvictionCheck))
         {
