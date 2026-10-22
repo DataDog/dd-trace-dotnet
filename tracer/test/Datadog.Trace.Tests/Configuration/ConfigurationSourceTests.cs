@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -250,24 +251,17 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", false)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc", true)]
         [InlineData(ConfigurationKeys.ServiceName, "", true)]
+        [EnvironmentRestorer(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, ConfigurationKeys.ServiceName)]
         public void EnvironmentConfigurationSource_EmptyOtelValueIsUnset(string key, string value, bool expectedFound)
         {
-            var original = Environment.GetEnvironmentVariable(key);
-            try
-            {
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                // Windows and .NET 8 or earlier remove a variable set to an empty value
-                Skip.If(value.Length == 0 && Environment.GetEnvironmentVariable(key) is null, "This runtime removes environment variables set to an empty value.");
-                IConfigurationSource source = new EnvironmentConfigurationSource();
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+            // Windows and .NET 8 or earlier remove a variable set to an empty value
+            Skip.If(value.Length == 0 && Environment.GetEnvironmentVariable(key) is null, "This runtime removes environment variables set to an empty value.");
+            IConfigurationSource source = new EnvironmentConfigurationSource();
 
-                var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
+            var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
 
-                result.IsPresent.Should().Be(expectedFound);
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable(key, original, EnvironmentVariableTarget.Process);
-            }
+            result.IsPresent.Should().Be(expectedFound);
         }
 
         // Special case for dictionary-typed settings in JSON
