@@ -1739,6 +1739,16 @@
       "description": "The number of tests detected as modified",
       "send_to_user": false,
       "user_tags": []
+    },
+    "dynamic_atr_retries.enabled": {
+      "tags": [
+        "has_custom_buckets"
+      ],
+      "metric_type": "count",
+      "data_type": "sessions",
+      "description": "The number of sessions that pick the automatic test retries count from the duration of each test. Tagged with has_custom_buckets:true when DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS sets the counts",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "profilers": {

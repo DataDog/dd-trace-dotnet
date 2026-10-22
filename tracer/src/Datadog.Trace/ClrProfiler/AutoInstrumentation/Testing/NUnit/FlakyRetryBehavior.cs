@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Threading;
 using Datadog.Trace.Ci;
 
@@ -13,9 +14,9 @@ internal readonly struct FlakyRetryBehavior : IRetryBehavior
 {
     private static int _totalRetries = -1;
 
-    public FlakyRetryBehavior(ITestOptimization testOptimization)
+    public FlakyRetryBehavior(ITestOptimization testOptimization, TimeSpan duration)
     {
-        RemainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
+        RemainingRetries = testOptimization.FlakyRetryFeature?.GetFlakyRetryCount(duration) ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
         Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
     }
 
