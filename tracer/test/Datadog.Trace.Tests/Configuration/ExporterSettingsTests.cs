@@ -389,6 +389,40 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("http/json", null)]
+        [InlineData(null, "http/json")]
+        [InlineData("HTTP/JSON", "grpc")]
+        public void OtlpLogsProtocol_HttpJson_FallsBackToHttpProtobufWithWarning(string logsProtocol, string generalProtocol)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, logsProtocol },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol },
+            });
+
+            var settings = new ExporterSettings(source, NoFile(), NullConfigurationTelemetry.Instance);
+
+            settings.OtlpLogsProtocol.Should().Be(OtlpProtocol.HttpProtobuf);
+            settings.OtlpLogsEndpoint.ToString().Should().Be("http://localhost:4318/v1/logs");
+            settings.ValidationWarnings.Should().ContainMatch("OTLP protocol 'http/json' is not supported for logs*");
+        }
+
+        [Fact]
+        public void OtlpLogsProtocol_GrpcOverridesGeneralHttpJsonWithoutWarning()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc" },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, "http/json" },
+            });
+
+            var settings = new ExporterSettings(source, NoFile(), NullConfigurationTelemetry.Instance);
+
+            settings.OtlpLogsProtocol.Should().Be(OtlpProtocol.Grpc);
+            settings.ValidationWarnings.Should().NotContainMatch("*not supported for logs*");
+        }
+
+        [Theory]
         [InlineData("http", null)]
         [InlineData(null, "http")]
         public void OtlpLogsProtocol_Unsupported_FallsBackToGrpcWithWarning(string logsProtocol, string generalProtocol)

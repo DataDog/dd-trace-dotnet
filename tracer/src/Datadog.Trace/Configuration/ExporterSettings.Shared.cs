@@ -143,9 +143,9 @@ namespace Datadog.Trace.Configuration
             => GetOtlpTransport("metrics", ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
 
         private OtlpTransportSettings GetOtlpLogsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("logs", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.Grpc, agentHost);
+            => GetOtlpTransport("logs", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.Grpc, agentHost, supportsHttpJson: false); // the logs exporter only serializes protobuf
 
-        private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost)
+        private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost, bool supportsHttpJson = true)
         {
             var configuredProtocol = signalProtocol ?? generalProtocol;
             var protocol = configuredProtocol switch
@@ -154,8 +154,15 @@ namespace Datadog.Trace.Configuration
                 _ when string.Equals(configuredProtocol, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
                 _ when string.Equals(configuredProtocol, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
                 _ when string.Equals(configuredProtocol, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
-                _ => UnsupportedOtlpProtocol(signal, configuredProtocol, defaultProtocol),
+                _ => UnsupportedOtlpProtocol(signal, configuredProtocol, defaultProtocol, supportsHttpJson),
             };
+
+            if (protocol == OtlpProtocol.HttpJson && !supportsHttpJson)
+            {
+                // http/protobuf targets the same endpoint as http/json
+                ValidationWarnings.Add($"OTLP protocol 'http/json' is not supported for {signal}. Using http/protobuf instead.");
+                protocol = OtlpProtocol.HttpProtobuf;
+            }
 
             if (!string.IsNullOrEmpty(signalEndpoint))
             {
@@ -193,9 +200,10 @@ namespace Datadog.Trace.Configuration
             return GetOtlpUri(signal, endpointKey, CreateDefaultOtlpUri(protocol, signal, agentHost), ConfigurationOrigins.Default, protocol, agentHost);
         }
 
-        private OtlpProtocol UnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol)
+        private OtlpProtocol UnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol, bool supportsHttpJson)
         {
-            ValidationWarnings.Add($"Unsupported OTLP protocol '{configuredProtocol}' for {signal}. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: {defaultProtocol.ToString()}");
+            var supportedValues = supportsHttpJson ? "'grpc', 'http/protobuf' and 'http/json'" : "'grpc' and 'http/protobuf'";
+            ValidationWarnings.Add($"Unsupported OTLP protocol '{configuredProtocol}' for {signal}. Supported values are {supportedValues}. Using default: {defaultProtocol.ToString()}");
             return defaultProtocol;
         }
 
