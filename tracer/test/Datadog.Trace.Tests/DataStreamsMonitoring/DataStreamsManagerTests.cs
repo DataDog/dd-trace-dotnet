@@ -742,7 +742,10 @@ public class DataStreamsManagerTests
     private static WeakReference[] SetCheckpointWithUncachedEdgeTags(DataStreamsManager dsm, DataStreamsWriterMock writer)
     {
         var edgeTags = new EdgeTags(["direction:in", "group:group1", "topic:topic1", "type:kafka"]);
-        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+        
+        context.Should().NotBeNull();
+        writer.Points.Should().ContainSingle();
         // The writer legitimately owns the array until its pending stats have been processed.
         while (writer.Points.TryDequeue(out _))
         {
