@@ -108,6 +108,59 @@ public class QueryStringObfuscatorTests
         result.Should().Be(expected);
     }
 
+    [SkippableTheory]
+    [InlineData("eyJabc.eyJdef", "<redacted>")]
+    [InlineData("?jwt=eyJabc.eyJdef&x=1", "?jwt=<redacted>&x=1")]
+    [InlineData("?q=eyJabc%3D.eyJdef=&x=1", "?q=<redacted>&x=1")]
+    [InlineData("?q=%22eyJabc.eyJdef%22", "?q=%22<redacted>%22")]
+    [InlineData("?q=\"eyJabc.eyJdef\"", "?q=\"<redacted>\"")]
+    [InlineData("?q=abceyJabc.eyJdef", "?q=abceyJabc.eyJdef")]
+    [InlineData("?q=-eyJabc.eyJdef", "?q=-eyJabc.eyJdef")]
+    [InlineData("?q=keyLength&other=monkeyIsland&keyid=x", "?q=keyLength&other=monkeyIsland&keyid=x")]
+    [InlineData("?q=heyJude.eyJoe", "?q=heyJude.eyJoe")]
+    [InlineData("?q=%3DeyJabc.eyJdef", "?q=%3D<redacted>")]
+    [InlineData("?q=_eyJabc.eyJdef", "?q=_eyJabc.eyJdef")]
+    [InlineData("?x=%eyJabc.eyJdef", "?x=%<redacted>")]
+    [InlineData("?q=\"password\":\"abc\"eyJabc.eyJdef&x=1", "?q=<redacted><redacted>&x=1")]
+    [InlineData("?password=abc&eyJabc.eyJdef&x=1", "?<redacted>&<redacted>&x=1")]
+    [InlineData("?q=eyJabc.eyJdef=eyJghi.eyJjkl=eyJmno.eyJpqr&x=1", "?q=<redacted><redacted><redacted>&x=1")]
+    [InlineData("?q=eyJabc.eyJdef%3DeyJghi.eyJjkl%3DeyJmno.eyJpqr&x=1", "?q=<redacted><redacted><redacted>&x=1")]
+    [InlineData("?t=eyJabc%3D.eyJdef%3D%3DeyJa.eyJb", "?t=<redacted><redacted>")]
+    public void DefaultPatternPreservesJwtDelimiter(string queryString, string expected)
+    {
+#if NETCOREAPP2_1
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
+        var obfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, new Mock<IDatadogLogger>().Object);
+
+        obfuscator.Obfuscate(queryString).Should().Be(expected);
+    }
+
+    [Fact]
+    public void CustomPatternNeverReEmitsCapturedSecret()
+    {
+        var obfuscator = ObfuscatorFactory.GetObfuscator(Timeout, "(secret)=abc", new Mock<IDatadogLogger>().Object);
+
+        obfuscator.Obfuscate("?secret=abc").Should().Be("?<redacted>");
+    }
+
+    [Fact]
+    public void InvalidPatternOmitsQueryString()
+    {
+        var obfuscator = ObfuscatorFactory.GetObfuscator(Timeout, "(", new Mock<IDatadogLogger>().Object);
+
+        obfuscator.Obfuscate("?password=secret").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RegexTimeoutOmitsQueryString()
+    {
+        // The backreference prevents regex optimizations from eliminating the backtracking, as .NET 5 does for (a+)+$.
+        var obfuscator = ObfuscatorFactory.GetObfuscator(1, @"^(a+)+\1$", new Mock<IDatadogLogger>().Object);
+
+        obfuscator.Obfuscate(new string('a', 256) + "!").Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

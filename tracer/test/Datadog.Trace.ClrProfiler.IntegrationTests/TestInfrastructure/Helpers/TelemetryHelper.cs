@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
+            var allData = mockAgent.Telemetry.ToArray().Cast<TelemetryData>().ToArray();
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             await mockAgent.WaitForLatestTelemetryAsync(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
+            var allData = mockAgent.Telemetry.ToArray().Cast<TelemetryData>().ToArray();
             AssertConfiguration(allData, key, value);
         }
 

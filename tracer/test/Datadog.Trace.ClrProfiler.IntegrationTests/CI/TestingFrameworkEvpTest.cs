@@ -601,7 +601,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
             using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                           agent,
-                                          arguments: GetTestRunnerArguments(packageVersion, testScenario.UseDotnetExec),
+                                          arguments: testScenario.Arguments ?? GetTestRunnerArguments(packageVersion, testScenario.UseDotnetExec),
                                           packageVersion: packageVersion,
                                           expectedExitCode: testScenario.ExpectedExitCode,
                                           useDotnetExec: testScenario.UseDotnetExec);
@@ -727,7 +727,12 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly bool UseDotnetExec;
         public readonly ExecutionData.ValidateDelegate ValidateAction;
 
-        public TestScenario(string? typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction, bool useDotnetExec = true)
+        /// <summary>
+        /// Optional test runner arguments for this scenario. When null, GetTestRunnerArguments provides them.
+        /// </summary>
+        public readonly string? Arguments;
+
+        public TestScenario(string? typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction, bool useDotnetExec = true, string? arguments = null)
         {
             TypeName = typeName;
             FriendlyName = friendlyName;
@@ -737,6 +742,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             UseSnapshot = useSnapshot;
             UseDotnetExec = useDotnetExec;
             ValidateAction = validateAction;
+            Arguments = arguments;
         }
     }
 
