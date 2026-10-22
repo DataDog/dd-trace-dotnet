@@ -3891,10 +3891,10 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_METRICS_PROTOCOL:
-  - implementation: C
+  - implementation: B
     scope: managed
     type: string
-    default: grpc
+    default: http/protobuf
     product: OpenTelemetry
     aliases:
     - OTEL_EXPORTER_OTLP_PROTOCOL
