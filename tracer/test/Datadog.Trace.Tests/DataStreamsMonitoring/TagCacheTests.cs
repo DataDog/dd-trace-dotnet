@@ -40,6 +40,7 @@ public class TagCacheTests
                 else
                 {
                     tags.Should().NotBeSameAs(results[i]);
+                    GetTags(cache, i).Should().NotBeSameAs(tags);
                 }
             }
         }
