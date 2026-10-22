@@ -1,7 +1,5 @@
 FROM ubuntu:22.04 AS base
 
-ARG DOTNETSDK_VERSION
-
 ENV \
     # Unset ASPNETCORE_URLS from aspnet base image
     ASPNETCORE_URLS= \
@@ -120,6 +118,8 @@ RUN set -eux; \
         tar -xzf glibc217-sysroot.tar.gz -C /sysroot/${ARCH}-glibc217; \
         rm glibc217-sysroot.tar.gz; \
     fi
+
+ARG DOTNETSDK_VERSION
 
 # Install the .NET SDK
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
