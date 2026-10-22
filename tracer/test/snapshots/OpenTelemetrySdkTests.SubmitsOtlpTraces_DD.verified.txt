@@ -150,7 +150,8 @@
                     "stringValue": "404"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -244,7 +245,8 @@
               "status": {
                 "message": "Something went wrong",
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -325,7 +327,8 @@
               ],
               "status": {
                 "code": 1
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -457,7 +460,8 @@
               "status": {
                 "message": "Example argument exception",
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -496,6 +500,24 @@
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "doubleValue": 2.0
                   }
                 },
                 {
@@ -540,7 +562,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -574,6 +597,18 @@
                   "key": "span.type",
                   "value": {
                     "stringValue": "web"
+                  }
+                },
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
                   }
                 },
                 {
@@ -624,7 +659,8 @@
                     "stringValue": "GET"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -708,7 +744,8 @@
                     "stringValue": "GET"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -792,7 +829,8 @@
                     "stringValue": "Redis"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -882,7 +920,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -972,7 +1011,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1062,7 +1102,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1152,7 +1193,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1242,7 +1284,8 @@
                     "stringValue": "S3"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1326,7 +1369,8 @@
                     "stringValue": "aws-api"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1410,7 +1454,8 @@
                     "stringValue": "GRPC"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1494,7 +1539,8 @@
                     "stringValue": "GRPC"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1584,7 +1630,8 @@
                     "stringValue": "My-Function"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1668,7 +1715,8 @@
                     "stringValue": "Datasource"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1752,7 +1800,8 @@
                     "stringValue": "query"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1836,7 +1885,8 @@
                     "stringValue": "Amqp"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1914,7 +1964,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1998,7 +2049,8 @@
                     "stringValue": "Amqp"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2076,7 +2128,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2154,7 +2207,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2232,7 +2286,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2310,7 +2365,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2406,7 +2462,8 @@
                     "doubleValue": 1.0
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2490,7 +2547,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2529,6 +2587,24 @@
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "doubleValue": 2.0
                   }
                 },
                 {
@@ -2877,7 +2953,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -2919,6 +2996,36 @@
                   }
                 },
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "doubleValue": 2.0
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -2967,7 +3074,8 @@
                   "spanId": "normalized-span-id",
                   "flags": 2147483649
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3009,6 +3117,36 @@
                   }
                 },
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "doubleValue": 2.0
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -3062,7 +3200,8 @@
                   "spanId": "normalized-span-id",
                   "flags": 2147483649
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3104,6 +3243,36 @@
                   }
                 },
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "doubleValue": 2.0
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -3133,7 +3302,8 @@
                     "stringValue": "Samples.OpenTelemetrySdk"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3217,7 +3387,8 @@
                     "stringValue": "404"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3251,6 +3422,18 @@
                   "key": "span.type",
                   "value": {
                     "stringValue": "custom"
+                  }
+                },
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
                   }
                 },
                 {
@@ -3295,7 +3478,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3373,7 +3557,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3451,7 +3636,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3529,7 +3715,8 @@
                     "stringValue": "Guid_2"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -3571,6 +3758,36 @@
                   }
                 },
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "doubleValue": 2.0
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -3594,7 +3811,8 @@
                     "stringValue": "STATUS_CODE_UNSET"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }
