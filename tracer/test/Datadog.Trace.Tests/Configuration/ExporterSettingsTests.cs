@@ -440,6 +440,41 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "  ")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, "")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, "  ")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "  ")]
+        public void OtlpSignalProtocol_Empty_InheritsGeneralProtocol(string signalProtocolKey, string signalProtocol)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { signalProtocolKey, signalProtocol },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, "grpc" },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, "http://collector:4317" },
+            });
+
+            var settings = new ExporterSettings(source, NoFile(), NullConfigurationTelemetry.Instance);
+
+            switch (signalProtocolKey)
+            {
+                case ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol:
+                    settings.OtlpTracesProtocol.Should().Be(OtlpProtocol.Grpc);
+                    settings.OtlpTracesEndpoint.ToString().Should().Be("http://collector:4317/");
+                    break;
+                case ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol:
+                    settings.OtlpMetricsProtocol.Should().Be(OtlpProtocol.Grpc);
+                    settings.OtlpMetricsEndpoint.ToString().Should().Be("http://collector:4317/");
+                    break;
+                default:
+                    settings.OtlpLogsProtocol.Should().Be(OtlpProtocol.Grpc);
+                    settings.OtlpLogsEndpoint.ToString().Should().Be("http://collector:4317/");
+                    break;
+            }
+        }
+
+        [Theory]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, null, null, "http://localhost:4318/v1/traces")]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/traces")]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4333/mycollector", "http://traces:4444/custom/path", "http://traces:4444/custom/path")]
