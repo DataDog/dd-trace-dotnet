@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     // We remove the evp_proxy endpoint to force the APM protocol compatibility
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: GetSharedSampleArguments(packageVersion), packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         spans = (await agent.WaitForSpansAsync(ExpectedSpanCount))
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
@@ -84,6 +84,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // Check the span count
                         spans.Should().HaveCount(ExpectedSpanCount);
+
+                        // NUnit 3 reports AssemblyVersion (3.14.0.0); later versions report the package version.
+                        spans.Where(s => s.Tags.ContainsKey(TestTags.FrameworkVersion))
+                             .Should()
+                             .OnlyContain(s => s.Tags[TestTags.FrameworkVersion].StartsWith(packageVersion, StringComparison.Ordinal));
 
                         foreach (var targetSpan in spans.ToArray())
                         {
@@ -297,6 +302,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 throw;
             }
         }
+
+        // NUnit 5 builds of this sample also contain the fixtures exercised by NUnit5Tests.
+        internal static string GetSharedSampleArguments(string packageVersion)
+            => packageVersion.StartsWith("5.", StringComparison.Ordinal) ? "/TestCaseFilter:FullyQualifiedName!~Samples.NUnit5Tests" : null;
 
         protected override void CheckSimpleTestSpan(MockSpan targetSpan)
         {

@@ -85,10 +85,10 @@ cases:
       - Gives a whole-product disable message using "Datadog SDK", such as "The Datadog SDK has been disabled". A plain message or a logging call is equally acceptable.
       - Explains that bare "Profiler" is ambiguous and should not name the whole SDK in this message; mentioning it to explain why to avoid it is correct.
       - Distinguishes the whole product from individual components. "Instrumentation" names native auto-instrumentation, "Continuous Profiler" names the profiling product, and "Datadog.Trace.dll" names the managed assembly. Advising against these component names for this whole-product message is correct, not a terminology error; an exhaustive component glossary is not required.
-      - If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler". Omitting this optional aside is not a defect in an otherwise correct whole-product message and explanation.
+      - If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler". Omitting this optional aside is not a defect in an otherwise correct whole-product message and explanation. Listing "managed profiler" and "Datadog.Trace.dll" together as terms to avoid for the whole-product message is acceptable; do not infer that this rejects Datadog.Trace.dll as the preferred assembly name. Penalize this naming distinction only when the answer explicitly recommends "managed profiler" as the assembly's name or explicitly claims Datadog.Trace.dll is an incorrect assembly name.
     bad_signals:
       - Uses the bare word "Profiler" as the SDK's name in the proposed message, rather than mentioning it as a term to avoid.
-      - Endorses "managed profiler" as the managed tracer's name, rather than quoting it as a term to avoid.
+      - Explicitly endorses "managed profiler" as the managed tracer's name or claims Datadog.Trace.dll is an incorrect assembly name. Listing either or both as terms to avoid for the whole-product message is not this bad signal.
       - Uses an individual component name instead of "Datadog SDK" for disabling the entire product.
 
   - id: dotnet-tracer-logging-noalloc-005

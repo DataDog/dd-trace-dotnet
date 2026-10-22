@@ -470,12 +470,12 @@ benchmark-serverless:
   needs:
     - benchmark-serverless-trigger
   script:
-    - curl -OL "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
+    - curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused -O "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
     - mv "authanywhere-linux-amd64" /bin/authanywhere 
     - chmod +x /bin/authanywhere
     - BTI_CI_API_TOKEN=$(authanywhere --audience rapid-devex-ci)
     - >-
-      BTI_RESPONSE=$(curl --silent --request GET \
+      BTI_RESPONSE=$(curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-connrefused --request GET \
         --header "$BTI_CI_API_TOKEN" \  --header "Content-Type: application/vnd.api+json" \
         "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=${GITLAB_GROUP}&repository=serverless-tools")
     - GITLAB_TOKEN=$(echo "$BTI_RESPONSE" | jq -r '.token // empty')
