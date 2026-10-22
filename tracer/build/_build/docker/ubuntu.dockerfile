@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS base
+FROM ubuntu:26.04 AS base
 
 ENV \
     # Unset ASPNETCORE_URLS from aspnet base image
@@ -81,12 +81,13 @@ RUN MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)" \
 # Install Clang
 RUN wget https://apt.llvm.org/llvm.sh \
     && chmod u+x llvm.sh \
-    && ./llvm.sh 16 all \
+    && ./llvm.sh 21 all \
     && rm llvm.sh \
-    && ln -s `which clang-16` /usr/bin/clang \
-    && ln -s `which clang++-16` /usr/bin/clang++ \
-    && ln -s `which clang-tidy-16` /usr/bin/clang-tidy \
-    && ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
+    && ln -s `which clang-21` /usr/bin/clang \
+    && ln -s `which clang++-21` /usr/bin/clang++ \
+    && ln -s `which clang-tidy-21` /usr/bin/clang-tidy \
+    && ln -s `which run-clang-tidy-21` /usr/bin/run-clang-tidy \
+    && ln -s `which ld.lld-21` /usr/bin/ld.lld
 
 # Fetch and verify the frozen glibc-2.17 sysroot (architecture-specific).
 # See glibc217-sysroot.harvest.dockerfile (single file, both arches).
