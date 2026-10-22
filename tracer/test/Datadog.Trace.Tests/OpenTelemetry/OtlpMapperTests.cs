@@ -546,6 +546,25 @@ public class OtlpMapperTests
     }
 
     [Fact]
+    public void EmitAttributesFromSpan_OmitsTraceIdUpperTag()
+    {
+        var span = CreateSpan();
+        var traceContext = span.Context.TraceContext;
+        traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteUserSamplingRule, rate: 0.5);
+        traceContext.Tags.SetTag(Tags.Propagated.TraceIdUpper, "6ad8ee3b00000000");
+
+        var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128);
+
+        // the upper 64 bits are already part of the 128-bit OTLP traceId
+        attributes.Should().NotContain(kv => kv.Key == Tags.Propagated.TraceIdUpper);
+        attributes.Should().ContainSingle(kv => kv.Key == Tags.Propagated.DecisionMaker).Which.Value.Should().Be(SamplingMechanism.RemoteUserSamplingRule);
+        attributes.Should().ContainSingle(kv => kv.Key == Tags.Propagated.KnuthSamplingRate);
+    }
+
+    [Fact]
     public void EmitAttributesFromSpan_SamplingDecisionIsWrittenBeforeSpanTags()
     {
         // OTel semantics skips the service/operation/etc. block, so the sampling attributes are emitted first

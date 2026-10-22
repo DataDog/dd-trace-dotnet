@@ -366,6 +366,12 @@ internal static class OtlpMapper
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Next(KeyValuePair<string, string> item)
         {
+            // the upper 64 bits of the trace id are already part of the 128-bit OTLP traceId
+            if (item.Key == Tags.Propagated.TraceIdUpper)
+            {
+                return;
+            }
+
             var isPropagatedTag = item.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal);
 
             // add propagated trace tags to the first span in every chunk,
