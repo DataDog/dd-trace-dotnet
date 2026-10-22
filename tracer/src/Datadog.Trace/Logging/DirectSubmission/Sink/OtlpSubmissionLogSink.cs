@@ -24,7 +24,7 @@ internal sealed class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEv
     private readonly IOtlpExporter _otlpExporter;
 
     public OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, TracerSettings settings)
-        : this(sinkOptions, new OtlpExporter(settings))
+        : this(sinkOptions, new OtlpExporter(settings, settings.Manager.InitialExporterSettings))
     {
     }
 

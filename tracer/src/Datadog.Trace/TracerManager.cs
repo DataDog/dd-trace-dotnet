@@ -394,23 +394,11 @@ namespace Datadog.Trace
 
                     void WriteOtlpExporterSettings(string signal, Uri endpoint, OtlpProtocol protocol, IEnumerable<KeyValuePair<string, string>> headers)
                     {
-                        // The metrics and logs exporters do not implement HTTP/JSON and send HTTP/protobuf instead.
-                        if (protocol == OtlpProtocol.HttpJson && signal is "METRICS" or "LOGS")
-                        {
-                            protocol = OtlpProtocol.HttpProtobuf;
-                        }
-
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_ENDPOINT");
                         writer.WriteValue(UriHelpers.CleanUri(endpoint, removeScheme: false, tryRemoveIds: false));
 
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_PROTOCOL");
-                        writer.WriteValue(protocol switch
-                        {
-                            OtlpProtocol.Grpc => "grpc",
-                            OtlpProtocol.HttpProtobuf => "http/protobuf",
-                            OtlpProtocol.HttpJson => "http/json",
-                            _ => null,
-                        });
+                        writer.WriteValue(ExporterSettings.GetOtlpProtocolName(protocol));
 
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_HEADERS");
                         writer.WriteStartObject();
@@ -701,7 +689,7 @@ namespace Datadog.Trace
 
                     if (instanceSettings.OtlpLogsExportEnabled)
                     {
-                        WriteOtlpExporterSettings("LOGS", instanceSettings.OtlpLogsEndpoint, instanceSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
+                        WriteOtlpExporterSettings("LOGS", exporterSettings.OtlpLogsEndpoint, exporterSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
 
                         writer.WritePropertyName("OTEL_BLRP_SCHEDULE_DELAY");
                         writer.WriteValue(instanceSettings.LogSubmissionSettings.BatchPeriod.TotalMilliseconds);
