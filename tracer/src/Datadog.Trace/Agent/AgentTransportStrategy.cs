@@ -90,8 +90,7 @@ internal static class AgentTransportStrategy
                     getBaseEndpoint?.Invoke(settings.AgentUri) ?? settings.AgentUri,
                     httpHeaderHelper.DefaultHeaders,
                     timeout: requestTimeout ?? tcpTimeout,
-                    allowAutoRedirect: allowAutoRedirect,
-                    enforceAsyncTimeout: requestTimeout is not null);
+                    allowAutoRedirect: allowAutoRedirect);
 #endif
         }
     }

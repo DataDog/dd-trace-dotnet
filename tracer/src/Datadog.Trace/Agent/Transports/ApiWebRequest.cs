@@ -25,12 +25,10 @@ namespace Datadog.Trace.Agent.Transports
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
-        private readonly TimeSpan? _asyncTimeout;
 
-        public ApiWebRequest(HttpWebRequest request, TimeSpan? asyncTimeout = null)
+        public ApiWebRequest(HttpWebRequest request)
         {
             _request = request;
-            _asyncTimeout = asyncTimeout;
         }
 
         public void AddHeader(string name, string value)
