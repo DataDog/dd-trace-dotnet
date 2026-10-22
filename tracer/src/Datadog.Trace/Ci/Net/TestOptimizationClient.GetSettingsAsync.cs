@@ -172,7 +172,7 @@ internal sealed partial class TestOptimizationClient
             Branch = branch;
             Sha = sha;
             Configurations = configurations;
-            TestLevel = "test";
+            TestLevel = SkippableTestsRequestScope.TestLevel;
         }
     }
 

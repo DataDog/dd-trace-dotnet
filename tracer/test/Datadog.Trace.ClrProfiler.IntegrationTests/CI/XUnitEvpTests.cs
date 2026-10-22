@@ -933,11 +933,11 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         {
             var settingsRequestAttributes = JObject.Parse(settingsRequestBody)["data"]?["attributes"];
             settingsRequestAttributes.Should().NotBeNull("settings request body: {0}", settingsRequestBody);
-            (settingsRequestAttributes!["test_level"]?.Value<string>()).Should().Be("test");
+            (settingsRequestAttributes["test_level"]?.Value<string>()).Should().Be("test");
             (settingsRequestAttributes["branch"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
             var settingsConfigurations = settingsRequestAttributes["configurations"];
             settingsConfigurations.Should().NotBeNull("settings request body: {0}", settingsRequestBody);
-            (settingsConfigurations!["os.platform"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
+            (settingsConfigurations["os.platform"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
             (settingsConfigurations["os.version"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
             (settingsConfigurations["os.architecture"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
             (settingsConfigurations["runtime.name"]?.Value<string>()).Should().NotBeNullOrWhiteSpace();
