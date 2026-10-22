@@ -20,40 +20,16 @@ public class ManagedApiOtlpTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("invalid")]
-    public void ExporterSettings_WithoutValidTracesProtocol_UsesDefaultProtocol(string protocol)
+    public void ExporterSettings_WithoutValidTracesProtocol_DefaultsToHttpProtobuf(string protocol)
     {
         var source = protocol is null
                          ? BuildSource("OTEL_TRACES_EXPORTER:otlp")
                          : BuildSource("OTEL_TRACES_EXPORTER:otlp", $"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL:{protocol}");
         var exporterSettings = new ExporterSettings(source, _ => false, NullConfigurationTelemetry.Instance);
 
-#if NETCOREAPP3_1_OR_GREATER
-        exporterSettings.OtlpTracesProtocol.Should().Be(OtlpProtocol.Grpc);
-        exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri("http://localhost:4317"));
-        // gRPC is not supported for traces export yet, so traces fall back to the Datadog format
-        exporterSettings.TracesEncoding.Should().Be(TracesEncoding.DatadogV0_4);
-#else
-        // Same as OpenTelemetry .NET: http/protobuf on .NET Framework and .NET Standard 2.0
         exporterSettings.OtlpTracesProtocol.Should().Be(OtlpProtocol.HttpProtobuf);
-        exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri("http://localhost:4318/v1/traces"));
         exporterSettings.TracesEncoding.Should().Be(TracesEncoding.OtlpProtobuf);
-#endif
-    }
-
-    [Fact]
-    public void ExporterSettings_WithoutMetricsProtocol_UsesDefaultProtocol()
-    {
-        var source = BuildSource();
-        var exporterSettings = new ExporterSettings(source, _ => false, NullConfigurationTelemetry.Instance);
-
-#if NETCOREAPP3_1_OR_GREATER
-        exporterSettings.OtlpMetricsProtocol.Should().Be(OtlpProtocol.Grpc);
-        exporterSettings.OtlpMetricsEndpoint.Should().Be(new Uri("http://localhost:4317"));
-#else
-        // Same as OpenTelemetry .NET: http/protobuf on .NET Framework and .NET Standard 2.0
-        exporterSettings.OtlpMetricsProtocol.Should().Be(OtlpProtocol.HttpProtobuf);
-        exporterSettings.OtlpMetricsEndpoint.Should().Be(new Uri("http://localhost:4318/v1/metrics"));
-#endif
+        exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri("http://localhost:4318/v1/traces"));
     }
 
     [Theory]

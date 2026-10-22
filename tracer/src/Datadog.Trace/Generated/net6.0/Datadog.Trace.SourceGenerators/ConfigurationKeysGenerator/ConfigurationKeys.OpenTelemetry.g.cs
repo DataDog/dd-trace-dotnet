@@ -98,7 +98,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key to set the OTLP protocol for metrics export.
         /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-        /// Valid values: grpc, http/protobuf, http/json, defaults to grpc, or http/protobuf on .NET Framework and .NET Standard 2.0.
+        /// Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
         /// </summary>
         public const string ExporterOtlpMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL";
 
@@ -120,7 +120,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key to set the OTLP protocol (fallback for metrics-specific protocol).
         /// Used when <see cref="ExporterOtlpMetricsProtocol"/> is not set.
-        /// Valid values: grpc, http/protobuf, http/json, defaults to grpc, or http/protobuf on .NET Framework and .NET Standard 2.0.
+        /// Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
         /// </summary>
         public const string ExporterOtlpProtocol = "OTEL_EXPORTER_OTLP_PROTOCOL";
 
@@ -150,8 +150,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key to set the OTLP protocol for traces export.
         /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-        /// Valid values: grpc, http/protobuf, http/json. Default: grpc, or http/protobuf on .NET Framework and .NET Standard 2.0.
-        /// gRPC is not yet supported for traces export: when it is selected, traces are sent to the Datadog Agent using the Datadog format.
+        /// Valid values: http/json, http/protobuf. Default: http/protobuf
         /// </summary>
         public const string ExporterOtlpTracesProtocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL";
 

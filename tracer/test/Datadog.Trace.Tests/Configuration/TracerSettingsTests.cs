@@ -1113,10 +1113,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, false, false)] // non-OTLP export: explicit false stays false
         public void OtelTracesSpanMetricsEnabled_ForcedFalseWhenNotOtlpTraceExport(string tracesExporter, bool explicitValue, bool expected)
         {
-            // gRPC, the default protocol, isn't supported for OTLP trace export
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, "http/protobuf"),
                 (ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, explicitValue.ToString()));
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new());

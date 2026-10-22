@@ -44,18 +44,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public const int DefaultOtlpHttpPort = 4318;
 
-#if NETFRAMEWORK || NETSTANDARD2_0
-        /// <summary>
-        /// The default OTLP protocol. Same as OpenTelemetry .NET: http/protobuf on .NET Framework and .NET Standard 2.0, gRPC otherwise.
-        /// </summary>
-        internal const OtlpProtocol DefaultOtlpProtocol = OtlpProtocol.HttpProtobuf;
-#else
-        /// <summary>
-        /// The default OTLP protocol. Same as OpenTelemetry .NET: http/protobuf on .NET Framework and .NET Standard 2.0, gRPC otherwise.
-        /// </summary>
-        internal const OtlpProtocol DefaultOtlpProtocol = OtlpProtocol.Grpc;
-#endif
-
         /// <summary>
         /// Prefix for unix domain sockets.
         /// </summary>
@@ -173,13 +161,13 @@ namespace Datadog.Trace.Configuration
         }
 
         private OtlpTransportSettings GetOtlpTracesTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("traces", ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, DefaultOtlpProtocol, agentHost);
+            => GetOtlpTransport("traces", ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
 
         private OtlpTransportSettings GetOtlpMetricsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("metrics", ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, DefaultOtlpProtocol, agentHost);
+            => GetOtlpTransport("metrics", ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
 
         private OtlpTransportSettings GetOtlpLogsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("logs", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, DefaultOtlpProtocol, agentHost, supportsHttpJson: false); // the logs exporter only serializes protobuf
+            => GetOtlpTransport("logs", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost, supportsHttpJson: false); // the logs exporter only serializes protobuf
 
         private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string protocolKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost, bool supportsHttpJson = true)
         {
