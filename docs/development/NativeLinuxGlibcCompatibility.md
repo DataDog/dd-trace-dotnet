@@ -100,6 +100,11 @@ selected compiler target, compiler-level sysroot, C/C++ flags, and executable
 linker flags. This keeps re2 compilation and libunwind configure probes on the
 harvested C and C++ headers as well as the glibc 2.17 libraries.
 
+Libunwind links its shared libraries through libtool. Libtool does not forward
+`-B` from `LDFLAGS`, so Clang looks up `crtbeginS.o` without the Developer
+Toolset directory and passes the bare filename to lld. `CC` and `CXX` for that
+build therefore include `-B` pointing at `GLIBC217_TOOLCHAIN_LIB`.
+
 Developer Toolset 10 and 11 include C++17 filesystem support directly in
 `libstdc++.a`. Sysroot builds therefore do not link the legacy
 `libstdc++fs.a`, which is not harvested and could otherwise resolve from the
