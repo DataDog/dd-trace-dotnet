@@ -51,8 +51,7 @@ public class AgentProcessManagerTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [CombinatorialData]
     public void GetKeepAliveAction_DoesNothingWhenHealthy(bool ownProcessIsRunning)
     {
         AgentProcessManager.GetKeepAliveAction(isHealthy: true, ownProcessIsRunning, failedHealthChecks: 0)
@@ -66,7 +65,8 @@ public class AgentProcessManagerTests
         string runningProcessPath;
         using (var currentProcess = Process.GetCurrentProcess())
         {
-            runningProcessPath = currentProcess.MainModule!.FileName;
+            var mainModule = currentProcess.MainModule ?? throw new InvalidOperationException("The test process has no main module.");
+            runningProcessPath = mainModule.FileName;
         }
 
         var metadata = new AgentProcessManager.ProcessMetadata
