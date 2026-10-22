@@ -599,6 +599,9 @@ public class DataStreamsManagerTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    // Previously, the manager cleared its hash cache when configuration changed. Now, each EdgeTags
+    // object detects a changed base hash and recalculates its memoized hash. Verify that this preserves
+    // configuration updates when reusing the same cached edge tags.
     public async Task SetCheckpoint_CachedEdgeTagsReflectConfigurationChanges(bool updateContainerTags)
     {
         var settings = TracerSettings.Create(new()
@@ -616,6 +619,8 @@ public class DataStreamsManagerTests
             var cached = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.Value}", "type:kafka"]);
             var before = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, cached, payloadSizeBytes: 0, timeInQueueMs: 0);
 
+            // Both scenarios change hash inputs: either the Agent reports new container tags,
+            // or manual configuration changes the environment from "foo" to "updated".
             if (updateContainerTags)
             {
                 discovery.TriggerChange(containerTagsHash: "updated-container-hash");
@@ -640,6 +645,9 @@ public class DataStreamsManagerTests
                 updateContainerTags ? "updated-container-hash" : null);
             var expectedHash = HashHelper.CalculatePathwayHash(HashHelper.CalculateNodeHash(expectedBase, cached.Tags), parentHash: default);
 
+            // The tag values and cached object are unchanged, but the configuration contributes to the hash.
+            // Verify that the configuration update invalidates the memoized hash: the result must match
+            // the updated configuration and differ from the hash calculated before the update.
             before.Should().NotBeNull();
             after.Should().NotBeNull();
             after.Value.Hash.Should().Be(expectedHash);
@@ -674,7 +682,9 @@ public class DataStreamsManagerTests
         var first = getTags(cached.Length);
         var second = getTags(cached.Length);
 
+        // This key bypasses the full cache, so each call creates a new tag object with the same contents.
         second.Should().NotBeSameAs(first);
+        // The overflow requests must preserve the original cached object for the active key 0.
         getTags(0).Should().BeSameAs(cached[0]);
     }
 
@@ -740,6 +750,9 @@ public class DataStreamsManagerTests
         }
     }
 
+    // Keep the allocation in a separate stack frame so the helper's local references are gone
+    // before the caller forces GC. Inlining could keep those references alive in the caller,
+    // making the GC test fail even when the manager does not retain the tags.
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference[] SetCheckpointWithUncachedEdgeTags(DataStreamsManager dsm, DataStreamsWriterMock writer)
     {
