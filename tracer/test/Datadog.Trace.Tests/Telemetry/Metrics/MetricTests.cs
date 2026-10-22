@@ -81,8 +81,8 @@ public class MetricTests
     public void OnlyAllowedMetricsAreSubmitted()
     {
         // Only metrics defined in the following json documents should be submitted
-        // https://github.com/DataDog/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/common_metrics.json
-        // https://github.com/DataDog/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/dotnet_metrics.json
+        // https://github.com/ddoghq/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/common_metrics.json
+        // https://github.com/ddoghq/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/dotnet_metrics.json
         //
         // These are duplicated in this repo. When adding new metrics, add them into the embedded json files here, then
         // after merging, update the source JSON file in dd-go
