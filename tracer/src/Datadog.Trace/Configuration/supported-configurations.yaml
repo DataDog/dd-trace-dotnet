@@ -2096,7 +2096,7 @@ supportedConfigurations:
       of correlation identifiers into the logging context.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.LogsInjectionEnabled"/>
   DD_LOG_LEVEL:
-  - implementation: A
+  - implementation: C
     scope: managed
     type: string
     default: info
