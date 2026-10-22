@@ -2715,7 +2715,9 @@ stages:
           serverless-lambda-generic-abstract-async \
           serverless-lambda-generic-complex \
           serverless-lambda-generic-complex-nested \
-          serverless-lambda-toplevel-statement
+          serverless-lambda-toplevel-statement \
+          serverless-lambda-disabled-integration \
+          serverless-lambda-disabled-tracing
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
@@ -4694,10 +4696,10 @@ stages:
           WORKFLOW="create-system-test-docker-base-images-master.yml"
           if [ "$(Build.Reason)" = "PullRequest" ]; then
             WORKFLOW="create-system-test-docker-base-images-pr.yml"
-            LABELS=$(curl -s $(CURL_RETRY_FLAGS) \
+            PR_JSON=$(curl -fsS $(CURL_RETRY_FLAGS) \
             -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)" \
-            | jq -r '.labels[].name')
+            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)") || exit 1
+            LABELS=$(echo "$PR_JSON" | jq -r '.labels[].name')
 
             if echo "$LABELS" | grep -q "docker_image_artifacts"; then
               BRANCH_NAME="$PR_SOURCE_BRANCH"
@@ -4714,7 +4716,7 @@ stages:
           fi
 
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/$WORKFLOW with ref=$REF and azdo_build_id=$(Build.BuildId)"
-          curl \
+          curl --fail \
             $(CURL_RETRY_FLAGS) \
             -X POST \
             -H "Accept: application/vnd.github+json" \
