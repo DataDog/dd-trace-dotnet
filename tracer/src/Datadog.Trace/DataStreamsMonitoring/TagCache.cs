@@ -22,7 +22,7 @@ internal sealed class TagCache<TKey, TValue>
     internal const int IdleTimeoutSeconds = 60;
 
     private readonly ConcurrentDictionary<TKey, Entry> _cache = new();
-    private readonly object _evictionLock = new();
+    private readonly object _cacheModificationLock = new();
     private readonly int _capacity;
     private readonly Func<long>? _getTimestampSeconds;
     private int _count;
@@ -51,13 +51,13 @@ internal sealed class TagCache<TKey, TValue>
         }
 
         var value = factory(key);
-        // A full, active cache bypasses both the eviction lock and the scan on misses.
+        // A full, active cache bypasses both the cache modification lock and the scan on misses.
         if (Volatile.Read(ref _count) >= _capacity && now < Volatile.Read(ref _nextEvictionCheck))
         {
             return value;
         }
 
-        lock (_evictionLock)
+        lock (_cacheModificationLock)
         {
             now = GetTimestampSeconds();
             if (_cache.TryGetValue(key, out existing))
@@ -81,7 +81,7 @@ internal sealed class TagCache<TKey, TValue>
     private long GetTimestampSeconds()
         => _getTimestampSeconds is null ? Stopwatch.GetTimestamp() / Stopwatch.Frequency : _getTimestampSeconds();
 
-    // Called only under the insertion lock. Hits can continue while the entries are scanned.
+    // Called only under the cache modification lock. Hits can continue while the entries are scanned.
     // Every idle entry is removed in a single pass, so a burst of misses for new keys pays for
     // one scan rather than one scan per miss.
     private bool TryEvictIdleEntries(long now)

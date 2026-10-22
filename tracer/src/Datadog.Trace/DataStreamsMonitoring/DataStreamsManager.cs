@@ -368,7 +368,7 @@ internal sealed class DataStreamsManager
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
     /// Once the cache reaches the capacity configured by <see cref="TracerSettings.DataStreamsTagCacheSize"/>, new keys replace
     /// entries that have been idle for a minute, or bypass caching
-    /// if all entries are active. Cache hits do not take the eviction lock.
+    /// if all entries are active. Cache hits do not take the cache modification lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
@@ -382,7 +382,7 @@ internal sealed class DataStreamsManager
     /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
     /// Once the cache reaches the capacity configured by <see cref="TracerSettings.DataStreamsTagCacheSize"/>, new keys replace
     /// entries that have been idle for a minute, or bypass caching
-    /// if all entries are active. Cache hits do not take the eviction lock.
+    /// if all entries are active. Cache hits do not take the cache modification lock.
     /// </summary>
     /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
