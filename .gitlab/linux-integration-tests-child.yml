@@ -36,7 +36,7 @@
   timeout: 90m
   variables:
     DOCKER_BUILDKIT: "1"
-    DOTNET_SDK_VERSION: "11.0.100-rc.1.26425.128"
+    DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
   script:
     - sh .gitlab/run-linux-integration-tests.sh
   artifacts:
