@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -11,22 +12,17 @@ namespace Datadog.Trace.Tagging
     {
         private const string ComponentName = nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions);
 
-        // The tag key depends on the hosting environment, which is only known at runtime, so these
-        // can't be [Tag] attributes (those require a compile-time constant key). They flow through
-        // the base tag dictionary instead. Selecting a key is a reference copy to an interned
-        // constant - nothing is built per instance on the span-creation path.
-        private readonly string _shortNameTagName;
-        private readonly string _fullNameTagName;
-        private readonly string _bindingSourceTagName;
-        private readonly string _triggerTypeTagName;
+        private readonly bool _isContainerApps;
+
+        [Obsolete("Use the constructor that takes isContainerApps. This exists only so the type can be created reflectively.")]
+        public AzureFunctionsTags()
+            : this(isContainerApps: false)
+        {
+        }
 
         public AzureFunctionsTags(bool isContainerApps)
         {
-            _shortNameTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionName : Trace.Tags.AzureFunctionName;
-            _fullNameTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionMethod : Trace.Tags.AzureFunctionMethod;
-            _bindingSourceTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionBindingSource : Trace.Tags.AzureFunctionBindingSource;
-            _triggerTypeTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionTriggerType : Trace.Tags.AzureFunctionTriggerType;
-
+            _isContainerApps = isContainerApps;
             TriggerType = "Unknown";
         }
 
@@ -36,28 +32,102 @@ namespace Datadog.Trace.Tagging
         [Tag(Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
-        public string ShortName
+        // Storage for both hosting environments. Exactly one set is ever populated - the hosting
+        // environment is fixed for the life of the process - and the generated EnumerateTags skips
+        // null tags, so the unused half costs a single null check and never reaches the wire.
+        // Keeping the keys as [Tag] attributes preserves the source-generated, pre-serialized
+        // MessagePack keys and the typed (lock-free) storage.
+        [Tag(Trace.Tags.AzureFunctionName)]
+        public string AasShortName { get; set; }
+
+        [Tag(Trace.Tags.AzureFunctionMethod)]
+        public string AasFullName { get; set; }
+
+        [Tag(Trace.Tags.AzureFunctionBindingSource)]
+        public string AasBindingSource { get; set; }
+
+        [Tag(Trace.Tags.AzureFunctionTriggerType)]
+        public string AasTriggerType { get; set; }
+
+        [Tag(Trace.Tags.AzureContainerAppFunctionName)]
+        public string AcaShortName { get; set; }
+
+        [Tag(Trace.Tags.AzureContainerAppFunctionMethod)]
+        public string AcaFullName { get; set; }
+
+        [Tag(Trace.Tags.AzureContainerAppFunctionBindingSource)]
+        public string AcaBindingSource { get; set; }
+
+        [Tag(Trace.Tags.AzureContainerAppFunctionTriggerType)]
+        public string AcaTriggerType { get; set; }
+
+        // Facade over whichever set this instance targets, so callers don't need to know.
+        internal string ShortName
         {
-            get => GetTag(_shortNameTagName);
-            set => SetTag(_shortNameTagName, value);
+            get => _isContainerApps ? AcaShortName : AasShortName;
+
+            set
+            {
+                if (_isContainerApps)
+                {
+                    AcaShortName = value;
+                }
+                else
+                {
+                    AasShortName = value;
+                }
+            }
         }
 
-        public string FullName
+        internal string FullName
         {
-            get => GetTag(_fullNameTagName);
-            set => SetTag(_fullNameTagName, value);
+            get => _isContainerApps ? AcaFullName : AasFullName;
+
+            set
+            {
+                if (_isContainerApps)
+                {
+                    AcaFullName = value;
+                }
+                else
+                {
+                    AasFullName = value;
+                }
+            }
         }
 
-        public string BindingSource
+        internal string BindingSource
         {
-            get => GetTag(_bindingSourceTagName);
-            set => SetTag(_bindingSourceTagName, value);
+            get => _isContainerApps ? AcaBindingSource : AasBindingSource;
+
+            set
+            {
+                if (_isContainerApps)
+                {
+                    AcaBindingSource = value;
+                }
+                else
+                {
+                    AasBindingSource = value;
+                }
+            }
         }
 
-        public string TriggerType
+        internal string TriggerType
         {
-            get => GetTag(_triggerTypeTagName);
-            set => SetTag(_triggerTypeTagName, value);
+            get => _isContainerApps ? AcaTriggerType : AasTriggerType;
+
+            set
+            {
+                if (_isContainerApps)
+                {
+                    AcaTriggerType = value;
+                }
+                else
+                {
+                    AasTriggerType = value;
+                }
+            }
         }
 
         internal static void SetRootSpanTags(
@@ -78,9 +148,8 @@ namespace Datadog.Trace.Tagging
                 tags.SetTag(Tags.InstrumentationName, ComponentName);
             }
 
-            // Applies to any ITags, AzureFunctionsTags included: its typed properties are backed by
-            // the same tag-dictionary entries these keys address, so there is no need to special
-            // case it - and no second source of truth for the prefix.
+            // Works for any ITags: on AzureFunctionsTags the generated SetTag routes these keys to
+            // the matching typed property, and anything else stores them in the tag dictionary.
             tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionName : Trace.Tags.AzureFunctionName, shortName);
             tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionMethod : Trace.Tags.AzureFunctionMethod, fullName);
             tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionBindingSource : Trace.Tags.AzureFunctionBindingSource, bindingSource);
