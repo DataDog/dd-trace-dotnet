@@ -392,12 +392,12 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("http/json", null, OtlpProtocol.HttpProtobuf, "OTLP protocol 'http/json' is not supported for logs*")]
-        [InlineData(null, "http/json", OtlpProtocol.HttpProtobuf, "OTLP protocol 'http/json' is not supported for logs*")]
-        [InlineData("HTTP/JSON", "grpc", OtlpProtocol.HttpProtobuf, "OTLP protocol 'http/json' is not supported for logs*")]
-        [InlineData("grpc", "http/json", OtlpProtocol.Grpc, null)]
-        [InlineData("http", null, OtlpProtocol.Grpc, "Unsupported OTLP protocol 'http' for logs*")]
-        public void OtlpLogsProtocol(string logsProtocol, string generalProtocol, OtlpProtocol expectedProtocol, string expectedWarning)
+        [InlineData("http/json", null, "HttpProtobuf", "OTLP protocol 'http/json' is not supported for logs*")]
+        [InlineData(null, "http/json", "HttpProtobuf", "OTLP protocol 'http/json' is not supported for logs*")]
+        [InlineData("HTTP/JSON", "grpc", "HttpProtobuf", "OTLP protocol 'http/json' is not supported for logs*")]
+        [InlineData("grpc", "http/json", "Grpc", null)]
+        [InlineData("http", null, "Grpc", "Unsupported OTLP protocol 'http' for logs*")]
+        public void OtlpLogsProtocol(string logsProtocol, string generalProtocol, string expectedProtocol, string expectedWarning)
         {
             var source = new NameValueConfigurationSource(new()
             {
@@ -407,7 +407,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settings = new ExporterSettings(source, NoFile(), NullConfigurationTelemetry.Instance);
 
-            settings.OtlpLogsProtocol.Should().Be(expectedProtocol);
+            settings.OtlpLogsProtocol.ToString().Should().Be(expectedProtocol);
             if (expectedWarning is null)
             {
                 settings.ValidationWarnings.Should().NotContainMatch("*OTLP protocol*");
