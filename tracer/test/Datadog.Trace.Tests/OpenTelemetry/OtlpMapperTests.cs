@@ -467,15 +467,19 @@ public class OtlpMapperTests
     }
 
     [Theory]
-    [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, Trace.Metrics.SamplingAgentDecision)]
-    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, Trace.Metrics.SamplingRuleDecision)]
-    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteUserSamplingRule, Trace.Metrics.SamplingRuleDecision)]
-    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteAdaptiveSamplingRule, Trace.Metrics.SamplingRuleDecision)]
-    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual, null)]
-    public void EmitAttributesFromSpan_EmitsSamplingDecision_OnLocalRoot(int samplingPriority, string mechanism, string? expectedRateKey)
+    [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, 0.5, null, Trace.Metrics.SamplingAgentDecision)]
+    [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default, 1.0, null, null)] // agent rates not received yet: rate but no psr/ksr
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, 0.5, 0.75f, Trace.Metrics.SamplingRuleDecision)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteUserSamplingRule, 0.5, 0.75f, Trace.Metrics.SamplingRuleDecision)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteAdaptiveSamplingRule, 0.5, 0.75f, Trace.Metrics.SamplingRuleDecision)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual, null, null, null)]
+    [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm, null, null, null)]
+    public void EmitAttributesFromSpan_EmitsSamplingDecision_OnLocalRoot(int samplingPriority, string mechanism, double? rate, float? limiterRate, string? expectedRateKey)
     {
+        // rate/limiterRate combinations match what TraceSampler produces: the limiter only applies to
+        // user rules that kept the trace, and manual/ASM decisions carry no rates
         var span = CreateSpan();
-        span.Context.TraceContext.SetSamplingPriority(samplingPriority, mechanism, rate: 0.5, limiterRate: 0.75f);
+        span.Context.TraceContext.SetSamplingPriority(samplingPriority, mechanism, rate, limiterRate);
 
         var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
         spanModel.IsLocalRoot.Should().BeTrue();
@@ -485,7 +489,15 @@ public class OtlpMapperTests
 
         attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingPriority).Which.Value.Should().Be(samplingPriority);
         attributes.Should().ContainSingle(kv => kv.Key == Tags.Propagated.DecisionMaker).Which.Value.Should().Be(mechanism);
-        attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingLimitDecision).Which.Value.Should().Be(0.75);
+
+        if (limiterRate is { } expectedLimiterRate)
+        {
+            attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingLimitDecision).Which.Value.Should().Be((double)expectedLimiterRate);
+        }
+        else
+        {
+            attributes.Should().NotContain(kv => kv.Key == Trace.Metrics.SamplingLimitDecision);
+        }
 
         if (expectedRateKey is null)
         {
@@ -494,7 +506,7 @@ public class OtlpMapperTests
         }
         else
         {
-            attributes.Should().ContainSingle(kv => kv.Key == expectedRateKey).Which.Value.Should().Be(0.5);
+            attributes.Should().ContainSingle(kv => kv.Key == expectedRateKey).Which.Value.Should().Be(rate);
             attributes.Should().ContainSingle(kv => kv.Key == Tags.Propagated.KnuthSamplingRate).Which.Value.Should().Be("0.5");
         }
     }
