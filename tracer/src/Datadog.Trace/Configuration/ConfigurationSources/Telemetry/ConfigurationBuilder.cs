@@ -20,6 +20,8 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
+    public HasKeys WithKeysIgnoringAliases(string key) => new(_source, _telemetry, key, []);
+
     public HasKeys WithIntegrationKey(string integrationName)
     {
         var integrationEnabledKeys = IntegrationNameToKeys.GetIntegrationEnabledKeys(integrationName);

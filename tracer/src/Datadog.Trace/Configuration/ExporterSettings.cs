@@ -633,7 +633,8 @@ namespace Datadog.Trace.Configuration
                     .Value;
                 OtlpHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsRedactedString()?.Trim();
 
-                OtlpMetricsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol).AsString()?.Trim();
+                // GetOtlpTransport inherits the general protocol, so the signal protocols are read without their alias
+                OtlpMetricsProtocol = config.WithKeysIgnoringAliases(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol).AsString()?.Trim();
                 OtlpMetricsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint).AsString()?.Trim();
                 OtlpMetricsTimeoutMs = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
@@ -641,10 +642,10 @@ namespace Datadog.Trace.Configuration
                     .Value;
                 OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsRedactedString()?.Trim();
 
-                OtlpLogsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol).AsString()?.Trim();
+                OtlpLogsProtocol = config.WithKeysIgnoringAliases(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol).AsString()?.Trim();
                 OtlpLogsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint).AsString()?.Trim();
 
-                OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
+                OtlpTracesProtocol = config.WithKeysIgnoringAliases(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
                 OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
                 OtlpTracesTimeoutMs = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesTimeoutMs)

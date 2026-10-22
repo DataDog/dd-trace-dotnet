@@ -505,12 +505,14 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "http/json", null, "http/protobuf", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "invalid", "grpc", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "http/protobuf", "grpc", "http/protobuf", ConfigurationOrigins.Code)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "invalid", "grpc", "grpc", ConfigurationOrigins.Default)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, null, null, "http/protobuf", ConfigurationOrigins.Default)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, null, "grpc", "grpc", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, null, "http/json", ConfigurationOrigins.Default)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf", "http/protobuf", "http/protobuf", ConfigurationOrigins.Code)]
         public void OtlpProtocolTelemetry(string signalProtocolKey, string signalProtocol, string generalProtocol, string expectedProtocol, ConfigurationOrigins expectedOrigin)
         {
             var source = new NameValueConfigurationSource(new()
