@@ -1,6 +1,6 @@
 ---
 name: analyze-azdo-build
-description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. This skill should be used when the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
+description: Analyze Azure DevOps CI failures in dd-trace-dotnet, including offline triage of supplied errors or logs without a build ID. Use for failing builds, PR checks, CI test failures, and snapshot-versus-span-count diagnosis. Reading this guidance does not require network calls; fetch build data only when the user's scope permits it.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
 allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
@@ -10,7 +10,23 @@ allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAn
 
 Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
-## Prerequisites
+## Choose the analysis mode
+
+For supplied errors/logs or an offline, local-only request, read this skill and use the evidence already
+available. A build ID is not required to triage that evidence. Skip tool prerequisite checks, build/PR
+auto-detection, and data fetching; do not run the analysis script, retry stages, or update snapshots.
+Use the snapshot guidance below and local source files to separate observations from possible causes.
+A timeout in another job may be related, but a shared cause needs evidence.
+
+If the user asks which helper to use later, identify
+`tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id>`; `-IncludeLogs` adds log downloads for a
+deeper investigation. Merely naming this skill does not identify the executable helper. Present these
+as future commands, not actions already performed.
+
+For a request to inspect a live build or PR, follow the connected workflow below. Fetching data still
+requires permission under the user's task scope; loading the skill itself does not initiate any calls.
+
+## Prerequisites (connected analysis)
 
 - **PowerShell 5.1+** — Minimum required. PowerShell 7+ (`pwsh`) preferred; PowerShell 5.1 (`powershell.exe`, Windows only) is supported.
 - **Azure CLI** (`az`) — Optional for read-only analysis; required for stage retry.
@@ -36,7 +52,7 @@ See [scripts-reference.md](scripts-reference.md#prerequisites) for install instr
 
 Analyze CI failures for the dd-trace-dotnet repository.
 
-**Phase 1 - Quick Initial Analysis (DO THIS FIRST)**:
+**Phase 1 - Connected Quick Initial Analysis**:
 1. **Fetch build details** - Get build status, branch, commit
 2. **Identify failed tasks** - List which tasks/jobs failed
 3. **Show quick summary** - Present overview to user
@@ -51,7 +67,7 @@ Analyze CI failures for the dd-trace-dotnet repository.
 
 ## Arguments
 
-The skill accepts these invocation patterns:
+For connected analysis, the skill accepts these invocation patterns:
 
 - **`pr <NUMBER>`** - Analyze failures for a GitHub PR
 - **`build <BUILD_ID>`** - Analyze a specific Azure DevOps build
@@ -61,7 +77,7 @@ Arguments are available as: `$ARGUMENTS`
 
 ## Implementation Steps
 
-### PHASE 1: Quick Initial Analysis
+### PHASE 1: Connected Quick Initial Analysis
 
 Perform these steps quickly to give user an overview, then ask what they want to investigate.
 
