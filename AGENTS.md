@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+<!-- Temporary change to exercise the collapsed LLM validation report format. -->
+
 **For AI Agents**: This file provides a navigation hub and quick reference. Linked docs in each section can be loaded when their topic is relevant to your task.
 
 ## Project Structure & Module Organization
