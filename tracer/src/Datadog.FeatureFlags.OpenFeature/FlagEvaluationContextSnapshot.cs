@@ -44,22 +44,30 @@ internal static class FlagEvaluationContextSnapshot
 
         internal void VisitMap(IImmutableDictionary<string, Value> map, string prefix, int depth)
         {
-            if (map.Count > MaxContainerItems)
+            // Root identity is captured separately and does not consume the attribute budget.
+            var attributeCount = map.Count - (depth == 0 && map.ContainsKey("targetingKey") ? 1 : 0);
+            if (attributeCount > MaxContainerItems)
             {
                 Reasons |= ContextOmissionReason.MaxStructureProperties;
             }
 
-            var count = Math.Min(map.Count, MaxContainerItems);
+            var count = Math.Min(attributeCount, MaxContainerItems);
             // Bound enumeration without collecting/sorting the input. Rebuilt oversized maps with
             // colliding key hashes can select different subsets; evaluation results are unaffected.
             using var iterator = map.GetEnumerator();
-            for (var i = 0; i < count && TryVisit() && iterator.MoveNext(); i++)
+            for (var i = 0; i < count && iterator.MoveNext();)
             {
                 var pair = iterator.Current;
 
                 if (depth == 0 && pair.Key == "targetingKey")
                 {
                     continue;
+                }
+
+                i++;
+                if (!TryVisit())
+                {
+                    break;
                 }
 
                 if (pair.Key.Length > MaxTextLength || (depth != 0 && prefix.Length + 1 + pair.Key.Length > MaxTextLength))
