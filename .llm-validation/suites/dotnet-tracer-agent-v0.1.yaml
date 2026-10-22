@@ -339,7 +339,7 @@ cases:
   # Ground truth: supplied evidence plus Get-AzureDevOpsBuildAnalysis.ps1 and the skill's snapshot guidance.
   - id: dotnet-tracer-azdo-span-count-019
     comparisons: [setup]
-    files: [.claude/skills/analyze-azdo-build/SKILL.md]
+    files: [.claude/skills/analyze-azdo-build/SKILL.md, .claude/skills/analyze-azdo-build/failure-patterns.md]
     only_warn: true
     input: |
       Triage this Azure DevOps failure using only the supplied evidence and local repo files.
@@ -349,14 +349,15 @@ cases:
       and the next targeted investigation steps. Mention the repo helper for a later analysis
       once a build ID is available; do not call external services, update files, or retry anything.
     expected_criteria:
-      - Distinguishes the missing-span assertion from a snapshot-content mismatch; the SubmitsTraces name alone does not justify accepting new snapshots.
-      - Treats the canceled job's supplied timeout message as timeout evidence, separately from the failed test; does not assume every canceled job failed an assertion.
-      - Investigates tracer/sample initialization and instrumentation evidence for the missing spans without claiming the root cause is already proven.
+      - Distinguishes the missing-span assertion from a snapshot-content mismatch; the SubmitsTraces name alone does not justify accepting new snapshots. Without checking the actual test, absence of a diff does not prove the precise execution order or that no snapshot artifacts exist.
+      - Uses the supplied timeout message as timeout evidence and investigates that job separately unless a common cause is supported. Duration alone, including >=55 or <5 minutes, does not prove infrastructure timeout or cascade cancellation; applicable configured limits and timeline events matter. Mentioning these as tentative heuristics with explicit verification is acceptable.
+      - Investigates tracer/sample initialization, instrumentation, transport, and timing as possible causes. Zero spans establishes a failed assertion, not whether the cause is deterministic, flaky, or environmental. Calling it a real observed failure is acceptable; claiming it cannot be flaky or is definitely a code regression without evidence is not.
       - Identifies tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id> as a valid later analysis helper; -IncludeLogs is available for deeper log analysis. Does not invent an actual build ID or fetched results.
-      - Gives focused next steps rather than blanket snapshot updates or retries; preserves the read-only, offline scope.
+      - Gives focused next steps rather than blanket snapshot updates or retries; preserves the read-only, offline scope. Proposing a conditional, targeted retry for later after diagnosis is not executing a retry and is not itself a scope violation.
     bad_signals:
       - Recommends updating snapshots to fix the span-count assertion despite the absence of a content diff.
-      - Claims the failure is definitely flaky or infrastructure-only without supporting evidence.
+      - Claims zero spans proves a deterministic code regression, rules out flakiness, or proves a flaky/infrastructure-only cause without evidence.
+      - Treats fixed duration thresholds as proof of a cancellation's cause or invents run-history evidence absent from the prompt and inspected files.
       - Calls external services, changes snapshots, or retries stages despite the user's explicit constraints.
 
   # Ground truth: local package/deployment helpers and azure-functions' local-test-only reference policy.
