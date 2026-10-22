@@ -30,7 +30,6 @@ internal sealed class DataStreamsManager
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
-    private readonly ConcurrentDictionary<Type, object> _tagCaches = new();
     private readonly int _tagCacheSize;
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDiscoveryService _discoveryService;
@@ -308,7 +307,7 @@ internal sealed class DataStreamsManager
             // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
             var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
 
-            // Memoized on the EdgeTags instance, recomputed when the base changes (settings updates).
+            // Cached on the EdgeTags instance, recomputed when the base changes (settings updates).
             var nodeHash = edgeTags.GetNodeHash(nodeHashBase);
 
             var parentHash = previousContext?.Hash ?? default;
@@ -365,7 +364,7 @@ internal sealed class DataStreamsManager
 
     /// <summary>
     /// Returns cached edge tags for the given key, creating and caching them on first use.
-    /// On cache hits, zero heap allocations occur, and the node hash memoized on the returned
+    /// On cache hits, zero heap allocations occur, and the node hash cached on the returned
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
     /// Once the cache reaches the capacity configured by <see cref="TracerSettings.DataStreamsTagCacheSize"/>, new keys replace
     /// entries that have been idle for a minute, or bypass caching
@@ -376,7 +375,7 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the edge-tag array from the key on cache miss.</param>
     public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
         where TKey : IEquatable<TKey>
-        => GetTagCache<TKey, EdgeTags>().GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)));
+        => SharedTagCache<TKey, EdgeTags>.GetCache(_tagCacheSize).GetOrCreate(key, factory, static (k, f) => new EdgeTags(f(k)));
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
@@ -390,7 +389,7 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
         where TKey : IEquatable<TKey>
-        => GetTagCache<TKey, string>().GetOrCreate(key, factory, static (k, f) => f(k));
+        => SharedTagCache<TKey, string>.GetCache(_tagCacheSize).GetOrCreate(key, factory, static (k, f) => f(k));
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions
@@ -413,17 +412,23 @@ internal sealed class DataStreamsManager
         return false;
     }
 
-    private TagCache<TKey, TValue> GetTagCache<TKey, TValue>()
+    private static class SharedTagCache<TKey, TValue>
         where TKey : IEquatable<TKey>
     {
-        var cacheType = typeof(TagCache<TKey, TValue>);
-        if (_tagCaches.TryGetValue(cacheType, out var cache))
-        {
-            return (TagCache<TKey, TValue>)cache;
-        }
+        private static TagCache<TKey, TValue>? _cache;
 
-        // Only the first access for a key/value type creates a cache. Concurrent creators
-        // publish a single instance, and subsequent lookups allocate nothing.
-        return (TagCache<TKey, TValue>)_tagCaches.GetOrAdd(cacheType, new TagCache<TKey, TValue>(_tagCacheSize));
+        // The first manager to use this key/value type determines its process-wide capacity.
+        // Later managers reuse the cache even if their configured capacity differs.
+        internal static TagCache<TKey, TValue> GetCache(int capacity)
+        {
+            var cache = Volatile.Read(ref _cache);
+            if (cache is not null)
+            {
+                return cache;
+            }
+
+            var created = new TagCache<TKey, TValue>(capacity);
+            return Interlocked.CompareExchange(ref _cache, created, null) ?? created;
+        }
     }
 }

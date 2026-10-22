@@ -1431,8 +1431,8 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringInDefaultState { get; }
 
         /// <summary>
-        /// Gets the maximum number of entries in each DSM edge-tag or backlog-tag cache owned by a manager.
-        /// Defaults to 1000 and remains fixed for the lifetime of the manager.
+        /// Gets the maximum number of entries in each process-wide DSM edge-tag or backlog-tag cache.
+        /// Defaults to 1000. The first manager to use each key/value type fixes its capacity for the process lifetime.
         /// </summary>
         internal int DataStreamsTagCacheSize { get; }
 

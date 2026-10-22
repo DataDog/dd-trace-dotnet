@@ -600,7 +600,7 @@ public class DataStreamsManagerTests
     [InlineData(false)]
     [InlineData(true)]
     // Previously, the manager cleared its hash cache when configuration changed. Now, each EdgeTags
-    // object detects a changed base hash and recalculates its memoized hash. Verify that this preserves
+    // object detects a changed base hash and recalculates its cached hash. Verify that this preserves
     // configuration updates when reusing the same cached edge tags.
     public async Task SetCheckpoint_CachedEdgeTagsReflectConfigurationChanges(bool updateContainerTags)
     {
@@ -646,7 +646,7 @@ public class DataStreamsManagerTests
             var expectedHash = HashHelper.CalculatePathwayHash(HashHelper.CalculateNodeHash(expectedBase, cached.Tags), parentHash: default);
 
             // The tag values and cached object are unchanged, but the configuration contributes to the hash.
-            // Verify that the configuration update invalidates the memoized hash: the result must match
+            // Verify that the configuration update invalidates the cached hash: the result must match
             // the updated configuration and differ from the hash calculated before the update.
             before.Should().NotBeNull();
             after.Should().NotBeNull();
@@ -666,32 +666,21 @@ public class DataStreamsManagerTests
     [InlineData(true, 2)]
     public void GetOrCreateTags_BypassesCache_WhenAtConfiguredCapacityWithActiveEntries(bool backlog, int capacity)
     {
-        var dsm = GetDataStreamManager(true, out _, capacity);
-        Func<int, object> getTags = backlog
-                                       ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey(value), static k => $"tag:{k.Value}")
-                                       : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey(value), static k => [$"tag:{k.Value}"]);
-
-        // Every entry stays active for the duration of the test, so none can be evicted.
-        var cached = new object[capacity];
-        for (var i = 0; i < cached.Length; i++)
+        // Separate key types keep the two capacities isolated in the process-wide caches.
+        if (capacity == 1)
         {
-            cached[i] = getTags(i);
-            getTags(i).Should().BeSameAs(cached[i]);
+            VerifyCapacity<CapacityOneScenario>(backlog, capacity);
         }
-
-        var first = getTags(cached.Length);
-        var second = getTags(cached.Length);
-
-        // This key bypasses the full cache, so each call creates a new tag object with the same contents.
-        second.Should().NotBeSameAs(first);
-        // The overflow requests must preserve the original cached object for the active key 0.
-        getTags(0).Should().BeSameAs(cached[0]);
+        else
+        {
+            VerifyCapacity<CapacityTwoScenario>(backlog, capacity);
+        }
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task GetOrCreateTags_ManagersUseIndependentCachesAndConfiguredCapacities(bool backlog)
+    public async Task GetOrCreateTags_ManagersShareCacheAndFirstCapacity(bool backlog)
     {
         var firstManager = GetDataStreamManager(true, out _, tagCacheSize: 1);
         var secondManager = GetDataStreamManager(true, out _, tagCacheSize: 2);
@@ -699,19 +688,15 @@ public class DataStreamsManagerTests
         {
             var first = GetTags(firstManager, 0);
             GetTags(firstManager, 0).Should().BeSameAs(first);
+            GetTags(secondManager, 0).Should().BeSameAs(first);
+
+            // The first manager initialized this shared cache with capacity 1. The second
+            // manager's capacity 2 must not resize or replace it, so key 1 bypasses both.
             var uncached = GetTags(firstManager, 1);
             GetTags(firstManager, 1).Should().NotBeSameAs(uncached);
-
-            var second = GetTags(secondManager, 0);
-            second.Should().NotBeSameAs(first);
-            GetTags(secondManager, 0).Should().BeSameAs(second);
-            var secondEntry = GetTags(secondManager, 1);
-            GetTags(secondManager, 1).Should().BeSameAs(secondEntry);
-            var overflow = GetTags(secondManager, 2);
-            GetTags(secondManager, 2).Should().NotBeSameAs(overflow);
-
+            var secondUncached = GetTags(secondManager, 1);
+            GetTags(secondManager, 1).Should().NotBeSameAs(secondUncached);
             GetTags(firstManager, 0).Should().BeSameAs(first);
-            GetTags(firstManager, 1).Should().NotBeSameAs(secondEntry);
         }
         finally
         {
@@ -721,8 +706,8 @@ public class DataStreamsManagerTests
 
         object GetTags(DataStreamsManager manager, int value)
             => backlog
-                   ? manager.GetOrCreateBacklogTags(new OverflowTestKey(value), static k => $"tag:{k.Value}")
-                   : manager.GetOrCreateEdgeTags(new OverflowTestKey(value), static k => [$"tag:{k.Value}"]);
+                   ? manager.GetOrCreateBacklogTags(new OverflowTestKey<SharedCacheScenario>(value), static k => $"tag:{k.Value}")
+                   : manager.GetOrCreateEdgeTags(new OverflowTestKey<SharedCacheScenario>(value), static k => [$"tag:{k.Value}"]);
     }
 
     [Theory]
@@ -735,8 +720,8 @@ public class DataStreamsManagerTests
         {
             var tasks = Enumerable.Range(0, 16)
                                   .Select(_ => Task.Run<object>(() => backlog
-                                                                         ? dsm.GetOrCreateBacklogTags(new OverflowTestKey(0), static k => $"tag:{k.Value}")
-                                                                         : dsm.GetOrCreateEdgeTags(new OverflowTestKey(0), static k => [$"tag:{k.Value}"])));
+                                                                         ? dsm.GetOrCreateBacklogTags(new OverflowTestKey<ConcurrentAccessScenario>(0), static k => $"tag:{k.Value}")
+                                                                         : dsm.GetOrCreateEdgeTags(new OverflowTestKey<ConcurrentAccessScenario>(0), static k => [$"tag:{k.Value}"])));
             var results = await Task.WhenAll(tasks);
 
             foreach (var result in results)
@@ -766,6 +751,30 @@ public class DataStreamsManagerTests
         return [new WeakReference(edgeTags), new WeakReference(edgeTags.Tags)];
     }
 
+    private static void VerifyCapacity<TScenario>(bool backlog, int capacity)
+    {
+        var dsm = GetDataStreamManager(true, out _, capacity);
+        Func<int, object> getTags = backlog
+                                       ? value => dsm.GetOrCreateBacklogTags(new OverflowTestKey<TScenario>(value), static k => $"tag:{k.Value}")
+                                       : value => dsm.GetOrCreateEdgeTags(new OverflowTestKey<TScenario>(value), static k => [$"tag:{k.Value}"]);
+
+        // Every entry stays active for the duration of the test, so none can be evicted.
+        var cached = new object[capacity];
+        for (var i = 0; i < cached.Length; i++)
+        {
+            cached[i] = getTags(i);
+            getTags(i).Should().BeSameAs(cached[i]);
+        }
+
+        var first = getTags(cached.Length);
+        var second = getTags(cached.Length);
+
+        // This key bypasses the full cache, so each call creates a new tag object with the same contents.
+        second.Should().NotBeSameAs(first);
+        // The overflow requests must preserve the original cached object for the active key 0.
+        getTags(0).Should().BeSameAs(cached[0]);
+    }
+
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer, int tagCacheSize = TracerSettings.DefaultDataStreamsTagCacheSize)
     {
         writer = enabled ? new DataStreamsWriterMock() : null;
@@ -784,15 +793,32 @@ public class DataStreamsManagerTests
         return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
     }
 
-    private readonly struct OverflowTestKey : IEquatable<OverflowTestKey>
+    // Marker types give each scenario its own static cache while retaining the same key shape.
+    private readonly struct CapacityOneScenario
+    {
+    }
+
+    private readonly struct CapacityTwoScenario
+    {
+    }
+
+    private readonly struct SharedCacheScenario
+    {
+    }
+
+    private readonly struct ConcurrentAccessScenario
+    {
+    }
+
+    private readonly struct OverflowTestKey<TScenario> : IEquatable<OverflowTestKey<TScenario>>
     {
         public readonly int Value;
 
         public OverflowTestKey(int value) => Value = value;
 
-        public bool Equals(OverflowTestKey other) => Value == other.Value;
+        public bool Equals(OverflowTestKey<TScenario> other) => Value == other.Value;
 
-        public override bool Equals(object obj) => obj is OverflowTestKey other && Equals(other);
+        public override bool Equals(object obj) => obj is OverflowTestKey<TScenario> other && Equals(other);
 
         public override int GetHashCode() => Value;
     }
