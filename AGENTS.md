@@ -6,7 +6,7 @@ This file is the coding-agent operating guide and task-routing reference for thi
 
 For non-trivial code changes:
 
-1. Identify the affected area, read its guide, and define verifiable success criteria.
+1. Identify the affected area, read its guide and the applicable per-lens rules in `docs/development/for-ai/Coding-Requirements/`, and define verifiable success criteria.
 2. Keep the change narrowly scoped. Mention unrelated problems, but do not fix them unless asked.
 3. Never manually edit generated files (`.g.` in the extension). Read the file header and use the documented regeneration command.
 4. Add a regression test for bug fixes when practical.
@@ -119,6 +119,10 @@ The GUI generator is primarily a Windows workflow:
 Debugger code inspects live customer objects. Before changing capture, expression evaluation, Exception Replay, Code Origin, or symbol resolution, read `docs/development/DebuggerSafetyBoundaries.md`. Avoid paths that load customer types early, trigger type initializers, instantiate attributes, or execute getters, enumerators, exception overrides, or `ToString()`.
 
 For general local debugging, read `docs/development/TracerDebugging.md`. For querying spans and logs during investigations, read `docs/development/QueryingDatadogAPIs.md`.
+
+### Feature Flags and OpenFeature
+
+Before changing OpenFeature provider evaluation or hooks, read `docs/development/FeatureFlagsOpenFeature.md` for synchronous API behavior, provider hook rules, and focused tests.
 
 ### Configuration and SDK Maintenance
 
