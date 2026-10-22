@@ -412,6 +412,8 @@ internal sealed class DataStreamsManager
         return false;
     }
 
+    // Share one cache per key/value type in production while keeping TagCache instance-based,
+    // so tests can create isolated caches with different capacities and a controllable clock.
     private static class SharedTagCache<TKey, TValue>
         where TKey : IEquatable<TKey>
     {
