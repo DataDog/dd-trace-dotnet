@@ -118,7 +118,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 **C# style:**
 - See `.editorconfig` (auto-enforced)
-- Add missing `using` directives instead of fully-qualified type names
+- Add missing `using` directives instead of fully-qualified type names.
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
 - Prefer modern collection expressions (`[]`)
