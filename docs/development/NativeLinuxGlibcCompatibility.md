@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The non-musl native libraries are built on Ubuntu 22.04 with Clang 16, but
+The non-musl native libraries are built on modern Ubuntu with Clang 16 (or newer), but
 must still load on distributions whose system C library is glibc 2.17, such
 as CentOS 7.
 
