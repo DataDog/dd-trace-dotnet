@@ -91,7 +91,7 @@ cases:
         do not award a pairwise win merely for including it. Incorrect terminology or unresolved contradictions still count against an answer.
     bad_signals:
       - Uses the bare word "Profiler" as the SDK's name in the proposed message, rather than mentioning it as a term to avoid.
-      - Endorses "managed profiler" as the managed tracer's name, rather than quoting it as a term to avoid.
+      - Explicitly endorses "managed profiler" as the managed tracer's name or claims Datadog.Trace.dll is an incorrect assembly name. Listing either or both as terms to avoid for the whole-product message is not this bad signal.
       - Uses an individual component name instead of "Datadog SDK" for disabling the entire product.
 
   - id: dotnet-tracer-logging-noalloc-005
