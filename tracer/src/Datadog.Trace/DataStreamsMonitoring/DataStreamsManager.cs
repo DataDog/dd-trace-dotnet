@@ -375,7 +375,7 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the edge tags from the key on cache miss.</param>
     public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, EdgeTags> factory)
         where TKey : IEquatable<TKey>
-        => SharedTagCache<TKey, EdgeTags>.GetCache(_tagCacheSize).GetOrCreate(key, factory);
+        => TagCache<TKey, EdgeTags>.GetOrCreate(key, factory, _tagCacheSize);
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
@@ -389,7 +389,7 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
         where TKey : IEquatable<TKey>
-        => SharedTagCache<TKey, string>.GetCache(_tagCacheSize).GetOrCreate(key, factory);
+        => TagCache<TKey, string>.GetOrCreate(key, factory, _tagCacheSize);
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions
@@ -410,27 +410,5 @@ internal sealed class DataStreamsManager
 
         weight = 0;
         return false;
-    }
-
-    // Share one cache per key/value type in production while keeping TagCache instance-based,
-    // so tests can create isolated caches with different capacities and a controllable clock.
-    private static class SharedTagCache<TKey, TValue>
-        where TKey : IEquatable<TKey>
-    {
-        private static TagCache<TKey, TValue>? _cache;
-
-        // The first manager to use this key/value type determines its process-wide capacity.
-        // Later managers reuse the cache even if their configured capacity differs.
-        internal static TagCache<TKey, TValue> GetCache(int capacity)
-        {
-            var cache = Volatile.Read(ref _cache);
-            if (cache is not null)
-            {
-                return cache;
-            }
-
-            var created = new TagCache<TKey, TValue>(capacity);
-            return Interlocked.CompareExchange(ref _cache, created, null) ?? created;
-        }
     }
 }
