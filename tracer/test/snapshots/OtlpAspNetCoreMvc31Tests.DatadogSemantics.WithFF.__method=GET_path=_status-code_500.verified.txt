@@ -140,7 +140,7 @@
                 {
                   "key": "_sampling_priority_v1",
                   "value": {
-                    "doubleValue": 2.0
+                    "intValue": "2"
                   }
                 },
                 {

@@ -483,7 +483,7 @@ public class OtlpMapperTests
         var attributes = new List<KeyValue>();
         OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128);
 
-        attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingPriority).Which.Value.Should().Be((double)samplingPriority);
+        attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingPriority).Which.Value.Should().Be(samplingPriority);
         attributes.Should().ContainSingle(kv => kv.Key == Tags.Propagated.DecisionMaker).Which.Value.Should().Be(mechanism);
         attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingLimitDecision).Which.Value.Should().Be(0.75);
 

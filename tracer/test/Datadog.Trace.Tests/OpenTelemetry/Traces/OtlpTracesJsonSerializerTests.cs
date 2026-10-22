@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.IO;
+using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
@@ -234,6 +236,28 @@ public class OtlpTracesJsonSerializerTests
         var json = WriteSpan(ddSpan);
 
         json["flags"]!.Value<int>().Should().Be(expectedFlags);
+    }
+
+    [Fact]
+    public void WriteSpan_NegativeSamplingPriority_UsesInvariantCulture()
+    {
+        var originalCulture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            // sv-SE uses U+2212 as its negative sign
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("sv-SE");
+
+            var ddSpan = CreateSpan();
+            ddSpan.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+
+            var json = WriteSpan(ddSpan);
+
+            json["attributes"]!.Should().Contain(a => a["key"]!.Value<string>() == "_sampling_priority_v1" && a["value"]!["intValue"]!.Value<string>() == "-1");
+        }
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
     }
 
     [Fact]

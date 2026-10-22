@@ -290,10 +290,10 @@ internal static class OtlpMapper
         }
 
         // add "_sampling_priority_v1" to all "chunk orphans" (spans whose parents are not found in the same chunk).
-        // Written as a double, like the MessagePack metric and other tracers' OTLP export.
+        // Written as an OTLP int; the Agent converts int and double attributes to the same span metric.
         if (spanModel is { IsChunkOrphan: true, TraceChunk.SamplingPriority: { } samplingPriority })
         {
-            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.SamplingPriority, (double)samplingPriority), limit, ref count, ref droppedAttributesCount);
+            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.SamplingPriority, samplingPriority), limit, ref count, ref droppedAttributesCount);
         }
 
         // Notes for later:

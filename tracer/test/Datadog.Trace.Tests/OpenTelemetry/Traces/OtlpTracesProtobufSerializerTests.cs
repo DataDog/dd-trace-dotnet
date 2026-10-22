@@ -600,7 +600,7 @@ public class OtlpTracesProtobufSerializerTests
 
         var span = SerializeAndParse(CreateChunk(ddSpan));
 
-        span.Attributes.Should().ContainSingle(a => a.Key == "_sampling_priority_v1").Which.Value.DoubleValue.Should().Be(2);
+        span.Attributes.Should().ContainSingle(a => a.Key == "_sampling_priority_v1").Which.Value.IntValue.Should().Be(2);
         span.Attributes.Should().ContainSingle(a => a.Key == "_dd.p.dm").Which.Value.StringValue.Should().Be("-12");
         span.Attributes.Should().ContainSingle(a => a.Key == "_dd.p.ksr").Which.Value.StringValue.Should().Be("0.25");
         span.Attributes.Should().ContainSingle(a => a.Key == "_dd.rule_psr").Which.Value.DoubleValue.Should().Be(0.25);

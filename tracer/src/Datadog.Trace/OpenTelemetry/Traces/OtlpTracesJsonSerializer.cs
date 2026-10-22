@@ -314,15 +314,19 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(boolValue);
                 break;
 
+            case int intValue:
+                writer.WritePropertyName("intValue");
+                writer.WriteValue(IntStringCache.ToInvariantString(intValue));
+                break;
+
             case byte:
             case sbyte:
             case short:
             case ushort:
-            case int:
             case uint:
             case long:
                 writer.WritePropertyName("intValue");
-                writer.WriteValue(value.ToString());
+                writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
                 break;
 
             case double doubleValue:
