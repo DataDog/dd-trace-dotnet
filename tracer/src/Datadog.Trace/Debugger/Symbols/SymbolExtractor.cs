@@ -171,12 +171,12 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle)))
+                var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
+                var isTopLevelProgram = IsTopLevelProgram(type);
+                if (!isTopLevelProgram && DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle)))
                 {
                     return false;
                 }
-
-                var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
 
                 if (type.IsInterfaceType())
                 {
@@ -197,7 +197,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 int nestedClassesScopeIndex = 0;
                 if (methods.Count > 0)
                 {
-                    PopulateMethodScopes(type, methods, scopes, ref methodsScopeIndex);
+                    PopulateMethodScopes(type, methods, scopes, isTopLevelProgram, ref methodsScopeIndex);
                 }
 
                 nestedClassesScopeIndex = methodsScopeIndex;
@@ -451,7 +451,27 @@ namespace Datadog.Trace.Debugger.Symbols
             return fieldSymbols;
         }
 
-        private void PopulateMethodScopes(TypeDefinition type, MethodDefinitionHandleCollection methods, Model.Scope[] classMethods, ref int index)
+        private bool IsTopLevelProgram(TypeDefinition type)
+        {
+            if (!type.Namespace.IsNil || !type.GetDeclaringType().IsNil || !MetadataReader.StringComparer.Equals(type.Name, "Program"))
+            {
+                return false;
+            }
+
+            // C# top-level statements live in a generated Program type with a <Main>$ method.
+            foreach (var handle in type.GetMethods())
+            {
+                var method = MetadataReader.GetMethodDefinition(handle);
+                if (method.IsStaticMethod() && MetadataReader.StringComparer.Equals(method.Name, "<Main>$"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void PopulateMethodScopes(TypeDefinition type, MethodDefinitionHandleCollection methods, Model.Scope[] classMethods, bool isTopLevelProgram, ref int index)
         {
             foreach (var methodDefHandle in methods)
             {
@@ -464,8 +484,11 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
 
                     var methodToken = MetadataTokens.GetToken(methodDefHandle);
+                    var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
 
-                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodToken))
+                    // Keep the compiled name so a method probe can target the local function directly.
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodToken) &&
+                        !(isTopLevelProgram && MetadataReader.GetString(methodDef.Name).StartsWith("<<Main>$>g__", StringComparison.Ordinal)))
                     {
                         continue;
                     }
@@ -475,7 +498,6 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
                     if (!TryCreateMethodScope(type, methodDefHandle, methodDef, out methodScope))
                     {
                         continue;
