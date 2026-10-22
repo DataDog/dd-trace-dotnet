@@ -17,6 +17,10 @@ list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
     CMAKE_SYSROOT
     CMAKE_FIND_ROOT_PATH)
 set(devtoolset10_dir ${glibc217_sysroot}/devtoolset10)
+# Libtool drops -B from LDFLAGS. Consumers that link through libtool (libunwind)
+# put this directory on the compiler command instead.
+set(GLIBC217_TOOLCHAIN_LIB "${devtoolset10_dir}/lib" CACHE INTERNAL
+    "Developer Toolset directory containing crtbeginS.o and libgcc")
 
 if (NOT EXISTS ${glibc217_sysroot})
     message(FATAL_ERROR "USE_GLIBC217_SYSROOT is set but ${glibc217_sysroot} does not exist. "
