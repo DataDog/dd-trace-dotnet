@@ -189,7 +189,7 @@ public class FeatureFlagsModuleTests
         subscription.Invoke(
             new Dictionary<string, List<RemoteConfiguration>>
             {
-                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(configJson), configJson.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(configJson), 1)]
             },
             null);
 
@@ -249,7 +249,7 @@ public class FeatureFlagsModuleTests
             var json = JsonConvert.SerializeObject(new ServerConfiguration { Flags = flags });
             return new Dictionary<string, List<RemoteConfiguration>>
             {
-                [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), 1)]
             };
         }
     }
@@ -417,7 +417,7 @@ public class FeatureFlagsModuleTests
         subscription.Invoke(
             new Dictionary<string, List<RemoteConfiguration>>
             {
-                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(configJson), configJson.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(configJson), 1)]
             },
             null);
 
