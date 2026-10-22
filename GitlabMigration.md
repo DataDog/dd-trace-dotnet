@@ -71,6 +71,12 @@ Local YAML, PowerShell, whitespace, SDK-consistency, and focused framework-helpe
 
 Local validation passed PowerShell parsing and a parallel build of all 11 sample frameworks with SDK 11 RC2 (zero warnings/errors). MSBuild evaluation confirmed distinct intermediate paths for explicit package versions. The fixes still require a GitLab run.
 
+### Windows .NET Framework CI Visibility follow-up (2026-10-22)
+
+[Pipeline 146756580](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/146756580) passed the previously failing Windows build jobs, then exposed missing-testhost failures in both x86 and x64 `net48:ci-visibility` jobs. Local VSTest diagnostics reproduced the cause: samples omit `TargetFrameworkAttribute`, so the SDK runner inferred `.NETCoreApp,Version=v1.0` instead of .NET Framework and selected the wrong test host.
+
+The shared launcher now supplies `/Framework:<sample TFM>` for .NET Framework samples, honoring explicit framework overrides. Direct `dotnet exec`/MTP and .NET Core paths are unchanged. This removes the ambiguous runtime inference rather than skipping tests or changing their assertions. The helper builds cleanly for `net48`; local MSTest sample discovery and a passing sample test succeed on x86 and x64 with `/Framework:net48`. Full instrumented CI validation remains pending.
+
 ### Reviewed CI results and follow-ups (2026-09-30)
 
 [Pipeline 141167767](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/141167767), at `7cdae62343`, passed all four unit-test child pipelines and all Windows and Debian CI Visibility cells. Seven Alpine CI Visibility cells passed their test assertions but failed `CheckBuildLogsForErrors`: x64 .NET 3.1/9/10 reported writer mutex timeouts, while ARM64 .NET 5/6/9/10 reported IPC mutex-creation failures with missing `/tmp/.dotnet/lockfiles/session1/` paths. Alpine .NET 11 passed on both architectures. This confirms recurrence across runs, not a failure in every Alpine configuration; the underlying IPC cause remains unresolved.

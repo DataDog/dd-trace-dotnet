@@ -22,6 +22,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -97,6 +98,14 @@ namespace Datadog.Trace.TestHelpers
                 (_, true) => $"vstest {sampleAppPath}",
                 _ => sampleAppPath,
             };
+
+            var targetFramework = StringUtil.IsNullOrEmpty(framework) ? EnvironmentHelper.GetTargetFramework() : framework;
+            if (!useDotnetExec && targetFramework.StartsWith("net4", StringComparison.Ordinal))
+            {
+                // Samples omit TargetFrameworkAttribute, so dotnet vstest can infer .NET Core
+                // and fail to find a testhost for a .NET Framework assembly.
+                appPath += $" /Framework:{targetFramework}";
+            }
 
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
