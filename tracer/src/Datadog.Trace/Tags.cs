@@ -642,34 +642,45 @@ namespace Datadog.Trace
         /// </summary>
         internal const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 
-        // NOTE: unlike every other tag in this file, the four Azure Functions constants below are
-        // key *suffixes*, not complete tag keys. They are combined with an environment-dependent
-        // prefix ("aas." in Azure App Service, "aca." in Azure Container Apps) by AzureFunctionsTags.
-        // Never use them directly as tag keys - doing so emits an unprefixed tag.
+        /// <summary>
+        /// The type of trigger for an azure function hosted in Azure App Service.
+        /// </summary>
+        internal const string AzureFunctionTriggerType = "aas.function.trigger";
 
         /// <summary>
-        /// The type of trigger for an azure function.
-        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
+        /// The UI name of the azure function hosted in Azure App Service.
         /// </summary>
-        internal const string AzureFunctionTriggerType = "function.trigger";
+        internal const string AzureFunctionName = "aas.function.name";
 
         /// <summary>
-        /// The UI name of the azure function.
-        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
+        /// The full method name of the azure function hosted in Azure App Service.
         /// </summary>
-        internal const string AzureFunctionName = "function.name";
+        internal const string AzureFunctionMethod = "aas.function.method";
 
         /// <summary>
-        /// The full method name of the azure function.
-        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
+        /// The literal type of the binding for the azure function trigger hosted in Azure App Service.
         /// </summary>
-        internal const string AzureFunctionMethod = "function.method";
+        internal const string AzureFunctionBindingSource = "aas.function.binding";
 
         /// <summary>
-        /// The literal type of the binding for the azure function trigger.
-        /// Key suffix; prefixed with "aas."/"aca." by <see cref="Tagging.AzureFunctionsTags"/>.
+        /// The type of trigger for an azure function hosted in Azure Container Apps.
         /// </summary>
-        internal const string AzureFunctionBindingSource = "function.binding";
+        internal const string AzureContainerAppFunctionTriggerType = "aca.function.trigger";
+
+        /// <summary>
+        /// The UI name of the azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionName = "aca.function.name";
+
+        /// <summary>
+        /// The full method name of the azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionMethod = "aca.function.method";
+
+        /// <summary>
+        /// The literal type of the binding for the azure function trigger hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionBindingSource = "aca.function.binding";
 
         /// <summary>
         /// Configures the origin of the trace. This tag is added during MessagePack serialization

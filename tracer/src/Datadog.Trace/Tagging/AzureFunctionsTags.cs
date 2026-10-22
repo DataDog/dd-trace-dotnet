@@ -9,11 +9,12 @@ namespace Datadog.Trace.Tagging
 {
     internal sealed partial class AzureFunctionsTags : InstrumentationTags
     {
-        private const string AasPrefix = "aas.";
-        private const string AcaPrefix = "aca.";
         private const string ComponentName = nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions);
-        // Tag keys carry an environment-dependent prefix, so they can't be [Tag] attributes
-        // (those require compile-time constants). These flow through the base tag dictionary.
+
+        // The tag key depends on the hosting environment, which is only known at runtime, so these
+        // can't be [Tag] attributes (those require a compile-time constant key). They flow through
+        // the base tag dictionary instead. Selecting a key is a reference copy to an interned
+        // constant - nothing is built per instance on the span-creation path.
         private readonly string _shortNameTagName;
         private readonly string _fullNameTagName;
         private readonly string _bindingSourceTagName;
@@ -21,12 +22,10 @@ namespace Datadog.Trace.Tagging
 
         public AzureFunctionsTags(bool isContainerApps)
         {
-            var prefix = isContainerApps ? AcaPrefix : AasPrefix;
-
-            _shortNameTagName = prefix + Trace.Tags.AzureFunctionName;
-            _fullNameTagName = prefix + Trace.Tags.AzureFunctionMethod;
-            _bindingSourceTagName = prefix + Trace.Tags.AzureFunctionBindingSource;
-            _triggerTypeTagName = prefix + Trace.Tags.AzureFunctionTriggerType;
+            _shortNameTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionName : Trace.Tags.AzureFunctionName;
+            _fullNameTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionMethod : Trace.Tags.AzureFunctionMethod;
+            _bindingSourceTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionBindingSource : Trace.Tags.AzureFunctionBindingSource;
+            _triggerTypeTagName = isContainerApps ? Trace.Tags.AzureContainerAppFunctionTriggerType : Trace.Tags.AzureFunctionTriggerType;
 
             TriggerType = "Unknown";
         }
@@ -79,22 +78,13 @@ namespace Datadog.Trace.Tagging
                 tags.SetTag(Tags.InstrumentationName, ComponentName);
             }
 
-            if (tags is AzureFunctionsTags azureFunctionsTags)
-            {
-                azureFunctionsTags.ShortName = shortName;
-                azureFunctionsTags.FullName = fullName;
-                azureFunctionsTags.BindingSource = bindingSource;
-                azureFunctionsTags.TriggerType = triggerType;
-            }
-            else
-            {
-                var prefix = isContainerApps ? AcaPrefix : AasPrefix;
-
-                tags.SetTag(prefix + Trace.Tags.AzureFunctionName, shortName);
-                tags.SetTag(prefix + Trace.Tags.AzureFunctionMethod, fullName);
-                tags.SetTag(prefix + Trace.Tags.AzureFunctionBindingSource, bindingSource);
-                tags.SetTag(prefix + Trace.Tags.AzureFunctionTriggerType, triggerType);
-            }
+            // Applies to any ITags, AzureFunctionsTags included: its typed properties are backed by
+            // the same tag-dictionary entries these keys address, so there is no need to special
+            // case it - and no second source of truth for the prefix.
+            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionName : Trace.Tags.AzureFunctionName, shortName);
+            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionMethod : Trace.Tags.AzureFunctionMethod, fullName);
+            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionBindingSource : Trace.Tags.AzureFunctionBindingSource, bindingSource);
+            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionTriggerType : Trace.Tags.AzureFunctionTriggerType, triggerType);
         }
     }
 }
