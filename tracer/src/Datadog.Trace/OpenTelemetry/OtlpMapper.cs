@@ -259,6 +259,11 @@ internal static class OtlpMapper
 
         if (spanModel.IsLocalRoot)
         {
+            // TODO: unlike SpanMessagePackFormatter, we don't write "process_id" or "_dd.tracer_kr" on the local root yet.
+            // "process_id" likely belongs on the OTLP resource instead (OTel semantic convention "process.pid").
+            // It's still open whether "_dd.tracer_kr" (tracer keep rate: moving average of the share of traces
+            // sent vs. dropped before reaching the Agent) should be exported over OTLP at all.
+
             // add agent or rule sampling rate
             if (spanModel.TraceChunk is { AppliedSamplingRate: { } samplingRate, SamplingMechanism: { } samplingMechanism })
             {
