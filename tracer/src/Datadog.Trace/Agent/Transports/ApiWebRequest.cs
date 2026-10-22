@@ -6,12 +6,14 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -37,7 +39,7 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         public Task<IApiResponse> GetAsync()
-            => SendAsync(method: "GET", contentType: null, contentEncoding: null, state: this, writeBody: null);
+            => SendAsync(method: "GET", contentType: null, contentEncoding: null, state: this, writeBody: null, new CancellationTokenSource(_request.Timeout));
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
             => PostAsync(bytes, contentType, null);
@@ -184,28 +186,127 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody)
+        private Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task> writeBody)
+            => SendAsync(method, contentType, contentEncoding, state, writeBody, new CancellationTokenSource(_request.Timeout));
+
+        [TestingOnly]
+        internal Task<IApiResponse> SendAsync(string method, string? contentType, string? contentEncoding, Func<Stream, Task>? writeBody, CancellationTokenSource cts)
+            => SendAsync(method, contentType, contentEncoding, state: writeBody, writeBody is null ? null : static (stream, writeFunc) => writeFunc!(stream), cts);
+
+        private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody, CancellationTokenSource cts)
         {
+            CancellationTokenRegistration registration = default;
             try
             {
                 ResetRequest(method, contentType, contentEncoding);
+
+                // The callback runs on a CancellationTokenSource timer thread (or
+                // synchronously if the token is already cancelled), so it must swallow
+                // exceptions -- nothing observes them there.
+
+                // Note that this deadline is currently _only_ scoped to the "send": connect,
+                // writing the request body, and waiting for response headers - ending when
+                // SendAsync returns. Reading the response body afterwards is not covered.
+                //
+                // This diverges slightly from HttpClient, where the timeout covers the _whole_ read
+                // currently, however, this _may_ change if we switch to using HttpCompletionMode.
+                // ResponseHeadersRead to avoid the full buffering into memory as we do today.
+                var deadlineExpired = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+                using var tcsRegistration = cts.Token.Register(x => ((TaskCompletionSource<object?>)x!).TrySetResult(true), deadlineExpired, useSynchronizationContext: false);
+                registration = cts.Token.Register(static s => { try { ((HttpWebRequest)s!).Abort(); } catch { } }, _request);
 
                 if (writeBody is not null)
                 {
                     using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
                     {
-                        await writeBody(requestStream, state).ConfigureAwait(false);
+                        var writeBodyTask = writeBody(requestStream, state);
+                        var result = await Task.WhenAny(writeBodyTask, deadlineExpired.Task).ConfigureAwait(false);
+                        if (result == deadlineExpired.Task)
+                        {
+                            // The deadline fired before the body producer finished. Don't wait for it any longer - observe
+                            // its eventual fault here so it can't surface as an unobserved task exception later.
+                            _ = writeBodyTask.ContinueWith(
+                                static t => _ = t.Exception,
+                                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+                            ThrowCancelledException(_request, cts.Token, null);
+                        }
+                        else
+                        {
+                            // This has  finished, but not necessarily succesfully, so await it
+                            await writeBodyTask.ConfigureAwait(false);
+                        }
                     }
                 }
 
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                // Call GetResponseAsync(), but make sure we handle cancellation in the mean time
+                HttpWebResponse httpWebResponse;
+                var getResponseTask = _request.GetResponseAsync();
+                var getResponseResult = await Task.WhenAny(getResponseTask, deadlineExpired.Task).ConfigureAwait(false);
+                if (getResponseResult == deadlineExpired.Task)
+                {
+                    // The deadline fired before GetResponseAsync() finished. Don't wait for it any longer:
+                    // if it eventually faults, observe the exception so it can't surface as an unobserved
+                    // task exception; if it eventually succeeds _despite_ Abort(), dispose the orphaned
+                    // response instead of leaking the underlying connection.
+                    _ = getResponseTask.ContinueWith(static t => ObserveOrphanedResponse(t), TaskContinuationOptions.ExecuteSynchronously);
+                    ThrowCancelledException(_request, cts.Token, null);
+                    httpWebResponse = default; // Not reachable, but easiest way to keep the compiler happy
+                }
+                else
+                {
+                    httpWebResponse = (HttpWebResponse)await getResponseTask.ConfigureAwait(false);
+                }
+
+                // Make sure we don't have a concurrent Abort() before returning - calling Dispose() here waits
+                // for in-flight cancellation, and it's safe to call Dispose() more than once.
+                registration.Dispose();
+                if (cts.IsCancellationRequested)
+                {
+                    httpWebResponse.Dispose();
+                    ThrowCancelledException(_request, cts.Token, null);
+                }
+
                 return new ApiWebResponse(httpWebResponse);
             }
             catch (WebException exception)
                 when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
             {
+                // Same race as above, and we don't want Abort() to happen after we return response to caller
+                registration.Dispose();
+                if (cts.IsCancellationRequested)
+                {
+                    exception.Response.Dispose();
+                    ThrowCancelledException(_request, cts.Token, exception);
+                }
+
                 // If the exception is caused by an error status code, ignore it and let the caller handle the result
                 return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+            catch (Exception ex) when (cts.IsCancellationRequested && ex is not OperationCanceledException)
+            {
+                ThrowCancelledException(_request, cts.Token, ex);
+                return default; // never hit, compiler is stupid
+            }
+            finally
+            {
+                registration.Dispose();
+                cts.Dispose();
+            }
+
+            [DoesNotReturn]
+            static void ThrowCancelledException(HttpWebRequest request, CancellationToken token, Exception? innerException)
+                => throw new OperationCanceledException($"The request to {request.RequestUri} timed out after {request.Timeout}ms.", innerException, token);
+
+            static void ObserveOrphanedResponse(Task<WebResponse> task)
+            {
+                if (task.IsFaulted)
+                {
+                    _ = task.Exception;
+                }
+                else if (task.Status == TaskStatus.RanToCompletion)
+                {
+                    task.Result.Dispose();
+                }
             }
         }
 
