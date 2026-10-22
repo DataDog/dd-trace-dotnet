@@ -19,22 +19,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Compile the version-specific generated file instead of the checked-in copy. -->
+    <Compile Remove="Sample.cs" />
     <PackageReference Include="Google.Protobuf" Version="$(ApiVersion)"/>
     <!-- 👇 This one is only here to bring the right version of protoc (must stay in sync with 👆) -->
     <PackageReference Include="Google.Protobuf.Tools" Version="$(ApiVersion)"/>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <!-- 
-    This is the step that takes the *.proto file and turns it into a C# file.
-
-    ⚠️ Looks like there is some race condition and we cannot rely on this to generate the file just before the build,
-    which is why even though it's regenerated before each build, we still commit the generated file 🤷
-
-    Protoc will generate different code depending on the version used,
-    and code generated for newer versions might not compile if the dependency is older
-    so we generate the C# code here to make sure it matches the dependency version that is used
-     -->
-    <Exec Command="$(NugetPackageRoot)\google.protobuf.tools\$(ApiVersion)\tools\$(ProtocPath) -I=$(NugetPackageRoot)\google.protobuf.tools\$(ApiVersion)\tools -I=$(ProjectDir) --csharp_out=$(ProjectDir) $(ProjectDir)sample.proto"/>
+    <!-- Match the generated code to the package version, without parallel framework/package
+         builds overwriting a shared source file. Evaluate the path after SDK targets load. -->
+    <PropertyGroup>
+      <ProtobufOutputPath>$(IntermediateOutputPath)protobuf</ProtobufOutputPath>
+    </PropertyGroup>
+    <MakeDir Directories="$(ProtobufOutputPath)" />
+    <Exec Command="&quot;$(NugetPackageRoot)\google.protobuf.tools\$(ApiVersion)\tools\$(ProtocPath)&quot; -I=&quot;$(NugetPackageRoot)\google.protobuf.tools\$(ApiVersion)\tools&quot; -I=&quot;$(ProjectDir).&quot; --csharp_out=&quot;$(ProtobufOutputPath)&quot; &quot;$(ProjectDir)sample.proto&quot;"/>
+    <ItemGroup>
+      <Compile Include="$(ProtobufOutputPath)/Sample.cs" />
+      <FileWrites Include="$(ProtobufOutputPath)/Sample.cs" />
+    </ItemGroup>
   </Target>
 </Project>
