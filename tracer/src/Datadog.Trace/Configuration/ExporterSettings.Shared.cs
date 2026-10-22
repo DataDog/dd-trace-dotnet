@@ -54,13 +54,29 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal const string DefaultTracesUnixDomainSocket = "/var/run/datadog/apm.socket";
 
-        private static string GetOtlpProtocolName(OtlpProtocol protocol)
+        internal static string GetOtlpProtocolName(OtlpProtocol protocol)
             => protocol switch
             {
                 OtlpProtocol.Grpc => "grpc",
                 OtlpProtocol.HttpProtobuf => "http/protobuf",
                 _ => "http/json",
             };
+
+        private static OtlpProtocol? ParseOtlpProtocol(string? protocol)
+            => protocol switch
+            {
+                _ when string.Equals(protocol, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                _ when string.Equals(protocol, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                _ when string.Equals(protocol, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
+                _ => null,
+            };
+
+        private static string GetDefaultOtlpBaseUri(OtlpProtocol protocol, string? agentHost)
+        {
+            var defaultHost = string.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
+            var defaultPort = protocol == OtlpProtocol.Grpc ? DefaultOtlpGrpcPort : DefaultOtlpHttpPort;
+            return $"http://{defaultHost}:{defaultPort}";
+        }
 
         private TraceTransportSettings GetTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
         {
@@ -158,14 +174,12 @@ namespace Datadog.Trace.Configuration
             // TODO: Treat empty OTEL settings as unset at the config source level instead of per setting
             var isSignalProtocolSet = !string.IsNullOrEmpty(signalProtocol);
             var configuredProtocol = isSignalProtocolSet ? signalProtocol : generalProtocol;
-            OtlpProtocol? parsedProtocol = configuredProtocol switch
+            var parsedProtocol = ParseOtlpProtocol(configuredProtocol);
+            if (parsedProtocol is null && !string.IsNullOrEmpty(configuredProtocol))
             {
-                null or "" => null,
-                _ when string.Equals(configuredProtocol, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
-                _ when string.Equals(configuredProtocol, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
-                _ when string.Equals(configuredProtocol, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
-                _ => UnsupportedOtlpProtocol(signal, configuredProtocol, defaultProtocol, supportsHttpJson),
-            };
+                WarnUnsupportedOtlpProtocol(signal, configuredProtocol!, defaultProtocol, supportsHttpJson);
+            }
+
             var protocol = parsedProtocol ?? defaultProtocol;
 
             if (protocol == OtlpProtocol.HttpJson && !supportsHttpJson)
@@ -217,11 +231,10 @@ namespace Datadog.Trace.Configuration
             return GetOtlpUri(signal, endpointKey, CreateDefaultOtlpUri(protocol, signal, agentHost), ConfigurationOrigins.Default, protocol, agentHost);
         }
 
-        private OtlpProtocol? UnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol, bool supportsHttpJson)
+        private void WarnUnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol, bool supportsHttpJson)
         {
             var supportedValues = supportsHttpJson ? "'grpc', 'http/protobuf' and 'http/json'" : "'grpc' and 'http/protobuf'";
             ValidationWarnings.Add($"Unsupported OTLP protocol '{configuredProtocol}' for {signal}. Supported values are {supportedValues}. Using default: {defaultProtocol.ToString()}");
-            return null;
         }
 
         private bool TryGetAgentUriAndTransport(string host, int port, out TraceTransportSettings settings)
@@ -360,11 +373,11 @@ namespace Datadog.Trace.Configuration
 
         private Uri CreateDefaultOtlpUri(OtlpProtocol protocol, string signal, string? agentHost)
         {
-            var defaultHost = string.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
+            var baseUri = GetDefaultOtlpBaseUri(protocol, agentHost);
             return protocol switch
             {
-                OtlpProtocol.Grpc => new Uri($"http://{defaultHost}:{DefaultOtlpGrpcPort}"),
-                OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"http://{defaultHost}:{DefaultOtlpHttpPort}/v1/{signal}"),
+                OtlpProtocol.Grpc => new Uri(baseUri),
+                OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"{baseUri}/v1/{signal}"),
                 _ => throw new ArgumentException($"Invalid protocol: {protocol}"),
             };
         }

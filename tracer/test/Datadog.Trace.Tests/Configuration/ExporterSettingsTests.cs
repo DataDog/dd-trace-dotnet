@@ -536,6 +536,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, null, "grpc", ConfigurationOrigins.Default, "http://localhost:4317/", ConfigurationOrigins.Default)]
         [InlineData(null, null, "agent", "grpc", ConfigurationOrigins.Default, "http://agent:4317/", ConfigurationOrigins.Default)]
         [InlineData("http/protobuf", null, null, "http/protobuf", ConfigurationOrigins.Code, "http://localhost:4318/", ConfigurationOrigins.Default)]
+        [InlineData("invalid", null, null, "grpc", ConfigurationOrigins.Default, "http://localhost:4317/", ConfigurationOrigins.Default)]
         [InlineData("http/json", "http://base:4333/mycollector", null, "http/json", ConfigurationOrigins.Code, "http://base:4333/mycollector", ConfigurationOrigins.Code)]
         public void OtlpGeneralTelemetry(string generalProtocol, string generalEndpoint, string agentHost, string expectedProtocol, ConfigurationOrigins expectedProtocolOrigin, string expectedEndpoint, ConfigurationOrigins expectedEndpointOrigin)
         {

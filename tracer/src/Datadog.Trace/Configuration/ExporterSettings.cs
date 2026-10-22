@@ -50,6 +50,8 @@ namespace Datadog.Trace.Configuration
         internal const string DefaultMetricsUnixDomainSocket = "/var/run/datadog/dsd.socket";
         internal const string UdpPrefix = "udp://";
 
+        private const OtlpProtocol DefaultOtlpProtocol = OtlpProtocol.Grpc;
+
         [TestingOnly]
         internal ExporterSettings()
             : this(source: null, File.Exists, new ConfigurationTelemetry())
@@ -370,18 +372,15 @@ namespace Datadog.Trace.Configuration
         private void RecordOtlpGeneralDefaults(string? generalProtocol, string? generalEndpoint, string? agentHost)
         {
             // Configured values are already recorded by the ConfigurationBuilder read in Raw
-            if (StringUtil.IsNullOrEmpty(generalProtocol))
+            var protocol = ParseOtlpProtocol(generalProtocol);
+            if (protocol is null)
             {
-                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, "grpc", recordValue: true, ConfigurationOrigins.Default);
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, GetOtlpProtocolName(DefaultOtlpProtocol), recordValue: true, ConfigurationOrigins.Default);
             }
 
             if (StringUtil.IsNullOrEmpty(generalEndpoint))
             {
-                var isHttp = string.Equals(generalProtocol, "http/protobuf", StringComparison.OrdinalIgnoreCase)
-                          || string.Equals(generalProtocol, "http/json", StringComparison.OrdinalIgnoreCase);
-                var host = StringUtil.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
-                var port = isHttp ? DefaultOtlpHttpPort : DefaultOtlpGrpcPort;
-                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, $"http://{host}:{port}/", recordValue: true, ConfigurationOrigins.Default);
+                _telemetry.Record(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, $"{GetDefaultOtlpBaseUri(protocol ?? DefaultOtlpProtocol, agentHost)}/", recordValue: true, ConfigurationOrigins.Default);
             }
         }
 

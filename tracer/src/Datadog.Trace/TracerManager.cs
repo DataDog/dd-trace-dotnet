@@ -404,13 +404,7 @@ namespace Datadog.Trace
                         writer.WriteValue(UriHelpers.CleanUri(endpoint, removeScheme: false, tryRemoveIds: false));
 
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_PROTOCOL");
-                        writer.WriteValue(protocol switch
-                        {
-                            OtlpProtocol.Grpc => "grpc",
-                            OtlpProtocol.HttpProtobuf => "http/protobuf",
-                            OtlpProtocol.HttpJson => "http/json",
-                            _ => null,
-                        });
+                        writer.WriteValue(ExporterSettings.GetOtlpProtocolName(protocol));
 
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_HEADERS");
                         writer.WriteStartObject();
