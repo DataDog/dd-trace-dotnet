@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 using LogEventLevel = Datadog.Trace.Vendors.Serilog.Events.LogEventLevel;
 
 namespace Datadog.Trace.Configuration
@@ -29,21 +30,46 @@ namespace Datadog.Trace.Configuration
         internal GlobalSettings(
             IConfigurationSource source,
             IConfigurationTelemetry telemetry,
-            IConfigurationOverrideHandler overrideHandler)
+            OverrideErrorLog overrideHandler)
         {
             var builder = new ConfigurationBuilder(source, telemetry);
 
+            var debugEnabled = builder.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
+            var datadogConfig = builder
+                               .WithKeys(ConfigurationKeys.Agent.LogLevel)
+                               .GetAsStructResult(ParseLogLevel);
+
+            var encounteredInvalidOtelLogLevel = false;
             var otelConfig = builder
                             .WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel)
-                            .AsStructResult(ParseLogLevel);
+                            .GetAsStructResult(
+                                 value =>
+                                 {
+                                     var parsed = ParseLogLevel(value);
+                                     encounteredInvalidOtelLogLevel |= !parsed.IsValid && !StringUtil.IsNullOrEmpty(value);
+                                     return parsed;
+                                 });
 
-            LogLevel = builder
-                      .WithKeys(ConfigurationKeys.DebugEnabled)
-                      .AsBoolResult()
-                      .Select(
-                           enabled => enabled ? LogEventLevel.Debug : LogEventLevel.Information,
-                           defaultValue: false)
-                      .OverrideWith(in otelConfig, overrideHandler);
+            if (debugEnabled)
+            {
+                datadogConfig = new(telemetry, ConfigurationKeys.DebugEnabled, ConfigurationResult<LogEventLevel>.Valid(LogEventLevel.Debug, "debug"));
+            }
+            else if (!datadogConfig.ConfigurationResult.IsValid)
+            {
+                datadogConfig = new(telemetry, ConfigurationKeys.Agent.LogLevel, ConfigurationResult<LogEventLevel>.NotFound());
+            }
+
+            if (!otelConfig.ConfigurationResult.IsValid)
+            {
+                var result = encounteredInvalidOtelLogLevel ? ConfigurationResult<LogEventLevel>.ParseFailure() : ConfigurationResult<LogEventLevel>.NotFound();
+                otelConfig = new(telemetry, ConfigurationKeys.OpenTelemetry.LogLevel, result);
+            }
+            else if (encounteredInvalidOtelLogLevel && !datadogConfig.ConfigurationResult.IsValid)
+            {
+                overrideHandler.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.LogLevel);
+            }
+
+            LogLevel = datadogConfig.OverrideWith(in otelConfig, overrideHandler, new DefaultResult<LogEventLevel>(LogEventLevel.Information, "info"));
 
             DebugEnabled = LogLevel == LogEventLevel.Debug;
 

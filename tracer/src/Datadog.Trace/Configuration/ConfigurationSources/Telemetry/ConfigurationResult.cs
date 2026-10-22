@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -16,12 +15,11 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 /// <typeparam name="T">The type of the returned value</typeparam>
 public readonly record struct ConfigurationResult<T>
 {
-    private ConfigurationResult(T? result, string? telemetryOverride, ConfigurationLoadResult loadResult, bool hasInvalidValue = false)
+    private ConfigurationResult(T? result, string? telemetryOverride, ConfigurationLoadResult loadResult)
     {
         Result = result;
         TelemetryOverride = telemetryOverride;
         LoadResult = loadResult;
-        HasInvalidValue = hasInvalidValue;
     }
 
     /// <summary>
@@ -58,14 +56,6 @@ public readonly record struct ConfigurationResult<T>
     /// Gets a value indicating the result of trying to load the configuration
     /// </summary>
     public ConfigurationLoadResult LoadResult { get; }
-
-    internal bool HasInvalidValue { get; }
-
-    internal ConfigurationResult<T> WithInvalidValue(bool hasInvalidValue)
-        => new(Result, TelemetryOverride, LoadResult, hasInvalidValue);
-
-    internal ConfigurationResult<TResult> Select<TResult>(Func<T, TResult> selector)
-        => new(IsValid ? selector(Result) : default, TelemetryOverride, LoadResult, HasInvalidValue);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value

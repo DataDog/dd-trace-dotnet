@@ -20,6 +20,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
@@ -35,12 +36,13 @@ internal sealed class TracerFlareManager : ITracerFlareManager
     private readonly IRcmSubscriptionManager _subscriptionManager;
     private readonly ITelemetryController _telemetryController;
     private readonly TracerFlareApi _flareApi;
+    private readonly object _debugLock = new();
 
     private string? _debugEnabledConfigPath;
     private ISubscription? _subscription;
     private Timer? _resetTimer;
 
-    private bool _wasDebugLogEnabled;
+    private LogEventLevel? _previousLogLevel;
 
     public TracerFlareManager(
         IDiscoveryService discoveryService,
@@ -86,11 +88,15 @@ internal sealed class TracerFlareManager : ITracerFlareManager
 
     private void ResetDebugging()
     {
-        // Restore the log level to its old value
-        if (!_wasDebugLogEnabled)
+        lock (_debugLock)
         {
-            _debugEnabledConfigPath = null;
-            GlobalSettings.SetDebugEnabled(false);
+            if (_previousLogLevel is { } previousLevel)
+            {
+                _previousLogLevel = null;
+                _debugEnabledConfigPath = null;
+                GlobalSettings.SetDebugEnabled(previousLevel == LogEventLevel.Debug);
+                DatadogLogging.SetLogLevel(previousLevel);
+            }
         }
     }
 
@@ -142,18 +148,21 @@ internal sealed class TracerFlareManager : ITracerFlareManager
             {
                 // This product means "prepare for sending a tracer flare."
                 // We may consider doing more than just enabling debug mode in the future
-                _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabled;
-                GlobalSettings.SetDebugEnabled(true);
+                lock (_debugLock)
+                {
+                    _previousLogLevel ??= DatadogLogging.LoggingLevelSwitch.MinimumLevel;
+                    GlobalSettings.SetDebugEnabled(true);
 
-                // The timer is a fallback, in case we never receive a "send flare" product
-                var timer = new Timer(
-                    _ => ResetDebugging(),
-                    state: null,
-                    dueTime: TimeSpan.FromMinutes(RevertGlobalDebugMinutes),
-                    period: Timeout.InfiniteTimeSpan);
+                    // The timer is a fallback, in case we never receive a "send flare" product
+                    var timer = new Timer(
+                        _ => ResetDebugging(),
+                        state: null,
+                        dueTime: TimeSpan.FromMinutes(RevertGlobalDebugMinutes),
+                        period: Timeout.InfiniteTimeSpan);
 
-                var previous = Interlocked.Exchange(ref _resetTimer, timer);
-                previous?.Dispose();
+                    var previous = Interlocked.Exchange(ref _resetTimer, timer);
+                    previous?.Dispose();
+                }
 
                 Log.Debug(TracerFlareInitializationLog);
 

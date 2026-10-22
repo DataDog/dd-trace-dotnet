@@ -7,14 +7,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -32,6 +39,7 @@ namespace Datadog.Trace.Tests.Logging
     {
         // Record this for restoring later
         private readonly bool _originalIsDebugEnabled;
+        private readonly LogEventLevel _originalLogLevel;
         private readonly ITestOutputHelper _output;
         private readonly ILogger _logger = null;
         private readonly CollectionSink _logEventSink;
@@ -41,6 +49,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             _output = output;
             _originalIsDebugEnabled = GlobalSettings.Instance.DebugEnabled;
+            _originalLogLevel = DatadogLogging.LoggingLevelSwitch.MinimumLevel;
             GlobalSettings.SetDebugEnabled(false);
             _logEventSink = new CollectionSink();
             _logger = new LoggerConfiguration()
@@ -54,6 +63,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             // On test cleanup, reload the GlobalSettings
             GlobalSettings.SetDebugEnabled(_originalIsDebugEnabled);
+            DatadogLogging.SetLogLevel(_originalLogLevel);
             _clockDisposable?.Dispose();
         }
 
@@ -83,13 +93,18 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Theory]
-        [InlineData("debug", 4)]
-        [InlineData("info", 3)]
-        [InlineData("warn", 2)]
-        [InlineData("error", 1)]
-        public void OtelLogLevelFiltersEmittedMessages(string value, int expectedCount)
+        [InlineData("debug", 4, false)]
+        [InlineData("debug", 4, true)]
+        [InlineData("info", 3, false)]
+        [InlineData("info", 3, true)]
+        [InlineData("warn", 2, false)]
+        [InlineData("warn", 2, true)]
+        [InlineData("error", 1, false)]
+        [InlineData("error", 1, true)]
+        public void ConfiguredLogLevelFiltersEmittedMessages(string value, int expectedCount, bool datadog)
         {
-            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.LogLevel, value } });
+            var key = datadog ? ConfigurationKeys.Agent.LogLevel : ConfigurationKeys.OpenTelemetry.LogLevel;
+            var source = new NameValueConfigurationSource(new() { { key, value } });
             var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             DatadogLogging.SetLogLevel(settings.LogLevel);
 
@@ -114,6 +129,64 @@ namespace Datadog.Trace.Tests.Logging
             GlobalSettings.SetDebugEnabled(false);
             DatadogLogging.LoggingLevelSwitch.MinimumLevel.Should().Be(LogEventLevel.Information);
             GlobalSettings.Instance.DebugEnabled.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData((int)LogEventLevel.Debug, "complete")]
+        [InlineData((int)LogEventLevel.Information, "complete")]
+        [InlineData((int)LogEventLevel.Warning, "complete")]
+        [InlineData((int)LogEventLevel.Error, "complete")]
+        [InlineData((int)LogEventLevel.Warning, "dispose")]
+        [InlineData((int)LogEventLevel.Error, "dispose")]
+        [InlineData((int)LogEventLevel.Warning, "timeout")]
+        [InlineData((int)LogEventLevel.Error, "timeout")]
+        public async Task FlareRestoresPreviousThreshold(int previousLevel, string cleanup)
+        {
+            GlobalSettings.SetDebugEnabled(previousLevel == (int)LogEventLevel.Debug);
+            DatadogLogging.SetLogLevel((LogEventLevel)previousLevel);
+            ISubscription subscription = null;
+            var subscriptions = new Mock<IRcmSubscriptionManager>();
+            subscriptions.Setup(x => x.SubscribeToChanges(It.IsAny<ISubscription>()))
+                         .Callback<ISubscription>(value => subscription = value);
+            var flare = new TracerFlareManager(
+                new DiscoveryServiceMock(),
+                subscriptions.Object,
+                NullTelemetryController.Instance,
+                new TracerFlareApi(Mock.Of<IApiRequestFactory>()));
+            try
+            {
+                flare.Start();
+                var path = RemoteConfigurationPath.FromPath("datadog/1/AGENT_CONFIG/flare-log-level.debug/config");
+                var config = new RemoteConfiguration(path, [], 0, new(), 1);
+                var configs = new Dictionary<string, List<RemoteConfiguration>> { [RcmProducts.TracerFlareInitiated] = [config] };
+
+                await subscription.Invoke(configs, null);
+                await subscription.Invoke(configs, null);
+                DatadogLogging.LoggingLevelSwitch.MinimumLevel.Should().Be(LogEventLevel.Debug);
+                GlobalSettings.Instance.DebugEnabled.Should().BeTrue();
+
+                if (cleanup == "complete")
+                {
+                    await subscription.Invoke(new(), new() { [RcmProducts.TracerFlareInitiated] = [path] });
+                }
+                else if (cleanup == "dispose")
+                {
+                    flare.Dispose();
+                }
+                else
+                {
+                    var timer = (Timer)typeof(TracerFlareManager).GetField("_resetTimer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(flare);
+                    timer.Change(TimeSpan.Zero, Timeout.InfiniteTimeSpan);
+                    SpinWait.SpinUntil(() => DatadogLogging.LoggingLevelSwitch.MinimumLevel == (LogEventLevel)previousLevel, TimeSpan.FromSeconds(5)).Should().BeTrue();
+                }
+
+                DatadogLogging.LoggingLevelSwitch.MinimumLevel.Should().Be((LogEventLevel)previousLevel);
+                GlobalSettings.Instance.DebugEnabled.Should().Be(previousLevel == (int)LogEventLevel.Debug);
+            }
+            finally
+            {
+                flare.Dispose();
+            }
         }
 
         [Fact]

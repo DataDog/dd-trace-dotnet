@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
@@ -78,6 +79,11 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
                     datadogKey,
                     otelKey);
                 OpenTelemetryHelpers.GetConfigurationMetricTags(otelKey, out var openTelemetryConfig, out var datadogConfig);
+                if (otelKey == ConfigurationKeys.OpenTelemetry.LogLevel && datadogKey == ConfigurationKeys.DebugEnabled)
+                {
+                    datadogConfig = MetricTags.DatadogConfiguration.DebugEnabled;
+                }
+
                 metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
             });
     }
@@ -114,22 +120,21 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
         [NotNullWhen(true)] out T? value)
         where T : default
     {
-        if (datadogConfigResult.IsPresent && (otelConfigResult.IsPresent || otelConfigResult.HasInvalidValue))
+        if (datadogConfigResult.IsPresent && otelConfigResult.IsPresent)
         {
             LogDuplicateConfiguration(datadogKey, otelKey);
         }
-        else
+        else if (otelConfigResult is { IsPresent: true } config)
         {
-            if (otelConfigResult.HasInvalidValue || (otelConfigResult.IsPresent && otelConfigResult is not { Result: { }, IsValid: true }))
+            if (config is { Result: { } openTelemetryValue, IsValid: true })
             {
-                LogInvalidConfiguration(otelKey);
+                {
+                    value = openTelemetryValue;
+                    return true;
+                }
             }
 
-            if (otelConfigResult is { Result: { } openTelemetryValue, IsValid: true })
-            {
-                value = openTelemetryValue;
-                return true;
-            }
+            LogInvalidConfiguration(otelKey);
         }
 
         value = default;

@@ -165,6 +165,7 @@ internal static class MetricTags
         [Description("config_datadog:dd_trace_sample_rate")] SampleRate,
         [Description("config_datadog:dd_trace_otel_enabled")] OpenTelemetryEnabled,
         [Description("config_datadog:unknown")] Unknown,
+        [Description("config_datadog:dd_log_level")] LogLevel,
     }
 
     internal enum OpenTelemetryConfiguration

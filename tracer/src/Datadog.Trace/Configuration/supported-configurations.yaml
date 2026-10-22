@@ -2096,6 +2096,13 @@ supportedConfigurations:
       of correlation identifiers into the logging context.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.LogsInjectionEnabled"/>
   DD_LOG_LEVEL:
+  - implementation: A
+    scope: managed
+    type: string
+    default: info
+    documentation: |-
+      Sets the managed SDK logging level. Valid values are debug, info, warn, and error (case-insensitive).
+      DD_TRACE_DEBUG=true takes precedence; otherwise this setting takes precedence over OTEL_LOG_LEVEL.
   - implementation: B
     scope: managed
     type: string
@@ -2951,7 +2958,8 @@ supportedConfigurations:
     const_name: DebugEnabled
     documentation: |-
       Configuration key for enabling or disabling the Tracer's debug mode.
-      Default value is false (disabled).
+      Default value is false (disabled). When true, takes precedence over DD_LOG_LEVEL and OTEL_LOG_LEVEL.
+      When false, the configured logging level is used.
   DD_TRACE_DEBUG_LOOKUP_FALLBACK:
   - implementation: A
     scope: managed

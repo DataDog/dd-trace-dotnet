@@ -434,7 +434,8 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debug mode.
-    /// Default value is false (disabled).
+    /// Default value is false (disabled). When true, takes precedence over DD_LOG_LEVEL and OTEL_LOG_LEVEL.
+    /// When false, the configured logging level is used.
     /// </summary>
     public const string DebugEnabled = "DD_TRACE_DEBUG";
 

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
@@ -428,25 +427,9 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             => StructConfigurationResultWithKey<bool>.Create(Telemetry, Key, configurationResult: GetBoolResult(validator, converter));
 
         // T
-        public ParsedStructConfigurationResultWithKey<T> AsStructResult<T>(Func<string, ParsingResult<T>> converter)
+        public StructConfigurationResultWithKey<T> GetAsStructResult<T>(Func<string, ParsingResult<T>> converter)
             where T : struct
-        {
-            var hasInvalidValue = false;
-            var result = GetAs(validator: null, converter: Convert);
-            if (!result.IsValid)
-            {
-                result = hasInvalidValue ? ConfigurationResult<T>.ParseFailure() : ConfigurationResult<T>.NotFound();
-            }
-
-            return new(Key, result.WithInvalidValue(hasInvalidValue));
-
-            ParsingResult<T> Convert(string value)
-            {
-                var parsed = converter(value);
-                hasInvalidValue |= !parsed.IsValid && !StringUtil.IsNullOrEmpty(value);
-                return parsed;
-            }
-        }
+            => new(Telemetry, Key, configurationResult: GetAs(validator: null, converter));
 
         public ClassConfigurationResultWithKey<T> GetAsClassResult<T>(Func<string, ParsingResult<T>> converter)
             where T : class
@@ -588,8 +571,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public readonly IConfigurationTelemetry Telemetry;
         public readonly ConfigurationResult<T> ConfigurationResult;
 
-        // Private so that it can only be created with specific T types
-        private StructConfigurationResultWithKey(IConfigurationTelemetry telemetry, string key, ConfigurationResult<T> configurationResult)
+        internal StructConfigurationResultWithKey(IConfigurationTelemetry telemetry, string key, ConfigurationResult<T> configurationResult)
         {
             Key = key;
             Telemetry = telemetry;
@@ -603,10 +585,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             => new(telemetry, key, configurationResult);
 
         public static StructConfigurationResultWithKey<double> Create(IConfigurationTelemetry telemetry, string key, ConfigurationResult<double> configurationResult) => new(telemetry, key, configurationResult);
-
-        public ProjectedStructConfigurationResultWithKey<T, TResult> Select<TResult>(Func<T, TResult> selector, T defaultValue)
-            where TResult : struct
-            => new(this, selector, defaultValue);
 
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public T? WithDefault(T? defaultValue)
@@ -636,6 +614,17 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T defaultValue)
             => CalculateOverrides(in otelConfig, overrideHandler, defaultValue).Value;
+
+        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, DefaultResult<T> defaultValue)
+        {
+            if (CalculateOverrides(in otelConfig, overrideHandler, defaultValue: null) is { } result)
+            {
+                return result;
+            }
+
+            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
+            return defaultValue.Result;
+        }
 
         [return: NotNullIfNotNull(nameof(defaultValue))]
         private T? CalculateOverrides(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T? defaultValue)
@@ -675,36 +664,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                     Telemetry.Record(Key, boolVal, ConfigurationOrigins.Default);
                     break;
             }
-        }
-    }
-
-    internal readonly struct ParsedStructConfigurationResultWithKey<T>(string key, ConfigurationResult<T> configurationResult)
-        where T : struct
-    {
-        public readonly string Key = key;
-        public readonly ConfigurationResult<T> ConfigurationResult = configurationResult;
-    }
-
-    internal readonly struct ProjectedStructConfigurationResultWithKey<TSource, TResult>(
-        StructConfigurationResultWithKey<TSource> source,
-        Func<TSource, TResult> selector,
-        TSource defaultValue)
-        where TSource : struct
-        where TResult : struct
-    {
-        private readonly StructConfigurationResultWithKey<TSource> _source = source;
-        private readonly Func<TSource, TResult> _selector = selector;
-        private readonly TSource _defaultValue = defaultValue;
-
-        public TResult OverrideWith(in ParsedStructConfigurationResultWithKey<TResult> otelConfig, IConfigurationOverrideHandler overrideHandler)
-        {
-            var projectedResult = _source.ConfigurationResult.Select(_selector);
-            if (overrideHandler.TryHandleOverrides(_source.Key, projectedResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
-            {
-                return overridden;
-            }
-
-            return _selector(_source.WithDefault(_defaultValue));
         }
     }
 
