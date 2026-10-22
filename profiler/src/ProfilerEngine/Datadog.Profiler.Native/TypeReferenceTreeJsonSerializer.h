@@ -13,7 +13,7 @@
 // JSON serializer for type reference tree.
 // Walks the tree structure directly — no cycle detection needed
 // because the tree is naturally acyclic (instance-level cycles are
-// stopped during traversal by VisitedObjectSet).
+// stopped during traversal by VisitedAddressBitmap).
 class TypeReferenceTreeJsonSerializer
 {
 public:

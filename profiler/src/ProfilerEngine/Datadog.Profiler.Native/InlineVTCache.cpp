@@ -54,6 +54,20 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classI
         return nullptr;
     }
 
+    return GetInlineVTInfoForScannableType(classID);
+}
+
+const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfoForScannableType(ClassID classID)
+{
+    if (classID == 0)
+    {
+        return nullptr;
+    }
+
+#ifdef DD_TEST
+    _lookupCountForTests++;
+#endif
+
     auto it = _cache.find(classID);
     if (it != _cache.end())
     {
