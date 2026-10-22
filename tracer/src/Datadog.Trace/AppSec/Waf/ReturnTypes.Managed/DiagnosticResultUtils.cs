@@ -21,9 +21,10 @@ internal static class DiagnosticResultUtils
     /// Counts the errors the WAF reported while loading a single configuration: one per top-level or
     /// per-section "error", plus one per distinct message in each section's "errors" map.
     /// </summary>
-    internal static int CountConfigErrors(in DdwafObjectStruct diagObject)
+    internal static unsafe int CountConfigErrors(in DdwafObjectStruct diagObject)
     {
-        if (diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
+        // walks the native map rather than decoding it, as the diagnostics also list every loaded id
+        if (diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP || diagObject.Pointer == IntPtr.Zero)
         {
             return 0;
         }
@@ -31,22 +32,16 @@ internal static class DiagnosticResultUtils
         var count = 0;
         try
         {
-            foreach (var entry in diagObject.DecodeMap())
+            var entries = (DdwafObjectKvStruct*)diagObject.Pointer;
+            for (var i = 0; i < diagObject.Size; i++)
             {
-                if (entry.Key == "error")
+                if (entries[i].Key.DecodeString() == "error")
                 {
-                    count += entry.Value is string { Length: > 0 } ? 1 : 0;
+                    count += IsNonEmptyString(entries[i].Value) ? 1 : 0;
                 }
-                else if (entry.Value is Dictionary<string, object> section)
+                else if (entries[i].Value.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
                 {
-                    if (section.TryGetValue("error", out var error) && error is string { Length: > 0 })
-                    {
-                        count++;
-                    }
-                    else if (section.TryGetValue("errors", out var errors) && errors is Dictionary<string, object> errorsByMessage)
-                    {
-                        count += errorsByMessage.Count;
-                    }
+                    count += CountSectionErrors(entries[i].Value);
                 }
             }
         }
@@ -57,6 +52,40 @@ internal static class DiagnosticResultUtils
 
         return count;
     }
+
+    private static unsafe int CountSectionErrors(in DdwafObjectStruct section)
+    {
+        if (section.Pointer == IntPtr.Zero)
+        {
+            return 0;
+        }
+
+        var errorMessages = 0;
+        var entries = (DdwafObjectKvStruct*)section.Pointer;
+        for (var i = 0; i < section.Size; i++)
+        {
+            var key = entries[i].Key.DecodeString();
+            if (key == "error" && IsNonEmptyString(entries[i].Value))
+            {
+                // the whole section failed to load, its other entries don't matter
+                return 1;
+            }
+
+            if (key == "errors" && entries[i].Value.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
+            {
+                errorMessages = entries[i].Value.Size;
+            }
+        }
+
+        return errorMessages;
+    }
+
+    private static bool IsNonEmptyString(in DdwafObjectStruct value) => value.Type switch
+    {
+        DDWAF_OBJ_TYPE.DDWAF_OBJ_SMALL_STRING => value.SmallStringSize > 0,
+        DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING or DDWAF_OBJ_TYPE.DDWAF_OBJ_LITERAL_STRING => value.Pointer != IntPtr.Zero && value.StringLength > 0,
+        _ => false
+    };
 
     internal static ReportedDiagnostics ExtractReportedDiagnostics(in DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
     {

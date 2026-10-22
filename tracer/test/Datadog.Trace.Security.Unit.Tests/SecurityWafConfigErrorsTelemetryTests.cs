@@ -132,6 +132,21 @@ public class SecurityWafConfigErrorsTelemetryTests : WafLibraryRequiredTest
     }
 
     [Fact]
+    public async Task GivenARulesetWithSomeInvalidRules_WhenTheWafInits_ThenEachErrorMessageIsCounted()
+    {
+        // init succeeds, and the WAF rejects five rules under two distinct messages
+        var metrics = await RecordMetricsAsync(() =>
+        {
+            using var security = CreateSecurity("wrong-tags-name-rule-set.json");
+            security.InitializationError.Should().BeNull();
+        });
+
+        var configErrors = metrics.Should().ContainSingle(m => m.Metric == ConfigErrorsMetric).Which;
+        configErrors.Tags.Should().Contain("action:init");
+        configErrors.Points.Sum(p => p.Value).Should().Be(2);
+    }
+
+    [Fact]
     public async Task GivenTheDefaultRules_WhenTheWafInits_ThenNoConfigErrorIsReported()
     {
         var metrics = await RecordMetricsAsync(() =>

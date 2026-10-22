@@ -62,7 +62,7 @@ public class MetricTests
         { "rasp.rule.skipped", ["rule_variant"] },
         { "rasp.timeout", ["rule_variant"] },
         { "rasp.error", ["rule_variant"] },
-        { "waf.config_errors", ["config_key", "scope"] }, // like python and nodejs, we only tag the action
+        { "waf.config_errors", ["config_key", "scope"] }, // match other tracers by omitting config_key and scope
         // Both dimensions are independently optional: a span can be cardinality-collapsed, oversized-truncated, or both.
         { "stats_collapsed_spans", ["collapsed", "oversized"] },
     };
