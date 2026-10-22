@@ -62,7 +62,16 @@ Rebasing onto `master` exposed four integration gaps, now corrected in the exper
 
 Local YAML, PowerShell, whitespace, SDK-consistency, and focused framework-helper checks passed. The subsequent pipeline passed the platform builds and Linux/macOS unit tests, but full test validation remains incomplete as described below. SDK 11 was unavailable locally and Docker was stopped during local validation.
 
-### Latest reviewed CI results and follow-ups (2026-09-30)
+### Windows build follow-ups (2026-10-22)
+
+[Pipeline 146719241](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/146719241), at `00054de75e`, passed Linux/macOS producers and managed unit-test child pipelines after the RC2 update. Two Windows build jobs failed; Windows unit tests and integration child pipelines were skipped, so those suites remain unvalidated in this run.
+
+- **Windows `build`:** a missing PowerShell continuation before `--NugetPackageDirectory` caused a parse error and subsequent Docker failures. Restore the continuation and leave packaging/signing in the existing step after native tests, rather than invoking them twice.
+- **`build-samples-standalone`:** `Samples.GoogleProtobuf` failed to resolve its generated `Sample` namespace on `net7.0`. Its existing generation step overwrote the same tracked `Sample.cs` across parallel frameworks/package versions, consistent with a race already noted in the project. Generate and compile it under the framework/package-specific intermediate directory instead; leave the tracked source unchanged.
+
+Local validation passed PowerShell parsing and a parallel build of all 11 sample frameworks with SDK 11 RC2 (zero warnings/errors). MSBuild evaluation confirmed distinct intermediate paths for explicit package versions. The fixes still require a GitLab run.
+
+### Reviewed CI results and follow-ups (2026-09-30)
 
 [Pipeline 141167767](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/141167767), at `7cdae62343`, passed all four unit-test child pipelines and all Windows and Debian CI Visibility cells. Seven Alpine CI Visibility cells passed their test assertions but failed `CheckBuildLogsForErrors`: x64 .NET 3.1/9/10 reported writer mutex timeouts, while ARM64 .NET 5/6/9/10 reported IPC mutex-creation failures with missing `/tmp/.dotnet/lockfiles/session1/` paths. Alpine .NET 11 passed on both architectures. This confirms recurrence across runs, not a failure in every Alpine configuration; the underlying IPC cause remains unresolved.
 
