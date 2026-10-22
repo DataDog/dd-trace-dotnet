@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -29,6 +30,10 @@ namespace Datadog.Trace.FeatureFlags
     internal sealed class FeatureFlagsModule : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+
+        // Static, so the warning that debug logs include raw evaluation data is written once per
+        // process even when the tracer is reconfigured and a new module is created.
+        private static int _rawEvaluationDataWarningLogged;
 
         // Activation, disposal and exposure-API creation all mutate the same state from different
         // threads, so they share one lock rather than individual interlocked flags: a flag set
@@ -86,6 +91,7 @@ namespace Datadog.Trace.FeatureFlags
         private Action<AgentConfiguration>? _evaluationDiscoveryCallback;
         private FeatureFlagsEvpTransport? _evpTransport;
         private string? _deliveryUnavailableReason;
+        private int _initializationTimedOut;
         private bool _activated;
         private bool _disposed;
         private bool _deliveryStarted;
@@ -228,6 +234,9 @@ namespace Datadog.Trace.FeatureFlags
         // Drain already accepted events even if an Agent change has closed admission.
         internal Task FlushAsync() => Volatile.Read(ref _evaluationWriter)?.FlushAsync() ?? Task.CompletedTask;
 
+        [TestingAndPrivateOnly]
+        internal static void ResetRawEvaluationDataWarning() => Volatile.Write(ref _rawEvaluationDataWarningLogged, 0);
+
         /// <summary>
         /// Signals that application code initialized the provider. Idempotent.
         /// <para>
@@ -283,6 +292,13 @@ namespace Datadog.Trace.FeatureFlags
             // hold up a Dispose(). A Dispose() that interleaves here has already signalled the source's
             // shutdown, which makes its poll loop exit before the first request.
             sourceToStart?.Start();
+
+            // Warned here rather than at construction: Feature Flags are enabled by default, so the
+            // module exists in applications that never use a provider.
+            if (_log.IsEnabled(LogEventLevel.Debug))
+            {
+                WarnRawEvaluationDataOnce();
+            }
         }
 
         /// <summary>
@@ -305,6 +321,7 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal async Task InitializeAsync(CancellationToken cancellationToken)
         {
+            _log.Debug<FeatureFlagsSource, double>("Feature Flags: provider initialization started (source={Source}, timeout={TimeoutMs}ms)", _settings.Source, _settings.InitializationTimeout.TotalMilliseconds);
             Activate();
 
             if (_firstConfigReceived.Task.IsCompleted)
@@ -367,6 +384,8 @@ namespace Datadog.Trace.FeatureFlags
             }
             else
             {
+                // Lets the configuration that eventually arrives report the recovery this warning promises.
+                Interlocked.Exchange(ref _initializationTimedOut, 1);
                 _log.Warning<double>(
                     "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
                     _settings.InitializationTimeout.TotalMilliseconds);
@@ -407,8 +426,7 @@ namespace Datadog.Trace.FeatureFlags
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
             {
-                _log.Debug<string>("FeatureFlagsModule::Evaluate -> Evaluated {FlagKey}: no configuration received yet, returning the default value (PROVIDER_NOT_READY)", flagKey);
-                return new Evaluation(
+                var notReady = new Evaluation(
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
@@ -417,24 +435,22 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
                     });
+
+                if (_log.IsEnabled(LogEventLevel.Debug))
+                {
+                    LogEvaluation(notReady, resultType, defaultValue, targetingKey, attributes, configuration: null);
+                }
+
+                return notReady;
             }
 
             var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
 
-            // Every evaluation passes through here, so the metadata lookups are skipped unless the line
-            // is actually written. The value and the targeting context are left out: the variant
-            // identifies the value, and the context may carry personal data. The error code is logged
-            // rather than the error, because the error can be an exception message that quotes a
-            // context attribute back.
+            // Every evaluation passes through here, so nothing is formatted unless the line is
+            // actually written.
             if (_log.IsEnabled(LogEventLevel.Debug))
             {
-                _log.Debug<string, EvaluationReason, string?, string?, string?>(
-                    "FeatureFlagsModule::Evaluate -> Evaluated {FlagKey}: reason={Reason}, variant={Variant}, allocation={Allocation}, error={ErrorCode}",
-                    flagKey,
-                    evaluation.Reason,
-                    evaluation.Variant,
-                    FeatureFlagsEvaluator.AllocationKey(evaluation),
-                    FeatureFlagsEvaluator.ErrorCode(evaluation));
+                LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
             }
 
             return evaluation;
@@ -443,15 +459,32 @@ namespace Datadog.Trace.FeatureFlags
         [TestingAndPrivateOnly]
         internal bool ApplyConfiguration(ServerConfiguration configuration)
         {
+            FeatureFlagsEvaluator? previous;
+            bool isFirst;
             try
             {
-                Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled));
-                _firstConfigReceived.TrySetResult(true);
+                previous = Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled));
+                isFirst = _firstConfigReceived.TrySetResult(true);
             }
             catch (Exception ex)
             {
                 _log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
+                _log.Debug<string>(
+                    "Feature Flags: configuration was not applied; {State}",
+                    HasConfiguration ? "the previously applied configuration remains active" : "no configuration is active, so evaluations return their default values");
                 return false;
+            }
+
+            // Reported once the evaluator is installed and readiness is signalled, so neither depends
+            // on the log being written.
+            if (isFirst && Volatile.Read(ref _initializationTimedOut) != 0)
+            {
+                // Only for the first configuration, and the counterpart of the timeout warning, so it is not debug-only.
+                _log.Information("Feature Flags configuration arrived after the initialization timeout. Evaluations now resolve flags.");
+            }
+            else if (!isFirst && previous is null)
+            {
+                _log.Debug("Feature Flags: configuration is available again after it was removed; evaluations resolve flags again");
             }
 
             NotifyNewConfiguration("ApplyConfiguration");
@@ -640,8 +673,56 @@ namespace Datadog.Trace.FeatureFlags
                     // Dispose stops new sends but preserves any request still live after the deadline.
                     evaluationTransport?.Dispose();
                     evpTransport?.Dispose();
+                    _log.Debug("Feature Flags: shutdown complete");
                     _disposeCompletion.TrySetResult(true);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Logs the provider's resolution with its raw inputs and outputs, so a customer can explain a
+        /// result from the log alone. Provider conversion and application hooks run afterwards and
+        /// are not reflected here. Callers check the debug
+        /// level first.
+        /// </summary>
+        private void LogEvaluation(Evaluation evaluation, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, ServerConfiguration? configuration)
+        {
+            try
+            {
+                // Debug logging can be switched on after startup, as a tracer flare does.
+                WarnRawEvaluationDataOnce();
+
+                _log.Debug(
+                    "FeatureFlagsModule::Evaluate -> Evaluator resolved {FlagKey} ({ResultType}) before provider conversion: value={Value}, variant={Variant}, reason={Reason}, error={ErrorCode}, errorDetail={Error}, default={DefaultValue}, targetingKey={TargetingKey}, attributes={Attributes}, metadata={Metadata}, configuration createdAt={CreatedAt}",
+                    [
+                        evaluation.FlagKey,
+                        resultType,
+                        FeatureFlagsDiagnostics.FormatValue(evaluation.Value),
+                        evaluation.Variant ?? "none",
+                        evaluation.Reason,
+                        FeatureFlagsEvaluator.ErrorCode(evaluation) ?? evaluation.Error ?? "none",
+                        evaluation.Error ?? "none",
+                        FeatureFlagsDiagnostics.FormatValue(defaultValue),
+                        FeatureFlagsDiagnostics.FormatValue(targetingKey),
+                        FeatureFlagsDiagnostics.FormatMap(attributes),
+                        FeatureFlagsDiagnostics.FormatMap(evaluation.FlagMetadata),
+                        configuration is null ? "none (no configuration is applied)" : configuration.CreatedAt ?? "unset",
+                    ]);
+            }
+            catch
+            {
+                // A diagnostic must never change what an evaluation returns.
+            }
+        }
+
+        // Callers check the debug level first. A warning is not sent to telemetry, which only
+        // collects errors.
+        private void WarnRawEvaluationDataOnce()
+        {
+            if (Volatile.Read(ref _rawEvaluationDataWarningLogged) == 0
+             && Interlocked.Exchange(ref _rawEvaluationDataWarningLogged, 1) == 0)
+            {
+                _log.Warning("Feature Flags: debug logging is enabled, so feature flag logs include raw evaluation data (targeting keys, evaluation context attributes, flag values, and default values) that may contain personal or sensitive information. Unset DD_TRACE_DEBUG when you no longer need it.");
             }
         }
 
@@ -720,7 +801,7 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                var ffeProduct = new FfeProduct(ApplyRemoteConfigurations);
+                var ffeProduct = new FfeProduct(ApplyRemoteConfigurations, _log);
                 _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
                 _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
@@ -740,12 +821,16 @@ namespace Datadog.Trace.FeatureFlags
 
                     // Logged only once applied: "applied" must not be reported for a configuration
                     // the evaluator rejected, which ApplyConfiguration already warns about.
-                    if (ApplyConfiguration(selectedConfig))
+                    if (ApplyConfiguration(selectedConfig) && _log.IsEnabled(LogEventLevel.Debug))
                     {
-                        _log.Debug<int, string>(
-                            "FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration applied successfully ({FlagCount} flag(s), configuration env={Environment})",
-                            selectedConfig.Flags?.Count ?? 0,
-                            selectedConfig.Environment?.Name ?? "unset");
+                        _log.Debug<int, int, string, string, string>(
+                            "FeatureFlagsModule::ApplyRemoteConfigurations -> remote_config configuration applied successfully ({UsableFlagCount} usable flag(s), {RejectedFlagCount} rejected, configuration env={Environment}, createdAt={CreatedAt}, files={Files})",
+                            selectedConfig.Flags?.ValidFlags.Count() ?? 0,
+                            selectedConfig.Flags?.InvalidFlagKeys.Count() ?? 0,
+                            selectedConfig.Environment?.Name ?? "unset",
+                            selectedConfig.CreatedAt ?? "unset",
+                            string.Join(", ", list.Select(p => p.Key)));
+                        FeatureFlagsDiagnostics.LogRejectedFlags(_log, "remote_config", selectedConfig);
                     }
                 }
                 else
@@ -786,7 +871,14 @@ namespace Datadog.Trace.FeatureFlags
         {
             // Nothing would ever dispose an API created after disposal, leaving its send loop running
             // for the rest of the process, so exposures are dropped from that point on.
-            GetExposureApi()?.SendExposure(exposure);
+            if (GetExposureApi() is { } exposureApi)
+            {
+                exposureApi.SendExposure(exposure);
+            }
+            else
+            {
+                _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
+            }
         }
 
         // Created on first use because most applications never evaluate a flag, and under the lock
@@ -813,7 +905,7 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     // Keep the HTTP client and its settings subscription lazy with the first exposure.
                     _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
-                    exposureApi = new ExposureApi(_tracerSettings, _evpTransport);
+                    exposureApi = new ExposureApi(_tracerSettings, _evpTransport, logger: _log);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }
 

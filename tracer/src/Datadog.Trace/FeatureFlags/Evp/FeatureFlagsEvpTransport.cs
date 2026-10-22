@@ -357,6 +357,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     {
         if (Volatile.Read(ref _disposed) != 0)
         {
+            _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: event delivery has stopped", intakePath);
             return;
         }
 
@@ -416,6 +417,8 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         {
             WarnUnavailable();
         }
+
+        _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: no event delivery route is available", intakePath);
     }
 
     private void WarnInvalidSite()
@@ -484,6 +487,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                 WarnUnavailable();
             }
 
+            _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: the Agent EVP proxy route is cooling down after a failure", intakePath);
             return;
         }
 
@@ -511,6 +515,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             if (response.StatusCode is >= 200 and < 300)
             {
                 local.UnavailableUntilUtcTicks = 0;
+                _log.Debug<string, string, int>("Feature Flags: {IntakePath} batch accepted by the Agent EVP proxy ({ProxyEndpoint}) with HTTP {StatusCode}", intakePath, localProxyEndpoint, response.StatusCode);
                 return;
             }
 
@@ -520,6 +525,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             {
                 if (LeaveLocalRoute(local))
                 {
+                    _log.Debug<int>("Feature Flags: Agent EVP proxy returned HTTP {StatusCode}; replaying the unaccepted batch through direct intake", response.StatusCode);
                     await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
                 }
                 else
@@ -539,6 +545,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         {
             if (LeaveLocalRoute(local))
             {
+                _log.Debug("Feature Flags: local EVP request failed before sending; replaying the batch through direct intake");
                 await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
             }
             else
@@ -549,7 +556,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                 }
                 else
                 {
-                    Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent");
+                    Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent; the batch is dropped without replay");
                 }
             }
         }
@@ -574,7 +581,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     {
         if (intakePath != FlagEvaluationIntakePath)
         {
-            Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", statusCode);
+            Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}; the batch will not be replayed", statusCode);
         }
         else if (IsEvaluationRejection(statusCode))
         {
@@ -617,6 +624,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         // start a new fallback request after the transport has been disposed.
         if (Volatile.Read(ref _disposed) != 0 || directFactory is null)
         {
+            _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: event delivery has stopped", intakePath);
             return;
         }
 
@@ -625,7 +633,11 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         {
             var request = directFactory.Create(endpoint);
             using var response = await sendAsync(request).ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300)
+            if (response.StatusCode is >= 200 and < 300)
+            {
+                _log.Debug<string, int>("Feature Flags: {IntakePath} batch accepted by the Datadog intake with HTTP {StatusCode}", intakePath, response.StatusCode);
+            }
+            else
             {
                 const string Message = "Feature Flags direct EVP request to {Endpoint} failed with HTTP status code {StatusCode} after 1 attempt; the batch will not be replayed. See https://docs.datadoghq.com/feature_flags/";
                 if (response.StatusCode == 400 || (intakePath == FlagEvaluationIntakePath && IsEvaluationRejection(response.StatusCode)))
@@ -647,7 +659,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             }
             else
             {
-                Log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed");
+                Log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed; delivery is unconfirmed and the batch will not be replayed");
             }
         }
     }

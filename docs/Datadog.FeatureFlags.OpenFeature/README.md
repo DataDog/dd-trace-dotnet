@@ -72,6 +72,26 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
+## Troubleshooting with debug logs
+
+Set `DD_TRACE_DEBUG=true` and restart the application. The provider writes to the tracer's log, so
+nothing needs to change in the application's logging.
+
+- **Where:** `dotnet-tracer-managed-<process name>-<pid>.log` in `DD_TRACE_LOG_DIRECTORY` (default
+  `/var/log/datadog/dotnet` on Linux, `%ProgramData%\Datadog .NET Tracer\logs` on Windows).
+- **What to look for:** lines containing `Feature Flags`, `FeatureFlagsModule::` or `FfeProduct::`.
+  Share the whole file: Remote Configuration and Agent discovery lines use other prefixes.
+- **When:** the configuration source is logged at startup. Agentless polling starts when the
+  application calls `SetProviderAsync` or first evaluates a flag.
+
+Debug logs cover each configuration poll, each applied configuration (including rejected flags), each
+evaluation and each exposure delivery. Warnings and errors, such as a missing API key or an
+initialization timeout, are logged without `DD_TRACE_DEBUG`.
+
+Evaluation lines show the tracer's result before OpenFeature hooks run, including the raw targeting
+key, context attributes, values and defaults. Structure defaults and attributes are written as their
+type name. Treat the log like that data, and turn debug logging off when you are done. If `DD_TRACE_LOGGING_RATE` is set, repeated lines can be suppressed.
+
 ## Synchronous evaluation (experimental)
 
 `DatadogProvider` provides experimental synchronous methods for code that cannot

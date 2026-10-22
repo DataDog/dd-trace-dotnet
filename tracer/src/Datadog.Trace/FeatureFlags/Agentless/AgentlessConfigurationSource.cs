@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -66,6 +67,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private RequestTarget _requestTarget;
 
     // Only ever touched from the poll loop.
+    private bool _hasApplied;
     private bool _malformedPayloadLogged;
     private bool _applyFailureLogged;
     private string? _etag;
@@ -128,10 +130,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             return null;
         }
 
-        log.Debug<string, double>(
-            "Feature Flags: starting agentless configuration source at {Origin} (poll interval {PollIntervalSeconds}s)",
+        log.Debug<string, double, double>(
+            "Feature Flags: starting agentless configuration source at {Origin} (poll interval {PollIntervalSeconds}s, request timeout={RequestTimeoutSeconds}s)",
             RedactedOrigin(endpoint.Uri),
-            settings.PollInterval.TotalSeconds);
+            settings.PollInterval.TotalSeconds,
+            settings.RequestTimeout.TotalSeconds);
 
         return new AgentlessConfigurationSource(
             endpoint,
@@ -207,6 +210,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             {
                 // Every attempt failed in a retryable way. Last-known-good stays in place.
                 WarnFailure(in result, MaxAttempts);
+                LogRetainedConfiguration("every attempt failed");
                 return;
             }
 
@@ -241,7 +245,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         // from applying its result by the shutdown check in PollAsync.
         if (_shutdown.TrySetResult(true))
         {
-            _log.Debug("Feature Flags: agentless configuration source stopped");
+            _log.Debug("Feature Flags: configuration polling stop requested; in-flight responses will not be applied");
         }
 
         try
@@ -406,9 +410,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 return;
             case 401 or 403:
                 WarnFailure(in result, attempts: 1);
+                LogRetainedConfiguration("the endpoint rejected the credentials");
                 return;
             case not 200:
                 WarnFailure(in result, attempts: 1);
+                LogRetainedConfiguration("the response status is not retryable");
                 return;
         }
 
@@ -420,6 +426,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 _log.Error("Feature Flags agentless endpoint returned an unusable payload: {Error}", result.ParseError);
             }
 
+            // The error above is only written once, so every later rejection is reported here.
+            LogRetainedConfiguration(result.ParseError ?? "the payload is unusable");
             return;
         }
 
@@ -431,8 +439,11 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
                 _log.Warning("Feature Flags agentless configuration could not be applied");
             }
 
+            LogRetainedConfiguration("the configuration could not be applied");
             return;
         }
+
+        _hasApplied = true;
 
         // The ETag advances only once parsing and applying have both succeeded. Advancing on
         // receipt would acknowledge a payload that was never applied, and every later poll would
@@ -442,11 +453,32 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 
         // The payload's environment is reported next to the requested one, because a mismatch
         // between DD_ENV and where the flags are configured is a common reason nothing resolves.
-        _log.Debug<int, string, string>(
-            "Feature Flags: agentless configuration applied successfully ({FlagCount} flag(s), requested env={RequestedEnvironment}, configuration env={ConfigurationEnvironment})",
-            configuration.Flags?.Count ?? 0,
-            result.RequestedEnvironment ?? "none",
-            configuration.Environment?.Name ?? "unset");
+        if (_log.IsEnabled(LogEventLevel.Debug))
+        {
+            _log.Debug(
+                "Feature Flags: agentless configuration applied successfully ({UsableFlagCount} usable flag(s), {RejectedFlagCount} rejected, requested env={RequestedEnvironment}, configuration env={ConfigurationEnvironment}, createdAt={CreatedAt}, etag={ETag})",
+                [
+                    configuration.Flags?.ValidFlags.Count() ?? 0,
+                    configuration.Flags?.InvalidFlagKeys.Count() ?? 0,
+                    result.RequestedEnvironment ?? "none",
+                    configuration.Environment?.Name ?? "unset",
+                    configuration.CreatedAt ?? "unset",
+                    _etag ?? "none",
+                ]);
+            FeatureFlagsDiagnostics.LogRejectedFlags(_log, "agentless", configuration);
+        }
+    }
+
+    /// <summary>
+    /// Reports, at debug level, what a poll that applied nothing leaves in place, so a failed refresh
+    /// is never mistaken for losing the configuration, nor for having one.
+    /// </summary>
+    private void LogRetainedConfiguration(string reason)
+    {
+        var state = _hasApplied
+                        ? "the previously applied configuration remains active"
+                        : "no configuration has been applied yet, so evaluations return their default values";
+        _log.Debug<string, string>("Feature Flags: agentless configuration was not updated ({Reason}); {State}", reason, state);
     }
 
     /// <summary>
@@ -521,18 +553,21 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             return;
         }
 
-        switch (result.StatusCode)
+        // An HTTP status when the endpoint answered. When it did not, the exception is logged with the
+        // line, so only its type is named here.
+        var failure = result.StatusCode switch
         {
-            case 401 or 403:
-                _log.Warning<int>("Feature Flags agentless endpoint returned HTTP {StatusCode}; verify endpoint authentication", result.StatusCode!.Value);
-                break;
-            case not null:
-                _log.Warning<int, int>("Feature Flags agentless endpoint returned HTTP {StatusCode} after {Attempts} attempts", result.StatusCode.Value, attempts);
-                break;
-            default:
-                _log.Warning<int>(result.Error, "Feature Flags agentless request failed after {Attempts} attempts", attempts);
-                break;
-        }
+            401 or 403 => $"HTTP {result.StatusCode}; verify endpoint authentication",
+            not null => $"HTTP {result.StatusCode}",
+            _ => result.Error?.GetType().Name ?? "request was not sent",
+        };
+
+        _log.Warning<string, int, string>(
+            result.Error,
+            "Feature Flags agentless request to {Origin} failed after {Attempts} attempt(s): {Failure}. See https://docs.datadoghq.com/feature_flags/",
+            RedactedOrigin(_endpoint.Uri),
+            attempts,
+            failure);
     }
 
     internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error, string? requestedEnvironment)

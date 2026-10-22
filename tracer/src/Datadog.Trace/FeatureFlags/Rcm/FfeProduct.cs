@@ -21,16 +21,18 @@ internal sealed class FfeProduct
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FfeProduct));
 
     private readonly Action<List<KeyValuePair<string, ServerConfiguration>>> _onNewConfig;
+    private readonly IDatadogLogger _log;
     private List<KeyValuePair<string, ServerConfiguration>> _serverConfigurations = new List<KeyValuePair<string, ServerConfiguration>>();
 
-    public FfeProduct(Action<List<KeyValuePair<string, ServerConfiguration>>> onNewConfig)
+    public FfeProduct(Action<List<KeyValuePair<string, ServerConfiguration>>> onNewConfig, IDatadogLogger? logger = null)
     {
         _onNewConfig = onNewConfig;
+        _log = logger ?? Log;
     }
 
     public ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
     {
-        Log.Debug("FfeProduct::UpdateFromRcm -> Processing new config...");
+        _log.Debug("FfeProduct::UpdateFromRcm -> Processing new config...");
         List<ApplyDetails> res = new List<ApplyDetails>();
         bool apply = false;
 
@@ -40,7 +42,12 @@ internal sealed class FfeProduct
             {
                 foreach (var removedConfig in removedConfigs)
                 {
-                    apply |= (_serverConfigurations.RemoveAll((x) => x.Key == removedConfig.Path) > 0);
+                    var removed = _serverConfigurations.RemoveAll((x) => x.Key == removedConfig.Path) > 0;
+                    apply |= removed;
+                    if (removed)
+                    {
+                        _log.Debug<string>("Feature Flags: remote_config configuration file {Path} removed", removedConfig.Path);
+                    }
                 }
             }
 
@@ -48,8 +55,18 @@ internal sealed class FfeProduct
             {
                 foreach (var ffeConfig in ffeConfigs)
                 {
+                    _log.Debug<string, long, long>(
+                        "Feature Flags: remote_config configuration file {Path} received (version {Version}, {Length} bytes)",
+                        ffeConfig.Path.Path,
+                        ffeConfig.Version,
+                        ffeConfig.Length);
                     var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
-                    if (serverConfigFile.TypedFile is not null)
+                    if (serverConfigFile.TypedFile is null)
+                    {
+                        // Not acknowledged either, so the file is not reported as applied anywhere.
+                        _log.Debug<string>("Feature Flags: remote_config configuration file {Path} was rejected: it holds no configuration, so the version of it applied before, if any, stays in use", ffeConfig.Path.Path);
+                    }
+                    else
                     {
                         // A modified file arrives under the path it already has, and never in the
                         // removed set. The configurations are merged, and a merge cannot delete a
@@ -69,7 +86,7 @@ internal sealed class FfeProduct
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while updating FFE RCM config");
+            _log.Error(ex, "Error while updating FFE RCM config");
         }
 
         return [.. res];

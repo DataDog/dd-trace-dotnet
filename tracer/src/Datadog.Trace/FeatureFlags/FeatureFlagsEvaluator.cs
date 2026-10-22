@@ -53,6 +53,11 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
+        /// <summary>
+        /// Gets the configuration this evaluator resolves against, which diagnostics use to identify it.
+        /// </summary>
+        internal ServerConfiguration? Configuration => _config;
+
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
             // Capture before evaluating: even an exception after a configuration update keeps this consent.
@@ -627,9 +632,8 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         /// <summary>
-        /// Returns the structured error code, which is always one of a fixed set. Unlike
-        /// <see cref="Evaluation.Error"/>, which can carry an exception message, it never holds
-        /// anything derived from the evaluation context, so it is what diagnostics may log.
+        /// Returns the structured error code, which is always one of a fixed set, unlike
+        /// <see cref="Evaluation.Error"/>, which can carry an exception message.
         /// </summary>
         internal static string? ErrorCode(Evaluation evaluation)
         {
@@ -761,6 +765,10 @@ namespace Datadog.Trace.FeatureFlags
             {
                 DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
             }
+            else
+            {
+                Log.Debug<string, string>("Feature Flags: exposure not recorded for {FlagKey}: allocation {AllocationKey} has exposure logging disabled", flagKey, allocation.Key);
+            }
 
             return evaluation;
 
@@ -792,6 +800,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (allocationKey == null || variantKey == null)
             {
+                Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
                 return;
             }
 
