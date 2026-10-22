@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -238,10 +239,13 @@ namespace Datadog.Trace
                                 {
                                     // This means we have tried to start from this domain before
                                     var previousState = metadata.ProcessState;
-                                    var ownProcessExited = RecordOwnProcessExit(metadata);
                                     var isHealthy = await metadata.ProcessIsHealthyAsync().ConfigureAwait(false);
+
+                                    // Check our own process after the probe, once, so an exit during the probe is still counted and logged
+                                    var ownProcessIsRunning = metadata.OwnProcessIsRunning();
+                                    var ownProcessExited = !ownProcessIsRunning && RecordOwnProcessExit(metadata);
                                     metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
-                                    var action = GetKeepAliveAction(isHealthy, metadata.OwnProcessIsRunning(), metadata.FailedHealthChecks);
+                                    var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, metadata.FailedHealthChecks);
                                     if (isHealthy)
                                     {
                                         // Failed starts and restarts share one backoff; it resets only once the agent stays healthy
@@ -439,14 +443,28 @@ namespace Datadog.Trace
                             {
                                 metadata.ProcessState = ProcessState.Faulted;
 
-                                // Retried with backoff, so not an Error; only the first failure in a run is logged above Debug
-                                if (metadata.SequentialFailures == 0)
+                                // Retried with backoff; only the first failure in a run is logged above Debug
+                                var firstFailure = metadata.SequentialFailures == 0;
+                                if (ex is Win32Exception)
                                 {
-                                    Log.Warning(ex, "Failed to start {Process}.", path);
+                                    // Process.Start could not start the agent, for example a missing file or no access: an expected failure
+                                    if (firstFailure)
+                                    {
+                                        Log.Warning(ex, "Failed to start {Process}.", path);
+                                    }
+                                    else
+                                    {
+                                        Log.Debug(ex, "Failed to start {Process}.", path);
+                                    }
+                                }
+                                else if (firstFailure)
+                                {
+                                    // Anything else is unexpected, probably a bug in this keep-alive, so keep the error signal
+                                    Log.Error(ex, "Unexpected error in keep-alive for {Process}.", path);
                                 }
                                 else
                                 {
-                                    Log.Debug(ex, "Failed to start {Process}.", path);
+                                    Log.Debug(ex, "Unexpected error in keep-alive for {Process}.", path);
                                 }
                             }
                             finally
