@@ -212,7 +212,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 #else
         // HttpWebRequest uses the platform default proxy and bypass list. Redirects stay disabled
         // so the API key is sent only to the configured intake host.
-        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false, enforceAsyncTimeout: true);
+        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false);
 #endif
     }
 
