@@ -58,6 +58,14 @@ namespace Datadog.Trace
         public const string EntityId = "Datadog-Entity-ID";
 
         /// <summary>
+        /// Origin detection information injected into the application container by the Datadog Cluster Agent
+        /// Admission Controller via the <c>DD_EXTERNAL_ENV</c> environment variable, forwarded unparsed.
+        /// Used by the agent to resolve the origin container when <see cref="ContainerId"/> and
+        /// <see cref="EntityId"/> are not available.
+        /// </summary>
+        public const string ExternalEnv = "Datadog-External-Env";
+
+        /// <summary>
         /// Tells the agent whether top-level spans are computed by the tracer
         /// </summary>
         public const string ComputedTopLevelSpan = "Datadog-Client-Computed-Top-Level";
