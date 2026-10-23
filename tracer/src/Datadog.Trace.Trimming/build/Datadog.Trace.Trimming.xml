@@ -259,7 +259,13 @@
    </assembly>
    <assembly fullname="System.Diagnostics.DiagnosticSource">
       <type fullname="System.Diagnostics.Activity" />
+      <type fullname="System.Diagnostics.ActivityContext" />
+      <type fullname="System.Diagnostics.ActivityCreationOptions`1" />
       <type fullname="System.Diagnostics.ActivityIdFormat" />
+      <type fullname="System.Diagnostics.ActivityKind" />
+      <type fullname="System.Diagnostics.ActivityListener" />
+      <type fullname="System.Diagnostics.ActivitySamplingResult" />
+      <type fullname="System.Diagnostics.ActivitySource" />
       <type fullname="System.Diagnostics.ActivitySpanId" />
       <type fullname="System.Diagnostics.ActivityTraceId" />
       <type fullname="System.Diagnostics.DiagnosticListener" />
@@ -272,6 +278,7 @@
       <type fullname="System.Diagnostics.Metrics.MeterListener" />
       <type fullname="System.Diagnostics.Metrics.ObservableCounter`1" />
       <type fullname="System.Diagnostics.Metrics.ObservableUpDownCounter`1" />
+      <type fullname="System.Diagnostics.SampleActivity`1" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.Process" />
@@ -1099,6 +1106,7 @@
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
       <type fullname="System.Runtime.InteropServices.Marshal" />
+      <type fullname="System.Runtime.InteropServices.NativeLibrary" />
       <type fullname="System.Runtime.InteropServices.PosixSignal" />
       <type fullname="System.Runtime.InteropServices.PosixSignalContext" />
       <type fullname="System.Runtime.InteropServices.PosixSignalRegistration" />

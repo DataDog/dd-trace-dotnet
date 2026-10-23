@@ -11,7 +11,19 @@ namespace Datadog.Trace;
 
 internal static class AspNetCoreAvailabilityChecker
 {
+    /// <summary>
+    /// The feature switch the Datadog.Trace.Aot targets set to false when a NativeAOT application doesn't have the ASP.NET Core
+    /// assemblies (see ILLink.Substitutions.xml).
+    /// </summary>
+    internal const string FeatureSwitch = "Datadog.Trace.AspNetCore.IsSupported";
+
     private static readonly Lazy<bool> IsAvailable = new(CheckForRequiredTypes);
+
+    /// <summary>
+    /// Gets a value indicating whether the application can have ASP.NET Core: false in a NativeAOT application without its
+    /// assemblies, where ILC then leaves out the code that uses them (instead of compiling it to throw).
+    /// </summary>
+    public static bool IsSupported => !AppContext.TryGetSwitch(FeatureSwitch, out var isSupported) || isSupported;
 
     private static bool CheckForRequiredTypes()
     {

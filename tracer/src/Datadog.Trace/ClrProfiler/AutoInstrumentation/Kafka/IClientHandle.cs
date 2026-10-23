@@ -8,7 +8,8 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
-/// Duck Type for Confluent.Kafka.IClient
+/// Duck Type for Confluent.Kafka.IClient: the producers and consumers of any key and value types, whose handle gives the
+/// cluster id.
 /// </summary>
 internal interface IClientHandle
 {

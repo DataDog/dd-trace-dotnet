@@ -100,9 +100,20 @@ internal static class ExceptionRedactor
         for (var i = 0; i < stackTrace.FrameCount; i++)
         {
             var frame = stackTrace.GetFrame(i);
-            var methodInfo = frame?.GetMethod();
-            if (frame is null || methodInfo is null)
+            if (frame is null)
             {
+                continue;
+            }
+
+            var methodInfo = frame.GetMethod();
+            if (methodInfo is null)
+            {
+                // NativeAOT: the methods without reflection metadata have the names of the stack trace data.
+                if (StackFrameMethod.TryGet(frame, out var method))
+                {
+                    AppendFrame(sb, method);
+                }
+
                 continue;
             }
 
@@ -117,20 +128,42 @@ internal static class ExceptionRedactor
         }
     }
 
+    /// <summary>
+    /// Appends a frame from the names of the stack trace data (NativeAOT, see <see cref="StackFrameMethod"/>): like the others
+    /// when its assembly is known, without the parameters it doesn't have; redacted when it isn't (.NET 8 doesn't give it).
+    /// </summary>
+    [TestingAndPrivateOnly]
+    internal static void AppendFrame(StringBuilder sb, in StackFrameMethod method)
+    {
+        sb.Append(StackFrameAt);
+        if (method.AssemblyName is not { } assemblyName || method.TypeFullName is not { } typeFullName || ShouldRedactAssembly(assemblyName + ","))
+        {
+            sb.AppendLine(Redacted);
+            return;
+        }
+
+        sb.Append(typeFullName.Replace('+', '.'));
+        sb.Append('.');
+        sb.AppendLine(method.Name);
+    }
+
     private static bool ShouldRedactFrame(MethodBase mb)
         => mb.DeclaringType switch
         {
             null => true, // "global" function
-            // NOTE: Keep this in sync with InstrumentationDefinitions SourceGenerator implementation in Sources.BuildInstrumentedAssemblies.IsKnownAssemblyPrefix()
-            { Assembly.FullName: { } name } => !(name.StartsWith("Datadog.", StringComparison.Ordinal)
-                                              || name.StartsWith("mscorlib,", StringComparison.Ordinal) // note that this uses ',' not '.' as it's the full assembly name
-                                              || name.StartsWith("Microsoft.", StringComparison.Ordinal)
-                                              || name.StartsWith("System.", StringComparison.Ordinal)
-                                              || name.StartsWith("Azure.", StringComparison.Ordinal)
-                                              || name.StartsWith("AWSSDK.", StringComparison.Ordinal)
-                                              || InstrumentationDefinitions.IsInstrumentedAssembly(name)),
+            { Assembly.FullName: { } name } => ShouldRedactAssembly(name),
             _ => true, // no assembly
         };
+
+    private static bool ShouldRedactAssembly(string assemblyFullName)
+        // NOTE: Keep this in sync with InstrumentationDefinitions SourceGenerator implementation in Sources.BuildInstrumentedAssemblies.IsKnownAssemblyPrefix()
+        => !(assemblyFullName.StartsWith("Datadog.", StringComparison.Ordinal)
+          || assemblyFullName.StartsWith("mscorlib,", StringComparison.Ordinal) // note that this uses ',' not '.' as it's the full assembly name
+          || assemblyFullName.StartsWith("Microsoft.", StringComparison.Ordinal)
+          || assemblyFullName.StartsWith("System.", StringComparison.Ordinal)
+          || assemblyFullName.StartsWith("Azure.", StringComparison.Ordinal)
+          || assemblyFullName.StartsWith("AWSSDK.", StringComparison.Ordinal)
+          || InstrumentationDefinitions.IsInstrumentedAssembly(assemblyFullName));
 
 #if NETFRAMEWORK
     private static void AppendFrame(StringBuilder sb, StackFrame sf)

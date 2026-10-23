@@ -9,8 +9,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.DuckTyping.Aot;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -27,8 +31,25 @@ internal static class IntegrationMapper
     private static readonly MethodInfo UnwrapTaskReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapTaskReturnValue), BindingFlags.NonPublic | BindingFlags.Static)!;
     private static readonly MethodInfo ConvertTypeMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.ConvertType), BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    /// <summary>
+    /// Gets a value indicating whether the integration methods can be bound at runtime: they're bound with IL emitted at
+    /// runtime, which NativeAOT applications don't support (their instrumentation binds them at build time). A constant for
+    /// ILC, which leaves the IL emission out of the application.
+    /// </summary>
+    internal static bool IsSupported
+#if NETCOREAPP3_0_OR_GREATER
+        => RuntimeFeature.IsDynamicCodeSupported;
+#else
+        => true;
+#endif
+
     internal static DynamicMethod? CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
          *      - CallTargetState OnMethodBegin<TTarget>(TTarget instance);
@@ -82,7 +103,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -138,7 +159,7 @@ internal static class IntegrationMapper
                 }
                 else
                 {
-                    var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterTypeElementType);
+                    var result = GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterTypeElementType);
                     parameterProxyType = result.ProxyType;
                     if (parameterProxyType is null)
                     {
@@ -210,6 +231,11 @@ internal static class IntegrationMapper
 
     internal static DynamicMethod? CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
          *      - CallTargetState OnMethodBegin<TTarget>(TTarget instance);
@@ -252,7 +278,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -333,6 +359,11 @@ internal static class IntegrationMapper
 
     internal static DynamicMethod? CreateEndMethodDelegate(Type integrationType, Type targetType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
          *      - CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state);
@@ -392,7 +423,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -448,6 +479,11 @@ internal static class IntegrationMapper
 
     internal static DynamicMethod? CreateEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
          *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
@@ -510,7 +546,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -533,7 +569,7 @@ internal static class IntegrationMapper
             var returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
             if (returnValueGenericConstraint != null)
             {
-                var result = DuckType.GetOrCreateProxyType(returnValueGenericConstraint, returnType);
+                var result = GetOrCreateProxyType(returnValueGenericConstraint, returnType);
                 returnValueProxyType = result.ProxyType;
                 if (returnValueProxyType is null)
                 {
@@ -608,6 +644,11 @@ internal static class IntegrationMapper
 
     internal static CreateAsyncEndMethodResult CreateAsyncEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
     {
+        if (!IsSupported)
+        {
+            throw new PlatformNotSupportedException("The integration method wasn't bound when the application was instrumented at build time (NativeAOT), and can't be bound at runtime.");
+        }
+
         /*
          * OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
          *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
@@ -691,7 +732,7 @@ internal static class IntegrationMapper
         Type? instanceProxyType = null;
         if (instanceGenericConstraint != null)
         {
-            var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+            var result = GetOrCreateProxyType(instanceGenericConstraint, targetType);
             instanceProxyType = result.ProxyType;
             if (instanceProxyType is null)
             {
@@ -714,7 +755,7 @@ internal static class IntegrationMapper
             var returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
             if (returnValueGenericConstraint != null)
             {
-                var result = DuckType.GetOrCreateProxyType(returnValueGenericConstraint, returnType);
+                var result = GetOrCreateProxyType(returnValueGenericConstraint, returnType);
                 returnValueProxyType = result.ProxyType;
                 if (returnValueProxyType is null)
                 {
@@ -833,11 +874,23 @@ internal static class IntegrationMapper
     private static void WriteCreateNewProxyInstance(ILGenerator ilWriter, Type proxyType, Type targetType)
     {
         var proxyTypeCtor = proxyType.GetConstructors()[0];
+        var instanceParameterType = proxyTypeCtor.GetParameters()[0].ParameterType;
 
         // No null check is needed for value types
-        if (targetType.IsValueType && !proxyTypeCtor.GetParameters()[0].ParameterType.IsValueType)
+        if (targetType.IsValueType && !instanceParameterType.IsValueType)
         {
             ilWriter.Emit(OpCodes.Box, targetType);
+        }
+
+        // The proxy of an AOT registry that also serves other runtime types (other array types, non-public types of the core
+        // library) has an internal constructor receiving the type it reports as IDuckType.Type: the target type, like the
+        // proxy dynamic duck typing creates for it.
+        if (proxyType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, [instanceParameterType, typeof(Type)], null) is { } reportingCtor)
+        {
+            ilWriter.Emit(OpCodes.Ldtoken, targetType);
+            ilWriter.Emit(OpCodes.Call, typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle))!);
+            ilWriter.Emit(OpCodes.Newobj, reportingCtor);
+            return;
         }
 
         ilWriter.Emit(OpCodes.Newobj, proxyTypeCtor);
@@ -954,6 +1007,14 @@ internal static class IntegrationMapper
         }
 
         // Finally we try to duck type
+        using var scope = DuckTypeAotDiscoveryRecorder.EnterCallTarget();
         return DuckType.Create<T>(value);
+    }
+
+    private static DuckType.CreateTypeResult GetOrCreateProxyType(Type proxyDefinitionType, Type targetType)
+    {
+        // A NativeAOT build generates the proxies of the integration constraints from the instrumented methods.
+        using var scope = DuckTypeAotDiscoveryRecorder.EnterCallTarget();
+        return DuckType.GetOrCreateProxyType(proxyDefinitionType, targetType);
     }
 }
