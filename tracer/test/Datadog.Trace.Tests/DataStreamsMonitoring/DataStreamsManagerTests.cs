@@ -580,6 +580,41 @@ public class DataStreamsManagerTests
         second.Should().NotBeSameAs(first);
     }
 
+    [Fact]
+    public void SetCheckpoint_WithUncachedEdgeTagArrays_DoesNotGrowNodeHashCache()
+    {
+        // Edge tags that bypass TagCache (cache full, or SpanContextExtractor/Injector) arrive as a
+        // fresh array on every call. They must not each add an entry to the node hash cache.
+        var dsm = GetDataStreamManager(true, out _);
+
+        for (var i = 0; i < 10_000; i++)
+        {
+            string[] edgeTags = ["direction:in", "group:group1", "topic:topic1", "type:kafka"];
+            dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+        }
+
+        GetNodeHashCacheCount(dsm).Should().BeLessOrEqualTo(DataStreamsManager.MaxNodeHashCacheSize);
+    }
+
+    [Fact]
+    public void SetCheckpoint_WithUncachedEdgeTagArrays_ProducesSameHashAsCachedArray()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        string[] cached = ["direction:in", "group:group1", "topic:topic1", "type:kafka"];
+
+        var expected = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, cached, payloadSizeBytes: 0, timeInQueueMs: 0);
+        var actual = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, [.. cached], payloadSizeBytes: 0, timeInQueueMs: 0);
+
+        actual.Should().NotBeNull();
+        actual.Value.Hash.Should().Be(expected.Value.Hash);
+    }
+
+    private static int GetNodeHashCacheCount(DataStreamsManager dsm)
+    {
+        var field = typeof(DataStreamsManager).GetField("_nodeHashCache", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        return ((System.Collections.ICollection)field!.GetValue(dsm)!).Count;
+    }
+
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)
     {
         writer = enabled ? new DataStreamsWriterMock() : null;
