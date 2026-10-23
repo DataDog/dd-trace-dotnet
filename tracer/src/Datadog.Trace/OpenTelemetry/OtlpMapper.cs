@@ -247,6 +247,15 @@ internal static class OtlpMapper
         // Sampling decision attributes (same tags and placement as the MessagePack path) let the Agent
         // honor the tracer's decision instead of applying its own OTLP sampler. They are written before
         // span tags so customer tags are dropped first when the attribute limit is reached.
+
+        // add "_sampling_priority_v1" to all "chunk orphans" (spans whose parents are not found in the same chunk).
+        // Written first so a large number of trace tags can't push it past the attribute limit.
+        // Written as an OTLP int; the Agent converts int and double attributes to the same span metric.
+        if (spanModel is { IsChunkOrphan: true, TraceChunk.SamplingPriority: { } samplingPriority })
+        {
+            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.SamplingPriority, samplingPriority), limit, ref count, ref droppedAttributesCount);
+        }
+
         if (spanModel.TraceChunk.Tags is { Count: > 0 } traceTags &&
             (spanModel.IsFirstSpanInChunk || spanModel.IsLocalRoot))
         {
@@ -270,7 +279,7 @@ internal static class OtlpMapper
                 var samplingRateTagName = samplingMechanism switch
                 {
                     SamplingMechanism.AgentRate => Trace.Metrics.SamplingAgentDecision, // "_dd.agent_psr"
-                    SamplingMechanism.LocalTraceSamplingRule
+ i                    SamplingMechanism.LocalTraceSamplingRule
                         or SamplingMechanism.RemoteAdaptiveSamplingRule
                         or SamplingMechanism.RemoteUserSamplingRule => Trace.Metrics.SamplingRuleDecision, // "_dd.rule_psr"
                     _ => null
@@ -287,13 +296,6 @@ internal static class OtlpMapper
             {
                 WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.SamplingLimitDecision, limitSamplingRate), limit, ref count, ref droppedAttributesCount);
             }
-        }
-
-        // add "_sampling_priority_v1" to all "chunk orphans" (spans whose parents are not found in the same chunk).
-        // Written as an OTLP int; the Agent converts int and double attributes to the same span metric.
-        if (spanModel is { IsChunkOrphan: true, TraceChunk.SamplingPriority: { } samplingPriority })
-        {
-            WriteAttribute(ref state, writeKeyValue, new KeyValue(Trace.Metrics.SamplingPriority, samplingPriority), limit, ref count, ref droppedAttributesCount);
         }
 
         // Notes for later:

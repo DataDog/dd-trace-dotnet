@@ -623,6 +623,28 @@ public class OtlpMapperTests
         dropped.Should().BeGreaterOrEqualTo(1);
     }
 
+    [Fact]
+    public void EmitAttributesFromSpan_SamplingPriorityIsKept_WhenTraceTagsExceedLimit()
+    {
+        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+        var traceContext = span.Context.TraceContext;
+        traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+        for (var i = 0; i < 10; i++)
+        {
+            traceContext.Tags.SetTag($"_dd.p.custom{i}", "v");
+        }
+
+        var spanModel = new TraceChunkModel(new SpanCollection([span])).GetSpanModel(0);
+
+        // fewer slots than trace tags: "_sampling_priority_v1" must still be written
+        var attributes = new List<KeyValue>();
+        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 3);
+
+        attributes.Should().HaveCount(3);
+        attributes.Should().ContainSingle(kv => kv.Key == Trace.Metrics.SamplingPriority).Which.Value.Should().Be(SamplingPriorityValues.UserKeep);
+        dropped.Should().BeGreaterOrEqualTo(8);
+    }
+
     private static Span CreateSpan(string? origin = null, bool openTelemetrySemanticsEnabled = false)
     {
         var traceContext = new TraceContext(new StubDatadogTracer());
