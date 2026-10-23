@@ -408,6 +408,8 @@ unit-tests-windows:
     strategy: depend
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+    # Variables inherited from the root pipeline are not automatically forwarded again.
+    WINDOWS_BUILD_IMAGE_BASE: $WINDOWS_BUILD_IMAGE_BASE
 
 unit-tests-linux-x64:
   stage: test

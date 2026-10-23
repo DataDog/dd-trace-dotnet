@@ -15,6 +15,9 @@ workflow:
       - git config --system core.longpaths true
   script:
     - |
+      if ([string]::IsNullOrWhiteSpace($env:WINDOWS_BUILD_IMAGE_BASE)) {
+        throw "WINDOWS_BUILD_IMAGE_BASE must be forwarded by the parent pipeline"
+      }
       $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
       if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
         throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
