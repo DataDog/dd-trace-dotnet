@@ -577,6 +577,30 @@ public class OtlpMapperTests
     }
 
     [Fact]
+    public void EmitAttributesFromSpan_ClassifiesPropagatedTraceTagsCaseInsensitively()
+    {
+        // TagPropagation.ParseHeader accepts "_dd.p." case-insensitively and keeps the original casing
+        var root = CreateSpan();
+        var traceContext = root.Context.TraceContext;
+        var child = new Span(new SpanContext(root.Context, traceContext, serviceName: null), DateTimeOffset.UtcNow);
+        traceContext.Tags.SetTag("_DD.P.DM", "-4");
+        traceContext.Tags.SetTag("_DD.P.TID", "6ad8ee3b00000000");
+
+        // child first: propagated tags go on the first span in the chunk, not the local root
+        var chunk = new TraceChunkModel(new SpanCollection([child, root]));
+
+        var childAttributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => childAttributes.Add(kv), chunk.GetSpanModel(0), limit: 128);
+        var rootAttributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => rootAttributes.Add(kv), chunk.GetSpanModel(1), limit: 128);
+
+        childAttributes.Should().ContainSingle(kv => kv.Key == "_DD.P.DM").Which.Value.Should().Be("-4");
+        rootAttributes.Should().NotContain(kv => kv.Key == "_DD.P.DM");
+        childAttributes.Should().NotContain(kv => kv.Key == "_DD.P.TID");
+        rootAttributes.Should().NotContain(kv => kv.Key == "_DD.P.TID");
+    }
+
+    [Fact]
     public void EmitAttributesFromSpan_SamplingDecisionIsWrittenBeforeSpanTags()
     {
         // OTel semantics skips the service/operation/etc. block, so the sampling attributes are emitted first

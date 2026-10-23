@@ -371,13 +371,17 @@ internal static class OtlpMapper
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Next(KeyValuePair<string, string> item)
         {
+            // TagPropagation.ParseHeader accepts the "_dd.p." prefix case-insensitively and keeps the original casing,
+            // so classify keys the same way here. Note: SpanMessagePackFormatter.TraceTagWriter and the header
+            // injection in TagPropagation still compare ordinally.
+
             // the upper 64 bits of the trace id are already part of the 128-bit OTLP traceId
-            if (item.Key == Tags.Propagated.TraceIdUpper)
+            if (string.Equals(item.Key, Tags.Propagated.TraceIdUpper, StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            var isPropagatedTag = item.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal);
+            var isPropagatedTag = item.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
 
             // add propagated trace tags to the first span in every chunk,
             // add non-propagated trace tags to the root span
