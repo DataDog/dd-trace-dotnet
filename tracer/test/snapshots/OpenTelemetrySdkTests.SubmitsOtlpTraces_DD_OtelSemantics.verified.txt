@@ -167,6 +167,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "_dd.rule_psr",
                   "value": {
                     "doubleValue": 1.0
@@ -176,12 +182,6 @@
                   "key": "_dd.limit_psr",
                   "value": {
                     "doubleValue": 1.0
-                  }
-                },
-                {
-                  "key": "_sampling_priority_v1",
-                  "value": {
-                    "intValue": "2"
                   }
                 }
               ],
@@ -615,6 +615,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "_dd.rule_psr",
                   "value": {
                     "doubleValue": 1.0
@@ -624,12 +630,6 @@
                   "key": "_dd.limit_psr",
                   "value": {
                     "doubleValue": 1.0
-                  }
-                },
-                {
-                  "key": "_sampling_priority_v1",
-                  "value": {
-                    "intValue": "2"
                   }
                 },
                 {
@@ -955,6 +955,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "_dd.p.dm",
                   "value": {
                     "stringValue": "-3"
@@ -976,12 +982,6 @@
                   "key": "_dd.limit_psr",
                   "value": {
                     "doubleValue": 1.0
-                  }
-                },
-                {
-                  "key": "_sampling_priority_v1",
-                  "value": {
-                    "intValue": "2"
                   }
                 }
               ],
@@ -1004,6 +1004,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "_dd.p.dm",
                   "value": {
                     "stringValue": "-3"
@@ -1025,12 +1031,6 @@
                   "key": "_dd.limit_psr",
                   "value": {
                     "doubleValue": 1.0
-                  }
-                },
-                {
-                  "key": "_sampling_priority_v1",
-                  "value": {
-                    "intValue": "2"
                   }
                 }
               ],
@@ -1058,6 +1058,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "_dd.p.dm",
                   "value": {
                     "stringValue": "-3"
@@ -1079,12 +1085,6 @@
                   "key": "_dd.limit_psr",
                   "value": {
                     "doubleValue": 1.0
-                  }
-                },
-                {
-                  "key": "_sampling_priority_v1",
-                  "value": {
-                    "intValue": "2"
                   }
                 }
               ],
@@ -1220,6 +1220,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "_dd.p.dm",
                   "value": {
                     "stringValue": "-3"
@@ -1241,12 +1247,6 @@
                   "key": "_dd.limit_psr",
                   "value": {
                     "doubleValue": 1.0
-                  }
-                },
-                {
-                  "key": "_sampling_priority_v1",
-                  "value": {
-                    "intValue": "2"
                   }
                 }
               ],
