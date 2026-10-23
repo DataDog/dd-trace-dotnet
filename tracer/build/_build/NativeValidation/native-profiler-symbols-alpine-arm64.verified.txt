@@ -18,7 +18,13 @@ clock_gettime
 clock_nanosleep
 close
 closedir
-ddog_crasht_CrashInfo_upload_to_endpoint
+ddog_Error_drop
+ddog_Error_message
+ddog_MaybeError_drop
+ddog_StringWrapper_drop
+ddog_Vec_Tag_drop
+ddog_Vec_Tag_new
+ddog_Vec_Tag_push
 ddog_crasht_CrashInfoBuilder_build
 ddog_crasht_CrashInfoBuilder_new
 ddog_crasht_CrashInfoBuilder_with_kind
@@ -29,7 +35,7 @@ ddog_crasht_CrashInfoBuilder_with_proc_info
 ddog_crasht_CrashInfoBuilder_with_sig_info
 ddog_crasht_CrashInfoBuilder_with_thread
 ddog_crasht_CrashInfoBuilder_with_timestamp_now
-ddog_crasht_demangle
+ddog_crasht_CrashInfo_upload_to_endpoint
 ddog_crasht_StackFrame_new
 ddog_crasht_StackFrame_with_build_id
 ddog_crasht_StackFrame_with_build_id_type
@@ -43,11 +49,9 @@ ddog_crasht_StackFrame_with_symbol_address
 ddog_crasht_StackTrace_new
 ddog_crasht_StackTrace_push_frame
 ddog_crasht_StackTrace_set_complete
+ddog_crasht_demangle
 ddog_endpoint_drop
 ddog_endpoint_from_url
-ddog_Error_drop
-ddog_Error_message
-ddog_MaybeError_drop
 ddog_prof_EncodedProfile_bytes
 ddog_prof_EncodedProfile_drop
 ddog_prof_Endpoint_agent
@@ -63,10 +67,6 @@ ddog_prof_Profile_drop
 ddog_prof_Profile_new
 ddog_prof_Profile_serialize
 ddog_prof_Profile_set_endpoint
-ddog_StringWrapper_drop
-ddog_Vec_Tag_drop
-ddog_Vec_Tag_new
-ddog_Vec_Tag_push
 dl_iterate_phdr
 dladdr
 dlclose
