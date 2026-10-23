@@ -25,7 +25,7 @@ public class ProbeRateLimiterTests
             Assert.True(limiter.TryAddSampler(probeId, initial));
 
             // SetRate must mutate in place; replacing would wipe running EMAs.
-            limiter.SetRate(probeId, samplesPerSecond: 100);
+            limiter.SetRate(probeId, snapshotsPerSecond: 100);
             var afterUpdate = limiter.GerOrAddSampler(probeId);
 
             Assert.Same(initial, afterUpdate);
@@ -33,6 +33,34 @@ public class ProbeRateLimiterTests
             // Budget = samplesPerWindow + (budgetLookback * samplesPerWindow); budgetLookback = 16.
             var state = ((AdaptiveSampler)afterUpdate).GetInternalState();
             Assert.Equal(expected: 100 + (16 * 100), state.Budget);
+        }
+        finally
+        {
+            limiter.ResetRate(probeId);
+        }
+    }
+
+    [Fact]
+    public void SetRate_FractionalRate_ScalesWindowWithoutReplacingSampler()
+    {
+        var limiter = new ProbeRateLimiter(AdaptiveSamplerLifetime.Create);
+        const string probeId = "fractional-rate";
+
+        try
+        {
+            limiter.SetRate(probeId, 2.5);
+            var sampler = (AdaptiveSampler)limiter.GerOrAddSampler(probeId);
+
+            Assert.Equal(TimeSpan.FromSeconds(2), sampler.WindowDuration);
+            Assert.Equal(5 + (16 * 5), sampler.GetInternalState().Budget);
+            Assert.True(sampler.Sample());
+
+            limiter.SetRate(probeId, 0.5);
+
+            Assert.Same(sampler, limiter.GerOrAddSampler(probeId));
+            Assert.Equal(TimeSpan.FromSeconds(2), sampler.WindowDuration);
+            Assert.Equal(1 + (16 * 1), sampler.GetInternalState().Budget);
+            Assert.True(sampler.Sample());
         }
         finally
         {
@@ -109,7 +137,7 @@ public class ProbeRateLimiterTests
     {
         public List<TestAdaptiveSampler> Samplers { get; } = [];
 
-        public IAdaptiveSampler Create(int samplesPerSecond)
+        public IAdaptiveSampler Create(double snapshotsPerSecond)
         {
             var sampler = new TestAdaptiveSampler();
             Samplers.Add(sampler);

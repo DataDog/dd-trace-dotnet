@@ -146,4 +146,99 @@ public class AdaptiveSamplerTests
         sampler.Dispose();
         sampler.Dispose();
     }
+
+    [Theory]
+    [InlineData(0d, 1, 0)]
+    [InlineData(0.5d, 2, 1)]
+    [InlineData(2d, 1, 2)]
+    [InlineData(2.5d, 2, 5)]
+    [InlineData(0.1d, 10, 1)]
+    public void Create_ScalesWindowSoFractionalRatesAreNotTruncated(double snapshotsPerSecond, int windowSeconds, int samplesPerWindow)
+    {
+        var sampler = (AdaptiveSampler)AdaptiveSamplerLifetime.Create(snapshotsPerSecond);
+        try
+        {
+            Assert.Equal(TimeSpan.FromSeconds(windowSeconds), sampler.WindowDuration);
+
+            // AdaptiveSamplerLifetime uses a budget lookback of 16.
+            Assert.Equal(samplesPerWindow + (16 * samplesPerWindow), sampler.GetInternalState().Budget);
+            Assert.Equal(snapshotsPerSecond > 0, sampler.Sample());
+        }
+        finally
+        {
+            sampler.Dispose();
+        }
+    }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.NegativeInfinity)]
+    [InlineData(-1d)]
+    public void Create_NonPositiveRate_BlocksSnapshots(double snapshotsPerSecond)
+    {
+        var sampler = (AdaptiveSampler)AdaptiveSamplerLifetime.Create(snapshotsPerSecond);
+        try
+        {
+            Assert.Equal(TimeSpan.FromSeconds(1), sampler.WindowDuration);
+            Assert.Equal(0, sampler.GetInternalState().Budget);
+            Assert.False(sampler.Sample());
+        }
+        finally
+        {
+            sampler.Dispose();
+        }
+    }
+
+    [Fact]
+    public void SetSnapshotsPerSecond_IntegerRateKeepsWindowAndHistory()
+    {
+        const int budgetLookback = 4;
+        var sampler = new AdaptiveSampler(TimeSpan.FromSeconds(1), samplesPerWindow: 2, averageLookback: 1, budgetLookback: budgetLookback, rollWindowCallback: null);
+        try
+        {
+            sampler.Keep();
+            sampler.Drop();
+            sampler.RollWindow();
+            var before = sampler.GetInternalState();
+
+            sampler.SetSnapshotsPerSecond(50);
+
+            var after = sampler.GetInternalState();
+            Assert.Equal(TimeSpan.FromSeconds(1), sampler.WindowDuration);
+            Assert.Equal(50 + (budgetLookback * 50), after.Budget);
+            Assert.Equal(before.TotalAverage, after.TotalAverage);
+            Assert.Equal(before.Probability, after.Probability);
+        }
+        finally
+        {
+            sampler.Dispose();
+        }
+    }
+
+    [Fact]
+    public void SetSnapshotsPerSecond_FractionalRateScalesWindowAndResetsHistory()
+    {
+        const int budgetLookback = 4;
+        var sampler = new AdaptiveSampler(WindowDuration, samplesPerWindow: 2, averageLookback: 1, budgetLookback: budgetLookback, rollWindowCallback: null);
+        try
+        {
+            sampler.Keep();
+            sampler.Drop();
+            sampler.RollWindow();
+            Assert.NotEqual(0, sampler.GetInternalState().TotalAverage);
+
+            sampler.SetSnapshotsPerSecond(0.5);
+
+            Assert.Equal(TimeSpan.FromSeconds(2), sampler.WindowDuration);
+            var state = sampler.GetInternalState();
+            Assert.Equal(1 + (budgetLookback * 1), state.Budget);
+            Assert.Equal(0, state.TotalAverage);
+            Assert.Equal(1, state.Probability);
+            Assert.True(sampler.Sample());
+        }
+        finally
+        {
+            sampler.Dispose();
+        }
+    }
 }
