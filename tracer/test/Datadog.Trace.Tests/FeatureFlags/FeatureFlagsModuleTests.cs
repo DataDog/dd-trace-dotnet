@@ -782,7 +782,7 @@ public class FeatureFlagsModuleTests
             .And.Contain("on")
             .And.Contain(EvaluationReason.TargetingMatch)
             .And.Contain("\"user-42\"")
-            .And.Contain("{\"plan\": \"premium\", \"seats\": 3}")
+            .And.Contain("{\"plan\":\"premium\",\"seats\":3}")
             .And.Contain("2026-10-20T00:00:00Z");
         line.OfType<string>().Should().Contain(v => v.Contains("plan-allocation"), "the flag metadata is logged");
     }
@@ -799,7 +799,7 @@ public class FeatureFlagsModuleTests
         EvaluationLine(logger).Should().Contain("PROVIDER_NOT_READY")
                               .And.Contain("\"fallback\"")
                               .And.Contain("\"user-42\"")
-                              .And.Contain("{\"plan\": \"premium\"}")
+                              .And.Contain("{\"plan\":\"premium\"}")
                               .And.Contain("none (no configuration is applied)");
     }
 
@@ -814,7 +814,7 @@ public class FeatureFlagsModuleTests
 
         result.Value.Should().Be(true);
         result.Error.Should().BeNull();
-        EvaluationLine(logger).OfType<string>().Should().Contain(v => v.Contains("\"plan\": \"premium\"") && v.Contains($"<not formatted: {typeof(UnserializableAttribute).FullName}>"));
+        EvaluationLine(logger).OfType<string>().Should().Contain(v => v.Contains("\"plan\":\"premium\"") && v.Contains($"<not formatted: {typeof(UnserializableAttribute).FullName}>"));
     }
 
     [Fact]
@@ -1013,8 +1013,8 @@ public class FeatureFlagsModuleTests
         {
             value = new Dictionary<string, object?> { ["nested"] = new object[] { large, 42 } };
             fallback = new Dictionary<string, object?> { ["fallback"] = large };
-            expectedValue = "{\"nested\": [\"" + large + "\", 42]}";
-            expectedDefault = "{\"fallback\": \"" + large + "\"}";
+            expectedValue = "{\"nested\":[\"" + large + "\",42]}";
+            expectedDefault = "{\"fallback\":\"" + large + "\"}";
         }
 
         var lines = new List<string>();

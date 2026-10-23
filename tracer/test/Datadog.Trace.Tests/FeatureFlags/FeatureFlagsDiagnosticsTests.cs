@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.FeatureFlags;
@@ -34,16 +35,48 @@ public class FeatureFlagsDiagnosticsTests
     }
 
     [Theory]
-    [InlineData("plain")]
-    [InlineData("\"quoted\"")]
-    [InlineData("back\\slash")]
-    [InlineData("line\nbreak\r\n\ttab")]
-    [InlineData("")]
-    public void FormatMapEscapesKeys(string key)
+    [InlineData("plain", "value")]
+    [InlineData("\"quoted\"", "\"quoted value\"")]
+    [InlineData("back\\slash", "back\\slash")]
+    [InlineData("line\nbreak\r\n\ttab", "line\nbreak\r\n\ttab")]
+    [InlineData("", "")]
+    [InlineData("nullable", null)]
+    public void FormatMapPreservesStringKeysAndValues(string key, string value)
     {
-        var map = new Dictionary<string, string> { [key] = "value" };
+        var map = new Dictionary<string, string> { [key] = value };
 
         JsonConvert.DeserializeObject<Dictionary<string, string>>(FeatureFlagsDiagnostics.FormatMap(map))
                    .Should().BeEquivalentTo(map);
+    }
+
+    [Fact]
+    public void FormatMapFormatsNestedValues()
+    {
+        var map = new Dictionary<string, object>
+        {
+            ["items"] = new object[] { "line\nbreak", true, null, 0.84551240822557006, 1.0000001f },
+            ["nested"] = new Dictionary<string, object> { ["empty"] = Array.Empty<object>() },
+        };
+
+        FeatureFlagsDiagnostics.FormatMap(map).Should().Be("{\"items\":[\"line\\nbreak\",true,null,0.84551240822557006,1.00000012],\"nested\":{\"empty\":[]}}");
+    }
+
+    [Fact]
+    public void FormatMapPreservesOtherEntriesWhenNestedMapThrows()
+    {
+        var map = new Dictionary<string, object>
+        {
+            ["before"] = "first",
+            ["broken"] = ThrowingMap(),
+            ["after"] = "last",
+        };
+
+        FeatureFlagsDiagnostics.FormatMap(map).Should().Be("{\"before\":\"first\",\"broken\":<unformattable: InvalidOperationException>,\"after\":\"last\"}");
+    }
+
+    private static IEnumerable<KeyValuePair<string, object>> ThrowingMap()
+    {
+        yield return new KeyValuePair<string, object>("partial", "value");
+        throw new InvalidOperationException();
     }
 }

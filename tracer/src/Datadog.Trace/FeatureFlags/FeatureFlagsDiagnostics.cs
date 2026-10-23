@@ -8,10 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -76,46 +78,57 @@ internal static class FeatureFlagsDiagnostics
         var sb = StringBuilderCache.Acquire();
         try
         {
-            sb.Append('{');
-            var first = true;
+            using var sw = new StringWriter(sb, CultureInfo.InvariantCulture);
+            using var writer = new JsonTextWriter(sw) { ArrayPool = JsonArrayPool.Shared };
+            writer.WriteStartObject();
             foreach (var pair in map)
             {
-                if (!first)
+                writer.WritePropertyName(pair.Key);
+                if (pair.Value is null or string)
                 {
-                    sb.Append(", ");
+                    // Flag metadata contains only strings; the writer handles these directly.
+                    writer.WriteValue(pair.Value);
                 }
-
-                first = false;
-                // JsonConvert.ToString quotes and JSON-escapes the key, including quotes and newlines.
-                sb.Append(JsonConvert.ToString(pair.Key)).Append(": ").Append(FormatValue(pair.Value));
+                else
+                {
+                    // Context attributes can also contain structured values and OpenFeature objects.
+                    writer.WriteRawValue(FormatValue(pair.Value));
+                }
             }
 
-            sb.Append('}');
-            return StringBuilderCache.GetStringAndRelease(sb);
+            writer.WriteEndObject();
+            return sb.ToString();
         }
         catch (Exception ex)
         {
-            StringBuilderCache.Release(sb);
             return $"<unformattable: {ex.GetType().Name}>";
+        }
+        finally
+        {
+            StringBuilderCache.Release(sb);
         }
     }
 
     private static string FormatArray(object?[] items)
     {
         var sb = StringBuilderCache.Acquire();
-        sb.Append('[');
-        for (var i = 0; i < items.Length; i++)
+        try
         {
-            if (i > 0)
+            using var sw = new StringWriter(sb, CultureInfo.InvariantCulture);
+            using var writer = new JsonTextWriter(sw) { ArrayPool = JsonArrayPool.Shared };
+            writer.WriteStartArray();
+            foreach (var item in items)
             {
-                sb.Append(", ");
+                writer.WriteRawValue(FormatValue(item));
             }
 
-            sb.Append(FormatValue(items[i]));
+            writer.WriteEndArray();
+            return sb.ToString();
         }
-
-        sb.Append(']');
-        return StringBuilderCache.GetStringAndRelease(sb);
+        finally
+        {
+            StringBuilderCache.Release(sb);
+        }
     }
 
     /// <summary>
