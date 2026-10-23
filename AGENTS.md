@@ -247,6 +247,8 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - Use struct implementations with generic constraints for zero-allocation production code
   - Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
 - Prefer using `[Theory]` with input data rather than duplicating tests
+- Synchronize on events, not time: wait on a `TaskCompletionSource`, a `std::promise`, or a marker queued behind the work instead of `Thread.Sleep`, `Task.Delay`, or a short timed wait, and don't fix a flaky test by raising its timeout
+  - Use a time bound only to detect a failure that no event can report, such as missing output from another process (`MockTracerAgent.WaitForSpans`), a deadlock probe, or a check that something stays blocked, and comment why
 
 - **`docs/development/TracerDebugging.md`** — Local debugging techniques, launchSettings.json configuration, $(SolutionDir) path issues, IDE-specific tips, and troubleshooting common tracer loading problems
 
