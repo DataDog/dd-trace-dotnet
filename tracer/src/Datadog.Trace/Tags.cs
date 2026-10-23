@@ -1,4 +1,4 @@
-// <copyright file="Tags.cs" company="Datadog">
+﻿// <copyright file="Tags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -643,24 +643,44 @@ namespace Datadog.Trace
         internal const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 
         /// <summary>
-        /// The type of trigger for an azure function
+        /// The type of trigger for an azure function hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionTriggerType = "aas.function.trigger";
 
         /// <summary>
-        /// The UI name of the azure function
+        /// The UI name of the azure function hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionName = "aas.function.name";
 
         /// <summary>
-        /// The full method name of the azure function
+        /// The full method name of the azure function hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionMethod = "aas.function.method";
 
         /// <summary>
-        /// The literal type of the binding for the azure function trigger
+        /// The literal type of the binding for the azure function trigger hosted in Azure App Service.
         /// </summary>
         internal const string AzureFunctionBindingSource = "aas.function.binding";
+
+        /// <summary>
+        /// The type of trigger for an azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionTriggerType = "aca.function.trigger";
+
+        /// <summary>
+        /// The UI name of the azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionName = "aca.function.name";
+
+        /// <summary>
+        /// The full method name of the azure function hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionMethod = "aca.function.method";
+
+        /// <summary>
+        /// The literal type of the binding for the azure function trigger hosted in Azure Container Apps.
+        /// </summary>
+        internal const string AzureContainerAppFunctionBindingSource = "aca.function.binding";
 
         /// <summary>
         /// Configures the origin of the trace. This tag is added during MessagePack serialization

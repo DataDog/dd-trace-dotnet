@@ -1,4 +1,4 @@
-// <copyright file="AzureFunctionsCommon.cs" company="Datadog">
+﻿// <copyright file="AzureFunctionsCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -71,6 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
             where TFunction : IFunctionInstance
         {
+            var isContainerApps = tracer.Settings.IsRunningInAzureContainerApps;
             Scope? scope = null;
 
             try
@@ -148,6 +149,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                                      : functionName;
                         AzureFunctionsTags.SetRootSpanTags(
                             rootSpan.Tags,
+                            isContainerApps,
                             shortName: remoteFunctionName,
                             fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
                             bindingSource: bindingSourceType.FullName,
@@ -160,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (tracer.InternalActiveScope == null)
                 {
-                    var tags = new AzureFunctionsTags
+                    var tags = new AzureFunctionsTags(isContainerApps)
                     {
                         TriggerType = triggerType,
                         ShortName = functionName,
@@ -180,6 +182,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         AzureFunctionsTags.SetRootSpanTags(
                             scope.Root.Span.Tags,
+                            isContainerApps,
                             shortName: functionName,
                             fullName: instanceParam.FunctionDescriptor.FullName,
                             bindingSource: bindingSourceType.FullName,
@@ -238,6 +241,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime)
             where T : IFunctionContext
         {
+            var isContainerApps = tracer.Settings.IsRunningInAzureContainerApps;
             Scope? scope = null;
 
             try
@@ -348,11 +352,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext);
                 }
 
-                var tags = new AzureFunctionsTags
+                // Keep these in locals rather than reading them back off the tags object: the tag
+                // properties are backed by the tag dictionary, so each read takes a lock.
+                var shortName = functionContext.FunctionDefinition.Name;
+                var fullName = functionContext.FunctionDefinition.EntryPoint;
+
+                var tags = new AzureFunctionsTags(isContainerApps)
                 {
                     TriggerType = triggerType,
-                    ShortName = functionContext.FunctionDefinition.Name,
-                    FullName = functionContext.FunctionDefinition.EntryPoint,
+                    ShortName = shortName,
+                    FullName = fullName,
                 };
 
                 // Use the supplied aspnet_core.request scope (from HttpContext.Items bridge)
@@ -370,13 +379,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan.Tags,
-                        shortName: tags.ShortName,
-                        fullName: tags.FullName,
+                        isContainerApps,
+                        shortName: shortName,
+                        fullName: fullName,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: tags.TriggerType);
+                        triggerType: triggerType);
 
                     rootSpan.Type = SpanType; // "serverless"
-                    rootSpan.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                    rootSpan.ResourceName = $"{triggerType} {shortName}";
                 }
                 else
                 {
@@ -406,15 +416,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         // this is NOT the local root span, copy some tags to the root span
                         AzureFunctionsTags.SetRootSpanTags(
                             rootSpan.Tags,
-                            shortName: tags.ShortName,
-                            fullName: tags.FullName,
+                            isContainerApps,
+                            shortName: shortName,
+                            fullName: fullName,
                             bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                            triggerType: tags.TriggerType);
+                            triggerType: triggerType);
 
                         rootSpan.Type = SpanType; // "serverless"
                     }
 
-                    span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                    span.ResourceName = $"{triggerType} {shortName}";
                     span.Type = SpanType;
                 }
 
