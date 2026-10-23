@@ -529,8 +529,23 @@ namespace Datadog.Trace.Configuration
             var otelPropagation = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
                             .GetAsClassResult(
-                                 validator: injectionValidator, // invalid individual values are rejected later
+                                 validator: styles => styles.Any(IsSupportedOtelPropagator),
                                  converter: otelConverter);
+
+            // Filter the selected value, rather than in the converter, which runs once per source
+            if (otelPropagation.ConfigurationResult is { Result: { } otelPropagators, IsValid: true })
+            {
+                var propagatorsBySupport = otelPropagators.ToLookup(IsSupportedOtelPropagator);
+                if (propagatorsBySupport.Contains(false))
+                {
+                    ErrorLog.LogUnsupportedValues(otelPropagation.Key, [..propagatorsBySupport[false]]);
+                    otelPropagation = new(
+                        otelPropagation.Telemetry,
+                        otelPropagation.Key,
+                        otelPropagation.RecordValue,
+                        ConfigurationResult<string[]>.Valid([..propagatorsBySupport[true]], otelPropagation.ConfigurationResult.TelemetryOverride));
+                }
+            }
 
             PropagationStyleInject = config
                .WithKeys(ConfigurationKeys.PropagationStyleInject)
@@ -1675,6 +1690,10 @@ namespace Datadog.Trace.Configuration
                 return null;
             }
         }
+
+        private static bool IsSupportedOtelPropagator(string propagator)
+            => SpanContextPropagatorFactory.GetPropagator(propagator) is not null
+            || string.Equals(propagator, "none", StringComparison.OrdinalIgnoreCase);
 
         private static ParsingResult<OtlpProtocol> UnsupportedOtlpProtocol(string inputValue)
         {
