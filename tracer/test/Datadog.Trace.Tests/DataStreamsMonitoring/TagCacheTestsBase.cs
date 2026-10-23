@@ -18,91 +18,14 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 // xUnit runs these inherited scenarios for both EdgeTagCacheTests and BacklogTagCacheTests.
 public abstract class TagCacheTestsBase
 {
-    [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    public async Task GetOrCreateTags_BypassesCache_WhenAtConfiguredCapacityWithActiveEntries(int capacity)
-    {
-        // Separate key types keep the two capacities isolated in the process-wide caches.
-        if (capacity == 1)
-        {
-            await VerifyCapacity<CapacityOneScenario>(capacity);
-        }
-        else
-        {
-            await VerifyCapacity<CapacityTwoScenario>(capacity);
-        }
-    }
-
     [Fact]
-    public async Task GetOrCreateTags_ManagersShareCacheAndFirstCapacity()
+    public async Task GetOrCreateTags_BypassesCache_WhenAtMaxCapacityWithActiveEntries()
     {
-        var firstManager = CreateManager(capacity: 1);
-        var secondManager = CreateManager(capacity: 2);
-        try
-        {
-            var first = GetTags(firstManager, 0);
-            GetTags(firstManager, 0).Should().BeSameAs(first);
-            GetTags(secondManager, 0).Should().BeSameAs(first);
-
-            // The first manager initialized this shared cache with capacity 1. The second
-            // manager's capacity 2 must not resize or replace it, so key 1 bypasses both.
-            var uncached = GetTags(firstManager, 1);
-            GetTags(firstManager, 1).Should().NotBeSameAs(uncached);
-            var secondUncached = GetTags(secondManager, 1);
-            GetTags(secondManager, 1).Should().NotBeSameAs(secondUncached);
-            GetTags(firstManager, 0).Should().BeSameAs(first);
-        }
-        finally
-        {
-            await firstManager.DisposeAsync();
-            await secondManager.DisposeAsync();
-        }
-
-        object GetTags(DataStreamsManager manager, int value)
-            => GetOverflowTestTags<SharedCacheScenario>(manager, value);
-    }
-
-    [Fact]
-    public async Task GetOrCreateTags_ConcurrentFirstAccessReturnsSameCachedValue()
-    {
-        var dsm = CreateManager(capacity: 1);
-        try
-        {
-            var tasks = Enumerable.Range(0, 16)
-                                  .Select(_ => Task.Run(() => GetOverflowTestTags<ConcurrentAccessScenario>(dsm, 0)));
-            var results = await Task.WhenAll(tasks);
-
-            foreach (var result in results)
-            {
-                result.Should().BeSameAs(results[0]);
-            }
-        }
-        finally
-        {
-            await dsm.DisposeAsync();
-        }
-    }
-
-    private protected abstract object GetOverflowTestTags<TScenario>(DataStreamsManager manager, int value);
-
-    private static DataStreamsManager CreateManager(int capacity)
-    {
-        var settings = TracerSettings.Create(new()
-        {
-            { ConfigurationKeys.DataStreamsMonitoring.Enabled, "true" },
-            { ConfigurationKeys.DataStreamsMonitoring.TagCacheSize, capacity.ToString() },
-        });
-        return new DataStreamsManager(settings, new DataStreamsManagerTests.DataStreamsWriterMock(), Mock.Of<IDiscoveryService>());
-    }
-
-    private async Task VerifyCapacity<TScenario>(int capacity)
-    {
-        var dsm = CreateManager(capacity);
+        var dsm = CreateManager();
         try
         {
             // Every entry stays active for the duration of the test, so none can be evicted.
-            var cached = new object[capacity];
+            var cached = new object[DataStreamsManager.MaxTagCacheSize];
             for (var i = 0; i < cached.Length; i++)
             {
                 cached[i] = GetTags(i);
@@ -122,7 +45,65 @@ public abstract class TagCacheTestsBase
             await dsm.DisposeAsync();
         }
 
-        object GetTags(int value) => GetOverflowTestTags<TScenario>(dsm, value);
+        object GetTags(int value) => GetOverflowTestTags<OverflowScenario>(dsm, value);
+    }
+
+    [Fact]
+    public async Task GetOrCreateTags_ManagersShareCache()
+    {
+        var firstManager = CreateManager();
+        var secondManager = CreateManager();
+        try
+        {
+            var first = GetTags(firstManager, 0);
+            GetTags(firstManager, 0).Should().BeSameAs(first);
+            GetTags(secondManager, 0).Should().BeSameAs(first);
+
+            // Entries inserted through either manager must be visible through the other.
+            var second = GetTags(secondManager, 1);
+            GetTags(firstManager, 1).Should().BeSameAs(second);
+            GetTags(firstManager, 0).Should().BeSameAs(first);
+        }
+        finally
+        {
+            await firstManager.DisposeAsync();
+            await secondManager.DisposeAsync();
+        }
+
+        object GetTags(DataStreamsManager manager, int value)
+            => GetOverflowTestTags<SharedCacheScenario>(manager, value);
+    }
+
+    [Fact]
+    public async Task GetOrCreateTags_ConcurrentFirstAccessReturnsSameCachedValue()
+    {
+        var dsm = CreateManager();
+        try
+        {
+            var tasks = Enumerable.Range(0, 16)
+                                  .Select(_ => Task.Run(() => GetOverflowTestTags<ConcurrentAccessScenario>(dsm, 0)));
+            var results = await Task.WhenAll(tasks);
+
+            foreach (var result in results)
+            {
+                result.Should().BeSameAs(results[0]);
+            }
+        }
+        finally
+        {
+            await dsm.DisposeAsync();
+        }
+    }
+
+    private protected abstract object GetOverflowTestTags<TScenario>(DataStreamsManager manager, int value);
+
+    private static DataStreamsManager CreateManager()
+    {
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.DataStreamsMonitoring.Enabled, "true" },
+        });
+        return new DataStreamsManager(settings, new DataStreamsManagerTests.DataStreamsWriterMock(), Mock.Of<IDiscoveryService>());
     }
 
     private protected readonly struct OverflowTestKey<TScenario> : IEquatable<OverflowTestKey<TScenario>>
@@ -139,11 +120,7 @@ public abstract class TagCacheTestsBase
     }
 
     // Marker types give each scenario its own static cache while retaining the same key shape.
-    private readonly struct CapacityOneScenario
-    {
-    }
-
-    private readonly struct CapacityTwoScenario
+    private readonly struct OverflowScenario
     {
     }
 

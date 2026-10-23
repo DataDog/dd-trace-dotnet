@@ -6,7 +6,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using FluentAssertions;
 using Xunit;
@@ -19,7 +18,7 @@ public class TagCacheTests
     public void FullCache_PreservesActiveEntries_WhenWorkingSetExceedsCapacity()
     {
         long now = 0;
-        var cache = new TagCache<int, object>(TracerSettings.DefaultDataStreamsTagCacheSize, () => now);
+        var cache = new TagCache<int, object>(DataStreamsManager.MaxTagCacheSize, () => now);
         var results = new object[1200];
         for (var i = 0; i < results.Length; i++)
         {
@@ -33,7 +32,7 @@ public class TagCacheTests
             for (var i = 0; i < results.Length; i++)
             {
                 var tags = GetTags(cache, i);
-                if (i < TracerSettings.DefaultDataStreamsTagCacheSize)
+                if (i < DataStreamsManager.MaxTagCacheSize)
                 {
                     tags.Should().BeSameAs(results[i]);
                 }
@@ -78,8 +77,8 @@ public class TagCacheTests
     public void ConcurrentInsertionsAndIdleEvictions_KeepCapacityAvailable()
     {
         long now = 0;
-        var cache = new TagCache<int, object>(TracerSettings.DefaultDataStreamsTagCacheSize, () => Volatile.Read(ref now));
-        var results = new object[TracerSettings.DefaultDataStreamsTagCacheSize];
+        var cache = new TagCache<int, object>(DataStreamsManager.MaxTagCacheSize, () => Volatile.Read(ref now));
+        var results = new object[DataStreamsManager.MaxTagCacheSize];
         Parallel.For(0, results.Length, i => results[i] = GetTags(cache, i));
         for (var i = 0; i < results.Length; i++)
         {
@@ -145,11 +144,11 @@ public class TagCacheTests
         var existing = GetTags(cache, 0);
         now = TagCache<int, object>.IdleTimeoutSeconds;
 
-        Action create = () => cache.GetOrCreate(1, static _ => throw new InvalidOperationException());
+        Action create = () => cache.GetOrCreateValue(1, static _ => throw new InvalidOperationException());
         create.Should().Throw<InvalidOperationException>();
         GetTags(cache, 0).Should().BeSameAs(existing);
     }
 
     private static object GetTags(TagCache<int, object> cache, int key)
-        => cache.GetOrCreate(key, static k => new EdgeTags([$"tag:{k}"]));
+        => cache.GetOrCreateValue(key, static k => new EdgeTags([$"tag:{k}"]));
 }

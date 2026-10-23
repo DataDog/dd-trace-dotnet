@@ -22,7 +22,7 @@ internal sealed class TagCache<TKey, TValue>
     internal const int IdleTimeoutSeconds = 60;
 
     // Production uses one shared cache per key/value type; tests can construct isolated instances.
-    private static TagCache<TKey, TValue>? _sharedCache;
+    private static readonly TagCache<TKey, TValue> SharedCache = new(DataStreamsManager.MaxTagCacheSize);
 
     private readonly ConcurrentDictionary<TKey, Entry> _cache = new();
     private readonly object _cacheModificationLock = new();
@@ -44,10 +44,10 @@ internal sealed class TagCache<TKey, TValue>
         _getTimestampSeconds = getTimestampSeconds;
     }
 
-    internal static TValue GetOrCreate(TKey key, Func<TKey, TValue> factory, int capacity)
-        => GetSharedCache(capacity).GetOrCreate(key, factory);
+    internal static TValue GetOrCreate(TKey key, Func<TKey, TValue> factory)
+        => SharedCache.GetOrCreateValue(key, factory);
 
-    internal TValue GetOrCreate(TKey key, Func<TKey, TValue> factory)
+    internal TValue GetOrCreateValue(TKey key, Func<TKey, TValue> factory)
     {
         var now = GetTimestampSeconds();
         if (_cache.TryGetValue(key, out var existing))
@@ -81,20 +81,6 @@ internal sealed class TagCache<TKey, TValue>
             Volatile.Write(ref _count, _count + 1);
             return value;
         }
-    }
-
-    // The first manager to use this key/value type determines its process-wide capacity.
-    // Later managers reuse the cache even if their configured capacity differs.
-    private static TagCache<TKey, TValue> GetSharedCache(int capacity)
-    {
-        var cache = Volatile.Read(ref _sharedCache);
-        if (cache is not null)
-        {
-            return cache;
-        }
-
-        var created = new TagCache<TKey, TValue>(capacity);
-        return Interlocked.CompareExchange(ref _sharedCache, created, null) ?? created;
     }
 
     // The production clock is read directly rather than through a delegate, since it runs on every hit.

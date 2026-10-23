@@ -34,8 +34,6 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public partial record TracerSettings
     {
-        internal const int DefaultDataStreamsTagCacheSize = 1000;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
         private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.StatsAdditionalTags];
 
@@ -608,11 +606,6 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
-
-            DataStreamsTagCacheSize = config
-                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TagCacheSize)
-                                    .AsInt32(DefaultDataStreamsTagCacheSize, static size => size > 0)
-                                    .Value;
 
             DataStreamsTransactionExtractors = config
                                                   .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
@@ -1429,12 +1422,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
         /// </summary>
         internal bool IsDataStreamsMonitoringInDefaultState { get; }
-
-        /// <summary>
-        /// Gets the maximum number of entries in each process-wide DSM edge-tag or backlog-tag cache.
-        /// Defaults to 1000. The first manager to use each key/value type fixes its capacity for the process lifetime.
-        /// </summary>
-        internal int DataStreamsTagCacheSize { get; }
 
         /// <summary>
         /// Gets a raw value for DSM extractors

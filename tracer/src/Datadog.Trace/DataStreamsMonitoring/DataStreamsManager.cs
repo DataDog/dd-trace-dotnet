@@ -27,10 +27,14 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// </summary>
 internal sealed class DataStreamsManager
 {
+    /// <summary>
+    /// Maximum number of entries in each process-wide edge-tag or backlog-tag cache.
+    /// </summary>
+    internal const int MaxTagCacheSize = 1000;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
-    private readonly int _tagCacheSize;
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDiscoveryService _discoveryService;
     private readonly DataStreamsExtractorRegistry _registry;
@@ -49,7 +53,6 @@ internal sealed class DataStreamsManager
         IDataStreamsWriter? writer,
         IDiscoveryService discoveryService)
     {
-        _tagCacheSize = tracerSettings.DataStreamsTagCacheSize;
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
@@ -366,7 +369,7 @@ internal sealed class DataStreamsManager
     /// Returns cached edge tags for the given key, creating and caching them on first use.
     /// On cache hits, zero heap allocations occur, and the node hash cached on the returned
     /// <see cref="EdgeTags"/> is reused. The factory is only invoked on cache misses.
-    /// Once the cache reaches the capacity configured by <see cref="TracerSettings.DataStreamsTagCacheSize"/>, new keys replace
+    /// Once the cache reaches <see cref="MaxTagCacheSize"/> entries, new keys replace
     /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the cache modification lock.
     /// </summary>
@@ -375,12 +378,12 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the edge tags from the key on cache miss.</param>
     public EdgeTags GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, EdgeTags> factory)
         where TKey : IEquatable<TKey>
-        => TagCache<TKey, EdgeTags>.GetOrCreate(key, factory, _tagCacheSize);
+        => TagCache<TKey, EdgeTags>.GetOrCreate(key, factory);
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
     /// On cache hits, zero heap allocations occur. The factory is only invoked on cache misses.
-    /// Once the cache reaches the capacity configured by <see cref="TracerSettings.DataStreamsTagCacheSize"/>, new keys replace
+    /// Once the cache reaches <see cref="MaxTagCacheSize"/> entries, new keys replace
     /// entries that have been idle for a minute, or bypass caching
     /// if all entries are active. Cache hits do not take the cache modification lock.
     /// </summary>
@@ -389,7 +392,7 @@ internal sealed class DataStreamsManager
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
         where TKey : IEquatable<TKey>
-        => TagCache<TKey, string>.GetOrCreate(key, factory, _tagCacheSize);
+        => TagCache<TKey, string>.GetOrCreate(key, factory);
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions

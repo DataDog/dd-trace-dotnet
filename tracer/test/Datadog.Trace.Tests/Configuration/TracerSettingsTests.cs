@@ -25,26 +25,6 @@ namespace Datadog.Trace.Tests.Configuration
     public class TracerSettingsTests : SettingsTestsBase
     {
         [Theory]
-        [InlineData(null, 1000)]
-        [InlineData("", 1000)]
-        [InlineData(" ", 1000)]
-        [InlineData("invalid", 1000)]
-        [InlineData("0", 1000)]
-        [InlineData("-1", 1000)]
-        [InlineData("2147483648", 1000)]
-        [InlineData("1", 1)]
-        [InlineData("25", 25)]
-        [InlineData("5000", 5000)]
-        [InlineData("2147483647", int.MaxValue)]
-        public void DataStreamsTagCacheSize(string value, int expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.TagCacheSize, value));
-            var settings = new TracerSettings(source);
-
-            settings.DataStreamsTagCacheSize.Should().Be(expected);
-        }
-
-        [Theory]
         [InlineData("http://localhost:7777/agent?querystring", "http://127.0.0.1:7777/agent?querystring")]
         [InlineData("http://datadog:7777/agent?querystring", "http://datadog:7777/agent?querystring")]
         public void ReplaceLocalhost(string original, string expected)
@@ -1016,7 +996,7 @@ namespace Datadog.Trace.Tests.Configuration
             var fields = type.GetFields(flags);
             foreach (var field in fields)
             {
-                (field.IsInitOnly || field.IsLiteral).Should().BeTrue($"{field.Name} should be read only or constant");
+                field.IsInitOnly.Should().BeTrue($"{field.Name} should be read only");
             }
         }
 
