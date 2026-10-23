@@ -285,6 +285,9 @@ case "$test_suite" in
       integration_service="IntegrationTests"
       export COMPOSE_PROFILES="group${DOCKER_GROUP}"
       export Filter="DockerGroup=${DOCKER_GROUP}"
+      # Match Azure: Event Grid must deliver to the Functions host inside the
+      # IntegrationTests container, not to the Docker daemon's host gateway.
+      export EVENTGRID_WEBHOOK_HOST=integrationtests
     fi
 
     if [ "$target_architecture" = "x64" ] && [ "$DOCKER_GROUP" = "1" ]; then

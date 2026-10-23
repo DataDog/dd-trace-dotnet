@@ -99,9 +99,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (read <= 0)
                     {
+                        var error = new Win32Exception(Marshal.GetLastWin32Error());
                         throw new Win32Exception(
-                            Marshal.GetLastWin32Error(),
-                            $"process_vm_readv failed while reading process {processId} at 0x{remoteAddress:x}.");
+                            error.NativeErrorCode,
+                            $"process_vm_readv failed while reading process {processId} at 0x{remoteAddress:x} (errno {error.NativeErrorCode}: {error.Message}).");
                     }
 
                     offset += checked((int)read);

@@ -116,6 +116,16 @@ namespace Datadog.Trace.TestHelpers
                 var monitoringHome = EnvironmentHelper.GetMonitoringHomePath();
                 SetEnvironmentVariable("COR_PROFILER_PATH_32", Path.Combine(monitoringHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
                 SetEnvironmentVariable("COR_PROFILER_PATH_64", Path.Combine(monitoringHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+
+                if (usesVsTest && !useDotnetExec)
+                {
+                    // The SDK's VSTest runner uses CoreCLR even for .NET Framework samples.
+                    // Instrument the runner too: it owns the session, including empty test runs.
+                    SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", EnvironmentHelper.AutomaticInstrumentationEnabled ? "1" : "0");
+                    SetEnvironmentVariable("CORECLR_PROFILER", EnvironmentTools.ProfilerClsId);
+                    SetEnvironmentVariable("CORECLR_PROFILER_PATH_32", Path.Combine(monitoringHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
+                    SetEnvironmentVariable("CORECLR_PROFILER_PATH_64", Path.Combine(monitoringHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+                }
             }
 
             var process = await ProfilerHelper.StartProcessWithProfiler(
