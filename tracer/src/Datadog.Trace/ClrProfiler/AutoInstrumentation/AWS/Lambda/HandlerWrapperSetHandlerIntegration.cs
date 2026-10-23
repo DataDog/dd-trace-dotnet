@@ -90,6 +90,21 @@ public sealed class HandlerWrapperSetHandlerIntegration
             else
             {
                 var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
+                // jsonString keeps the original payload (with _datadog) for the extension;
+                // only the stream the customer handler reads is replaced.
+                try
+                {
+                    var stripped = StripInjectedContext.StripStream(jsonString, Tracer.Instance.Settings.AwsLambdaStripContextEnabled);
+                    if (stripped != null)
+                    {
+                        proxyInstance.InputStream = stripped;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LambdaCommon.Log("Unable to replace Lambda InputStream with stripped payload", ex, false);
+                }
+
                 scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext);
                 requestId = proxyInstance.LambdaContext?.AwsRequestId;
             }

@@ -2816,6 +2816,18 @@ supportedConfigurations:
     documentation: |-
       Configuration key for toggling span pointers on AWS requests.
       Default value is true
+  DD_TRACE_AWS_LAMBDA_STRIP_CONTEXT_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: Aws
+    const_name: LambdaStripContextEnabled
+    documentation: |-
+      When true, removes the _datadog trace-context carrier injected by Datadog
+      into AWS Lambda event payloads (EventBridge detail, SQS body, SNS Message)
+      before the customer handler reads them.
+      Default value is false.
   DD_TRACE_AZURE_EVENTGRID_BATCH_LINKS_ENABLED:
   - implementation: A
     scope: managed
