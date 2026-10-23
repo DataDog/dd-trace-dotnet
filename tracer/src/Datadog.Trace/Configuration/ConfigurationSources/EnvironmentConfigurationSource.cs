@@ -26,8 +26,17 @@ namespace Datadog.Trace.Configuration
             {
 // one of the few places where it's legit to use Environment.GetEnvironmentVariable but key must come from ConfigurationKeys or PlatformKeys
 #pragma warning disable RS0030
-                return Environment.GetEnvironmentVariable(key);
+                var value = Environment.GetEnvironmentVariable(key);
 #pragma warning restore RS0030
+
+                // The OpenTelemetry spec requires an empty environment variable to be treated as unset
+                // https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#parsing-empty-value
+                if (value is { Length: 0 } && key.StartsWith("OTEL_", StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
+                return value;
             }
             catch
             {
