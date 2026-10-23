@@ -23,7 +23,8 @@ protoc \
   OpenTelemetry/Traces/proto/opentelemetry/proto/common/v1/common.proto \
   OpenTelemetry/Traces/proto/opentelemetry/proto/resource/v1/resource.proto \
   OpenTelemetry/Traces/proto/opentelemetry/proto/trace/v1/trace.proto \
-  OpenTelemetry/Traces/proto/opentelemetry/proto/collector/trace/v1/trace_service.proto
+  OpenTelemetry/Traces/proto/opentelemetry/proto/collector/trace/v1/trace_service.proto \
+  OpenTelemetry/Traces/proto/opentelemetry/proto/metrics/v1/metrics.proto
 ```
 
 If you have `Grpc.Tools` restored locally via NuGet, its bundled `protoc` works
