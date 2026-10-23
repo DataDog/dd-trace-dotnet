@@ -19,10 +19,12 @@ setup:
     - .claude/skills/analyze-azdo-build
     - .claude/skills/azure-functions
     - .claude/skills/bump-libdatadog
+    - .claude/skills/sdk-review
 
 default_level: gate
 presets:
-  # Three guidance cases, all four repository skills, and two general-language controls.
+  # Three guidance cases, four skill workflows, and two general-language controls.
+  # sdk-review is included in the setup inventory but has no dedicated case yet.
   # This is a calibration subset, not full-suite coverage or proof of individual skill benefit.
   setup:
     cases:
