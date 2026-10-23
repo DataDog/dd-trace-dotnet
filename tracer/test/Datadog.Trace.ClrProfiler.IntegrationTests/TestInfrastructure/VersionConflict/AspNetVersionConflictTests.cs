@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetVersionConflictTests : TestHelper, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;

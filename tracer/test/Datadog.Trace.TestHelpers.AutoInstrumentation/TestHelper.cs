@@ -14,6 +14,7 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -22,6 +23,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -98,6 +100,17 @@ namespace Datadog.Trace.TestHelpers
                 _ => sampleAppPath,
             };
 
+            var targetFramework = StringUtil.IsNullOrEmpty(framework) ? EnvironmentHelper.GetTargetFramework() : framework;
+            if (!useDotnetExec
+             && targetFramework.StartsWith("net4", StringComparison.Ordinal)
+             && !Regex.IsMatch(arguments ?? string.Empty, @"(?:^|\s)(?:/|--)Framework(?=[:\s]|$)", RegexOptions.IgnoreCase))
+            {
+                // Samples omit TargetFrameworkAttribute, so dotnet vstest can infer .NET Core
+                // and fail to find a testhost for a .NET Framework assembly. Preserve an explicit
+                // caller override (for example, the IAST tests) instead of passing /Framework twice.
+                appPath += $" /Framework:{targetFramework}";
+            }
+
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
             if (!EnvironmentHelper.IsCoreClr())
@@ -107,6 +120,16 @@ namespace Datadog.Trace.TestHelpers
                 var monitoringHome = EnvironmentHelper.GetMonitoringHomePath();
                 SetEnvironmentVariable("COR_PROFILER_PATH_32", Path.Combine(monitoringHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
                 SetEnvironmentVariable("COR_PROFILER_PATH_64", Path.Combine(monitoringHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+
+                if (usesVsTest && !useDotnetExec)
+                {
+                    // The SDK's VSTest runner uses CoreCLR even for .NET Framework samples.
+                    // Instrument the runner too: it owns the session, including empty test runs.
+                    SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", EnvironmentHelper.AutomaticInstrumentationEnabled ? "1" : "0");
+                    SetEnvironmentVariable("CORECLR_PROFILER", EnvironmentTools.ProfilerClsId);
+                    SetEnvironmentVariable("CORECLR_PROFILER_PATH_32", Path.Combine(monitoringHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
+                    SetEnvironmentVariable("CORECLR_PROFILER_PATH_64", Path.Combine(monitoringHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+                }
             }
 
             var process = await ProfilerHelper.StartProcessWithProfiler(
@@ -420,6 +443,31 @@ namespace Datadog.Trace.TestHelpers
 
         protected void ClearCIEnvironmentVariables()
         {
+            // Child samples must not treat the enclosing CI job's trace context as a test session.
+            // Override only the child environment, leaving the parent's telemetry untouched.
+            string[] sessionVariables =
+            [
+                "X_DATADOG_TRACE_ID",
+                "X_DATADOG_PARENT_ID",
+                "X_DATADOG_SAMPLING_PRIORITY",
+                "X_DATADOG_ORIGIN",
+                "X_DATADOG_TAGS",
+                "TRACEPARENT",
+                "TRACESTATE",
+                "BAGGAGE",
+                "B3",
+                "X_B3_TRACEID",
+                "X_B3_SPANID",
+                "X_B3_SAMPLED",
+                "X_B3_FLAGS",
+                ConfigurationKeys.CIVisibility.TestSessionCommand,
+                ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory,
+            ];
+            foreach (var key in sessionVariables)
+            {
+                SetEnvironmentVariable(key, string.Empty);
+            }
+
             // Clear provider variables only; keep shared HOME and USERPROFILE values.
             foreach (var provider in typeof(PlatformKeys.Ci).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
             {
