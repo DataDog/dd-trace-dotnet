@@ -2,6 +2,7 @@
 #include "test_dynamic_instance.h"
 #include "test_dynamic_dispatcher.h"
 #include "test_cor_profiler.h"
+#include "environment_variable_wrapper.h"
 #include "../../src/Datadog.Trace.ClrProfiler.Native/cor_profiler.h"
 
 #include <memory>
@@ -545,4 +546,64 @@ TEST(cor_profiler, CallBackTests)
     EXPECT_EQ(1, test_instance_profiler->m_UnmanagedToManagedTransition);
     EXPECT_EQ(1, test_instance_profiler2->m_UnmanagedToManagedTransition);
     EXPECT_EQ(1, test_instance_profiler3->m_UnmanagedToManagedTransition);
+}
+
+// Runs CorProfiler::Initialize in an Azure App Services environment and returns its result.
+// The test harness has no CLR, so an instance that passes the AAS checks still fails later,
+// but never with CORPROF_E_PROFILER_CANCEL_ACTIVATION.
+static HRESULT InitializeInAzureAppServices(const ::shared::WSTRING& app_pool_id)
+{
+    EnvironmentVariable aas(WStr("DD_AZURE_APP_SERVICES"), WStr("1"));
+    EnvironmentVariable app_pool(WStr("APP_POOL_ID"), app_pool_id);
+
+    auto test_dispatcher = std::make_unique<TestDynamicDispatcherImpl>();
+    auto test_profiler = std::make_unique<TestCorProfiler>();
+    auto profiler = std::make_unique<CorProfiler>(test_dispatcher.get());
+    return profiler->Initialize(test_profiler.get());
+}
+
+TEST(cor_profiler, AzureAppServicesInstrumentsSite)
+{
+    EXPECT_NE(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("mysite")));
+}
+
+TEST(cor_profiler, AzureAppServicesSkipsKuduProcesses)
+{
+    // Processes started by Kudu
+    EXPECT_EQ(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("~1mysite")));
+
+    {
+        EnvironmentVariable kudu(WStr("DOTNET_CLI_TELEMETRY_PROFILE"), WStr("AzureKudu"));
+        EXPECT_EQ(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("mysite")));
+    }
+
+    // Kudu's own w3wp, which doesn't have APP_POOL_ID yet when the profiler is initialized
+    EnvironmentVariable scm(WStr("DD_AZURE_APP_SERVICES_SCM"), WStr("1"));
+    EXPECT_EQ(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("")));
+}
+
+TEST(cor_profiler, AzureAppServicesSkipsWebJobsByDefault)
+{
+    EnvironmentVariable scm(WStr("DD_AZURE_APP_SERVICES_SCM"), WStr("1"));
+    EnvironmentVariable kudu(WStr("DOTNET_CLI_TELEMETRY_PROFILE"), WStr("AzureKudu"));
+    EnvironmentVariable webjob(WStr("WEBJOBS_NAME"), WStr("myjob"));
+
+    EXPECT_EQ(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("~1mysite")));
+
+    EnvironmentVariable disabled(WStr("DD_TRACE_AZURE_WEBJOBS_ENABLED"), WStr("false"));
+    EXPECT_EQ(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("~1mysite")));
+}
+
+TEST(cor_profiler, AzureAppServicesInstrumentsWebJobsWhenEnabled)
+{
+    EnvironmentVariable enabled(WStr("DD_TRACE_AZURE_WEBJOBS_ENABLED"), WStr("true"));
+    EnvironmentVariable scm(WStr("DD_AZURE_APP_SERVICES_SCM"), WStr("1"));
+    EnvironmentVariable kudu(WStr("DOTNET_CLI_TELEMETRY_PROFILE"), WStr("AzureKudu"));
+
+    // The other processes of the scm host stay excluded: only WebJob processes have WEBJOBS_NAME
+    EXPECT_EQ(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("")));
+    EXPECT_EQ(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("~1mysite")));
+
+    EnvironmentVariable webjob(WStr("WEBJOBS_NAME"), WStr("myjob"));
+    EXPECT_NE(CORPROF_E_PROFILER_CANCEL_ACTIVATION, InitializeInAzureAppServices(WStr("~1mysite")));
 }
