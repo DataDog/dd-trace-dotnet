@@ -22,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         private const string DatadogAwsStepFunctionsServiceName = "aws-stepfunctions";
         private const string StepFunctionsServiceName = "StepFunctions";
         private const string StepFunctionsRequestOperationName = "stepfunctions.request";
+        private const string StateMachineResourceDelimiter = ":stateMachine:";
+        private static readonly char[] StateMachineNameTerminators = { ':', '/' };
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
 
         public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsStepFunctionsTags? tags, ISpanContext? parentContext = null)
@@ -61,7 +63,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         }
 
         /// <summary>
-        /// Extracts the state machine name from the state machine ARN. The ARN is expected to be in the format: `arn:aws:states:region:account:stateMachine:name`.
+        /// Extracts the state machine name from the state machine ARN. The ARN may be unqualified, or
+        /// qualified with a version, an alias, or a Distributed Map state label:
+        /// `arn:aws:states:region:account:stateMachine:name`,
+        /// `arn:aws:states:region:account:stateMachine:name:version`,
+        /// `arn:aws:states:region:account:stateMachine:name:alias`, or
+        /// `arn:aws:states:region:account:stateMachine:name/mapStateLabel`.
         /// </summary>
         [return: NotNullIfNotNull(nameof(stateMachineArn))]
         public static string? GetStateMachineName(string? stateMachineArn)
@@ -71,6 +78,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 return stateMachineArn;
             }
 
+            var resourceIndex = stateMachineArn.IndexOf(StateMachineResourceDelimiter, StringComparison.Ordinal);
+            if (resourceIndex >= 0)
+            {
+                // The name follows the `stateMachine` resource type and may itself be followed by a
+                // `:version`, `:alias`, or `/mapStateLabel` qualifier. State machine names cannot contain
+                // ':' or '/', so the first of either character terminates the name.
+                var nameStartIndex = resourceIndex + StateMachineResourceDelimiter.Length;
+                var qualifierIndex = stateMachineArn.IndexOfAny(StateMachineNameTerminators, nameStartIndex);
+
+                return qualifierIndex < 0
+                           ? stateMachineArn.Substring(nameStartIndex)
+                           : stateMachineArn.Substring(nameStartIndex, qualifierIndex - nameStartIndex);
+            }
+
+            // Not a recognized state machine ARN, so fall back to the trailing segment.
             var lastSeparationIndex = stateMachineArn.LastIndexOf(':') + 1;
             return stateMachineArn.Substring(lastSeparationIndex);
         }
