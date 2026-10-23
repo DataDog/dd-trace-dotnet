@@ -21,8 +21,6 @@ namespace Datadog.Trace.FeatureFlags.Exposure;
 
 internal sealed class ExposureApi : IDisposable
 {
-    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
-
     private const int DefaultCapacity = 1 << 16; // 65536 elements
     private static readonly TimeSpan DefaultSendInterval = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(10);
@@ -58,7 +56,7 @@ internal sealed class ExposureApi : IDisposable
         TimeSpan? shutdownTimeout = null,
         IDatadogLogger? logger = null)
     {
-        _log = logger ?? Log;
+        _log = logger ?? DatadogLogging.GetLoggerFor(typeof(ExposureApi));
         _transport = transport;
         _sendInterval = sendInterval ?? DefaultSendInterval;
         _shutdownTimeout = shutdownTimeout ?? DefaultShutdownTimeout;
@@ -75,7 +73,7 @@ internal sealed class ExposureApi : IDisposable
         [MemberNotNull(nameof(_context))]
         void UpdateContext(MutableSettings settings)
         {
-            Log.Debug("ExposureApi::UpdateContext -> Applying settings");
+            _log.Debug("ExposureApi::UpdateContext -> Applying settings");
             var context = new Dictionary<string, string>
             {
                 { "service", settings.DefaultServiceName },
@@ -116,7 +114,7 @@ internal sealed class ExposureApi : IDisposable
 
     private async Task SendLoopAsync()
     {
-        Log.Debug("ExposureApi::SendLoopAsync -> Enter");
+        _log.Debug("ExposureApi::SendLoopAsync -> Enter");
         while (!_processExit.Task.IsCompleted)
         {
             await FlushAsync().ConfigureAwait(false);
@@ -135,7 +133,7 @@ internal sealed class ExposureApi : IDisposable
         // common short-lived-process loss mode without allowing shutdown to hang indefinitely.
         var flushed = await FlushAsync().ConfigureAwait(false);
         _log.Debug<int>("Feature Flags: final exposure flush handed {ExposureCount} exposure(s) to the transport; see transport outcome", flushed);
-        Log.Debug("ExposureApi::SendLoopAsync -> Exit");
+        _log.Debug("ExposureApi::SendLoopAsync -> Exit");
     }
 
     /// <summary>
@@ -156,7 +154,7 @@ internal sealed class ExposureApi : IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while sending Feature Flags exposures");
+            _log.Error(ex, "Error while sending Feature Flags exposures");
         }
 
         return 0;
@@ -203,7 +201,7 @@ internal sealed class ExposureApi : IDisposable
                 {
                     _sendLoopTask = Task.Run(SendLoopAsync);
                     _sendLoopTask.ContinueWith(
-                        t => Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"),
+                        t => _log.Error(t.Exception, "FeatureFlags Exposure send loop failed"),
                         CancellationToken.None,
                         TaskContinuationOptions.OnlyOnFaulted,
                         TaskScheduler.Default);

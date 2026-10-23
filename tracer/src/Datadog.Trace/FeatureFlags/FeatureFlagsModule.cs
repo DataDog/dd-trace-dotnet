@@ -29,8 +29,6 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsModule : IDisposable
     {
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
-
         // Static, so the warning that debug logs include raw evaluation data is written once per
         // process even when the tracer is reconfigured and a new module is created.
         private static int _rawEvaluationDataWarningLogged;
@@ -41,7 +39,7 @@ namespace Datadog.Trace.FeatureFlags
         // module, and a disposal interleaved with activation leaks the delivery path it started.
         private readonly object _stateLock = new();
 
-        // Guards the configuration handler and its generation counters. Separate from _stateLock,
+        // Guards configuration installation, the handler and its generation counters. Separate from _stateLock,
         // which covers activation and disposal: a configuration event must not wait on either.
         private readonly object _handlerLock = new();
 
@@ -103,7 +101,7 @@ namespace Datadog.Trace.FeatureFlags
             IDiscoveryService? discoveryService = null,
             IDatadogLogger? logger = null)
         {
-            _log = logger ?? Log;
+            _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
@@ -148,7 +146,7 @@ namespace Datadog.Trace.FeatureFlags
         {
             if (!settings.FeatureFlags.Enabled)
             {
-                var log = logger ?? Log;
+                var log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
 
                 // Offline is resolved to disabled by the settings, so no module exists for Activate to report it from.
                 if (settings.FeatureFlags.Source == FeatureFlagsSource.Offline)
@@ -176,6 +174,9 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         public void Dispose() => _ = DisposeAsync();
+
+        [TestingAndPrivateOnly]
+        internal static void ResetRawEvaluationDataWarning() => Volatile.Write(ref _rawEvaluationDataWarningLogged, 0);
 
         internal Task DisposeAsync()
         {
@@ -233,9 +234,6 @@ namespace Datadog.Trace.FeatureFlags
 
         // Drain already accepted events even if an Agent change has closed admission.
         internal Task FlushAsync() => Volatile.Read(ref _evaluationWriter)?.FlushAsync() ?? Task.CompletedTask;
-
-        [TestingAndPrivateOnly]
-        internal static void ResetRawEvaluationDataWarning() => Volatile.Write(ref _rawEvaluationDataWarningLogged, 0);
 
         /// <summary>
         /// Signals that application code initialized the provider. Idempotent.
@@ -436,22 +434,14 @@ namespace Datadog.Trace.FeatureFlags
                         [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
                     });
 
-                if (_log.IsEnabled(LogEventLevel.Debug))
-                {
-                    LogEvaluation(notReady, resultType, defaultValue, targetingKey, attributes, configuration: null);
-                }
+                LogEvaluation(notReady, resultType, defaultValue, targetingKey, attributes, configuration: null);
 
                 return notReady;
             }
 
             var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
 
-            // Every evaluation passes through here, so nothing is formatted unless the line is
-            // actually written.
-            if (_log.IsEnabled(LogEventLevel.Debug))
-            {
-                LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
-            }
+            LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
 
             return evaluation;
         }
@@ -463,8 +453,14 @@ namespace Datadog.Trace.FeatureFlags
             bool isFirst;
             try
             {
-                previous = Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled));
-                isFirst = _firstConfigReceived.TrySetResult(true);
+                var evaluator = new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled);
+                lock (_handlerLock)
+                {
+                    // Keep first-configuration detection with installation so concurrent updates
+                    // cannot make the first configuration look like recovery from a withdrawal.
+                    previous = Interlocked.Exchange(ref _evaluator, evaluator);
+                    isFirst = _firstConfigReceived.TrySetResult(true);
+                }
             }
             catch (Exception ex)
             {
@@ -613,7 +609,7 @@ namespace Datadog.Trace.FeatureFlags
                     }
                     catch (Exception)
                     {
-                        Log.Debug("FeatureFlags flagevaluation writer could not be started.");
+                        _log.Debug("FeatureFlags flagevaluation writer could not be started.");
                     }
                 }
 
@@ -656,7 +652,7 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (Exception)
             {
-                Log.Debug("FeatureFlags cleanup failed; continuing bounded flagevaluation shutdown.");
+                _log.Debug("FeatureFlags cleanup failed; continuing bounded flagevaluation shutdown.");
             }
             finally
             {
@@ -666,7 +662,7 @@ namespace Datadog.Trace.FeatureFlags
                 }
                 catch (Exception)
                 {
-                    Log.Debug("FeatureFlags flagevaluation shutdown failed.");
+                    _log.Debug("FeatureFlags flagevaluation shutdown failed.");
                 }
                 finally
                 {
@@ -682,13 +678,17 @@ namespace Datadog.Trace.FeatureFlags
         /// <summary>
         /// Logs the provider's resolution with its raw inputs and outputs, so a customer can explain a
         /// result from the log alone. Provider conversion and application hooks run afterwards and
-        /// are not reflected here. Callers check the debug
-        /// level first.
+        /// are not reflected here. Checks the debug level before formatting any values.
         /// </summary>
         private void LogEvaluation(Evaluation evaluation, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, ServerConfiguration? configuration)
         {
             try
             {
+                if (!_log.IsEnabled(LogEventLevel.Debug))
+                {
+                    return;
+                }
+
                 // Debug logging can be switched on after startup, as a tracer flare does.
                 WarnRawEvaluationDataOnce();
 
@@ -719,8 +719,7 @@ namespace Datadog.Trace.FeatureFlags
         // collects errors.
         private void WarnRawEvaluationDataOnce()
         {
-            if (Volatile.Read(ref _rawEvaluationDataWarningLogged) == 0
-             && Interlocked.Exchange(ref _rawEvaluationDataWarningLogged, 1) == 0)
+            if (Interlocked.CompareExchange(ref _rawEvaluationDataWarningLogged, 1, 0) == 0)
             {
                 _log.Warning("Feature Flags: debug logging is enabled, so feature flag logs include raw evaluation data (targeting keys, evaluation context attributes, flag values, and default values) that may contain personal or sensitive information. Unset DD_TRACE_DEBUG when you no longer need it.");
             }

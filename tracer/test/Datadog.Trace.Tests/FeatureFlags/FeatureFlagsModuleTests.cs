@@ -832,20 +832,58 @@ public class FeatureFlagsModuleTests
         result.Variant.Should().Be("on");
     }
 
-    [Fact]
-    public void Evaluate_WithDebugDisabled_DoesNotFormatTheContext()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Evaluate_WithDebugDisabled_DoesNotFormatTheContext(bool hasConfiguration)
     {
         var logger = new Mock<IDatadogLogger>();
         logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(false);
         using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
-        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+        if (hasConfiguration)
+        {
+            module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+        }
+
         var counting = new CountingAttribute();
 
         module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", new Dictionary<string, object?> { ["plan"] = "premium", ["counted"] = counting });
         module.Evaluate("missing-flag", FeatureFlagsValueType.Boolean, false, "user-42", new Dictionary<string, object?> { ["counted"] = counting });
 
+        // A missing flag never reads attributes during evaluation, so enumeration here would only
+        // come from formatting the diagnostic, even if the formatter avoids property getters.
+        var attributes = new Mock<IDictionary<string, object?>>();
+        module.Evaluate("missing-flag", FeatureFlagsValueType.Boolean, false, "user-42", attributes.Object);
+
+        attributes.Verify(a => a.GetEnumerator(), Times.Never);
+
         counting.Reads.Should().Be(0);
         logger.Invocations.Should().NotContain(i => i.Arguments.OfType<string>().Any(a => a.Contains("Evaluator resolved")));
+    }
+
+    [Fact]
+    public async Task ApplyConfiguration_WhenUpdatesRace_DoesNotReportRecoveryFromWithdrawal()
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            var logger = CreateDebugLogger();
+            using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+            using var start = new ManualResetEventSlim(false);
+            var first = Task.Run(Apply);
+            var second = Task.Run(Apply);
+
+            start.Set();
+            (await Task.WhenAll(first, second)).Should().OnlyContain(applied => applied);
+
+            module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+            LoggedTemplates(logger).Should().NotContain(t => t.Contains("available again after it was removed"));
+
+            bool Apply()
+            {
+                start.Wait();
+                return module.ApplyConfiguration(new ServerConfiguration());
+            }
+        }
     }
 
     [Fact]

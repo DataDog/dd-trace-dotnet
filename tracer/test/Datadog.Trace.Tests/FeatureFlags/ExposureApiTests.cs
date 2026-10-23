@@ -179,6 +179,9 @@ public class ExposureApiTests
         ArgumentsOf(logger, "accepted by the Agent EVP proxy").Should().Equal(FeatureFlagsEvpTransport.ExposureIntakePath, FeatureFlagsEvpTransport.EventPlatformProxyV4, 200);
         ArgumentsOf(logger, "final exposure flush").Should().ContainSingle();
         ArgumentsOf(logger, "dropped: exposure reporting has stopped").Should().Equal("after-dispose");
+        logger.Verify(l => l.Debug("ExposureApi::UpdateContext -> Applying settings", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        logger.Verify(l => l.Debug("ExposureApi::SendLoopAsync -> Enter", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        logger.Verify(l => l.Debug("ExposureApi::SendLoopAsync -> Exit", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
     }
 
     private static Mock<IDatadogLogger> CreateDebugLogger()

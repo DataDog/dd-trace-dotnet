@@ -18,8 +18,6 @@ namespace Datadog.Trace.FeatureFlags.Rcm;
 
 internal sealed class FfeProduct
 {
-    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FfeProduct));
-
     private readonly Action<List<KeyValuePair<string, ServerConfiguration>>> _onNewConfig;
     private readonly IDatadogLogger _log;
     private List<KeyValuePair<string, ServerConfiguration>> _serverConfigurations = new List<KeyValuePair<string, ServerConfiguration>>();
@@ -27,7 +25,7 @@ internal sealed class FfeProduct
     public FfeProduct(Action<List<KeyValuePair<string, ServerConfiguration>>> onNewConfig, IDatadogLogger? logger = null)
     {
         _onNewConfig = onNewConfig;
-        _log = logger ?? Log;
+        _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FfeProduct));
     }
 
     public ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)

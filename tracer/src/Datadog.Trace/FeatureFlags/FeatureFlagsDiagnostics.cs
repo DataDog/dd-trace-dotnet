@@ -34,10 +34,10 @@ internal static class FeatureFlagsDiagnostics
     /// </summary>
     internal static string FormatValue(object? value)
     {
-        // Doubles use "R" because on .NET Framework the default format keeps only 15 significant
-        // digits. Maps and arrays are the shapes the evaluator produces for JSON values. Anything
-        // else, such as an OpenFeature Value, is named rather than serialized by reflection, which
-        // writes every property and repeats nested structures at each level.
+        // G17/G9 preserve double/float precision on every supported runtime, including .NET Framework
+        // where "R" does not always round-trip doubles. Maps and arrays are the shapes the evaluator
+        // produces for JSON values. Anything else, such as an OpenFeature Value, is named rather than
+        // serialized by reflection, which writes every property and repeats nested structures at each level.
         try
         {
             return value switch
@@ -45,8 +45,8 @@ internal static class FeatureFlagsDiagnostics
                 null => "null",
                 string s => JsonConvert.ToString(s),
                 bool b => b ? "true" : "false",
-                double d => d.ToString("R", CultureInfo.InvariantCulture),
-                float f => f.ToString("R", CultureInfo.InvariantCulture),
+                double d => d.ToString("G17", CultureInfo.InvariantCulture),
+                float f => f.ToString("G9", CultureInfo.InvariantCulture),
                 DateTime dt => JsonConvert.ToString(dt),
                 IConvertible c when c.GetTypeCode() is >= TypeCode.SByte and <= TypeCode.Decimal => c.ToString(CultureInfo.InvariantCulture),
                 IEnumerable<KeyValuePair<string, object?>> map => FormatMap(map),
@@ -63,6 +63,8 @@ internal static class FeatureFlagsDiagnostics
     /// <summary>
     /// Formats context attributes or flag metadata as a JSON-like object. Each entry is formatted on
     /// its own, so one value that cannot be formatted does not hide the others.
+    /// Unlike JsonHelper.SerializeObject, this only formats supported value shapes and does not
+    /// reflect over arbitrary objects or invoke their property getters.
     /// </summary>
     internal static string FormatMap<T>(IEnumerable<KeyValuePair<string, T>>? map)
     {
@@ -84,6 +86,7 @@ internal static class FeatureFlagsDiagnostics
                 }
 
                 first = false;
+                // JsonConvert.ToString quotes and JSON-escapes the key, including quotes and newlines.
                 sb.Append(JsonConvert.ToString(pair.Key)).Append(": ").Append(FormatValue(pair.Value));
             }
 

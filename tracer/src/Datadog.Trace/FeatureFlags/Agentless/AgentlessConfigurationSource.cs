@@ -42,8 +42,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     // retries into a burst against the endpoint.
     private static readonly TimeSpan MinRetryDelay = TimeSpan.FromSeconds(1);
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
-
     private readonly IDatadogLogger _log;
     private readonly IApiRequestFactory _requestFactory;
     private readonly AgentlessEndpoint _endpoint;
@@ -85,7 +83,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         Func<TimeSpan, Task>? waitAsync = null,
         IDatadogLogger? logger = null)
     {
-        _log = logger ?? Log;
+        _log = logger ?? DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
         _endpoint = endpoint;
         _requestFactory = requestFactory;
         _pollInterval = pollInterval;
@@ -116,7 +114,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         Func<ServerConfiguration, bool> applyConfiguration,
         IDatadogLogger? logger = null)
     {
-        var log = logger ?? Log;
+        var log = logger ?? DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
 
         if (!AgentlessEndpoint.TryCreate(settings.Site, settings.AgentlessBaseUrl, out var endpoint, out var error))
         {

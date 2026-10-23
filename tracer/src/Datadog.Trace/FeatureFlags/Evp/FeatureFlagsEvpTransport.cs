@@ -41,8 +41,6 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     private static readonly TimeSpan InitialDiscoveryWait = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RouteRecoveryCooldown = TimeSpan.FromSeconds(30);
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
-
     private readonly FeatureFlagsSource _source;
     private readonly IApiRequestFactory? _directRequestFactory;
     private readonly IDiscoveryService _discoveryService;
@@ -54,7 +52,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     private readonly Func<DateTimeOffset> _utcNow;
     private readonly bool _discoverySubscribed;
     private readonly object _settingsLock = new();
-    private readonly IDatadogLogger _log = Log;
+    private readonly IDatadogLogger _log;
 
     private LocalEndpoint _localEndpoint;
     private int _directIsSticky;
@@ -63,6 +61,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     internal FeatureFlagsEvpTransport(TracerSettings settings, IDiscoveryService discoveryService, Action<string>? warningSink = null)
     {
+        _log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
         _source = settings.FeatureFlags.Source;
         var exporter = settings.Manager.InitialExporterSettings;
         _localEndpoint = new(CreateLocalRequestFactory(exporter, _source == FeatureFlagsSource.RemoteConfig), exporter);
@@ -131,7 +130,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     {
         _source = source;
         _localEndpoint = new(localRequestFactory, exporterSettings);
-        _log = logger ?? Log;
+        _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
         _directRequestFactory = source == FeatureFlagsSource.Agentless ? directRequestFactory : null;
         _discoveryService = discoveryService;
         _discoveryCallback = UpdateAgentConfiguration;
@@ -430,7 +429,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         }
         else
         {
-            Log.Warning("Feature Flags direct event delivery is disabled because DD_SITE is not a valid DNS site suffix");
+            _log.Warning("Feature Flags direct event delivery is disabled because DD_SITE is not a valid DNS site suffix");
         }
     }
 
@@ -443,7 +442,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         }
         else
         {
-            Log.Warning("Feature Flags event delivery is unavailable because no compatible local EVP route or direct intake credentials are available");
+            _log.Warning("Feature Flags event delivery is unavailable because no compatible local EVP route or direct intake credentials are available");
         }
     }
 
@@ -556,7 +555,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                 }
                 else
                 {
-                    Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent; the batch is dropped without replay");
+                    _log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent; the batch is dropped without replay");
                 }
             }
         }
@@ -572,7 +571,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             }
             else
             {
-                Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
+                _log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
             }
         }
     }
@@ -581,7 +580,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     {
         if (intakePath != FlagEvaluationIntakePath)
         {
-            Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}; the batch will not be replayed", statusCode);
+            _log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}; the batch will not be replayed", statusCode);
         }
         else if (IsEvaluationRejection(statusCode))
         {
@@ -659,7 +658,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             }
             else
             {
-                Log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed; delivery is unconfirmed and the batch will not be replayed");
+                _log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed; delivery is unconfirmed and the batch will not be replayed");
             }
         }
     }
