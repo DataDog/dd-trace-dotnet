@@ -14,6 +14,7 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -100,10 +101,13 @@ namespace Datadog.Trace.TestHelpers
             };
 
             var targetFramework = StringUtil.IsNullOrEmpty(framework) ? EnvironmentHelper.GetTargetFramework() : framework;
-            if (!useDotnetExec && targetFramework.StartsWith("net4", StringComparison.Ordinal))
+            if (!useDotnetExec
+             && targetFramework.StartsWith("net4", StringComparison.Ordinal)
+             && !Regex.IsMatch(arguments ?? string.Empty, @"(?:^|\s)(?:/|--)Framework(?=[:\s]|$)", RegexOptions.IgnoreCase))
             {
                 // Samples omit TargetFrameworkAttribute, so dotnet vstest can infer .NET Core
-                // and fail to find a testhost for a .NET Framework assembly.
+                // and fail to find a testhost for a .NET Framework assembly. Preserve an explicit
+                // caller override (for example, the IAST tests) instead of passing /Framework twice.
                 appPath += $" /Framework:{targetFramework}";
             }
 
