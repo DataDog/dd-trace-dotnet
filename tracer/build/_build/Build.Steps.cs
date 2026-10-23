@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -206,7 +207,11 @@ partial class Build
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
-    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) =>
+        GetTestingFrameworks(platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting());
+
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64, bool includeAllFrameworks) =>
+        (platform, isArm64, includeAllFrameworks) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
         (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
@@ -241,7 +246,11 @@ partial class Build
             return true;
         }
 
-        var gitChangedFiles = GetGitChangedFiles(baseBranch);
+        return HasChangesRequiringThoroughTesting(GetGitChangedFiles(baseBranch));
+    }
+
+    bool HasChangesRequiringThoroughTesting(string[] gitChangedFiles)
+    {
         var integrationChangedFiles = TargetFrameworks
             .SelectMany(tfm => new[]
             {
@@ -328,6 +337,23 @@ partial class Build
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory)));
             }
+        });
+
+    Target RestoreManagedUnitTestPackages => _ => _
+        .Unlisted()
+        .Before(BuildRunnerTool, CompileManagedUnitTests)
+        .OnlyWhenDynamic(() => IsGitlab && !string.IsNullOrEmpty(NugetPackageDirectory))
+        .Executes(() =>
+        {
+            // NuGet.exe restore does not fully populate all SDK-style PackageReference
+            // dependencies required by the managed test graph. GitLab runs the build and
+            // tests in separate containers, so restore them into the mounted package directory.
+            DotNetRestore(s => s
+                .SetProjectFile(Solution)
+                .SetVerbosity(DotNetVerbosity.Minimal)
+                .SetProperty("configuration", BuildConfiguration.ToString())
+                .SetProperty("Platform", "Any CPU")
+                .SetPackageDirectory(NugetPackageDirectory));
         });
 
     Target CompileTracerNativeSrcWindows => _ => _
@@ -849,6 +875,10 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var frameworks = project.TryGetTargetFrameworks();
+                    if (IsGitlab && Framework is not null)
+                    {
+                        frameworks = frameworks.Where(x => x == Framework).ToList();
+                    }
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -1478,7 +1508,10 @@ partial class Build
         .After(Restore, CompileManagedSrc)
         .Executes(() =>
         {
-            DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false);
+            DotnetBuild(
+                TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"),
+                noRestore: !IsGitlab || Framework is null,
+                noDependencies: false);
         });
 
     Target CompileManagedTestHelpers => _ => _
@@ -1489,10 +1522,11 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
+            var framework = IsGitlab ? Framework : null;
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"), noRestore: !IsGitlab);
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"), noRestore: !IsGitlab);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: framework, noRestore: !IsGitlab);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: framework, noRestore: !IsGitlab);
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -1506,7 +1540,18 @@ partial class Build
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
+            var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj");
+            if (IsGitlab && Framework is not null)
+            {
+                testProjects = testProjects
+                              .Where(path => TargetsFramework(Solution.GetProject(path), Framework))
+                              .ToList();
+            }
+
+            DotnetBuild(
+                testProjects,
+                framework: IsGitlab ? Framework : null,
+                noRestore: !IsGitlab);
         });
 
     Target RunManagedUnitTests => _ => _
@@ -1517,11 +1562,94 @@ partial class Build
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
+                .Where(project => !IsGitlab || Framework is null || TargetsFramework(project, Framework))
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
+            if (IsGitlab && testProjects.Count == 0)
+            {
+                throw new InvalidOperationException($"No managed unit-test projects target {Framework}");
+            }
+
             var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
             var exceptions = new List<Exception>();
+            if (IsGitlab && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
+            {
+                try
+                {
+                    var oidcToken = Environment.GetEnvironmentVariable("DD_STS_OIDC_TOKEN");
+                    if (string.IsNullOrWhiteSpace(oidcToken))
+                    {
+                        throw new InvalidOperationException("DD_STS_OIDC_TOKEN is unavailable");
+                    }
+
+                    using var client = new HttpClient();
+                    using var request = new HttpRequestMessage(
+                        HttpMethod.Get,
+                        "https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key");
+                    request.Headers.Authorization = new("Bearer", oidcToken);
+                    using var response = client.SendAsync(request).GetAwaiter().GetResult();
+                    response.EnsureSuccessStatusCode();
+                    using var responseStream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+                    using var payload = JsonDocument.Parse(responseStream);
+                    if (!payload.RootElement.TryGetProperty("api_key", out var apiKeyElement)
+                     || string.IsNullOrWhiteSpace(apiKeyElement.GetString()))
+                    {
+                        throw new InvalidOperationException("The dd-sts response did not contain an API key");
+                    }
+
+                    Environment.SetEnvironmentVariable("DD_LOGGER_DD_API_KEY", apiKeyElement.GetString());
+                    Logger.Information("CI Visibility API key configured using dd-sts");
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("CI Visibility credentials are required for GitLab unit tests", ex);
+                }
+            }
+
+            var defaultDotNetLogger = DotNetTasks.DotNetLogger;
+            if (IsGitlab)
+            {
+                var suppressedDatadogTestMessage = new AsyncLocal<string>();
+                DotNetTasks.DotNetLogger = (type, text) =>
+                {
+                    // The Datadog test logger emits STARTED and SUCCESS messages for every
+                    // test. Test arguments can span multiple lines, so suppress their
+                    // continuations too while preserving failures, skips, and diagnostics.
+                    if (text.Contains(": STARTED:", StringComparison.Ordinal))
+                    {
+                        suppressedDatadogTestMessage.Value = text.TrimEnd().EndsWith(")", StringComparison.Ordinal) ? null : "started";
+                        return;
+                    }
+
+                    if (text.Contains(": SUCCESS:", StringComparison.Ordinal))
+                    {
+                        suppressedDatadogTestMessage.Value = text.TrimEnd().EndsWith("s)", StringComparison.Ordinal) ? null : "success";
+                        return;
+                    }
+
+                    // A new xUnit event is never a continuation of the suppressed message.
+                    // Reset first so failures and skips cannot be hidden.
+                    if (text.Contains("[xUnit.net ", StringComparison.Ordinal))
+                    {
+                        suppressedDatadogTestMessage.Value = null;
+                    }
+                    else if (suppressedDatadogTestMessage.Value is { } suppressedMessage)
+                    {
+                        var trimmedText = text.TrimEnd();
+                        if ((suppressedMessage == "started" && trimmedText.EndsWith(")", StringComparison.Ordinal)) ||
+                            (suppressedMessage == "success" && trimmedText.EndsWith("s)", StringComparison.Ordinal)))
+                        {
+                            suppressedDatadogTestMessage.Value = null;
+                        }
+
+                        return;
+                    }
+
+                    defaultDotNetLogger(type, text);
+                };
+            }
+
             try
             {
                 foreach (var targetFramework in TestingFrameworks.Where(x => x == Framework || Framework is null))
@@ -1565,6 +1693,7 @@ partial class Build
             }
             finally
             {
+                DotNetTasks.DotNetLogger = defaultDotNetLogger;
                 CopyDumpsToBuildData();
             }
         });
@@ -2980,6 +3109,13 @@ partial class Build
         }
     }
 
+
+    private static bool TargetsFramework(Project project, TargetFramework framework)
+    {
+        var frameworks = project.TryGetTargetFrameworks()
+                      ?? throw new InvalidOperationException($"Could not determine target frameworks for project {project.Name}");
+        return frameworks.Contains(framework);
+    }
 
     private void DotnetBuild(
         Project project,

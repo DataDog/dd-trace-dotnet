@@ -276,6 +276,7 @@ partial class Build : NukeBuild
         .Description("Builds the managed unit tests")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(RestoreManagedUnitTestPackages)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests);
 
@@ -463,7 +464,10 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
-                .EnableNoRestore()
+                .When(!IsGitlab || Framework is null, settings => settings.EnableNoRestore())
+                // The runner has no .NET Framework target; net48 unit tests use net8.0.
+                .When(IsGitlab && Framework is not null, settings => settings.SetFramework(Framework == TargetFramework.NET48 ? TargetFramework.NET8_0 : Framework))
+                .When(IsGitlab && Framework is not null, settings => settings.SetTargetPlatformAnyCPU().SetProperty("PlatformTarget", "AnyCPU"))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
