@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -355,6 +356,27 @@ namespace Datadog.Trace.Tests.Configuration
                    .Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                    .Should()
                    .ContainSingle(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.String && x.StringValue == endpoint);
+        }
+
+        [Theory]
+        [InlineData(null, true)]
+        [InlineData("false", true)]
+        [InlineData("true", false)]
+        [InlineData("TRUE", false)]
+        public void OtlpTraceExport_DisabledByOtelSdkDisabled(string otelSdkDisabled, bool expectedOtlp)
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp" },
+                { ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf" },
+                { ConfigurationKeys.OpenTelemetry.SdkDisabled, otelSdkDisabled },
+            });
+
+            var settings = Setup(source, NoFile());
+
+            settings.IsOtlpTraceExport.Should().Be(expectedOtlp);
+            settings.TracesEncoding.Should().Be(expectedOtlp ? TracesEncoding.OtlpProtobuf : TracesEncoding.DatadogV0_4);
+            settings.ValidationWarnings.Any(w => w.Contains(ConfigurationKeys.OpenTelemetry.SdkDisabled)).Should().Be(!expectedOtlp);
         }
 
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)

@@ -187,6 +187,42 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false, and takes precedence over OTEL_TRACES_EXPORTER
+        [InlineData(null, null, false)]
+        [InlineData(null, "otlp", false)]
+        [InlineData(null, "none", false)]
+        // Any DD_TRACE_ENABLED value overrides it, and an invalid one falls back to the default
+        [InlineData("true", null, true)]
+        [InlineData("1", "otlp", true)]
+        [InlineData("false", null, false)]
+        [InlineData("0", "otlp", false)]
+        [InlineData("", null, true)]
+        [InlineData("invalid", null, true)]
+        public async Task TraceEnabledWithOtelSdkDisabled(string value, string otelTracesExporter, bool areTracesEnabled)
+        {
+            var settings = new NameValueCollection
+            {
+                { ConfigurationKeys.OpenTelemetry.SdkDisabled, "true" },
+                { ConfigurationKeys.TraceEnabled, value },
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, otelTracesExporter },
+            };
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+
+            tracerSettings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(areTracesEnabled);
+
+            _writerMock.Invocations.Clear();
+
+            await using var tracer = TracerHelper.Create(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var span = tracer.StartSpan("TestTracerDisabled");
+            span.Dispose();
+
+            var assertion = areTracesEnabled ? Times.Once() : Times.Never();
+
+            _writerMock.Verify(w => w.WriteTrace(in It.Ref<SpanCollection>.IsAny), assertion);
+        }
+
+        [Theory]
         [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void Environment(string value, string expected)
         {

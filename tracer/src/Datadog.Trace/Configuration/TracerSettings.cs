@@ -105,16 +105,23 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
 
+            // Only OTEL_SDK_DISABLED=true has an effect: "false", unset and empty leave the DD_* settings in charge
             var otelActivityListenerEnabled = config
                                              .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
                                              .AsBoolResult(
                                                   value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
                                                                ? ParsingResult<bool>.Success(result: false)
                                                                : ParsingResult<bool>.Failure());
-            IsActivityListenerEnabled = config
-                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
-                                       .AsBoolResult()
-                                       .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
+            OtelSdkDisabled = otelActivityListenerEnabled.ConfigurationResult is { IsValid: true, Result: false };
+
+            // Unlike other OTEL_* settings, OTEL_SDK_DISABLED=true takes precedence over its Datadog equivalent,
+            // so OverrideWith (which favors DD_TRACE_OTEL_ENABLED) only applies when it doesn't
+            var activityListenerEnabled = config
+                                         .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
+                                         .AsBoolResult();
+            IsActivityListenerEnabled = OtelSdkDisabled
+                                            ? DisableIfOtelSdkDisabled(activityListenerEnabled.ConfigurationResult is { IsValid: true, Result: true }, ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
+                                            : activityListenerEnabled.OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -367,7 +374,7 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
                                     .AsBool(defaultValue: false);
 
-            OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled && OtelLogsExporterEnabled;
+            OpenTelemetryLogsEnabled = DisableIfOtelSdkDisabled(OpenTelemetryLogsEnabled, ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled) && OtelLogsExporterEnabled;
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
@@ -812,9 +819,9 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            OpenTelemetryMetricsEnabled = config
-                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled)
-                                    .AsBool(defaultValue: false);
+            OpenTelemetryMetricsEnabled = DisableIfOtelSdkDisabled(
+                config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled).AsBool(defaultValue: false),
+                ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled);
 
             var enabledMeters = config.WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames).AsString();
             OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters)
@@ -831,8 +838,9 @@ namespace Datadog.Trace.Configuration
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
             var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString();
             var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
-            OtelTracesSpanMetricsEnabled = explicitSpanMetrics
-                ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
+            OtelTracesSpanMetricsEnabled = DisableIfOtelSdkDisabled(
+                explicitSpanMetrics ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled),
+                ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled);
 
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
@@ -934,6 +942,27 @@ namespace Datadog.Trace.Configuration
 
                 OtelTracesSpanMetricsEnabled = false;
                 telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, false, ConfigurationOrigins.Calculated);
+            }
+
+            // OTEL_SDK_DISABLED=true turns off OpenTelemetry mode for every signal,
+            // so it takes precedence over the DD_* and OTEL_* settings that enable it.
+            bool DisableIfOtelSdkDisabled(bool enabled, string key)
+            {
+                if (!OtelSdkDisabled)
+                {
+                    return enabled;
+                }
+
+                if (enabled)
+                {
+                    Log.Warning(
+                        "{ConfigurationKey} is enabled, but {OtelSdkDisabledKey} is set to true. Using false instead.",
+                        key,
+                        ConfigurationKeys.OpenTelemetry.SdkDisabled);
+                }
+
+                telemetry.Record(key, false, ConfigurationOrigins.Calculated);
+                return false;
             }
         }
 
@@ -1422,6 +1451,14 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry mode is disabled for every signal.
+        /// When <c>true</c>, the OpenTelemetry tracing and metrics APIs, OTLP export, and tracing
+        /// (unless <see cref="ConfigurationKeys.TraceEnabled"/> is set explicitly) are all disabled.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/>
+        internal bool OtelSdkDisabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
