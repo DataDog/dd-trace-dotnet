@@ -20,6 +20,7 @@ constexpr ddog_CharSlice to_char_slice(const char* str)
 {
     return {str, std::char_traits<char>::length(str)};
 }
+bool IsCustomSampleType(ddog_prof_SampleType sampleType);
 bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_SampleType& sampleType);
 
 std::string GetErrorMessage(ddog_Error& error);
