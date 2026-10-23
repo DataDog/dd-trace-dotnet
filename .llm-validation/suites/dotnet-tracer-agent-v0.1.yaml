@@ -27,7 +27,8 @@ cases:
         via tracer/build.ps1, tracer/build.sh, or tracer/build.cmd (Nuke wrapper), or
         dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- generate <dll> --type <type> --method <method> (direct CLI).
         The wrapper in tracer/build/_build/Build.Utilities.cs maps its flags to the direct CLI arguments;
-        --output-path maps to --output. Both accept --overload-index <n> and --parameter-types "<type1> <type2>";
+        --output-path maps to --output. Both accept --overload-index <n>. For parameter types, the wrapper splits
+        --parameter-types "<type1> <type2>"; the direct CLI requires separate arguments: --parameter-types <type1> <type2>.
         the direct CLI also accepts -t/-m aliases. The installed tool name is dd-autoinstrumentation, with
         inspect <assembly-path> --list-methods <type-full-name> --json documented in docs/development/for-ai/InstrumentationGenerator-CLI.md.
         One valid invocation is sufficient; alternatives and discovery are optional. Assess argument correctness
