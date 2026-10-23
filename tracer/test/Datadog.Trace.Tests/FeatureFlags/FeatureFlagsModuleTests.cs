@@ -7,9 +7,12 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,15 +22,24 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.Serilog.Formatting;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 using FeatureFlagsValueType = Datadog.Trace.FeatureFlags.ValueType;
@@ -753,15 +765,452 @@ public class FeatureFlagsModuleTests
         module.GetExposureApi().Should().BeNull();
     }
 
+    [Fact]
+    public void Evaluate_LogsTheRawInputsAndOutputsOfTheResolution()
+    {
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+
+        var result = module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", new Dictionary<string, object?> { ["plan"] = "premium", ["seats"] = 3L });
+
+        result.Value.Should().Be(true);
+        var line = EvaluationLine(logger);
+        line.Should().Contain("plan-flag")
+            .And.Contain("true", "the resolved value is logged")
+            .And.Contain("false", "the default value is logged")
+            .And.Contain("on")
+            .And.Contain(EvaluationReason.TargetingMatch)
+            .And.Contain("\"user-42\"")
+            .And.Contain("{\"plan\":\"premium\",\"seats\":3}")
+            .And.Contain("2026-10-20T00:00:00Z");
+        line.OfType<string>().Should().Contain(v => v.Contains("plan-allocation"), "the flag metadata is logged");
+    }
+
+    [Fact]
+    public void Evaluate_BeforeConfiguration_LogsTheDefaultAndTheContext()
+    {
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+
+        var result = module.Evaluate("plan-flag", FeatureFlagsValueType.String, "fallback", "user-42", new Dictionary<string, object?> { ["plan"] = "premium" });
+
+        result.Error.Should().Be("PROVIDER_NOT_READY");
+        EvaluationLine(logger).Should().Contain("PROVIDER_NOT_READY")
+                              .And.Contain("\"fallback\"")
+                              .And.Contain("\"user-42\"")
+                              .And.Contain("{\"plan\":\"premium\"}")
+                              .And.Contain("none (no configuration is applied)");
+    }
+
+    [Fact]
+    public void Evaluate_WhenAContextValueCannotBeFormatted_ReturnsTheSameResult()
+    {
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+
+        var result = module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", new Dictionary<string, object?> { ["plan"] = "premium", ["broken"] = new UnserializableAttribute() });
+
+        result.Value.Should().Be(true);
+        result.Error.Should().BeNull();
+        EvaluationLine(logger).OfType<string>().Should().Contain(v => v.Contains("\"plan\":\"premium\"") && v.Contains($"<not formatted: {typeof(UnserializableAttribute).FullName}>"));
+    }
+
+    [Fact]
+    public void Evaluate_WhenTheLoggerThrows_ReturnsTheSameResult()
+    {
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+        logger.Setup(l => l.Debug(It.IsAny<string>(), It.IsAny<object?[]>(), It.IsAny<int>(), It.IsAny<string>()))
+              .Throws(new InvalidOperationException("logger failed"));
+
+        var result = module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", new Dictionary<string, object?> { ["plan"] = "premium" });
+
+        result.Value.Should().Be(true);
+        result.Variant.Should().Be("on");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Evaluate_WithDebugDisabled_DoesNotFormatTheContext(bool hasConfiguration)
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(false);
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        if (hasConfiguration)
+        {
+            module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+        }
+
+        var counting = new CountingAttribute();
+
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", new Dictionary<string, object?> { ["plan"] = "premium", ["counted"] = counting });
+        module.Evaluate("missing-flag", FeatureFlagsValueType.Boolean, false, "user-42", new Dictionary<string, object?> { ["counted"] = counting });
+
+        // A missing flag never reads attributes during evaluation, so enumeration here would only
+        // come from formatting the diagnostic, even if the formatter avoids property getters.
+        var attributes = new Mock<IDictionary<string, object?>>();
+        module.Evaluate("missing-flag", FeatureFlagsValueType.Boolean, false, "user-42", attributes.Object);
+
+        attributes.Verify(a => a.GetEnumerator(), Times.Never);
+
+        counting.Reads.Should().Be(0);
+        logger.Invocations.Should().NotContain(i => i.Arguments.OfType<string>().Any(a => a.Contains("Evaluator resolved")));
+    }
+
+    [Fact]
+    public async Task ApplyConfiguration_WhenUpdatesRace_DoesNotReportRecoveryFromWithdrawal()
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            var logger = CreateDebugLogger();
+            using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+            using var start = new ManualResetEventSlim(false);
+            var first = Task.Run(Apply);
+            var second = Task.Run(Apply);
+
+            start.Set();
+            (await Task.WhenAll(first, second)).Should().OnlyContain(applied => applied);
+
+            module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+            LoggedTemplates(logger).Should().NotContain(t => t.Contains("available again after it was removed"));
+
+            bool Apply()
+            {
+                start.Wait();
+                return module.ApplyConfiguration(new ServerConfiguration());
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyRemoteConfiguration_ReportsUsableAndRejectedFlags()
+    {
+        var logger = CreateDebugLogger();
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager, logger: logger.Object);
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+        // Written as valid, so it is the parser that rejects the flag with no splits.
+        var json = JsonConvert.SerializeObject(new ServerConfiguration
+        {
+            CreatedAt = "2026-10-20T00:00:00Z",
+            Environment = new Datadog.Trace.FeatureFlags.Rcm.Model.Environment { Name = "staging" },
+            Flags = new FlagCollection
+            {
+                ["valid-flag"] = new Flag { Key = "valid-flag", Enabled = true, VariationType = FeatureFlagsValueType.Boolean },
+                ["broken-flag"] = new Flag { Key = "broken-flag", Enabled = true, VariationType = FeatureFlagsValueType.Boolean, Allocations = [new Allocation { Key = "a1" }] },
+            }
+        });
+
+        subscription.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 7)]
+            },
+            null);
+
+        ArgumentsOf(logger, "received (version").Should().Equal(configPath.Path, 7L, (long)json.Length);
+        ArgumentsOf(logger, "applied successfully").Should().Equal(1, 1, "staging", "2026-10-20T00:00:00Z", configPath.Path);
+        ArgumentsOf(logger, "were rejected").Should().Equal(1, "remote_config", "broken-flag");
+        module.Evaluate("broken-flag", FeatureFlagsValueType.Boolean, false, "user-1", null).Error.Should().Be("PARSE_ERROR");
+    }
+
+    [Fact]
+    public async Task ApplyConfiguration_AfterTheInitializationTimeout_ReportsTheRecovery()
+    {
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateInitializationSettings("1"), new MockRcmSubscriptionManager(), logger: logger.Object);
+        await module.InitializeAsync(CancellationToken.None);
+
+        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+
+        logger.Invocations.Should().Contain(i => i.Method.Name == nameof(IDatadogLogger.Information)
+                                              && i.Arguments.OfType<string>().Any(a => a.Contains("after the initialization timeout")));
+    }
+
+    [Fact]
+    public void Dispose_ReportsShutdownCompletion()
+    {
+        var logger = CreateDebugLogger();
+        var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+
+        module.Dispose();
+
+        LoggedTemplates(logger).Should().Contain(t => t.Contains("shutdown complete"));
+    }
+
+    [Fact]
+    public void Activate_WithDebugLogging_WarnsOncePerProcessThatLogsIncludeRawEvaluationData()
+    {
+        FeatureFlagsModule.ResetRawEvaluationDataWarning();
+        var logger = CreateDebugLogger();
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        RawEvaluationDataWarnings(logger).Should().Be(0, "Feature Flags are enabled by default, so an application that never initializes a provider is not warned");
+
+        module.Activate();
+        RawEvaluationDataWarnings(logger).Should().Be(1, "the warning is written when the application initializes the provider, before any evaluation");
+        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", null);
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", null);
+        var secondLogger = CreateDebugLogger();
+        using var secondModule = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: secondLogger.Object);
+        secondModule.Activate();
+
+        RawEvaluationDataWarnings(logger).Should().Be(1);
+        RawEvaluationDataWarnings(secondLogger).Should().Be(0, "a provider initialized later in the same process does not warn again");
+    }
+
+    [Fact]
+    public void Evaluate_WithDebugDisabled_DoesNotWarnThatLogsIncludeRawEvaluationData()
+    {
+        FeatureFlagsModule.ResetRawEvaluationDataWarning();
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(false);
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", null);
+
+        RawEvaluationDataWarnings(logger).Should().Be(0);
+    }
+
+    [Fact]
+    public void Evaluate_WhenDebugLoggingIsEnabledAfterStartup_WarnsOnceBeforeTheFirstEvaluationLine()
+    {
+        FeatureFlagsModule.ResetRawEvaluationDataWarning();
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(false);
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger.Object);
+        module.ApplyConfiguration(CreatePlanFlagConfiguration()).Should().BeTrue();
+
+        // Switched on at runtime, as a tracer flare does.
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", null);
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user-42", null);
+
+        RawEvaluationDataWarnings(logger).Should().Be(1);
+        var templates = LoggedTemplates(logger);
+        templates.FindIndex(t => t.Contains("include raw evaluation data"))
+                 .Should().BeLessThan(templates.FindIndex(t => t.Contains("Evaluator resolved")));
+    }
+
+    [Theory]
+    [InlineData(FeatureFlagsValueType.Boolean, true, false, "true", "false")]
+    [InlineData(FeatureFlagsValueType.Integer, 42, -1, "42", "-1")]
+    [InlineData(FeatureFlagsValueType.Numeric, 12.5, -1.5, "12.5", "-1.5")]
+    [InlineData(FeatureFlagsValueType.String, "resolved", "fallback", "\"resolved\"", "\"fallback\"")]
+    [InlineData(FeatureFlagsValueType.Json, null, null, "", "")]
+    public void EvaluationDiagnosticsPreserveRawValues(FeatureFlagsValueType type, object? value, object? fallback, string expectedValue, string expectedDefault)
+    {
+        var large = new string('x', 20000) + "END-MARKER";
+        if (type == FeatureFlagsValueType.Json)
+        {
+            value = new Dictionary<string, object?> { ["nested"] = new object[] { large, 42 } };
+            fallback = new Dictionary<string, object?> { ["fallback"] = large };
+            expectedValue = "{\"nested\":[\"" + large + "\",42]}";
+            expectedDefault = "{\"fallback\":\"" + large + "\"}";
+        }
+
+        var lines = new List<string>();
+        var sink = new Mock<ILogEventSink>();
+        sink.Setup(x => x.Emit(It.IsAny<LogEvent>())).Callback<LogEvent>(e => lines.Add(e.RenderMessage()));
+        using var serilog = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Sink(sink.Object).CreateLogger();
+        var logger = new DatadogSerilogLogger(serilog, new NullLogRateLimiter(), null);
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager(), logger: logger);
+        var config = CreatePlanFlagConfiguration();
+        config.Flags!["plan-flag"].VariationType = type;
+        config.Flags["plan-flag"].Variations!["on"].Value = value;
+        module.ApplyConfiguration(config).Should().BeTrue();
+        var attributes = new Dictionary<string, object?> { ["plan"] = "premium", ["nested"] = new object[] { large } };
+
+        module.Evaluate("plan-flag", type, fallback, "user-42", attributes).Value.Should().BeEquivalentTo(value);
+        var line = lines.Single(x => x.Contains("Evaluator resolved"));
+        line.Should().Contain(large).And.Contain("user-42").And.Contain("variant=\"on\"").And.Contain("reason=TargetingMatch");
+        line.Should().Contain("metadata=").And.Contain("plan-allocation").And.Contain("before provider conversion");
+        line.Should().Contain("value=\"" + expectedValue.Replace("\"", "\\\"") + "\"");
+        line.Should().Contain("default=\"" + expectedDefault.Replace("\"", "\\\"") + "\"");
+        lines.Clear();
+        module.Evaluate("missing", type, fallback, "user-42", attributes).Value.Should().BeEquivalentTo(fallback);
+        lines.Single(x => x.Contains("Evaluator resolved")).Should().Contain("FLAG_NOT_FOUND").And.Contain(large);
+        lines.Clear();
+        var wrongType = type == FeatureFlagsValueType.Boolean ? FeatureFlagsValueType.String : FeatureFlagsValueType.Boolean;
+        module.Evaluate("plan-flag", wrongType, fallback, "user-42", attributes).Error.Should().Be("TYPE_MISMATCH");
+        lines.Single(x => x.Contains("Evaluator resolved")).Should().Contain("TYPE_MISMATCH").And.Contain("default=");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RemoteConfigurationDiagnosticsDistinguishEmptyAndRejectedFlags(bool invalid)
+    {
+        var logger = CreateDebugLogger();
+        var manager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), manager, logger: logger.Object);
+        var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test/config");
+        var json = invalid ? "{\"flags\":{\"broken\":null}}" : "{\"flags\":{}}";
+        foreach (var body in new[] { json, "not-json" })
+        {
+            await manager.LastSubscription!.Invoke(
+                new Dictionary<string, List<RemoteConfiguration>>
+                {
+                    [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(body), body.Length, new Dictionary<string, string>(), 1)],
+                },
+                null);
+        }
+
+        module.HasConfiguration.Should().BeTrue();
+        module.Evaluate("broken", FeatureFlagsValueType.Boolean, false, null, null).Error.Should().Be(invalid ? "PARSE_ERROR" : "FLAG_NOT_FOUND");
+        ArgumentsOf(logger, "applied successfully").Take(2).Should().Equal(0, invalid ? 1 : 0);
+        LoggedTemplates(logger).Should().Contain(x => x.Contains("Error while updating FFE RCM config"));
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task RealLoggerFailuresPreserveFeatureFlagsLifecycle(bool agentless, bool throwFromSink)
+    {
+        var lines = new ConcurrentQueue<string>();
+        var sink = new Mock<ILogEventSink>();
+        sink.Setup(x => x.Emit(It.IsAny<LogEvent>())).Callback<LogEvent>(e =>
+        {
+            lines.Enqueue(e.RenderMessage());
+            if (throwFromSink)
+            {
+                throw new InvalidOperationException("sink failed");
+            }
+        });
+        var formatter = new Mock<ITextFormatter>();
+        formatter.Setup(x => x.Format(It.IsAny<LogEvent>(), It.IsAny<TextWriter>())).Throws(new InvalidOperationException("deferred formatter failed"));
+        var asyncSink = new AsyncTextWriterSink(formatter.Object, new StringWriter(), 100);
+        using var serilog = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Sink(sink.Object).WriteTo.Sink(asyncSink).CreateLogger();
+        var logger = new DatadogSerilogLogger(serilog, new NullLogRateLimiter(), null);
+        var settings = agentless ? CreateAgentlessSettings() : CreateSettings();
+        var manager = new MockRcmSubscriptionManager();
+        var delivery = new FakeDeliverySource();
+        using var module = CreateModule(settings, manager, _ => delivery, logger);
+        var requests = new TestRequestFactory();
+        using var transport = new FeatureFlagsEvpTransport(FeatureFlagsSource.RemoteConfig, requests, null, new DiscoveryServiceMock(), logger: logger);
+        var exposures = new ExposureApi(settings, transport, shutdownTimeout: TimeSpan.FromSeconds(5), logger: logger);
+        typeof(FeatureFlagsModule).GetField("_exposureApi", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(module, exposures);
+        var config = CreatePlanFlagConfiguration();
+        config.Flags!["plan-flag"].Allocations![0].DoLog = true;
+        config.Format = "SERVER";
+        config.Environment = new Datadog.Trace.FeatureFlags.Rcm.Model.Environment { Name = "test" };
+        var json = JsonConvert.SerializeObject(config);
+        var notifications = 0;
+        module.RegisterOnNewConfigEventHandler(() => notifications++);
+        module.Activate();
+        if (agentless)
+        {
+            AgentlessEndpoint.TryCreate(null, "http://localhost/config", out var endpoint, out _).Should().BeTrue();
+            var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: "{\"data\":{\"type\":\"universal-flag-configuration\",\"attributes\":" + json + "}}"));
+            using var source = new AgentlessConfigurationSource(endpoint!, factory, TimeSpan.FromSeconds(30), module.ApplyConfiguration, logger: logger);
+            await source.PollAsync();
+        }
+        else
+        {
+            var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test/config");
+            await manager.LastSubscription!.Invoke(
+                new Dictionary<string, List<RemoteConfiguration>>
+                {
+                    [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string>(), 1)],
+                },
+                null);
+        }
+
+        await module.InitializeAsync(CancellationToken.None);
+        notifications.Should().Be(1);
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+        module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user", new Dictionary<string, object?> { ["plan"] = "premium", ["broken"] = new UnserializableAttribute() }).Value.Should().Be(true);
+        module.Dispose();
+        requests.RequestsSent.Should().ContainSingle();
+        manager.HasAnySubscription.Should().BeFalse();
+        delivery.Disposed.Should().Be(agentless ? 1 : 0);
+        lines.Should().Contain(x => x.Contains("<not formatted: "));
+        lines.Should().Contain(x => x.Contains("shutdown complete"));
+        await asyncSink.FlushAsync();
+        formatter.Verify(x => x.Format(It.IsAny<LogEvent>(), It.IsAny<TextWriter>()), Times.AtLeastOnce);
+    }
+
     // Creates the module for settings that enable Feature Flags, and returns it as non-nullable so
     // tests can use it directly. Throwing rather than asserting keeps the compiler's nullable analysis
     // satisfied without a null-forgiving operator.
     private static FeatureFlagsModule CreateModule(
         TracerSettings settings,
         IRcmSubscriptionManager rcmSubscriptionManager,
-        Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
-        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager, agentlessSourceFactory)
+        Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null,
+        IDatadogLogger? logger = null)
+        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager, agentlessSourceFactory, logger: logger)
         ?? throw new InvalidOperationException("Feature Flags are enabled, but no module was created.");
+
+    private static Mock<IDatadogLogger> CreateDebugLogger()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+        return logger;
+    }
+
+    private static List<string> LoggedTemplates(Mock<IDatadogLogger> logger)
+        => logger.Invocations
+                 .SelectMany(i => i.Method.GetParameters().Zip(i.Arguments, (parameter, argument) => (parameter.Name, argument)))
+                 .Where(p => p.Name == "messageTemplate")
+                 .Select(p => (string)p.argument!)
+                 .ToList();
+
+    // The values handed to the single log call whose message contains the fragment.
+    private static List<object?> ArgumentsOf(Mock<IDatadogLogger> logger, string templateFragment)
+        => logger.Invocations
+                 .Select(i => i.Method.GetParameters().Zip(i.Arguments, (parameter, argument) => (parameter.Name, argument)).ToList())
+                 .Where(call => call.Any(p => p.Name == "messageTemplate" && ((string)p.argument!).Contains(templateFragment)))
+                 .Select(call => call.Where(p => p.Name is not ("sourceLine" or "sourceFile" or "messageTemplate"))
+                                     .SelectMany(p => p.argument is object?[] args ? args : [p.argument])
+                                     .ToList())
+                 .Should().ContainSingle().Subject;
+
+    private static List<object?> EvaluationLine(Mock<IDatadogLogger> logger) => ArgumentsOf(logger, "Evaluator resolved");
+
+    private static int RawEvaluationDataWarnings(Mock<IDatadogLogger> logger)
+        => logger.Invocations.Count(i => i.Method.Name == nameof(IDatadogLogger.Warning)
+                                      && i.Arguments.OfType<string>().Any(a => a.Contains("include raw evaluation data")));
+
+    private static ServerConfiguration CreatePlanFlagConfiguration()
+    {
+        var conditions = new List<ConditionConfiguration>
+        {
+            new ConditionConfiguration { Operator = ConditionOperator.ONE_OF, Attribute = "plan", Value = new[] { "premium" } },
+        };
+        var allocation = new Allocation
+        {
+            Key = "plan-allocation",
+            Rules = [new Rule(conditions)],
+            Splits = [new Split { Shards = [], VariationKey = "on" }],
+            DoLog = false,
+        };
+
+        return new ServerConfiguration
+        {
+            CreatedAt = "2026-10-20T00:00:00Z",
+            Flags = new FlagCollection
+            {
+                ["plan-flag"] = new Flag
+                {
+                    Key = "plan-flag",
+                    Enabled = true,
+                    VariationType = FeatureFlagsValueType.Boolean,
+                    Variations = new Dictionary<string, Variant> { ["on"] = new Variant { Key = "on", Value = true } },
+                    Allocations = [allocation],
+                }
+            }
+        };
+    }
 
     private static TracerSettings CreateSettings(params (string Key, string Value)[] settings)
     {
@@ -785,6 +1234,29 @@ public class FeatureFlagsModuleTests
 
     private static TracerSettings CreateAgentlessSettings()
         => CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"));
+
+    // An attribute that cannot be serialized, as a customer object with a failing getter would be.
+    private sealed class UnserializableAttribute
+    {
+        public string Value => throw new InvalidOperationException("getter failed");
+    }
+
+    // Counts every read of its value, which serializing it for a log line would do.
+    private sealed class CountingAttribute
+    {
+        private int _reads;
+
+        public int Reads => Volatile.Read(ref _reads);
+
+        public string Value
+        {
+            get
+            {
+                Interlocked.Increment(ref _reads);
+                return "counted";
+            }
+        }
+    }
 
     // Records what the module does with a delivery source, which the real one cannot report without
     // issuing requests.
