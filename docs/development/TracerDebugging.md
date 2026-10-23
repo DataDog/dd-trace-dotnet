@@ -1,6 +1,29 @@
 # Tracer Debugging Guide
 
-This guide covers how to configure environment variables for debugging the Datadog .NET tracer locally.
+This guide covers local tracer debugging configuration and how to interpret runtime instrumentation evidence.
+
+## Confirming Runtime Instrumentation
+
+Correlate evidence with the specific method and running process. A source declaration or an intermediate
+native-log message does not establish that the replacement IL was accepted, executed, or produced a span.
+
+| Stage | Evidence | What remains unverified |
+|-------|----------|-------------------------|
+| Declaration | `[InstrumentMethod]` attributes under `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/` describe the target assembly, type, method, and version range. | Whether the running method matches and is selected. |
+| Selection/enqueue | The native log's `Method enqueued for ReJIT` records selection for ReJIT processing. | Whether rewriting or CLR submission succeeds. |
+| Rewrite preparation | `GetReJITParameters` means the CLR is requesting replacement IL. `*** CallTarget_RewriterCallback() Finished` follows a successful export of the tracer's rewritten body into a local buffer. | Whether the later submission succeeds and the CLR compiles the replacement body. |
+| CLR submission | `FunctionControlWrapper.ApplyChanges` passes the buffered body to the CLR through `SetILFunctionBody`. | The earlier `Finished` message does not establish this call's result or subsequent compilation/execution. |
+| Execution and span production | A breakpoint in the relevant CallTarget callback confirms callback execution; a correlated integration span confirms span production. | Callback execution alone does not guarantee a span, and a missing span alone does not identify which earlier stage failed. |
+
+The ordering is visible in [TracerMethodRewriter](../../tracer/src/Datadog.Tracer.Native/tracer_method_rewriter.cpp),
+[RejitHandler.NotifyReJITParameters](../../tracer/src/Datadog.Tracer.Native/rejit_handler.cpp), and
+[FunctionControlWrapper](../../tracer/src/Datadog.Tracer.Native/function_control_wrapper.cpp): the tracer logs
+`Finished` during rewriting, then `ApplyChanges` submits the buffered IL after the rejitters run.
+
+Do not treat `Finished` plus absence of `ReJITError` as proof of CLR acceptance. A qualified hypothesis is
+reasonable, but identify what is still unverified and obtain method-specific runtime evidence before asserting
+success. Managed tracer initialization logs establish initialization, not per-method rewriting. Likewise,
+absence of a native-log line is not conclusive without checking log level and capture completeness.
 
 ## Understanding `$(SolutionDir)` and Path References
 

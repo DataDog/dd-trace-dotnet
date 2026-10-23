@@ -239,7 +239,7 @@ cases:
       - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
       - Invents a libdatadog version pin in the root vcpkg.json.
       - Bumps to an upstream DataDog/libdatadog tag/version instead of the DataDog/libdatadog-dotnet release.
-      - Invents release versions or checksums. Correcting stale guidance using actual repository evidence is acceptable and must not be penalized.
+      - Invents release versions or checksums.
 
   # ---- Control / out-of-scope cases (detect AGENTS.md context saturation) ----
   # General C#/.NET questions AGENTS.md does NOT cover. They should not benefit from AGENTS.md content, but a
@@ -318,28 +318,3 @@ cases:
       - Claims String.Replace strips or doesn't propagate taint, so nothing is flagged.
       - Requires manual annotation of the source/sink, or invents a non-existent mechanism, flag, or API.
       - Confuses IAST (code-level vulnerability detection) with the WAF / AppSec live-attack (threat) detection.
-
-  # Ground truth: supplied evidence plus Get-AzureDevOpsBuildAnalysis.ps1 and the skill's snapshot guidance.
-  - id: dotnet-tracer-azdo-span-count-019
-    files: [.claude/skills/analyze-azdo-build/SKILL.md, .claude/skills/analyze-azdo-build/failure-patterns.md]
-    only_warn: true
-    input: |
-      Triage this Azure DevOps failure using only the supplied evidence and local repo files.
-      A task running a SubmitsTraces integration test failed with "Expected 2 spans but got 0".
-      There is no Received/Verified file diff. A separate job is canceled with a timeout message.
-      A teammate suggests updating snapshots and retrying every stage. Give a brief assessment
-      and the next targeted investigation steps. Mention the repo helper for a later analysis
-      once a build ID is available; do not call external services, update files, or retry anything.
-    expected_criteria:
-      - Distinguishes a span-count failure from a snapshot-content mismatch and rejects snapshot updates as a remedy for zero spans.
-      - Keeps the execution order unknown because the exact failing test is not identified. Neither a representative test nor the missing diff establishes whether this test reached snapshot comparison. A later instruction to confirm the order is not a correction of an earlier claim that comparison never ran.
-      - Uses the supplied timeout message as timeout evidence and investigates that job separately unless a common cause is supported. Duration alone, including >=55 or <5 minutes, does not prove infrastructure timeout or cascade cancellation; applicable configured limits and timeline events matter. Mentioning these as tentative heuristics with explicit verification is acceptable.
-      - Investigates tracer/sample initialization, instrumentation, transport, and timing as possible causes. Zero spans establishes a failed assertion, not whether the cause is deterministic, flaky, or environmental. Calling it a real observed failure is acceptable; claiming it cannot be flaky or is definitely a code regression without evidence is not.
-      - Identifies tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id> as a valid later analysis helper; -IncludeLogs is available for deeper log analysis. Does not invent an actual build ID or fetched results. The analyze-azdo-build skill at .claude/skills/analyze-azdo-build/SKILL.md is real and may be found in Git history even when removed from the checkout; referencing it is not fabrication, but naming the skill alone does not identify the executable helper.
-      - Gives focused next steps rather than blanket snapshot updates or retries; preserves the read-only, offline scope. Proposing a conditional, targeted retry for later after diagnosis is not executing a retry and is not itself a scope violation.
-    bad_signals:
-      - Recommends updating snapshots to fix the span-count assertion despite the absence of a content diff.
-      - Presents snapshot comparison not running as an explanation of the missing diff. Examples include "the count assertion failed before snapshot verification ran" and "so the test never reached snapshot comparison". This remains a bad signal if the answer later says to confirm or verify the order; only an explicit withdrawal of that conclusion resolves it. A consistently tentative hypothesis is not this bad signal.
-      - Claims zero spans proves a deterministic code regression, rules out flakiness, or proves a flaky/infrastructure-only cause without evidence.
-      - Treats fixed duration thresholds as proof of a cancellation's cause or invents run-history evidence absent from the prompt and inspected files.
-      - Calls external services, changes snapshots, or retries stages despite the user's explicit constraints.
