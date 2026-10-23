@@ -52,12 +52,7 @@ public class OtlpHeaderTests(ITestOutputHelper output)
         var telemetry = new ConfigurationTelemetry();
         var settings = new TracerSettings(source, telemetry, new());
         var exporter = new ExporterSettings(source, _ => false, telemetry);
-        var headers = signal switch
-        {
-            "traces" => exporter.OtlpTracesHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-            "metrics" => exporter.OtlpMetricsHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-            _ => settings.OtlpLogsHeaders,
-        };
+        var headers = GetHeaders(signal, settings, exporter);
 
         headers.Should().BeEquivalentTo(ExpectedHeaders);
         telemetry.GetQueueForTesting().Should().NotContain(entry => entry.StringValue != null && (entry.StringValue.Contains("hello") || entry.StringValue.Contains("bad%2G")));
@@ -73,12 +68,7 @@ public class OtlpHeaderTests(ITestOutputHelper output)
         var source = CreateSource(signal, signalSpecific, value);
         var settings = new TracerSettings(source);
         var exporter = new ExporterSettings(source, _ => false, NullConfigurationTelemetry.Instance);
-        var headers = signal switch
-        {
-            "traces" => exporter.OtlpTracesHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-            "metrics" => exporter.OtlpMetricsHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-            _ => settings.OtlpLogsHeaders,
-        };
+        var headers = GetHeaders(signal, settings, exporter);
         var expected = new Dictionary<string, string>();
         if (value is not null && value.Length > 0)
         {
@@ -100,12 +90,7 @@ public class OtlpHeaderTests(ITestOutputHelper output)
         });
         var settings = new TracerSettings(source);
         var exporter = new ExporterSettings(source, _ => false, NullConfigurationTelemetry.Instance);
-        var headers = signal switch
-        {
-            "traces" => exporter.OtlpTracesHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-            "metrics" => exporter.OtlpMetricsHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-            _ => settings.OtlpLogsHeaders,
-        };
+        var headers = GetHeaders(signal, settings, exporter);
 
         headers.Should().BeEquivalentTo(new Dictionary<string, string> { ["api-key"] = "signal value" });
     }
@@ -169,6 +154,16 @@ public class OtlpHeaderTests(ITestOutputHelper output)
             output.WriteLine($"{signal}/{(signalSpecific ? "signal" : "generic")}: {header.Key}={actual}");
             actual.Should().Be(header.Value);
         }
+    }
+
+    private static IReadOnlyDictionary<string, string> GetHeaders(string signal, TracerSettings settings, ExporterSettings exporter)
+    {
+        return signal switch
+        {
+            "traces" => exporter.OtlpTracesHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+            "metrics" => exporter.OtlpMetricsHeaders.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+            _ => settings.OtlpLogsHeaders,
+        };
     }
 
     private static NameValueConfigurationSource CreateSource(string signal, bool signalSpecific, string headers, string endpoint = "http://localhost:4318")
