@@ -10,6 +10,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Google.Protobuf;
@@ -572,6 +573,38 @@ public class OtlpTracesProtobufSerializerTests
         var span = SerializeAndParse(CreateChunk(CreatePropagatedSpan(samplingPriority)));
 
         span.Flags.Should().Be(expectedFlags);
+    }
+
+    [Theory]
+    [InlineData(2, 1u)]   // user-keep
+    [InlineData(1, 1u)]   // auto-keep
+    [InlineData(0, 0u)]   // auto-reject
+    [InlineData(-1, 0u)]  // user-reject
+    public void SerializeSpans_LocalSpanSamplingPriority_EmitsSpanFlagsFromTraceChunk(int samplingPriority, uint expectedFlags)
+    {
+        // Local spans don't carry the sampling priority on their own context; it lives on the TraceContext.
+        var ddSpan = CreateSpan();
+        ddSpan.Context.SamplingPriority.Should().BeNull();
+        ddSpan.Context.TraceContext.SetSamplingPriority(samplingPriority, SamplingMechanism.Manual);
+
+        var span = SerializeAndParse(CreateChunk(ddSpan));
+
+        span.Flags.Should().Be(expectedFlags);
+    }
+
+    [Fact]
+    public void SerializeSpans_LocalRoot_EmitsSamplingDecisionAttributes()
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteAdaptiveSamplingRule, rate: 0.25, limiterRate: 1f);
+
+        var span = SerializeAndParse(CreateChunk(ddSpan));
+
+        span.Attributes.Should().ContainSingle(a => a.Key == "_sampling_priority_v1").Which.Value.IntValue.Should().Be(2);
+        span.Attributes.Should().ContainSingle(a => a.Key == "_dd.p.dm").Which.Value.StringValue.Should().Be("-12");
+        span.Attributes.Should().ContainSingle(a => a.Key == "_dd.p.ksr").Which.Value.StringValue.Should().Be("0.25");
+        span.Attributes.Should().ContainSingle(a => a.Key == "_dd.rule_psr").Which.Value.DoubleValue.Should().Be(0.25);
+        span.Attributes.Should().ContainSingle(a => a.Key == "_dd.limit_psr").Which.Value.DoubleValue.Should().Be(1);
     }
 
     [Theory]
