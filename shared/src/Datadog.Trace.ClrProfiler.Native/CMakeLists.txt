@@ -251,10 +251,3 @@ if (UNIVERSAL)
         -flto
         )
 endif()
-
-# Provides __libc_single_threaded (not in glibc 2.17). See glibc217-compat.c.
-# Link the object directly so it cannot be skipped because of static archive ordering.
-if (USE_GLIBC217_SYSROOT)
-    target_link_libraries("Datadog.Trace.ClrProfiler.Native" glibc217-compat)
-    add_dependencies("Datadog.Trace.ClrProfiler.Native" glibc217-compat)
-endif()

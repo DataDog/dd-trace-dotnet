@@ -67,6 +67,17 @@ if (CMAKE_TOOLCHAIN_FILE MATCHES "Glibc217" AND NOT USE_GLIBC217_SYSROOT)
         "configure it again from scratch.")
 endif()
 
+if (USE_GLIBC217_SYSROOT)
+    include(CheckIncludeFileCXX)
+    check_include_file_cxx("sys/single_threaded.h" GLIBC217_HAS_SINGLE_THREADED_HEADER)
+    if (GLIBC217_HAS_SINGLE_THREADED_HEADER)
+        message(FATAL_ERROR
+            "The glibc 2.17 build can see <sys/single_threaded.h>, which was introduced "
+            "after glibc 2.17. CMAKE_SYSROOT must resolve C headers exclusively from the "
+            "harvested CentOS 7 SDK.")
+    endif()
+endif()
+
 SET(OSX_ARCH ${CMAKE_OSX_ARCHITECTURES})
 
 # Detect architecture
@@ -142,12 +153,6 @@ message(STATUS "PPDB library")
 if (UNIVERSAL)
     find_package(GlibcCompat REQUIRED)
     message(STATUS "Glibc Compat objects")
-endif()
-
-# Separate from glibc-compat above (see FindGlibc217Compat.cmake). Same once-here pattern.
-if (USE_GLIBC217_SYSROOT)
-    find_package(Glibc217Compat REQUIRED)
-    message(STATUS "Glibc217 Compat objects")
 endif()
 
 add_subdirectory(tracer)

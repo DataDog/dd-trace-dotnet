@@ -55,9 +55,10 @@ The glibc build follows this path:
 6. CMake configures the shared native build directory with
    [`Glibc217.cmake.x86_64`](../../build/cmake/Glibc217.cmake.x86_64) or
    [`Glibc217.cmake.aarch64`](../../build/cmake/Glibc217.cmake.aarch64).
-7. The linker resolves glibc and C++ runtime inputs from the harvested files.
-   The completed libraries are then checked for their maximum required
-   `GLIBC_*` symbol version.
+7. Clang resolves C headers and glibc libraries through `CMAKE_SYSROOT`, while
+   C++ headers and runtime inputs come from the harvested Developer Toolset.
+8. The completed libraries are checked for their maximum required `GLIBC_*`
+   symbol version.
 
 The architecture-specific settings are:
 
@@ -70,31 +71,39 @@ Selecting the toolchain file is the CMake opt-in. The toolchain sets
 
 ## What is in the sysroot
 
-The harvest contains the link-time glibc inputs, including:
+The harvest contains the compile-time and link-time target SDK, including:
 
+- CentOS 7 glibc and kernel C headers under `/usr/include`;
 - the dynamic loader and glibc shared objects;
 - glibc linker scripts and non-shared archives;
 - startup objects such as `crt1.o`, `crti.o`, and `crtn.o`;
+- Developer Toolset compiler support objects such as `crtbeginS.o` and
+  `crtendS.o`;
 - Developer Toolset C++ headers;
-- the selected Developer Toolset's `libstdc++` and `libgcc` inputs.
+- the selected Developer Toolset's `libstdc++` and `libgcc` inputs;
+- a manifest of installed source package versions.
 
-The toolchain uses `--sysroot`, `-B`, and `-L` for linker resolution and links
-`libstdc++` and `libgcc` statically. It also supplies
-`shared/src/glibc217-compat` for `__libc_single_threaded`, which is referenced
-by newer C++ headers but is not provided by glibc 2.17.
+The toolchain sets `CMAKE_SYSROOT`, so both C compilation and linking use the
+CentOS 7 root. It uses `-nostdinc++` plus explicit Developer Toolset paths for
+C++ headers, and `-B`/`-L` for the selected compiler support objects and static
+`libstdc++`/`libgcc`. Host programs such as CMake, Clang, lld, Make, and
+Autoconf still run from Ubuntu.
 
-The toolchain deliberately does **not** set `CMAKE_SYSROOT`. C headers therefore
-come from Ubuntu, while C++ headers come from the harvested Developer Toolset.
-The old glibc files constrain link-time symbol resolution, but this is not
-equivalent to compiling against a complete glibc 2.17 SDK. The consequences
-are covered under [Known risks and follow-ups](#known-risks-and-follow-ups).
+The root CMake configuration fails if `<sys/single_threaded.h>` is visible.
+That header and `__libc_single_threaded` were introduced after glibc 2.17; a
+reference indicates that host C headers leaked into the target build.
 
 The re2 and libunwind dependencies use CMake `ExternalProject` builds, which
 do not inherit the parent toolchain automatically. When
 `USE_GLIBC217_SYSROOT` is enabled, their build commands explicitly receive the
-selected compiler target, C/C++ flags, and executable linker flags. This keeps
-re2 compilation and libunwind configure probes on the harvested C++ headers
-and glibc 2.17 link sysroot.
+selected compiler target, compiler-level sysroot, C/C++ flags, and executable
+linker flags. This keeps re2 compilation and libunwind configure probes on the
+harvested C and C++ headers as well as the glibc 2.17 libraries.
+
+Libunwind links its shared libraries through libtool. Libtool does not forward
+`-B` from `LDFLAGS`, so Clang looks up `crtbeginS.o` without the Developer
+Toolset directory and passes the bare filename to lld. `CC` and `CXX` for that
+build therefore include `-B` pointing at `GLIBC217_TOOLCHAIN_LIB`.
 
 Developer Toolset 10 and 11 include C++17 filesystem support directly in
 `libstdc++.a`. Sysroot builds therefore do not link the legacy
@@ -102,10 +111,8 @@ Developer Toolset 10 and 11 include C++17 filesystem support directly in
 Ubuntu host. Non-sysroot builds retain that library for compatibility with
 older local toolchains.
 
-The `__libc_single_threaded` compatibility shim is compiled with hidden
-visibility and its stub declaration marks references hidden as well. Native
-artifact validation checks `nm -D --defined-only` and fails if this internal
-symbol is ever exposed from a shipped library.
+Native artifact validation rejects any dynamic import or export of
+`__libc_single_threaded`.
 
 The profiler uses its install RPATH while it is built, restricted to
 `$ORIGIN`, so CMake does not embed the temporary directory containing the
@@ -182,8 +189,12 @@ For local work on the harvest itself, build the Ubuntu `base` stage with
 architecture path:
 
 ```bash
+DOTNETSDK_VERSION="$(python3 -c \
+  'import json; print(json.load(open("global.json"))["sdk"]["version"])')"
+
 docker build \
   --platform linux/arm64 \
+  --build-arg DOTNETSDK_VERSION="${DOTNETSDK_VERSION}" \
   --build-arg SkipGlibc217SysrootFetch=true \
   --target base \
   --tag ubuntu217-local \
@@ -200,6 +211,54 @@ docker run --rm -it \
 
 Use `/sysroot/x86_64-glibc217` for x86_64. The toolchain also accepts
 `-DGLIBC217_SYSROOT=/path/to/sysroot` for direct CMake reproduction.
+
+Inside the container, first validate the archive and the standalone native
+dependency builds:
+
+```bash
+SYSROOT=/sysroot/aarch64-glibc217
+TOOLCHAIN=build/cmake/Glibc217.cmake.aarch64
+
+test -f "${SYSROOT}/usr/include/features.h"
+test ! -e "${SYSROOT}/usr/include/sys/single_threaded.h"
+
+rm -rf artifacts/glibc217-validation
+cmake \
+  -S . \
+  -B artifacts/glibc217-validation \
+  -DCMAKE_C_COMPILER=clang-16 \
+  -DCMAKE_CXX_COMPILER=clang++-16 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN}" \
+  -DGLIBC217_SYSROOT="${SYSROOT}"
+
+cmake --build artifacts/glibc217-validation --parallel \
+  --target re2 libunwind Datadog.Trace.ClrProfiler.Native
+
+nm --with-symbol-versions -D \
+  artifacts/native-bin/Datadog.Trace.ClrProfiler.Native/Datadog.Trace.ClrProfiler.Native.so
+```
+
+The CMake configure output must report that
+`sys/single_threaded.h` was **not** found. Running the compiler with `-E -v`
+must show the Clang resource directory, Developer Toolset C++ directories, and
+`${SYSROOT}/usr/include`, but not Ubuntu `/usr/include`.
+
+For the complete CI-equivalent path, build the managed loader and run the Nuke
+native build, test, and validation targets in the same mounted container.
+
+```bash
+./tracer/build.sh \
+  CompileManagedLoader \
+  BuildNativeTracerHome \
+  CompileTracerNativeTests \
+  RunTracerNativeTests \
+  BuildProfilerHome \
+  CompileProfilerNativeTests \
+  RunProfilerNativeTests \
+  ValidateNativeTracerGlibcCompatibility \
+  ValidateNativeProfilerGlibcCompatibility
+```
 
 Always use a clean CMake build directory after adding, removing, or changing a
 toolchain file. CMake reads a toolchain only during the first configuration;
@@ -291,27 +350,26 @@ problem is which archive or shared object the linker selected.
 The items below should be reviewed before treating the sysroot as a hermetic
 cross-toolchain.
 
-### Ubuntu C headers
+### Target header age
 
-The build uses Ubuntu C headers with CentOS 7 link-time glibc files. Symbol
-version validation catches newer versioned glibc imports, but it cannot catch
-all differences in constants, inline implementations, structure layouts, or
-kernel-facing behavior.
+The build uses CentOS 7 glibc and kernel headers. This removes host-header ABI
+drift, but it also means APIs, constants, and kernel definitions added after
+that baseline are intentionally unavailable at compile time.
 
-Ways to reduce the risk:
+When newer native code is introduced:
 
 1. keep the glibc symbol check mandatory;
 2. run a CentOS 7 package smoke test for native/toolchain changes;
-3. add focused runtime tests for APIs affected by newer headers;
-4. evaluate harvesting and using the matching CentOS 7 C headers if a header
-   compatibility issue appears.
+3. add focused runtime tests for APIs affected by conditional header features;
+4. use explicit syscall or compatibility implementations only when their
+   runtime semantics on the supported kernel baseline are understood.
 
 ### Harvest reproducibility
 
 The consumed archives are pinned by SHA-512, so CI detects an archive changing
-under an existing hash. Recreating an archive is less hermetic: the Docker base
-tag, CentOS vault metadata, and Developer Toolset packages are not recorded in
-a manifest of exact source package versions.
+under an existing hash. Each complete archive also records the installed RPM
+versions in `sysroot-packages.txt`. Recreating it is still not fully hermetic
+unless the Docker base image and CentOS vault inputs are pinned by digest.
 
 For a refresh, record the base image digest and installed package versions
 alongside the new archive hashes. Consider pinning those inputs if sysroot
@@ -347,16 +405,15 @@ The native build directory was configured before the toolchain argument was
 added. Delete the directory and rebuild. Changing `CMAKE_TOOLCHAIN_FILE` in an
 existing cache is not supported.
 
-### `__libc_single_threaded` is unresolved
+### CMake reports that `sys/single_threaded.h` is visible
 
 Confirm that:
 
 - the glibc 2.17 toolchain was selected;
-- `FindGlibc217Compat.cmake` created `glibc217-compat`;
-- the final shared library or test executable links that object library
-  directly, rather than relying on an earlier static archive;
-- the compatibility include directory shadows the host
-  `sys/single_threaded.h`.
+- the archive contains `${GLIBC217_SYSROOT}/usr/include/features.h`;
+- `CMAKE_SYSROOT` is the harvested root;
+- compiler `-E -v` output does not contain Ubuntu `/usr/include`;
+- the native CMake build directory was recreated after the toolchain change.
 
 ### The linker selects a host C++ archive
 
@@ -386,6 +443,9 @@ Linux package assembly:
 - [ ] Confirm which artifacts and architectures are affected.
 - [ ] Build the Ubuntu image for x86_64 and arm64 as applicable.
 - [ ] Start from a clean native CMake build directory.
+- [ ] Confirm C and kernel headers resolve from the harvested sysroot, not the
+      Ubuntu host.
+- [ ] Confirm `<sys/single_threaded.h>` is not visible.
 - [ ] Run tracer/profiler native unit tests.
 - [ ] Run `ValidateNativeTracerGlibcCompatibility`.
 - [ ] Run `ValidateNativeProfilerGlibcCompatibility`.
