@@ -46,6 +46,35 @@ public class FlagEvaluationContextSnapshotTests
         reasons.Should().Be(0);
     }
 
+    [Theory]
+    [CombinatorialData]
+    public void RootTargetingKeyDoesNotConsumeAttributeBudget([CombinatorialValues(255, 256, 257)] int attributeCount, bool includeTargetingKey)
+    {
+        var values = Enumerable.Range(0, attributeCount).ToDictionary(i => "field" + i, i => "value" + i);
+        var builder = EvaluationContext.Builder();
+        foreach (var pair in values)
+        {
+            builder.Set(pair.Key, pair.Value);
+        }
+
+        if (includeTargetingKey)
+        {
+            builder.Set("targetingKey", "subject");
+        }
+
+        var snapshot = FlagEvaluationContextSnapshot.Capture(builder.Build(), out var reasons);
+
+        snapshot.Should().HaveCount(Math.Min(attributeCount, 256));
+        snapshot.Should().NotContainKey("targetingKey");
+        foreach (var pair in snapshot)
+        {
+            values.Should().ContainKey(pair.Key);
+            pair.Value.Should().Be(values[pair.Key]);
+        }
+
+        reasons.Should().Be(attributeCount > 256 ? (int)ContextOmissionReason.MaxStructureProperties : 0);
+    }
+
     [Fact]
     public void OversizedMapsUseRepeatableBoundedSelection()
     {
