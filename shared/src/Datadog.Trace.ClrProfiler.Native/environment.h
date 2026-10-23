@@ -32,6 +32,16 @@ public:
     // The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
     inline static const shared::WSTRING azure_app_services_cli_telemetry_profiler_value = WStr("DOTNET_CLI_TELEMETRY_PROFILE");
 
+    // Set by the site extension in the scm (Kudu) host, so the processes it starts aren't instrumented (except WebJobs)
+    inline static const shared::WSTRING azure_app_services_scm_host = WStr("DD_AZURE_APP_SERVICES_SCM");
+
+    // Set by Kudu to the WebJob's name in every process it starts for a WebJob.
+    // Used to tell WebJobs apart from the other processes of the scm host.
+    inline static const shared::WSTRING azure_app_services_webjobs_name = WStr("WEBJOBS_NAME");
+
+    // Enables instrumentation of Azure App Services WebJobs. Default value is false.
+    inline static const shared::WSTRING azure_webjobs_instrumentation_enabled = WStr("DD_TRACE_AZURE_WEBJOBS_ENABLED");
+
     // The FUNCTIONS_WORKER_RUNTIME in Azure Functions.
     // Valid values: "dotnet" (in-process functions) or "dotnet-isolated" (isolated functions).
     // Used as a flag to determine that we are running within a functions app.

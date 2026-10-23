@@ -366,6 +366,15 @@ supportedConfigurations:
     const_name: AzureAppServicesContextKey
     documentation: |-
       Configuration key which is used as a flag to tell us whether we are instrumenting an Azure App Service using the AAS Site Extension
+  DD_AZURE_APP_SERVICES_SCM:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: AzureAppService
+    documentation: |-
+      Set by the Azure App Services site extension in the scm (Kudu) host.
+      Processes of the scm host are not instrumented, except WebJobs when <c>DD_TRACE_AZURE_WEBJOBS_ENABLED</c> is true.
   DD_CALLSITE_MANAGED_ACTIVATION_ENABLED:
   - implementation: A
     scope: native
@@ -2858,6 +2867,16 @@ supportedConfigurations:
       when using Azure Service Bus batch operations.
       Default value is <c>true</c> (enabled).
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureServiceBusBatchLinksEnabled"/>
+  DD_TRACE_AZURE_WEBJOBS_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: AzureAppService
+    documentation: |-
+      Controls whether Azure App Services WebJobs are instrumented when running with the site extension.
+      WebJobs run in the scm (Kudu) host, which is otherwise excluded from instrumentation.
+      Default is false.
   DD_TRACE_BAGGAGE_MAX_BYTES:
   - implementation: A
     scope: managed
