@@ -87,16 +87,24 @@ internal sealed partial class CircularChannel : IChannel
             // Let's open or create the file we want to map
             var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
 
-            // Ensure we have the correct size
-            stream.SetLength(_settings.BufferSize);
+            // Only a file we have just created, or one with an unexpected size, needs initializing. The other side of
+            // the channel may already be using an existing one, and resetting its pointers drops every unread message.
+            var initialize = stream.Length != _settings.BufferSize;
+            if (initialize)
+            {
+                stream.SetLength(_settings.BufferSize);
+            }
 
             // Create the memory mapped file from the stream
             _mmf = MemoryMappedFile.CreateFromFile(stream, mapName: null, _settings.BufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, leaveOpen: false);
 
-            // Initialize the write and read pointer
-            using var accessor = _mmf.CreateViewAccessor();
-            accessor.Write(0, (ushort)0); // Write pointer
-            accessor.Write(2, (ushort)0); // Read pointer
+            if (initialize)
+            {
+                // Initialize the write and read pointer
+                using var accessor = _mmf.CreateViewAccessor();
+                accessor.Write(0, (ushort)0); // Write pointer
+                accessor.Write(2, (ushort)0); // Read pointer
+            }
         }
         finally
         {

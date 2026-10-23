@@ -21,6 +21,9 @@ public class CircularChannelTests
     private const int HeaderSize = 4;
     private const int AvailableBufferSize = BufferSize - HeaderSize;
 
+    // Only keeps a broken channel from hanging the test run
+    private static readonly TimeSpan HangTimeout = TimeSpan.FromSeconds(30);
+
     public static IEnumerable<object[]> GetWriteData()
     {
         var random = new Random();
@@ -97,6 +100,35 @@ public class CircularChannelTests
         // Receiving the first message alone can hide a recursive mutex acquisition leak.
         writer.TryWrite(in message).Should().BeTrue("the reader must release ownership before another thread can send");
         messagesReceived.Wait(5_000).Should().BeTrue();
+    }
+
+    [Fact]
+    public void OpeningAnExistingChannelKeepsUnreadMessages()
+    {
+        var name = nameof(OpeningAnExistingChannelKeepsUnreadMessages) + "-" + Guid.NewGuid().ToString("n");
+        var settings = new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = 50 };
+        using var readerChannel = new CircularChannel(name, settings);
+
+        var valueSegment = new ArraySegment<byte>([1, 2, 3, 4]);
+        using (var writerChannel = new CircularChannel(name, settings))
+        {
+            writerChannel.GetWriter().TryWrite(in valueSegment).Should().BeTrue();
+        }
+
+        // Another process opening the same channel must not reset the pointers and drop the unread message
+        using var otherChannel = new CircularChannel(name, settings);
+
+        byte[]? receivedValue = null;
+        var received = new ManualResetEventSlim(false);
+        using var reader = readerChannel.GetReader();
+        reader.SetCallback(bytes =>
+        {
+            receivedValue = bytes.ToArray();
+            received.Set();
+        });
+
+        received.Wait(HangTimeout).Should().BeTrue("the message written before the channel was reopened should still be delivered");
+        receivedValue.Should().Equal(valueSegment);
     }
 
     [Collection(nameof(HighConcurrencyTestCollection))]
