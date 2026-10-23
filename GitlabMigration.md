@@ -1,6 +1,6 @@
 # GitLab CI migration plan and findings
 
-Last updated: 2026-10-01
+Last updated: 2026-10-23
 
 ## Purpose
 
@@ -76,6 +76,14 @@ Local validation passed PowerShell parsing and a parallel build of all 11 sample
 [Pipeline 146756580](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/146756580) passed the previously failing Windows build jobs, then exposed missing-testhost failures in both x86 and x64 `net48:ci-visibility` jobs. Local VSTest diagnostics reproduced the cause: samples omit `TargetFrameworkAttribute`, so the SDK runner inferred `.NETCoreApp,Version=v1.0` instead of .NET Framework and selected the wrong test host.
 
 The shared launcher now supplies `/Framework:<sample TFM>` for .NET Framework samples, honoring explicit framework overrides. Direct `dotnet exec`/MTP and .NET Core paths are unchanged. This removes the ambiguous runtime inference rather than skipping tests or changing their assertions. The helper builds cleanly for `net48`; local MSTest sample discovery and a passing sample test succeed on x86 and x64 with `/Framework:net48`. Full instrumented CI validation remains pending.
+
+### Integration follow-ups (2026-10-23)
+
+[Pipeline 146785963](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/146785963), at `f371da5d7f`, passed the builds and all four managed unit-test child pipelines. Integration failures remain:
+
+- **Windows .NET Framework CI Visibility:** explicit framework selection removed the missing-testhost failures. Both architectures now have one failing empty-run discovery case: the SDK's CoreCLR VSTest runner was not instrumented because the sample targets .NET Framework. The launcher now enables CoreCLR instrumentation for this path alongside the existing Framework testhost instrumentation. A focused local x64 empty-run check emitted zero sessions before the fix and exactly one afterward; the helper builds cleanly for `net48`. Full x86/x64 CI validation remains pending.
+- **Linux x64 Docker / Azure Functions:** Event Grid delivery logs target `host.docker.internal`, whereas the Functions host runs in the test container. The GitLab launcher now sets `EVENTGRID_WEBHOOK_HOST=integrationtests`, matching Azure. Shell syntax validation passed; Docker was unavailable locally, so delivery and the subsequent messaging tests still need a CI rerun.
+- **Linux OpenTelemetry context tests:** recurring `process_vm_readv` failures affect x64/ARM64 Tracer jobs on glibc and musl. `SYS_PTRACE` is already enabled. The reader now includes the native error number and description in its exception to distinguish permission failures from invalid addresses or other syscall errors. The cause remains unresolved; no privilege broadening, skips, or assertion changes were made.
 
 ### Reviewed CI results and follow-ups (2026-09-30)
 
