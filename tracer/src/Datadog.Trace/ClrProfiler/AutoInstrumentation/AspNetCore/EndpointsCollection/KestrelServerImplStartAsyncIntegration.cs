@@ -8,6 +8,7 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.AppSec;
@@ -84,7 +85,20 @@ public sealed class KestrelServerImplStartAsyncIntegration
             return;
         }
 
-        AppSec.EndpointsCollection.CollectEndpoints(endpointDataSource.Endpoints);
+        IReadOnlyList<object> endpoints;
+
+        try
+        {
+            endpoints = endpointDataSource.Endpoints;
+        }
+        catch (Exception ex)
+        {
+            // Evaluating this property runs third-party code, so a failure here isn't a tracer defect
+            Log.Warning(ex, "API Security: Endpoints collection: Failed to evaluate the EndpointDataSource endpoints.");
+            return;
+        }
+
+        AppSec.EndpointsCollection.CollectEndpoints(endpoints);
     }
 }
 
