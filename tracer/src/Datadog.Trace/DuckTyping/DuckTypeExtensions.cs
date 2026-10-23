@@ -200,6 +200,11 @@ namespace Datadog.Trace.DuckTyping
         {
             if (typeToDeriveFrom is null) { ThrowHelper.ThrowArgumentNullException(nameof(typeToDeriveFrom)); }
 
+            if (DuckType.TryUnwrapForwardProxy(instance, typeToDeriveFrom, out value))
+            {
+                return true;
+            }
+
             if (instance is not null &&
                 DuckType.GetOrCreateReverseProxyType(typeToDeriveFrom, instance.GetType()) is { Success: true } proxyResult)
             {

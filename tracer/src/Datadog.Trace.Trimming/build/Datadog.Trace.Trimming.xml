@@ -687,6 +687,7 @@
       <type fullname="System.DateTime" />
       <type fullname="System.DateTimeKind" />
       <type fullname="System.DateTimeOffset" />
+      <type fullname="System.DBNull" />
       <type fullname="System.Decimal" />
       <type fullname="System.Delegate" />
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
@@ -864,6 +865,7 @@
       <type fullname="System.Reflection.MethodBody" />
       <type fullname="System.Reflection.MethodImplAttributes" />
       <type fullname="System.Reflection.MethodInfo" />
+      <type fullname="System.Reflection.Missing" />
       <type fullname="System.Reflection.Module" />
       <type fullname="System.Reflection.ParameterAttributes" />
       <type fullname="System.Reflection.ParameterInfo" />
@@ -1087,6 +1089,7 @@
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
       <type fullname="System.Runtime.InteropServices.ComTypes.STATSTG" />
       <type fullname="System.Runtime.InteropServices.DefaultDllImportSearchPathsAttribute" />
+      <type fullname="System.Runtime.InteropServices.DispatchWrapper" />
       <type fullname="System.Runtime.InteropServices.DllImportSearchPath" />
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
@@ -1094,6 +1097,7 @@
       <type fullname="System.Runtime.InteropServices.PosixSignal" />
       <type fullname="System.Runtime.InteropServices.PosixSignalContext" />
       <type fullname="System.Runtime.InteropServices.PosixSignalRegistration" />
+      <type fullname="System.Runtime.InteropServices.UnknownWrapper" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
    </assembly>
