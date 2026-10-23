@@ -11,8 +11,6 @@ using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
@@ -66,17 +64,14 @@ public sealed class TestRunRequestOnRunCompletionIntegration
         // The session that owns this run propagates its context through environment variables, whether it was created
         // by this vstest.console process or by a parent process such as the dotnet CLI. Only sessions created by the
         // dotnet test integrations host the IPC server, so manual sessions never receive the count.
-        var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-            EnvironmentHelpers.GetEnvironmentVariables(),
-            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-        if (context.SpanContext is not { } sessionContext)
+        if (!DotnetCommon.TryGetParentSessionSpanId(out var sessionSpanId))
         {
             return;
         }
 
         try
         {
-            using var ipcClient = new IpcClient($"session_{sessionContext.SpanId}");
+            using var ipcClient = new IpcClient($"session_{sessionSpanId}");
             var message = new SessionExecutedTestsMessage(executedTests);
 
             // A lost count could let another run's zero count report the session as empty. The session drains the
