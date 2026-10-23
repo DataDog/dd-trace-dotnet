@@ -36,7 +36,7 @@ services:
     - "3306"
 
   postgres_arm64:
-    image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
+    image: postgres:18.6-alpine@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
     environment:
     - POSTGRES_PASSWORD=postgres
     - POSTGRES_USER=postgres
@@ -45,14 +45,14 @@ services:
     - "5432"
 
   rabbitmq_arm64:
-    image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
+    image: rabbitmq:4-management-alpine@sha256:0452ee3fd3b9a74160b251e693338616b464f22df4d4ba43304c101bebdca292
     command: rabbitmq-server
     ports:
       - "5672"
       - "15672"
 
   servicestackredis_arm64:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     command: redis-server --bind 0.0.0.0
     ports:
     - "6379"
@@ -70,21 +70,21 @@ services:
     command: ["--protocol", "https"]
 
   stackexchangeredis_arm64:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     hostname: stackexchangeredis_arm64
     command: redis-server --bind 0.0.0.0
     ports:
     - "6379"
 
   stackexchangeredis_arm64-replica:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     hostname: stackexchangeredis_arm64-replica
     command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_arm64 6379
     ports:
     - "127.0.0.1:6390:6379"
 
   stackexchangeredis_arm64-single:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     hostname: stackexchangeredis_arm64-single
     command: redis-server --bind 0.0.0.0
     ports:
@@ -105,7 +105,7 @@ services:
       - "./.localstack:/tmp"
 
   rabbitmq:
-    image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
+    image: rabbitmq:4-management-alpine@sha256:0452ee3fd3b9a74160b251e693338616b464f22df4d4ba43304c101bebdca292
     profiles: ["group1"]
     command: rabbitmq-server
     ports:
@@ -113,14 +113,14 @@ services:
       - "127.0.0.1:15672:15672"
 
   servicestackredis:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     profiles: ["group1"]
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6379:6379"
 
   stackexchangeredis:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     profiles: ["group1"]
     hostname: stackexchangeredis
     command: redis-server --bind 0.0.0.0
@@ -128,7 +128,7 @@ services:
     - "127.0.0.1:6389:6379"
 
   stackexchangeredis-replica:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     profiles: ["group1"]
     hostname: stackexchangeredis-replica
     command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis 6379
@@ -136,7 +136,7 @@ services:
     - "127.0.0.1:6390:6379"
 
   stackexchangeredis-single:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     profiles: ["group1"]
     hostname: stackexchangeredis-single
     command: redis-server --bind 0.0.0.0
@@ -188,7 +188,7 @@ services:
     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   postgres:
-    image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
+    image: postgres:18.6-alpine@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
     profiles: ["group1"]
     environment:
     - POSTGRES_PASSWORD=postgres
@@ -945,7 +945,7 @@ services:
       - "3306:3306"
 
   postgres_osx_arm64:
-    image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
+    image: postgres:18.6-alpine@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
@@ -954,34 +954,34 @@ services:
       - "5432:5432"
 
   rabbitmq_osx_arm64:
-    image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
+    image: rabbitmq:4-management-alpine@sha256:0452ee3fd3b9a74160b251e693338616b464f22df4d4ba43304c101bebdca292
     command: rabbitmq-server
     ports:
       - "5672:5672"
       - "15672:15672"
 
   servicestackredis_osx_arm64:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     command: redis-server --bind 0.0.0.0
     ports:
       - "6379:6379"
 
   stackexchangeredis_osx_arm64:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     hostname: stackexchangeredis_osx_arm64
     command: redis-server --bind 0.0.0.0
     ports:
       - "6392:6379"
 
   stackexchangeredis_osx_arm64-replica:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     hostname: stackexchangeredis_osx_arm64-replica
     command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_osx_arm64 6379
     ports:
       - "6390:6379"
 
   stackexchangeredis_osx_arm64-single:
-    image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     hostname: stackexchangeredis_osx_arm64-single
     command: redis-server --bind 0.0.0.0
     ports:
