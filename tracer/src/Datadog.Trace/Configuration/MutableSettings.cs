@@ -967,10 +967,22 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                                          : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
                                                            ? ParsingResult<bool>.Success(result: true)
                                                            : ParsingResult<bool>.Failure());
-        var traceEnabled = config
-                          .WithKeys(ConfigurationKeys.TraceEnabled)
-                          .AsBoolResult()
-                          .OverrideWith(in otelTraceEnabled, errorLog, defaultValue: true);
+        var traceEnabledResult = config
+                                .WithKeys(ConfigurationKeys.TraceEnabled)
+                                .AsBoolResult();
+
+        bool traceEnabled;
+        if (tracerSettings.OtelSdkDisabled && !traceEnabledResult.ConfigurationResult.IsPresent)
+        {
+            // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false and takes precedence over OTEL_TRACES_EXPORTER.
+            // Any DD_TRACE_ENABLED value overrides it, and an invalid one falls back to the default (true).
+            telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
+            traceEnabled = false;
+        }
+        else
+        {
+            traceEnabled = traceEnabledResult.OverrideWith(in otelTraceEnabled, errorLog, defaultValue: true);
+        }
 
         if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
         {
