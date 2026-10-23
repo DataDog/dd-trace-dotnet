@@ -47,19 +47,14 @@ public class FlagEvaluationContextSnapshotTests
     }
 
     [Theory]
-    [InlineData(255, false)]
-    [InlineData(255, true)]
-    [InlineData(256, false)]
-    [InlineData(256, true)]
-    [InlineData(257, false)]
-    [InlineData(257, true)]
-    public void RootTargetingKeyDoesNotConsumeAttributeBudget(int attributeCount, bool includeTargetingKey)
+    [CombinatorialData]
+    public void RootTargetingKeyDoesNotConsumeAttributeBudget([CombinatorialValues(255, 256, 257)] int attributeCount, bool includeTargetingKey)
     {
-        var values = Enumerable.Range(0, attributeCount).ToDictionary(i => "field" + i, i => (object?)("value" + i));
+        var values = Enumerable.Range(0, attributeCount).ToDictionary(i => "field" + i, i => "value" + i);
         var builder = EvaluationContext.Builder();
         foreach (var pair in values)
         {
-            builder.Set(pair.Key, (string)pair.Value!);
+            builder.Set(pair.Key, pair.Value);
         }
 
         if (includeTargetingKey)
@@ -73,7 +68,8 @@ public class FlagEvaluationContextSnapshotTests
         snapshot.Should().NotContainKey("targetingKey");
         foreach (var pair in snapshot)
         {
-            values.Should().Contain(pair.Key, pair.Value);
+            values.Should().ContainKey(pair.Key);
+            pair.Value.Should().Be(values[pair.Key]);
         }
 
         reasons.Should().Be(attributeCount > 256 ? (int)ContextOmissionReason.MaxStructureProperties : 0);
