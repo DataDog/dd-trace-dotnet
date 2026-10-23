@@ -84,11 +84,7 @@ cases:
       - Gives a whole-product disable message using "Datadog SDK", such as "The Datadog SDK has been disabled". A plain message or a logging call is equally acceptable.
       - Explains that bare "Profiler" is ambiguous and should not name the whole SDK in this message; mentioning it to explain why to avoid it is correct.
       - Distinguishes the whole product from individual components. "Instrumentation" names native auto-instrumentation, "Continuous Profiler" names the profiling product, and "Datadog.Trace.dll" names the managed assembly. Advising against these component names for this whole-product message is correct, not a terminology error; an exhaustive component glossary is not required.
-      - >-
-        If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler".
-        "Avoid Datadog.Trace.dll here because it names only the managed assembly" is correct for a whole-product message,
-        not a rejection of the assembly's preferred name. Omitting this optional aside is not a defect;
-        do not award a pairwise win merely for including it. Incorrect terminology or unresolved contradictions still count against an answer.
+      - If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler". Omitting this optional aside is not a defect in an otherwise correct whole-product message and explanation; do not award a pairwise win merely for including it. Listing "managed profiler" and "Datadog.Trace.dll" together as terms to avoid for the whole-product message is acceptable; do not infer that this rejects Datadog.Trace.dll as the preferred assembly name. Penalize this naming distinction only when the answer explicitly recommends "managed profiler" as the assembly's name or explicitly claims Datadog.Trace.dll is an incorrect assembly name.
     bad_signals:
       - Uses the bare word "Profiler" as the SDK's name in the proposed message, rather than mentioning it as a term to avoid.
       - Explicitly endorses "managed profiler" as the managed tracer's name or claims Datadog.Trace.dll is an incorrect assembly name. Listing either or both as terms to avoid for the whole-product message is not this bad signal.
@@ -229,20 +225,21 @@ cases:
     files: [.claude/skills/bump-libdatadog/SKILL.md, .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh]   # run when the skill (SKILL.md or its helper script) changed
     input: |
       I need to bump the libdatadog native library to a new release version. Walk me
-      through everything I have to update in this repo and how to verify it.
+      through everything I have to update in this repo and how to verify it. Give a
+      plan using local repository evidence; do not edit files, fetch releases, or run builds.
     expected_criteria:
       - Updates BOTH version pins — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
       - FindLibdatadog.cmake uses SHA-256 hashes and a v-prefixed version (e.g. v2.0.0) from DataDog/libdatadog-dotnet — the .NET-specific distribution, NOT upstream DataDog/libdatadog; the vcpkg version-string has NO v prefix.
       - portfile.cmake uses SHA-512 hashes for the Windows x64/x86 builds.
       - Verifies by running the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
-      - Notes Linux/macOS and Windows versions can differ, and the NativeValidation symbol snapshots may need regenerating.
+      - Normally moves Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if exports change.
     bad_signals:
       - Says there is a single version to update / only one file to change.
       - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).
       - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
       - Invents a libdatadog version pin in the root vcpkg.json.
       - Bumps to an upstream DataDog/libdatadog tag/version instead of the DataDog/libdatadog-dotnet release.
-      - Indicates the project's libdatadog skill / instructions are wrong, outdated, or had to be corrected against the actual repo files.
+      - Invents release versions or checksums. Correcting stale guidance using actual repository evidence is acceptable and must not be penalized.
 
   # ---- Control / out-of-scope cases (detect AGENTS.md context saturation) ----
   # General C#/.NET questions AGENTS.md does NOT cover. They should not benefit from AGENTS.md content, but a
@@ -321,3 +318,28 @@ cases:
       - Claims String.Replace strips or doesn't propagate taint, so nothing is flagged.
       - Requires manual annotation of the source/sink, or invents a non-existent mechanism, flag, or API.
       - Confuses IAST (code-level vulnerability detection) with the WAF / AppSec live-attack (threat) detection.
+
+  # Ground truth: supplied evidence plus Get-AzureDevOpsBuildAnalysis.ps1 and the skill's snapshot guidance.
+  - id: dotnet-tracer-azdo-span-count-019
+    files: [.claude/skills/analyze-azdo-build/SKILL.md, .claude/skills/analyze-azdo-build/failure-patterns.md]
+    only_warn: true
+    input: |
+      Triage this Azure DevOps failure using only the supplied evidence and local repo files.
+      A task running a SubmitsTraces integration test failed with "Expected 2 spans but got 0".
+      There is no Received/Verified file diff. A separate job is canceled with a timeout message.
+      A teammate suggests updating snapshots and retrying every stage. Give a brief assessment
+      and the next targeted investigation steps. Mention the repo helper for a later analysis
+      once a build ID is available; do not call external services, update files, or retry anything.
+    expected_criteria:
+      - Distinguishes a span-count failure from a snapshot-content mismatch and rejects snapshot updates as a remedy for zero spans.
+      - Keeps the execution order unknown because the exact failing test is not identified. Neither a representative test nor the missing diff establishes whether this test reached snapshot comparison. A later instruction to confirm the order is not a correction of an earlier claim that comparison never ran.
+      - Uses the supplied timeout message as timeout evidence and investigates that job separately unless a common cause is supported. Duration alone, including >=55 or <5 minutes, does not prove infrastructure timeout or cascade cancellation; applicable configured limits and timeline events matter. Mentioning these as tentative heuristics with explicit verification is acceptable.
+      - Investigates tracer/sample initialization, instrumentation, transport, and timing as possible causes. Zero spans establishes a failed assertion, not whether the cause is deterministic, flaky, or environmental. Calling it a real observed failure is acceptable; claiming it cannot be flaky or is definitely a code regression without evidence is not.
+      - Identifies tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id> as a valid later analysis helper; -IncludeLogs is available for deeper log analysis. Does not invent an actual build ID or fetched results. The analyze-azdo-build skill at .claude/skills/analyze-azdo-build/SKILL.md is real and may be found in Git history even when removed from the checkout; referencing it is not fabrication, but naming the skill alone does not identify the executable helper.
+      - Gives focused next steps rather than blanket snapshot updates or retries; preserves the read-only, offline scope. Proposing a conditional, targeted retry for later after diagnosis is not executing a retry and is not itself a scope violation.
+    bad_signals:
+      - Recommends updating snapshots to fix the span-count assertion despite the absence of a content diff.
+      - Presents snapshot comparison not running as an explanation of the missing diff. Examples include "the count assertion failed before snapshot verification ran" and "so the test never reached snapshot comparison". This remains a bad signal if the answer later says to confirm or verify the order; only an explicit withdrawal of that conclusion resolves it. A consistently tentative hypothesis is not this bad signal.
+      - Claims zero spans proves a deterministic code regression, rules out flakiness, or proves a flaky/infrastructure-only cause without evidence.
+      - Treats fixed duration thresholds as proof of a cancellation's cause or invents run-history evidence absent from the prompt and inspected files.
+      - Calls external services, changes snapshots, or retries stages despite the user's explicit constraints.

@@ -5,6 +5,8 @@ instruction_files:
   - AGENTS.md
   - .claude/skills/bump-libdatadog/SKILL.md
   - .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh
+  - .claude/skills/analyze-azdo-build/SKILL.md
+  - .claude/skills/analyze-azdo-build/failure-patterns.md
 
 default_level: gate
 presets:
