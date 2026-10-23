@@ -323,6 +323,35 @@ partial class Build
             nativeLibHelper.ValidateNativeLibraryCompatibility(dest, maximumAllowedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
         });
 
+    Target ValidateDdDotnetGlibcCompatibility => _ => _
+        .Unlisted()
+        .Description("Validates the glibc requirements of the uncompressed dd-dotnet NativeAOT executable")
+        .OnlyWhenStatic(() => IsLinux && !IsAlpine)
+        .After(BuildDdDotnet)
+        .Executes(() =>
+        {
+            var binary = GetUncompressedDdDotnetPath(DdDotnetRuntimeIdentifier);
+            Assert.FileExists(binary, "BuildDdDotnet writes the uncompressed copy of dd-dotnet that is validated here.");
+
+            // Same compatibility ceiling as the native tracer and profiler.
+            var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
+            helper.ValidateNativeLibraryCompatibility(binary, new Version(2, 17), snapshotPrefix: null);
+
+            var loader = IsArm64 ? "ld-linux-aarch64.so.1" : "ld-linux-x86-64.so.2";
+            var interpreter = IsArm64 ? "/lib/ld-linux-aarch64.so.1" : "/lib64/ld-linux-x86-64.so.2";
+            var allowedLibraries = new[] { "libc.so.6", "libdl.so.2", "libm.so.6", "libpthread.so.0", "librt.so.1", loader };
+
+            var dynamicSection = ReadElf.Value($"--wide --dynamic {binary}", logOutput: false)
+                                        .Where(x => x.Type == OutputType.Std)
+                                        .Select(x => x.Text);
+            ElfDynamicLinkingChecker.ValidateNeededLibraries(dynamicSection, allowedLibraries, "dd-dotnet");
+
+            var programHeaders = ReadElf.Value($"--wide --program-headers {binary}", logOutput: false)
+                                        .Where(x => x.Type == OutputType.Std)
+                                        .Select(x => x.Text);
+            ElfDynamicLinkingChecker.ValidateInterpreter(programHeaders, interpreter, "dd-dotnet");
+        });
+
     Target ValidateNativeConfigurations => _ => _
         .Description("Validates that every DD_* environment variable read by native code is registered in supported-configurations.yaml with native scope")
         .Executes(() =>
