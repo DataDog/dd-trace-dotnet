@@ -290,6 +290,15 @@ namespace Datadog.Trace.Configuration
                 return GetOtlpUri(signal, CreateDefaultOtlpUri(otlpProtocol, signal, agentHost), ConfigurationOrigins.Calculated, otlpProtocol, agentHost);
             }
 
+#elif !NET5_0_OR_GREATER
+            if (otlpProtocol == OtlpProtocol.Grpc && uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                // gRPC over Unix Domain Sockets requires SocketsHttpHandler.ConnectCallback, which doesn't exist in .NET Core 3.1
+                ValidationWarnings.Add($"The provided Uri {uri} represents a Unix Domain Socket (UDS), but the current runtime doesn't support gRPC over UDS. Falling back to the default TCP transport.");
+                // TODO: Record OTLP transport telemetry
+                return GetOtlpUri(signal, CreateDefaultOtlpUri(otlpProtocol, signal, agentHost), ConfigurationOrigins.Calculated, otlpProtocol, agentHost);
+            }
+
 #endif
             // TODO: Record OTLP transport telemetry
             return new(uri, OtlpProtocol: otlpProtocol);
