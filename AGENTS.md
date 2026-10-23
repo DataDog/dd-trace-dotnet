@@ -79,10 +79,44 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 ## Build & Development
 
-**Quick start:**
+**Quick start (managed-only, all platforms, no Docker):**
 - Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
-- Integration tests: `BuildAndRunIntegrationTests`
+- Integration tests: `./tracer/build.sh BuildAndRunIntegrationTests`
+
+### Linux profiler iteration (host: macOS or Linux)
+
+> Applies only to the **Linux** profiler / native loader / native tracer / API wrapper. For Windows-host profiler development (Windows native code, Visual Studio debugging) see `profiler/README.md`.
+
+The native Linux components must be built inside the Alpine builder image — direct `cmake` does not work. From macOS this needs Docker (Colima, Docker Desktop, …).
+
+**Initial / cold build** (once per fresh clone, or after pulling a large change):
+
+```bash
+./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
+```
+
+All five targets are required to run a scenario end-to-end: tracer home (managed tracer + native tracer), native loader (CorProfiler entry point), API wrapper (`LD_PRELOAD`), profiler home (`Datadog.Profiler.Native.so`), and samples (the `Samples.Computer01` demo app).
+
+**Iterative rebuild** after editing native profiler code (the common case):
+
+```bash
+./tracer/build_in_docker.sh BuildProfilerHome
+```
+
+Only rebuild more targets if you edited their source: `BuildNativeLoader` for `shared/src/Datadog.Trace.ClrProfiler.Native/`, `BuildTracerHome` for the managed tracer or `tracer/src/Datadog.Tracer.Native/`, `BuildNativeWrapper` for `profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/`, `BuildProfilerSamples` for `profiler/src/Demos/Samples.Computer01/`.
+
+**Run a scenario** with the freshly-built profiler attached:
+
+```bash
+./tracer/build_in_docker.sh RunProfilerScenario                                # default: PiComputation
+./tracer/build_in_docker.sh RunProfilerScenario --scenario 5 --scenario-timeout 30  # FibonacciComputation, 30s
+./tracer/build_in_docker.sh RunProfilerScenario --scenario 13 --scenario-args "--param 1"
+```
+
+On a Linux host with the build deps available locally, drop the `_in_docker` prefix and call `./tracer/build.sh RunProfilerScenario ...` directly.
+
+`RunProfilerScenario` is a Nuke target (`tracer/build/_build/Build.Profiler.RunScenario.cs`) that sets the CorProfiler env vars, `LD_PRELOAD`s the API wrapper, sets `DD_INTERNAL_PROFILING_ENABLED_ARM64=1` on arm64 hosts, and runs `Samples.Computer01.dll`. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files land under `.profiler-out/` (gitignored). The target surfaces a clear warning if `Datadog.Profiler.Native.so` fails to load.
 
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
