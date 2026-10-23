@@ -359,7 +359,7 @@ namespace Datadog.Trace.FeatureFlags
             InvokeConfigurationHandler(replay, "RegisterOnNewConfigEventHandler");
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool experimentationOptOutImmediate = false)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
@@ -377,7 +377,7 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
-            return evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
+            return evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes), experimentationOptOutImmediate);
         }
 
         [TestingAndPrivateOnly]

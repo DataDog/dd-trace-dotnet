@@ -86,6 +86,11 @@ internal static partial class ConfigurationKeys
         public const string FeatureFlagsEnabled = "DD_FEATURE_FLAGS_ENABLED";
 
         /// <summary>
+        /// Controls per-subject exclusion from experimentation. Supported values are disabled and immediate.
+        /// </summary>
+        public const string ExperimentationOptOutMode = "DD_FEATURE_FLAGS_EXPERIMENTATION_OPT_OUT_MODE";
+
+        /// <summary>
         /// Enables Feature Flags flagevaluation track EVP events through the configured Datadog Agent.
         /// Default value is <c>true</c> (enabled). Disabling this does not disable flag evaluation,
         /// configuration fetching, experiment exposures, or span enrichment.
