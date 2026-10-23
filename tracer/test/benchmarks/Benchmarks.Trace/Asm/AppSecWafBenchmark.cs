@@ -20,6 +20,7 @@ using Datadog.Trace.Configuration.Telemetry;
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
+[GcForce(true)]
 [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
 public class AppSecWafBenchmark
@@ -65,16 +66,6 @@ public class AppSecWafBenchmark
         AppSecBenchmarkUtils.CleanupDummyAgent();
         AppSecBenchmarkUtils.CleanupWafLibraryInvoker();
         _waf?.Dispose();
-    }
-
-    [IterationSetup]
-    public void IterationSetup()
-    {
-        // Force GC to reduce variance from native memory interactions
-        // WAF library uses unmanaged memory with allocation patterns outside .NET GC control
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
     }
 
     private static Dictionary<string, object> MakeRealisticNestedMapStage1(bool withAttack)
