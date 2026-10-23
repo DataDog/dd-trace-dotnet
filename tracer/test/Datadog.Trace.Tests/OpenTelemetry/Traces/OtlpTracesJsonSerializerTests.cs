@@ -244,8 +244,11 @@ public class OtlpTracesJsonSerializerTests
         var originalCulture = Thread.CurrentThread.CurrentCulture;
         try
         {
-            // sv-SE uses U+2212 as its negative sign
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("sv-SE");
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            culture.NumberFormat.NegativeSign = "NEG";
+            Thread.CurrentThread.CurrentCulture = culture;
+
+            // If a culture-sensitive formatting was used, it would produce "NEG1"
 
             var ddSpan = CreateSpan();
             ddSpan.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
