@@ -27,14 +27,15 @@ Exporter::~Exporter() = default;
 
 libdatadog::Success Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::vector<uint8_t>>> files, std::string metadata, std::string info, std::string processTags)
 {
-    auto s = ddog_prof_Profile_serialize(*profile->_impl, nullptr, nullptr);
+    ddog_prof_encoded_profile* rawEncoded = nullptr;
+    auto s = ddog_prof_profile_serialize(*profile->_impl, nullptr, nullptr, &rawEncoded);
 
-    if (s.tag == DDOG_PROF_PROFILE_SERIALIZE_RESULT_ERR)
+    if (s != DDOG_OK)
     {
-        return make_error(s.err);
+        return make_error(s);
     }
 
-    auto ep = EncodedProfile(&s.ok);
+    auto ep = EncodedProfile(rawEncoded);
     if (_fileSaver != nullptr)
     {
         auto success = _fileSaver->WriteToDisk(ep, profile->GetApplicationName(), files, metadata, info);

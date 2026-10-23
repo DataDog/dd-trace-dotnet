@@ -12,25 +12,19 @@
 
 extern "C"
 {
-#include "datadog/common.h"
-#include "datadog/profiling.h"
+#include "datadog_poc/common.h"
+#include "datadog_poc/profiling.h"
 }
 
 namespace libdatadog {
 
 struct SuccessImpl
 {
-    SuccessImpl(ddog_Error error) :
-        SuccessImpl(GetErrorMessage(error))
+    SuccessImpl(ddog_error_code error) :
+        SuccessImpl(std::string(ddog_last_error_message()))
     {
-        ddog_Error_drop(&error);
-    }
-
-    SuccessImpl(ddog_MaybeError error) :
-        SuccessImpl(GetErrorMessage(error.some))
-    {
-        assert(error.tag == DDOG_OPTION_ERROR_SOME_ERROR);
-        ddog_MaybeError_drop(error);
+        assert(error != DDOG_OK);
+        (void)error; // only used for the assert above - the message is already captured
     }
 
     SuccessImpl(std::string message) :
