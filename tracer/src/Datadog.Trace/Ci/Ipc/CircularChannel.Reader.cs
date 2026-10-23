@@ -35,8 +35,12 @@ internal partial class CircularChannel
 
         private void PollForMessages(object? state)
         {
-            while (!_pollingThreadFinishEvent.IsSet)
+            // Poll once more after Dispose is requested, so messages written before it are not lost.
+            // Dispose joins this thread before the channel releases the memory mapped file.
+            var finishing = false;
+            while (!finishing)
             {
+                finishing = _pollingThreadFinishEvent.IsSet;
                 try
                 {
                     InternalPollForMessage();
@@ -46,20 +50,15 @@ internal partial class CircularChannel
                     Log.Error(ex, "CircularChannel.Reader: Error while polling for messages (InternalPollForMessage)");
                 }
 
-                if (!_pollingThreadFinishEvent.IsSet)
+                if (!finishing)
                 {
-                    Thread.Sleep(_channel._settings.PollingInterval);
+                    _pollingThreadFinishEvent.Wait(_channel._settings.PollingInterval);
                 }
             }
         }
 
         private void InternalPollForMessage()
         {
-            if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref _channel._disposed) == 1)
-            {
-                return;
-            }
-
             if (_callback is null)
             {
                 // To avoid losing messages, we stop the polling if there are no subscribers

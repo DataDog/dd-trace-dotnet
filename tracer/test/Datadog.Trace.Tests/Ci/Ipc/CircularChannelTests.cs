@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Ipc;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -144,6 +145,27 @@ public class CircularChannelTests
 
         received.Wait(HangTimeout).Should().BeTrue("the message written before the channel was reopened should still be delivered");
         receivedValue.Should().Equal(valueSegment);
+    }
+
+    [Fact]
+    public async Task DisposingAReaderReadsMessagesWrittenBeforeIt()
+    {
+        // With an infinite polling interval the reader polls once when it starts and then only when it's disposed,
+        // so the message below is read either by that first poll or by Dispose.
+        var name = nameof(DisposingAReaderReadsMessagesWrittenBeforeIt) + "-" + Guid.NewGuid().ToString("n");
+        using var channel = new CircularChannel(name, new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = Timeout.Infinite });
+        using var writer = channel.GetWriter();
+        using var received = new ManualResetEventSlim();
+        var reader = channel.GetReader();
+        reader.SetCallback(_ => received.Set());
+
+        var message = new ArraySegment<byte>([1]);
+        writer.TryWrite(in message).Should().BeTrue();
+
+        // Dispose wakes the reader and polls once more before it returns
+        var disposing = Task.Run(reader.Dispose);
+        (await Task.WhenAny(disposing, Task.Delay(HangTimeout))).Should().BeSameAs(disposing);
+        received.IsSet.Should().BeTrue();
     }
 
     [Fact]
