@@ -255,9 +255,11 @@ build-linux-tracer-arm64-musl:
       - artifacts/native-symbols
       - artifacts/build_data/logs
       - artifacts/build_data/dumps
+      - artifacts/build_data/tests
       - profiler/build_data/tests
     reports:
       junit:
+        - artifacts/build_data/tests/*.xml
         - profiler/build_data/tests/*.xml
 
 build-linux-profiler-x64:
