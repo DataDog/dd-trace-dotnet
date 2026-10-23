@@ -92,7 +92,7 @@ internal sealed class TestOptimizationTestCommand
                 Common.Log.Debug("TestOptimizationTestCommand: Exception instrumentation was set or timed out.");
             }
 
-            result = DoRetries(new FlakyRetryBehavior(testOptimization), context, result);
+            result = DoRetries(new FlakyRetryBehavior(testOptimization, duration), context, result);
         }
         else if (atfWillRetry)
         {

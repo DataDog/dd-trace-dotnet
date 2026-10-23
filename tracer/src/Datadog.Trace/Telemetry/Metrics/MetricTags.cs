@@ -846,6 +846,12 @@ internal static class MetricTags
         [Description("test_management_enabled:false")] Disabled,
     }
 
+    public enum CIVisibilityDynamicFlakyRetryBuckets
+    {
+        [Description("")] Default,
+        [Description("has_custom_buckets:true")] Custom,
+    }
+
     public enum CIVisibilityRequestCompressed
     {
         [Description("")] Uncompressed,

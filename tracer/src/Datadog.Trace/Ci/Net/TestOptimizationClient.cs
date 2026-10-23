@@ -414,9 +414,9 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         {
             request.AddHeader(EvpSubdomainHeader, "api");
         }
-        else
+        else if (_testOptimization.Settings.ApiKey is { } apiKey)
         {
-            request.AddHeader(ApiKeyHeader, _testOptimization.Settings.ApiKey);
+            request.AddHeader(ApiKeyHeader, apiKey);
         }
     }
 
