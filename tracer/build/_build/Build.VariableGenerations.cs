@@ -927,6 +927,15 @@ partial class Build : NukeBuild
             branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
         }
 
+        if (string.IsNullOrWhiteSpace(branch))
+        {
+            branch = Environment.GetEnvironmentVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
+            if (string.IsNullOrWhiteSpace(branch))
+            {
+                branch = Environment.GetEnvironmentVariable("CI_COMMIT_BRANCH");
+            }
+        }
+
         Console.WriteLine("Base Branch: {0}", baseBranch);
         Console.WriteLine("Current Branch: {0}", branch);
 
@@ -941,6 +950,13 @@ partial class Build : NukeBuild
         }
 
         Console.WriteLine("false");
+
+        // GitLab containers may not have access to the runner's Git alternates.
+        // A provider-reported branch is sufficient to determine this comparison.
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI_JOB_ID")) && !string.IsNullOrWhiteSpace(branch))
+        {
+            return false;
+        }
 
         // *****
         // In case we cannot find the baseBranch we fallback to the git command
