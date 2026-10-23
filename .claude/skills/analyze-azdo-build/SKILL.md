@@ -1,6 +1,6 @@
 ---
 name: analyze-azdo-build
-description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. This skill should be used when the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
+description: Analyze Azure DevOps CI failures in dd-trace-dotnet, including offline triage of supplied errors or logs without a build ID. Use for failing builds, PR checks, and snapshot-versus-span-count diagnosis.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
 allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
@@ -10,7 +10,18 @@ allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAn
 
 Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
-## Prerequisites
+## Choose the analysis mode
+
+For supplied errors/logs or an offline request, use the supplied evidence and local files; no build ID is
+required. Skip prerequisites, build/PR auto-detection, fetching, retries, and snapshot updates. Treat a timeout
+in another job as separate unless evidence supports a shared cause.
+
+For later connected analysis, identify `tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id>`;
+`-IncludeLogs` downloads logs. Present these as future commands, not completed actions.
+
+For a request to inspect a live build or PR, follow the connected workflow within the user's task scope.
+
+## Prerequisites (connected analysis)
 
 - **PowerShell 5.1+** — Minimum required. PowerShell 7+ (`pwsh`) preferred; PowerShell 5.1 (`powershell.exe`, Windows only) is supported.
 - **Azure CLI** (`az`) — Optional for read-only analysis; required for stage retry.
@@ -36,13 +47,13 @@ See [scripts-reference.md](scripts-reference.md#prerequisites) for install instr
 
 Analyze CI failures for the dd-trace-dotnet repository.
 
-**Phase 1 - Quick Initial Analysis (DO THIS FIRST)**:
+**Phase 1 - Connected Quick Initial Analysis**:
 1. **Fetch build details** - Get build status, branch, commit
 2. **Identify failed tasks** - List which tasks/jobs failed
 3. **Show quick summary** - Present overview to user
 4. **Ask user what to investigate** - Prompt for next steps
 
-**Assumption**: All tests pass in master. If a test were consistently failing, it wouldn't have been merged.
+Compare with available base-branch results; do not assume master is green or invent results that were not supplied.
 
 **Phase 2 - Deep Analysis (ONLY IF USER REQUESTS)**:
 - Download and analyze logs (if available)
@@ -51,7 +62,7 @@ Analyze CI failures for the dd-trace-dotnet repository.
 
 ## Arguments
 
-The skill accepts these invocation patterns:
+For connected analysis, the skill accepts these invocation patterns:
 
 - **`pr <NUMBER>`** - Analyze failures for a GitHub PR
 - **`build <BUILD_ID>`** - Analyze a specific Azure DevOps build
@@ -61,7 +72,7 @@ Arguments are available as: `$ARGUMENTS`
 
 ## Implementation Steps
 
-### PHASE 1: Quick Initial Analysis
+### PHASE 1: Connected Quick Initial Analysis
 
 Perform these steps quickly to give user an overview, then ask what they want to investigate.
 
@@ -103,7 +114,7 @@ After presenting the quick summary, check if any failed tests are likely snapsho
 - **Error messages** containing `Received file does not match`, `*.received.*` vs `*.verified.*` diffs, or Verify assertion failures
 - **Test names** containing `SubmitsTraces` in `Datadog.Trace.ClrProfiler.IntegrationTests.*` — but **only if** the error is a snapshot diff, not a span count mismatch
 
-**Important**: `SubmitsTraces` tests typically assert on span count first (`Expected N spans but got M`), then compare snapshots. A span count mismatch is a deeper issue (missing/extra instrumentation), not a snapshot problem — updating snapshots won't help. Only suggest snapshot updates when the error is specifically about snapshot file content differences.
+**Important**: A span-count assertion (`Expected N spans but got M`, including zero) is not a snapshot-content diff; updating snapshots cannot fix it. Check the particular test's assertion order before claiming snapshot comparison never ran. Missing spans can result from instrumentation defects, startup/transport failures, or timing; the count alone does not prove a deterministic regression or rule out flakiness. Only suggest snapshot updates for an actual content diff whose change is intentional.
 
 If snapshot failures are detected:
 
@@ -184,8 +195,8 @@ Structure the output as:
        ⚠️ canceled_job_name (duration)
    ```
    Use ❌ for failed, ⚠️ for canceled stages/jobs. Tasks are listed with `- ` prefix under their job.
-4. **Timed Out Jobs**: Jobs with `result="canceled"` and duration >= 55 min (show duration)
-5. **Collateral Cancellations**: Jobs canceled in < 5 min (parent stage failure cascade)
+4. **Timed Out Jobs**: Identify timeout messages and check the applicable configured limit; show duration as supporting evidence, not a universal cutoff.
+5. **Other Cancellations**: Check timeline/parent events for cascade or manual cancellation; short duration alone does not establish the cause.
 6. **Failed Tests**: Specific test names extracted from error messages
 7. **Snapshot Mismatches** (if detected): List affected tests and show `UpdateSnapshotsFromBuild` command
 8. **Investigation menu**: Categorize failures / View logs / Full analysis / Retry failed stages / Update snapshots (if applicable)
@@ -199,10 +210,11 @@ Structure the output as:
 
 For detailed categorization rules, pattern examples, and the decision tree, see [failure-patterns.md](failure-patterns.md).
 
-**Quick reference** — three categories:
-- 🔴 **Real Failures** — Test assertions, compilation errors, segfaults, span count mismatches → Investigate
-- 🟡 **Flaky Tests** — Auto-retried tests, single-runtime failures, Alpine stack walking, ARM64 timeouts → Retry
-- 🔵 **Infrastructure** — Docker rate limits, network timeouts, disk space, job cancellation >= 55 min → Retry
+**Quick reference** — distinguish symptoms from causes:
+- **Assertions, span-count mismatches, compilation errors, crashes** → Investigate; an assertion does not establish whether the cause is deterministic, intermittent, or environmental.
+- **Retries or failures isolated to one runtime** → Check reproduction and run history; these can also expose real runtime-specific defects.
+- **Timeouts and cancellations** → Check messages, configured limits, and timeline events. Timing alone does not prove infrastructure failure.
+Recommend targeted retries only when the evidence warrants them; execute retries only within the user's authorized scope.
 
 ## Error Handling
 

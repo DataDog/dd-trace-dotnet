@@ -1,6 +1,26 @@
 # Tracer Debugging Guide
 
-This guide covers how to configure environment variables for debugging the Datadog .NET tracer locally.
+This guide covers local tracer debugging configuration and how to interpret runtime instrumentation evidence.
+
+## Confirming Runtime Instrumentation
+
+Correlate evidence with the specific method and running process:
+
+| Stage | Evidence and limits |
+|-------|---------------------|
+| Declaration | `[InstrumentMethod]` attributes under `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/` describe target assemblies, types, methods, and versions; they do not establish runtime selection. |
+| Selection/enqueue | The native log's `Method enqueued for ReJIT` records selection, not successful rewriting or CLR submission. |
+| Rewrite preparation | `GetReJITParameters` requests replacement IL. `*** CallTarget_RewriterCallback() Finished` confirms export into a local buffer, before CLR submission. |
+| CLR submission | `FunctionControlWrapper.ApplyChanges` submits the buffered body through `SetILFunctionBody`. Submission can fail; it does not prove compilation or execution. |
+| Execution/span production | A breakpoint in the relevant CallTarget callback confirms execution; a correlated integration span confirms span production. Callback execution alone does not guarantee a span, and a missing span does not locate the failure. |
+
+Source: [TracerMethodRewriter](../../tracer/src/Datadog.Tracer.Native/tracer_method_rewriter.cpp),
+[RejitHandler.NotifyReJITParameters](../../tracer/src/Datadog.Tracer.Native/rejit_handler.cpp), and
+[FunctionControlWrapper](../../tracer/src/Datadog.Tracer.Native/function_control_wrapper.cpp).
+
+`Finished` plus absence of `ReJITError` still does not prove CLR acceptance. State what remains unverified
+when making an inference. Managed initialization logs do not establish per-method rewriting; absent native
+logs are inconclusive without checking log level and capture completeness.
 
 ## Understanding `$(SolutionDir)` and Path References
 
