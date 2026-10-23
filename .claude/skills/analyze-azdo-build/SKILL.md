@@ -1,6 +1,6 @@
 ---
 name: analyze-azdo-build
-description: Analyze Azure DevOps CI failures in dd-trace-dotnet, including offline triage of supplied errors or logs without a build ID. Use for failing builds, PR checks, CI test failures, and snapshot-versus-span-count diagnosis. Reading this guidance does not require network calls; fetch build data only when the user's scope permits it.
+description: Analyze Azure DevOps CI failures in dd-trace-dotnet, including offline triage of supplied errors or logs without a build ID. Use for failing builds, PR checks, and snapshot-versus-span-count diagnosis.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
 allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
@@ -12,19 +12,14 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Choose the analysis mode
 
-For supplied errors/logs or an offline, local-only request, read this skill and use the evidence already
-available. A build ID is not required to triage that evidence. Skip tool prerequisite checks, build/PR
-auto-detection, and data fetching; do not run the analysis script, retry stages, or update snapshots.
-Use the snapshot guidance below and local source files to separate observations from possible causes.
-A timeout in another job may be related, but a shared cause needs evidence.
+For supplied errors/logs or an offline request, use the supplied evidence and local files; no build ID is
+required. Skip prerequisites, build/PR auto-detection, fetching, retries, and snapshot updates. Treat a timeout
+in another job as separate unless evidence supports a shared cause.
 
-If the user asks which helper to use later, identify
-`tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id>`; `-IncludeLogs` adds log downloads for a
-deeper investigation. Merely naming this skill does not identify the executable helper. Present these
-as future commands, not actions already performed.
+For later connected analysis, identify `tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id>`;
+`-IncludeLogs` downloads logs. Present these as future commands, not completed actions.
 
-For a request to inspect a live build or PR, follow the connected workflow below. Fetching data still
-requires permission under the user's task scope; loading the skill itself does not initiate any calls.
+For a request to inspect a live build or PR, follow the connected workflow within the user's task scope.
 
 ## Prerequisites (connected analysis)
 

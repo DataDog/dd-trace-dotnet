@@ -2,10 +2,9 @@
 
 Reference guide for categorizing and troubleshooting common CI failures in dd-trace-dotnet.
 
-Patterns below suggest investigations, not proven causes. Keep observations separate from hypotheses;
-use logs, applicable timeout settings, and reproduction history to classify a failure. A failed assertion
-can be intermittent or environmental, and a failure isolated to one runtime can be a code defect.
-Retry recommendations are conditional on evidence and the user's scope; they do not authorize execution.
+Classify failures using logs, configured limits, and reproduction history. Assertions and single-runtime
+failures do not establish a root cause. Recommend retries only when supported by evidence; executing them
+requires authorization within the user's task scope.
 
 ## Table of Contents
 

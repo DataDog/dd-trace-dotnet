@@ -97,8 +97,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Generate boilerplate (GUI): `./tracer/build.ps1 RunInstrumentationGenerator`
 - Generate boilerplate (CLI): `./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>`
 - Generators only scaffold code: copy GUI output or use CLI `--output-path <file>`, then implement handlers and add samples/tests.
-- When confirming instrumentation, separate selection/enqueue, rewrite preparation, CLR acceptance, and execution. `GetReJITParameters` requests replacement IL; `CallTarget_RewriterCallback() Finished` confirms rewrite preparation, before the later `ApplyChanges` submission. Neither these logs nor absence of `ReJITError` proves CLR acceptance or execution.
-- For evidence at each stage, read [Confirming runtime instrumentation](docs/development/TracerDebugging.md#confirming-runtime-instrumentation). Verify callback execution and span production separately; a missing span does not by itself locate the failure.
+- When confirming instrumentation, neither `CallTarget_RewriterCallback() Finished` nor absence of `ReJITError` proves CLR acceptance or execution. Read [Confirming runtime instrumentation](docs/development/TracerDebugging.md#confirming-runtime-instrumentation) for the evidence required at each stage.
 
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
 - **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
