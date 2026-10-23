@@ -525,8 +525,8 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(true, out _);
         var key = new SnsEdgeTagCacheKey("arn:topic1");
 
-        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"]);
-        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"]);
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicArn}", "type:sns"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicArn}", "type:sns"]);
 
         second.Should().BeSameAs(first);
     }
