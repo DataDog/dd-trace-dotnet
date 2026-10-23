@@ -2,11 +2,6 @@
 
 Reference guide for categorizing and troubleshooting common CI failures in dd-trace-dotnet.
 
-Patterns below suggest investigations, not proven causes. Keep observations separate from hypotheses;
-use logs, applicable timeout settings, and reproduction history to classify a failure. A failed assertion
-can be intermittent or environmental, and a failure isolated to one runtime can be a code defect.
-Retry recommendations are conditional on evidence and the user's scope; they do not authorize execution.
-
 ## Table of Contents
 
 - [Infrastructure Failures](#infrastructure-failures) — Docker rate limiting, network issues, timeouts, disk space
@@ -68,7 +63,7 @@ The job running on agent ... ran longer than the maximum time
 Test run timed out after 600000 ms
 ```
 
-**Observation**: An execution limit was exceeded. Slow infrastructure, a code-level hang, or an unsuitable limit are possible causes.
+**Cause**: Job exceeded Azure DevOps time limits (often due to slow infrastructure)
 
 **Solution**:
 - Retry the build
@@ -76,18 +71,16 @@ Test run timed out after 600000 ms
 
 #### Timeout via Cancellation
 
-**Detection**: Use an explicit timeout message and the applicable job/task limit. Cancellation status or duration alone is insufficient.
+**Detection**: Jobs with `result == "canceled"` and duration >= 55 minutes
 
-Timed-out jobs can appear as `canceled`; that status also covers other cancellation causes.
+**Why not "failed"?**: Azure DevOps marks timed-out jobs as "canceled" rather than "failed".
 
 **Differentiation**:
-| Evidence | Interpretation | Next check |
-|----------|----------------|------------|
-| Timeout message | Execution limit reached | Applicable configured limit and last task activity |
-| Parent failure/cancellation event | Possible cascade | Timeline ordering and dependency relationship |
-| Duration alone, including >=55 or <5 minutes | Cause unknown | Timeout messages, configured limits, manual cancellation, parent events |
-
-The repository's `.azure-pipelines/ultimate-pipeline.yml` defines different job/task limits. Do not assume a universal 60-minute limit.
+| Duration | Classification | Likely Cause |
+|----------|---------------|--------------|
+| >= 55 min | Timeout | Azure DevOps 60-min limit exceeded |
+| < 5 min | Collateral | Parent stage failure triggered cascade cancellation |
+| 5-55 min | Unknown | Could be manual cancellation or other cause |
 
 **Example**: Build 195486
 - Stage: `integration_tests_linux` - result: "failed"
@@ -152,7 +145,7 @@ Failed to walk N stacks for sampled exception: E_FAIL
 **Cause**: Azure DevOps already retried the test/job automatically
 
 **Solution**:
-- Previous attempts establish a retry occurred, not why it failed or that it is flaky
+- Likely flaky test
 - Check if it passed on retry
 - If still failing after retries, investigate deeper and alert **#apm-dotnet** on Slack
 
@@ -172,9 +165,9 @@ Failed to walk N stacks for sampled exception: E_FAIL
 **Cause**: Timing-sensitive behavior, runtime-specific quirks, or transient environment issues affecting a single runtime variant.
 
 **Solution**:
-- Compare attempts and logs before deciding whether a targeted retry is useful
+- Likely flaky — retry the build
 - If persistent on the same runtime after 2 retries, investigate runtime-specific behavior and alert **#apm-dotnet** on Slack
-- A real regression can affect only one runtime; passing on other runtimes does not rule it out
+- A real regression would typically fail across all runtimes, not just one
 
 ---
 
@@ -201,7 +194,7 @@ Failed to initialize security
 
 ## Real Failures
 
-These symptoms need investigation; assertions alone do not distinguish code defects from intermittent or environmental causes.
+These indicate actual code problems that need investigation. **Recommendation: Investigate before merging.**
 
 ### Test Assertion Failures
 
@@ -238,7 +231,7 @@ Verify assertion failure
 
 **Common test names**: `*.SubmitsTraces` and other integration tests in `Datadog.Trace.ClrProfiler.IntegrationTests` — but only when the error is a snapshot content diff, not a span count mismatch.
 
-**Important**: A span-count mismatch is a **Test Assertion Failure**, not a snapshot-content diff. Updating snapshots cannot fix missing spans. Verify the particular test's assertion order before claiming snapshot comparison never ran; the test name and absence of a diff alone do not establish execution order. Zero spans does not rule out startup, transport, or timing failures.
+**Important**: `SubmitsTraces` tests typically assert on span count first (`Expected N spans but got M`), then compare snapshots. A span count mismatch indicates missing/extra instrumentation and is a **Test Assertion Failure** (see above), not a snapshot problem. Updating snapshots won't help in that case.
 
 **Cause**: Code changes affected trace output (span tags, names, ordering, etc.). The actual output (`.received.txt`) no longer matches the expected snapshots (`.verified.txt` files in `tracer/test/snapshots/`).
 
@@ -378,9 +371,9 @@ Could not load native library for ARM64
 - All other runtimes in the same stage completed in ~14 minutes
 - The failing runtime is not consistently the same across multiple runs
 
-**Possible causes**: Transient agent delays, resource contention, or a runtime-specific code/test hang. Passing on other runtimes does not distinguish these causes.
+**Cause**: Transient ARM64 infrastructure issue — the agent likely timed out waiting for something (container startup, package download, slow I/O), not a code problem. A real regression would fail across multiple runtimes or consistently on the same runtime.
 
-**Next step**: Inspect the stalled task and compare attempts. Consider a targeted retry if evidence suggests a transient issue; investigate reproducible hangs.
+**Solution**: Retry the build. This is almost certainly a flaky CI infrastructure issue, not a code regression.
 
 ---
 
@@ -474,16 +467,28 @@ Expected tracer log but found none
 
 ## Categorization Decision Tree
 
-1. For a canceled job, check explicit timeout messages, configured limits, and parent/manual
-   cancellation events. Duration alone leaves the cause unknown.
-2. For an assertion failure, identify what was observed. A span-count failure needs investigation
-   of instrumentation, startup, transport, and timing; it is not fixed by updating snapshots.
-3. For an actual snapshot-content diff, establish whether the change is intentional before
-   proposing an update.
-4. Use logs and attempt history to distinguish a reproducible defect from a transient issue.
-   Single-runtime failures and previous attempts alone do not establish flakiness.
-5. Recommend a targeted retry only when supported by that evidence, and execute it only if
-   the user's scope permits it.
+```
+Are there canceled jobs?
+├─ Yes → Check duration:
+│   ├─ >= 55 min → **Timeout** (infrastructure, retry)
+│   ├─ < 5 min → **Collateral Cancellation** (check parent failure)
+│   └─ 5-55 min → **Unknown** (review manually, could be manual cancellation)
+│
+└─ No canceled jobs or after classifying them →
+    Is it an infrastructure issue (network, rate limit, disk)?
+    ├─ Yes → **Infrastructure** (retry)
+    └─ No → Is it an ARM64 stage where only one runtime timed out (~60 min) while others passed (~14 min)?
+        ├─ Yes → **Flaky Infrastructure** (retry — transient ARM64 agent issue)
+        └─ No → Does the test fail on only one runtime but pass on others?
+        ├─ Yes → **Flaky** (retry, alert #apm-dotnet if persistent)
+        └─ No → Does it have previousAttempts > 0 or is it a known flaky test?
+            ├─ Yes → **Flaky** (retry, monitor)
+            └─ No → Is the error a snapshot content diff (*.received.* vs *.verified.*)?
+                ├─ Yes → **Snapshot Mismatch** (update snapshots if intentional, investigate if not)
+                └─ No → **Real Failure** (investigate)
+                    Note: SubmitsTraces tests with span count mismatches are real failures, not snapshot issues
+
+```
 
 ---
 
@@ -493,13 +498,14 @@ Expected tracer log but found none
 |---------|----------|--------|----------|
 | `toomanyrequests`, `rate limit` | Infrastructure | Retry | Low |
 | `TLS handshake`, `Connection reset` | Infrastructure | Retry | Low |
-| `maximum execution time` | Timeout; cause unknown | Check limit and stalled task | Medium |
-| Canceled job, any duration | Cause unknown | Check messages, configured limit, and parent/manual cancellation events | Medium |
+| `maximum execution time` | Infrastructure | Retry | Medium |
+| Canceled job, duration >= 55 min | Infrastructure (Timeout) | Retry, alert #apm-dotnet if persistent | Medium |
+| Canceled job, duration < 5 min | Collateral | Check parent failure cause | None |
 | `Failed to walk N stacks` | Flaky | Retry, monitor | Low |
-| `previousAttempts > 0` | Retried; cause unknown | Compare attempts | Medium |
-| ARM64 stage: 1 runtime timeout, all others pass | Cause unknown | Inspect stalled task and compare runs | Medium |
-| Fails on 1 runtime, passes on others | Runtime-specific symptom | Investigate runtime differences and reproducibility | Medium |
-| `Expected X but got Y` | Assertion failure; cause unknown | Investigate | **High** |
+| `previousAttempts > 0` | Flaky | Retry | Low |
+| ARM64 stage: 1 runtime timeout (~60 min), all others pass (~14 min) | Flaky Infrastructure | Retry | Low |
+| Fails on 1 runtime, passes on others | Flaky | Retry, alert #apm-dotnet if persistent | Low |
+| `Expected X but got Y` | Real | Investigate | **High** |
 | `Received file does not match` | Real (Snapshot) | Update snapshots or investigate | **High** |
 | `error CS`, `MSB` | Real | Fix code | **High** |
 | `SIGSEGV`, `Access Violation` | Real | Investigate urgently | **Critical** |
@@ -510,9 +516,9 @@ Expected tracer log but found none
 
 ### Retry First
 - Infrastructure failures (network, rate limiting, disk)
-- Failures that run history supports treating as transient, within the user's retry scope
+- Tests with `previousAttempts > 0`
 - Known flaky tests (Alpine stack walking)
-- Do not retry solely because a failure affects only one runtime or already has previous attempts
+- Tests failing on only one runtime but passing on others
 
 ### Investigate Immediately (and Alert #apm-dotnet)
 - Compilation errors
