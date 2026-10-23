@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -491,6 +492,8 @@ namespace Datadog.Trace.DuckTyping
             // If the method wasn't found could be because a DuckType interface is being use in the parameters or in the return value.
             // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
             // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
+            int targetMethodOmittedParameterCount = int.MaxValue;
+            MethodInfo? ambiguousTargetMethod = null;
 
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
@@ -555,7 +558,9 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
-                // The proxy must have the same or less parameters than the candidate ( less is due to possible optional parameters in the candidate ).
+                // A proxy may omit only trailing target parameters whose optional defaults can be represented
+                // safely in the generated IL. The emitted method will push those defaults explicitly before the
+                // target call, because the CLR still requires one stack value for every declared parameter.
                 if (proxyMethodParameters.Length > candidateParameters.Length)
                 {
                     continue;
@@ -689,18 +694,11 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
-                if (skip)
+                for (int i = proxyMethodParameters.Length; !skip && i < candidateParameters.Length; i++)
                 {
-                    continue;
-                }
-
-                // The target method may have optional parameters with default values so we have to skip those
-                for (int i = proxyMethodParametersTypes.Length; i < candidateParameters.Length; i++)
-                {
-                    if (!candidateParameters[i].IsOptional)
+                    if (!MethodIlHelper.CanLoadOptionalParameterDefault(candidateParameters[i]))
                     {
                         skip = true;
-                        break;
                     }
                 }
 
@@ -709,14 +707,25 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                if (targetMethod is null)
+                int omittedParameterCount = candidateParameters.Length - proxyMethodParameters.Length;
+                if (targetMethod is null || omittedParameterCount < targetMethodOmittedParameterCount)
                 {
+                    // Prefer the candidate that needs the fewest synthesized arguments. This mirrors normal call
+                    // resolution for an exact-arity overload and avoids making it ambiguous with a longer method
+                    // whose remaining parameters happen to be optional.
                     targetMethod = candidateMethod;
+                    targetMethodOmittedParameterCount = omittedParameterCount;
+                    ambiguousTargetMethod = null;
                 }
-                else
+                else if (omittedParameterCount == targetMethodOmittedParameterCount)
                 {
-                    return DuckTypeTargetMethodAmbiguousMatchException.Create(proxyMethod, targetMethod, candidateMethod);
+                    ambiguousTargetMethod = candidateMethod;
                 }
+            }
+
+            if (ambiguousTargetMethod is not null)
+            {
+                return DuckTypeTargetMethodAmbiguousMatchException.Create(proxyMethod, targetMethod!, ambiguousTargetMethod);
             }
 
             selectedMethod = targetMethod;
@@ -913,6 +922,15 @@ namespace Datadog.Trace.DuckTyping
 
         private static class MethodIlHelper
         {
+            private static readonly ConstructorInfo DecimalConstructor =
+                typeof(decimal).GetConstructor(new[] { typeof(int), typeof(int), typeof(int), typeof(bool), typeof(byte) })!;
+
+            private static readonly ConstructorInfo DateTimeConstructor =
+                typeof(DateTime).GetConstructor(new[] { typeof(long) })!;
+
+            private static readonly FieldInfo MissingValueField =
+                typeof(Missing).GetField(nameof(Missing.Value), BindingFlags.Public | BindingFlags.Static)!;
+
             internal static LazyILGenerator InitialiseProxyMethod(
                 MethodBuilder? proxyMethod,
                 ParameterInfo[] proxyMethodDefinitionParameters,
@@ -959,6 +977,189 @@ namespace Datadog.Trace.DuckTyping
                 return il;
             }
 
+            /// <summary>
+            /// Determines whether an omitted target parameter has an optional value that can be emitted safely.
+            /// </summary>
+            /// <param name="parameter">The target parameter.</param>
+            /// <returns><c>true</c> when the generated method can push the omitted value.</returns>
+            internal static bool CanLoadOptionalParameterDefault(ParameterInfo parameter)
+            {
+                if (!parameter.IsOptional || HasCallerInfoAttribute(parameter))
+                {
+                    return false;
+                }
+
+                Type parameterType = parameter.ParameterType;
+                object? defaultValue = GetOptionalParameterDefault(parameter);
+                if (defaultValue is null || ReferenceEquals(defaultValue, Missing.Value))
+                {
+                    // A null metadata constant represents either a null reference or default(T) for a value type.
+                    // OptionalAttribute without a constant reports Missing.Value; language compilers pass that
+                    // singleton only when the declared type accepts it and otherwise pass default(T).
+                    return CanLoadDefaultValue(parameterType);
+                }
+
+                Type constantType = parameterType.IsEnum ? Enum.GetUnderlyingType(parameterType) : parameterType;
+                return Type.GetTypeCode(constantType) switch
+                {
+                    TypeCode.Boolean => defaultValue is bool,
+                    TypeCode.Char => defaultValue is char,
+                    TypeCode.SByte => defaultValue is sbyte,
+                    TypeCode.Byte => defaultValue is byte,
+                    TypeCode.Int16 => defaultValue is short,
+                    TypeCode.UInt16 => defaultValue is ushort,
+                    TypeCode.Int32 => defaultValue is int,
+                    TypeCode.UInt32 => defaultValue is uint,
+                    TypeCode.Int64 => defaultValue is long,
+                    TypeCode.UInt64 => defaultValue is ulong,
+                    TypeCode.Single => defaultValue is float,
+                    TypeCode.Double => defaultValue is double,
+                    TypeCode.Decimal => defaultValue is decimal,
+                    TypeCode.DateTime => defaultValue is DateTime,
+                    TypeCode.String => defaultValue is string,
+                    _ => false,
+                };
+            }
+
+            /// <summary>
+            /// Gets the metadata value for an optional target parameter.
+            /// </summary>
+            /// <param name="parameter">The target parameter.</param>
+            /// <returns>The value that the generated method must pass to the target.</returns>
+            private static object? GetOptionalParameterDefault(ParameterInfo parameter)
+            {
+#if NETFRAMEWORK
+                // Roslyn represents default(DateTime) with a null metadata constant. The .NET Framework
+                // reflection decoder special-cases DateTime and rejects that valid encoding with a
+                // FormatException before returning the value. Non-default DateTime constants use
+                // DateTimeConstantAttribute and must continue through RawDefaultValue to preserve their ticks.
+                if (parameter.ParameterType == typeof(DateTime)
+                 && (parameter.Attributes & ParameterAttributes.HasDefault) != 0
+                 && !parameter.IsDefined(typeof(DateTimeConstantAttribute), inherit: false))
+                {
+                    return null;
+                }
+#endif
+
+                return parameter.RawDefaultValue;
+            }
+
+            private static bool HasCallerInfoAttribute(ParameterInfo parameter)
+                // These values describe the source call site rather than a declared constant. A generated proxy
+                // has no reliable source file or line to reproduce, so the metadata fallback would be misleading.
+                => parameter.IsDefined(typeof(CallerMemberNameAttribute), inherit: false)
+                || parameter.IsDefined(typeof(CallerFilePathAttribute), inherit: false)
+                || parameter.IsDefined(typeof(CallerLineNumberAttribute), inherit: false)
+                || parameter.IsDefined(typeof(CallerArgumentExpressionAttribute), inherit: false);
+
+            private static bool CanLoadDefaultValue(Type type)
+                => !type.IsByRef
+                && !type.IsPointer
+                && !type.ContainsGenericParameters
+                && (type.IsValueType || type.IsClass || type.IsInterface || type.IsArray);
+
+            /// <summary>
+            /// Emits the value for an optional target parameter omitted by the proxy signature.
+            /// </summary>
+            /// <param name="il">The proxy method IL generator.</param>
+            /// <param name="parameter">The omitted target parameter.</param>
+            private static void AddIlToLoadOptionalParameterDefault(LazyILGenerator il, ParameterInfo parameter)
+            {
+                Type parameterType = parameter.ParameterType;
+                object? defaultValue = GetOptionalParameterDefault(parameter);
+                if (defaultValue is null)
+                {
+                    AddIlToLoadDefaultValue(il, parameterType);
+                    return;
+                }
+
+                if (ReferenceEquals(defaultValue, Missing.Value))
+                {
+                    if (!parameterType.IsValueType && parameterType.IsAssignableFrom(typeof(Missing)))
+                    {
+                        il.Emit(OpCodes.Ldsfld, MissingValueField);
+                    }
+                    else
+                    {
+                        AddIlToLoadDefaultValue(il, parameterType);
+                    }
+
+                    return;
+                }
+
+                Type constantType = parameterType.IsEnum ? Enum.GetUnderlyingType(parameterType) : parameterType;
+                switch (Type.GetTypeCode(constantType))
+                {
+                    case TypeCode.Boolean:
+                        il.WriteInt((bool)defaultValue ? 1 : 0);
+                        break;
+                    case TypeCode.Char:
+                        il.WriteInt((char)defaultValue);
+                        break;
+                    case TypeCode.SByte:
+                        il.WriteInt((sbyte)defaultValue);
+                        break;
+                    case TypeCode.Byte:
+                        il.WriteInt((byte)defaultValue);
+                        break;
+                    case TypeCode.Int16:
+                        il.WriteInt((short)defaultValue);
+                        break;
+                    case TypeCode.UInt16:
+                        il.WriteInt((ushort)defaultValue);
+                        break;
+                    case TypeCode.Int32:
+                        il.WriteInt((int)defaultValue);
+                        break;
+                    case TypeCode.UInt32:
+                        il.WriteInt(unchecked((int)(uint)defaultValue));
+                        break;
+                    case TypeCode.Int64:
+                        il.Emit(OpCodes.Ldc_I8, (long)defaultValue);
+                        break;
+                    case TypeCode.UInt64:
+                        il.Emit(OpCodes.Ldc_I8, unchecked((long)(ulong)defaultValue));
+                        break;
+                    case TypeCode.Single:
+                        il.Emit(OpCodes.Ldc_R4, (float)defaultValue);
+                        break;
+                    case TypeCode.Double:
+                        il.Emit(OpCodes.Ldc_R8, (double)defaultValue);
+                        break;
+                    case TypeCode.Decimal:
+                        int[] bits = decimal.GetBits((decimal)defaultValue);
+                        il.WriteInt(bits[0]);
+                        il.WriteInt(bits[1]);
+                        il.WriteInt(bits[2]);
+                        il.WriteInt((bits[3] & unchecked((int)0x80000000)) != 0 ? 1 : 0);
+                        il.WriteInt((bits[3] >> 16) & 0x7f);
+                        il.Emit(OpCodes.Newobj, DecimalConstructor);
+                        break;
+                    case TypeCode.DateTime:
+                        il.Emit(OpCodes.Ldc_I8, ((DateTime)defaultValue).Ticks);
+                        il.Emit(OpCodes.Newobj, DateTimeConstructor);
+                        break;
+                    case TypeCode.String:
+                        il.Emit(OpCodes.Ldstr, (string)defaultValue);
+                        break;
+                }
+            }
+
+            private static void AddIlToLoadDefaultValue(LazyILGenerator il, Type type)
+            {
+                if (!type.IsValueType)
+                {
+                    il.Emit(OpCodes.Ldnull);
+                    return;
+                }
+
+                LocalBuilder? defaultLocal = il.DeclareLocal(type);
+                int defaultLocalIndex = defaultLocal?.LocalIndex ?? 0;
+                il.Emit(OpCodes.Ldloca_S, defaultLocalIndex);
+                il.Emit(OpCodes.Initobj, type);
+                il.WriteLoadLocal(defaultLocalIndex);
+            }
+
             internal static DuckTypeException? AddIlToLoadArguments(
                 TypeBuilder? proxyTypeBuilder,
                 LazyILGenerator il,
@@ -989,13 +1190,14 @@ namespace Datadog.Trace.DuckTyping
 
                     if (outerParamInfo is null)
                     {
-                        // The outer (proxy) method is missing parameters, we check if the target parameter is optional
-                        // This will not occur for reverse proxies, where the parameter count must match
-                        if (!innerParamInfo.IsOptional)
+                        // Normal method selection has already validated omitted defaults. Keep the same guard here
+                        // for attribute-based selection, which can identify a target by declared parameter names.
+                        if (!CanLoadOptionalParameterDefault(innerParamInfo))
                         {
-                            // The target method parameter is not optional.
                             return DuckTypeProxyMethodParameterIsMissingException.Create(outerMethod, innerParamInfo);
                         }
+
+                        AddIlToLoadOptionalParameterDefault(il, innerParamInfo);
                     }
                     else
                     {
