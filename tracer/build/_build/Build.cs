@@ -463,6 +463,9 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
+                // Keep the managed runner loadable by both x86 and x64 test hosts.
+                .SetTargetPlatformAnyCPU()
+                .SetProperty("PlatformTarget", "AnyCPU")
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
