@@ -13,12 +13,14 @@ workflow:
     - |
       set -eu
 
+      DOTNET_SDK_VERSION=$(sh .gitlab/get-dotnet-sdk-version.sh)
+
       tester_image="dd-trace-dotnet/${BASE_IMAGE}-tester:${CI_JOB_ID}"
       tester_with_ca_certs_image="dd-trace-dotnet/${BASE_IMAGE}-tester-ca-certs:${CI_JOB_ID}"
       mkdir -p artifacts/build_data/infra_logs
       echo "Building ${BASE_IMAGE} test image for ${FRAMEWORK}"
       docker build \
-        --build-arg DOTNETSDK_VERSION=11.0.100-rc.2.26504.105 \
+        --build-arg "DOTNETSDK_VERSION=${DOTNET_SDK_VERSION}" \
         --tag "$tester_image" \
         --target tester \
         --file "tracer/build/_build/docker/${BASE_IMAGE}.dockerfile" \

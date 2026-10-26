@@ -72,6 +72,9 @@ build:
     - |
       set -eu
 
+      MANAGED_DOTNET_SDK_VERSION=$(sh .gitlab/get-dotnet-sdk-version.sh)
+      NATIVE_DOTNET_SDK_VERSION=${NATIVE_DOTNET_SDK_VERSION:-$MANAGED_DOTNET_SDK_VERSION}
+
       managed_image="dd-trace-dotnet/${MANAGED_BASE_IMAGE}-builder:${CI_JOB_ID}"
       native_image="dd-trace-dotnet/${NATIVE_BASE_IMAGE}-builder:${CI_JOB_ID}"
 
@@ -146,7 +149,6 @@ build-linux-tracer-x64:
   tags: ["docker-in-docker:amd64"]
   variables:
     MANAGED_BASE_IMAGE: debian
-    MANAGED_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     NATIVE_BASE_IMAGE: centos7
     NATIVE_DOTNET_SDK_VERSION: "7.0.306"
     RUN_NATIVE_TESTS: "true"
@@ -156,9 +158,7 @@ build-linux-tracer-x64-musl:
   tags: ["docker-in-docker:amd64"]
   variables:
     MANAGED_BASE_IMAGE: alpine
-    MANAGED_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     NATIVE_BASE_IMAGE: alpine
-    NATIVE_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     RUN_NATIVE_TESTS: "true"
 
 build-linux-tracer-arm64:
@@ -166,9 +166,7 @@ build-linux-tracer-arm64:
   tags: ["docker-in-docker:arm64"]
   variables:
     MANAGED_BASE_IMAGE: debian
-    MANAGED_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     NATIVE_BASE_IMAGE: debian
-    NATIVE_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     RUN_NATIVE_TESTS: "false"
 
 build-linux-tracer-arm64-musl:
@@ -176,9 +174,7 @@ build-linux-tracer-arm64-musl:
   tags: ["docker-in-docker:arm64"]
   variables:
     MANAGED_BASE_IMAGE: alpine
-    MANAGED_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     NATIVE_BASE_IMAGE: alpine
-    NATIVE_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     RUN_NATIVE_TESTS: "false"
 
 .build-linux-profiler:
@@ -191,6 +187,9 @@ build-linux-tracer-arm64-musl:
   script:
     - |
       set -eu
+
+      VALIDATION_DOTNET_SDK_VERSION=$(sh .gitlab/get-dotnet-sdk-version.sh)
+      NATIVE_DOTNET_SDK_VERSION=${NATIVE_DOTNET_SDK_VERSION:-$VALIDATION_DOTNET_SDK_VERSION}
 
       native_image="dd-trace-dotnet/${NATIVE_BASE_IMAGE}-profiler-builder:${CI_JOB_ID}"
       validation_image="dd-trace-dotnet/${VALIDATION_BASE_IMAGE}-profiler-validator:${CI_JOB_ID}"
@@ -269,7 +268,6 @@ build-linux-profiler-x64:
     NATIVE_BASE_IMAGE: centos7
     NATIVE_DOTNET_SDK_VERSION: "7.0.306"
     VALIDATION_BASE_IMAGE: debian
-    VALIDATION_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     RUN_NATIVE_TESTS: "true"
 
 build-linux-profiler-x64-musl:
@@ -277,9 +275,7 @@ build-linux-profiler-x64-musl:
   tags: ["docker-in-docker:amd64"]
   variables:
     NATIVE_BASE_IMAGE: alpine
-    NATIVE_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     VALIDATION_BASE_IMAGE: alpine
-    VALIDATION_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     RUN_NATIVE_TESTS: "true"
 
 build-linux-profiler-arm64:
@@ -287,9 +283,7 @@ build-linux-profiler-arm64:
   tags: ["docker-in-docker:arm64"]
   variables:
     NATIVE_BASE_IMAGE: debian
-    NATIVE_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     VALIDATION_BASE_IMAGE: debian
-    VALIDATION_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     RUN_NATIVE_TESTS: "false"
 
 build-linux-profiler-arm64-musl:
@@ -297,9 +291,7 @@ build-linux-profiler-arm64-musl:
   tags: ["docker-in-docker:arm64"]
   variables:
     NATIVE_BASE_IMAGE: alpine
-    NATIVE_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     VALIDATION_BASE_IMAGE: alpine
-    VALIDATION_DOTNET_SDK_VERSION: "11.0.100-rc.2.26504.105"
     RUN_NATIVE_TESTS: "false"
 
 build-linux-universal-x64:
