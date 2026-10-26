@@ -720,27 +720,6 @@ namespace Datadog.Trace.Tests.Configuration
             }
         }
 
-        private static IEnumerable<(Count? Metric, string OtelSetting, string DdSetting)> GetExpectedOtelPropagationMetrics(string ddValue, string otelValue)
-        {
-            var otelSetting = ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant();
-            var ddSetting = "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant();
-
-            if (ddValue is not null && otelValue is not null)
-            {
-                yield return (Count.OpenTelemetryConfigHiddenByDatadogConfig, otelSetting, ddSetting);
-            }
-            else if (otelValue is "," or "jaeger")
-            {
-                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
-            }
-
-            // Values mixing supported and unsupported propagators
-            if (otelValue is "tracecontext,baggage,jaeger,xray" or "b3,ottrace" or "tracecontext,jaeger")
-            {
-                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
-            }
-        }
-
         [Theory]
         // Values with no supported propagator are reported as invalid instead
         [InlineData(null, "not-a-propagator", null)]
@@ -772,26 +751,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.PropagationStyleInject.Should().BeEquivalentTo("tracecontext");
             settings.PropagationStyleExtract.Should().BeEquivalentTo("tracecontext");
-        }
-
-        private static TracerSettings ShouldWarnAboutUnsupportedOtelPropagators(IConfigurationSource source, string expectedWarningValue)
-        {
-            var errorLog = new OverrideErrorLog();
-            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
-
-            var log = new Mock<IDatadogLogger>();
-            errorLog.ProcessAndClearActions(log.Object, new MetricsTelemetryCollector());
-
-            log.Verify(
-                l => l.Warning(
-                    It.Is<string>(s => s.Contains("unsupported values")),
-                    ConfigurationKeys.OpenTelemetry.Propagators,
-                    It.Is<string>(v => expectedWarningValue == null || v == expectedWarningValue),
-                    It.IsAny<int>(),
-                    It.IsAny<string>()),
-                expectedWarningValue is null ? Times.Never() : Times.Once());
-
-            return settings;
         }
 
         [Theory]
@@ -1439,6 +1398,47 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.ExperimentalFeaturesEnabled.Should().BeEquivalentTo(expected);
+        }
+
+        private static IEnumerable<(Count? Metric, string OtelSetting, string DdSetting)> GetExpectedOtelPropagationMetrics(string ddValue, string otelValue)
+        {
+            var otelSetting = ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant();
+            var ddSetting = "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant();
+
+            if (ddValue is not null && otelValue is not null)
+            {
+                yield return (Count.OpenTelemetryConfigHiddenByDatadogConfig, otelSetting, ddSetting);
+            }
+            else if (otelValue is "," or "jaeger")
+            {
+                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
+            }
+
+            // Values mixing supported and unsupported propagators
+            if (otelValue is "tracecontext,baggage,jaeger,xray" or "b3,ottrace" or "tracecontext,jaeger")
+            {
+                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
+            }
+        }
+
+        private static TracerSettings ShouldWarnAboutUnsupportedOtelPropagators(IConfigurationSource source, string expectedWarningValue)
+        {
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+
+            var log = new Mock<IDatadogLogger>();
+            errorLog.ProcessAndClearActions(log.Object, new MetricsTelemetryCollector());
+
+            log.Verify(
+                l => l.Warning(
+                    It.Is<string>(s => s.Contains("unsupported values")),
+                    ConfigurationKeys.OpenTelemetry.Propagators,
+                    It.Is<string>(v => expectedWarningValue == null || v == expectedWarningValue),
+                    It.IsAny<int>(),
+                    It.IsAny<string>()),
+                expectedWarningValue is null ? Times.Never() : Times.Once());
+
+            return settings;
         }
     }
 }
