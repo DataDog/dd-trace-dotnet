@@ -230,7 +230,7 @@ cases:
       - FindLibdatadog.cmake uses SHA-256 hashes and a v-prefixed version (e.g. v2.0.0) from DataDog/libdatadog-dotnet — the .NET-specific distribution, NOT upstream DataDog/libdatadog; the vcpkg version-string has NO v prefix.
       - portfile.cmake uses SHA-512 hashes for the Windows x64/x86 builds.
       - Verifies by running the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
-      - Normally moves Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if exports change.
+      - Normally moves Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if undefined/imported symbols change.
     bad_signals:
       - Says there is a single version to update / only one file to change.
       - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).
