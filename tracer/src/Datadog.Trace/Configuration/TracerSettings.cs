@@ -105,23 +105,17 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
 
-            // Only OTEL_SDK_DISABLED=true has an effect: "false", unset and empty leave the DD_* settings in charge
-            var otelActivityListenerEnabled = config
-                                             .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
-                                             .AsBoolResult(
-                                                  value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
-                                                               ? ParsingResult<bool>.Success(result: false)
-                                                               : ParsingResult<bool>.Failure());
-            OtelSdkDisabled = otelActivityListenerEnabled.ConfigurationResult is { IsValid: true, Result: false };
+            var otelSdkDisabled = GetOtelSdkDisabled(config);
+            OtelSdkDisabled = otelSdkDisabled.ConfigurationResult is { IsValid: true, Result: true };
 
-            // Unlike other OTEL_* settings, OTEL_SDK_DISABLED=true takes precedence over its Datadog equivalent,
-            // so OverrideWith (which favors DD_TRACE_OTEL_ENABLED) only applies when it doesn't
+            // Unlike other OTEL_* settings, OTEL_SDK_DISABLED=true takes precedence over its Datadog equivalent.
+            // Otherwise it's unset or invalid, so OverrideWith only uses it to report a hidden or invalid value.
             var activityListenerEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
                                          .AsBoolResult();
             IsActivityListenerEnabled = OtelSdkDisabled
                                             ? DisableIfOtelSdkDisabled(activityListenerEnabled.ConfigurationResult is { IsValid: true, Result: true }, ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
-                                            : activityListenerEnabled.OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
+                                            : activityListenerEnabled.OverrideWith(in otelSdkDisabled, ErrorLog, defaultValue: false);
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -1638,6 +1632,22 @@ namespace Datadog.Trace.Configuration
 
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, new());
+
+        /// <summary>
+        /// Reads <see cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/>. Only "true" (case-insensitive) is valid:
+        /// "false", unset, empty and other values leave the DD_* settings in charge.
+        /// Every reader uses this, so they all resolve the same value across composite sources.
+        /// </summary>
+        internal static ConfigurationBuilder.StructConfigurationResultWithKey<bool> GetOtelSdkDisabled(in ConfigurationBuilder config)
+            => config
+              .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
+              .AsBoolResult(
+                   value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                                ? ParsingResult<bool>.Success(result: true)
+                                : ParsingResult<bool>.Failure());
+
+        internal static bool IsOtelSdkDisabled(in ConfigurationBuilder config)
+            => GetOtelSdkDisabled(config).ConfigurationResult is { IsValid: true, Result: true };
 
         internal static ReadOnlyDictionary<string, string>? TrimConfigKeysValues(ConfigurationBuilder.HasKeys key)
         {

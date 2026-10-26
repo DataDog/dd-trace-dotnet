@@ -589,7 +589,7 @@ namespace Datadog.Trace.Configuration
                                      .Value;
 
                 OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()?.Trim();
-                OtelSdkDisabled = string.Equals(config.WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled).AsString(), "true", StringComparison.OrdinalIgnoreCase);
+                OtelSdkDisabled = TracerSettings.IsOtelSdkDisabled(config);
 
                 OtlpProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
                 OtlpEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();

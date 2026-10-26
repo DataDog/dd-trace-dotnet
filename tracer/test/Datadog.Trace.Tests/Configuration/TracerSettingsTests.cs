@@ -701,6 +701,28 @@ namespace Datadog.Trace.Tests.Configuration
             }
         }
 
+        [Fact]
+        public void OtelSdkDisabled_ResolvesTheSameValueAcrossCompositeSources()
+        {
+            // The composite source skips the invalid value in the first source and falls back to "true" in the second
+            var source = new CompositeConfigurationSource(
+            [
+                CreateConfigurationSource(
+                    (ConfigurationKeys.OpenTelemetry.SdkDisabled, "invalid"),
+                    (ConfigurationKeys.TraceEnabled, "invalid"),
+                    (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                    (ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf")),
+                CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.SdkDisabled, "true")),
+            ]);
+
+            var settings = new TracerSettings(source);
+
+            using var scope = new AssertionScope();
+            settings.OtelSdkDisabled.Should().BeTrue();
+            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeFalse();
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
+        }
+
         [Theory]
         [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", null, new[] { "test1", "test2" })]
         [InlineData("", "test3,, ,test4", "test5,, ,test6", null, new[] { "Datadog", "tracecontext", "baggage" })]

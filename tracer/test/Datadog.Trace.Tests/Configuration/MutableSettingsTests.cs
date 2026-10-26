@@ -191,13 +191,14 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, "none", false)]
-        // Any DD_TRACE_ENABLED value overrides it, and an invalid one falls back to the default
+        // An empty or invalid DD_TRACE_ENABLED is treated as unset
+        [InlineData("", null, false)]
+        [InlineData("invalid", null, false)]
+        // Only a valid DD_TRACE_ENABLED overrides it
         [InlineData("true", null, true)]
         [InlineData("1", "otlp", true)]
         [InlineData("false", null, false)]
         [InlineData("0", "otlp", false)]
-        [InlineData("", null, true)]
-        [InlineData("invalid", null, true)]
         public async Task TraceEnabledWithOtelSdkDisabled(string value, string otelTracesExporter, bool areTracesEnabled)
         {
             var settings = new NameValueCollection
@@ -220,6 +221,18 @@ namespace Datadog.Trace.Tests.Configuration
             var assertion = areTracesEnabled ? Times.Once() : Times.Never();
 
             _writerMock.Verify(w => w.WriteTrace(in It.Ref<SpanCollection>.IsAny), assertion);
+        }
+
+        [Fact]
+        public void TraceEnabledWithOtelSdkDisabled_IgnoredWithoutDefaultSources()
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"));
+            var tracerSettings = new TracerSettings(source);
+
+            tracerSettings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
+
+            // Manual configuration with useDefaultSources: false starts from the defaults, so OTEL_SDK_DISABLED doesn't apply
+            MutableSettings.CreateWithoutDefaultSources(tracerSettings, new ConfigurationTelemetry()).TraceEnabled.Should().BeTrue();
         }
 
         [Theory]

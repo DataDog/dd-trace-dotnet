@@ -971,11 +971,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                 .WithKeys(ConfigurationKeys.TraceEnabled)
                                 .AsBoolResult();
 
+        // Read OTEL_SDK_DISABLED from this snapshot's source rather than tracerSettings,
+        // so that settings created without default sources ignore it.
         bool traceEnabled;
-        if (tracerSettings.OtelSdkDisabled && !traceEnabledResult.ConfigurationResult.IsPresent)
+        if (TracerSettings.IsOtelSdkDisabled(config) && traceEnabledResult.ConfigurationResult is not { IsValid: true })
         {
             // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false and takes precedence over OTEL_TRACES_EXPORTER.
-            // Any DD_TRACE_ENABLED value overrides it, and an invalid one falls back to the default (true).
+            // Only a valid DD_TRACE_ENABLED overrides it: an empty or invalid value is treated as unset.
             telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
             traceEnabled = false;
         }
