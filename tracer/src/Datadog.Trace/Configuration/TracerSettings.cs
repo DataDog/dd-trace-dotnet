@@ -546,6 +546,16 @@ namespace Datadog.Trace.Configuration
                         ConfigurationResult<string[]>.Valid([..propagatorsBySupport[true]], otelPropagation.ConfigurationResult.TelemetryOverride));
                 }
             }
+            else if (otelPropagation.ConfigurationResult.IsPresent)
+            {
+                // Report once, instead of once per OverrideWith call (inject and extract)
+                ErrorLog.LogInvalidConfiguration(otelPropagation.Key);
+                otelPropagation = new(
+                    otelPropagation.Telemetry,
+                    otelPropagation.Key,
+                    otelPropagation.RecordValue,
+                    ConfigurationResult<string[]>.NotFound());
+            }
 
             PropagationStyleInject = config
                .WithKeys(ConfigurationKeys.PropagationStyleInject)
