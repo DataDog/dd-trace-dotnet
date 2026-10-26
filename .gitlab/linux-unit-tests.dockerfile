@@ -2,7 +2,8 @@ ARG TESTER_IMAGE=dd-trace-dotnet/debian-tester:latest
 
 FROM ${TESTER_IMAGE}
 
-COPY --from=registry.ddbuild.io/images/datadog-ca-certs:standard /certs/ /usr/local/share/ca-certificates/
+# Pin the multi-architecture index so x64 and ARM64 jobs use reviewed trust roots.
+COPY --from=registry.ddbuild.io/images/datadog-ca-certs:standard@sha256:451a0209af8cff55760f798e99fa5a5a220b3ea94aef9d0da9208f533be90cea /certs/ /usr/local/share/ca-certificates/
 
 RUN chmod -R o-w /usr/local/share/ca-certificates \
     && update-ca-certificates
