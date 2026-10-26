@@ -226,11 +226,11 @@ cases:
       through everything I have to update in this repo and how to verify it. Give a
       plan using local repository evidence; do not edit files, fetch releases, or run builds.
     expected_criteria:
-      - Updates BOTH version pins — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
+      - Identifies both version pins to update — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
       - FindLibdatadog.cmake uses SHA-256 hashes and a v-prefixed version (e.g. v2.0.0) from DataDog/libdatadog-dotnet — the .NET-specific distribution, NOT upstream DataDog/libdatadog; the vcpkg version-string has NO v prefix.
       - portfile.cmake uses SHA-512 hashes for the Windows x64/x86 builds.
-      - Verifies by running the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
-      - Normally moves Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if undefined/imported symbols change.
+      - Proposes verification using the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
+      - Normally proposes moving Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if undefined/imported symbols change.
     bad_signals:
       - Says there is a single version to update / only one file to change.
       - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).

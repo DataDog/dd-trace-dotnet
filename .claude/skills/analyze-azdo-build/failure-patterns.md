@@ -70,8 +70,8 @@ Test run timed out after 600000 ms
 **Observation**: An execution limit was exceeded. Slow infrastructure, a code-level hang, or an unsuitable limit are possible causes.
 
 **Solution**:
-- Retry the build
-- If persistent, investigate test performance and alert **#apm-dotnet** on Slack
+- Check the configured limit, last task activity, and run history to investigate why the limit was reached.
+- Consider a targeted retry if the evidence suggests a transient issue; investigate reproducible hangs or unsuitable limits.
 
 #### Timeout via Cancellation
 
@@ -91,15 +91,12 @@ The repository's `.azure-pipelines/ultimate-pipeline.yml` defines different job/
 **Example**: Build 195486
 - Stage: `integration_tests_linux` - result: "failed"
 - Job: `DockerTest alpine_netcoreapp3.0_group1` - result: "canceled", duration: 60.3 min
-- Diagnosis: Job timed out, causing stage to fail
-- Action: Retry once; if persistent, investigate and alert **#apm-dotnet** on Slack (check test performance, resource contention)
+- Diagnosis: Cancellation cause unknown from the supplied status and duration alone.
+- Action: Check timeout messages, the configured limit, and timeline events before identifying the cause or recommending a retry.
 
 **Solution**:
-- Retry the build (may be transient infrastructure slowness)
-- If persistent after 2 runs, investigate and alert **#apm-dotnet** on Slack:
-  - Check job logs for stuck tests or infinite loops
-  - Look for resource contention (CPU, memory, I/O)
-  - Compare with successful runs to identify anomalies
+- Check job logs for stuck tests or infinite loops, resource contention (CPU, memory, I/O), and differences from successful runs.
+- Consider a targeted retry only if those findings suggest a transient issue; investigate reproducible failures and alert **#apm-dotnet** on Slack when needed.
 
 ---
 
