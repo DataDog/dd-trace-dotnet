@@ -21,10 +21,25 @@ cases:
       - Decorate with the [InstrumentMethod] attribute (assembly/type/method + version range).
       - Implement OnMethodBegin and OnMethodEnd / OnAsyncMethodEnd handlers.
       - Tests under tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests with sample apps in tracer/test/test-applications/integrations.
-      - Mentions the instrumentation generator to scaffold boilerplate. Both the build.ps1 RunInstrumentationGenerator entry point and the documented CLI are valid. docs/development/for-ai/InstrumentationGenerator-CLI.md documents dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options], including inspect <assembly-path> --list-methods <type-full-name> --json for discovery before generation. The project exists and targets net11.0; these names and flags are not fabricated. Listing every invocation is not required.
+      - >-
+        Mentions a valid instrumentation generator entry point: ./tracer/build.ps1 RunInstrumentationGenerator (GUI),
+        RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>
+        via tracer/build.ps1, tracer/build.sh, or tracer/build.cmd (Nuke wrapper), or
+        dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- generate <dll> --type <type> --method <method> (direct CLI).
+        The wrapper in tracer/build/_build/Build.Utilities.cs maps its flags to the direct CLI arguments;
+        --output-path maps to --output. Both accept --overload-index <n>. For parameter types, the wrapper splits
+        --parameter-types "<type1> <type2>"; the direct CLI requires separate arguments: --parameter-types <type1> <type2>.
+        the direct CLI also accepts -t/-m aliases. The installed tool name is dd-autoinstrumentation, with
+        inspect <assembly-path> --list-methods <type-full-name> --json documented in docs/development/for-ai/InstrumentationGenerator-CLI.md.
+        One valid invocation is sufficient; alternatives and discovery are optional. Assess argument correctness
+        and actionable guidance, not how many alternatives are listed.
+        The GUI displays code to copy; the CLI prints code or writes to an explicit output path.
+        Neither chooses the integration folder nor implements handler behavior or test/sample wiring.
+        These limits need not all be listed, but claims about automation must respect them.
     bad_signals:
       - Puts the integration under profiler/src.
-      - Invents file paths or test projects that do not exist. The documented tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ project, its net11.0 target, and inspect/--list-methods/--json CLI options are valid and do not trigger this signal.
+      - Invents file paths, test projects, or generator commands. The entry points and flags above are valid, but using a real flag with the wrong entry point can still be an error.
+      - Claims the generator chooses and populates the integration folder automatically or implements span behavior and tests. Saying it generates boilerplate is correct.
       - Tells the user to edit generated (.g.) files by hand.
 
   - id: dotnet-tracer-test-selection-httpclient-002
@@ -67,7 +82,7 @@ cases:
       - Gives a whole-product disable message using "Datadog SDK", such as "The Datadog SDK has been disabled". A plain message or a logging call is equally acceptable.
       - Explains that bare "Profiler" is ambiguous and should not name the whole SDK in this message; mentioning it to explain why to avoid it is correct.
       - Distinguishes the whole product from individual components. "Instrumentation" names native auto-instrumentation, "Continuous Profiler" names the profiling product, and "Datadog.Trace.dll" names the managed assembly. Advising against these component names for this whole-product message is correct, not a terminology error; an exhaustive component glossary is not required.
-      - If discussing the managed assembly's preferred name, uses Datadog.Trace.dll rather than "managed profiler". Omitting this optional aside is not a defect in an otherwise correct whole-product message and explanation. Listing "managed profiler" and "Datadog.Trace.dll" together as terms to avoid for the whole-product message is acceptable; do not infer that this rejects Datadog.Trace.dll as the preferred assembly name. Penalize this naming distinction only when the answer explicitly recommends "managed profiler" as the assembly's name or explicitly claims Datadog.Trace.dll is an incorrect assembly name.
+      - If discussing the managed assembly, uses Datadog.Trace.dll as its preferred name. This aside is optional and does not alone justify a pairwise win. Listing "managed profiler" and "Datadog.Trace.dll" as terms to avoid for the whole-product message is acceptable; penalize only explicitly recommending "managed profiler" as the assembly name or rejecting Datadog.Trace.dll as that name.
     bad_signals:
       - Uses the bare word "Profiler" as the SDK's name in the proposed message, rather than mentioning it as a term to avoid.
       - Explicitly endorses "managed profiler" as the managed tracer's name or claims Datadog.Trace.dll is an incorrect assembly name. Listing either or both as terms to avoid for the whole-product message is not this bad signal.
@@ -174,12 +189,19 @@ cases:
     expected_criteria:
       - Locates source declarations in InstrumentMethod attributes under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/. Generated definitions may be used as a cross-check; listing every generated artifact is not required.
       - Places per-method rewrite evidence in the native tracer log, not the managed log. Managed initialization messages can provide context but do not prove that a specific method was rewritten.
-      - Explains the limits of the relevant method's native-log evidence. "Method enqueued for ReJIT" indicates selection/enqueue; "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer. The later ApplyChanges call submits the replacement IL to the CLR and can still fail. Correctly challenges the premise that either line alone proves runtime instrumentation was applied; claiming CLR acceptance requires additional evidence. Equivalent explanations are acceptable without exact log wording or internal API names, and neither line alone proves the method executed or produced a span.
+      - >-
+        Explains the limits of the relevant method's native-log evidence. "Method enqueued for ReJIT" indicates selection/enqueue;
+        "*** CallTarget_RewriterCallback() Finished" indicates successful rewrite preparation/export into a local buffer.
+        The later ApplyChanges call submits the replacement IL to the CLR and can still fail.
+        Neither line, even without a ReJITError log, proves CLR acceptance, method execution, or span production.
+        Tentative inference is acceptable if the answer makes clear that further verification is needed.
+        Equivalent explanations are acceptable without exact log wording or internal API names.
       - If citing tracer/build/supported_calltargets.g.json, treats it as a valid build-generated enumeration of instrumented targets, not hand-authored configuration. Reading it is valid; it may need to be generated before it exists in a clean checkout. The answer need not mention this optional artifact.
     bad_signals:
       - Claims a managed initialization log proves that a specific method's JIT/ReJIT instrumentation replacement succeeded.
       - Presents a hand-authored configuration file as the authoritative list of instrumented methods or recommends hand-editing generated definitions. Merely pointing to a generated enumeration, including tracer/build/supported_calltargets.g.json, does not trigger this signal.
       - Claims enqueueing alone proves a successful rewrite, that an enqueue/rewrite-completion log alone proves the CLR accepted the replacement IL, or that either line alone proves the method executed or a span was produced.
+      - Claims absence of ReJITError, alone or combined with a rewrite-completion log, proves the CLR accepted the replacement IL. A qualified inference that explicitly requires further verification does not trigger this signal.
 
   - id: dotnet-tracer-debug-logging-in-prod-012
     files: [AGENTS.md]
@@ -204,18 +226,18 @@ cases:
       through everything I have to update in this repo and how to verify it. Give a
       plan using local repository evidence; do not edit files, fetch releases, or run builds.
     expected_criteria:
-      - Updates BOTH version pins — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
+      - Identifies both version pins to update — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
       - FindLibdatadog.cmake uses SHA-256 hashes and a v-prefixed version (e.g. v2.0.0) from DataDog/libdatadog-dotnet — the .NET-specific distribution, NOT upstream DataDog/libdatadog; the vcpkg version-string has NO v prefix.
       - portfile.cmake uses SHA-512 hashes for the Windows x64/x86 builds.
-      - Verifies by running the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
-      - Notes Linux/macOS and Windows versions can differ, and the NativeValidation symbol snapshots may need regenerating.
+      - Proposes verification using the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
+      - Normally proposes moving Linux/macOS and Windows pins to the same libdatadog-dotnet release; a deliberate partial update needs explanation. NativeValidation symbol snapshots may need regenerating if undefined/imported symbols change.
     bad_signals:
       - Says there is a single version to update / only one file to change.
       - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).
       - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
       - Invents a libdatadog version pin in the root vcpkg.json.
       - Bumps to an upstream DataDog/libdatadog tag/version instead of the DataDog/libdatadog-dotnet release.
-      - Indicates the project's libdatadog skill / instructions are wrong, outdated, or had to be corrected against the actual repo files.
+      - Invents release versions or checksums.
 
   # ---- Control / out-of-scope cases (detect AGENTS.md context saturation) ----
   # General C#/.NET questions AGENTS.md does NOT cover. They should not benefit from AGENTS.md content, but a
