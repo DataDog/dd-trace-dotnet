@@ -37,6 +37,28 @@ internal static partial class ConfigurationKeys
         public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
 
         /// <summary>
+        /// Configuration key for the maximum number of OTLP logs to export at one time.
+        /// Must be positive and not greater than <see cref="BlrpMaxQueueSize"/>.
+        /// Default value is <c>512</c>.
+        /// Ignored when <see cref="ConfigurationKeys.DirectLogSubmission.BatchSizeLimit"/> is set.
+        /// </summary>
+        public const string BlrpMaxExportBatchSize = "OTEL_BLRP_MAX_EXPORT_BATCH_SIZE";
+
+        /// <summary>
+        /// Configuration key for the maximum number of OTLP logs to hold in the internal queue.
+        /// Must be positive. Default value is <c>2048</c>.
+        /// Ignored when <see cref="ConfigurationKeys.DirectLogSubmission.QueueSizeLimit"/> is set.
+        /// </summary>
+        public const string BlrpMaxQueueSize = "OTEL_BLRP_MAX_QUEUE_SIZE";
+
+        /// <summary>
+        /// Configuration key for the delay between two consecutive OTLP logs exports, in milliseconds.
+        /// Must be positive; <c>0</c> is not supported. Default value is <c>1000</c>ms.
+        /// Ignored when <see cref="ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds"/> is set.
+        /// </summary>
+        public const string BlrpScheduleDelayMs = "OTEL_BLRP_SCHEDULE_DELAY";
+
+        /// <summary>
         /// Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
         /// Used when <see cref="ExporterOtlpMetricsEndpoint"/> is not set.
         /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
