@@ -11,7 +11,7 @@ namespace Samples.OracleMDA
     {
         private static string Host => Environment.GetEnvironmentVariable("ORACLE_HOST") ?? "localhost";
 
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
             var tableId = Guid.NewGuid().ToString("N").Substring(0, 10);
             var commandFactory = new OracleDbCommandFactory($@"oracletest{tableId}");
@@ -19,14 +19,7 @@ namespace Samples.OracleMDA
 
             using (var connection = OpenConnection())
             {
-                if (args.Length == 1 && args[0] == "--stored-procedure-comments")
-                {
-                    await StoredProcedureComments.RunAsync(connection);
-                }
-                else
-                {
-                    await RelationalDatabaseTestHarness.RunAllAsync<OracleCommand>(connection, commandFactory, commandExecutor, CancellationToken.None);
-                }
+                await RelationalDatabaseTestHarness.RunAllAsync<OracleCommand>(connection, commandFactory, commandExecutor, CancellationToken.None);
             }
 
             // allow time to flush
@@ -36,9 +29,9 @@ namespace Samples.OracleMDA
         private static OracleConnection OpenConnection()
         {
             var cstringBuilder = new OracleConnectionStringBuilder();
-            cstringBuilder.DataSource = Environment.GetEnvironmentVariable("ORACLE_DATA_SOURCE") ?? $"{Host}:1521/FREE";
-            cstringBuilder.UserID = Environment.GetEnvironmentVariable("ORACLE_USER") ?? "system";
-            cstringBuilder.Password = Environment.GetEnvironmentVariable("ORACLE_PASSWORD") ?? "testpassword";
+            cstringBuilder.DataSource = $"{Host}:1521/FREE";
+            cstringBuilder.UserID = "system";
+            cstringBuilder.Password = "testpassword";
             
             var connection = new OracleConnection(cstringBuilder.ConnectionString);
             connection.Open();
