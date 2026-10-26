@@ -577,7 +577,7 @@ namespace Datadog.Trace.Configuration
                             .AsString(defaultValue: "user.id,session.id,account.id")
                             ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
-            LogSubmissionSettings = new DirectLogSubmissionSettings(source, telemetry, OpenTelemetryLogsEnabled);
+            LogSubmissionSettings = new DirectLogSubmissionSettings(source, telemetry, OpenTelemetryLogsEnabled, ErrorLog);
 
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)

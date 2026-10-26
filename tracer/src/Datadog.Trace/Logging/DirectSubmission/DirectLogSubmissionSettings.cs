@@ -35,7 +35,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
         // OpenTelemetry OTLP logs defaults (OTEL_BLRP_* environment variables)
         internal const int OtlpBatchSizeLimit = 512;        // OTEL_BLRP_MAX_EXPORT_BATCH_SIZE
         internal const int OtlpQueueSizeLimit = 2048;       // OTEL_BLRP_MAX_QUEUE_SIZE
-        internal const int OtlpBatchPeriodSeconds = 1;      // OTEL_BLRP_SCHEDULE_DELAY
+        internal const int OtlpBatchPeriodMs = 1000;        // OTEL_BLRP_SCHEDULE_DELAY
+        internal static readonly TimeSpan MinCircuitBreakPeriod = TimeSpan.FromSeconds(1);
 
         private const string IntakePrefix = "https://http-intake.logs.";
         private const string DefaultSite = "datadoghq.com";
@@ -51,7 +52,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             IntegrationId.XUnit,
         };
 
-        public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, bool otlpLogsEnabled = false)
+        public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, bool otlpLogsEnabled = false, OverrideErrorLog? errorLog = null)
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -91,26 +92,59 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags ?? []);
 
-            var defaultBatchSize = otlpLogsEnabled ? OtlpBatchSizeLimit : DatadogDefaultBatchSizeLimit;
-            var defaultQueueSize = otlpLogsEnabled ? OtlpQueueSizeLimit : DatadogDefaultQueueSizeLimit;
-            var defaultBatchPeriod = otlpLogsEnabled ? OtlpBatchPeriodSeconds : DatadogDefaultBatchPeriodSeconds;
+            if (otlpLogsEnabled)
+            {
+                errorLog ??= new OverrideErrorLog();
 
-            BatchSizeLimit = config
-                                               .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
-                                               .AsInt32(defaultBatchSize, x => x > 0)
-                                               .Value;
+                var otelQueueSize = config
+                                   .WithKeys(ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize)
+                                   .AsInt32Result(x => x > 0, converter: null);
+                QueueSizeLimit = config
+                                .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
+                                .AsInt32Result(x => x > 0, converter: null)
+                                .OverrideWith(in otelQueueSize, errorLog, OtlpQueueSizeLimit);
 
-            QueueSizeLimit = config
-                                               .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
-                                               .AsInt32(defaultQueueSize, x => x > 0)
-                                               .Value;
+                var otelBatchSize = config
+                                   .WithKeys(ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize)
+                                   .AsInt32Result(x => x > 0, converter: null);
+                BatchSizeLimit = config
+                                .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
+                                .AsInt32Result(x => x > 0, converter: null)
+                                .OverrideWith(in otelBatchSize, errorLog, OtlpBatchSizeLimit);
 
-            var seconds = config
-                     .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)
-                     .AsInt32(defaultBatchPeriod, x => x > 0)
-                     .Value;
+                if (BatchSizeLimit > QueueSizeLimit)
+                {
+                    var fallbackBatchSize = Math.Min(OtlpBatchSizeLimit, QueueSizeLimit);
+                    Log.Warning<int, int, int>(
+                        "OTLP logs batch size {BatchSize} is greater than the queue size {QueueSize}. Using {FallbackBatchSize} instead.",
+                        BatchSizeLimit,
+                        QueueSizeLimit,
+                        fallbackBatchSize);
+                    telemetry.Record(ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, fallbackBatchSize, ConfigurationOrigins.Calculated);
+                    BatchSizeLimit = fallbackBatchSize;
+                }
 
-            BatchPeriod = TimeSpan.FromSeconds(seconds);
+                BatchPeriod = GetOtlpBatchPeriod(config, telemetry, errorLog);
+            }
+            else
+            {
+                BatchSizeLimit = config
+                                                   .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
+                                                   .AsInt32(DatadogDefaultBatchSizeLimit, x => x > 0)
+                                                   .Value;
+
+                QueueSizeLimit = config
+                                                   .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
+                                                   .AsInt32(DatadogDefaultQueueSizeLimit, x => x > 0)
+                                                   .Value;
+
+                var seconds = config
+                         .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)
+                         .AsInt32(DatadogDefaultBatchPeriodSeconds, x => x > 0)
+                         .Value;
+
+                BatchPeriod = TimeSpan.FromSeconds(seconds);
+            }
 
             AzureFunctionsHostEnabled = config.WithKeys(ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled)
                                               .AsBool(false);
@@ -289,11 +323,46 @@ namespace Datadog.Trace.Logging.DirectSubmission
             => new(
                 batchSizeLimit: BatchSizeLimit,
                 queueLimit: QueueSizeLimit,
-                period: BatchPeriod);
+                period: BatchPeriod,
+                circuitBreakPeriod: TimeSpan.FromTicks(Math.Max(BatchPeriod.Ticks, MinCircuitBreakPeriod.Ticks)),
+                failuresBeforeCircuitBreak: BatchingSinkOptions.DefaultFailuresBeforeCircuitBreak);
 
         public bool IsIntegrationEnabled(IntegrationId integrationId)
         {
             return IsEnabled && _enabledIntegrations is not null && _enabledIntegrations[(int)integrationId];
+        }
+
+        private static TimeSpan GetOtlpBatchPeriod(ConfigurationBuilder config, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
+        {
+            // The Datadog key is in seconds and the OpenTelemetry key in milliseconds, so OverrideWith() can't be used
+            var datadogConfig = config.WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds).AsInt32Result(x => x > 0, converter: null);
+            var otelConfig = config.WithKeys(ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs).AsInt32Result(x => x > 0, converter: null);
+            var datadogSeconds = datadogConfig.ConfigurationResult;
+            var otelMilliseconds = otelConfig.ConfigurationResult;
+
+            if (datadogSeconds.IsPresent && otelMilliseconds.IsPresent)
+            {
+                errorLog.LogDuplicateConfiguration(datadogConfig.Key, otelConfig.Key);
+            }
+
+            if (datadogSeconds is { Result: var seconds, IsValid: true })
+            {
+                return TimeSpan.FromSeconds(seconds);
+            }
+
+            if (!datadogSeconds.IsPresent && otelMilliseconds.IsPresent)
+            {
+                if (otelMilliseconds is { Result: var milliseconds, IsValid: true })
+                {
+                    return TimeSpan.FromMilliseconds(milliseconds);
+                }
+
+                errorLog.LogInvalidConfiguration(otelConfig.Key);
+            }
+
+            var defaultPeriod = TimeSpan.FromMilliseconds(OtlpBatchPeriodMs);
+            telemetry.Record(datadogConfig.Key, (int)defaultPeriod.TotalSeconds, ConfigurationOrigins.Default);
+            return defaultPeriod;
         }
     }
 }

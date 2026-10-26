@@ -25,6 +25,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 {
     internal sealed class BatchingSinkOptions
     {
+        internal const int DefaultFailuresBeforeCircuitBreak = 10;
+
         public BatchingSinkOptions(
             int batchSizeLimit,
             int queueLimit,
@@ -34,7 +36,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
              queueLimit,
              period,
              circuitBreakPeriod: TimeSpan.FromTicks(period.Ticks),
-             failuresBeforeCircuitBreak: 10)
+             failuresBeforeCircuitBreak: DefaultFailuresBeforeCircuitBreak)
         {
         }
 

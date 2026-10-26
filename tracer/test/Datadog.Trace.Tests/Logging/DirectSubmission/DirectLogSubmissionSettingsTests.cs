@@ -8,10 +8,13 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.Configuration;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -378,5 +381,117 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
             tracerSettings.Manager.InitialMutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
         }
+
+        [Theory]
+        [InlineData("17", null, 17)]
+        [InlineData(null, null, DirectLogSubmissionSettings.OtlpBatchPeriodMs)]
+        [InlineData("", null, DirectLogSubmissionSettings.OtlpBatchPeriodMs)]
+        [InlineData("0", null, DirectLogSubmissionSettings.OtlpBatchPeriodMs)]
+        [InlineData("-1", null, DirectLogSubmissionSettings.OtlpBatchPeriodMs)]
+        [InlineData("abc", null, DirectLogSubmissionSettings.OtlpBatchPeriodMs)]
+        [InlineData("500", "2", 2000)]
+        [InlineData("500", "0", DirectLogSubmissionSettings.OtlpBatchPeriodMs)]
+        public void OtlpScheduleDelay(string otel, string dd, int expectedMs)
+        {
+            var settings = OtlpEnabled(
+                (ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, otel),
+                (ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, dd));
+
+            settings.BatchPeriod.Should().Be(TimeSpan.FromMilliseconds(expectedMs));
+        }
+
+        [Fact]
+        public void OtlpScheduleDelayZero_LogsInvalidConfiguration()
+        {
+            var errorLog = new OverrideErrorLog();
+            OtlpEnabled(errorLog, (ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, "0"));
+
+            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigInvalid, "unknown", "unknown");
+        }
+
+        [Theory]
+        [InlineData("1024", null, 1024)]
+        [InlineData(null, null, DirectLogSubmissionSettings.OtlpQueueSizeLimit)]
+        [InlineData("", null, DirectLogSubmissionSettings.OtlpQueueSizeLimit)]
+        [InlineData("0", null, DirectLogSubmissionSettings.OtlpQueueSizeLimit)]
+        [InlineData("-5", null, DirectLogSubmissionSettings.OtlpQueueSizeLimit)]
+        [InlineData("1024", "300", 300)]
+        public void OtlpMaxQueueSize(string otel, string dd, int expected)
+        {
+            var settings = OtlpEnabled(
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize, otel),
+                (ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, dd));
+
+            settings.QueueSizeLimit.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("64", null, null, 64)]
+        [InlineData(null, null, null, DirectLogSubmissionSettings.OtlpBatchSizeLimit)]
+        [InlineData("0", null, null, DirectLogSubmissionSettings.OtlpBatchSizeLimit)]
+        [InlineData("2049", null, null, DirectLogSubmissionSettings.OtlpBatchSizeLimit)]
+        [InlineData("200", "100", null, 100)]
+        [InlineData("64", null, "128", 128)]
+        public void OtlpMaxExportBatchSize(string otelBatch, string otelQueue, string ddBatch, int expected)
+        {
+            var settings = OtlpEnabled(
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, otelBatch),
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize, otelQueue),
+                (ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, ddBatch));
+
+            settings.BatchSizeLimit.Should().Be(expected);
+        }
+
+        [Fact]
+        public void OtlpDuplicateKeysLogHiddenMetric()
+        {
+            var errorLog = new OverrideErrorLog();
+            OtlpEnabled(
+                errorLog,
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, "64"),
+                (ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "128"));
+
+            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "unknown", "unknown");
+        }
+
+        [Fact]
+        public void OtelKeysIgnoredWhenOtlpDisabled()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, "17"),
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize, "1024"),
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, "64"));
+            var telemetry = new ConfigurationTelemetry();
+
+            var settings = new DirectLogSubmissionSettings(source, telemetry, otlpLogsEnabled: false);
+
+            using var scope = new AssertionScope();
+            settings.BatchSizeLimit.Should().Be(DirectLogSubmissionSettings.DatadogDefaultBatchSizeLimit);
+            settings.QueueSizeLimit.Should().Be(DirectLogSubmissionSettings.DatadogDefaultQueueSizeLimit);
+            settings.BatchPeriod.Should().Be(TimeSpan.FromSeconds(DirectLogSubmissionSettings.DatadogDefaultBatchPeriodSeconds));
+            telemetry.GetQueueForTesting().Select(x => x.Key).Should().NotContain(
+                [
+                    ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs,
+                    ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize,
+                    ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize,
+                ]);
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, "17", 17, 1000)]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "5", 5000, 5000)]
+        public void CreateBatchingSinkOptions_CircuitBreakPeriod(string key, string value, int expectedPeriodMs, int expectedCircuitBreakPeriodMs)
+        {
+            var options = OtlpEnabled((key, value)).CreateBatchingSinkOptions();
+
+            options.Period.Should().Be(TimeSpan.FromMilliseconds(expectedPeriodMs));
+            options.CircuitBreakPeriod.Should().Be(TimeSpan.FromMilliseconds(expectedCircuitBreakPeriodMs));
+        }
+
+        private static DirectLogSubmissionSettings OtlpEnabled(params (string Key, string Value)[] values)
+            => OtlpEnabled(new OverrideErrorLog(), values);
+
+        private static DirectLogSubmissionSettings OtlpEnabled(OverrideErrorLog errorLog, params (string Key, string Value)[] values)
+            => new(CreateConfigurationSource(values), NullConfigurationTelemetry.Instance, otlpLogsEnabled: true, errorLog);
     }
 }
