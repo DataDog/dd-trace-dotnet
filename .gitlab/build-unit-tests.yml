@@ -254,10 +254,9 @@ build-linux-profiler-arm64-musl:
     VALIDATION_BASE_IMAGE: alpine
     RUN_NATIVE_TESTS: "false"
 
-build-linux-universal-x64:
+.build-linux-universal:
   stage: build
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
-  tags: ["docker-in-docker:amd64"]
   timeout: 60m
   needs: []
   variables:
@@ -267,8 +266,8 @@ build-linux-universal-x64:
     - |
       set -eu
 
-      universal_image="dd-trace-dotnet/universal-builder:${CI_JOB_ID}"
-      echo "Building universal .NET ${UNIVERSAL_DOTNET_SDK_VERSION} builder image"
+      universal_image="dd-trace-dotnet/universal-${UNIVERSAL_ARCHITECTURE}-builder:${CI_JOB_ID}"
+      echo "Building ${UNIVERSAL_ARCHITECTURE} universal .NET ${UNIVERSAL_DOTNET_SDK_VERSION} builder image"
       docker build \
         --build-arg "DOTNETSDK_VERSION=${UNIVERSAL_DOTNET_SDK_VERSION}" \
         --tag "$universal_image" \
@@ -276,77 +275,31 @@ build-linux-universal-x64:
         --file tracer/build/_build/docker/universal.dockerfile \
         tracer/build/_build
 
-      docker run --rm \
-        --cap-add=SYS_PTRACE \
-        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
-        --env NugetPackageDirectory=/project/packages \
-        --env artifacts=/project/artifacts/output \
-        --env CI=true \
-        --env CI_JOB_ID \
-        --env CI_PROJECT_NAME \
-        --env CI_JOB_NAME_SLUG \
-        --env CI_COMMIT_SHA \
-        --env CI_COMMIT_BRANCH \
-        --env NUKE_TELEMETRY_OPTOUT=1 \
-        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-        "$universal_image" \
-        dotnet /build/bin/Debug/_build.dll \
+      . .gitlab/run-nuke-linux.sh
+      # Universal builds do not need CI Visibility credentials.
+      unset DD_LOGGER_DD_API_KEY
+      run_nuke "$universal_image" \
         Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux
   artifacts:
     when: always
     expire_in: 2 weeks
     paths:
-      - artifacts/monitoring-home/linux-musl-x64
-      - artifacts/native-symbols/linux-musl-x64
+      - artifacts/monitoring-home/linux-musl-${UNIVERSAL_ARCHITECTURE}
+      - artifacts/native-symbols/linux-musl-${UNIVERSAL_ARCHITECTURE}
       - artifacts/build_data/logs
       - artifacts/build_data/dumps
+
+build-linux-universal-x64:
+  extends: .build-linux-universal
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    UNIVERSAL_ARCHITECTURE: x64
 
 build-linux-universal-arm64:
-  stage: build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  extends: .build-linux-universal
   tags: ["docker-in-docker:arm64"]
-  timeout: 60m
-  needs: []
   variables:
-    DOCKER_BUILDKIT: "1"
-    UNIVERSAL_DOTNET_SDK_VERSION: "7.0.306"
-  script:
-    - |
-      set -eu
-
-      universal_image="dd-trace-dotnet/universal-arm64-builder:${CI_JOB_ID}"
-      echo "Building ARM64 universal .NET ${UNIVERSAL_DOTNET_SDK_VERSION} builder image"
-      docker build \
-        --build-arg "DOTNETSDK_VERSION=${UNIVERSAL_DOTNET_SDK_VERSION}" \
-        --tag "$universal_image" \
-        --target builder \
-        --file tracer/build/_build/docker/universal.dockerfile \
-        tracer/build/_build
-
-      docker run --rm \
-        --cap-add=SYS_PTRACE \
-        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
-        --env NugetPackageDirectory=/project/packages \
-        --env artifacts=/project/artifacts/output \
-        --env CI=true \
-        --env CI_JOB_ID \
-        --env CI_PROJECT_NAME \
-        --env CI_JOB_NAME_SLUG \
-        --env CI_COMMIT_SHA \
-        --env CI_COMMIT_BRANCH \
-        --env NUKE_TELEMETRY_OPTOUT=1 \
-        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-        "$universal_image" \
-        dotnet /build/bin/Debug/_build.dll \
-        Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux
-  artifacts:
-    when: always
-    expire_in: 2 weeks
-    paths:
-      - artifacts/monitoring-home/linux-musl-arm64
-      - artifacts/native-symbols/linux-musl-arm64
-      - artifacts/build_data/logs
-      - artifacts/build_data/dumps
+    UNIVERSAL_ARCHITECTURE: arm64
 
 unit-tests-windows:
   stage: test
