@@ -184,6 +184,64 @@ public class ExposureApiTests
         logger.Verify(l => l.Debug("ExposureApi::SendLoopAsync -> Exit", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
     }
 
+    [Fact]
+    public void SendExposureReturnsTheDeduplicationVerdict()
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local);
+        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromMilliseconds(10));
+
+        api.SendExposure(CreateExposure("flag")).Should().BeFalse("the first exposure of a subject is new");
+        api.SendExposure(CreateExposure("flag")).Should().BeTrue("the same exposure again is a cache hit");
+
+        api.SendExposure(CreateExposure("flag", variant: "variant-b")).Should().BeFalse("a changed variant is a new exposure");
+        api.SendExposure(CreateExposure("flag")).Should().BeFalse("switching back to an earlier variant is also a change");
+
+        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().BeFalse("a changed serial id is a new exposure");
+        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().BeTrue("the new serial id repeats as a cache hit");
+
+        api.SendExposure(CreateExposure("other-flag")).Should().BeFalse("another flag is a new exposure");
+    }
+
+    [Fact]
+    public async Task SendExposureWithDatadogLoggingDisabledRecordsButSendsNothing()
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local);
+        var settings = new TracerSettings(
+            new NameValueConfigurationSource(new NameValueCollection
+            {
+                ["DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED"] = "false",
+            }));
+        using var api = new ExposureApi(settings, transport, TimeSpan.FromMilliseconds(1), TimeSpan.FromSeconds(1));
+
+        api.SendExposure(CreateExposure("flag")).Should().BeFalse();
+        api.SendExposure(CreateExposure("flag")).Should().BeTrue("the cache still records with logging off");
+
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+        local.RequestsSent.Should().BeEmpty("no exposure reaches Datadog with the setting off");
+    }
+
+    [Fact]
+    public async Task SendExposureWithDatadogLoggingEnabledSendsNewExposuresOnly()
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"), uri => new RecordingJsonApiRequest(uri));
+        using var transport = CreateLocalTransport(local);
+        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromMilliseconds(1), TimeSpan.FromSeconds(1));
+
+        api.SendExposure(CreateExposure("flag")).Should().BeFalse();
+        api.SendExposure(CreateExposure("flag")).Should().BeTrue();
+
+        var deadline = DateTime.UtcNow.AddSeconds(3);
+        while (local.RequestsSent.Count == 0 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(20));
+        }
+
+        var payload = JObject.Parse(local.RequestsSent.OfType<RecordingJsonApiRequest>().Single().PayloadJson);
+        payload["exposures"]!.Should().ContainSingle("a repeat is not sent");
+    }
+
     private static Mock<IDatadogLogger> CreateDebugLogger()
     {
         var logger = new Mock<IDatadogLogger>();
@@ -210,13 +268,14 @@ public class ExposureApiTests
             initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4,
             logger: logger);
 
-    private static ExposureEvent CreateExposure(string flag)
+    private static ExposureEvent CreateExposure(string flag, string variant = "variant", long? serialId = null)
         => new(
             DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             new Allocation("allocation"),
             new Flag(flag),
-            new Variant("variant"),
-            new Subject("subject", new Dictionary<string, object?>()));
+            new Variant(variant),
+            new Subject("subject", new Dictionary<string, object?>()),
+            serialId);
 
     private static TracerSettings CreateSettings()
         => new(new NameValueConfigurationSource(new NameValueCollection()));

@@ -866,18 +866,17 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private void ReportExposure(in ExposureEvent exposure)
+        private bool ReportExposure(in ExposureEvent exposure)
         {
             // Nothing would ever dispose an API created after disposal, leaving its send loop running
             // for the rest of the process, so exposures are dropped from that point on.
             if (GetExposureApi() is { } exposureApi)
             {
-                exposureApi.SendExposure(exposure);
+                return exposureApi.SendExposure(exposure);
             }
-            else
-            {
-                _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
-            }
+
+            _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
+            return false;
         }
 
         // Created on first use because most applications never evaluate a flag, and under the lock

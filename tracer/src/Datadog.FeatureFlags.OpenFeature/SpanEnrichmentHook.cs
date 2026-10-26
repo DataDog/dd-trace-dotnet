@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
@@ -18,6 +17,20 @@ namespace Datadog.FeatureFlags.OpenFeature;
 
 internal sealed class SpanEnrichmentHook : Hook
 {
+    // The tracer hands metadata across the package boundary as strings; FeatureFlagsSdk.ToMetadata
+    // converts the keys this hook reads into their types before they arrive here.
+    private readonly Action<long?, bool, string?, bool, string, object?> _accumulate;
+
+    public SpanEnrichmentHook()
+        : this(FeatureFlagsSdk.AccumulateSpanEnrichment)
+    {
+    }
+
+    internal SpanEnrichmentHook(Action<long?, bool, string?, bool, string, object?> accumulate)
+    {
+        _accumulate = accumulate;
+    }
+
     /// <inheritdoc/>
     public override ValueTask FinallyAsync<T>(
         HookContext<T> context,
@@ -29,16 +42,8 @@ internal sealed class SpanEnrichmentHook : Hook
         {
             var metadata = details.FlagMetadata;
 
-            long? serialId = null;
-            var serialIdStr = metadata?.GetString(FeatureFlagMetadataKeys.SplitSerialId);
-            if (!string.IsNullOrEmpty(serialIdStr) &&
-                long.TryParse(serialIdStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
-            {
-                serialId = parsed;
-            }
-
-            var doLogStr = metadata?.GetString(FeatureFlagMetadataKeys.DoLog);
-            var doLog = string.Equals(doLogStr, "true", StringComparison.OrdinalIgnoreCase);
+            var serialId = metadata?.GetInt(FeatureFlagMetadataKeys.SplitSerialId) is { } parsed ? (long?)parsed : null;
+            var doLog = metadata?.GetBool(FeatureFlagMetadataKeys.DoLog) == true;
 
             var targetingKey = context.EvaluationContext?.TargetingKey;
             var hasVariant = !string.IsNullOrEmpty(details.Variant);
@@ -51,7 +56,7 @@ internal sealed class SpanEnrichmentHook : Hook
                 runtimeValue = context.DefaultValue is Value defaultValue ? ToPlainObject(defaultValue) : details.Value;
             }
 
-            FeatureFlagsSdk.AccumulateSpanEnrichment(serialId, doLog, targetingKey, hasVariant, context.FlagKey, runtimeValue);
+            _accumulate(serialId, doLog, targetingKey, hasVariant, context.FlagKey, runtimeValue);
         }
         catch (Exception)
         {

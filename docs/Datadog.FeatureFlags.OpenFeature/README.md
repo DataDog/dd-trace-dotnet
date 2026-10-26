@@ -72,6 +72,90 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
+## Exposures in your own data store
+
+The provider sends exposures to Datadog. It also puts its exposure decision and the selected split's
+features into the flag metadata of every evaluation, so any OpenFeature hook can record exposures
+in your own data store (see [Flag metadata](#flag-metadata)).
+
+For convenience, this package ships `ExposureHook`, which reads that metadata for you. It receives
+every completed evaluation, with the same exposure decision the provider uses for Datadog.
+
+```csharp
+using Datadog.FeatureFlags.OpenFeature;
+using OpenFeature;
+
+var queue = new BlockingCollection<ExposureRecord>(10_000);
+
+OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
+{
+    if (!e.ShouldSend)
+    {
+        return;
+    }
+
+    var features = evaluation.Features;
+    queue.Add(new ExposureRecord(
+        evaluation.FlagKey,
+        evaluation.Variant,
+        evaluation.TargetingKey,
+        (string)features["holdout.key"],
+        (string)features["holdout.assignment_group"]));
+}));
+// A background thread drains the queue and writes to the data store.
+```
+
+- The callback runs on the evaluation thread. Do not write to the data store from the callback:
+  copy what you need and hand it to a background queue.
+- `ShouldSend` is true for a successful evaluation of an allocation that logs exposures, for a
+  subject not yet exposed to the same allocation, variant and serial id. These are exactly the
+  exposures the provider sends to Datadog while Datadog logging is on. The serial id and the
+  verdict require a tracer version that carries this feature; with an older tracer, `ShouldSend`
+  is false.
+- `IsExposure` is true for every successful evaluation of an allocation that logs exposures,
+  including repeats. `IsCacheHit` tells repeats apart.
+- An evaluation that fails, including one that an `after` hook fails, is not an exposure.
+- An exception from the callback does not affect the evaluation. The first one is logged at warn
+  level, later ones at debug level; pass an `ILogger` to the hook to route them, otherwise they go
+  to `System.Diagnostics.Trace`.
+
+### Features
+
+`Features` returns the features of the selected split whose destinations include the customer
+hook, keyed without the `__dd_feature.` prefix. Values are a `string`, `double` or `bool`. The
+map is empty when the split has no such features. Datadog can add destinations later; the tracer
+ignores a destination it does not know and logs a warning once for each one.
+
+### Flag metadata
+
+The same data is in the evaluation's flag metadata, for hooks that use only the OpenFeature API.
+Read it in the hook's `finally` stage, where the details match what the application receives, and
+skip details that have an error. `ExposureHook` does both.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `__dd_allocation_key` | String | The selected allocation |
+| `__dd_do_log` | Boolean | Whether the allocation logs exposures. Present when the allocation logs exposures or span enrichment is on |
+| `__dd_exposure_cache_hit` | Boolean | The subject was already exposed. Present only when `__dd_do_log` is true |
+| `__dd_split_serial_id` | Integer | The split's serial id. Present when `__dd_do_log` is present and the split has a serial id |
+| `__dd_feature.<key>` | String, Double or Boolean | One entry for each feature of the selected split that lists the `HOOK` destination |
+
+The tracer and this package ship separately, and the tracer fills the metadata. An older tracer
+emits fewer keys, and the hooks treat a missing key as its fail-safe value.
+
+### Stop sending exposures to Datadog
+
+```
+DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED=false
+```
+
+The provider then sends no exposure events to Datadog. `ExposureHook` callbacks still receive every
+evaluation, the exposure cache still records, and `ShouldSend` gives the same results. The default
+is `true`.
+
+This setting stops exposures only. Flag evaluation events have their own setting,
+`DD_FLAGGING_EVALUATION_COUNTS_ENABLED`, and are unaffected.
+
 ## Synchronous evaluation (experimental)
 
 `DatadogProvider` provides experimental synchronous methods for code that cannot

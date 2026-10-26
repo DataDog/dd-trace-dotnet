@@ -44,6 +44,7 @@ internal sealed class ExposureApi : IDisposable
     private readonly FeatureFlagsEvpTransport _transport;
     private readonly IDisposable _settingsSubscription;
     private readonly IDatadogLogger _log;
+    private readonly bool _datadogLoggingEnabled;
 
     private Dictionary<string, string> _context;
     private Task? _sendLoopTask;
@@ -60,6 +61,7 @@ internal sealed class ExposureApi : IDisposable
         _transport = transport;
         _sendInterval = sendInterval ?? DefaultSendInterval;
         _shutdownTimeout = shutdownTimeout ?? DefaultShutdownTimeout;
+        _datadogLoggingEnabled = tracerSettings.FeatureFlags.ExposuresDatadogLoggingEnabled;
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
         _settingsSubscription = tracerSettings.Manager.SubscribeToChanges(changes =>
@@ -178,18 +180,24 @@ internal sealed class ExposureApi : IDisposable
         return new ExposuresRequest(_context, exposures);
     }
 
-    public void SendExposure(in ExposureEvent exposure)
+    /// <summary>
+    /// Records the subject and returns whether this exposure repeats one already recorded: the same
+    /// flag, allocation, variant and serial id. The exposure is queued for Datadog only when it is
+    /// new and Datadog logging is enabled; the cache records either way, so customers recording
+    /// exposures themselves see the same verdicts with logging off.
+    /// </summary>
+    public bool SendExposure(in ExposureEvent exposure)
     {
         bool stopped;
-        var queued = false;
+        var isNew = false;
 
         lock (_lifecycleLock)
         {
             stopped = _disposed;
             if (!stopped)
             {
-                queued = _exposureCache.Add(exposure);
-                if (queued)
+                isNew = _exposureCache.Add(exposure);
+                if (isNew && _datadogLoggingEnabled)
                 {
                     lock (_exposures)
                     {
@@ -197,7 +205,7 @@ internal sealed class ExposureApi : IDisposable
                     }
                 }
 
-                if (_sendLoopTask is null)
+                if (_sendLoopTask is null && _datadogLoggingEnabled)
                 {
                     _sendLoopTask = Task.Run(SendLoopAsync);
                     _sendLoopTask.ContinueWith(
@@ -215,7 +223,18 @@ internal sealed class ExposureApi : IDisposable
         {
             _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
         }
-        else if (queued)
+        else if (!isNew)
+        {
+            _log.Debug<string, string>(
+                "Feature Flags: exposure for {FlagKey} not queued: subject {TargetingKey} already has an identical exposure recorded",
+                exposure.Flag.Key,
+                exposure.Subject.Id);
+        }
+        else if (!_datadogLoggingEnabled)
+        {
+            _log.Debug<string>("Feature Flags: exposure for {FlagKey} recorded but not queued: Datadog exposure logging is disabled", exposure.Flag.Key);
+        }
+        else
         {
             _log.Debug<string, string, string, string>(
                 "Feature Flags: exposure for {FlagKey} queued for the next flush (allocation={AllocationKey}, variant={VariantKey}, subject={TargetingKey})",
@@ -224,13 +243,8 @@ internal sealed class ExposureApi : IDisposable
                 exposure.Variant.Key,
                 exposure.Subject.Id);
         }
-        else
-        {
-            _log.Debug<string, string>(
-                "Feature Flags: exposure for {FlagKey} not queued: subject {TargetingKey} already has an identical exposure recorded",
-                exposure.Flag.Key,
-                exposure.Subject.Id);
-        }
+
+        return !stopped && !isNew;
     }
 
     private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)

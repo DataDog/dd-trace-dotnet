@@ -35,7 +35,8 @@ public class FeatureFlagsSdkTests
 
         result.FlagMetadata.Should().NotBeNull();
         result.FlagMetadata!.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData).Should().Be(expected);
-        result.FlagMetadata.GetString(FeatureFlagMetadataKeys.DoLog).Should().Be("true");
+        result.FlagMetadata.GetBool(FeatureFlagMetadataKeys.DoLog).Should().BeTrue();
+        result.FlagMetadata.GetString(FeatureFlagMetadataKeys.DoLog).Should().BeNull();
         result.FlagMetadata.GetDouble("__dd_eval_timestamp_ms").Should().Be(1234);
         metadata.Should().NotContainKey("__dd_eval_timestamp_ms");
     }
@@ -97,7 +98,7 @@ public class FeatureFlagsSdkTests
         var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata, error), null);
 
         result.Value.Should().Be(error is null);
-        result.FlagMetadata!.GetString(FeatureFlagMetadataKeys.DoLog).Should().Be("true");
+        result.FlagMetadata!.GetBool(FeatureFlagMetadataKeys.DoLog).Should().BeTrue();
         result.FlagMetadata.GetString("__dd_allocation_key").Should().Be("allocation");
         result.FlagMetadata.GetString("errorCode").Should().Be(error ?? string.Empty);
         result.FlagMetadata.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData).Should().BeNull();
@@ -115,6 +116,72 @@ public class FeatureFlagsSdkTests
 
         result.Value.Should().BeTrue();
         result.FlagMetadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void MetadataConvertsKnownKeysToTheirTypes()
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            ["__dd_allocation_key"] = "alloc",
+            [FeatureFlagMetadataKeys.DoLog] = "true",
+            [FeatureFlagMetadataKeys.ExposureCacheHit] = "false",
+            [FeatureFlagMetadataKeys.SplitSerialId] = "1001",
+            ["__dd_feature.holdout.key"] = "06ad",
+            ["__dd_feature.holdout.should_include_in_holdout_analysis"] = "false",
+            ["__dd_feature.internal.count"] = "3.5",
+            ["errorCode"] = string.Empty,
+        };
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+
+        var converted = result.FlagMetadata!;
+        converted.GetBool(FeatureFlagMetadataKeys.DoLog).Should().BeTrue();
+        converted.GetString(FeatureFlagMetadataKeys.DoLog).Should().BeNull();
+        converted.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit).Should().BeFalse();
+        converted.GetInt(FeatureFlagMetadataKeys.SplitSerialId).Should().Be(1001);
+        converted.GetString("__dd_allocation_key").Should().Be("alloc");
+        converted.GetString("errorCode").Should().BeEmpty();
+        converted.GetString("__dd_feature.holdout.key").Should().Be("06ad");
+        converted.GetBool("__dd_feature.holdout.should_include_in_holdout_analysis").Should().BeFalse();
+        converted.GetDouble("__dd_feature.internal.count").Should().Be(3.5);
+    }
+
+    [Fact]
+    public void ASerialIdAboveTheIntRangeKeepsItsWireBits()
+    {
+        var metadata = new Dictionary<string, string> { [FeatureFlagMetadataKeys.SplitSerialId] = "4294967295" };
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+
+        result.FlagMetadata!.GetInt(FeatureFlagMetadataKeys.SplitSerialId).Should().Be(-1);
+    }
+
+    [Fact]
+    public void HookFeaturesAreStashedWithTheResultMetadata()
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            ["__dd_feature.holdout.key"] = "06ad",
+            ["__dd_feature.holdout.should_include_in_holdout_analysis"] = "false",
+            ["__dd_exposure_feature.holdout.key"] = "06ad",
+        };
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+
+        var features = FeatureFlagsSdk.GetHookFeatures(result.FlagMetadata);
+        features.Should().NotBeNull();
+        features!.Count.Should().Be(2, "only HOOK features are exposed to the exposure hook");
+        features["holdout.key"].Should().Be("06ad");
+        features["holdout.should_include_in_holdout_analysis"].Should().Be(false);
+    }
+
+    [Fact]
+    public void HookFeaturesAreAbsentWithoutFeatureMetadata()
+    {
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(new Dictionary<string, string> { ["__dd_allocation_key"] = "alloc" }), null);
+
+        FeatureFlagsSdk.GetHookFeatures(result.FlagMetadata).Should().BeNull();
     }
 
     private sealed class TestEvaluation(IDictionary<string, string>? metadata, string? error = null) : IEvaluation
