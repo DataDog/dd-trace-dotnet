@@ -1,6 +1,6 @@
 ---
 name: analyze-azdo-build
-description: Analyze Azure DevOps CI failures in dd-trace-dotnet, including offline triage of supplied errors or logs without a build ID. Use for failing builds, PR checks, and snapshot-versus-span-count diagnosis.
+description: Analyze Azure DevOps CI failures in dd-trace-dotnet using live build data or supplied logs. Use for failing builds, PR checks, and snapshot-versus-span-count diagnosis.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
 allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
@@ -12,14 +12,15 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Choose the analysis mode
 
-For supplied errors/logs or an offline request, use the supplied evidence and local files; no build ID is
-required. Skip prerequisites, build/PR auto-detection, fetching, retries, and snapshot updates. Treat a timeout
-in another job as separate unless evidence supports a shared cause.
+When the user provides a build ID or PR number for analysis, use it in the connected workflow below
+unless they explicitly request offline or local-only analysis. Supplied log excerpts can supplement that investigation.
+
+For an offline request, or triage of supplied errors/logs without an identified build or PR, use the
+available evidence and local files. Skip prerequisites, build/PR auto-detection, fetching, retries, and
+snapshot updates. Treat a timeout in another job as separate unless evidence supports a shared cause.
 
 For later connected analysis, identify `tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1 -BuildId <id>`;
-`-IncludeLogs` downloads logs. Present these as future commands, not completed actions.
-
-For a request to inspect a live build or PR, follow the connected workflow within the user's task scope.
+`-IncludeLogs` downloads logs. Present these as future commands when working offline.
 
 ## Prerequisites (connected analysis)
 
