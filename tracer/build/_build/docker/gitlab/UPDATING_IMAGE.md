@@ -1,6 +1,6 @@
 # Updating the GitLab CI Windows Docker Image
 
-The Windows GitLab CI build container is defined by `gitlab.windows.dockerfile` and the install scripts in this directory. The image is referenced by the `build:` job in `.gitlab-ci.yml` via a content-addressed tag derived from the hash of every file in this directory.
+The Windows GitLab CI build container is defined by `gitlab.windows.dockerfile` and the install scripts in this directory. Windows build, signing, and shadow jobs use a content-addressed tag derived from the hash of every file in this directory.
 
 ## Preferred: build via GitLab CI
 
@@ -12,34 +12,28 @@ Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoin
 
 ### 2. Open a PR
 
-Push the branch. The `build:` job will run and fail fast at its preflight step with a message like:
+Push the branch. `build-windows-ci-image` runs automatically in `.pre`, before jobs that consume the image. It is skipped when all consumers are excluded: tag pipelines, or pipelines with both `DEPLOY_TO_REL_ENV=true` and a nonempty `DOTNET_PACKAGE_VERSION`.
 
-```
-ERROR: Windows build image not found at registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build:<hash>.
-The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed.
-Manually trigger the 'build-windows-ci-image' job in this pipeline...
-```
+### 3. Wait for image preparation
 
-This is expected. The tag does not exist yet because nobody has built it.
-
-### 3. Manually trigger `build-windows-ci-image`
-
-Find the `build-windows-ci-image` job in the pipeline UI and click run. It will:
+The job will:
 
 1. Compute the hash via `compute-image-hash.ps1`.
 2. Short-circuit if the tag already exists in `registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build`.
 3. Otherwise pull `:latest` to warm the Docker layer cache, build the image, and push both the content-addressed tag and `:latest`.
 
-A cold-cache build (e.g., rebasing the base image) takes up to 2 hours. A warm-cache build with only late-stage install changes should be a small fraction of that.
+A cold-cache build (e.g., rebasing the base image) has a 2-hour job timeout. A warm-cache build with only late-stage install changes should be much faster. Image-preparation jobs are serialized by the `windows-ci-image` resource group.
 
-### 4. Re-run the `build:` job
+### 4. Check the consumers
 
-Once `build-windows-ci-image` is green, re-run the `build:` job (or any other Windows job that consumes the image). It recomputes the same hash, finds the image in the registry, and proceeds normally.
+After successful preparation, eligible consumers proceed automatically using the same content-addressed tag. No expected missing-image failure or manual start is needed.
+
+If preparation fails, inspect its logs, resolve the cause, and retry `build-windows-ci-image`. Retry any failed consumers after preparation succeeds. If a consumer reports a missing image, compare its expected tag with the preparation job's tag and check that the push succeeded.
 
 ### Notes
 
 - The `:latest` tag is **only** used to seed the Docker build cache on the next rebuild. Nothing in the pipeline consumes `:latest` as an input at runtime; the consumer always pins to the content hash.
-- Changes to `compute-image-hash.ps1` itself also invalidate the hash, because the script hashes its own directory.
+- Changes to `compute-image-hash.ps1` or this guide also invalidate the hash, because the script hashes every file in its own directory.
 
 ### vcpkg toolchain
 
