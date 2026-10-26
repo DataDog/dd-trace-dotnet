@@ -36,7 +36,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
         internal const int OtlpBatchSizeLimit = 512;        // OTEL_BLRP_MAX_EXPORT_BATCH_SIZE
         internal const int OtlpQueueSizeLimit = 2048;       // OTEL_BLRP_MAX_QUEUE_SIZE
         internal const int OtlpBatchPeriodMs = 1000;        // OTEL_BLRP_SCHEDULE_DELAY
-        internal static readonly TimeSpan MinCircuitBreakPeriod = TimeSpan.FromSeconds(1);
 
         private const string IntakePrefix = "https://http-intake.logs.";
         private const string DefaultSite = "datadoghq.com";
@@ -94,7 +93,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             if (otlpLogsEnabled)
             {
-                errorLog ??= new OverrideErrorLog();
+                errorLog ??= OverrideErrorLog.Instance;
 
                 var otelQueueSize = config
                                    .WithKeys(ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize)
@@ -116,11 +115,11 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 {
                     var fallbackBatchSize = Math.Min(OtlpBatchSizeLimit, QueueSizeLimit);
                     Log.Warning<int, int, int>(
-                        "OTLP logs batch size {BatchSize} is greater than the queue size {QueueSize}. Using {FallbackBatchSize} instead.",
+                        $"OTLP logs batch size {{BatchSize}} ({ConfigurationKeys.DirectLogSubmission.BatchSizeLimit} or {ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize}) is greater than the queue size {{QueueSize}} ({ConfigurationKeys.DirectLogSubmission.QueueSizeLimit} or {ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize}). Using {{FallbackBatchSize}} instead.",
                         BatchSizeLimit,
                         QueueSizeLimit,
                         fallbackBatchSize);
-                    telemetry.Record(ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, fallbackBatchSize, ConfigurationOrigins.Calculated);
+                    telemetry.Record(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, fallbackBatchSize, ConfigurationOrigins.Calculated);
                     BatchSizeLimit = fallbackBatchSize;
                 }
 
@@ -323,9 +322,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             => new(
                 batchSizeLimit: BatchSizeLimit,
                 queueLimit: QueueSizeLimit,
-                period: BatchPeriod,
-                circuitBreakPeriod: TimeSpan.FromTicks(Math.Max(BatchPeriod.Ticks, MinCircuitBreakPeriod.Ticks)),
-                failuresBeforeCircuitBreak: BatchingSinkOptions.DefaultFailuresBeforeCircuitBreak);
+                period: BatchPeriod);
 
         public bool IsIntegrationEnabled(IntegrationId integrationId)
         {

@@ -26,7 +26,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key for the time to wait between checking for batches
         /// Default value is <c>2</c>s.
-        /// Takes precedence over <see cref="ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs"/>.
+        /// Takes precedence over <see cref="ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs"/> when OTLP logs are enabled.
         /// </summary>
         public const string BatchPeriodSeconds = "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS";
 
@@ -47,14 +47,14 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key for the maximum number of logs to send at one time
         /// Default value is <c>1,000</c>, the maximum accepted by the Datadog log API
-        /// Takes precedence over <see cref="ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize"/>.
+        /// Takes precedence over <see cref="ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize"/> when OTLP logs are enabled.
         /// </summary>
         public const string BatchSizeLimit = "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE";
 
         /// <summary>
         /// Configuration key for the maximum number of logs to hold in internal queue at any one time
         /// Default value is <c>100,000</c>.
-        /// Takes precedence over <see cref="ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize"/>.
+        /// Takes precedence over <see cref="ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize"/> when OTLP logs are enabled.
         /// </summary>
         public const string QueueSizeLimit = "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE";
 

@@ -455,6 +455,53 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Fact]
+        public void OtlpScheduleDelayInvalidDatadogAndValidOtel_LogsHiddenMetric()
+        {
+            var errorLog = new OverrideErrorLog();
+            OtlpEnabled(
+                errorLog,
+                (ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, "500"),
+                (ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "0"));
+
+            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "unknown", "unknown");
+        }
+
+        [Fact]
+        public void OtlpScheduleDelayDefault_IsRecordedUnderDatadogKey()
+        {
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new DirectLogSubmissionSettings(CreateConfigurationSource(), telemetry, otlpLogsEnabled: true, new OverrideErrorLog());
+
+            telemetry.GetQueueForTesting()
+                     .Where(x => x.Key is ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds or ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs)
+                     .Select(x => (x.Key, x.IntValue, x.Origin))
+                     .Should()
+                     .Equal((ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, (int?)1, ConfigurationOrigins.Default));
+        }
+
+        [Theory]
+        [InlineData("2049", null, null, DirectLogSubmissionSettings.OtlpBatchSizeLimit)]
+        [InlineData(null, null, "3000", DirectLogSubmissionSettings.OtlpBatchSizeLimit)]
+        [InlineData(null, "100", null, 100)]
+        public void OtlpBatchSizeGreaterThanQueue_RecordsCalculatedTelemetryUnderDatadogKey(string otelBatch, string otelQueue, string ddBatch, int expectedValue)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, otelBatch),
+                (ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize, otelQueue),
+                (ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, ddBatch));
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new DirectLogSubmissionSettings(source, telemetry, otlpLogsEnabled: true, new OverrideErrorLog());
+
+            telemetry.GetQueueForTesting()
+                     .Where(x => x.Origin == ConfigurationOrigins.Calculated)
+                     .Select(x => (x.Key, x.IntValue))
+                     .Should()
+                     .Equal((ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, (int?)expectedValue));
+        }
+
+        [Fact]
         public void OtelKeysIgnoredWhenOtlpDisabled()
         {
             var source = CreateConfigurationSource(
