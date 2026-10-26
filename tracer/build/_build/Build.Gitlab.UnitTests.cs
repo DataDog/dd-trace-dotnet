@@ -13,9 +13,6 @@ partial class Build
     [Parameter("JSON list of changed files captured from the GitLab runner checkout")]
     readonly AbsolutePath GitlabChangedFiles;
 
-    [Parameter("Output directory for GitLab unit-test child pipelines")]
-    readonly AbsolutePath GitlabUnitTestPipelineDirectory;
-
     Target GenerateGitlabUnitTestsPipelines => _ => _
         .Unlisted()
         .Requires(() => GitlabChangedFiles)
@@ -27,7 +24,7 @@ partial class Build
                             ?? throw new InvalidOperationException("The GitLab changed-file list is missing");
             var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
             var includeAll = IncludeAllTestFrameworks || IsGitBaseBranch(baseBranch) || HasChangesRequiringThoroughTesting(changedFiles);
-            var outputDirectory = GitlabUnitTestPipelineDirectory ?? RootDirectory / ".gitlab" / "generated";
+            var outputDirectory = RootDirectory / ".gitlab" / "generated";
             Directory.CreateDirectory(outputDirectory);
 
             WritePipeline("windows", PlatformFamily.Windows, isArm64: false);
