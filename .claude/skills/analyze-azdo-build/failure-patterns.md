@@ -234,7 +234,7 @@ Verify assertion failure
 
 **Common test names**: `*.SubmitsTraces` and other integration tests in `Datadog.Trace.ClrProfiler.IntegrationTests` — but only when the error is a snapshot content diff, not a span count mismatch.
 
-**Important**: A span-count mismatch is a **Test Assertion Failure**, not a snapshot-content diff. Updating snapshots cannot fix missing spans. Verify the particular test's assertion order before claiming snapshot comparison never ran; the test name and absence of a diff alone do not establish execution order. Zero spans does not rule out startup, transport, or timing failures.
+**Important**: A span-count mismatch is a **Test Assertion Failure**, not a snapshot-content diff. Updating snapshots cannot fix missing spans. Without the exact failing test, report: "The span-count assertion failed; whether snapshot verification ran is unknown." A missing Received/Verified diff does not establish execution order. Only describe that order after checking the specific test and its failure path, not a representative `SubmitsTraces` test. Zero spans does not rule out startup, transport, or timing failures.
 
 **Cause**: Code changes affected trace output (span tags, names, ordering, etc.). The actual output (`.received.txt`) no longer matches the expected snapshots (`.verified.txt` files in `tracer/test/snapshots/`).
 
