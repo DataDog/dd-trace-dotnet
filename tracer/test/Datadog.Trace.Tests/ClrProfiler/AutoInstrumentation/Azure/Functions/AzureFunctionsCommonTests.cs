@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -31,6 +32,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
 #pragma warning restore SA1403
 
+    [BaggageRestorer]
     public class AzureFunctionsCommonTests
     {
         [Fact]

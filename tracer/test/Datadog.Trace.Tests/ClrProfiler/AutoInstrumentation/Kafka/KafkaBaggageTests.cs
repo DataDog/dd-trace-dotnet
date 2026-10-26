@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
@@ -17,6 +18,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Kafka;
 
+[BaggageRestorer]
 public class KafkaBaggageTests
 {
     [Theory]
