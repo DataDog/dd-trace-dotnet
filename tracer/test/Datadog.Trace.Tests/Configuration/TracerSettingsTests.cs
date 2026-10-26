@@ -1135,6 +1135,44 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true", true, true)]
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true", false, false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp", true, true)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp", false, false)]
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "false", true, false)] // semantics mode without any signal
+#if NETCOREAPP3_1_OR_GREATER
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "true", true, true)]
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "true", false, false)]
+#endif
+#if NET6_0_OR_GREATER
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true", true, true)]
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true", false, false)]
+#endif
+        public void IsOpenTelemetryModeEnabled_RequiresSemanticsModeAndSignal(string signalKey, string signalValue, bool otelSemanticsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (signalKey, signalValue),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.IsOpenTelemetryModeEnabled(settings.Manager.InitialMutableSettings, settings.Manager.InitialExporterSettings)
+                    .Should().Be(expected);
+        }
+
+        [Fact]
+        public void IsOpenTelemetryModeEnabled_IgnoresOtlpTraceExportWhenTracingDisabled()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                (ConfigurationKeys.TraceEnabled, "false"),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.IsOpenTelemetryModeEnabled(settings.Manager.InitialMutableSettings, settings.Manager.InitialExporterSettings)
+                    .Should().BeFalse();
+        }
+
+        [Theory]
         [InlineData(null, 10000)]
         [InlineData("5000", 5000)]  // User custom value
         [InlineData("60000", 60000)]  // OTel spec default
