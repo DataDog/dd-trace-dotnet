@@ -22,6 +22,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             _failuresBeforeBroken = failuresBeforeBroken;
         }
 
+        public bool HasConsecutiveFailures => _consecutiveFailureCount > 0;
+
         public CircuitStatus MarkSuccess()
         {
             _hasEverSucceeded = true;

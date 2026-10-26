@@ -111,6 +111,27 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         }
 
         [Fact]
+        public async Task AfterFailure_WaitsAtLeastCircuitBreakPeriod_ThenFlushPeriodAfterSuccess()
+        {
+            var flushPeriod = TimeSpan.FromMilliseconds(10);
+            var options = new BatchingSinkOptions(
+                batchSizeLimit: 2,
+                queueLimit: DefaultQueueLimit,
+                period: flushPeriod,
+                circuitBreakPeriod: CircuitBreakPeriod,
+                failuresBeforeCircuitBreak: FailuresBeforeCircuitBreak);
+            await using var sink = new InMemoryBatchedSink(options, emitResults: [false, true]);
+            sink.Start();
+
+            sink.EnqueueLog(new TestEvent("Some event"));
+            await sink.RunOneIterationAsync(noDelay: false);
+            sink.EnqueueLog(new TestEvent("Some event"));
+            await sink.RunOneIterationAsync(noDelay: false);
+
+            sink.Delays.Should().Equal(CircuitBreakPeriod, flushPeriod);
+        }
+
+        [Fact]
         public async Task SinkDoesNotStartEmittingUntilStartIsCalled()
         {
             // This is the one test that needs the real background loop, because it's
@@ -256,6 +277,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             public ConcurrentStack<IList<DirectSubmissionLogEvent>> Batches { get; } = new();
 
+            public ConcurrentQueue<TimeSpan> Delays { get; } = new();
+
             protected override Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
                 Batches.Push(events.ToList());
@@ -273,6 +296,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             protected override void DelayEvents(TimeSpan delayUntilNextFlush)
             {
+                Delays.Enqueue(delayUntilNextFlush);
             }
         }
     }

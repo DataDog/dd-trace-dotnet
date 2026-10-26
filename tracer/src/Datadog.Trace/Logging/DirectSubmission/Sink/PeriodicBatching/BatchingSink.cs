@@ -300,6 +300,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 case CircuitStatus.Closed:
                 default:
                     _enqueueLogEnabled = true;
+                    if (_circuitBreaker.HasConsecutiveFailures && _circuitBreakPeriod > delayTillNextEmit)
+                    {
+                        delayTillNextEmit = _circuitBreakPeriod;
+                    }
+
                     break;
             }
 
