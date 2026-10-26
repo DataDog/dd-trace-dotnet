@@ -5,6 +5,9 @@
     Always run the UpdateVersion Nuke target to change it; do not edit by hand.
     Native (.vcxproj) projects import build/DdVersion.props instead, which imports this file.
 
+    It lives next to _build.csproj, rather than at the repository root, because the Linux build
+    images compile Nuke using only this directory as the Docker build context, and Nuke needs it.
+
     Keep exactly one DD_VersionPrefix element in this file, and never write its opening and closing
     tags anywhere else - not even in a comment. build/cmake/DdVersion.cmake and the UpdateVersion
     target both locate the version by matching those tags textually, and UpdateVersion rewrites

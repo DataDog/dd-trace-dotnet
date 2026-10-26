@@ -33,7 +33,7 @@ namespace PrepareRelease
         public string TracerDirectory { get; }
 
         /// <summary>
-        /// Gets the version to write. The source of truth is version.props at the repository root;
+        /// Gets the version to write. The source of truth is tracer/build/_build/version.props;
         /// change it with the UpdateVersion Nuke target rather than editing files by hand.
         /// </summary>
         public Version TracerVersion { get; }
@@ -181,7 +181,7 @@ namespace PrepareRelease
                 // Always changes, because UpdateVersion rejects a bump that does not change the
                 // version number.
                 SynchronizeVersion(
-                    "../version.props",
+                    "build/_build/version.props",
                     text =>
                     {
                         text = ReplaceElement(text, "DD_VersionPrefix", VersionString());

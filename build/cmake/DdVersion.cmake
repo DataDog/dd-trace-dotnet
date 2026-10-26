@@ -1,7 +1,8 @@
-# Exposes the version from <repo-root>/version.props as DD_VERSION, for project(... VERSION ...),
-# which accepts only a numeric major[.minor[.patch[.tweak]]]. Also adds the DD_VERSION_* compile
-# definitions that shared/src/native-src/dd_version.h expects (build/DdVersion.props defines the same set
-# for the MSBuild builds).
+# Exposes the version from tracer/build/_build/version.props as DD_VERSION, for project(... VERSION ...),
+# which accepts only a numeric major[.minor[.patch[.tweak]]]. Also adds the DD_VERSION_MAJOR,
+# DD_VERSION_MINOR and DD_VERSION_PATCH compile definitions that shared/src/native-src/dd_version.h
+# expects (build/DdVersion.props defines the same set for the MSBuild builds). dd_version.h derives
+# everything else from them, so new derived values belong there, not here.
 #
 # Deliberately re-read on every include and stored as a normal (not cached) variable, so that a
 # version bump is picked up by an existing build directory, and you don't get weird instrumentation
@@ -9,7 +10,7 @@
 
 get_filename_component(DD_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 
-set(DD_VERSION_PROPS "${DD_REPO_ROOT}/version.props")
+set(DD_VERSION_PROPS "${DD_REPO_ROOT}/tracer/build/_build/version.props")
 if(NOT EXISTS "${DD_VERSION_PROPS}")
     message(FATAL_ERROR "Could not find ${DD_VERSION_PROPS}. This file holds the SDK version number.")
 endif()

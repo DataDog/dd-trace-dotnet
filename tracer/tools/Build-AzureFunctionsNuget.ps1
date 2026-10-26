@@ -84,7 +84,7 @@ Write-Verbose "Tracer directory: $tracerDir"
 if (-not $Version)
 {
     # Read the base version from version.props
-    $propsPath = "$(Split-Path -Parent $tracerDir)/version.props"
+    $propsPath = "$tracerDir/build/_build/version.props"
     [xml]$propsXml = Get-Content $propsPath
     $baseVersion = $propsXml.Project.PropertyGroup.DD_VersionPrefix | Where-Object { $_ } | Select-Object -First 1
     if (-not $baseVersion)

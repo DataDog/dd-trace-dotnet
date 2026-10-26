@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- The SDK version, so ProjectInfo below can echo it into Nuke itself -->
-  <Import Project="$(MSBuildThisFileDirectory)..\..\..\version.props" />
+  <Import Project="$(MSBuildThisFileDirectory)version.props" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>

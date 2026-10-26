@@ -447,7 +447,7 @@ partial class Build
             // canonical file and the samples.
             var expectedFileChanges = new List<string>
             {
-                "version.props",
+                "tracer/build/_build/version.props",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",

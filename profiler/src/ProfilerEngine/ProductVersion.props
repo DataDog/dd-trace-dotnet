@@ -3,7 +3,7 @@
   <!-- Follow the instructions in the comments to set the version and the version-date.                                                     -->
   <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
 
-  <!-- The version comes from version.props at the repo root. -->
+  <!-- The version comes from tracer/build/_build/version.props. -->
   <PropertyGroup>
     <ProductVersion>$(DD_VersionPrefix)</ProductVersion>
   </PropertyGroup>
