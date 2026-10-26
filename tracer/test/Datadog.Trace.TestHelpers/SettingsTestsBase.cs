@@ -96,7 +96,8 @@ namespace Datadog.Trace.TestHelpers
                 config.Add(key, value);
             }
 
-            return new NameValueConfigurationSource(config);
+            // Production settings always read through a composite source
+            return new CompositeConfigurationSource { new NameValueConfigurationSource(config) };
         }
     }
 }

@@ -159,18 +159,17 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("1", "none", true, (int)Count.OpenTelemetryConfigHiddenByDatadogConfig)]
         [InlineData("0", "random", false, (int)Count.OpenTelemetryConfigHiddenByDatadogConfig)]
         [InlineData("0", "none", false, (int)Count.OpenTelemetryConfigHiddenByDatadogConfig)]
+        [InlineData("invalid", "none", true, (int)Count.OpenTelemetryConfigHiddenByDatadogConfig)]
         [InlineData(null, "random", true, (int)Count.OpenTelemetryConfigInvalid)]
         [InlineData(null, "none", false, null)]
         public async Task TraceEnabled(string value, string otelValue, bool areTracesEnabled, int? metric)
         {
-            var settings = new NameValueCollection
-            {
-                { ConfigurationKeys.TraceEnabled, value },
-                { ConfigurationKeys.OpenTelemetry.TracesExporter, otelValue },
-            };
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.TraceEnabled, value),
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, otelValue));
 
             var errorLog = new OverrideErrorLog();
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, errorLog);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
 
             Assert.Equal(areTracesEnabled, tracerSettings.Manager.InitialMutableSettings.TraceEnabled);
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter.ToLowerInvariant(), ConfigurationKeys.TraceEnabled.ToLowerInvariant());
