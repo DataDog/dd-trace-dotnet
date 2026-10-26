@@ -1135,11 +1135,10 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true", true, true)]
-        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true", false, false)]
         [InlineData(ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp", true, true)]
         [InlineData(ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp", false, false)]
-        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "false", true, false)] // semantics mode without any signal
+        [InlineData(ConfigurationKeys.OpenTelemetry.TracesExporter, null, true, false)] // semantics mode without any signal
+        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true", true, false)] // the tracing API bridge is not a signal
 #if NETCOREAPP3_1_OR_GREATER
         [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "true", true, true)]
         [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "true", false, false)]
