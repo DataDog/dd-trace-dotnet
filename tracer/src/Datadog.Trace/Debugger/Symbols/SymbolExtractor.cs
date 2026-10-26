@@ -105,6 +105,7 @@ namespace Datadog.Trace.Debugger.Symbols
         /// <summary>
         /// Roslyn emits a local function declared in source as <c>Name</c> as a method named
         /// <c>&lt;{containing member}&gt;g__Name|{id}</c>, e.g. <c>&lt;&lt;Main&gt;$&gt;g__GetProduct|0_0</c> for a local function declared in top-level statements.
+        /// Keep in sync with DebuggerRejitPreprocessor::IsLocalFunctionNamed, which resolves method probes on that name.
         /// </summary>
         [TestingAndPrivateOnly]
         internal static bool TryGetLocalFunctionName(string? methodName, [NotNullWhen(true)] out string? localFunctionName)
@@ -822,6 +823,7 @@ namespace Datadog.Trace.Debugger.Symbols
         /// <summary>
         /// Creates the method scope of a local function. The scope uses the name the user wrote, not the generated metadata name,
         /// and its source location is the one of the method that runs, so line probes on it resolve to the generated method.
+        /// Method probes on the source name are resolved to the generated method by DebuggerRejitPreprocessor.
         /// </summary>
         protected virtual bool TryCreateLocalFunctionScope(TypeDefinition ownerType, MethodDefinitionHandle methodHandle, MethodDefinition method, string localFunctionName, bool declaredOnClosureClass, out Model.Scope methodScope)
         {

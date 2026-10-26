@@ -51,6 +51,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     signature_builder_test.cpp
     runtime_async_test.cpp
     rejit_concurrency_test.cpp
+    debugger_local_function_test.cpp
     test_link_stubs.cpp
     otel_thread_ctx_test.cpp
     ../../src/Datadog.Tracer.Native/otel_thread_ctx.cpp

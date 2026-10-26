@@ -59,10 +59,13 @@ protected:
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     const bool m_isDesktopClr;
 
+    // methodNameOverride looks up methods with that metadata name instead of the target method name, e.g. the generated
+    // name of a C# local function targeted by its source name. It does not apply to explicit interface implementations.
     void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                             ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
                             ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
-                            mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
+                            mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests,
+                            const shared::WSTRING* methodNameOverride = nullptr);
 
     virtual void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
                           ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,

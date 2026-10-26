@@ -313,26 +313,27 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
     const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
     ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
     ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo, const mdTypeDef typeDef,
-    std::vector<MethodIdentifier>& rejitRequests)
+    std::vector<MethodIdentifier>& rejitRequests, const shared::WSTRING* methodNameOverride)
 {
     auto target_method = GetTargetMethod(definition);
+    const auto& method_name_to_find = methodNameOverride != nullptr ? *methodNameOverride : target_method.method_name;
     auto is_interface = GetIsInterface(definition);
-    const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
+    const bool wildcard_enabled = method_name_to_find == tracemethodintegration_wildcardmethodname;
     const bool iterate_explicit_interface_methods = is_interface && !wildcard_enabled;
 
-    DBG("  Looking for '", target_method.type.name, ".", target_method.method_name, "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
+    DBG("  Looking for '", target_method.type.name, ".", method_name_to_find, "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
 
     // Now we enumerate all methods with the same target method name. (All overloads of the method)
     auto enumMethods = Enumerator<mdMethodDef>(
-        [&metadataImport, target_method, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            if (target_method.method_name == tracemethodintegration_wildcardmethodname)
+        [&metadataImport, &method_name_to_find, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
+                                                          ULONG* cnt) -> HRESULT {
+            if (method_name_to_find == tracemethodintegration_wildcardmethodname)
             {
                 return metadataImport->EnumMethods(ptr, typeDef, arr, max, cnt);
             }
             else
             {
-                return metadataImport->EnumMethodsWithName(ptr, typeDef, target_method.method_name.c_str(), arr, max,
-                                                           cnt);
+                return metadataImport->EnumMethodsWithName(ptr, typeDef, method_name_to_find.c_str(), arr, max, cnt);
             }
         },
         [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
