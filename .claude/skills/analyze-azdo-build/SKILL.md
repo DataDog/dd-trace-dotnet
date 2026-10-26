@@ -115,7 +115,7 @@ After presenting the quick summary, check if any failed tests are likely snapsho
 - **Error messages** containing `Received file does not match`, `*.received.*` vs `*.verified.*` diffs, or Verify assertion failures
 - **Test names** containing `SubmitsTraces` in `Datadog.Trace.ClrProfiler.IntegrationTests.*` — but **only if** the error is a snapshot diff, not a span count mismatch
 
-**Important**: A span-count assertion (`Expected N spans but got M`, including zero) is not a snapshot-content diff; updating snapshots cannot fix it. Check the particular test's assertion order before claiming snapshot comparison never ran. Missing spans can result from instrumentation defects, startup/transport failures, or timing; the count alone does not prove a deterministic regression or rule out flakiness. Only suggest snapshot updates for an actual content diff whose change is intentional.
+**Important**: A span-count assertion (`Expected N spans but got M`, including zero) is not a snapshot-content diff; updating snapshots cannot fix it. Without the exact failing test, report: "The span-count assertion failed; whether snapshot verification ran is unknown." A missing Received/Verified diff does not establish execution order. Only describe that order after checking the specific test and its failure path, not a representative `SubmitsTraces` test. Missing spans can result from instrumentation defects, startup/transport failures, or timing; the count alone does not prove a deterministic regression or rule out flakiness. Only suggest snapshot updates for an actual content diff whose change is intentional.
 
 If snapshot failures are detected:
 
