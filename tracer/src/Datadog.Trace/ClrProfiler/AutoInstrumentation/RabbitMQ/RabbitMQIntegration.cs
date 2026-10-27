@@ -178,10 +178,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 return 0;
             }
 
-            var isPublishedInSeconds = amqpTimestamp < MaxAmqpTimestampInSeconds;
-            return isPublishedInSeconds
-                ? Math.Max(0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - (amqpTimestamp * 1000))
-                : Math.Max(0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - amqpTimestamp);
+            var publishedAtMs = amqpTimestamp < MaxAmqpTimestampInSeconds ? amqpTimestamp * 1000 : amqpTimestamp;
+            return Math.Max(0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - publishedAtMs);
         }
 
         internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize, long messageTimestamp)
