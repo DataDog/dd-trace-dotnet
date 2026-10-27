@@ -1130,7 +1130,8 @@ public class FeatureFlagsModuleTests
         notifications.Should().Be(1);
         module.FirstConfigReceived.IsCompleted.Should().BeTrue();
         module.Evaluate("plan-flag", FeatureFlagsValueType.Boolean, false, "user", new Dictionary<string, object?> { ["plan"] = "premium", ["broken"] = new UnserializableAttribute() }).Value.Should().Be(true);
-        module.Dispose();
+        // Dispose returns before an agentless evaluation writer finishes closing.
+        await module.DisposeAsync();
         requests.RequestsSent.Should().ContainSingle();
         manager.HasAnySubscription.Should().BeFalse();
         delivery.Disposed.Should().Be(agentless ? 1 : 0);
