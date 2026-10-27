@@ -72,7 +72,36 @@ public class FlagEvaluationContextSnapshotTests
             pair.Value.Should().Be(values[pair.Key]);
         }
 
-        reasons.Should().Be(attributeCount > 256 ? (int)ContextOmissionReason.MaxStructureProperties : 0);
+        reasons.Should().Be(attributeCount > 256 ? (int)ContextOmissionReason.MaxContextFields : 0);
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void RootTargetingKeyDoesNotConsumeVisitBudget(bool overBudget)
+    {
+        // The baseline fills the visit budget; overBudget adds one discarded element.
+        var builder = EvaluationContext.Builder().SetTargetingKey("subject");
+        for (var i = 0; i < 256; i++)
+        {
+            var discarded = overBudget && i == 0 ? 4 : 3;
+            builder.Set("field" + i, new Value(Enumerable.Repeat(new Value(double.NaN), discarded).Concat([new Value("value" + i)]).ToList()));
+        }
+
+        var snapshot = FlagEvaluationContextSnapshot.Capture(builder.Build(), out var reasons);
+
+        snapshot.Should().HaveCount(overBudget ? 255 : 256);
+        reasons.Should().Be((int)(ContextOmissionReason.UnsupportedValue | (overBudget ? ContextOmissionReason.MaxVisitedNodes : ContextOmissionReason.None)));
+    }
+
+    [Fact]
+    public void KeysOmittedForLengthStillConsumeContainerSlots()
+    {
+        // Rejected keys must consume container slots before traversal exhausts the visit budget.
+        var entries = Enumerable.Range(0, 1280).ToDictionary(i => new string('k', 257) + i, _ => new Value(true));
+        var context = EvaluationContext.Builder().Set("data", new Value(new Structure(entries))).Build();
+
+        FlagEvaluationContextSnapshot.Capture(context, out var reasons).Should().BeEmpty();
+        reasons.Should().Be((int)(ContextOmissionReason.MaxStructureProperties | ContextOmissionReason.MaxKeyLength));
     }
 
     [Fact]
@@ -85,7 +114,7 @@ public class FlagEvaluationContextSnapshotTests
         var first = FlagEvaluationContextSnapshot.Capture(firstContext, out var reasons);
 
         first.Should().HaveCount(256);
-        reasons.Should().NotBe(0);
+        reasons.Should().Be((int)ContextOmissionReason.MaxStructureProperties);
         FlagEvaluationContextSnapshot.Capture(firstContext, out _).Should().BeEquivalentTo(first);
         FlagEvaluationContextSnapshot.Capture(rebuiltContext, out _).Should().BeEquivalentTo(first);
     }

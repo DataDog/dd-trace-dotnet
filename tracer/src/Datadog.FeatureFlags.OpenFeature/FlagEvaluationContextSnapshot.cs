@@ -30,6 +30,7 @@ internal static class FlagEvaluationContextSnapshot
 
     private sealed class Snapshot
     {
+        private const string TargetingKey = "targetingKey";
         private const int MaxFields = 256;
         private const int MaxTextLength = 256;
         private const int MaxContainerItems = 256;
@@ -44,27 +45,28 @@ internal static class FlagEvaluationContextSnapshot
 
         internal void VisitMap(IImmutableDictionary<string, Value> map, string prefix, int depth)
         {
-            // Root identity is captured separately and does not consume the attribute budget.
-            var attributeCount = map.Count - (depth == 0 && map.ContainsKey("targetingKey") ? 1 : 0);
+            // The root targetingKey is never captured as an attribute, so it does not consume the
+            // attribute budget. A string value is reported separately as the event's targeting key.
+            var attributeCount = map.Count - (depth == 0 && map.ContainsKey(TargetingKey) ? 1 : 0);
             if (attributeCount > MaxContainerItems)
             {
-                Reasons |= ContextOmissionReason.MaxStructureProperties;
+                Reasons |= depth == 0 ? ContextOmissionReason.MaxContextFields : ContextOmissionReason.MaxStructureProperties;
             }
 
-            var count = Math.Min(attributeCount, MaxContainerItems);
+            var remaining = Math.Min(attributeCount, MaxContainerItems);
             // Bound enumeration without collecting/sorting the input. Rebuilt oversized maps with
             // colliding key hashes can select different subsets; evaluation results are unaffected.
             using var iterator = map.GetEnumerator();
-            for (var i = 0; i < count && iterator.MoveNext();)
+            while (remaining > 0 && iterator.MoveNext())
             {
                 var pair = iterator.Current;
 
-                if (depth == 0 && pair.Key == "targetingKey")
+                if (depth == 0 && pair.Key == TargetingKey)
                 {
                     continue;
                 }
 
-                i++;
+                remaining--;
                 if (!TryVisit())
                 {
                     break;
