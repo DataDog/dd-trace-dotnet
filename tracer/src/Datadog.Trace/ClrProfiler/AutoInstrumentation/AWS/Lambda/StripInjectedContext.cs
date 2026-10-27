@@ -5,7 +5,6 @@
 #if NET6_0_OR_GREATER
 #nullable enable
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -73,7 +72,7 @@ internal static class StripInjectedContext
                 return null;
             }
 
-            return new MemoryStream(Encoding.UTF8.GetBytes(stripped));
+            return new MemoryStream(EncodingHelpers.Utf8NoBom.GetBytes(stripped));
         }
         catch (Exception ex)
         {
@@ -227,31 +226,31 @@ internal static class StripInjectedContext
     private static string? StripEncodedJson(string json, int start, int end, int depth)
     {
         var decoded = DecodeString(json, start, end);
-        if (!IsJsonObject(decoded))
+        if (decoded == null || !StartsWithObject(decoded))
         {
             return null;
         }
 
         var stripped = StripJson(decoded, depth + 1);
-        if (ReferenceEquals(stripped, decoded))
+
+        // Only validated when rewriting, so strings that merely mention the carrier key are not parsed
+        if (ReferenceEquals(stripped, decoded) || !IsJsonObject(decoded))
         {
             return null;
         }
 
-        // Re-encode as a JSON string literal
-        return JsonHelper.SerializeObject(stripped);
+        return JsonConvert.ToString(stripped);
     }
 
     // Decodes the JSON string literal json[start, end) (quotes included) without copying the literal first.
     // Returns null on an invalid escape sequence.
     private static string? DecodeString(string json, int start, int end)
     {
-        int contentStart = start + 1;
         int contentEnd = end - 1;
-        var builder = StringBuilderCache.Acquire(contentEnd - contentStart);
-        int copyFrom = contentStart;
+        int copyFrom = start + 1;
+        var builder = StringBuilderCache.Acquire(contentEnd - copyFrom);
 
-        for (int i = contentStart; i < contentEnd; i++)
+        for (int i = copyFrom; i < contentEnd; i++)
         {
             if (json[i] != '\\')
             {
@@ -259,50 +258,13 @@ internal static class StripInjectedContext
             }
 
             builder.Append(json, copyFrom, i - copyFrom);
-            if (++i >= contentEnd)
+            if (!TryUnescape(json, ref i, contentEnd, out char c))
             {
                 StringBuilderCache.Release(builder);
                 return null;
             }
 
-            switch (json[i])
-            {
-                case '"':
-                case '\\':
-                case '/':
-                    builder.Append(json[i]);
-                    break;
-                case 'b':
-                    builder.Append('\b');
-                    break;
-                case 'f':
-                    builder.Append('\f');
-                    break;
-                case 'n':
-                    builder.Append('\n');
-                    break;
-                case 'r':
-                    builder.Append('\r');
-                    break;
-                case 't':
-                    builder.Append('\t');
-                    break;
-                case 'u':
-                    if (i + 4 >= contentEnd
-                        || !ushort.TryParse(json.AsSpan(i + 1, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var code))
-                    {
-                        StringBuilderCache.Release(builder);
-                        return null;
-                    }
-
-                    builder.Append((char)code);
-                    i += 4;
-                    break;
-                default:
-                    StringBuilderCache.Release(builder);
-                    return null;
-            }
-
+            builder.Append(c);
             copyFrom = i + 1;
         }
 
@@ -310,29 +272,66 @@ internal static class StripInjectedContext
         return StringBuilderCache.GetStringAndRelease(builder);
     }
 
-    // Only a string holding exactly one JSON object is treated as encoded JSON;
-    // brace-delimited customer text such as "{...} is an example {}" is kept as is.
-    private static bool IsJsonObject([NotNullWhen(true)] string? text)
+    // i is on the backslash; on success it is left on the last character of the escape sequence.
+    private static bool TryUnescape(string json, ref int i, int contentEnd, out char c)
     {
-        if (text == null)
+        c = default;
+        if (++i >= contentEnd)
         {
             return false;
         }
 
+        switch (json[i])
+        {
+            case '"' or '\\' or '/':
+                c = json[i];
+                return true;
+            case 'b':
+                c = '\b';
+                return true;
+            case 'f':
+                c = '\f';
+                return true;
+            case 'n':
+                c = '\n';
+                return true;
+            case 'r':
+                c = '\r';
+                return true;
+            case 't':
+                c = '\t';
+                return true;
+            case 'u' when i + 4 < contentEnd
+                && ushort.TryParse(json.AsSpan(i + 1, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var code):
+                c = (char)code;
+                i += 4;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static bool StartsWithObject(string text)
+    {
         int first = SkipWhitespace(text, 0);
-        if (first >= text.Length || text[first] != '{')
-        {
-            return false;
-        }
+        return first < text.Length && text[first] == '{';
+    }
 
+    // Only a string holding exactly one JSON object is rewritten;
+    // brace-delimited customer text such as "{...} is an example {}" is kept as is.
+    private static bool IsJsonObject(string text)
+    {
         try
         {
-            using var reader = new JsonTextReader(new StringReader(text)) { ArrayPool = JsonArrayPool.Shared };
-            reader.Read();
-            reader.Skip();
+            using var reader = new JsonTextReader(new StringReader(text))
+            {
+                ArrayPool = JsonArrayPool.Shared,
+                DateParseHandling = DateParseHandling.None,
+            };
+
             while (reader.Read())
             {
-                // throws on trailing content after the object
+                // throws on trailing content after the root object
             }
 
             return true;
