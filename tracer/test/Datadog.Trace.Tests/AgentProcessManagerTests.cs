@@ -25,7 +25,7 @@ public class AgentProcessManagerTests
     [InlineData(2)]
     public void GetKeepAliveAction_DoesNotStartWhileOwnProcessIsRunning(int failedHealthChecks)
     {
-        // e.g. the startup wait timed out while the process we started is still running
+        // For example, the startup wait timed out while the process we started is still running
         AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true, failedHealthChecks)
                            .Should().Be(KeepAliveAction.None);
     }
@@ -36,7 +36,7 @@ public class AgentProcessManagerTests
     [InlineData(10)]
     public void GetKeepAliveAction_StartsWhenUnhealthyAndOwnProcessIsNotRunning(int failedHealthChecks)
     {
-        // Never Restart: an agent we did not start is never stopped
+        // Never Restart, even after many failed checks, because we never stop an agent we did not start
         AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: false, failedHealthChecks)
                            .Should().Be(KeepAliveAction.Start);
     }

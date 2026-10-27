@@ -241,15 +241,15 @@ namespace Datadog.Trace
                                     var previousState = metadata.ProcessState;
                                     var isHealthy = await metadata.ProcessIsHealthyAsync().ConfigureAwait(false);
 
-                                    // Read our process state after the probe, so an exit during the probe is logged and counted,
-                                    // and use that single reading for every decision below
+                                    // Check whether our own process is running only after the health check, so an exit during the
+                                    // check is logged and counted. Every decision below uses this one reading.
                                     var ownProcessIsRunning = metadata.OwnProcessIsRunning();
                                     var ownProcessExited = !ownProcessIsRunning && RecordOwnProcessExit(metadata);
                                     metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
                                     var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, metadata.FailedHealthChecks);
                                     if (isHealthy)
                                     {
-                                        // Failed starts, exits, and restarts share one backoff, which resets only after StableHealthyPeriod of health
+                                        // Reset the backoff only after StableHealthyPeriod, so an agent that keeps flapping still backs off
                                         metadata.HealthyStopwatch ??= Stopwatch.StartNew();
                                         if (metadata.HealthyStopwatch.ElapsedMilliseconds >= StableHealthyPeriod)
                                         {
@@ -269,7 +269,7 @@ namespace Datadog.Trace
                                         var startDelay = GetStartDelay(ownProcessExited, metadata.SequentialFailures, maxRetryInterval);
                                         if (startDelay > 0)
                                         {
-                                            // The process we started exited after its startup window: back off like any other failure
+                                            // The process we started exited after the startup wait: back off like any other failure
                                             if (metadata.SequentialFailures == 1)
                                             {
                                                 Log.Warning("{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
@@ -536,7 +536,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the delay before retrying after a failed start or a health-check restart: <see cref="ExceptionRetryInterval"/>
+        /// Gets the delay before the next attempt after <paramref name="sequentialFailures"/> failures in a row: <see cref="ExceptionRetryInterval"/>
         /// after the first failure, doubling with each further failure up to <paramref name="maxRetryInterval"/>. Retries never stop.
         /// </summary>
         [TestingAndPrivateOnly]
@@ -697,10 +697,9 @@ namespace Datadog.Trace
             public bool IsBeingManaged { get; set; }
 
             /// <summary>
-            /// Gets or sets the number of failures in a row: failed starts, exits of the process we started, restarts,
-            /// and unexpected keep-alive exceptions. It sets the retry backoff. For failed starts, exits, and restarts, only
-            /// the first failure in a run is logged above Debug, because later ones are expected retries; unexpected exceptions
-            /// are always logged as an Error. It resets after the agent stays healthy for <see cref="StableHealthyPeriod"/>.
+            /// Gets or sets the number of failures in a row, which sets the retry backoff: failed starts, exits of the process
+            /// we started, restarts, and unexpected exceptions. Only the first failed start, exit, or restart in a run logs above
+            /// Debug, because later ones are retries. It resets after the agent stays healthy for <see cref="StableHealthyPeriod"/>.
             /// </summary>
             public int SequentialFailures { get; set; }
 
