@@ -16,27 +16,33 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
 {
     public class RequestInvokerHandlerSendAsyncIntegrationTests
     {
+        public static TheoryData<bool, int, string> ContextScenarios => new()
+        {
+            { false, 0, "gateway" },
+            { false, 1, "direct" },
+            { false, 2, "other" },
+            // Disposed contexts fail before the connection mode can be read.
+            { true, 0, "gateway" },
+        };
+
         [Theory]
-        [InlineData(false, 0, "gateway")]
-        [InlineData(false, 1, "direct")]
-        [InlineData(false, 2, "other")]
-        [InlineData(true, 0, "gateway")]
-        [InlineData(true, 1, "direct")]
-        [InlineData(true, 2, "other")]
+        [MemberData(nameof(ContextScenarios))]
         public void OnMethodBegin_CreatesSpanWhenContextIsDisposed(bool disposed, int connectionMode, string expectedMode)
         {
             var context = new ClientContext(disposed, connectionMode);
             var handler = new RequestInvokerHandler(new Client(context)).DuckCast<IRequestInvokerHandlerProxy>();
+            var container = new { Id = "myColl", Database = new { Id = "myDb" } }.DuckCast<IContainer>();
             var state = RequestInvokerHandlerSendAsyncIntegration.OnMethodBegin<IRequestInvokerHandlerProxy, IContainer>(
-                handler, "dbs/myDb/colls/myColl/docs/item1", "Document", "Read", null, null!, null, null, null, null, default);
+                handler, "dbs/myDb/colls/myColl/docs/item1", "Document", "Read", null, container, null, null, null, null, default);
 
-            using var scope = state.Scope;
-            scope.Should().NotBeNull();
-            scope!.Span.ResourceName.Should().Be("Read dbs/myDb/colls/myColl/docs/?");
+            using var scope = Assert.IsType<Scope>(state.Scope);
+            scope.Span.ResourceName.Should().Be("Read dbs/myDb/colls/myColl/docs/?");
             scope.Span.Type.Should().Be(SpanTypes.Sql);
             var tags = scope.Span.Tags.Should().BeAssignableTo<CosmosDbTags>().Subject;
             tags.UserAgent.Should().Be(disposed ? null : "cosmos-test-agent");
             tags.ConnectionMode.Should().Be(disposed ? null : expectedMode);
+            tags.ContainerId.Should().Be("myColl");
+            tags.DatabaseId.Should().Be("myDb");
             var expectedTags = Tracer.Instance.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
             expectedTags.SetEndpoint(new Uri("https://localhost:8081"));
             tags.Host.Should().Be(expectedTags.Host);
