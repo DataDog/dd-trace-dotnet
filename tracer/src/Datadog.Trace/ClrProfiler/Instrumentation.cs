@@ -211,13 +211,10 @@ namespace Datadog.Trace.ClrProfiler
                     // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
                     // while the app is shutting down, which results in flaky tests due to the short-
                     // lived nature of our apps. This appears to be a bug in the runtime (although
-                    // we haven't yet confirmed that). Computing a SHA-256 hash forces the native
-                    // OpenSSL library to load during startup. SHA-256 is used instead of MD5 because
-                    // MD5 is not FIPS-approved: on FIPS-enabled OpenSSL it can throw or crash the process.
-                    using (var sha256 = SHA256.Create())
-                    {
-                        _ = sha256.ComputeHash(Array.Empty<byte>());
-                    }
+                    // we haven't yet confirmed that). Creating a SHA-256 instance forces the native
+                    // OpenSSL library to load and initialize during startup. SHA-256 is used instead of MD5
+                    // because MD5 is not FIPS-approved: on FIPS-enabled OpenSSL it can throw or crash the process.
+                    SHA256.Create().Dispose();
                 }
                 catch (Exception ex)
                 {
