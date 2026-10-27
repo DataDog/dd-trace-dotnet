@@ -156,7 +156,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
 
         if (exporterSettings.IsOtlpTraceExport)
         {
-            sampler.RegisterRule(new DefaultSamplingRule());
+            sampler.RegisterRule(new OtlpDefaultSamplingRule());
         }
         else
         {

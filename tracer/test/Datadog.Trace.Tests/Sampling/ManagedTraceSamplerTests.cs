@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.Sampling
     {
         [Theory]
         [InlineData(null, typeof(AgentSamplingRule))]
-        [InlineData("otlp", typeof(DefaultSamplingRule))]
+        [InlineData("otlp", typeof(OtlpDefaultSamplingRule))]
         public void NoSamplingRules_UsesDefaultMechanism(string tracesExporter, Type expectedRuleType)
         {
             var sampler = CreateSampler(tracesExporter, globalSamplingRate: null);
