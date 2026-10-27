@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -3095,6 +3096,28 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
+        [Theory]
+        [InlineData(@"{""getmember"":[{""ref"":""AutoPropertyLocal""},""<Password>k__BackingField""]}")]
+        [InlineData(@"{""getmember"":[{""ref"":""AutoPropertyLocal""},""<ApiKey>k__BackingField""]}")]
+        [InlineData(@"{""ref"":""<Password>k__BackingField""}")]
+        [InlineData(@"{""eq"":[{""getmember"":[{""ref"":""AutoPropertyLocal""},""<Password>k__BackingField""]},""TOP_SECRET_VALUE""]}")]
+        public void ProbeExpressionEvaluator_TemplateBackingFieldOfSensitiveAutoProperty_IsRedacted(string json)
+        {
+            var result = EvaluateAutoPropertyTemplate(json);
+
+            result.Template.Should().Be("value={redacted}");
+            result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateBackingFieldOfNonSensitiveAutoProperty_IsRendered()
+        {
+            var result = EvaluateAutoPropertyTemplate(@"{""getmember"":[{""ref"":""AutoPropertyLocal""},""<Data>k__BackingField""]}");
+
+            result.Template.Should().Be("value=PUBLIC_VALUE");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
         [Fact]
         public void ProbeExpressionEvaluator_ConditionRedaction_IsConditionError()
         {
@@ -3442,7 +3465,7 @@ namespace Datadog.Trace.Tests.Debugger
             var result = evaluator.Evaluate(scopeMembers);
 
             result.Template.Should().Be("{redacted}");
-            result.Errors.Should().BeNullOrEmpty();
+            result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
         }
 
         [Fact]
@@ -3843,6 +3866,27 @@ namespace Datadog.Trace.Tests.Debugger
                 ref budget);
         }
 
+        private ExpressionEvaluationResult EvaluateAutoPropertyTemplate(string json)
+        {
+            var holder = new SensitiveAutoPropertyHolder { Password = "TOP_SECRET_VALUE", ApiKey = "TOP_SECRET_VALUE", Data = "PUBLIC_VALUE" };
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(SensitiveAutoPropertyHolder), holder, ScopeMemberKind.This);
+            scopeMembers.AddMember(new ScopeMember("AutoPropertyLocal", typeof(SensitiveAutoPropertyHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(null, null, "value="),
+                    new DebuggerExpression(string.Empty, json, null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            return evaluator.Evaluate(scopeMembers);
+        }
+
         private (string Template, bool? Condition, double? Metric, List<EvaluationError> Errors) Evaluate((ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) evaluator)
         {
             var result = evaluator.Evaluator.Evaluate(evaluator.ScopeMembers);
@@ -4125,6 +4169,147 @@ namespace Datadog.Trace.Tests.Debugger
 #pragma warning disable CS0414 // Field is assigned but its value is never used
                 private string _childPrivateMember = "Hello from child private member";
 #pragma warning restore CS0414 // Field is assigned but its value is never used
+            }
+        }
+
+        [Collection(nameof(RedactionTests))]
+        public class RedactedTypeTests
+        {
+            private const string Secret = "TOP_SECRET_VALUE";
+            private const string PublicValue = "PUBLIC_VALUE";
+
+            private readonly DebuggerExpressionLanguageTests _tests = new();
+
+            [Theory]
+            [InlineData(@"{""ref"":""PiiLocal""}")]
+            [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]}")]
+            [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""TestValue""]}")]
+            [InlineData(@"{""getmember"":[{""ref"":""PiiAsBaseLocal""},""TestValue""]}")]
+            [InlineData(@"{""eq"":[{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""len"":{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]}}")]
+            [InlineData(@"{""index"":[{""ref"":""PiiListLocal""},0]}")]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""PiiListLocal""},0]},""CustomKey""]}")]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""PiiDictionaryLocal""},""first""]},""CustomKey""]}")]
+            [InlineData(@"{""index"":[{""ref"":""RedactedListLocal""},0]}")]
+            [InlineData(@"{""len"":{""ref"":""RedactedListLocal""}}")]
+            [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""Redacted""]}")]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""Redacted""]},""CustomKey""]}")]
+            [InlineData(@"{""any"":[{""ref"":""PiiListLocal""},{""eq"":[{""getmember"":[""@it"",""CustomKey""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""any"":[{""ref"":""PiiDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""CustomKey""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""getmember"":[{""ref"":""this""},""CustomKey""]}")]
+            [InlineData(@"{""ref"":""CustomKey""}")]
+            [InlineData(@"{""getmember"":[{""ref"":""@return""},""CustomKey""]}")]
+            public void ProbeExpressionEvaluator_TemplateReadingRedactedType_IsRedacted(string json)
+            {
+                var result = Evaluate(new RedactedTarget { TestValue = Secret, CustomKey = Secret }, template: json, condition: null);
+
+                result.Template.Should().Be("value={redacted}");
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+            }
+
+            [Theory]
+            [InlineData(@"{""eq"":[{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""eq"":[{""getmember"":[{""index"":[{""ref"":""PiiListLocal""},0]},""CustomKey""]},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""eq"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""Redacted""]},""CustomKey""]},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""any"":[{""ref"":""PiiListLocal""},{""eq"":[{""getmember"":[""@it"",""CustomKey""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""eq"":[{""ref"":""CustomKey""},""TOP_SECRET_VALUE""]}")]
+            public void ProbeExpressionEvaluator_ConditionReadingRedactedType_IsRedactionError(string json)
+            {
+                var result = Evaluate(new RedactedTarget { TestValue = Secret, CustomKey = Secret }, template: null, condition: json);
+
+                result.Condition.Should().BeFalse();
+                result.HasConditionError.Should().BeTrue();
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+            }
+
+            [Theory]
+            [InlineData(@"{""getmember"":[{""ref"":""PublicLocal""},""CustomKey""]}", PublicValue)]
+            [InlineData(@"{""getmember"":[{""ref"":""PublicLocal""},""TestValue""]}", PublicValue)]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""PublicListLocal""},0]},""CustomKey""]}", PublicValue)]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""PublicDictionaryLocal""},""first""]},""CustomKey""]}", PublicValue)]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""Public""]},""CustomKey""]}", PublicValue)]
+            [InlineData(@"{""any"":[{""ref"":""PublicListLocal""},{""eq"":[{""getmember"":[""@it"",""CustomKey""]},""PUBLIC_VALUE""]}]}", "True")]
+            [InlineData(@"{""any"":[{""ref"":""PublicDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""CustomKey""]},""PUBLIC_VALUE""]}]}", "True")]
+            [InlineData(@"{""len"":{""ref"":""PublicListLocal""}}", "1")]
+            [InlineData(@"{""getmember"":[{""ref"":""this""},""CustomKey""]}", PublicValue)]
+            [InlineData(@"{""ref"":""CustomKey""}", PublicValue)]
+            [InlineData(@"{""getmember"":[{""ref"":""@return""},""CustomKey""]}", PublicValue)]
+            public void ProbeExpressionEvaluator_TemplateReadingNonRedactedType_IsUnchanged(string json, string expected)
+            {
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
+
+                result.Template.Should().Be("value=" + expected);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            private ExpressionEvaluationResult Evaluate(TargetBase target, string template, string condition)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    Redaction.Instance.SetConfig([], [], [typeof(RedactedTarget).FullName, typeof(List<RedactedListItem>).FullName]);
+
+                    DebuggerExpression?[] templates = template is null
+                                                          ? [new DebuggerExpression(null, null, "value=")]
+                                                          : [new DebuggerExpression(null, null, "value="), new DebuggerExpression(string.Empty, template, null)];
+                    var evaluator = _tests.CreateEvaluator(
+                        templates: templates,
+                        condition: condition is null ? null : new DebuggerExpression(string.Empty, condition, null),
+                        metric: null,
+                        spanDecorations: null,
+                        captureExpressions: null);
+
+                    return evaluator.Evaluate(CreateScopeMembers(target));
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            private MethodScopeMembers CreateScopeMembers(TargetBase target)
+            {
+                var redacted = new RedactedTarget { TestValue = Secret, CustomKey = Secret };
+                var @public = new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
+                var scopeMembers = _tests.CreateScopeMembers();
+                scopeMembers.InvocationTarget = new ScopeMember("this", target.GetType(), target, ScopeMemberKind.This);
+                scopeMembers.Return = new ScopeMember("@return", target.GetType(), target, ScopeMemberKind.Return);
+                scopeMembers.AddMember(new ScopeMember("PiiLocal", typeof(RedactedTarget), redacted, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("PiiAsBaseLocal", typeof(TargetBase), redacted, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("PiiListLocal", typeof(List<RedactedTarget>), new List<RedactedTarget> { redacted }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("PiiDictionaryLocal", typeof(Dictionary<string, RedactedTarget>), new Dictionary<string, RedactedTarget> { { "first", redacted } }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("RedactedListLocal", typeof(List<RedactedListItem>), new List<RedactedListItem> { new() }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("PublicLocal", typeof(PublicTarget), @public, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("PublicListLocal", typeof(List<PublicTarget>), new List<PublicTarget> { @public }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("PublicDictionaryLocal", typeof(Dictionary<string, PublicTarget>), new Dictionary<string, PublicTarget> { { "first", @public } }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("HolderLocal", typeof(TargetHolder), new TargetHolder { Redacted = redacted, Public = @public }, ScopeMemberKind.Local));
+                return scopeMembers;
+            }
+
+            private class TargetBase
+            {
+                public string TestValue { get; set; }
+            }
+
+            private class RedactedTarget : TargetBase
+            {
+                public string CustomKey { get; set; }
+            }
+
+            private class PublicTarget : TargetBase
+            {
+                public string CustomKey { get; set; }
+            }
+
+            private class TargetHolder
+            {
+                public RedactedTarget Redacted { get; set; }
+
+                public PublicTarget Public { get; set; }
+            }
+
+            private class RedactedListItem
+            {
             }
         }
 
@@ -4432,6 +4617,15 @@ namespace Datadog.Trace.Tests.Debugger
         private class AutoPropertyTarget
         {
             public string Value { get; set; }
+        }
+
+        private class SensitiveAutoPropertyHolder
+        {
+            public string Password { get; set; }
+
+            public string ApiKey { get; set; }
+
+            public string Data { get; set; }
         }
 
         private class BaseAutoPropertyTarget

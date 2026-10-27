@@ -419,6 +419,17 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
+            if (IsRedactedValue(source))
+            {
+                return source;
+            }
+
+            if (Redaction.Instance.IsRedactedType(source.Type))
+            {
+                AddRedactionError($"{source}[{indexOrKey}]");
+                return RedactedValue();
+            }
+
             if (!IsTypeSupportIndex(source.Type, out var assignableFrom))
             {
                 throw new InvalidOperationException("Source must implement IList or IDictionary");
@@ -440,7 +451,14 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            return CallGetItem(source, assignableFrom, indexOrKey);
+            var item = CallGetItem(source, assignableFrom, indexOrKey);
+            if (Redaction.Instance.IsRedactedType(item.Type))
+            {
+                AddRedactionError($"{source}[{indexOrKey}]");
+                return RedactedValue();
+            }
+
+            return item;
         }
         catch (Exception e)
         {
@@ -700,6 +718,12 @@ internal partial class ProbeExpressionParser<T>
             (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
                .Add(undefinedValue, new RedactedDictionaryValueExpression(redactedDictionaryValue.ShouldRedactExpression, undefinedValue));
             return undefinedValue;
+        }
+
+        if (Redaction.Instance.IsRedactedType(memberExpression.Type))
+        {
+            AddRedactionError($"{valueExpression}.{propertyOrFieldValue}");
+            return RedactedValue();
         }
 
         (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
