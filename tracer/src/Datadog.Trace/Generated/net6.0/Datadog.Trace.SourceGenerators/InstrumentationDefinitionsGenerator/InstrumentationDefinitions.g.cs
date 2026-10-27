@@ -190,6 +190,19 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsToChannelIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCustomEventsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsToChannelAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCustomEventsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AzureEventGrid,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.InstrumentMessageIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.AmqpConsumerReceiveAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventDataBatchTryAddIntegration"
@@ -580,6 +593,7 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.Npgsql,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSetSkippedResultIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.SimpleWorkItemctor2Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.SimpleWorkItemctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitSimpleWorkItemMakeTestCommandIntegration"
@@ -588,11 +602,15 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitReflectInvokeMethodIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkAccumulateSpanEnrichmentIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanEnqueueEVPIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEnqueueEVPIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkHasConfigurationIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkInitializeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsAvailableIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsEvaluationEventsEnabledIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsSpanEnrichmentEnabledIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRecordEVPHookErrorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRegisterOnNewConfigEventHandlerIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.OpenFeature,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"

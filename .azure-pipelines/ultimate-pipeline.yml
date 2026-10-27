@@ -159,7 +159,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.56.0
+  ToolVersion: 3.57.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -209,6 +209,52 @@ stages:
 
     steps:
     - checkout: none
+    # Allow opting out of CI for a PR (e.g. for large stacks of PRs) by adding the 'skip-ci' label or
+    # '[skip-ci]' or '[skip ci]' (case-insensitive) anywhere in the title. AzDO doesn't expose labels or title as variables, so we query GitHub.
+    # Every stage depends on this one, so failing here stops the whole pipeline. Any error fails open.
+    - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+      - template: steps/create-github-app-token.yml
+        parameters:
+          continueOnError: true
+      - bash: |
+          AUTH_HEADER=()
+          if [[ -n "$GITHUB_TOKEN" && "$GITHUB_TOKEN" != '$('* ]]; then
+            AUTH_HEADER=(-H "Authorization: token $GITHUB_TOKEN")
+          else
+            echo "No GitHub token available, querying anonymously"
+          fi
+
+          if ! PR_JSON=$(curl -sf $(CURL_RETRY_FLAGS) "${AUTH_HEADER[@]}" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$PR_NUMBER"); then
+            echo "##vso[task.logissue type=warning]Unable to fetch details for PR #$PR_NUMBER, running CI"
+            exit 0
+          fi
+
+          if ! SKIP=$(echo "$PR_JSON" | jq -r 'any(.labels[]?; .name == "skip-ci") or ((.title // "") | ascii_downcase | contains("[skip-ci]") or contains("[skip ci]"))'); then
+            echo "##vso[task.logissue type=warning]Unable to parse details for PR #$PR_NUMBER, running CI"
+            exit 0
+          fi
+
+          if [[ "$SKIP" != "true" ]]; then
+            echo "PR #$PR_NUMBER has not opted out of CI, running CI"
+            exit 0
+          fi
+
+          echo "##vso[task.logissue type=warning]PR #$PR_NUMBER has the 'skip-ci' label or '[skip-ci]'/'[skip ci]' in the title, so cancelling CI. To run CI, remove it and then either comment '/azp run' on the PR or retry this build in Azure DevOps"
+          curl -s $(CURL_RETRY_FLAGS) -o /dev/null -X PATCH \
+            -H "Authorization: Bearer $SYSTEM_ACCESSTOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"status":"cancelling"}' \
+            "$(System.CollectionUri)$(System.TeamProject)/_apis/build/builds/$(Build.BuildId)?api-version=7.1" \
+            || echo "Unable to cancel the build"
+
+          # Also fail the job, so dependent stages are skipped even if the cancellation is slow or not permitted
+          exit 1
+        displayName: Check for skip-ci opt out
+        env:
+          GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
+          PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     - bash: |
         TARGET_BRANCH=$SYSTEM_PULLREQUEST_TARGETBRANCH
         echo "SYSTEM_PULLREQUEST_TARGETBRANCH=$TARGET_BRANCH"
@@ -2462,6 +2508,9 @@ stages:
         SampleName: $(IntegrationTestSampleName)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         COMPOSE_PROFILES: group$(dockerGroup)
+        # Event Grid emulator (group2) pushes to the Functions host webhook; in CI the func host runs inside
+        # the IntegrationTests container, reachable by sibling containers as "integrationtests".
+        EVENTGRID_WEBHOOK_HOST: integrationtests
       displayName: docker-compose build IntegrationTests and run StartDependencies (Group $(dockerGroup))
       retryCountOnTaskFailure: 5
 
@@ -2481,6 +2530,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
         COMPOSE_PROFILES: group$(dockerGroup)
+        EVENTGRID_WEBHOOK_HOST: integrationtests
 
     - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) logs
       displayName: docker-compose logs
@@ -2665,7 +2715,9 @@ stages:
           serverless-lambda-generic-abstract-async \
           serverless-lambda-generic-complex \
           serverless-lambda-generic-complex-nested \
-          serverless-lambda-toplevel-statement
+          serverless-lambda-toplevel-statement \
+          serverless-lambda-disabled-integration \
+          serverless-lambda-disabled-tracing
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
@@ -4644,10 +4696,10 @@ stages:
           WORKFLOW="create-system-test-docker-base-images-master.yml"
           if [ "$(Build.Reason)" = "PullRequest" ]; then
             WORKFLOW="create-system-test-docker-base-images-pr.yml"
-            LABELS=$(curl -s $(CURL_RETRY_FLAGS) \
+            PR_JSON=$(curl -fsS $(CURL_RETRY_FLAGS) \
             -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)" \
-            | jq -r '.labels[].name')
+            "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$(System.PullRequest.PullRequestNumber)") || exit 1
+            LABELS=$(echo "$PR_JSON" | jq -r '.labels[].name')
 
             if echo "$LABELS" | grep -q "docker_image_artifacts"; then
               BRANCH_NAME="$PR_SOURCE_BRANCH"
@@ -4664,7 +4716,7 @@ stages:
           fi
 
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/$WORKFLOW with ref=$REF and azdo_build_id=$(Build.BuildId)"
-          curl \
+          curl --fail \
             $(CURL_RETRY_FLAGS) \
             -X POST \
             -H "Accept: application/vnd.github+json" \

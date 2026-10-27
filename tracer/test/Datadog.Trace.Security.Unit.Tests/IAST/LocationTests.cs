@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Iast;
 using FluentAssertions;
 using Xunit;
@@ -58,4 +59,21 @@ public class LocationTests
         location.Method.Should().Be("GivenALocation_WhenCreatedFromStackFrame_ValueIsExpected");
         location.Path.Should().Be("LocationTests.cs");
     }
+
+    [Fact]
+    public void GivenAnIdentityFrame_WhenCreatedFromStackFrame_TheHashComesFromItButTheValuesDoNot()
+    {
+        var stack = new StackTrace(fNeedFileInfo: true);
+        var frame = stack.GetFrame(0);
+        var identityFrame = GetIdentityFrame();
+
+        var location = new Location(frame, stack, null, null, identityFrame);
+
+        location.Class.Should().Be("Datadog.Trace.Security.Unit.Tests.IAST.LocationTests");
+        location.Method.Should().Be(nameof(GivenAnIdentityFrame_WhenCreatedFromStackFrame_TheHashComesFromItButTheValuesDoNot));
+        location.GetHashCode().Should().Be(new Location("Datadog.Trace.Security.Unit.Tests.IAST.LocationTests", nameof(GetIdentityFrame), null, null).GetHashCode());
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static StackFrame GetIdentityFrame() => new StackFrame(0, false);
 }

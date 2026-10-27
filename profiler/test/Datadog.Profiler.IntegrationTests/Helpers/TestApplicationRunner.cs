@@ -80,6 +80,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             RunTest(agent);
             PrintTestInfo();
+            agent.ThrowIfHandlerFailed();
         }
 
         public bool WaitForExitOrCaptureDump(Process process, int milliseconds)

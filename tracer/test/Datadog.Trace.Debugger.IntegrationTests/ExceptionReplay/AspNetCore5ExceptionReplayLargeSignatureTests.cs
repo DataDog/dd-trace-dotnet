@@ -6,9 +6,10 @@
 #if NETCOREAPP3_0_OR_GREATER
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Samples.Probes.TestRuns;
@@ -19,16 +20,17 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Debugger.IntegrationTests.ExceptionReplay;
 
 /// <summary>
-/// Exception Replay rewrites the frames of a thrown exception. A frame holding a local whose type signature is
-/// larger than the native 500 byte buffers (here an anonymous type with 300 properties) used to overflow a
-/// stack buffer in the native tracer and fail fast the process (0xC0000409).
+/// Exception Replay rewrites the frames of a thrown exception. A frame with a local or a return type whose type
+/// signature is larger than the native 500 byte buffers (here an anonymous type with 300 properties) used to
+/// overflow a stack buffer in the native tracer and fail fast the process (0xC0000409).
 /// </summary>
 [CollectionDefinition(nameof(AspNetCore5ExceptionReplayLargeSignatureTests), DisableParallelization = true)]
 [Collection(nameof(AspNetCore5ExceptionReplayLargeSignatureTests))]
 public class AspNetCore5ExceptionReplayLargeSignatureTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    private const string ExceptionReplayPhaseTag = "_dd.di._er";
-    private const string DebugInfoCapturedTag = "error.debug_info_captured";
+    private const string FrameFunctionTagSuffix = ".frame_data.function";
+    private const string FrameWithLargeLocal = "ThrowWithLargeLocal";
+    private const string LambdaReturningLargeTypePrefix = "<ThrowWithLargeLocal>b__";
     private const int Attempts = 4;
 
     public AspNetCore5ExceptionReplayLargeSignatureTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
@@ -59,9 +61,9 @@ public class AspNetCore5ExceptionReplayLargeSignatureTests : AspNetBase, IClassF
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task ExceptionReplay_LocalWithLargeTypeSignature_DoesNotCrashProcess()
+    public async Task ExceptionReplay_LargeTypeSignatures_DoesNotCrashProcess()
     {
-        var url = $"/RunTest/{typeof(LargeAnonymousTypeLocalTest).FullName}";
+        var url = $"/RunTest/{typeof(LargeAnonymousTypeTest).FullName}";
         var expectedErrorType = typeof(ExceptionReplayIntentionalException).FullName;
 
         IncludeAllHttpSpans = true;
@@ -69,7 +71,7 @@ public class AspNetCore5ExceptionReplayLargeSignatureTests : AspNetBase, IClassF
         SetHttpPort(Fixture.HttpPort);
 
         var agent = Fixture.Agent;
-        var captured = false;
+        var capturedFunctions = new HashSet<string>();
 
         try
         {
@@ -85,18 +87,28 @@ public class AspNetCore5ExceptionReplayLargeSignatureTests : AspNetBase, IClassF
                 var erroredSpan = spans.Should().Contain(x => x.Tags != null && x.Tags.ContainsKey(Tags.ErrorStack)).Which;
                 erroredSpan.GetTag(Tags.ErrorType).Should().Be(expectedErrorType);
 
-                captured |= erroredSpan.GetTag(ExceptionReplayPhaseTag) == ExceptionReplayDiagnosticTagNames.Eligible
-                         && erroredSpan.Tags.ContainsKey(DebugInfoCapturedTag);
+                capturedFunctions.UnionWith(GetCapturedFunctions(erroredSpan));
 
                 await Task.Delay(250);
             }
 
-            captured.Should().BeTrue("the frame with the large local should be rewritten and captured, not just survive");
+            // Other frames are captured too, so check these two by name: either could be skipped while the request still succeeds
+            capturedFunctions.Should().Contain(FrameWithLargeLocal, "the frame holding the large local should be rewritten and captured, not just survive");
+            capturedFunctions.Should().Contain(
+                function => function.StartsWith(LambdaReturningLargeTypePrefix, StringComparison.Ordinal),
+                "the lambda returning the large type should be rewritten and captured, not just survive");
         }
         finally
         {
             agent.ClearSnapshots();
         }
+    }
+
+    private static IEnumerable<string> GetCapturedFunctions(MockSpan span)
+    {
+        return span.Tags
+                   .Where(tag => tag.Key.EndsWith(FrameFunctionTagSuffix, StringComparison.Ordinal))
+                   .Select(tag => tag.Value);
     }
 }
 

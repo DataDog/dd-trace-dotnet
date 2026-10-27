@@ -104,7 +104,10 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
         _settingsSubscription = settings.Manager.SubscribeToChanges(changes =>
         {
-            if (changes.UpdatedExporter is { } updatedExporter)
+            // Replay may describe a later context-only update. Its previous exporter is
+            // still the current address, not necessarily InitialExporterSettings.
+            var updatedExporter = changes.UpdatedExporter ?? changes.PreviousExporter;
+            if (!ReferenceEquals(Volatile.Read(ref _localEndpoint).ExporterSettings, updatedExporter))
             {
                 UpdateExporter(updatedExporter);
             }
@@ -209,7 +212,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 #else
         // HttpWebRequest uses the platform default proxy and bypass list. Redirects stay disabled
         // so the API key is sent only to the configured intake host.
-        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false, enforceAsyncTimeout: true);
+        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false);
 #endif
     }
 
@@ -220,7 +223,8 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             productName: "Feature Flags EVP",
             tcpTimeout: TimeSpan.FromSeconds(5),
             httpHeaderHelper: FeatureFlagsEvpHeaderHelper.Instance,
-            allowAutoRedirect: allowAutoRedirect);
+            allowAutoRedirect: allowAutoRedirect,
+            requestTimeout: TimeSpan.FromSeconds(5));
 
     [TestingAndPrivateOnly]
     internal static bool IsDefinitivePreSendSocketFailure(SocketException exception)
@@ -232,6 +236,9 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                                              or SocketError.AddressNotAvailable
         || exception.ErrorCode == 2 // ENOENT for a missing Unix domain socket
         || exception.ErrorCode == 10061; // WSAECONNREFUSED
+
+    private static bool IsEvaluationRejection(int statusCode)
+        => statusCode is >= 400 and < 500 and not (404 or 405 or 408 or 429);
 
     private static NetworkFailure ClassifyNetworkFailure(Exception exception)
     {
@@ -299,6 +306,20 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     internal Task SendAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings)
         => SendAsync(intakePath, request => request.PostAsJsonAsync(payload, MultipartCompression.GZip, serializerSettings));
+
+    // The writer has already applied privacy rules, payload limits and gzip compression.
+    internal async Task SendFlagEvaluationsAsync(ArraySegment<byte> payload)
+    {
+        try
+        {
+            await SendAsync(FlagEvaluationIntakePath, request => request.PostAsync(payload, "application/json", "gzip")).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Neither exception messages nor response bodies are safe evaluation diagnostics.
+            _log.ErrorSkipTelemetry("FeatureFlags flagevaluation send failed; dropping this batch without retry.");
+        }
+    }
 
     private void UpdateExporter(ExporterSettings exporter)
     {
@@ -503,7 +524,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                 }
                 else
                 {
-                    Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", response.StatusCode);
+                    LogLocalRejection(intakePath, response.StatusCode);
                 }
 
                 return;
@@ -512,7 +533,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             // Other responses may have come from upstream after the Agent accepted the payload.
             // Never replay this batch, but leave the failed route for future Agentless batches.
             LeaveLocalRoute(local);
-            Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", response.StatusCode);
+            LogLocalRejection(intakePath, response.StatusCode);
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.DefinitivePreSend)
         {
@@ -522,7 +543,14 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             }
             else
             {
-                Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent");
+                if (intakePath == FlagEvaluationIntakePath)
+                {
+                    LogEvaluationNetworkFailure();
+                }
+                else
+                {
+                    Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent");
+                }
             }
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.Ambiguous)
@@ -531,8 +559,37 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             // current one can never be duplicated across the local and direct routes.
             LeaveLocalRoute(local);
 
-            Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
+            if (intakePath == FlagEvaluationIntakePath)
+            {
+                LogEvaluationNetworkFailure();
+            }
+            else
+            {
+                Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
+            }
         }
+    }
+
+    private void LogLocalRejection(string intakePath, int statusCode)
+    {
+        if (intakePath != FlagEvaluationIntakePath)
+        {
+            Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", statusCode);
+        }
+        else if (IsEvaluationRejection(statusCode))
+        {
+            _log.Error<int>("FeatureFlags flagevaluation Agent request rejected with HTTP status {StatusCode}; dropping this batch without retry.", statusCode);
+        }
+        else
+        {
+            _log.ErrorSkipTelemetry<int>("FeatureFlags flagevaluation Agent request failed with HTTP status {StatusCode}; dropping this batch without retry.", statusCode);
+        }
+    }
+
+    private void LogEvaluationNetworkFailure()
+    {
+        // Network exceptions may include customer-controlled data. Keep them out of logs.
+        _log.ErrorSkipTelemetry("FeatureFlags flagevaluation request failed; see https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet");
     }
 
     private bool LeaveLocalRoute(LocalEndpoint local)
@@ -571,7 +628,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             if (response.StatusCode is < 200 or >= 300)
             {
                 const string Message = "Feature Flags direct EVP request to {Endpoint} failed with HTTP status code {StatusCode} after 1 attempt; the batch will not be replayed. See https://docs.datadoghq.com/feature_flags/";
-                if (response.StatusCode == 400)
+                if (response.StatusCode == 400 || (intakePath == FlagEvaluationIntakePath && IsEvaluationRejection(response.StatusCode)))
                 {
                     _log.Error<string, int>(Message, intakePath, response.StatusCode);
                 }
@@ -584,7 +641,14 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         catch (Exception ex)
         {
             // Direct intake is terminal: never loop a failed direct request back through the Agent.
-            Log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed");
+            if (intakePath == FlagEvaluationIntakePath)
+            {
+                LogEvaluationNetworkFailure();
+            }
+            else
+            {
+                Log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed");
+            }
         }
     }
 

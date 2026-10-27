@@ -12,7 +12,7 @@
       env: integration_tests,
       error.msg: Expected InvalidOperationException thrown,
       error.stack:
-Parameters: refire = False, unscheduleFiringTrigger = False, unscheduleAllTriggers = False 
+Parameters: refire = False, unscheduleFiringTrigger = False, unscheduleAllTriggers = False
 Quartz.JobExecutionException: Expected InvalidOperationException thrown
 ---> System.InvalidOperationException: Expected InvalidOperationException thrown
 at QuartzSampleApp.Jobs.ExceptionJob.Quartz.IJob.Execute(IJobExecutionContext context),
