@@ -71,6 +71,28 @@ internal partial class ProbeExpressionParser<T>
                type == typeof(char);
     }
 
+    private static bool TryFoldConstantExpression(Expression expression, out ConstantExpression constant)
+    {
+        constant = null;
+        try
+        {
+            var visitor = new ConstantFoldingVisitor();
+            var body = visitor.Visit(expression);
+            if (visitor.IsRejected)
+            {
+                return false;
+            }
+
+            var value = Expression.Lambda<Func<object>>(Expression.Convert(body, typeof(object))).Compile()();
+            constant = Expression.Constant(value, expression.Type);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Predicate(reader, parameters, PredicateOperation.Any, itParameter);
@@ -401,6 +423,12 @@ internal partial class ProbeExpressionParser<T>
             if (!IsTypeSupportIndex(source.Type, out var assignableFrom))
             {
                 throw new InvalidOperationException("Source must implement IList or IDictionary");
+            }
+
+            // Fold keys computed only from constants so they are redaction-checked like literal keys.
+            if (indexOrKey is not null and not ConstantExpression && TryFoldConstantExpression(indexOrKey, out var foldedIndexOrKey))
+            {
+                indexOrKey = foldedIndexOrKey;
             }
 
             if (indexOrKey.Type == typeof(string) &&
@@ -881,6 +909,66 @@ internal partial class ProbeExpressionParser<T>
                 Found = true;
             }
 
+            return node;
+        }
+    }
+
+    /// <summary>
+    /// Strips parser budget checks and rejects anything that reads runtime state or could run customer code,
+    /// leaving only BCL operations on primitive and string constants.
+    /// </summary>
+    private sealed class ConstantFoldingVisitor : ExpressionVisitor
+    {
+        internal bool IsRejected { get; private set; }
+
+        public override Expression Visit(Expression node)
+        {
+            return IsRejected ? node : base.Visit(node);
+        }
+
+        protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
+            if (node.Method == ThrowIfExceededMethod || node.Method == ThrowIfExceededImmediatelyMethod)
+            {
+                return Expression.Empty();
+            }
+
+            return base.VisitMethodCall(node);
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return Reject(node);
+        }
+
+        protected override Expression VisitMember(MemberExpression node)
+        {
+            return node.Expression is null ? Reject(node) : base.VisitMember(node);
+        }
+
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            return node.Value is null or string || node.Value.GetType().IsPrimitive ? node : Reject(node);
+        }
+
+        protected override Expression VisitLambda<TDelegate>(Expression<TDelegate> node)
+        {
+            return Reject(node);
+        }
+
+        protected override Expression VisitGoto(GotoExpression node)
+        {
+            return Reject(node);
+        }
+
+        protected override Expression VisitExtension(Expression node)
+        {
+            return Reject(node);
+        }
+
+        private Expression Reject(Expression node)
+        {
+            IsRejected = true;
             return node;
         }
     }
