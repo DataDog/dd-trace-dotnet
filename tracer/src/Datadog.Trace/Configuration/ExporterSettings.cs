@@ -607,6 +607,8 @@ namespace Datadog.Trace.Configuration
                 TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
                 TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString()?.Trim();
 
+                // Pre-record the default like AsString(defaultValue) does, as TraceAgentHost must stay null when unset
+                telemetry.Record(ConfigurationKeys.AgentHost, DefaultAgentHost, recordValue: true, ConfigurationOrigins.Default);
                 TraceAgentHost = config
                                .WithKeys(ConfigurationKeys.AgentHost)
                                .AsString()?.Trim();

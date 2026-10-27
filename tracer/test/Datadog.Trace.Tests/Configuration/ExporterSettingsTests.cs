@@ -496,6 +496,21 @@ namespace Datadog.Trace.Tests.Configuration
             endpointEntry.Origin.Should().Be(expectedEndpointOrigin);
         }
 
+        [Theory]
+        [InlineData(null, "localhost", ConfigurationOrigins.Default)]
+        [InlineData("agent", "agent", ConfigurationOrigins.Code)]
+        public void AgentHostTelemetry(string agentHost, string expectedAgentHost, ConfigurationOrigins expectedOrigin)
+        {
+            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.AgentHost, agentHost } });
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ExporterSettings(source, NoFile(), telemetry);
+
+            var entry = LastEntry(telemetry, ConfigurationKeys.AgentHost);
+            entry.StringValue.Should().Be(expectedAgentHost);
+            entry.Origin.Should().Be(expectedOrigin);
+        }
+
         private static ConfigurationTelemetry.ConfigurationTelemetryEntry LastEntry(ConfigurationTelemetry telemetry, string key)
             => telemetry.GetQueueForTesting().Where(e => e.Key == key).OrderByDescending(e => e.SeqId).First();
 
