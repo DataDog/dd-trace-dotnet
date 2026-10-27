@@ -15,8 +15,9 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal sealed class UpdateResult
     {
-        private UpdateResult(in DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), IntPtr wafHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
+        private UpdateResult(in DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), IntPtr wafHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null, int configErrors = 0)
         {
+            ConfigErrors = configErrors;
             WafLibraryInvoker = invoker;
             Encoder = encoder;
             WafBuilderHandle = builderHandle;
@@ -34,8 +35,8 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             }
         }
 
-        private UpdateResult(string errorMessage, in DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
-            : this(diagObject, builderHandle, IntPtr.Zero, invoker, encoder)
+        private UpdateResult(string errorMessage, in DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null, int configErrors = 0)
+            : this(diagObject, builderHandle, IntPtr.Zero, invoker, encoder, configErrors)
         {
             ErrorMessage = !string.IsNullOrEmpty(ErrorMessage) ? string.Join(Environment.NewLine, errorMessage, ErrorMessage) : errorMessage;
         }
@@ -58,11 +59,16 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal bool HasRuleErrors { get; }
 
+        /// <summary>
+        /// Gets the number of errors the WAF reported across every configuration applied, already sent as telemetry
+        /// </summary>
+        internal int ConfigErrors { get; }
+
         internal IReadOnlyDictionary<string, object>? RuleErrors => ReportedDiagnostics.Rules.Errors;
 
-        public static UpdateResult FromSuccess(in DdwafObjectStruct diagObj, IntPtr builderHandle, IntPtr wafHandle, WafLibraryInvoker invoker, IEncoder encoder) => new(diagObj, builderHandle, wafHandle, invoker, encoder);
+        public static UpdateResult FromSuccess(in DdwafObjectStruct diagObj, IntPtr builderHandle, IntPtr wafHandle, WafLibraryInvoker invoker, IEncoder encoder, int configErrors = 0) => new(diagObj, builderHandle, wafHandle, invoker, encoder, configErrors);
 
-        internal static UpdateResult FromFailed(string message, in DdwafObjectStruct diagObject, IntPtr builderHandle, WafLibraryInvoker? invoker, IEncoder encoder) => new(message, diagObject, builderHandle, invoker, encoder);
+        internal static UpdateResult FromFailed(string message, in DdwafObjectStruct diagObject, IntPtr builderHandle, WafLibraryInvoker? invoker, IEncoder encoder, int configErrors = 0) => new(message, diagObject, builderHandle, invoker, encoder, configErrors);
 
         internal static UpdateResult FromException(Exception e) => FromFailed(e.Message);
 
