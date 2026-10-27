@@ -3173,13 +3173,13 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void ProbeExpressionEvaluator_MetricRedactionThatFailsToCompile_ReportsErrorsWithoutValue()
         {
-            // password.Length is undefined, so assigning it to the metric result throws while compiling. The
+            // The filter result is a list, so assigning it to the metric result throws while compiling. The
             // default delegate would then report 0.
             var scopeMembers = CreateScopeMembers();
             var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
-                metric: new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""password""},""Length""]}", null),
+                metric: new DebuggerExpression(string.Empty, @"{""filter"":[{""ref"":""CollectionLocal""},{""eq"":[""@it"",{""ref"":""password""}]}]}", null),
                 spanDecorations: null,
                 captureExpressions: null);
 
