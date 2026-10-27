@@ -50,7 +50,7 @@ internal partial class ProbeExpressionParser<T>
         return field.IsLiteral ? StaticMemberSafety.GetRawConstantValue(field) : field.GetValue(field.IsStatic ? null : source);
     }
 
-    private static bool ShouldRedactDumpValue(string name, Type type)
+    private static bool ShouldRedactValue(string name, Type type)
     {
         if (Redaction.Instance.ShouldRedact(name, type, out _))
         {
@@ -81,7 +81,7 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
-        if (ShouldRedactDumpValue(null, expression.Type))
+        if (ShouldRedactValue(null, expression.Type))
         {
             return Expression.Constant(RedactedValueDump);
         }
@@ -278,7 +278,7 @@ internal partial class ProbeExpressionParser<T>
     private string DumpObject(object value, Type type, string name, int depth = 0)
     {
         var hasName = !StringUtil.IsNullOrEmpty(name);
-        if (ShouldRedactDumpValue(name, type))
+        if (ShouldRedactValue(name, type))
         {
             return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
         }

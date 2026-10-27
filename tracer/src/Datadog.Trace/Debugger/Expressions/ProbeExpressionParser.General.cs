@@ -464,7 +464,7 @@ internal partial class ProbeExpressionParser<T>
         {
             // method local variable and method argument
             var refMember = ParseTree(reader, parameters, itParameter);
-            if (refMember is not ConstantExpression constant)
+            if (refMember is not ConstantExpression constant || IsRedactedValue(refMember))
             {
                 return refMember;
             }
@@ -482,7 +482,7 @@ internal partial class ProbeExpressionParser<T>
                 var parameter = parameters[i];
                 if (parameter.Name == constantValue)
                 {
-                    return parameter;
+                    return RedactIfRedactedType(parameter, null, constantValue);
                 }
             }
 
@@ -505,9 +505,14 @@ internal partial class ProbeExpressionParser<T>
             return UndefinedValue();
         }
 
+        if (IsRedactedValue(expression))
+        {
+            return expression;
+        }
+
         try
         {
-            if (Redaction.Instance.ShouldRedact(propertyOrFieldValue, propertyOrField.Type, out _))
+            if (ShouldRedactValue(propertyOrFieldValue, expression.Type))
             {
                 AddRedactionError($"{expression}.{propertyOrFieldValue}");
                 return RedactedValue();
@@ -515,7 +520,7 @@ internal partial class ProbeExpressionParser<T>
 
             if (TryGetDictionaryEntryMember(expression, propertyOrFieldValue, out var dictionaryEntryMember))
             {
-                return dictionaryEntryMember;
+                return RedactIfRedactedType(dictionaryEntryMember, expression, propertyOrFieldValue);
             }
 
             if (TryGetRedactedDictionaryValue(expression, out var redactedDictionaryValue))
@@ -529,7 +534,7 @@ internal partial class ProbeExpressionParser<T>
                 return UndefinedValue();
             }
 
-            return memberExpression;
+            return RedactIfRedactedType(memberExpression, expression, propertyOrFieldValue);
         }
         catch (Exception e)
         {
@@ -545,7 +550,24 @@ internal partial class ProbeExpressionParser<T>
 
     private ConstantExpression RedactedValue()
     {
-        return Expression.Constant(RedactedValueDump);
+        return _redactedValue ??= Expression.Constant(RedactedValueDump);
+    }
+
+    private bool IsRedactedValue(Expression expression)
+    {
+        return _redactedValue is not null && ReferenceEquals(expression, _redactedValue);
+    }
+
+    // Compile-time check: exact for root scope members (compiled per runtime type), declared type for anything read from them.
+    private Expression RedactIfRedactedType(Expression value, Expression source, string name)
+    {
+        if (!Redaction.Instance.IsRedactedType(value.Type))
+        {
+            return value;
+        }
+
+        AddRedactionError(source is null ? name : $"{source}.{name}");
+        return RedactedValue();
     }
 
     private GotoExpression ReturnDefaultValueExpression()
