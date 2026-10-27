@@ -5,6 +5,7 @@ $dockerArguments = @(
     'run', '--rm', '-m', '20480M',
     '-v', "$(Get-Location):c:\mnt",
     '-e', 'CI=true',
+    '-e', 'GITLAB_CI',
     '-e', 'CI_JOB_ID',
     '-e', 'CI_COMMIT_BRANCH',
     '-e', 'CI_MERGE_REQUEST_SOURCE_BRANCH_NAME',
