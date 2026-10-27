@@ -46,7 +46,9 @@ Expressions: (
             ? "System.Exception"
             : ProbeExpressionParser<string>.IsRedactedRuntimeValue(dumpValue, typeof(Exception))
                 ? "{redacted}"
-                : "System.Exception" + ", " + ((Exception)dumpValue).Message + ", " + ((Exception)dumpValue).StackTrace;
+                : ProbeExpressionParser<string>.IsCoreLibType(dumpValue)
+                    ? "System.Exception" + ", " + ((Exception)dumpValue).Message + ", " + ((Exception)dumpValue).StackTrace
+                    : ProbeExpressionParser<string>.DumpNonCoreLibException((Exception)dumpValue);
     };
 
     return $dd_el_result;

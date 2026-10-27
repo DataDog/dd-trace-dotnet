@@ -23,6 +23,12 @@ internal partial class ProbeExpressionParser<T>
     private const string RedactedValueDump = "{redacted}";
     private const string BackingFieldSuffix = ">k__BackingField";
 
+    // A type in CoreLib is never customer code, and a subclass of a type outside CoreLib is never in CoreLib.
+    private static readonly Assembly CoreLibAssembly = typeof(object).Assembly;
+
+    // Read as a field, so a Message override never runs.
+    private static readonly FieldInfo ExceptionMessageField = typeof(Exception).GetField("_message", BindingFlags.Instance | BindingFlags.NonPublic);
+
     private static FieldInfo[] GetSafeFieldsForDump(FieldInfo[] fields)
     {
         var writeIndex = 0;
@@ -111,6 +117,19 @@ internal partial class ProbeExpressionParser<T>
         return value.GetType() == declaredType || declaredType.IsValueType;
     }
 
+    // Message and StackTrace are virtual, so they are only called on a CoreLib exception.
+    private static bool IsCoreLibType(object value)
+    {
+        return ReferenceEquals(value.GetType().Assembly, CoreLibAssembly);
+    }
+
+    // Any exception outside CoreLib shows its runtime type and the message it was constructed with.
+    private static string DumpNonCoreLibException(Exception exception)
+    {
+        var typeName = exception.GetType().FullName;
+        return ExceptionMessageField?.GetValue(exception) is string message ? $"{typeName}, {message}" : typeName;
+    }
+
     private static Expression IsNullExpression(Expression expression)
     {
         // Expression.Equal could bind to a customer equality operator
@@ -163,10 +182,10 @@ internal partial class ProbeExpressionParser<T>
         // A sealed or value type is its own runtime type, so its dump is decided here and needs no runtime check.
         var isExactType = type.IsValueType || type.IsSealed;
 
-        if (IsSafeException(type))
+        if (typeof(Exception).IsAssignableFrom(type))
         {
-            // for known Exception types we can assume it's safe to call .Message
-            // whereas the others might have overriden it in a way that could cause side effects
+            // Message and StackTrace are virtual, so call them only on a CoreLib exception. Only a non-sealed
+            // CoreLib declared type can hold either kind, so only that one needs a check of the runtime type.
             var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
             var typeNameExpression = Expression.Constant(type.FullName, typeof(string));
             Func<Expression, Expression> exceptionAsString = exception => Expression.Call(
@@ -179,9 +198,29 @@ internal partial class ProbeExpressionParser<T>
                    Expression.Constant(", "),
                    Expression.Property(exception, nameof(Exception.StackTrace))));
 
-            return isExactType
-                       ? Expression.Condition(IsNullExpression(expression), typeNameExpression, exceptionAsString(expression))
-                       : DumpRuntimeValueExpression(expression, typeNameExpression, (_, exception) => exceptionAsString(exception), scopeMembers);
+            Func<Expression, Expression> nonCoreLibException = exception => Expression.Call(
+                GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpNonCoreLibException), [typeof(Exception)]),
+                exception.Type == typeof(Exception) ? exception : Expression.Convert(exception, typeof(Exception)));
+            var isCoreLibType = ReferenceEquals(type.Assembly, CoreLibAssembly);
+
+            if (isExactType)
+            {
+                return Expression.Condition(
+                    IsNullExpression(expression),
+                    typeNameExpression,
+                    isCoreLibType ? exceptionAsString(expression) : nonCoreLibException(expression));
+            }
+
+            return DumpRuntimeValueExpression(
+                expression,
+                typeNameExpression,
+                (value, exception) => isCoreLibType
+                                          ? Expression.Condition(
+                                              Expression.Call(GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsCoreLibType), [typeof(object)]), value),
+                                              exceptionAsString(exception),
+                                              nonCoreLibException(exception))
+                                          : nonCoreLibException(exception),
+                scopeMembers);
         }
 
         if (IsDictionaryDumpType(type))
@@ -486,11 +525,22 @@ internal partial class ProbeExpressionParser<T>
             return $"{name}{UndefinedValueDump}";
         }
 
-        if (IsSafeException(type))
+        if (typeof(Exception).IsAssignableFrom(type))
         {
-            return value is not Exception ex
-                       ? $"{name}{type?.FullName}"
-                       : $"{name}{ex.GetType().FullName}, {ex.Message}, {ex.StackTrace}";
+            if (value is not Exception ex)
+            {
+                return $"{name}{type.FullName}";
+            }
+
+            // The declared type may be a non-sealed exception. Redact from the runtime type before reading the message.
+            if (IsRedactedRuntimeValue(value, type))
+            {
+                return $"{name}{RedactedValueDump}";
+            }
+
+            return IsCoreLibType(ex)
+                       ? $"{name}{ex.GetType().FullName}, {ex.Message}, {ex.StackTrace}"
+                       : $"{name}{DumpNonCoreLibException(ex)}";
         }
 
         return value is not null && Redaction.IsSafeToCallToString(type) && CanCallToStringOnRuntimeType(value, type) ?
