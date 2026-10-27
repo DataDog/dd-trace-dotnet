@@ -3605,7 +3605,7 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(new[] { "a", "b" }, "[a, b]", "{[a, a], [b, b]}")]
         [InlineData(new[] { "a", "b", "c" }, "[a, b, c]", "{[a, a], [b, b], [c, c]}")]
         [InlineData(new[] { "a", "b", "c", "d" }, "[a, b, c, ...]", "{[a, a], [b, b], [c, c], ...}")]
-        public void ProbeExpressionEvaluator_TemplateDump_CollectionsListAtMostThreeItems(string[] items, string expectedList, string expectedDictionary)
+        public void ProbeExpressionEvaluator_TemplateDump_CollectionDumpSeparatorsAndFieldNames(string[] items, string expectedList, string expectedDictionary)
         {
             var list = new List<string>(items);
             var dictionary = items.ToDictionary(item => item);
