@@ -286,6 +286,14 @@ public class StripInjectedContextTests
     // -----------------------------------------------------------------------
 
     [Fact]
+    public void StripStream_LoneSurrogateInEncodedJson_KeepsOriginal()
+    {
+        var input = "{\"Message\":\"{\\\"_datadog\\\":{},\\\"s\\\":\\\"\\ud800\\\"}\"}";
+
+        StripInjectedContext.StripStream(input, enabled: true).Should().BeNull();
+    }
+
+    [Fact]
     public void StripStream_WhenDisabled_ReturnsNull()
     {
         var json = $"{{\"orderId\":42,\"_datadog\":{Carrier}}}";
