@@ -50,7 +50,7 @@ variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
     LLMVAL_PLATFORM_REF: "5d6646ab66035ef0e66cf27b2d0d8789302627ed"   # platform PR #48 (must match include ref above)
 
-# The historical job name is retained; the setup preset exercises guidance, all skills, and controls.
+# The historical job name is retained; the setup preset exercises guidance, selected skill workflows, and controls.
 "llm validation (setup smoke)":
   variables:
     LLMVAL_SETUP_ENABLED: "true"
