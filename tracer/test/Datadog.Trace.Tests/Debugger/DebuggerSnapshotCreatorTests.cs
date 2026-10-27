@@ -495,7 +495,7 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("direct={redacted}", true, false, "other evaluation error")]
         [InlineData("direct={redacted}", false, true, "The property or field is redacted.")]
         [InlineData(null, false, false, "The property or field is redacted.")]
-        public void Message_UsesRenderedTemplateUnlessAnotherErrorOrConditionError(string template, bool hasOtherError, bool hasConditionError, string expectedMessage)
+        public void Message_UsesRenderedTemplateUnlessAnotherErrorConditionErrorOrNoTemplate(string template, bool hasOtherError, bool hasConditionError, string expectedMessage)
         {
             var captureLimitInfo = CreateCaptureLimitInfo();
             var snapshotCreator = new DebuggerSnapshotCreator(

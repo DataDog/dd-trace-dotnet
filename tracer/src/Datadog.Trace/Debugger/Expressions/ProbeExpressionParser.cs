@@ -647,12 +647,6 @@ internal partial class ProbeExpressionParser<T>
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);
-        if (IsRedactedNumericResult())
-        {
-            // ParseExpression doesn't compile it, see CreateRedactedNumericExpression.
-            return default;
-        }
-
         if (_hasRedaction && (typeof(T) == typeof(string) || typeof(T) == typeof(object)))
         {
             // A rendered or captured value that uses a redacted value is itself redacted. Otherwise operators would
@@ -715,18 +709,6 @@ internal partial class ProbeExpressionParser<T>
                    : _budgetCheckExpression ??= Expression.Call(ThrowIfExceededMethod, _evaluationBudgetParameterExpression);
     }
 
-    private bool IsRedactedNumericResult()
-    {
-        return _hasRedaction && typeof(T).IsNumeric();
-    }
-
-    private CompiledExpression<T> CreateRedactedNumericExpression(string expressionJson)
-    {
-        // A number computed from a redacted value would be made up, and converting the {redacted} placeholder
-        // would throw on every evaluation. Without a delegate, the evaluator reports the errors and no value.
-        return new CompiledExpression<T>(null, null, expressionJson, _errors.ToArray());
-    }
-
     internal static CompiledExpression<T> ParseExpression(JObject expressionJson, MethodScopeMembers scopeMembers)
     {
         return ParseExpression(expressionJson.ToString(), scopeMembers);
@@ -767,15 +749,11 @@ internal partial class ProbeExpressionParser<T>
         parser._parserContext = parserContext;
         parser._captureLimitInfo = captureLimitInfo;
 
+        CompiledExpression<T> compiledExpression;
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {
             parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers, thisTypeOverride);
-            if (parser.IsRedactedNumericResult())
-            {
-                return parser.CreateRedactedNumericExpression(expressionJson);
-            }
-
             var expression = Expression.Lambda<CompiledExpressionDelegate<T>>(
                 parsedExpression.ExpressionBody,
                 parsedExpression.ThisParameterExpression,
@@ -785,22 +763,27 @@ internal partial class ProbeExpressionParser<T>
                 parsedExpression.ArgsAndLocalsParameterExpression,
                 parsedExpression.EvaluationBudgetParameterExpression);
             var compiled = expression.Compile();
-            return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
+            compiledExpression = new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }
         catch (Exception e)
         {
             Log.Error(e, "Expression was: {Expression}", expressionJson);
             parser.AddError(parsedExpression.ExpressionBody?.ToString() ?? expressionJson, e.Message);
-            if (parser.IsRedactedNumericResult())
-            {
-                return parser.CreateRedactedNumericExpression(expressionJson);
-            }
-
-            return new CompiledExpression<T>(
+            compiledExpression = new CompiledExpression<T>(
                 DefaultDelegate,
                 parsedExpression.ExpressionBody ?? Expression.Constant("N/A"),
                 expressionJson,
                 parser._errors.ToArray());
         }
+
+        if (parser._hasRedaction && typeof(T).IsNumeric())
+        {
+            // A number computed from a redacted value would be made up, such as len(password), and converting the
+            // {redacted} placeholder throws on every evaluation. If compiling failed, the default delegate would
+            // report a made-up 0. Either way, a metric reports its errors and no value.
+            return CompiledExpression<T>.WithoutDelegate(expressionJson, compiledExpression.Errors);
+        }
+
+        return compiledExpression;
     }
 }
