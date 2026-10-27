@@ -1,4 +1,4 @@
-﻿// <copyright file="AzureFunctionsCommonTests.cs" company="Datadog">
+// <copyright file="AzureFunctionsCommonTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -31,8 +36,42 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
 #pragma warning restore SA1403
 
+    [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
     public class AzureFunctionsCommonTests
     {
+        // Guards the wiring between AzureInfo.IsAzureContainerApp and the tag prefix actually
+        // emitted. The tag-level tests take the bool directly, so without this a refactor could
+        // disconnect detection from construction and both suites would still pass.
+        [Theory]
+        [InlineData(null, "aas.", "aca.")]
+        [InlineData("my-container-app", "aca.", "aas.")]
+        [EnvironmentRestorer(PlatformKeys.AzureAppService.ContainerAppName)]
+        public async Task OnIsolatedFunctionBegin_TagPrefixFollowsContainerAppsDetection(string? containerAppName, string prefix, string otherPrefix)
+        {
+            Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName, containerAppName);
+
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            var functionContext = CreateMockFunctionContext("httpTrigger");
+
+            // A fresh AzureInfo reads the environment above; the production overload uses the singleton.
+            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(functionContext, triggerType: null, startTime: null, new AzureInfo());
+
+            var scope = state.Scope;
+            scope.Should().NotBeNull();
+
+            var tags = scope!.Span.Tags;
+            tags.GetTag(prefix + "function.name").Should().Be("TestFunction");
+            tags.GetTag(prefix + "function.method").Should().Be("Tests.TestFunction.Run");
+            tags.GetTag(prefix + "function.trigger").Should().Be("Http");
+
+            tags.GetTag(otherPrefix + "function.name").Should().BeNull();
+            tags.GetTag(otherPrefix + "function.method").Should().BeNull();
+            tags.GetTag(otherPrefix + "function.trigger").Should().BeNull();
+        }
+
         [Fact]
         public void ExtractPropagatedContextFromMessaging_MergesIntoEmptyBaggageCurrent()
         {

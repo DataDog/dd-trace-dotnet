@@ -1,4 +1,4 @@
-﻿// <copyright file="AzureFunctionsCommon.cs" company="Datadog">
+// <copyright file="AzureFunctionsCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -216,6 +216,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         internal static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext, string? triggerType, DateTimeOffset? startTime)
             where T : IFunctionContext
+            => OnIsolatedFunctionBegin(functionContext, triggerType, startTime, AzureInfo.Instance);
+
+        internal static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext, string? triggerType, DateTimeOffset? startTime, AzureInfo azureInfo)
+            where T : IFunctionContext
         {
             var tracer = Tracer.Instance;
 
@@ -229,7 +233,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // (in OnAsyncMethodEnd of the calling integration).
             var aspNetCoreScope = GetAspNetCoreScope(functionContext);
 
-            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope, triggerType, startTime);
+            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope, triggerType, startTime, azureInfo);
 
             if (scope == null && aspNetCoreScope == null)
             {
@@ -239,10 +243,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return new CallTargetState(scope, state: aspNetCoreScope);
         }
 
-        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime, AzureInfo azureInfo)
             where T : IFunctionContext
         {
-            var isContainerApps = AzureInfo.Instance.IsAzureContainerApp;
+            var isContainerApps = azureInfo.IsAzureContainerApp;
             Scope? scope = null;
 
             try
