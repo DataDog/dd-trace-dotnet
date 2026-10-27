@@ -258,8 +258,9 @@ internal partial class ProbeExpressionParser<T>
                     Redaction.IsSupportedCollection(type) ? DumpCollectionExpression(expression, scopeMembers) : DumpFieldsExpression(expression, scopeMembers));
             }
 
-            // Every supported collection type derives directly from object, so a declared class can only hold a
-            // supported runtime type by holding exactly itself. Only an interface needs the runtime allowlist.
+            // Every type on the collection allowlist other than arrays, which are handled above, derives directly from
+            // object, so a declared class can only hold a supported runtime type by holding exactly itself. Only an
+            // interface needs the runtime allowlist.
             if (!type.IsInterface && !Redaction.IsSupportedCollection(type))
             {
                 return DumpRuntimeValueExpression(expression, Expression.Constant("null"), value => DumpFieldsExpression(value, scopeMembers), scopeMembers);
@@ -334,7 +335,7 @@ internal partial class ProbeExpressionParser<T>
             GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(Type)]),
             value,
             Expression.Constant(typeof(IDictionary)));
-        var dumpFields = DumpFieldsExpression(Expression.Convert(value, dictionary.Type), scopeMembers);
+        var dumpFields = DumpFieldsExpression(value, scopeMembers);
         var dump = Expression.Condition(isSupportedDictionary, dumpEntries, dumpFields);
 
         return Expression.Block(
