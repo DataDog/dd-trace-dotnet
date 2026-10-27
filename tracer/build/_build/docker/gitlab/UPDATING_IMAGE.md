@@ -12,26 +12,27 @@ Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoin
 
 ### 2. Open a PR
 
-Push the branch. `build-windows-ci-image` runs automatically in `.pre`, before jobs that consume the image. It is skipped when all consumers are excluded: tag pipelines, or pipelines with both `DEPLOY_TO_REL_ENV=true` and a nonempty `DOTNET_PACKAGE_VERSION`.
+Push the branch. `check-windows-ci-image` automatically checks the expected tag in `.pre`, without building or pushing images. If it exists, consumers proceed without manual approval. Both image jobs are excluded when all consumers are excluded: tag pipelines, or pipelines with both `DEPLOY_TO_REL_ENV=true` and a nonempty `DOTNET_PACKAGE_VERSION`.
 
-### 3. Wait for image preparation
+### 3. Publish a missing image manually
 
-The job will:
+If the check fails because the image is missing, review the image changes, then manually run `build-windows-ci-image` in the same pipeline. This job is optional so pipelines with an existing image do not wait for approval. It will:
 
 1. Compute the hash via `compute-image-hash.ps1`.
 2. Short-circuit if the tag already exists in `registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build`.
 3. Otherwise pull `:latest` to warm the Docker layer cache, build the image, and push both the content-addressed tag and `:latest`.
 
-A cold-cache build (e.g., rebasing the base image) has a 2-hour job timeout. A warm-cache build with only late-stage install changes should be much faster. Image-preparation jobs are serialized by the `windows-ci-image` resource group.
+A cold-cache build (e.g., rebasing the base image) has a 2-hour job timeout. A warm-cache build with only late-stage install changes should be much faster. Publication jobs are serialized by the `windows-ci-image` resource group.
 
 ### 4. Check the consumers
 
-After successful preparation, eligible consumers proceed automatically using the same content-addressed tag. No expected missing-image failure or manual start is needed.
+After publication succeeds, retry `check-windows-ci-image`, then retry any skipped or failed consumers. Retrying the check never builds or publishes an image.
 
-If preparation fails, inspect its logs, resolve the cause, and retry `build-windows-ci-image`. Retry any failed consumers after preparation succeeds. If a consumer reports a missing image, compare its expected tag with the preparation job's tag and check that the push succeeded.
+If publication fails, inspect its logs, resolve the cause, and retry the manual job. For authentication or network failures in the check, fix those before retrying; they do not necessarily mean the image is missing. If a consumer reports a missing image, compare its expected tag with the publication job's tag and check that the push succeeded.
 
 ### Notes
 
+- Manual publication restores a human checkpoint, not a registry permission boundary. Restricting untrusted jobs from overwriting shared tags remains a registry/CI Identity follow-up.
 - The `:latest` tag is **only** used to seed the Docker build cache on the next rebuild. Nothing in the pipeline consumes `:latest` as an input at runtime; the consumer always pins to the content hash.
 - Changes to `compute-image-hash.ps1` or this guide also invalidate the hash, because the script hashes every file in its own directory.
 
