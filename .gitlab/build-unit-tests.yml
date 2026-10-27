@@ -253,8 +253,6 @@ build-linux-profiler-arm64-musl:
       sh .gitlab/build-linux-image.sh universal "$UNIVERSAL_DOTNET_SDK_VERSION" "$universal_image"
 
       . .gitlab/run-nuke-linux.sh
-      # Universal builds do not need CI Visibility credentials.
-      unset DD_LOGGER_DD_API_KEY
       run_nuke "$universal_image" \
         Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux
   artifacts:
