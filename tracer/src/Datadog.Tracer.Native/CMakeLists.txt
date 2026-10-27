@@ -14,6 +14,9 @@ endif()
 
 project("Datadog.Tracer.Native" VERSION 3.57.0)
 
+# USE_GLIBC217_SYSROOT links glibc217-compat (not glibc-compat, which conflicts with real
+# glibc's strerror_r). See glibc217-compat.c.
+
 # ******************************************************
 # Environment detection
 # ******************************************************
@@ -125,7 +128,9 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -Wno-deprecated-this-capture)
 elseif(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    # DD_CXX_STDLIB_COMPILE_OPTIONS is empty under USE_GLIBC217_SYSROOT - see the root
+    # CMakeLists.txt for why.
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
 endif()
 if (BIT64)
     add_compile_options(-DBIT64 -DHOST_64BIT)
@@ -307,6 +312,15 @@ set_target_properties("Datadog.Tracer.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 target_link_libraries("Datadog.Tracer.Native" "Datadog.Tracer.Native.static")
+
+# Link the compatibility object directly into the final binary. Putting it in the
+# static archive is not sufficient: dependencies such as re2 are linked later and
+# can introduce __libc_single_threaded after the linker has scanned that archive.
+if (USE_GLIBC217_SYSROOT)
+    target_link_libraries("Datadog.Tracer.Native" glibc217-compat)
+    add_dependencies("Datadog.Tracer.Native" glibc217-compat)
+endif()
+
 if (ISLINUX)
     target_link_libraries("Datadog.Tracer.Native" Threads::Threads)
 endif()
