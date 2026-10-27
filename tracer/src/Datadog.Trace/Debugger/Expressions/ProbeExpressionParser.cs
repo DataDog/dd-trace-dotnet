@@ -47,6 +47,9 @@ internal partial class ProbeExpressionParser<T>
     private ParserContext _parserContext;
     private CaptureLimitInfo? _captureLimitInfo;
     private bool _hasRedaction;
+
+    // Sentinel node for a value redacted at compile time. IsRedactedValue compares it by reference, so a literal
+    // "{redacted}" string in an expression is never mistaken for it.
     private ConstantExpression _redactedValue;
 
     static ProbeExpressionParser()
@@ -658,6 +661,12 @@ internal partial class ProbeExpressionParser<T>
             // A rendered or captured value that uses a redacted value is itself redacted. Otherwise operators would
             // run on the placeholder text and render made-up values, such as len(password) = 10.
             finalExpr = RedactedValue();
+        }
+
+        if (_hasRedaction && typeof(T) == typeof(bool))
+        {
+            // A condition that uses a redacted value is false. Its redaction error sets HasConditionError.
+            finalExpr = Expression.Constant(false);
         }
 
         finalExpr = HandleReturnType(finalExpr, scopeMembers);
