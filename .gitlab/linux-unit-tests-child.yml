@@ -32,7 +32,6 @@ workflow:
       docker run --rm \
         --cap-add=SYS_PTRACE \
         --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
-        --env NugetPackageDirectory=/project/packages \
         --env artifacts=/project/artifacts/output \
         --env CI=true \
         --env FRAMEWORK \
@@ -78,6 +77,7 @@ workflow:
             BuildManagedUnitTests RunManagedUnitTests \
             --framework "$FRAMEWORK" \
             --UnitTestFrameworkOnly true \
+            --RequireGitlabCiVisibility true \
             --IncludeAllTestFrameworks true \
             --NugetPackageDirectory /project/packages
         '

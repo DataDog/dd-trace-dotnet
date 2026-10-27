@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1552,47 +1551,6 @@ partial class Build
                 testProjects,
                 framework: UnitTestFrameworkOnly ? Framework : null,
                 noRestore: !UnitTestFrameworkOnly);
-        });
-
-    Target ConfigureGitlabUnitTestCredentials => _ => _
-        .Unlisted()
-        .After(CompileManagedUnitTests)
-        .OnlyWhenDynamic(() => IsGitlab)
-        .Executes(() =>
-        {
-            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
-            {
-                try
-                {
-                    var oidcToken = Environment.GetEnvironmentVariable("DD_STS_OIDC_TOKEN");
-                    if (string.IsNullOrWhiteSpace(oidcToken))
-                    {
-                        throw new InvalidOperationException("DD_STS_OIDC_TOKEN is unavailable");
-                    }
-
-                    using var client = new HttpClient();
-                    using var request = new HttpRequestMessage(
-                        HttpMethod.Get,
-                        "https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key");
-                    request.Headers.Authorization = new("Bearer", oidcToken);
-                    using var response = client.SendAsync(request).GetAwaiter().GetResult();
-                    response.EnsureSuccessStatusCode();
-                    using var responseStream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-                    using var payload = JsonDocument.Parse(responseStream);
-                    if (!payload.RootElement.TryGetProperty("api_key", out var apiKeyElement)
-                     || string.IsNullOrWhiteSpace(apiKeyElement.GetString()))
-                    {
-                        throw new InvalidOperationException("The dd-sts response did not contain an API key");
-                    }
-
-                    Environment.SetEnvironmentVariable("DD_LOGGER_DD_API_KEY", apiKeyElement.GetString());
-                    Logger.Information("CI Visibility API key configured using dd-sts");
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException("CI Visibility credentials are required for GitLab unit tests", ex);
-                }
-            }
         });
 
     Target RunManagedUnitTests => _ => _

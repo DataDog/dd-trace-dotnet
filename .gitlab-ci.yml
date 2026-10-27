@@ -73,13 +73,14 @@ shadow-build-unit-tests:
 
 check-windows-ci-image:
   stage: build
-  # Start immediately without making image availability a global .pre barrier.
+  # Start immediately; image consumers declare an explicit dependency on this check.
   needs: []
   timeout: 15m
   tags: ["windows-v2:2022"]
   rules:
     # Skip only when build, sign-nuget-packages, and the shadow are all excluded.
-    - if: '$CI_COMMIT_TAG || ($DEPLOY_TO_REL_ENV == "true" && $DOTNET_PACKAGE_VERSION)'
+    - &skip-windows-ci-image
+      if: '$CI_COMMIT_TAG || ($DEPLOY_TO_REL_ENV == "true" && $DOTNET_PACKAGE_VERSION)'
       when: never
     - when: on_success
   hooks:
@@ -114,9 +115,7 @@ build-windows-ci-image:
   # Existing images need no approval; only publication requires a manual action.
   allow_failure: true
   rules:
-    # Skip only when build, sign-nuget-packages, and the shadow are all excluded.
-    - if: '$CI_COMMIT_TAG || ($DEPLOY_TO_REL_ENV == "true" && $DOTNET_PACKAGE_VERSION)'
-      when: never
+    - *skip-windows-ci-image
     - when: manual
   hooks:
     pre_get_sources_script:

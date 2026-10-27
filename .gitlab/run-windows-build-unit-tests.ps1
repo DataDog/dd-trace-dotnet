@@ -13,7 +13,6 @@ $dockerArguments = @(
     '-e', 'WINDOWS_BUILDER=true',
     '-e', 'AWS_NETWORKING=true',
     '-e', 'NUGET_CERT_REVOCATION_MODE=offline',
-    '-e', 'CI_IDENTITIES_GITLAB_ID_TOKEN',
     $image
 )
 

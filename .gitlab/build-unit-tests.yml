@@ -32,6 +32,7 @@ generate-unit-tests-pipelines:
       - .gitlab/generated/windows-unit-tests.yml
       - .gitlab/generated/linux-unit-tests.yml
       - .gitlab/generated/linux-arm64-unit-tests.yml
+  # Registry authentication on the host; do not forward into shadow containers.
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
@@ -63,6 +64,7 @@ build:
       junit:
         - artifacts/build_data/tests/*.xml
         - profiler/build_data/tests/*.xml
+  # Registry authentication on the host; do not forward into shadow containers.
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
