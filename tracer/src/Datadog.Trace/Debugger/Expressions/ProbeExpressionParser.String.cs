@@ -39,7 +39,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var pattern = ParseTree(reader, parameters, itParameter);
-        if (IsRedactedValue(source))
+        if (IsRedactedValue(source) || IsRedactedValue(pattern))
         {
             return Expression.Constant(false);
         }
@@ -77,9 +77,9 @@ internal partial class ProbeExpressionParser<T>
 
         var startIndex = ParseTree(reader, parameters, itParameter);
         var endIndex = ParseTree(reader, parameters, itParameter);
-        if (IsRedactedValue(source))
+        if (IsRedactedValue(source) || IsRedactedValue(startIndex) || IsRedactedValue(endIndex))
         {
-            return source;
+            return RedactedValue();
         }
 
         var lengthExpr = Expression.Subtract(endIndex, startIndex);
@@ -138,7 +138,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var parameter = ParseTree(reader, parameters, itParameter);
-        if (IsRedactedValue(source))
+        if (IsRedactedValue(source) || IsRedactedValue(parameter))
         {
             return Expression.Constant(false);
         }

@@ -140,7 +140,7 @@ internal partial class ProbeExpressionParser<T>
 
             if (IsRedactedValue(source))
             {
-                SkipRedactedOperand(reader, parameters);
+                SkipPredicateOfRedactedSource(reader, parameters);
                 return Expression.Constant(false);
             }
 
@@ -173,21 +173,8 @@ internal partial class ProbeExpressionParser<T>
         Expression source = null;
         try
         {
-            var previousIsBoundedFilterCapture = _isBoundedFilterCapture;
-            var previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
-            _isBoundedFilterCapture = false;
-            _deferredFilterSourceArrayStack = previousIsBoundedFilterCapture || isDeferredFilterSource
-                                                  ? _arrayStack + 1
-                                                  : -1;
-            try
-            {
-                source = ParseTree(reader, parameters, null);
-            }
-            finally
-            {
-                _isBoundedFilterCapture = previousIsBoundedFilterCapture;
-                _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
-            }
+            var sourceDeferredFilterArrayStack = _isBoundedFilterCapture || isDeferredFilterSource ? _arrayStack + 1 : -1;
+            source = ParseTreeOutsideFilterCapture(reader, parameters, itParameter: null, sourceDeferredFilterArrayStack);
 
             if (source is GotoExpression)
             {
@@ -201,7 +188,7 @@ internal partial class ProbeExpressionParser<T>
 
             if (IsRedactedValue(source))
             {
-                SkipRedactedOperand(reader, parameters);
+                SkipPredicateOfRedactedSource(reader, parameters);
                 return source;
             }
 
@@ -214,20 +201,7 @@ internal partial class ProbeExpressionParser<T>
                                       ? sourceFilterExpression.IteratorType
                                       : GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            previousIsBoundedFilterCapture = _isBoundedFilterCapture;
-            previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
-            _isBoundedFilterCapture = false;
-            _deferredFilterSourceArrayStack = -1;
-            Expression predicate;
-            try
-            {
-                predicate = ParseTree(reader, parameters, itParameter);
-            }
-            finally
-            {
-                _isBoundedFilterCapture = previousIsBoundedFilterCapture;
-                _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
-            }
+            var predicate = ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1);
 
             var lambda = Expression.Lambda(predicate, itParameter);
             var isDictionary = source is FilterExpression filterSource
@@ -242,23 +216,34 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    // Parses and drops the predicate of an operation over a redacted value, so the reader stays aligned and the
-    // predicate adds no errors about the placeholder that replaced the value.
-    private void SkipRedactedOperand(JsonTextReader reader, List<ParameterExpression> parameters)
+    private Expression ParseTreeOutsideFilterCapture(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, int deferredFilterSourceArrayStack)
     {
-        var errorCount = _errors?.Count ?? 0;
         var previousIsBoundedFilterCapture = _isBoundedFilterCapture;
         var previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
         _isBoundedFilterCapture = false;
-        _deferredFilterSourceArrayStack = -1;
+        _deferredFilterSourceArrayStack = deferredFilterSourceArrayStack;
         try
         {
-            ParseTree(reader, parameters, itParameter: null);
+            return ParseTree(reader, parameters, itParameter);
         }
         finally
         {
             _isBoundedFilterCapture = previousIsBoundedFilterCapture;
             _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
+        }
+    }
+
+    // Parses and drops the predicate of an operation over a redacted value, so the reader stays aligned and the
+    // predicate adds no errors about the placeholder that replaced the value.
+    private void SkipPredicateOfRedactedSource(JsonTextReader reader, List<ParameterExpression> parameters)
+    {
+        var errorCount = _errors?.Count ?? 0;
+        try
+        {
+            ParseTreeOutsideFilterCapture(reader, parameters, itParameter: null, deferredFilterSourceArrayStack: -1);
+        }
+        finally
+        {
             _errors?.RemoveRange(errorCount, _errors.Count - errorCount);
         }
     }
@@ -452,15 +437,15 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
-            if (IsRedactedValue(source))
+            if (IsRedactedValue(source) || IsRedactedValue(indexOrKey))
             {
-                return source;
+                return RedactedValue();
             }
 
-            if (Redaction.Instance.IsRedactedType(source.Type))
+            var redactedSource = RedactIfRedactedType(source, source, indexOrKey);
+            if (IsRedactedValue(redactedSource))
             {
-                AddRedactionError($"{source}[{indexOrKey}]");
-                return RedactedValue();
+                return redactedSource;
             }
 
             if (!IsTypeSupportIndex(source.Type, out var assignableFrom))
@@ -484,14 +469,7 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            var item = CallGetItem(source, assignableFrom, indexOrKey);
-            if (Redaction.Instance.IsRedactedType(item.Type))
-            {
-                AddRedactionError($"{source}[{indexOrKey}]");
-                return RedactedValue();
-            }
-
-            return item;
+            return RedactIfRedactedType(CallGetItem(source, assignableFrom, indexOrKey), source, indexOrKey);
         }
         catch (Exception e)
         {
@@ -584,6 +562,11 @@ internal partial class ProbeExpressionParser<T>
             if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
                 return ReturnDefaultValueExpression();
+            }
+
+            if (IsRedactedValue(source))
+            {
+                return source;
             }
 
             return RedactDictionaryOperation(source, CollectionAndStringLengthExpression(source));
@@ -753,10 +736,10 @@ internal partial class ProbeExpressionParser<T>
             return undefinedValue;
         }
 
-        if (Redaction.Instance.IsRedactedType(memberExpression.Type))
+        var redactedMember = RedactIfRedactedType(memberExpression, valueExpression, propertyOrFieldValue);
+        if (IsRedactedValue(redactedMember))
         {
-            AddRedactionError($"{valueExpression}.{propertyOrFieldValue}");
-            return RedactedValue();
+            return redactedMember;
         }
 
         (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())

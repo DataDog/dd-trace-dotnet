@@ -21,7 +21,6 @@ internal partial class ProbeExpressionParser<T>
 {
     private const string UndefinedValueDump = nameof(Expressions.UndefinedValue);
     private const string RedactedValueDump = "{redacted}";
-    private const string BackingFieldSuffix = ">k__BackingField";
 
     private static FieldInfo[] GetSafeFieldsForDump(FieldInfo[] fields)
     {
@@ -50,40 +49,11 @@ internal partial class ProbeExpressionParser<T>
         return field.IsLiteral ? StaticMemberSafety.GetRawConstantValue(field) : field.GetValue(field.IsStatic ? null : source);
     }
 
-    private static bool ShouldRedactValue(string name, Type type)
-    {
-        if (Redaction.Instance.ShouldRedact(name, type, out _))
-        {
-            return true;
-        }
-
-        var autoPropertyName = GetAutoPropertyOrFieldName(name);
-        return !ReferenceEquals(name, autoPropertyName) &&
-               Redaction.Instance.IsRedactedKeyword(autoPropertyName);
-    }
-
-    private static string GetAutoPropertyOrFieldName(string fieldName)
-    {
-        if (StringUtil.IsNullOrEmpty(fieldName) || fieldName[0] != '<')
-        {
-            return fieldName;
-        }
-
-        var propertyNameLength = fieldName.Length - BackingFieldSuffix.Length - 1;
-        if (propertyNameLength <= 0 ||
-            !fieldName.EndsWith(BackingFieldSuffix, StringComparison.Ordinal))
-        {
-            return fieldName;
-        }
-
-        return fieldName.Substring(1, propertyNameLength);
-    }
-
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
         if (ShouldRedactValue(null, expression.Type))
         {
-            return Expression.Constant(RedactedValueDump);
+            return RedactedValue();
         }
 
         if (expression.Type == ProbeExpressionParserHelper.UndefinedValueType)

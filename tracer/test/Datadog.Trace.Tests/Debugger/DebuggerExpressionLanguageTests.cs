@@ -146,6 +146,13 @@ namespace Datadog.Trace.Tests.Debugger
             ];
         }
 
+        public static IEnumerable<object[]> CompilerGeneratedSensitiveFields()
+        {
+            yield return [new PrimaryConstructorHolder("TOP_SECRET_VALUE"), "<password>P"];
+            yield return [new { Password = "TOP_SECRET_VALUE" }, "<Password>i__Field"];
+            yield return [CompilerGeneratedFieldTargets.StartedIteratorWithHoistedPassword(), "<password>5__"];
+        }
+
         public static IEnumerable<object[]> TemplatesResources()
         {
             var sourceFilePath = GetSourceFilePath();
@@ -3098,13 +3105,13 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData(@"{""getmember"":[{""ref"":""AutoPropertyLocal""},""<Password>k__BackingField""]}")]
-        [InlineData(@"{""getmember"":[{""ref"":""AutoPropertyLocal""},""<ApiKey>k__BackingField""]}")]
+        [InlineData(@"{""getmember"":[{""ref"":""TargetLocal""},""<Password>k__BackingField""]}")]
+        [InlineData(@"{""getmember"":[{""ref"":""TargetLocal""},""<ApiKey>k__BackingField""]}")]
         [InlineData(@"{""ref"":""<Password>k__BackingField""}")]
-        [InlineData(@"{""eq"":[{""getmember"":[{""ref"":""AutoPropertyLocal""},""<Password>k__BackingField""]},""TOP_SECRET_VALUE""]}")]
+        [InlineData(@"{""eq"":[{""getmember"":[{""ref"":""TargetLocal""},""<Password>k__BackingField""]},""TOP_SECRET_VALUE""]}")]
         public void ProbeExpressionEvaluator_TemplateBackingFieldOfSensitiveAutoProperty_IsRedacted(string json)
         {
-            var result = EvaluateAutoPropertyTemplate(json);
+            var result = EvaluateTemplateOnTarget(CreateSensitiveAutoPropertyHolder(), json);
 
             result.Template.Should().Be("value={redacted}");
             result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
@@ -3113,10 +3120,25 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void ProbeExpressionEvaluator_TemplateBackingFieldOfNonSensitiveAutoProperty_IsRendered()
         {
-            var result = EvaluateAutoPropertyTemplate(@"{""getmember"":[{""ref"":""AutoPropertyLocal""},""<Data>k__BackingField""]}");
+            var result = EvaluateTemplateOnTarget(CreateSensitiveAutoPropertyHolder(), @"{""getmember"":[{""ref"":""TargetLocal""},""<Data>k__BackingField""]}");
 
             result.Template.Should().Be("value=PUBLIC_VALUE");
             result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Theory]
+        [MemberData(nameof(CompilerGeneratedSensitiveFields))]
+        public void ProbeExpressionEvaluator_TemplateCompilerGeneratedFieldOfSensitiveName_IsRedacted(object target, string fieldNamePrefix)
+        {
+            var fieldName = target.GetType()
+                                  .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                                  .Single(field => field.Name.StartsWith(fieldNamePrefix, StringComparison.Ordinal))
+                                  .Name;
+
+            var result = EvaluateTemplateOnTarget(target, @"{""getmember"":[{""ref"":""TargetLocal""},""" + fieldName + @"""]}");
+
+            result.Template.Should().Be("value={redacted}");
+            result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
         }
 
         [Fact]
@@ -3867,12 +3889,16 @@ namespace Datadog.Trace.Tests.Debugger
                 ref budget);
         }
 
-        private ExpressionEvaluationResult EvaluateAutoPropertyTemplate(string json)
+        private SensitiveAutoPropertyHolder CreateSensitiveAutoPropertyHolder()
         {
-            var holder = new SensitiveAutoPropertyHolder { Password = "TOP_SECRET_VALUE", ApiKey = "TOP_SECRET_VALUE", Data = "PUBLIC_VALUE" };
+            return new SensitiveAutoPropertyHolder { Password = "TOP_SECRET_VALUE", ApiKey = "TOP_SECRET_VALUE", Data = "PUBLIC_VALUE" };
+        }
+
+        private ExpressionEvaluationResult EvaluateTemplateOnTarget(object target, string json)
+        {
             var scopeMembers = CreateScopeMembers();
-            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(SensitiveAutoPropertyHolder), holder, ScopeMemberKind.This);
-            scopeMembers.AddMember(new ScopeMember("AutoPropertyLocal", typeof(SensitiveAutoPropertyHolder), holder, ScopeMemberKind.Local));
+            scopeMembers.InvocationTarget = new ScopeMember("this", target.GetType(), target, ScopeMemberKind.This);
+            scopeMembers.AddMember(new ScopeMember("TargetLocal", target.GetType(), target, ScopeMemberKind.Local));
 
             var evaluator = CreateEvaluator(
                 templates:
@@ -4191,12 +4217,11 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""index"":[{""ref"":""PiiListLocal""},0]}")]
             [InlineData(@"{""getmember"":[{""index"":[{""ref"":""PiiListLocal""},0]},""CustomKey""]}")]
             [InlineData(@"{""getmember"":[{""index"":[{""ref"":""PiiDictionaryLocal""},""first""]},""CustomKey""]}")]
-            [InlineData(@"{""index"":[{""ref"":""RedactedListLocal""},0]}")]
-            [InlineData(@"{""len"":{""ref"":""RedactedListLocal""}}")]
             [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""Redacted""]}")]
             [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""Redacted""]},""CustomKey""]}")]
             [InlineData(@"{""any"":[{""ref"":""PiiListLocal""},{""eq"":[{""getmember"":[""@it"",""CustomKey""]},""TOP_SECRET_VALUE""]}]}")]
             [InlineData(@"{""any"":[{""ref"":""PiiDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""CustomKey""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""any"":[{""ref"":""PiiKeyDictionaryLocal""},{""eq"":[{""getmember"":[""@key"",""CustomKey""]},""TOP_SECRET_VALUE""]}]}")]
             [InlineData(@"{""getmember"":[{""ref"":""this""},""CustomKey""]}")]
             [InlineData(@"{""ref"":""CustomKey""}")]
             [InlineData(@"{""getmember"":[{""ref"":""@return""},""CustomKey""]}")]
@@ -4214,6 +4239,8 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""eq"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""Redacted""]},""CustomKey""]},""TOP_SECRET_VALUE""]}")]
             [InlineData(@"{""any"":[{""ref"":""PiiListLocal""},{""eq"":[{""getmember"":[""@it"",""CustomKey""]},""TOP_SECRET_VALUE""]}]}")]
             [InlineData(@"{""eq"":[{""ref"":""CustomKey""},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""gt"":[{""len"":{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]}},0]}")]
+            [InlineData(@"{""or"":[{""eq"":[{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]},""x""]},true]}")]
             public void ProbeExpressionEvaluator_ConditionReadingRedactedType_IsRedactionError(string json)
             {
                 var result = Evaluate(new RedactedTarget { TestValue = Secret, CustomKey = Secret }, template: null, condition: json);
@@ -4251,7 +4278,12 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""len"":{""ref"":""RedactedListLocal""}}")]
             [InlineData(@"{""isEmpty"":{""ref"":""RedactedListLocal""}}")]
             [InlineData(@"{""index"":[{""ref"":""RedactedListLocal""},0]}")]
+            [InlineData(@"{""index"":[{""ref"":""PublicDictionaryLocal""},{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]}]}")]
             [InlineData(@"{""contains"":[{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]},""SECRET""]}")]
+            [InlineData(@"{""contains"":[""TOP_SECRET_VALUE"",{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]}]}")]
+            [InlineData(@"{""matches"":[{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]},""TOP_.*""]}")]
+            [InlineData(@"{""substring"":[{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]},0,3]}")]
+            [InlineData(@"{""substring"":[""abcdef"",0,{""getmember"":[{""ref"":""PiiLocal""},""Age""]}]}")]
             [InlineData(@"{""gt"":[{""getmember"":[{""ref"":""PiiLocal""},""Age""]},30]}")]
             [InlineData(@"{""not"":{""getmember"":[{""ref"":""PiiLocal""},""Enabled""]}}")]
             [InlineData(@"{""and"":[{""getmember"":[{""ref"":""PiiLocal""},""Enabled""]},true]}")]
@@ -4263,6 +4295,20 @@ namespace Datadog.Trace.Tests.Debugger
                 result.Errors.Should().NotBeEmpty().And.OnlyContain(error => error.IsRedaction);
                 result.HasConditionError.Should().BeFalse();
                 RenderSnapshotMessage(result).Should().Be("value={redacted}");
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_RedactedRuntimeTypeBehindBaseTypedMember_IsNotRedactedYet()
+            {
+                // Known gap: members are checked by declared type at compile time, so a redacted runtime type behind
+                // a base-typed member stays visible. The follow-up runtime-type check closes it.
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: @"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}",
+                    condition: null);
+
+                result.Template.Should().Be("value=" + Secret);
+                result.Errors.Should().BeNullOrEmpty();
             }
 
             private ExpressionEvaluationResult Evaluate(TargetBase target, string template, string condition)
@@ -4301,11 +4347,12 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.AddMember(new ScopeMember("PiiAsBaseLocal", typeof(TargetBase), redacted, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PiiListLocal", typeof(List<RedactedTarget>), new List<RedactedTarget> { redacted }, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PiiDictionaryLocal", typeof(Dictionary<string, RedactedTarget>), new Dictionary<string, RedactedTarget> { { "first", redacted } }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("PiiKeyDictionaryLocal", typeof(Dictionary<RedactedTarget, string>), new Dictionary<RedactedTarget, string> { { redacted, "first" } }, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("RedactedListLocal", typeof(List<RedactedListItem>), new List<RedactedListItem> { new() }, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PublicLocal", typeof(PublicTarget), @public, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PublicListLocal", typeof(List<PublicTarget>), new List<PublicTarget> { @public }, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PublicDictionaryLocal", typeof(Dictionary<string, PublicTarget>), new Dictionary<string, PublicTarget> { { "first", @public } }, ScopeMemberKind.Local));
-                scopeMembers.AddMember(new ScopeMember("HolderLocal", typeof(TargetHolder), new TargetHolder { Redacted = redacted, Public = @public }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("HolderLocal", typeof(TargetHolder), new TargetHolder { Redacted = redacted, Public = @public, AsBase = redacted }, ScopeMemberKind.Local));
                 return scopeMembers;
             }
 
@@ -4336,6 +4383,10 @@ namespace Datadog.Trace.Tests.Debugger
             private class TargetBase
             {
                 public string TestValue { get; set; }
+
+                public int Age { get; set; }
+
+                public bool Enabled { get; set; }
             }
 
             private class RedactedTarget : TargetBase
@@ -4353,6 +4404,8 @@ namespace Datadog.Trace.Tests.Debugger
                 public RedactedTarget Redacted { get; set; }
 
                 public PublicTarget Public { get; set; }
+
+                public TargetBase AsBase { get; set; }
             }
 
             private class RedactedListItem
@@ -4433,6 +4486,23 @@ namespace Datadog.Trace.Tests.Debugger
 
         internal sealed class String
         {
+        }
+
+        private static class CompilerGeneratedFieldTargets
+        {
+            internal static IEnumerator<string> StartedIteratorWithHoistedPassword()
+            {
+                var enumerator = IteratorWithHoistedPassword().GetEnumerator();
+                enumerator.MoveNext();
+                return enumerator;
+            }
+
+            private static IEnumerable<string> IteratorWithHoistedPassword()
+            {
+                var password = "TOP_SECRET_VALUE";
+                yield return "first";
+                yield return password;
+            }
         }
 
         private class BudgetExpressionRenderingVisitor : System.Linq.Expressions.ExpressionVisitor
@@ -4673,6 +4743,11 @@ namespace Datadog.Trace.Tests.Debugger
             public string ApiKey { get; set; }
 
             public string Data { get; set; }
+        }
+
+        private class PrimaryConstructorHolder(string password)
+        {
+            public string Read() => password;
         }
 
         private class BaseAutoPropertyTarget
