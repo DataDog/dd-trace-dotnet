@@ -236,7 +236,7 @@ partial class Build
 
     string TestComparisonBranch => string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
 
-    bool RequiresThoroughTesting()
+    bool RequiresThoroughTesting(string[] changedFiles = null)
     {
         if (IsLocalBuild)
         {
@@ -251,7 +251,7 @@ partial class Build
             return true;
         }
 
-        return HasChangesRequiringThoroughTesting(GetGitChangedFiles(baseBranch));
+        return HasChangesRequiringThoroughTesting(changedFiles ?? GetGitChangedFiles(baseBranch));
     }
 
     bool HasChangesRequiringThoroughTesting(string[] gitChangedFiles)

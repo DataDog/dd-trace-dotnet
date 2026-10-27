@@ -82,8 +82,7 @@ partial class Build
         {
             var changedFiles = JsonConvert.DeserializeObject<string[]>(File.ReadAllText(GitlabChangedFiles))
                             ?? throw new InvalidOperationException("The GitLab changed-file list is missing");
-            var baseBranch = TestComparisonBranch;
-            var includeAll = IncludeAllTestFrameworks || IsGitBaseBranch(baseBranch) || HasChangesRequiringThoroughTesting(changedFiles);
+            var includeAll = IncludeAllTestFrameworks || RequiresThoroughTesting(changedFiles);
             var outputDirectory = GitlabUnitTestsOutputDirectory;
             Directory.CreateDirectory(outputDirectory);
 
