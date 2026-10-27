@@ -238,7 +238,8 @@ public class AgentProcessManagerTests
 
         var stopwatch = Stopwatch.StartNew();
         (await metadata.ProcessIsHealthyAsync()).Should().BeFalse();
-        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
+        // Allow a little slack over the timeout for slow CI machines
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromMilliseconds(AgentProcessManager.TraceAgentResponseTimeout + 1_000));
         metadata.LastHealthCheckFailure.Should().Contain("no response to GET /info").And.Contain(pipeName);
         (await requestBytes).Should().BeGreaterThan(0);
 

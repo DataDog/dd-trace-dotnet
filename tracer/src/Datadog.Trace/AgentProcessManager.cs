@@ -31,11 +31,11 @@ namespace Datadog.Trace
         internal const int ExceptionRetryInterval = 2_000;
         internal const int StableHealthyPeriod = 60_000;
         internal const int MaxFailedHealthChecks = 3;
+        internal const int TraceAgentResponseTimeout = 2_000;
 
         private const int ErrorSemTimeout = 121;
         private const int ErrorPipeBusy = 231;
         private const int TraceAgentConnectTimeout = 500;
-        private const int TraceAgentResponseTimeout = 2_000;
         private const int StopTimeout = 1_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
