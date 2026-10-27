@@ -5,6 +5,9 @@
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1;net6.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>$(DD_SemVer)</Version>
+    <!-- Explicit, because the SDK derives it from Version by dropping the suffix, which would give a prerelease
+         revision 0. Projects that set their own Version must clear this so the SDK derives it again. -->
+    <AssemblyVersion>$(DD_AssemblyVersion)</AssemblyVersion>
 
     <!-- Code analysis -->
     <AnalysisLevel>latest</AnalysisLevel>
