@@ -149,10 +149,13 @@ namespace Datadog.Trace.ClrProfiler
 
                 var sw = RefStopwatch.Create();
 
-                bool versionMismatch = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+                // Compares the four-part version, because a prerelease and the release with the same X.Y.Z differ
+                // only in the revision. Neither runtime enforces the version that the native tracer and the
+                // loader request: the loader's assembly resolvers load Datadog.Trace.dll by path, whatever its version.
+                bool versionMismatch = GetNativeTracerVersion() != TracerConstants.AssemblyVersion;
                 if (versionMismatch)
                 {
-                    Log.Error("Version mismatch detected. This scenario should not exist. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.ThreePartVersion);
+                    Log.Error("Version mismatch detected. This scenario should not exist. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.AssemblyVersion);
                 }
                 else
                 {
