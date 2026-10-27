@@ -255,8 +255,8 @@ rm -rf artifacts/glibc217-validation
 cmake \
   -S . \
   -B artifacts/glibc217-validation \
-  -DCMAKE_C_COMPILER=clang-16 \
-  -DCMAKE_CXX_COMPILER=clang++-16 \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN}" \
   -DGLIBC217_SYSROOT="${SYSROOT}"
