@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
     internal sealed class Redaction
     {
-        // Same as the previous LFU cache capacity. Once full, results are computed without caching.
+        // Same as the previous LFU cache capacity. A full cache is replaced with an empty one.
         internal const int MaxCachedTypes = 2048;
 
         internal const int MaxCachedKeywords = 2048;
@@ -88,6 +88,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         ];
 
         private static Redaction _instnace = new();
+
+        private static int _longIdentifierLogged;
 
         private readonly Trie _typeTrie;
 
@@ -309,6 +311,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             return false;
         }
 
+        private static void AddToCache<TKey>(ref RedactionCache<TKey> field, RedactionCache<TKey> cache, TKey key, bool value, int capacity)
+            where TKey : notnull
+        {
+            if (cache.TryAdd(key, value))
+            {
+                return;
+            }
+
+            // Full: start over so new hot keys can be cached again. The compare-exchange keeps a cache installed by SetConfig.
+            var fresh = new RedactionCache<TKey>(capacity);
+            fresh.TryAdd(key, value);
+            Interlocked.CompareExchange(ref field, fresh, cache);
+        }
+
         internal bool IsRedactedType(Type? type)
         {
             if (type is null)
@@ -327,10 +343,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             // Caching a collectible type would keep its AssemblyLoadContext from unloading.
             if (!type.IsCollectible)
             {
-                cache.TryAdd(type, redacted);
+                AddToCache(ref _typeCache, cache, type, redacted, MaxCachedTypes);
             }
 #else
-            cache.TryAdd(type, redacted);
+            AddToCache(ref _typeCache, cache, type, redacted, MaxCachedTypes);
 #endif
 
             return redacted;
@@ -391,7 +407,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             if (name.Length > MaxStackAlloc)
             {
                 // Too long to normalize, so it never matches. Not caching it avoids retaining large customer strings.
-                Log.Debug("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, so it is skipped for redaction matching", name.Length, property1: MaxStackAlloc);
+                if (Volatile.Read(ref _longIdentifierLogged) == 0 && Interlocked.Exchange(ref _longIdentifierLogged, 1) == 0)
+                {
+                    Log.Warning("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, so it cannot be normalized and will be skipped for redaction matching. Further occurrences are not logged.", name.Length, property1: MaxStackAlloc);
+                }
+
                 return false;
             }
 
@@ -402,7 +422,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             redacted = CheckForRedactedKeyword(name);
-            cache.TryAdd(name, redacted);
+            AddToCache(ref _keywordCache, cache, name, redacted, MaxCachedKeywords);
             return redacted;
         }
 

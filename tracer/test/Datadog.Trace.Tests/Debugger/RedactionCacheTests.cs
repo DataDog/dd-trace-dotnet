@@ -18,9 +18,9 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var cache = new RedactionCache<string>(capacity: 2);
 
-            cache.TryAdd("a", true);
-            cache.TryAdd("b", false);
-            cache.TryAdd("c", true);
+            cache.TryAdd("a", true).Should().BeTrue();
+            cache.TryAdd("b", false).Should().BeTrue();
+            cache.TryAdd("c", true).Should().BeFalse();
 
             cache.Count.Should().Be(2);
             cache.TryGetValue("a", out var a).Should().BeTrue();
@@ -35,9 +35,9 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var cache = new RedactionCache<string>(capacity: 2);
 
-            cache.TryAdd("a", true);
-            cache.TryAdd("a", false);
-            cache.TryAdd("b", false);
+            cache.TryAdd("a", true).Should().BeTrue();
+            cache.TryAdd("a", false).Should().BeTrue();
+            cache.TryAdd("b", false).Should().BeTrue();
 
             cache.Count.Should().Be(2);
             cache.TryGetValue("a", out var a).Should().BeTrue();
