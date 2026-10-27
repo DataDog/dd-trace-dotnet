@@ -249,22 +249,25 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void IsRedactedKeyword_WhenCacheIsFull_StillComputesResult()
+        public void IsRedactedKeyword_WhenCacheIsFull_StartsNewCache()
         {
             Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
-            for (var i = 0; i < Redaction.MaxCachedKeywords + 10; i++)
+            for (var i = 0; i < Redaction.MaxCachedKeywords; i++)
             {
                 redaction.IsRedactedKeyword("field" + i).Should().BeFalse();
             }
 
             redaction.CachedKeywordsCount.Should().Be(Redaction.MaxCachedKeywords);
+
             redaction.IsRedactedKeyword("Pass_Word").Should().BeTrue();
+            redaction.CachedKeywordsCount.Should().Be(1);
+
             redaction.IsRedactedKeyword("Pass_Word").Should().BeTrue();
-            redaction.IsRedactedKeyword("notcached").Should().BeFalse();
+            redaction.IsRedactedKeyword("field0").Should().BeFalse();
             redaction.ShouldRedact("x-api-key", typeof(string), out var reason).Should().BeTrue();
             reason.Should().Be(RedactionReason.Identifier);
-            redaction.CachedKeywordsCount.Should().Be(Redaction.MaxCachedKeywords);
+            redaction.CachedKeywordsCount.Should().Be(3);
         }
 
         [Fact]
