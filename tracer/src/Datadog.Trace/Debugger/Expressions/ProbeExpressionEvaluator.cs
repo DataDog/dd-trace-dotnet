@@ -368,6 +368,12 @@ internal sealed class ProbeExpressionEvaluator
             compiledExpression = cached.Value;
             if (compiledExpression.BudgetedDelegate is null)
             {
+                // A metric that uses a redacted value has no delegate. It reports its errors and no value.
+                if (compiledExpression.Errors is { } errors)
+                {
+                    (result.Errors ??= new List<EvaluationError>()).AddRange(errors);
+                }
+
                 return;
             }
 

@@ -738,7 +738,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             _errors = evaluationResult.Errors;
 
             // A redaction doesn't replace the message, because the template already renders {redacted} in its
-            // place. Any other error does, and so does a redaction in the condition.
+            // place. Any other error does, and so does a redaction in the condition or one with no template to
+            // render it, such as in a metric.
             string? errorMessage = null;
             string? redactionMessage = null;
             if (_errors is not null)
@@ -760,7 +761,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
             }
 
-            _message = errorMessage ?? (evaluationResult.HasConditionError ? redactionMessage : null) ?? evaluationResult.Template;
+            _message = errorMessage ?? (evaluationResult.HasConditionError ? redactionMessage : null) ?? evaluationResult.Template ?? redactionMessage;
             if (evaluationResult.HasConditionError)
             {
                 _omitCaptureData = true;

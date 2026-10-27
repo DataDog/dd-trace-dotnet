@@ -647,6 +647,12 @@ internal partial class ProbeExpressionParser<T>
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);
+        if (IsRedactedNumericResult())
+        {
+            // ParseExpression doesn't compile it, see CreateRedactedNumericExpression.
+            return default;
+        }
+
         if (_hasRedaction && (typeof(T) == typeof(string) || typeof(T) == typeof(object)))
         {
             // A rendered or captured value that uses a redacted value is itself redacted. Otherwise operators would
@@ -709,6 +715,18 @@ internal partial class ProbeExpressionParser<T>
                    : _budgetCheckExpression ??= Expression.Call(ThrowIfExceededMethod, _evaluationBudgetParameterExpression);
     }
 
+    private bool IsRedactedNumericResult()
+    {
+        return _hasRedaction && typeof(T).IsNumeric();
+    }
+
+    private CompiledExpression<T> CreateRedactedNumericExpression(string expressionJson)
+    {
+        // A number computed from a redacted value would be made up, and converting the {redacted} placeholder
+        // would throw on every evaluation. Without a delegate, the evaluator reports the errors and no value.
+        return new CompiledExpression<T>(null, null, expressionJson, _errors.ToArray());
+    }
+
     internal static CompiledExpression<T> ParseExpression(JObject expressionJson, MethodScopeMembers scopeMembers)
     {
         return ParseExpression(expressionJson.ToString(), scopeMembers);
@@ -753,6 +771,11 @@ internal partial class ProbeExpressionParser<T>
         try
         {
             parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers, thisTypeOverride);
+            if (parser.IsRedactedNumericResult())
+            {
+                return parser.CreateRedactedNumericExpression(expressionJson);
+            }
+
             var expression = Expression.Lambda<CompiledExpressionDelegate<T>>(
                 parsedExpression.ExpressionBody,
                 parsedExpression.ThisParameterExpression,
@@ -768,6 +791,11 @@ internal partial class ProbeExpressionParser<T>
         {
             Log.Error(e, "Expression was: {Expression}", expressionJson);
             parser.AddError(parsedExpression.ExpressionBody?.ToString() ?? expressionJson, e.Message);
+            if (parser.IsRedactedNumericResult())
+            {
+                return parser.CreateRedactedNumericExpression(expressionJson);
+            }
+
             return new CompiledExpression<T>(
                 DefaultDelegate,
                 parsedExpression.ExpressionBody ?? Expression.Constant("N/A"),
