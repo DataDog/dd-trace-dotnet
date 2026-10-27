@@ -15,11 +15,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -659,6 +661,38 @@ namespace Datadog.Trace.Tests.Debugger
 
             var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
             Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return"));
+        }
+
+        [Theory]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
+        [InlineData(true, true)]
+        public void Timestamp_IsWrittenAtRootAndInSnapshotWithSameValue(bool exceptionReplay, bool isFullSnapshot)
+        {
+            const Datadog.Trace.Debugger.Expressions.ProbeLocation location = Datadog.Trace.Debugger.Expressions.ProbeLocation.Method;
+            DebuggerSnapshotCreator snapshotCreator = exceptionReplay
+                ? new ExceptionReplaySnapshotCreator(isFullSnapshot, location, hasCondition: false, tags: [], CreateCaptureLimitInfo(), processTagsProvider: static () => null, serviceNameProvider: static () => "test-service")
+                : new DebuggerSnapshotCreator(isFullSnapshot, location, hasCondition: false, tags: [], CreateCaptureLimitInfo(), processTagsProvider: static () => null, serviceNameProvider: static () => "test-service");
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            var after = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            var rootTimestamp = snapshot["timestamp"];
+            var snapshotTimestamp = snapshot.SelectToken("debugger.snapshot.timestamp");
+            (rootTimestamp?.Type).Should().Be(JTokenType.Integer);
+            (snapshotTimestamp?.Type).Should().Be(JTokenType.Integer);
+            rootTimestamp!.Value<long>().Should().Be(snapshotTimestamp!.Value<long>());
+            rootTimestamp.Value<long>().Should().BeInRange(before, after);
         }
 
         [Fact]
