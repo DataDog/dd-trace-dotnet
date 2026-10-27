@@ -18,6 +18,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -71,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
             where TFunction : IFunctionInstance
         {
-            var isContainerApps = tracer.Settings.IsRunningInAzureContainerApps;
+            var isContainerApps = AzureInfo.Instance.IsAzureContainerApp;
             Scope? scope = null;
 
             try
@@ -241,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime)
             where T : IFunctionContext
         {
-            var isContainerApps = tracer.Settings.IsRunningInAzureContainerApps;
+            var isContainerApps = AzureInfo.Instance.IsAzureContainerApp;
             Scope? scope = null;
 
             try
@@ -352,8 +353,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext);
                 }
 
-                // Keep these in locals rather than reading them back off the tags object: the tag
-                // properties are backed by the tag dictionary, so each read takes a lock.
+                // Read these once into locals: they are needed both for the tags object and for
+                // the resource name, and FunctionDefinition is a struct we would otherwise re-read.
                 var shortName = functionContext.FunctionDefinition.Name;
                 var fullName = functionContext.FunctionDefinition.EntryPoint;
 

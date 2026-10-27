@@ -1,4 +1,4 @@
-// <copyright file="AzureInfo.cs" company="Datadog">
+﻿// <copyright file="AzureInfo.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,6 +19,7 @@ namespace Datadog.Trace.Serverless;
 internal sealed class AzureInfo
 {
     private bool? _isAzureAppService;
+    private bool? _isAzureContainerApp;
     private bool? _isAzureFunctions;
     private bool? _isUsingSiteExtension;
     private bool? _isIsolatedFunction;
@@ -38,6 +39,14 @@ internal sealed class AzureInfo
     /// </summary>
     internal bool IsAzureAppService =>
         _isAzureAppService ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
+
+    /// <summary>
+    /// Gets a value indicating whether the current environment is Azure Container Apps
+    /// by checking the presence of "CONTAINER_APP_NAME".
+    /// The result is cached after the first evaluation.
+    /// </summary>
+    internal bool IsAzureContainerApp =>
+        _isAzureContainerApp ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.ContainerAppName);
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure Functions

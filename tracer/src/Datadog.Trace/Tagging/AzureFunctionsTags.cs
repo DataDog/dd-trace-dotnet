@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
@@ -14,6 +15,7 @@ namespace Datadog.Trace.Tagging
 
         private readonly bool _isContainerApps;
 
+        [TestingOnly]
         [Obsolete("Use the constructor that takes isContainerApps. This exists only so the type can be created reflectively.")]
         public AzureFunctionsTags()
             : this(isContainerApps: false)

@@ -1,4 +1,4 @@
-// <copyright file="AzureInfoTests.cs" company="Datadog">
+﻿// <copyright file="AzureInfoTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,8 @@ namespace Datadog.Trace.Tests.Serverless;
     "FUNCTIONS_WORKER_RUNTIME",
     "FUNCTIONS_EXTENSION_VERSION",
     "DD_AZURE_APP_SERVICES",
-    "DD_AAS_DOTNET_EXTENSION_VERSION")]
+    "DD_AAS_DOTNET_EXTENSION_VERSION",
+    "CONTAINER_APP_NAME")]
 public class AzureInfoTests
 {
     [Theory]
@@ -30,6 +31,18 @@ public class AzureInfoTests
         }
 
         new AzureInfo().IsAzureAppService.Should().Be(value);
+    }
+
+    [Theory]
+    [PairwiseData]
+    public void IsContainerApp(bool value)
+    {
+        if (value)
+        {
+            Environment.SetEnvironmentVariable("CONTAINER_APP_NAME", "test");
+        }
+
+        new AzureInfo().IsAzureContainerApp.Should().Be(value);
     }
 
     [Theory]

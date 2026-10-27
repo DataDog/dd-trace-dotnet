@@ -1,8 +1,12 @@
-// <copyright file="AzureFunctionsTagsTests.cs" company="Datadog">
+﻿// <copyright file="AzureFunctionsTagsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
@@ -43,9 +47,8 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void Properties_RoundTripThroughTheTagDictionary(bool isContainerApps)
+        [CombinatorialData]
+        public void Facade_ReadsBackWhatWasWritten(bool isContainerApps)
         {
             var tags = CreateTags(isContainerApps);
 
@@ -114,16 +117,35 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void Tags_AreEnumerated(bool isContainerApps)
+        [CombinatorialData]
+        public void OnlyTheActivePrefixReachesTheSerializer(bool isContainerApps)
         {
             var tags = CreateTags(isContainerApps);
-            var prefix = isContainerApps ? "aca." : "aas.";
+            var expectedPrefix = isContainerApps ? "aca." : "aas.";
+            var unexpectedPrefix = isContainerApps ? "aas." : "aca.";
 
-            // the four function tags no longer have [Tag] attributes, so prove they still
-            // reach the serializer via the base tag dictionary
-            tags.ToString().Should().Contain(prefix + "function.name");
+            // EnumerateTags is the path that feeds serialization (ToString only covers debug
+            // output), so assert the wire-visible tags here.
+            var enumerated = GetTagsSnapshot(tags);
+
+            enumerated.Should().Contain(
+                new KeyValuePair<string, string>(expectedPrefix + "function.name", ShortName));
+            enumerated.Should().Contain(
+                new KeyValuePair<string, string>(expectedPrefix + "function.method", FullName));
+            enumerated.Should().Contain(
+                new KeyValuePair<string, string>(expectedPrefix + "function.binding", BindingSource));
+            enumerated.Should().Contain(
+                new KeyValuePair<string, string>(expectedPrefix + "function.trigger", TriggerType));
+
+            enumerated.Should().NotContain(kvp => kvp.Key.StartsWith(unexpectedPrefix, StringComparison.Ordinal));
+        }
+
+        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags)
+        {
+            var result = new List<KeyValuePair<string, string>>();
+            var processor = new TagCollectorProcessor(result);
+            tags.EnumerateTags(ref processor, openTelemetrySemanticsEnabled: false);
+            return result;
         }
 
         private static AzureFunctionsTags CreateTags(bool isContainerApps)
@@ -134,5 +156,25 @@ namespace Datadog.Trace.Tests.Tagging
                 BindingSource = BindingSource,
                 TriggerType = TriggerType,
             };
+
+        private readonly struct TagCollectorProcessor : IItemProcessor<string>, IItemProcessor<int>
+        {
+            private readonly List<KeyValuePair<string, string>> _items;
+
+            public TagCollectorProcessor(List<KeyValuePair<string, string>> items)
+            {
+                _items = items;
+            }
+
+            public void Process(TagItem<string> item)
+            {
+                _items.Add(new(item.Key, item.Value));
+            }
+
+            public void Process(TagItem<int> item)
+            {
+                _items.Add(new(item.Key, item.Value.ToString(CultureInfo.InvariantCulture)));
+            }
+        }
     }
 }
