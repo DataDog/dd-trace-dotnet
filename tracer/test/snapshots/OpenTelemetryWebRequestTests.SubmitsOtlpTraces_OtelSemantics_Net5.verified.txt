@@ -81,7 +81,28 @@
               "name": "WebRequestRequestAsync",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -93,6 +114,18 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
                 {
                   "key": "http.request.method",
                   "value": {
@@ -129,7 +162,8 @@
                     "stringValue": "http://localhost:00000/Guid_2/ok"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -177,7 +211,8 @@
                     "stringValue": "http://localhost:00000/Guid_2/ok?<redacted>"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -231,7 +266,8 @@
                     "stringValue": "http://localhost:00000/Guid_2/ok"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -279,7 +315,8 @@
                     "stringValue": "http://localhost:00000/Guid_2/redirect"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -362,7 +399,8 @@
               ],
               "status": {
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -445,7 +483,8 @@
               ],
               "status": {
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -493,7 +532,8 @@
                     "stringValue": "http://REDACTED:REDACTED@localhost:00000/Guid_2/ok"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }
