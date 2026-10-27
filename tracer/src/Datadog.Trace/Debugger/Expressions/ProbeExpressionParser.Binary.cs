@@ -102,6 +102,11 @@ internal sealed partial class ProbeExpressionParser<T>
                 return RedactDictionaryUndefinedOperation(right);
             }
 
+            if (IsRedactedValue(left) || IsRedactedValue(right))
+            {
+                return Expression.Constant(false);
+            }
+
             if (left.Type == typeof(string) && right.Type == typeof(string))
             {
                 return RedactDictionaryBinaryOperation(

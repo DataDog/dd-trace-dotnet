@@ -14,6 +14,11 @@ internal partial class ProbeExpressionParser<T>
     private Expression Not(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var ex = ParseTree(reader, parameters, itParameter);
+        if (IsRedactedValue(ex))
+        {
+            return Expression.Constant(false);
+        }
+
         return RedactDictionaryOperation(ex, Expression.Not(ex));
     }
 }

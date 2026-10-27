@@ -148,6 +148,11 @@ internal partial class ProbeExpressionParser<T>
 
         Expression AsBoolean(Expression operand)
         {
+            if (IsRedactedValue(operand))
+            {
+                return Expression.Constant(false);
+            }
+
             return operand?.Type == ProbeExpressionParserHelper.UndefinedValueType
                        ? Expression.Constant(true)
                        : operand;
