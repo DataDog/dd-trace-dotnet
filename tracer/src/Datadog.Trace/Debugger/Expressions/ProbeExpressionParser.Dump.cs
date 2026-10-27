@@ -110,24 +110,29 @@ internal partial class ProbeExpressionParser<T>
     }
 
     // Only called when the declared type is safe to call ToString on. A value type or an exact match is
-    // decided by the declared type. No subclass of a non-sealed allowed type (Uri, StackTrace) is allowed
-    // itself, so any other runtime type is a subclass whose override must not run.
+    // decided by the declared type. No subclass of a non-sealed allowed type is allowed itself, so any
+    // other runtime type is a subclass whose override must not run.
     private static bool CanCallToStringOnRuntimeType(object value, Type declaredType)
     {
         return value.GetType() == declaredType || declaredType.IsValueType;
     }
 
     // Message and StackTrace are virtual, so they are only called on a CoreLib exception.
-    private static bool IsCoreLibType(object value)
+    private static string DumpException(Exception exception, string prefix)
     {
-        return ReferenceEquals(value.GetType().Assembly, CoreLibAssembly);
+        var runtimeType = exception.GetType();
+        return ReferenceEquals(runtimeType.Assembly, CoreLibAssembly)
+                   ? $"{prefix}{runtimeType.FullName}, {exception.Message}, {exception.StackTrace}"
+                   : DumpNonCoreLibException(exception, prefix);
     }
 
     // Any exception outside CoreLib shows its runtime type and the message it was constructed with.
-    private static string DumpNonCoreLibException(Exception exception)
+    private static string DumpNonCoreLibException(Exception exception, string prefix)
     {
         var typeName = exception.GetType().FullName;
-        return ExceptionMessageField?.GetValue(exception) is string message ? $"{typeName}, {message}" : typeName;
+        return ExceptionMessageField?.GetValue(exception) is string message
+                   ? $"{prefix}{typeName}, {message}"
+                   : $"{prefix}{typeName}";
     }
 
     private static Expression IsNullExpression(Expression expression)
@@ -156,71 +161,66 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Constant(UndefinedValueDump);
         }
 
+        // A sealed or value type is its own runtime type, so its dump is decided here and needs no runtime check.
+        var isExactType = type.IsValueType || type.IsSealed;
+        var getTypeMethod = GetMethodByReflection(typeof(object), nameof(object.GetType), Type.EmptyTypes);
         var toStringMethod = GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes);
+
         if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(type) ||
             Redaction.AllowedTypesSafeToCallToString.Contains(type))
         {
-            if (type.IsValueType || type.IsSealed)
+            if (isExactType)
             {
                 return Expression.Call(expression, toStringMethod);
             }
 
-            // Uri and StackTrace aren't sealed, and no subclass of them is allowed, so only an exact match may run ToString.
+            // No subclass of a non-sealed allowed type is allowed itself, so only an exact match may run ToString.
             return DumpRuntimeValueExpression(
                 expression,
                 Expression.Constant("null"),
-                (value, typedValue) => DumpIfRuntimeTypeAllows(
-                    Expression.ReferenceEqual(
-                        Expression.Call(value, GetMethodByReflection(typeof(object), nameof(GetType), Type.EmptyTypes)),
-                        Expression.Constant(type, typeof(Type))),
-                    Expression.Call(typedValue, toStringMethod),
-                    typedValue,
+                value => DumpIfRuntimeTypeAllows(
+                    Expression.ReferenceEqual(Expression.Call(value, getTypeMethod), Expression.Constant(type, typeof(Type))),
+                    Expression.Call(value, toStringMethod),
+                    value,
                     scopeMembers),
                 scopeMembers);
         }
 
-        // A sealed or value type is its own runtime type, so its dump is decided here and needs no runtime check.
-        var isExactType = type.IsValueType || type.IsSealed;
-
         if (typeof(Exception).IsAssignableFrom(type))
         {
-            // Message and StackTrace are virtual, so call them only on a CoreLib exception. Only a non-sealed
-            // CoreLib declared type can hold either kind, so only that one needs a check of the runtime type.
-            var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
             var typeNameExpression = Expression.Constant(type.FullName, typeof(string));
-            Func<Expression, Expression> exceptionAsString = exception => Expression.Call(
-               stringConcat,
-               Expression.NewArrayInit(
-                   typeof(string),
-                   typeNameExpression,
-                   Expression.Constant(", "),
-                   Expression.Property(exception, nameof(Exception.Message)),
-                   Expression.Constant(", "),
-                   Expression.Property(exception, nameof(Exception.StackTrace))));
 
-            Func<Expression, Expression> nonCoreLibException = exception => Expression.Call(
-                GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpNonCoreLibException), [typeof(Exception)]),
-                exception.Type == typeof(Exception) ? exception : Expression.Convert(exception, typeof(Exception)));
+            // Message and StackTrace are virtual, so DumpException calls them only on a CoreLib exception. A type
+            // outside CoreLib has no subclass in CoreLib, so that check only runs for a non-sealed CoreLib type.
             var isCoreLibType = ReferenceEquals(type.Assembly, CoreLibAssembly);
-
-            if (isExactType)
+            if (isExactType && isCoreLibType)
             {
-                return Expression.Condition(
-                    IsNullExpression(expression),
-                    typeNameExpression,
-                    isCoreLibType ? exceptionAsString(expression) : nonCoreLibException(expression));
+                var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+                var exceptionAsString = Expression.Call(
+                   stringConcat,
+                   Expression.NewArrayInit(
+                       typeof(string),
+                       typeNameExpression,
+                       Expression.Constant(", "),
+                       Expression.Property(expression, nameof(Exception.Message)),
+                       Expression.Constant(", "),
+                       Expression.Property(expression, nameof(Exception.StackTrace))));
+
+                return Expression.Condition(IsNullExpression(expression), typeNameExpression, exceptionAsString);
             }
 
-            return DumpRuntimeValueExpression(
-                expression,
-                typeNameExpression,
-                (value, exception) => isCoreLibType
-                                          ? Expression.Condition(
-                                              Expression.Call(GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsCoreLibType), [typeof(object)]), value),
-                                              exceptionAsString(exception),
-                                              nonCoreLibException(exception))
-                                          : nonCoreLibException(exception),
-                scopeMembers);
+            var dumpExceptionMethod = GetMethodByReflection(
+                typeof(ProbeExpressionParser<T>),
+                isCoreLibType ? nameof(DumpException) : nameof(DumpNonCoreLibException),
+                [typeof(Exception), typeof(string)]);
+            Func<Expression, Expression> dumpException = exception => Expression.Call(
+                dumpExceptionMethod,
+                Expression.Convert(exception, typeof(Exception)),
+                Expression.Constant(null, typeof(string)));
+
+            return isExactType
+                       ? Expression.Condition(IsNullExpression(expression), typeNameExpression, dumpException(expression))
+                       : DumpRuntimeValueExpression(expression, typeNameExpression, dumpException, scopeMembers);
         }
 
         if (IsDictionaryDumpType(type))
@@ -245,20 +245,29 @@ internal partial class ProbeExpressionParser<T>
                     Redaction.IsSupportedCollection(type) ? DumpCollectionExpression(expression, scopeMembers) : DumpFieldsExpression(expression, scopeMembers));
             }
 
+            // Every supported collection type derives directly from object, so a declared class can only hold a
+            // supported runtime type by holding exactly itself. Only an interface needs the runtime allowlist.
+            if (!type.IsInterface && !Redaction.IsSupportedCollection(type))
+            {
+                return DumpRuntimeValueExpression(expression, Expression.Constant("null"), value => DumpFieldsExpression(value, scopeMembers), scopeMembers);
+            }
+
             return DumpRuntimeValueExpression(
                 expression,
                 Expression.Constant("null"),
-                (value, collection) => DumpIfRuntimeTypeAllows(
-                    Expression.Call(GetMethodByReflection(typeof(Redaction), nameof(Redaction.IsSupportedCollection), [typeof(object)]), value),
-                    DumpCollectionExpression(collection, scopeMembers),
-                    collection,
+                value => DumpIfRuntimeTypeAllows(
+                    type.IsInterface
+                        ? Expression.Call(GetMethodByReflection(typeof(Redaction), nameof(Redaction.IsSupportedCollection), [typeof(object)]), value)
+                        : Expression.ReferenceEqual(Expression.Call(value, getTypeMethod), Expression.Constant(type, typeof(Type))),
+                    DumpCollectionExpression(Expression.Convert(value, type), scopeMembers),
+                    value,
                     scopeMembers),
                 scopeMembers);
         }
 
         return isExactType
                    ? Expression.Condition(IsNullExpression(expression), Expression.Constant("null"), DumpFieldsExpression(expression, scopeMembers))
-                   : DumpRuntimeValueExpression(expression, Expression.Constant("null"), (_, typedValue) => DumpFieldsExpression(typedValue, scopeMembers), scopeMembers);
+                   : DumpRuntimeValueExpression(expression, Expression.Constant("null"), value => DumpFieldsExpression(value, scopeMembers), scopeMembers);
     }
 
     // Reads the value once and redacts it when its runtime type, which a non-sealed declared type can't tell, is
@@ -266,7 +275,7 @@ internal partial class ProbeExpressionParser<T>
     private BlockExpression DumpRuntimeValueExpression(
         Expression expression,
         Expression nullDump,
-        Func<ParameterExpression, Expression, Expression> dumpValue,
+        Func<ParameterExpression, Expression> dumpValue,
         List<ParameterExpression> scopeMembers)
     {
         var value = Expression.Variable(typeof(object), "dumpValue");
@@ -281,16 +290,13 @@ internal partial class ProbeExpressionParser<T>
             Expression.Condition(
                 Expression.ReferenceEqual(value, Expression.Constant(null)),
                 nullDump,
-                Expression.Condition(
-                    isRedacted,
-                    Expression.Constant(RedactedValueDump),
-                    dumpValue(value, Expression.Convert(value, expression.Type)))));
+                Expression.Condition(isRedacted, Expression.Constant(RedactedValueDump), dumpValue(value))));
     }
 
     // Any runtime type that isAllowed rejects gets its fields dumped, the same output a root local of that type gets.
-    private ConditionalExpression DumpIfRuntimeTypeAllows(Expression isAllowed, Expression dumpAllowed, Expression typedValue, List<ParameterExpression> scopeMembers)
+    private ConditionalExpression DumpIfRuntimeTypeAllows(Expression isAllowed, Expression dumpAllowed, Expression value, List<ParameterExpression> scopeMembers)
     {
-        return Expression.Condition(isAllowed, dumpAllowed, DumpFieldsExpression(typedValue, scopeMembers));
+        return Expression.Condition(isAllowed, dumpAllowed, DumpFieldsExpression(value, scopeMembers));
     }
 
     private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
@@ -533,14 +539,7 @@ internal partial class ProbeExpressionParser<T>
             }
 
             // The declared type may be a non-sealed exception. Redact from the runtime type before reading the message.
-            if (IsRedactedRuntimeValue(value, type))
-            {
-                return $"{name}{RedactedValueDump}";
-            }
-
-            return IsCoreLibType(ex)
-                       ? $"{name}{ex.GetType().FullName}, {ex.Message}, {ex.StackTrace}"
-                       : $"{name}{DumpNonCoreLibException(ex)}";
+            return IsRedactedRuntimeValue(value, type) ? $"{name}{RedactedValueDump}" : DumpException(ex, name);
         }
 
         return value is not null && Redaction.IsSafeToCallToString(type) && CanCallToStringOnRuntimeType(value, type) ?

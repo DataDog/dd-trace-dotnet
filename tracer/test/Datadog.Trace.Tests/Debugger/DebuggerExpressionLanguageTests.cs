@@ -3534,7 +3534,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData("coreLib", "System.Exception, operation failed, ")]
+        [InlineData("coreLib", "System.InvalidOperationException, operation failed, ")]
         [InlineData("customer", "Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+ThrowingMessageException, customer message")]
         [InlineData("customerWithoutMessage", "Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+CustomerException")]
         [InlineData("outsideCoreLib", "System.Xml.XmlException, bad xml")]
@@ -3559,7 +3559,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void ProbeExpressionEvaluator_TemplateDump_ExceptionFieldsUseRuntimeType()
+        public void ProbeExpressionEvaluator_TemplateDump_ExceptionFieldsCallMembersOnlyOnCoreLibRuntimeType()
         {
             var scopeMembers = CreateScopeMembers();
             scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpExceptionFieldsHolder), new DumpExceptionFieldsHolder(), ScopeMemberKind.Local));

@@ -59,7 +59,7 @@ Expressions: (
                 : {
                     fieldsArray = ProbeExpressionParser<string>
                         .GetSafeFieldsForDump(
-                            ((DebuggerExpressionLanguageTests.TestStruct.NestedObject)dumpValue).GetType().GetFields(
+                            dumpValue.GetType().GetFields(
                                 BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                         .OrderBy(fieldInfo => fieldInfo.MetadataToken)
                         .ToArray();
@@ -71,9 +71,7 @@ Expressions: (
                         {
                             fieldValues.Append(
                                 ProbeExpressionParser<string>.DumpObject(
-                                    ProbeExpressionParser<string>.GetFieldValueForDump(
-                                        fieldsArray[index],
-                                        (object)((DebuggerExpressionLanguageTests.TestStruct.NestedObject)dumpValue)),
+                                    ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index], (object)dumpValue),
                                     fieldsArray[index].FieldType,
                                     fieldsArray[index].Name,
                                     0));

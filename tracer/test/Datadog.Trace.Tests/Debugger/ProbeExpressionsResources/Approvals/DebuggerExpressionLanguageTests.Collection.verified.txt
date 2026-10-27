@@ -51,7 +51,7 @@ Expressions: (
             ? "null"
             : ProbeExpressionParser<string>.IsRedactedRuntimeValue(dumpValue, typeof(List<string>))
                 ? "{redacted}"
-                : Redaction.IsSupportedCollection(dumpValue)
+                : (dumpValue.GetType() == typeof(List<string>))
                     ? {
                         enumerator = ((List<string>)dumpValue).GetEnumerator();
                         index = 0;
@@ -96,7 +96,7 @@ Expressions: (
                     : {
                         fieldsArray = ProbeExpressionParser<string>
                             .GetSafeFieldsForDump(
-                                ((List<string>)dumpValue).GetType().GetFields(
+                                dumpValue.GetType().GetFields(
                                     BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                             .OrderBy(fieldInfo => fieldInfo.MetadataToken)
                             .ToArray();
@@ -108,7 +108,7 @@ Expressions: (
                             {
                                 fieldValues.Append(
                                     ProbeExpressionParser<string>.DumpObject(
-                                        ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index2], (object)((List<string>)dumpValue)),
+                                        ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index2], (object)dumpValue),
                                         fieldsArray[index2].FieldType,
                                         fieldsArray[index2].Name,
                                         0));
