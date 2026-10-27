@@ -1,6 +1,33 @@
 # Tracer Debugging Guide
 
-This guide covers how to configure environment variables for debugging the Datadog .NET tracer locally.
+This guide covers local tracer debugging configuration and how to interpret runtime instrumentation evidence.
+
+## Confirming Runtime Instrumentation
+
+To check whether a particular method is instrumented, reproduce a call to it and inspect
+the native tracer logs for that method in the same process.
+
+- `Method enqueued for ReJIT` means the tracer selected the method for instrumentation.
+- `CallTarget_RewriterCallback() Finished` means the tracer prepared the modified method
+  body. The runtime still needs to accept and compile it, so this message alone does not
+  confirm that the instrumentation ran. Even together with an absence of `ReJITError`
+  messages, it does not prove runtime acceptance.
+- To confirm execution, set a breakpoint in the integration's `OnMethodBegin` or
+  `OnMethodEnd` callback and trigger the operation. A breakpoint hit for the relevant method
+  confirms execution, but does not by itself confirm that a span was created. If the
+  integration should create a span, check for a span corresponding to that operation too.
+
+If the expected span is missing, check callback execution to help narrow the investigation.
+A missing span alone does not tell you whether instrumentation failed or the callback ran
+without producing a span.
+
+Managed tracer startup messages do not confirm instrumentation of a specific method.
+If native log entries are missing, check the logging configuration and that you captured
+the relevant time period from the correct process before drawing a conclusion.
+
+For implementation details, see [TracerMethodRewriter](../../tracer/src/Datadog.Tracer.Native/tracer_method_rewriter.cpp),
+[RejitHandler](../../tracer/src/Datadog.Tracer.Native/rejit_handler.cpp), and
+[FunctionControlWrapper](../../tracer/src/Datadog.Tracer.Native/function_control_wrapper.cpp).
 
 ## Understanding `$(SolutionDir)` and Path References
 

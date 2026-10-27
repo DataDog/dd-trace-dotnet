@@ -113,6 +113,24 @@
                   }
                 },
                 {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "aspnet_core.route",
                   "value": {
                     "stringValue": "status-code/{statuscode}"
@@ -196,7 +214,8 @@
                     "stringValue": "web"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -207,6 +226,18 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
                 {
                   "key": "aspnet_core.action",
                   "value": {
@@ -261,7 +292,8 @@
                     "stringValue": "web"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }
