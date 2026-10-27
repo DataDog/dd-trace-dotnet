@@ -5,7 +5,6 @@
 
 using System;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
