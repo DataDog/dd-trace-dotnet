@@ -103,25 +103,60 @@ internal partial class ProbeExpressionParser<T>
         return runtimeType != declaredType && ShouldRedactDumpValue(null, runtimeType);
     }
 
+    // Only called when the declared type is safe to call ToString on. A value type or an exact match is
+    // decided by the declared type. No subclass of a non-sealed allowed type (Uri, StackTrace) is allowed
+    // itself, so any other runtime type is a subclass whose override must not run.
+    private static bool CanCallToStringOnRuntimeType(object value, Type declaredType)
+    {
+        return value.GetType() == declaredType || declaredType.IsValueType;
+    }
+
+    private static Expression IsNullExpression(Expression expression)
+    {
+        // Expression.Equal could bind to a customer equality operator
+        if (!expression.Type.IsValueType)
+        {
+            return Expression.ReferenceEqual(expression, Expression.Constant(null));
+        }
+
+        return Nullable.GetUnderlyingType(expression.Type) is null
+                   ? Expression.Constant(false)
+                   : Expression.Not(Expression.Property(expression, nameof(Nullable<int>.HasValue)));
+    }
+
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
-        if (ShouldRedactDumpValue(null, expression.Type))
+        var type = expression.Type;
+        if (ShouldRedactDumpValue(null, type))
         {
             return Expression.Constant(RedactedValueDump);
         }
 
-        if (expression.Type == ProbeExpressionParserHelper.UndefinedValueType)
+        if (type == ProbeExpressionParserHelper.UndefinedValueType)
         {
             return Expression.Constant(UndefinedValueDump);
         }
 
-        if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(expression.Type) ||
-            Redaction.AllowedTypesSafeToCallToString.Contains(expression.Type))
+        var toStringMethod = GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes);
+        if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(type) ||
+            Redaction.AllowedTypesSafeToCallToString.Contains(type))
         {
-            return Expression.Call(expression, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
+            if (type.IsValueType || type.IsSealed)
+            {
+                return Expression.Call(expression, toStringMethod);
+            }
+
+            // Uri and StackTrace aren't sealed, and no subclass of them is allowed, so only an exact match may run ToString.
+            return DumpIfRuntimeTypeAllows(
+                expression,
+                value => Expression.ReferenceEqual(
+                    Expression.Call(value, GetMethodByReflection(typeof(object), nameof(GetType), Type.EmptyTypes)),
+                    Expression.Constant(type, typeof(Type))),
+                value => Expression.Call(value, toStringMethod),
+                scopeMembers);
         }
 
-        var ifNull = Expression.Equal(expression, Expression.Constant(null));
+        var ifNull = IsNullExpression(expression);
 
         if (IsSafeException(expression.Type))
         {
@@ -143,13 +178,24 @@ internal partial class ProbeExpressionParser<T>
         }
 
         Expression dumpExpression;
-        if (IsDictionaryDumpType(expression.Type))
+        if (IsDictionaryDumpType(type))
         {
             dumpExpression = DumpDictionaryExpression(expression, scopeMembers);
         }
-        else if (IsSafeCollection(expression.Type))
+        else if (type.IsArray)
         {
+            // An array's runtime type is always an array, whose enumerator can't be customer code.
             dumpExpression = DumpCollectionExpression(expression, scopeMembers);
+        }
+        else if (IsSafeCollection(type))
+        {
+            // The declared type may be an interface or a non-sealed type over a customer collection, so
+            // enumerate only the runtime types snapshot capture supports.
+            return DumpIfRuntimeTypeAllows(
+                expression,
+                value => Expression.Call(GetMethodByReflection(typeof(Redaction), nameof(Redaction.IsSupportedCollection), [typeof(object)]), value),
+                collection => DumpCollectionExpression(collection, scopeMembers),
+                scopeMembers);
         }
         else
         {
@@ -157,6 +203,26 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
+    }
+
+    // Reads the value once. dumpAllowed runs on it only when isAllowed accepts its runtime type, and any other
+    // runtime type gets its fields dumped, the same output a root local of that type gets.
+    private BlockExpression DumpIfRuntimeTypeAllows(
+        Expression expression,
+        Func<ParameterExpression, Expression> isAllowed,
+        Func<Expression, Expression> dumpAllowed,
+        List<ParameterExpression> scopeMembers)
+    {
+        var value = Expression.Variable(typeof(object), "dumpValue");
+        scopeMembers.Add(value);
+        var typedValue = Expression.Convert(value, expression.Type);
+
+        return Expression.Block(
+            Expression.Assign(value, Expression.Convert(expression, typeof(object))),
+            Expression.Condition(
+                Expression.ReferenceEqual(value, Expression.Constant(null)),
+                Expression.Constant("null"),
+                Expression.Condition(isAllowed(value), dumpAllowed(typedValue), DumpFieldsExpression(typedValue, scopeMembers))));
     }
 
     private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
@@ -365,22 +431,20 @@ internal partial class ProbeExpressionParser<T>
         }
 
         // only one level depth of collection
-        if (depth == 0 && (IsTypeSupportIndex(type, out var assignableFrom) || IsGenericDictionaryInterface(type)))
+        // The declared type doesn't tell which collection the field holds, so enumerate only the runtime types
+        // snapshot capture supports and a customer or wrapped enumerator never runs. Those allow lists are
+        // cheap, so check them before the declared type, whose check looks up interfaces.
+        if (depth == 0 &&
+            (value is null || Redaction.IsSupportedDictionary(value) || Redaction.IsSupportedCollection(value)) &&
+            (IsTypeSupportIndex(type, out var assignableFrom) || IsGenericDictionaryInterface(type)))
         {
-            assignableFrom ??= typeof(IDictionary);
-
             // The declared type may be an interface. Redact from the runtime type before enumerating.
             if (IsRedactedRuntimeValue(value, type))
             {
                 return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
             }
 
-            // The declared type doesn't tell which dictionary the field holds. Enumerate only the dictionary
-            // types snapshot capture supports, so a customer or wrapped enumerator never runs.
-            if (assignableFrom != typeof(IDictionary) || value is null || Redaction.IsSupportedDictionary(value))
-            {
-                return DumpCollection(value, assignableFrom);
-            }
+            return DumpCollection(value, assignableFrom ?? typeof(IDictionary));
         }
 
         if (hasName)
@@ -400,8 +464,8 @@ internal partial class ProbeExpressionParser<T>
                        : $"{name}{ex.GetType().FullName}, {ex.Message}, {ex.StackTrace}";
         }
 
-        return Redaction.IsSafeToCallToString(type) ?
-                   $"{name}{value?.ToString() ?? type.FullName}" :
+        return value is not null && Redaction.IsSafeToCallToString(type) && CanCallToStringOnRuntimeType(value, type) ?
+                   $"{name}{value.ToString()}" :
                    $"{name}{type?.FullName}";
     }
 
