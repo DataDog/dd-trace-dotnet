@@ -206,6 +206,10 @@ partial class Build
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
+    IEnumerable<TargetFramework> ManagedUnitTestFrameworks => UnitTestFrameworkOnly
+        ? new[] { Framework }
+        : TestingFrameworks.Where(x => x == Framework || Framework is null);
+
     TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) =>
         GetTestingFrameworks(platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting());
 
@@ -230,6 +234,8 @@ partial class Build
         var major => $"origin/release/{major}.x",
     };
 
+    string TestComparisonBranch => string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+
     bool RequiresThoroughTesting()
     {
         if (IsLocalBuild)
@@ -238,7 +244,7 @@ partial class Build
             return true;
         }
 
-        var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+        var baseBranch = TestComparisonBranch;
         if (IsGitBaseBranch(baseBranch))
         {
             // do a full run on the main branch
@@ -1574,15 +1580,9 @@ partial class Build
 
             var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
             var exceptions = new List<Exception>();
-            var defaultDotNetLogger = DotNetTasks.DotNetLogger;
-            if (IsGitlab)
-            {
-                DotNetTasks.DotNetLogger = UnitTestOutputFilter.Wrap(defaultDotNetLogger);
-            }
-
             try
             {
-                foreach (var targetFramework in TestingFrameworks.Where(x => x == Framework || Framework is null))
+                foreach (var targetFramework in ManagedUnitTestFrameworks)
                 {
                     if (IsArm64 && Framework is null && targetFramework == TargetFramework.NETCOREAPP2_1)
                     {
@@ -1607,6 +1607,7 @@ partial class Build
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
+                                .When(IsGitlab, c => c.SetProcessCustomLogger(UnitTestOutputFilter.Wrap(DotNetTasks.DotNetLogger)))
                                 .SetProjectFile(project)));
                     }
                     catch (Exception ex)
@@ -1623,7 +1624,6 @@ partial class Build
             }
             finally
             {
-                DotNetTasks.DotNetLogger = defaultDotNetLogger;
                 CopyDumpsToBuildData();
             }
         });

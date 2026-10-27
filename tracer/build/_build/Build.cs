@@ -280,6 +280,7 @@ partial class Build : NukeBuild
         .Requires(() => !UnitTestFrameworkOnly || Framework != null)
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(ConfigureGitlabUnitTestCredentials)
         .DependsOn(RestoreManagedUnitTestPackages)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests);

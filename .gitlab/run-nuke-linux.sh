@@ -15,7 +15,6 @@ run_nuke() {
         --env CI_JOB_NAME_SLUG \
         --env CI_COMMIT_SHA \
         --env CI_COMMIT_BRANCH \
-        --env DD_LOGGER_DD_API_KEY \
         --env NUKE_TELEMETRY_OPTOUT=1 \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         "$image" \

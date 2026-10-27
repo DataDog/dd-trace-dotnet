@@ -111,7 +111,7 @@ partial class Build : NukeBuild
 
                 void GenerateConditionVariableBasedOnGitChange(ChangedTeamValue changedTeamValue, CodeOwnersParser codeOwners)
                 {
-                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                    var baseBranch = TestComparisonBranch;
                     bool isChanged = false;
                     var forceExplorationTestsWithVariableName = $"force_run_tests_with_{changedTeamValue.VariableName}";
 
@@ -173,7 +173,7 @@ partial class Build : NukeBuild
 
                 if (Environment.GetEnvironmentVariable("BUILD_REASON") == "PullRequest")
                 {
-                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                    var baseBranch = TestComparisonBranch;
                     var changedFiles = GetGitChangedFiles(baseBranch);
                     // Run smoke tests on a PR if any of the files change that most definitely indicate that they _should_ run
                     var matcher = new Matcher(StringComparison.Ordinal)

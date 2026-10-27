@@ -6,8 +6,6 @@ using System.Text.Json;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.IO;
-using Nuke.Common.Tooling;
-using Nuke.Common.Tools.DotNet;
 using Logger = Serilog.Log;
 
 partial class Build
@@ -18,20 +16,20 @@ partial class Build
     [Parameter("Require GitLab CI Visibility credentials for managed unit tests. Defaults to false.")]
     readonly bool RequireGitlabCiVisibility;
 
-    string GitlabUnitTestsBaseBranch => string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+    AbsolutePath GitlabUnitTestsOutputDirectory => RootDirectory / ".gitlab" / "generated";
 
     Target WriteGitlabUnitTestsBaseBranch => _ => _
         .Unlisted()
         .Executes(() =>
         {
-            var outputDirectory = RootDirectory / ".gitlab" / "generated";
+            var outputDirectory = GitlabUnitTestsOutputDirectory;
             Directory.CreateDirectory(outputDirectory);
-            File.WriteAllText(outputDirectory / "base-branch.txt", GitlabUnitTestsBaseBranch);
+            File.WriteAllText(outputDirectory / "base-branch.txt", TestComparisonBranch);
         });
 
     Target ConfigureGitlabUnitTestCredentials => _ => _
         .Unlisted()
-        .After(CompileManagedUnitTests)
+        .Before(Restore, RestoreManagedUnitTestPackages, CompileManagedSrc, CompileManagedLoader, CompileInstrumentationVerificationLibrary)
         .OnlyWhenDynamic(() => RequireGitlabCiVisibility)
         .Executes(() =>
         {
@@ -82,13 +80,11 @@ partial class Build
         .Requires(() => GitlabChangedFiles)
         .Executes(() =>
         {
-            // The runner's Git alternates may not be visible inside a container.
-            // Capture paths on the host, but keep selection decisions in shared NUKE code.
             var changedFiles = JsonConvert.DeserializeObject<string[]>(File.ReadAllText(GitlabChangedFiles))
                             ?? throw new InvalidOperationException("The GitLab changed-file list is missing");
-            var baseBranch = GitlabUnitTestsBaseBranch;
+            var baseBranch = TestComparisonBranch;
             var includeAll = IncludeAllTestFrameworks || IsGitBaseBranch(baseBranch) || HasChangesRequiringThoroughTesting(changedFiles);
-            var outputDirectory = RootDirectory / ".gitlab" / "generated";
+            var outputDirectory = GitlabUnitTestsOutputDirectory;
             Directory.CreateDirectory(outputDirectory);
 
             WritePipeline("windows", PlatformFamily.Windows, isArm64: false);

@@ -78,7 +78,6 @@ workflow:
             --framework "$FRAMEWORK" \
             --UnitTestFrameworkOnly true \
             --RequireGitlabCiVisibility true \
-            --IncludeAllTestFrameworks true \
             --NugetPackageDirectory /project/packages
         '
   artifacts:
