@@ -32,10 +32,20 @@ namespace Datadog.Trace.Debugger.Snapshots
 
     internal sealed class Redaction
     {
-        // Same as the previous LFU cache capacity. A full cache is replaced with an empty one.
-        internal const int MaxCachedTypes = 2048;
-
+        // Identifiers come from probed code, so 2048 covers typical apps. Cached names are at most
+        // MaxCachedNameLength chars, which bounds this cache to about 2 MB in the worst case.
+        [TestingAndPrivateOnly]
         internal const int MaxCachedKeywords = 2048;
+
+        // Data keys come from customer data and churn, so this cache is smaller and expected to reset.
+        [TestingAndPrivateOnly]
+        internal const int MaxCachedDataKeys = 1024;
+
+        // Captured types are usually a few hundred per process; 2048 leaves headroom for about 100 KB.
+        private const int MaxCachedTypes = 2048;
+
+        // Longer names are still checked but never cached, so large customer strings are not retained.
+        private const int MaxCachedNameLength = 512;
 
         private const int MaxStackAlloc = 512;
 
@@ -89,7 +99,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static Redaction _instnace = new();
 
-        private static int _longIdentifierLogged;
+        private static int _longNameLogged;
 
         private readonly Trie _typeTrie;
 
@@ -97,10 +107,15 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private readonly HashSet<string> _redactKeywords;
 
+        // Upper bound on the length of any keyword, so longer normalized names are rejected without allocating.
+        private int _maxKeywordLength;
+
         // Replaced, not cleared, by SetConfig so a lookup racing with it cannot store a stale result in the new cache.
         private RedactionCache<Type> _typeCache;
 
         private RedactionCache<string> _keywordCache;
+
+        private RedactionCache<string> _dataKeyCache;
 
         private Redaction()
         {
@@ -194,8 +209,10 @@ namespace Datadog.Trace.Debugger.Snapshots
                 "xsrf",
                 "xsrftoken"
             ];
+            _maxKeywordLength = GetMaxLength(_redactKeywords);
             _typeCache = new(MaxCachedTypes);
             _keywordCache = new(MaxCachedKeywords);
+            _dataKeyCache = new(MaxCachedDataKeys);
         }
 
         internal static Redaction Instance => _instnace;
@@ -205,6 +222,9 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         [TestingOnly]
         internal int CachedKeywordsCount => Volatile.Read(ref _keywordCache).Count;
+
+        [TestingOnly]
+        internal int CachedDataKeysCount => Volatile.Read(ref _dataKeyCache).Count;
 
         internal static bool IsSafeToCallToString(Type? type)
         {
@@ -311,7 +331,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return false;
         }
 
-        private static void AddToCache<TKey>(ref RedactionCache<TKey> field, RedactionCache<TKey> cache, TKey key, bool value, int capacity)
+        private static void AddToCache<TKey>(ref RedactionCache<TKey> field, RedactionCache<TKey> cache, TKey key, bool value)
             where TKey : notnull
         {
             if (cache.TryAdd(key, value))
@@ -320,9 +340,23 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             // Full: start over so new hot keys can be cached again. The compare-exchange keeps a cache installed by SetConfig.
-            var fresh = new RedactionCache<TKey>(capacity);
+            var fresh = new RedactionCache<TKey>(cache.Capacity);
             fresh.TryAdd(key, value);
             Interlocked.CompareExchange(ref field, fresh, cache);
+        }
+
+        private static int GetMaxLength(HashSet<string> values)
+        {
+            var max = 0;
+            foreach (var value in values)
+            {
+                if (value.Length > max)
+                {
+                    max = value.Length;
+                }
+            }
+
+            return max;
         }
 
         internal bool IsRedactedType(Type? type)
@@ -343,10 +377,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             // Caching a collectible type would keep its AssemblyLoadContext from unloading.
             if (!type.IsCollectible)
             {
-                AddToCache(ref _typeCache, cache, type, redacted, MaxCachedTypes);
+                AddToCache(ref _typeCache, cache, type, redacted);
             }
 #else
-            AddToCache(ref _typeCache, cache, type, redacted, MaxCachedTypes);
+            AddToCache(ref _typeCache, cache, type, redacted);
 #endif
 
             return redacted;
@@ -397,43 +431,136 @@ namespace Datadog.Trace.Debugger.Snapshots
             return false;
         }
 
-        internal bool IsRedactedKeyword(string name)
+        /// <summary>
+        /// Checks an identifier from probed code, such as a variable, field or property name.
+        /// </summary>
+        internal bool IsRedactedKeyword(string name) => IsRedactedName(name, ref _keywordCache);
+
+        /// <summary>
+        /// Checks a key taken from customer data, such as a dictionary key. Data keys have their own cache
+        /// so that unique keys cannot keep resetting the identifier cache.
+        /// </summary>
+        internal bool IsRedactedDataKey(string? key) => IsRedactedName(key, ref _dataKeyCache);
+
+        internal bool CheckForRedactedKeyword(string keyword)
+        {
+            return TryNormalize(keyword, _maxKeywordLength, out var result) && _redactKeywords.Contains(result);
+        }
+
+        internal bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
+            => ShouldRedactCore(IsRedactedKeyword(name), type, out redactionReason);
+
+        internal bool ShouldRedactDataKey(string? key, Type type, out RedactionReason redactionReason)
+            => ShouldRedactCore(IsRedactedDataKey(key), type, out redactionReason);
+
+        private static string Normalize(string identifier)
+        {
+            TryNormalize(identifier, int.MaxValue, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Lowercases <paramref name="identifier"/> and removes separator characters. Returns false, without
+        /// allocating, when the result would be longer than <paramref name="maxLength"/>.
+        /// </summary>
+        private static unsafe bool TryNormalize(string identifier, int maxLength, out string result)
+        {
+            result = identifier;
+            var normalizedLength = 0;
+            var needsNormalization = false;
+            for (var i = 0; i < identifier.Length; i++)
+            {
+                var c = identifier[i];
+                if (IsRemovableChar(c))
+                {
+                    needsNormalization = true;
+                }
+                else if (++normalizedLength > maxLength)
+                {
+                    return false;
+                }
+                else if (char.IsUpper(c))
+                {
+                    needsNormalization = true;
+                }
+            }
+
+            if (!needsNormalization)
+            {
+                return true;
+            }
+
+            if (normalizedLength <= MaxStackAlloc)
+            {
+                var buffer = stackalloc char[normalizedLength];
+                result = WriteNormalized(identifier, buffer);
+            }
+            else
+            {
+                fixed (char* buffer = new char[normalizedLength])
+                {
+                    result = WriteNormalized(identifier, buffer);
+                }
+            }
+
+            return true;
+        }
+
+        private static unsafe string WriteNormalized(string identifier, char* buffer)
+        {
+            var written = 0;
+            for (var i = 0; i < identifier.Length; i++)
+            {
+                var c = identifier[i];
+                if (char.IsUpper(c))
+                {
+                    buffer[written++] = char.ToLowerInvariant(c);
+                }
+                else if (!IsRemovableChar(c))
+                {
+                    buffer[written++] = c;
+                }
+            }
+
+            return new string(buffer, 0, written);
+        }
+
+        private static bool IsRemovableChar(char c)
+        {
+            return c is '_' or '-' or '$' or '@';
+        }
+
+        private bool IsRedactedName(string? name, ref RedactionCache<string> cacheField)
         {
             if (StringUtil.IsNullOrEmpty(name))
             {
                 return false;
             }
 
-            if (name.Length > MaxStackAlloc)
+            if (name.Length > MaxCachedNameLength)
             {
-                // Too long to normalize, so it never matches. Not caching it avoids retaining large customer strings.
-                if (Volatile.Read(ref _longIdentifierLogged) == 0 && Interlocked.Exchange(ref _longIdentifierLogged, 1) == 0)
+                if (Volatile.Read(ref _longNameLogged) == 0 && Interlocked.Exchange(ref _longNameLogged, 1) == 0)
                 {
-                    Log.Warning("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, so it cannot be normalized and will be skipped for redaction matching. Further occurrences are not logged.", name.Length, property1: MaxStackAlloc);
+                    Log.Warning("Name length {Length} exceeds {MaxLength} characters, so its redaction result is not cached. Further occurrences are not logged.", name.Length, property1: MaxCachedNameLength);
                 }
 
-                return false;
+                return CheckForRedactedKeyword(name);
             }
 
-            var cache = Volatile.Read(ref _keywordCache);
+            var cache = Volatile.Read(ref cacheField);
             if (cache.TryGetValue(name, out var redacted))
             {
                 return redacted;
             }
 
             redacted = CheckForRedactedKeyword(name);
-            AddToCache(ref _keywordCache, cache, name, redacted, MaxCachedKeywords);
+            AddToCache(ref cacheField, cache, name, redacted);
             return redacted;
         }
 
-        internal bool CheckForRedactedKeyword(string keyword)
+        private bool ShouldRedactCore(bool isRedactedName, Type type, out RedactionReason redactionReason)
         {
-            return TryNormalize(keyword, out var result) && _redactKeywords.Contains(result);
-        }
-
-        internal bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
-        {
-            if (IsRedactedKeyword(name))
+            if (isRedactedName)
             {
                 redactionReason = RedactionReason.Identifier;
                 return true;
@@ -449,57 +576,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             return false;
         }
 
-        private static unsafe bool TryNormalize(string identifier, out string result)
-        {
-            result = identifier;
-            if (string.IsNullOrEmpty(identifier))
-            {
-                return true;
-            }
-
-            if (identifier.Length > MaxStackAlloc)
-            {
-                Log.Warning("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, so it cannot be normalized and will be skipped for redaction matching", identifier.Length, property1: MaxStackAlloc);
-                return false;
-            }
-
-            bool needsNormalization = false;
-            var length = identifier.Length;
-            for (int i = 0; i < length && !needsNormalization; i++)
-            {
-                char c = identifier[i];
-                needsNormalization = char.IsUpper(c) || IsRemovableChar(c);
-            }
-
-            if (!needsNormalization)
-            {
-                return true;
-            }
-
-            int written = 0;
-            var buffer = stackalloc char[length];
-            for (int i = 0; i < identifier.Length; i++)
-            {
-                char c = identifier[i];
-                if (char.IsUpper(c))
-                {
-                    buffer[written++] = char.ToLowerInvariant(c);
-                }
-                else if (!IsRemovableChar(c))
-                {
-                    buffer[written++] = c;
-                }
-            }
-
-            result = new string(buffer, 0, written);
-            return true;
-        }
-
-        private static bool IsRemovableChar(char c)
-        {
-            return c is '_' or '-' or '$' or '@';
-        }
-
         internal void SetConfig(HashSet<string> redactedIdentifiers, HashSet<string> redactedExcludedIdentifiers, HashSet<string> redactedTypes)
         {
 #if NET6_0_OR_GREATER
@@ -507,27 +583,23 @@ namespace Datadog.Trace.Debugger.Snapshots
 #endif
             foreach (var identifier in redactedIdentifiers)
             {
-                if (TryNormalize(identifier, out var result))
+                var normalized = Normalize(identifier);
+
+                // Raise the bound before adding, so a concurrent lookup never rejects the new keyword by length.
+                if (normalized.Length > _maxKeywordLength)
                 {
-                    _redactKeywords.Add(result);
+                    _maxKeywordLength = normalized.Length;
                 }
-                else
-                {
-                    Log.Error("Skipping identifier that exceeds maximum length: {Length}", property: identifier.Length);
-                }
+
+                _redactKeywords.Add(normalized);
             }
 
             foreach (var excluded in redactedExcludedIdentifiers)
             {
-                if (TryNormalize(excluded, out var result))
-                {
-                    _redactKeywords.Remove(result);
-                }
-                else
-                {
-                    Log.Error("Skipping excluded identifier that exceeds maximum length: {Length}", property: excluded.Length);
-                }
+                _redactKeywords.Remove(Normalize(excluded));
             }
+
+            _maxKeywordLength = GetMaxLength(_redactKeywords);
 
             foreach (var type in redactedTypes)
             {
@@ -549,6 +621,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             // Results cached under the previous configuration may be stale.
             Volatile.Write(ref _typeCache, new RedactionCache<Type>(MaxCachedTypes));
             Volatile.Write(ref _keywordCache, new RedactionCache<string>(MaxCachedKeywords));
+            Volatile.Write(ref _dataKeyCache, new RedactionCache<string>(MaxCachedDataKeys));
         }
 
         /// <summary>

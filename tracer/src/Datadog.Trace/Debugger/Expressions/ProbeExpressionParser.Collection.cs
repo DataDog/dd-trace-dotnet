@@ -41,7 +41,7 @@ internal partial class ProbeExpressionParser<T>
             _ => null
         };
 
-        return Redaction.Instance.ShouldRedact(name, type, out _);
+        return Redaction.Instance.ShouldRedactDataKey(name, type, out _);
     }
 
     private static Expression RedactedDictionaryOperationDefault(Type type)

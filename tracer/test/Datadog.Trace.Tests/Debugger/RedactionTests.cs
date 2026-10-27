@@ -5,6 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Security;
 using Datadog.Trace.Debugger.Snapshots;
 using FluentAssertions;
 using VerifyXunit;
@@ -179,7 +182,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new HashSet<string> { "System.Security.SecureString", "Namespace.Sensitive*" });
 
             // Act & Assert
-            Assert.True(Redaction.Instance.IsRedactedType(typeof(System.Security.SecureString)));
+            Assert.True(Redaction.Instance.IsRedactedType(typeof(SecureString)));
         }
 
         [Fact]
@@ -218,7 +221,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new HashSet<string> { "System.Security.*" });
 
             // Act & Assert
-            Assert.True(Redaction.Instance.IsRedactedType(typeof(System.Security.SecureString)));
+            Assert.True(Redaction.Instance.IsRedactedType(typeof(SecureString)));
         }
 
         [Fact]
@@ -271,14 +274,68 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void IsRedactedKeyword_TooLongName_IsNotCached()
+        public void IsRedactedKeyword_LongName_IsCheckedButNotCached()
         {
             Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
 
-            redaction.IsRedactedKeyword("password" + new string('_', 600)).Should().BeFalse();
+            redaction.IsRedactedKeyword("password" + new string('_', 600)).Should().BeTrue();
+            redaction.IsRedactedKeyword(new string('a', 600)).Should().BeFalse();
+            redaction.IsRedactedDataKey("Pass-Word" + new string('-', 600)).Should().BeTrue();
             redaction.CachedKeywordsCount.Should().Be(0);
+            redaction.CachedDataKeysCount.Should().Be(0);
         }
+
+        [Fact]
+        public void SetConfig_IdentifierLongerThanStackBuffer_IsRedacted()
+        {
+            Redaction.Instance.ResetInstance();
+            var identifier = new string('x', 600) + "-api-key";
+
+            Redaction.Instance.SetConfig([identifier], [], []);
+
+            Redaction.Instance.IsRedactedKeyword(identifier).Should().BeTrue();
+            Redaction.Instance.IsRedactedKeyword(identifier.ToUpperInvariant()).Should().BeTrue();
+            Redaction.Instance.IsRedactedKeyword(identifier + "x").Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsRedactedDataKey_UsesSeparateCache()
+        {
+            Redaction.Instance.ResetInstance();
+            var redaction = Redaction.Instance;
+            redaction.IsRedactedKeyword("customerName").Should().BeFalse();
+
+            for (var i = 0; i < Redaction.MaxCachedDataKeys; i++)
+            {
+                redaction.IsRedactedDataKey("key" + i).Should().BeFalse();
+            }
+
+            redaction.CachedDataKeysCount.Should().Be(Redaction.MaxCachedDataKeys);
+            redaction.CachedKeywordsCount.Should().Be(1);
+
+            redaction.ShouldRedactDataKey("Pass_Word", typeof(string), out var reason).Should().BeTrue();
+            reason.Should().Be(RedactionReason.Identifier);
+            redaction.CachedDataKeysCount.Should().Be(1);
+            redaction.CachedKeywordsCount.Should().Be(1);
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public void IsRedactedType_CollectibleType_IsNotCached()
+        {
+            Redaction.Instance.ResetInstance();
+            var redaction = Redaction.Instance;
+            redaction.SetConfig([], [], ["Collectible.SecretHolder"]);
+            var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("RedactionCollectibleTypeTests"), AssemblyBuilderAccess.RunAndCollect);
+            var type = assembly.DefineDynamicModule("Main").DefineType("Collectible.SecretHolder", TypeAttributes.Public).CreateType();
+
+            type.IsCollectible.Should().BeTrue();
+            redaction.IsRedactedType(type).Should().BeTrue();
+            redaction.IsRedactedType(type).Should().BeTrue();
+            redaction.CachedTypesCount.Should().Be(0);
+        }
+#endif
 
         [Fact]
         public void IsRedactedType_CachesResult()
@@ -286,8 +343,8 @@ namespace Datadog.Trace.Tests.Debugger
             Redaction.Instance.ResetInstance();
             var redaction = Redaction.Instance;
 
-            redaction.IsRedactedType(typeof(System.Security.SecureString)).Should().BeTrue();
-            redaction.IsRedactedType(typeof(System.Security.SecureString)).Should().BeTrue();
+            redaction.IsRedactedType(typeof(SecureString)).Should().BeTrue();
+            redaction.IsRedactedType(typeof(SecureString)).Should().BeTrue();
             redaction.IsRedactedType(typeof(Uri)).Should().BeFalse();
             redaction.CachedTypesCount.Should().Be(2);
         }
@@ -299,11 +356,15 @@ namespace Datadog.Trace.Tests.Debugger
             var redaction = Redaction.Instance;
             redaction.IsRedactedKeyword("customerEmail").Should().BeFalse();
             redaction.IsRedactedKeyword("password").Should().BeTrue();
+            redaction.IsRedactedDataKey("customerEmail").Should().BeFalse();
+            redaction.IsRedactedDataKey("password").Should().BeTrue();
 
             redaction.SetConfig(["customer_email"], ["password"], []);
 
             redaction.IsRedactedKeyword("customerEmail").Should().BeTrue();
             redaction.IsRedactedKeyword("password").Should().BeFalse();
+            redaction.IsRedactedDataKey("customerEmail").Should().BeTrue();
+            redaction.IsRedactedDataKey("password").Should().BeFalse();
         }
 
         [Fact]
@@ -339,8 +400,8 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData("password", typeof(System.Security.SecureString), RedactionReason.Identifier)]
-        [InlineData("no-password", typeof(System.Security.SecureString), RedactionReason.Type)]
+        [InlineData("password", typeof(SecureString), RedactionReason.Identifier)]
+        [InlineData("no-password", typeof(SecureString), RedactionReason.Type)]
         [InlineData("nullable-guid", typeof(Guid?), RedactionReason.Type)]
         [InlineData("api_key", typeof(string), RedactionReason.Identifier)]
         [InlineData("normal", typeof(string), RedactionReason.None)]
