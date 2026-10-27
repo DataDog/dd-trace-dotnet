@@ -1113,7 +1113,7 @@ partial class Build
             {
                 var msiPath = ArtifactsDirectory / arch / "en-us" / $"datadog-dotnet-apm-{FullVersion}-{arch}.msi";
                 var verifiedPath = BuildProjectDirectory / nameof(MsiValidation) / $"msi-{arch}.verified.yml";
-                MsiSnapshot.ValidateMsiSnapshot(msiPath, verifiedPath, Version, FullVersion);
+                MsiSnapshot.ValidateMsiSnapshot(msiPath, verifiedPath, Version, AssemblyVersion, FullVersion);
             }
         });
 
