@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -442,28 +441,10 @@ namespace Datadog.Trace
                             {
                                 metadata.ProcessState = ProcessState.Faulted;
 
-                                var firstFailure = metadata.SequentialFailures == 0;
-                                if (ex is Win32Exception)
-                                {
-                                    // Process.Start could not start the agent, for example a missing file or no access: an expected failure
-                                    if (firstFailure)
-                                    {
-                                        Log.Warning(ex, "Failed to start {Process}.", path);
-                                    }
-                                    else
-                                    {
-                                        Log.Debug(ex, "Failed to start {Process}.", path);
-                                    }
-                                }
-                                else if (firstFailure)
-                                {
-                                    // Anything else is unexpected and probably a bug here, so it is logged as an Error
-                                    Log.Error(ex, "Unexpected error in keep-alive for {Process}.", path);
-                                }
-                                else
-                                {
-                                    Log.Debug(ex, "Unexpected error in keep-alive for {Process}.", path);
-                                }
+                                // Expected failures (the agent exits, fails its health check, or does not start in time) are handled
+                                // above without exceptions, so anything that reaches here is unexpected and is logged as an Error.
+                                // The retry backoff limits how often a repeating error is logged.
+                                Log.Error(ex, "Unexpected error in keep-alive for {Process}.", path);
                             }
                             finally
                             {
@@ -716,9 +697,10 @@ namespace Datadog.Trace
             public bool IsBeingManaged { get; set; }
 
             /// <summary>
-            /// Gets or sets the number of failures in a row: failed starts, exits of the process we started, and restarts.
-            /// It sets the retry backoff, and only the first failure in a run is logged above Debug, because later
-            /// ones are expected retries. It resets after the agent stays healthy for <see cref="StableHealthyPeriod"/>.
+            /// Gets or sets the number of failures in a row: failed starts, exits of the process we started, restarts,
+            /// and unexpected keep-alive exceptions. It sets the retry backoff. For failed starts, exits, and restarts, only
+            /// the first failure in a run is logged above Debug, because later ones are expected retries; unexpected exceptions
+            /// are always logged as an Error. It resets after the agent stays healthy for <see cref="StableHealthyPeriod"/>.
             /// </summary>
             public int SequentialFailures { get; set; }
 
