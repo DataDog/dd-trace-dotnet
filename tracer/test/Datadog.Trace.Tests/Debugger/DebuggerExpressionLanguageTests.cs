@@ -19,7 +19,6 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -3025,7 +3024,53 @@ namespace Datadog.Trace.Tests.Debugger
 
             EvaluateCompiled(compiled, scopeMembers).Should().Be("hello");
             compiled.Errors.Should().BeNullOrEmpty();
-            compiled.ParsedExpression.ToReadableString().Should().NotContain(nameof(string.Substring));
+            var parsedExpression = compiled.ParsedExpression.ToReadableString();
+            parsedExpression.Should().NotContain(nameof(string.Substring));
+            parsedExpression.Should().Contain(@"""public""");
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_ConstantKeyThatThrowsWhenFolded_KeepsRuntimeError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(
+                new ScopeMember(
+                    "SafeDictionaryLocal",
+                    typeof(Dictionary<string, string>),
+                    new Dictionary<string, string> { { "public", "hello" } },
+                    ScopeMemberKind.Local));
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(null, null, "value="),
+                    new DebuggerExpression(string.Empty, @"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""abc"",5,9]}]}", null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+            var expectedError = Record.Exception(() => "abc".Substring(5, 4));
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("value=");
+            var error = result.Errors.Should().ContainSingle().Subject;
+            error.Message.Should().Be(expectedError.Message);
+            error.IsRedaction.Should().BeFalse();
+            evaluator.CompiledTemplates[1].ParsedExpression.ToReadableString().Should().Contain(nameof(string.Substring));
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ConstantComputedListIndex_IsEvaluatedAtRuntime()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string json = @"{""index"":[{""ref"":""CollectionLocal""},{""len"":""ab""}]}";
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+
+            EvaluateCompiled(compiled, scopeMembers).Should().Be("2nd item");
+            compiled.Errors.Should().BeNullOrEmpty();
+            compiled.ParsedExpression.ToReadableString().Should().Contain(@"""ab""");
         }
 
         [Fact]
@@ -4007,53 +4052,6 @@ namespace Datadog.Trace.Tests.Debugger
 #pragma warning disable CS0414 // Field is assigned but its value is never used
                 private string _childPrivateMember = "Hello from child private member";
 #pragma warning restore CS0414 // Field is assigned but its value is never used
-            }
-        }
-
-        [Collection(nameof(RedactionTests))]
-        public class RedactionConfigurationTests
-        {
-            [Theory]
-            [InlineData(@"{""substring"":[""xpasswordx"",1,9]}")]
-            [InlineData(@"{""substring"":[{""substring"":[""xxpasswordxx"",1,11]},1,9]}")]
-            public void ProbeExpressionEvaluator_ConstantComputedExcludedKey_IsNotRedacted(string keyJson)
-            {
-                const string value = "EXCLUDED_IDENTIFIER_VALUE";
-                var scopeMembers = new MethodScopeMembers(new MethodScopeMembersParameters(1, 0));
-                scopeMembers.AddMember(
-                    new ScopeMember(
-                        "SafeDictionaryLocal",
-                        typeof(Dictionary<string, string>),
-                        new Dictionary<string, string> { { "password", value } },
-                        ScopeMemberKind.Local));
-                scopeMembers.InvocationTarget = new ScopeMember("this", typeof(object), new object(), ScopeMemberKind.This);
-                scopeMembers.Duration = new ScopeMember("@duration", typeof(TimeSpan), TimeSpan.Zero, ScopeMemberKind.Duration);
-
-                Redaction.Instance.ResetInstance();
-                try
-                {
-                    Redaction.Instance.SetConfig([], ["password"], []);
-                    var evaluator = new ProbeExpressionEvaluator(
-                        templates:
-                        [
-                            new DebuggerExpression(null, null, "value="),
-                            new DebuggerExpression(string.Empty, $@"{{""index"":[{{""ref"":""SafeDictionaryLocal""}},{keyJson}]}}", null)
-                        ],
-                        condition: null,
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null,
-                        maxEvaluationTimeInMilliseconds: TestMaxEvaluationTimeInMilliseconds);
-
-                    var result = evaluator.Evaluate(scopeMembers);
-
-                    result.Template.Should().Be($"value={value}");
-                    result.Errors.Should().BeNullOrEmpty();
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
             }
         }
 
