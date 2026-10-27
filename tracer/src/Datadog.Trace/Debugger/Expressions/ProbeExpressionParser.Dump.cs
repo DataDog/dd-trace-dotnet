@@ -79,6 +79,18 @@ internal partial class ProbeExpressionParser<T>
         return fieldName.Substring(1, propertyNameLength);
     }
 
+    // IDictionary<,> and IReadOnlyDictionary<,> don't implement IDictionary, so IsTypeSupportIndex doesn't see them.
+    private static bool IsGenericDictionaryInterface(Type type)
+    {
+        if (!type.IsInterface || !type.IsGenericType)
+        {
+            return false;
+        }
+
+        var definition = type.GetGenericTypeDefinition();
+        return definition == typeof(IDictionary<,>) || definition == typeof(IReadOnlyDictionary<,>);
+    }
+
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
         if (ShouldRedactDumpValue(null, expression.Type))
@@ -119,7 +131,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         Expression dumpExpression;
-        if (IsSafeNonGenericDictionary(expression.Type) || IsSupportedGenericDictionary(expression.Type))
+        if (IsDictionaryDumpType(expression.Type))
         {
             dumpExpression = DumpDictionaryExpression(expression, scopeMembers);
         }
@@ -137,8 +149,9 @@ internal partial class ProbeExpressionParser<T>
 
     private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
     {
-        // Declared type may be IDictionary while the runtime value is a custom dictionary or a redacted type.
-        // Capture once, redact from the runtime type, then enumerate only a Microsoft dictionary.
+        // The declared type may be an interface over a customer dictionary, a wrapper such as ReadOnlyDictionary,
+        // or a redacted type. Capture once, redact from the runtime type, then enumerate only the dictionary
+        // types snapshot capture supports.
         var value = Expression.Variable(typeof(object), "dictionaryDumpValue");
         scopeMembers.Add(value);
 
@@ -148,8 +161,7 @@ internal partial class ProbeExpressionParser<T>
             GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object)]),
             value);
         var isSafe = Expression.Call(
-            Expression.Constant(this),
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsSafeDictionaryValue), [typeof(object)]),
+            GetMethodByReflection(typeof(Redaction), nameof(Redaction.IsSupportedDictionary), [typeof(object)]),
             value);
         var dumpEntries = Expression.Call(
             Expression.Constant(this),
@@ -167,9 +179,16 @@ internal partial class ProbeExpressionParser<T>
         return value != null && ShouldRedactDumpValue(null, value.GetType());
     }
 
-    private bool IsSafeDictionaryValue(object value)
+    // DumpCollectionExpression takes the first generic argument as the item type, which is the key type for a
+    // dictionary, so any declared dictionary type goes through DumpDictionaryExpression instead.
+    private bool IsDictionaryDumpType(Type type)
     {
-        return value != null && IsSafeNonGenericDictionary(value.GetType());
+        return IsSafeNonGenericDictionary(type) ||
+               (IsMicrosoftType(type) &&
+                (IsGenericDictionaryInterface(type) ||
+                 type.GetInterfaces().Any(i => i.IsGenericType &&
+                                               (i.GetGenericTypeDefinition() == typeof(IDictionary<,>) ||
+                                                i.GetGenericTypeDefinition() == typeof(IReadOnlyDictionary<,>)))));
     }
 
     private BlockExpression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
@@ -336,17 +355,19 @@ internal partial class ProbeExpressionParser<T>
         }
 
         // only one level depth of collection
-        if (depth == 0 && IsTypeSupportIndex(type, out var assignableFrom))
+        if (depth == 0 && (IsTypeSupportIndex(type, out var assignableFrom) || IsGenericDictionaryInterface(type)))
         {
+            assignableFrom ??= typeof(IDictionary);
+
             // The declared type may be an interface. Redact from the runtime type before enumerating.
             if (IsRedactedRuntimeValue(value))
             {
                 return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
             }
 
-            // IDictionary fields use the declared type for IsTypeSupportIndex; require a Microsoft
-            // runtime implementation before enumerating so custom dictionaries stay on field/type dump.
-            if (assignableFrom != typeof(IDictionary) || value is null || IsSafeDictionaryValue(value))
+            // The declared type doesn't tell which dictionary the field holds. Enumerate only the dictionary
+            // types snapshot capture supports, so a customer or wrapped enumerator never runs.
+            if (assignableFrom != typeof(IDictionary) || value is null || Redaction.IsSupportedDictionary(value))
             {
                 return DumpCollection(value, assignableFrom);
             }

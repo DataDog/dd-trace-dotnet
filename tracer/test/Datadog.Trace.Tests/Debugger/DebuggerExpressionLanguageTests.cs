@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -3372,6 +3373,92 @@ namespace Datadog.Trace.Tests.Debugger
             result.Errors.Should().BeNullOrEmpty();
         }
 
+        [Theory]
+        [InlineData(@"{""getmember"":[{""ref"":""DumpHolderLocal""},""headers""]}")]
+        [InlineData(@"{""ref"":""DumpHolderLocal""}")]
+        public void ProbeExpressionEvaluator_TemplateDump_GenericIReadOnlyDictionaryField_RedactsSensitiveValues(string expression)
+        {
+            var holder = new DumpGenericIReadOnlyDictionaryFieldHolder(
+                new Dictionary<string, string> { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } });
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpGenericIReadOnlyDictionaryFieldHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, expression, null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("[password, {redacted}]");
+            result.Template.Should().Contain("[public, hello]");
+            result.Template.Should().NotContain("TOP_SECRET_VALUE");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberIDictionaryField_DoesNotEnumerateCustomDictionary()
+        {
+            // getmember keeps the declared IDictionary type, so only the runtime check in DumpDictionaryExpression
+            // keeps the custom enumerator from running.
+            var customDictionary = new EnumeratorTrackingDictionary { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
+            var holder = new DumpCustomIDictionaryFieldHolder(customDictionary);
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpCustomIDictionaryFieldHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(
+                        string.Empty,
+                        @"{""getmember"":[{""ref"":""DumpHolderLocal""},""customMap""]}",
+                        null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            customDictionary.GetEnumeratorCallCount.Should().Be(0);
+            result.Template.Should().Contain("GetEnumeratorCallCount");
+            result.Template.Should().NotContain("[password,");
+            result.Template.Should().NotContain("[public,");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Theory]
+        [InlineData(@"{""ref"":""WrappedDictionaryLocal""}")]
+        [InlineData(@"{""getmember"":[{""ref"":""DumpHolderLocal""},""headers""]}")]
+        [InlineData(@"{""ref"":""DumpHolderLocal""}")]
+        public void ProbeExpressionEvaluator_TemplateDump_DoesNotEnumerateCustomDictionaryBehindReadOnlyDictionary(string expression)
+        {
+            // ReadOnlyDictionary is a Microsoft type, but its enumerator calls the wrapped dictionary's enumerator.
+            var customDictionary = new EnumeratorTrackingGenericDictionary { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } };
+            var wrapper = new ReadOnlyDictionary<string, string>(customDictionary);
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("WrappedDictionaryLocal", wrapper.GetType(), wrapper, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpGenericIDictionaryFieldHolder), new DumpGenericIDictionaryFieldHolder(wrapper), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, expression, null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            customDictionary.GetEnumeratorCallCount.Should().Be(0);
+            result.Template.Should().NotBeNullOrEmpty();
+            result.Template.Should().NotContain("TOP_SECRET_VALUE");
+            result.Template.Should().NotContain("[public,");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
         [Fact]
         public void ProbeExpressionEvaluator_TemplateDump_GetMemberIDictionaryField_RedactsConfiguredRuntimeType()
         {
@@ -4409,6 +4496,16 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
+        private sealed class DumpGenericIReadOnlyDictionaryFieldHolder
+        {
+            private readonly IReadOnlyDictionary<string, string> headers;
+
+            public DumpGenericIReadOnlyDictionaryFieldHolder(IReadOnlyDictionary<string, string> headers)
+            {
+                this.headers = headers;
+            }
+        }
+
         private sealed class DumpIDictionaryFieldHolder
         {
             private readonly IDictionary headers;
@@ -4470,6 +4567,31 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        // Re-implements the enumeration interfaces so wrappers such as ReadOnlyDictionary reach this
+        // type's enumerators. DeclaredOnly field dumps don't see the entries stored in the base Dictionary.
+        private sealed class EnumeratorTrackingGenericDictionary : Dictionary<string, string>, IDictionary, IEnumerable<KeyValuePair<string, string>>
+        {
+            public int GetEnumeratorCallCount { get; private set; }
+
+            IDictionaryEnumerator IDictionary.GetEnumerator()
+            {
+                GetEnumeratorCallCount++;
+                return new Hashtable().GetEnumerator();
+            }
+
+            IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator()
+            {
+                GetEnumeratorCallCount++;
+                return Enumerable.Empty<KeyValuePair<string, string>>().GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                GetEnumeratorCallCount++;
+                return Array.Empty<object>().GetEnumerator();
+            }
         }
 
         private sealed class ThrowingGetTypeAssembly : Assembly
