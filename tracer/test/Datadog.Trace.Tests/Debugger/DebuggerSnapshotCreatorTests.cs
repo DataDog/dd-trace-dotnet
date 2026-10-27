@@ -664,9 +664,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData(false, true)]
-        [InlineData(false, false)]
-        [InlineData(true, true)]
+        [CombinatorialData]
         public void Timestamp_IsWrittenAtRootAndInSnapshotWithSameValue(bool exceptionReplay, bool isFullSnapshot)
         {
             const Datadog.Trace.Debugger.Expressions.ProbeLocation location = Datadog.Trace.Debugger.Expressions.ProbeLocation.Method;
