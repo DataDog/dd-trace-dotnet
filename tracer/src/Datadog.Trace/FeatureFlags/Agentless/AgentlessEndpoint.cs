@@ -207,6 +207,27 @@ internal sealed class AgentlessEndpoint
     }
 
     /// <summary>
+    /// Returns the environment that <see cref="BuildRequestUri"/> sends as <c>dd_env</c>, or
+    /// <c>null</c> when none is sent: a configured base URL never carries one, and a value that
+    /// normalizes to nothing is treated as no environment at all.
+    /// </summary>
+    /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
+    /// <returns>The normalized environment, or <c>null</c>.</returns>
+    public string? RequestEnvironment(string? env)
+    {
+        if (!IsManaged)
+        {
+            return null;
+        }
+
+        // Normalized the same way the tracer normalizes it before tagging spans, so that flag
+        // targeting and span tags agree on what the environment is. It also bounds the value at 200
+        // characters, which keeps a misconfigured environment from producing an unusable URL.
+        var normalized = TraceUtil.NormalizeTag(env);
+        return StringUtil.IsNullOrEmpty(normalized) ? null : normalized;
+    }
+
+    /// <summary>
     /// Returns the URI to request configuration for <paramref name="env"/>. The environment is
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
@@ -220,17 +241,8 @@ internal sealed class AgentlessEndpoint
     /// <returns>The URI to request.</returns>
     public Uri BuildRequestUri(string? env)
     {
-        if (!IsManaged)
-        {
-            return Uri;
-        }
-
-        // Normalized the same way the tracer normalizes it before tagging spans, so that flag
-        // targeting and span tags agree on what the environment is. It also bounds the value at 200
-        // characters, which keeps a misconfigured environment from producing an unusable URL.
-        // A value that normalizes to nothing is treated as no environment at all.
-        var normalized = TraceUtil.NormalizeTag(env);
-        if (StringUtil.IsNullOrEmpty(normalized))
+        var normalized = RequestEnvironment(env);
+        if (normalized is null)
         {
             return Uri;
         }

@@ -5,6 +5,8 @@
 
 #nullable enable
 
+extern alias Tracer;
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +14,8 @@ using FluentAssertions;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 using Xunit;
+using TracerFlags = Tracer::Datadog.Trace.FeatureFlags;
+using TracerModel = Tracer::Datadog.Trace.FeatureFlags.Rcm.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
@@ -28,6 +32,19 @@ public class SynchronousResolutionTests
         { "String", "fallback" },
         { "Structure", new Value(Structure.Builder().Set("fallback", true).Build()) },
     };
+
+    [Fact]
+    public void DiagnosticsNameAStructureDefaultInsteadOfSerializingIt()
+    {
+        // Serialized by reflection, every nested level of a Value is written twice.
+        var fallback = new Value(Structure.Builder().Set("nested", new Value(Structure.Builder().Set("raw", "value").Build())).Build());
+        var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, new TracerModel.ServerConfiguration());
+        var result = evaluator.Evaluate("missing", TracerFlags.ValueType.Json, fallback, new TracerFlags.EvaluationContext("user"));
+        result.Error.Should().Be("FLAG_NOT_FOUND");
+        result.Value.Should().BeSameAs(fallback);
+
+        TracerFlags.FeatureFlagsDiagnostics.FormatValue(result.Value).Should().Be($"<not formatted: {typeof(Value).FullName}>");
+    }
 
     [Theory]
     [MemberData(nameof(Fallbacks))]
