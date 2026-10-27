@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
@@ -12,17 +13,21 @@ namespace Datadog.Trace.Debugger.Snapshots
 {
     /// <summary>
     /// Caches redaction results. Lookups are lock-free and allocation-free.
-    /// Nothing is evicted: once <see cref="Capacity"/> entries are stored, <see cref="TryAdd"/> returns false.
+    /// Nothing is evicted: once <see cref="Capacity"/> entries are stored, <see cref="TryAdd"/> returns false
+    /// and the owner replaces the full instance with a new one.
     /// </summary>
     internal sealed class RedactionCache<TKey>
         where TKey : notnull
     {
-        private readonly ConcurrentDictionary<TKey, bool> _entries = new();
+        private readonly ConcurrentDictionary<TKey, bool> _entries;
         private int _count;
 
         internal RedactionCache(int capacity)
         {
             Capacity = capacity;
+
+            // Pre-sized so filling it never resizes, which would take every lock in the dictionary.
+            _entries = new ConcurrentDictionary<TKey, bool>(Environment.ProcessorCount, capacity);
         }
 
         internal int Capacity { get; }
