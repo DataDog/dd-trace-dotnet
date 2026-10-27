@@ -86,12 +86,8 @@ build-windows-ci-image:
       - git config --system core.longpaths true
   script:
     - |
-      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
-        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
-      }
+      $image = & .gitlab/get-windows-build-image.ps1
       $base = $env:WINDOWS_BUILD_IMAGE_BASE
-      $image = "${base}:${hash}"
       Write-Output "Target image: $image"
 
       docker manifest inspect $image
@@ -133,11 +129,7 @@ build:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - |
-      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
-        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
-      }
-      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      $env:WINDOWS_BUILD_IMAGE = & .gitlab/get-windows-build-image.ps1
       Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
 
       docker manifest inspect $env:WINDOWS_BUILD_IMAGE
@@ -362,11 +354,7 @@ sign-nuget-packages:
   script:
     - if (Test-Path signed-out) { remove-item -recurse -force signed-out }
     - |
-      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
-        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
-      }
-      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      $env:WINDOWS_BUILD_IMAGE = & .gitlab/get-windows-build-image.ps1
     - |
       New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\nuget" | Out-Null
       New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\packages-to-sign" | Out-Null

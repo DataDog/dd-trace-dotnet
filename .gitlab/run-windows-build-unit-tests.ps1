@@ -1,9 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
-    throw 'Unable to compute the Windows build image hash'
-}
-$image = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+$image = & "$PSScriptRoot/get-windows-build-image.ps1"
 $dockerArguments = @(
     'run', '--rm', '-m', '20480M',
     '-v', "$(Get-Location):c:\mnt",
