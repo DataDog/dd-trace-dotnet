@@ -3794,6 +3794,7 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData("items", "[a, b]")]
         [InlineData("uri", "http://localhost/")]
+        [InlineData("xmlError", "System.Xml.XmlException, bad xml")]
         public void ProbeExpressionEvaluator_TemplateDump_GetMemberDumpsAllowedRuntimeType(string memberName, string expected)
         {
             var scopeMembers = CreateScopeMembers();
@@ -3931,6 +3932,28 @@ namespace Datadog.Trace.Tests.Debugger
             result.Errors.Should().BeNullOrEmpty();
         }
 #endif
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberCollectionClassOutsideAllowlistDumpsFields()
+        {
+            // Collection<T> isn't on the snapshot allowlist, and no allowlisted type derives from it, so the
+            // dump is decided when the expression compiles: its fields, not its items.
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(AllowedRuntimeTypesHolder), new AllowedRuntimeTypesHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""DumpHolderLocal""},""collection""]}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().StartWith("items=");
+            result.Template.Should().NotContain("[a, b]");
+            result.Errors.Should().BeNullOrEmpty();
+        }
 
         [Fact]
         public void ProbeExpressionEvaluator_TemplateDump_NullCheckDoesNotInvokeEqualityOperator()
@@ -5436,6 +5459,10 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly IList<string> items = new List<string> { "a", "b" };
 
             private readonly Uri uri = new("http://localhost/");
+
+            private readonly XmlException xmlError = new("bad xml");
+
+            private readonly Collection<string> collection = new() { "a", "b" };
         }
 
         private sealed class ThrowingEnumerationList : List<string>, IEnumerable<string>
