@@ -3601,6 +3601,59 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_ReflectionTypeLoadExceptionDoesNotReadLoaderExceptionMessages()
+        {
+            // On .NET Core, ReflectionTypeLoadException.Message reads each loader exception's Message.
+            var exception = new ReflectionTypeLoadException(Type.EmptyTypes, [new ThrowingMessageException("loader")], "loader failed");
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("ExceptionLocal", typeof(ReflectionTypeLoadException), exception, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpExceptionFieldHolder), new DumpExceptionFieldHolder(exception), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(string.Empty, @"{""ref"":""ExceptionLocal""}", null),
+                    new DebuggerExpression(null, null, " | "),
+                    new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""DumpHolderLocal""},""error""]}", null),
+                    new DebuggerExpression(null, null, " | "),
+                    new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            const string expected = "System.Reflection.ReflectionTypeLoadException, loader failed";
+            result.Template.Should().Be($"{expected} | {expected} | error={expected}");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+#if NETCOREAPP3_0_OR_GREATER
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_SwitchExpressionExceptionDoesNotFormatUnmatchedValue()
+        {
+            // SwitchExpressionException.Message formats the unmatched value, which calls its ToString.
+            var exception = new SwitchExpressionException(new ThrowingToStringValue());
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpExceptionFieldHolder), new DumpExceptionFieldHolder(exception), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""DumpHolderLocal""},""error""]}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().StartWith("System.Runtime.CompilerServices.SwitchExpressionException, ");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+#endif
+
+        [Fact]
         public void ProbeExpressionEvaluator_TemplateDump_NullCheckDoesNotInvokeEqualityOperator()
         {
             var scopeMembers = CreateScopeMembers();
@@ -4766,6 +4819,21 @@ namespace Datadog.Trace.Tests.Debugger
 
         private sealed class CustomerException : Exception
         {
+        }
+
+        private sealed class DumpExceptionFieldHolder
+        {
+            private readonly Exception error;
+
+            public DumpExceptionFieldHolder(Exception error)
+            {
+                this.error = error;
+            }
+        }
+
+        private sealed class ThrowingToStringValue
+        {
+            public override string ToString() => throw new InvalidOperationException("Customer ToString should not be called.");
         }
 
         private sealed class RedactedRuntimeTypeValue

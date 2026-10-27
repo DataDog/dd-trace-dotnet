@@ -26,6 +26,12 @@ internal partial class ProbeExpressionParser<T>
     // A type in CoreLib is never customer code, and a subclass of a type outside CoreLib is never in CoreLib.
     private static readonly Assembly CoreLibAssembly = typeof(object).Assembly;
 
+    // CoreLib exceptions whose Message formats values that can be customer objects: ReflectionTypeLoadException reads
+    // each loader exception's Message, and SwitchExpressionException formats the unmatched value. .NET Framework has no
+    // SwitchExpressionException, so it's looked up by name and can be null.
+    private static readonly Type ReflectionTypeLoadExceptionType = typeof(ReflectionTypeLoadException);
+    private static readonly Type SwitchExpressionExceptionType = CoreLibAssembly.GetType("System.Runtime.CompilerServices.SwitchExpressionException");
+
     // Read as a field, so a Message override never runs.
     private static readonly FieldInfo ExceptionMessageField = typeof(Exception).GetField("_message", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -117,17 +123,25 @@ internal partial class ProbeExpressionParser<T>
         return value.GetType() == declaredType || declaredType.IsValueType;
     }
 
-    // Message and StackTrace are virtual, so they are only called on a CoreLib exception.
+    // Message and StackTrace are virtual, so they are only called on a CoreLib exception whose Message doesn't
+    // format customer values.
+    private static bool CanCallExceptionMembers(Type exceptionType)
+    {
+        return ReferenceEquals(exceptionType.Assembly, CoreLibAssembly) &&
+               !ReferenceEquals(exceptionType, ReflectionTypeLoadExceptionType) &&
+               !ReferenceEquals(exceptionType, SwitchExpressionExceptionType);
+    }
+
     private static string DumpException(Exception exception, string prefix)
     {
         var runtimeType = exception.GetType();
-        return ReferenceEquals(runtimeType.Assembly, CoreLibAssembly)
+        return CanCallExceptionMembers(runtimeType)
                    ? $"{prefix}{runtimeType.FullName}, {exception.Message}, {exception.StackTrace}"
-                   : DumpNonCoreLibException(exception, prefix);
+                   : DumpExceptionMessageField(exception, prefix);
     }
 
-    // Any exception outside CoreLib shows its runtime type and the message it was constructed with.
-    private static string DumpNonCoreLibException(Exception exception, string prefix)
+    // Shows the runtime type and the message the exception was constructed with, without calling any member.
+    private static string DumpExceptionMessageField(Exception exception, string prefix)
     {
         var typeName = exception.GetType().FullName;
         return ExceptionMessageField?.GetValue(exception) is string message
@@ -190,10 +204,9 @@ internal partial class ProbeExpressionParser<T>
         {
             var typeNameExpression = Expression.Constant(type.FullName, typeof(string));
 
-            // Message and StackTrace are virtual, so DumpException calls them only on a CoreLib exception. A type
-            // outside CoreLib has no subclass in CoreLib, so that check only runs for a non-sealed CoreLib type.
-            var isCoreLibType = ReferenceEquals(type.Assembly, CoreLibAssembly);
-            if (isExactType && isCoreLibType)
+            // Message and StackTrace are virtual, so DumpException calls them only when CanCallExceptionMembers allows it.
+            // A type outside CoreLib has no subclass in CoreLib, so that check only runs for a non-sealed CoreLib type.
+            if (isExactType && CanCallExceptionMembers(type))
             {
                 var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
                 var exceptionAsString = Expression.Call(
@@ -211,7 +224,7 @@ internal partial class ProbeExpressionParser<T>
 
             var dumpExceptionMethod = GetMethodByReflection(
                 typeof(ProbeExpressionParser<T>),
-                isCoreLibType ? nameof(DumpException) : nameof(DumpNonCoreLibException),
+                !isExactType && ReferenceEquals(type.Assembly, CoreLibAssembly) ? nameof(DumpException) : nameof(DumpExceptionMessageField),
                 [typeof(Exception), typeof(string)]);
             Func<Expression, Expression> dumpException = exception => Expression.Call(
                 dumpExceptionMethod,
