@@ -84,7 +84,8 @@
                     "doubleValue": 404.0
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -98,7 +99,8 @@
               "status": {
                 "message": "Something went wrong",
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -111,7 +113,8 @@
               "endTimeUnixNano": "0",
               "status": {
                 "code": 1
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -151,7 +154,8 @@
               "status": {
                 "message": "Example argument exception",
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -160,7 +164,28 @@
               "name": "OperationNameRootSpan",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                }
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -173,12 +198,25 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -196,7 +234,8 @@
                     "stringValue": "GET"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -214,7 +253,8 @@
                     "stringValue": "Redis"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -238,7 +278,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -262,7 +303,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -286,7 +328,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -310,7 +353,8 @@
                     "stringValue": "Receive"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -334,7 +378,8 @@
                     "stringValue": "S3"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -352,7 +397,8 @@
                     "stringValue": "aws-api"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -370,7 +416,8 @@
                     "stringValue": "GRPC"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -388,7 +435,8 @@
                     "stringValue": "GRPC"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -412,7 +460,8 @@
                     "stringValue": "My-Function"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -430,7 +479,8 @@
                     "stringValue": "Datasource"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -448,7 +498,8 @@
                     "stringValue": "query"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -466,7 +517,8 @@
                     "stringValue": "Amqp"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -476,7 +528,8 @@
               "name": "ResourceName",
               "kind": 2,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -494,7 +547,8 @@
                     "stringValue": "Amqp"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -504,7 +558,8 @@
               "name": "ResourceName",
               "kind": 3,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -514,7 +569,8 @@
               "name": "ResourceName",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -524,7 +580,8 @@
               "name": "ResourceName",
               "kind": 5,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -534,7 +591,8 @@
               "name": "ResourceName",
               "kind": 4,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -544,7 +602,8 @@
               "name": "Response",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -555,6 +614,24 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
                 {
                   "key": "operation.name",
                   "value": {
@@ -865,7 +942,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -875,13 +953,46 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                }
+              ],
               "links": [
                 {
                   "traceId": "normalized-trace-id",
                   "spanId": "normalized-span-id",
                   "flags": 2147483649
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -891,6 +1002,38 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                }
+              ],
               "links": [
                 {
                   "traceId": "normalized-trace-id",
@@ -902,7 +1045,8 @@
                   "spanId": "normalized-span-id",
                   "flags": 2147483649
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -911,7 +1055,40 @@
               "name": "service.name should be the DefaultServiceName value",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                }
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -929,7 +1106,8 @@
                     "doubleValue": 404.0
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -939,7 +1117,22 @@
               "name": "StartActiveSpan.Child",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                }
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -949,7 +1142,8 @@
               "name": "StartRootSpan",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -959,7 +1153,8 @@
               "name": "StartSpan",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -969,7 +1164,8 @@
               "name": "StartSpan2",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1011,7 +1207,8 @@
                     "stringValue": "true"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -1020,7 +1217,40 @@
               "name": "Transform",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                }
+              ],
+              "flags": 1
             }
           ]
         }
