@@ -62,6 +62,21 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry
                 openTelemetryConfig = MetricTags.OpenTelemetryConfiguration.SdkDisabled;
                 datadogConfig = MetricTags.DatadogConfiguration.OpenTelemetryEnabled;
             }
+            else if (string.Equals(openTelemetryKey, "OTEL_BLRP_SCHEDULE_DELAY", StringComparison.OrdinalIgnoreCase))
+            {
+                openTelemetryConfig = MetricTags.OpenTelemetryConfiguration.BlrpScheduleDelay;
+                datadogConfig = MetricTags.DatadogConfiguration.LogsDirectSubmissionBatchPeriodSeconds;
+            }
+            else if (string.Equals(openTelemetryKey, "OTEL_BLRP_MAX_QUEUE_SIZE", StringComparison.OrdinalIgnoreCase))
+            {
+                openTelemetryConfig = MetricTags.OpenTelemetryConfiguration.BlrpMaxQueueSize;
+                datadogConfig = MetricTags.DatadogConfiguration.LogsDirectSubmissionMaxQueueSize;
+            }
+            else if (string.Equals(openTelemetryKey, "OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", StringComparison.OrdinalIgnoreCase))
+            {
+                openTelemetryConfig = MetricTags.OpenTelemetryConfiguration.BlrpMaxExportBatchSize;
+                datadogConfig = MetricTags.DatadogConfiguration.LogsDirectSubmissionMaxBatchSize;
+            }
             else
             {
                 openTelemetryConfig = MetricTags.OpenTelemetryConfiguration.Unknown;

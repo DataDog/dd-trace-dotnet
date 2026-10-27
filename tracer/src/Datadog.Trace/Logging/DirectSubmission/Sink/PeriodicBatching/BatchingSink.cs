@@ -300,6 +300,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 case CircuitStatus.Closed:
                 default:
                     _enqueueLogEnabled = true;
+                    // Back off for at least the circuit break period after a failure to emit
                     if (_circuitBreaker.HasConsecutiveFailures && _circuitBreakPeriod > delayTillNextEmit)
                     {
                         delayTillNextEmit = _circuitBreakPeriod;

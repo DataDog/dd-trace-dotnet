@@ -117,7 +117,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             }
 
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.Host, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.Host.Should().Be(expected);
         }
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionSource(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.Source, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.Source.Should().Be(expected);
         }
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionMinimumLevel(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.MinimumLevel, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.MinimumLevel.Should().Be((DirectSubmissionLogLevel)expected);
         }
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionEnabledIntegrations(string value, string[] expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.EnabledIntegrationNames.Should().BeEquivalentTo(expected);
         }
@@ -167,7 +167,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionBatchSizeLimit(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.BatchSizeLimit.Should().Be(expected);
         }
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionQueueSizeLimit(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.QueueSizeLimit.Should().Be(expected);
         }
@@ -197,7 +197,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionBatchPeriod(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.BatchPeriod.Should().Be(TimeSpan.FromSeconds(expected));
         }
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void ApiKey(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ApiKey, value));
-            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance, otlpLogsEnabled: false, new OverrideErrorLog());
 
             settings.ApiKey.Should().Be(expected);
         }
@@ -406,7 +406,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var errorLog = new OverrideErrorLog();
             OtlpEnabled(errorLog, (ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, "0"));
 
-            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigInvalid, "unknown", "unknown");
+            errorLog.ShouldHaveExpectedOtelMetric(
+                Count.OpenTelemetryConfigInvalid,
+                ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs.ToLowerInvariant(),
+                ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds.ToLowerInvariant());
         }
 
         [Theory]
@@ -442,16 +445,19 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             settings.BatchSizeLimit.Should().Be(expected);
         }
 
-        [Fact]
-        public void OtlpDuplicateKeysLogHiddenMetric()
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize, ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)]
+        public void OtlpDuplicateKeysLogHiddenMetric(string otelKey, string datadogKey)
         {
             var errorLog = new OverrideErrorLog();
-            OtlpEnabled(
-                errorLog,
-                (ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, "64"),
-                (ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "128"));
+            OtlpEnabled(errorLog, (otelKey, "64"), (datadogKey, "8"));
 
-            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "unknown", "unknown");
+            errorLog.ShouldHaveExpectedOtelMetric(
+                Count.OpenTelemetryConfigHiddenByDatadogConfig,
+                otelKey.ToLowerInvariant(),
+                datadogKey.ToLowerInvariant());
         }
 
         [Fact]
@@ -463,7 +469,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 (ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs, "500"),
                 (ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "0"));
 
-            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "unknown", "unknown");
+            errorLog.ShouldHaveExpectedOtelMetric(
+                Count.OpenTelemetryConfigHiddenByDatadogConfig,
+                ConfigurationKeys.OpenTelemetry.BlrpScheduleDelayMs.ToLowerInvariant(),
+                ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds.ToLowerInvariant());
         }
 
         [Fact]
@@ -510,7 +519,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 (ConfigurationKeys.OpenTelemetry.BlrpMaxExportBatchSize, "64"));
             var telemetry = new ConfigurationTelemetry();
 
-            var settings = new DirectLogSubmissionSettings(source, telemetry, otlpLogsEnabled: false);
+            var settings = new DirectLogSubmissionSettings(source, telemetry, otlpLogsEnabled: false, new OverrideErrorLog());
 
             using var scope = new AssertionScope();
             settings.BatchSizeLimit.Should().Be(DirectLogSubmissionSettings.DatadogDefaultBatchSizeLimit);

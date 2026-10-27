@@ -51,7 +51,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             IntegrationId.XUnit,
         };
 
-        public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, bool otlpLogsEnabled = false, OverrideErrorLog? errorLog = null)
+        public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, bool otlpLogsEnabled, OverrideErrorLog errorLog)
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -93,8 +93,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             if (otlpLogsEnabled)
             {
-                errorLog ??= OverrideErrorLog.Instance;
-
                 var otelQueueSize = config
                                    .WithKeys(ConfigurationKeys.OpenTelemetry.BlrpMaxQueueSize)
                                    .AsInt32Result(x => x > 0, converter: null);

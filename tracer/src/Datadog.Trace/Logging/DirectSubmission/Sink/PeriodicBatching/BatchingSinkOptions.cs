@@ -65,7 +65,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         public TimeSpan Period { get; }
 
         /// <summary>
-        /// Gets the time to ignore logs when repeated failures to emit a batch cause the circuit to break.
+        /// Gets the time to ignore logs when repeated failures to emit a batch cause the circuit to break,
+        /// and the minimum time to wait before retrying after a failure to emit a batch.
         /// </summary>
         public TimeSpan CircuitBreakPeriod { get; }
 

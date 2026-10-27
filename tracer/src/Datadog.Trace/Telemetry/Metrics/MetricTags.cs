@@ -164,6 +164,9 @@ internal static class MetricTags
         [Description("config_datadog:dd_trace_propagation_style")] PropagationStyle,
         [Description("config_datadog:dd_trace_sample_rate")] SampleRate,
         [Description("config_datadog:dd_trace_otel_enabled")] OpenTelemetryEnabled,
+        [Description("config_datadog:dd_logs_direct_submission_batch_period_seconds")] LogsDirectSubmissionBatchPeriodSeconds,
+        [Description("config_datadog:dd_logs_direct_submission_max_queue_size")] LogsDirectSubmissionMaxQueueSize,
+        [Description("config_datadog:dd_logs_direct_submission_max_batch_size")] LogsDirectSubmissionMaxBatchSize,
         [Description("config_datadog:unknown")] Unknown,
     }
 
@@ -178,6 +181,9 @@ internal static class MetricTags
         [Description("config_opentelemetry:otel_traces_exporter")] TracesExporter,
         [Description("config_opentelemetry:otel_traces_sampler")] TracesSampler,
         [Description("config_opentelemetry:otel_traces_sampler_arg")] TracesSamplerArg,
+        [Description("config_opentelemetry:otel_blrp_schedule_delay")] BlrpScheduleDelay,
+        [Description("config_opentelemetry:otel_blrp_max_queue_size")] BlrpMaxQueueSize,
+        [Description("config_opentelemetry:otel_blrp_max_export_batch_size")] BlrpMaxExportBatchSize,
         [Description("config_opentelemetry:unknown")] Unknown,
     }
 
