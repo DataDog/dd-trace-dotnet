@@ -49,87 +49,89 @@ Expressions: (
 
         return (dumpValue == null)
             ? "null"
-            : Redaction.IsSupportedCollection(dumpValue)
-                ? {
-                    enumerator = ((List<string>)dumpValue).GetEnumerator();
-                    index = 0;
-                    itemValues = new StringBuilder();
-                    itemValues.Append("[");
-                    while (true)
-                    {
-                        if (enumerator.MoveNext())
+            : ProbeExpressionParser<string>.IsRedactedRuntimeValue(dumpValue, typeof(List<string>))
+                ? "{redacted}"
+                : Redaction.IsSupportedCollection(dumpValue)
+                    ? {
+                        enumerator = ((List<string>)dumpValue).GetEnumerator();
+                        index = 0;
+                        itemValues = new StringBuilder();
+                        itemValues.Append("[");
+                        while (true)
                         {
-                            string loopItem;
-
-                            if (index < 3)
+                            if (enumerator.MoveNext())
                             {
-                                if (index > 0)
-                                {
-                                    return itemValues.Append(", ");
-                                }
+                                string loopItem;
 
-                                loopItem = enumerator.Current;
-                                itemValues.Append(ProbeExpressionParser<string>.DumpObject(
-                                    loopItem,
-                                    typeof(string),
-                                    "",
-                                    1));
-                                index++;
+                                if (index < 3)
+                                {
+                                    if (index > 0)
+                                    {
+                                        return itemValues.Append(", ");
+                                    }
+
+                                    loopItem = enumerator.Current;
+                                    itemValues.Append(ProbeExpressionParser<string>.DumpObject(
+                                        loopItem,
+                                        typeof(string),
+                                        "",
+                                        1));
+                                    index++;
+                                }
+                                else
+                                {
+                                    itemValues.Append(", ...");
+                                    break;
+                                }
                             }
                             else
                             {
-                                itemValues.Append(", ...");
                                 break;
                             }
                         }
-                        else
-                        {
-                            break;
-                        }
+                        itemValues.Append("]");
+
+                        return itemValues.ToString();
                     }
-                    itemValues.Append("]");
-
-                    return itemValues.ToString();
-                }
-                : {
-                    fieldsArray = ProbeExpressionParser<string>
-                        .GetSafeFieldsForDump(
-                            ((List<string>)dumpValue).GetType().GetFields(
-                                BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
-                        .OrderBy(fieldInfo => fieldInfo.MetadataToken)
-                        .ToArray();
-                    fieldValues = new StringBuilder();
-                    index2 = 0;
-                    while (true)
-                    {
-                        if ((index2 < fieldsArray.Length) && (index2 < 5))
+                    : {
+                        fieldsArray = ProbeExpressionParser<string>
+                            .GetSafeFieldsForDump(
+                                ((List<string>)dumpValue).GetType().GetFields(
+                                    BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                            .OrderBy(fieldInfo => fieldInfo.MetadataToken)
+                            .ToArray();
+                        fieldValues = new StringBuilder();
+                        index2 = 0;
+                        while (true)
                         {
-                            fieldValues.Append(
-                                ProbeExpressionParser<string>.DumpObject(
-                                    ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index2], (object)((List<string>)dumpValue)),
-                                    fieldsArray[index2].FieldType,
-                                    fieldsArray[index2].Name,
-                                    0));
-                            index2++;
-
                             if ((index2 < fieldsArray.Length) && (index2 < 5))
                             {
-                                return fieldValues.Append(", ");
+                                fieldValues.Append(
+                                    ProbeExpressionParser<string>.DumpObject(
+                                        ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index2], (object)((List<string>)dumpValue)),
+                                        fieldsArray[index2].FieldType,
+                                        fieldsArray[index2].Name,
+                                        0));
+                                index2++;
+
+                                if ((index2 < fieldsArray.Length) && (index2 < 5))
+                                {
+                                    return fieldValues.Append(", ");
+                                }
                             }
-                        }
-                        else
-                        {
-                            if (index2 < fieldsArray.Length)
+                            else
                             {
-                                return fieldValues.Append(", ...");
+                                if (index2 < fieldsArray.Length)
+                                {
+                                    return fieldValues.Append(", ...");
+                                }
+
+                                break;
                             }
-
-                            break;
                         }
-                    }
 
-                    return fieldValues.ToString();
-                };
+                        return fieldValues.ToString();
+                    };
     };
 
     return $dd_el_result;
