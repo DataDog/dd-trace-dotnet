@@ -287,9 +287,9 @@ internal partial class ProbeExpressionParser<T>
             value);
         var dumpEntries = Expression.Call(
             Expression.Constant(this),
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(Type), typeof(string)]),
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(bool), typeof(string)]),
             value,
-            Expression.Constant(typeof(IDictionary)),
+            Expression.Constant(true),
             Expression.Constant(null, typeof(string)));
         var dumpFields = DumpFieldsExpression(value, scopeMembers);
         var dump = Expression.Condition(isSupportedDictionary, dumpEntries, dumpFields);
@@ -488,7 +488,7 @@ internal partial class ProbeExpressionParser<T>
                 return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
             }
 
-            return DumpCollection(value, assignableFrom ?? typeof(IDictionary), name);
+            return DumpCollection(value, isDictionary: assignableFrom is null || assignableFrom == typeof(IDictionary), name);
         }
 
         if (hasName)
@@ -517,7 +517,7 @@ internal partial class ProbeExpressionParser<T>
                    $"{name}{type?.FullName}";
     }
 
-    private string DumpCollection(object value, Type assignableFrom, string name)
+    private string DumpCollection(object value, bool isDictionary, string name)
     {
         var sb = StringBuilderCache.Acquire();
         try
@@ -533,7 +533,6 @@ internal partial class ProbeExpressionParser<T>
                 return sb.ToString();
             }
 
-            var isDictionary = assignableFrom == typeof(IDictionary);
             var enumerator = isDictionary ? ((IDictionary)value).GetEnumerator() : ((IEnumerable)value).GetEnumerator();
             try
             {
