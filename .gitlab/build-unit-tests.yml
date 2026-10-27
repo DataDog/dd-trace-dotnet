@@ -1,4 +1,11 @@
 # Non-blocking build/unit-test shadow; failures propagate to the optional parent trigger.
+include:
+  - local: .gitlab/linux-build-common.yml
+
+variables:
+  # CentOS/universal native toolchains cannot use the managed SDK from global.json.
+  LEGACY_NATIVE_DOTNET_SDK_VERSION: "7.0.306"
+
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
@@ -61,13 +68,10 @@ build:
       aud: ci-identities
 
 .build-linux-tracer:
+  extends: .linux-docker
   stage: build
-  # Approved Docker CLI image also used by dd-trace-java image-building jobs.
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
   timeout: 90m
   needs: []
-  variables:
-    DOCKER_BUILDKIT: "1"
   script:
     - |
       set -eu
@@ -79,23 +83,13 @@ build:
       native_image="dd-trace-dotnet/${NATIVE_BASE_IMAGE}-builder:${CI_JOB_ID}"
 
       echo "Building ${MANAGED_BASE_IMAGE} .NET ${MANAGED_DOTNET_SDK_VERSION} builder image"
-      docker build \
-        --build-arg "DOTNETSDK_VERSION=${MANAGED_DOTNET_SDK_VERSION}" \
-        --tag "$managed_image" \
-        --target builder \
-        --file "tracer/build/_build/docker/${MANAGED_BASE_IMAGE}.dockerfile" \
-        tracer/build/_build
+      sh .gitlab/build-linux-image.sh "$MANAGED_BASE_IMAGE" "$MANAGED_DOTNET_SDK_VERSION" "$managed_image"
 
       if [ "$NATIVE_BASE_IMAGE" = "$MANAGED_BASE_IMAGE" ] && [ "$NATIVE_DOTNET_SDK_VERSION" = "$MANAGED_DOTNET_SDK_VERSION" ]; then
         native_image="$managed_image"
       else
         echo "Building ${NATIVE_BASE_IMAGE} .NET ${NATIVE_DOTNET_SDK_VERSION} native builder image"
-        docker build \
-          --build-arg "DOTNETSDK_VERSION=${NATIVE_DOTNET_SDK_VERSION}" \
-          --tag "$native_image" \
-          --target builder \
-          --file "tracer/build/_build/docker/${NATIVE_BASE_IMAGE}.dockerfile" \
-          tracer/build/_build
+        sh .gitlab/build-linux-image.sh "$NATIVE_BASE_IMAGE" "$NATIVE_DOTNET_SDK_VERSION" "$native_image"
       fi
 
       . .gitlab/run-nuke-linux.sh
@@ -130,7 +124,7 @@ build-linux-tracer-x64:
   variables:
     MANAGED_BASE_IMAGE: debian
     NATIVE_BASE_IMAGE: centos7
-    NATIVE_DOTNET_SDK_VERSION: "7.0.306"
+    NATIVE_DOTNET_SDK_VERSION: "$LEGACY_NATIVE_DOTNET_SDK_VERSION"
     RUN_NATIVE_TESTS: "true"
 
 build-linux-tracer-x64-musl:
@@ -158,12 +152,10 @@ build-linux-tracer-arm64-musl:
     RUN_NATIVE_TESTS: "false"
 
 .build-linux-profiler:
+  extends: .linux-docker
   stage: build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
   timeout: 90m
   needs: []
-  variables:
-    DOCKER_BUILDKIT: "1"
   script:
     - |
       set -eu
@@ -175,23 +167,13 @@ build-linux-tracer-arm64-musl:
       validation_image="dd-trace-dotnet/${VALIDATION_BASE_IMAGE}-profiler-validator:${CI_JOB_ID}"
 
       echo "Building ${NATIVE_BASE_IMAGE} .NET ${NATIVE_DOTNET_SDK_VERSION} profiler builder image"
-      docker build \
-        --build-arg "DOTNETSDK_VERSION=${NATIVE_DOTNET_SDK_VERSION}" \
-        --tag "$native_image" \
-        --target builder \
-        --file "tracer/build/_build/docker/${NATIVE_BASE_IMAGE}.dockerfile" \
-        tracer/build/_build
+      sh .gitlab/build-linux-image.sh "$NATIVE_BASE_IMAGE" "$NATIVE_DOTNET_SDK_VERSION" "$native_image"
 
       if [ "$NATIVE_BASE_IMAGE" = "$VALIDATION_BASE_IMAGE" ] && [ "$NATIVE_DOTNET_SDK_VERSION" = "$VALIDATION_DOTNET_SDK_VERSION" ]; then
         validation_image="$native_image"
       else
         echo "Building ${VALIDATION_BASE_IMAGE} .NET ${VALIDATION_DOTNET_SDK_VERSION} profiler validation image"
-        docker build \
-          --build-arg "DOTNETSDK_VERSION=${VALIDATION_DOTNET_SDK_VERSION}" \
-          --tag "$validation_image" \
-          --target builder \
-          --file "tracer/build/_build/docker/${VALIDATION_BASE_IMAGE}.dockerfile" \
-          tracer/build/_build
+        sh .gitlab/build-linux-image.sh "$VALIDATION_BASE_IMAGE" "$VALIDATION_DOTNET_SDK_VERSION" "$validation_image"
       fi
 
       . .gitlab/run-nuke-linux.sh
@@ -226,7 +208,7 @@ build-linux-profiler-x64:
   tags: ["docker-in-docker:amd64"]
   variables:
     NATIVE_BASE_IMAGE: centos7
-    NATIVE_DOTNET_SDK_VERSION: "7.0.306"
+    NATIVE_DOTNET_SDK_VERSION: "$LEGACY_NATIVE_DOTNET_SDK_VERSION"
     VALIDATION_BASE_IMAGE: debian
     RUN_NATIVE_TESTS: "true"
 
@@ -255,25 +237,19 @@ build-linux-profiler-arm64-musl:
     RUN_NATIVE_TESTS: "false"
 
 .build-linux-universal:
+  extends: .linux-docker
   stage: build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
   timeout: 60m
   needs: []
   variables:
-    DOCKER_BUILDKIT: "1"
-    UNIVERSAL_DOTNET_SDK_VERSION: "7.0.306"
+    UNIVERSAL_DOTNET_SDK_VERSION: "$LEGACY_NATIVE_DOTNET_SDK_VERSION"
   script:
     - |
       set -eu
 
       universal_image="dd-trace-dotnet/universal-${UNIVERSAL_ARCHITECTURE}-builder:${CI_JOB_ID}"
       echo "Building ${UNIVERSAL_ARCHITECTURE} universal .NET ${UNIVERSAL_DOTNET_SDK_VERSION} builder image"
-      docker build \
-        --build-arg "DOTNETSDK_VERSION=${UNIVERSAL_DOTNET_SDK_VERSION}" \
-        --tag "$universal_image" \
-        --target builder \
-        --file tracer/build/_build/docker/universal.dockerfile \
-        tracer/build/_build
+      sh .gitlab/build-linux-image.sh universal "$UNIVERSAL_DOTNET_SDK_VERSION" "$universal_image"
 
       . .gitlab/run-nuke-linux.sh
       # Universal builds do not need CI Visibility credentials.

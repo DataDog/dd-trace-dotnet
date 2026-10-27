@@ -1,0 +1,6 @@
+# Shared by the build pipeline and generated Linux unit-test child pipelines.
+.linux-docker:
+  # Approved Docker CLI image also used by dd-trace-java image-building jobs.
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  variables:
+    DOCKER_BUILDKIT: "1"

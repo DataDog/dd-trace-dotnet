@@ -1,14 +1,14 @@
+include:
+  - local: .gitlab/linux-build-common.yml
+
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
 
 .linux-unit-test:
+  extends: .linux-docker
   stage: test
   timeout: 1h
-  # Approved Docker CLI image also used by the Linux build producer.
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
-  variables:
-    DOCKER_BUILDKIT: "1"
   script:
     - |
       set -eu
@@ -19,12 +19,7 @@ workflow:
       tester_with_ca_certs_image="dd-trace-dotnet/${BASE_IMAGE}-tester-ca-certs:${CI_JOB_ID}"
       mkdir -p artifacts/build_data/infra_logs
       echo "Building ${BASE_IMAGE} test image for ${FRAMEWORK}"
-      docker build \
-        --build-arg "DOTNETSDK_VERSION=${DOTNET_SDK_VERSION}" \
-        --tag "$tester_image" \
-        --target tester \
-        --file "tracer/build/_build/docker/${BASE_IMAGE}.dockerfile" \
-        tracer/build/_build
+      sh .gitlab/build-linux-image.sh "$BASE_IMAGE" "$DOTNET_SDK_VERSION" "$tester_image" tester
 
       echo "Adding Datadog CA certificates to the test image"
       docker build \
