@@ -12,9 +12,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
-using Datadog.Trace.Debugger.Caching;
+using System.Threading;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 using TypeExtensions = Datadog.Trace.Debugger.Helpers.TypeExtensions;
 
 #nullable enable
@@ -30,6 +32,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
     internal sealed class Redaction
     {
+        // Same as the previous LFU cache capacity. Once full, results are computed without caching.
+        internal const int MaxCachedTypes = 2048;
+
+        internal const int MaxCachedKeywords = 2048;
+
         private const int MaxStackAlloc = 512;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Redaction));
@@ -88,9 +95,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private readonly HashSet<string> _redactKeywords;
 
-        private readonly ConcurrentAdaptiveCache<Type, bool> _redactedTypesCache;
+        // Replaced, not cleared, by SetConfig so a lookup racing with it cannot store a stale result in the new cache.
+        private RedactionCache<Type> _typeCache;
 
-        private readonly ConcurrentAdaptiveCache<string, bool> _redactedKeywordsCache;
+        private RedactionCache<string> _keywordCache;
 
         private Redaction()
         {
@@ -184,11 +192,17 @@ namespace Datadog.Trace.Debugger.Snapshots
                 "xsrf",
                 "xsrftoken"
             ];
-            _redactedTypesCache = new(evictionPolicyKind: EvictionPolicy.Lfu);
-            _redactedKeywordsCache = new(evictionPolicyKind: EvictionPolicy.Lfu);
+            _typeCache = new(MaxCachedTypes);
+            _keywordCache = new(MaxCachedKeywords);
         }
 
         internal static Redaction Instance => _instnace;
+
+        [TestingOnly]
+        internal int CachedTypesCount => Volatile.Read(ref _typeCache).Count;
+
+        [TestingOnly]
+        internal int CachedKeywordsCount => Volatile.Read(ref _keywordCache).Count;
 
         internal static bool IsSafeToCallToString(Type? type)
         {
@@ -297,12 +311,29 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal bool IsRedactedType(Type? type)
         {
-            if (type == null)
+            if (type is null)
             {
                 return false;
             }
 
-            return _redactedTypesCache.GetOrAdd(type, CheckForRedactedType);
+            var cache = Volatile.Read(ref _typeCache);
+            if (cache.TryGetValue(type, out var redacted))
+            {
+                return redacted;
+            }
+
+            redacted = CheckForRedactedType(type);
+#if NETCOREAPP3_1_OR_GREATER
+            // Caching a collectible type would keep its AssemblyLoadContext from unloading.
+            if (!type.IsCollectible)
+            {
+                cache.TryAdd(type, redacted);
+            }
+#else
+            cache.TryAdd(type, redacted);
+#endif
+
+            return redacted;
         }
 
         private bool CheckForRedactedType(Type type)
@@ -352,12 +383,27 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal bool IsRedactedKeyword(string name)
         {
-            if (string.IsNullOrEmpty(name))
+            if (StringUtil.IsNullOrEmpty(name))
             {
                 return false;
             }
 
-            return _redactedKeywordsCache.GetOrAdd(name, CheckForRedactedKeyword);
+            if (name.Length > MaxStackAlloc)
+            {
+                // Too long to normalize, so it never matches. Not caching it avoids retaining large customer strings.
+                Log.Debug("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, so it is skipped for redaction matching", name.Length, property1: MaxStackAlloc);
+                return false;
+            }
+
+            var cache = Volatile.Read(ref _keywordCache);
+            if (cache.TryGetValue(name, out var redacted))
+            {
+                return redacted;
+            }
+
+            redacted = CheckForRedactedKeyword(name);
+            cache.TryAdd(name, redacted);
+            return redacted;
         }
 
         internal bool CheckForRedactedKeyword(string keyword)
@@ -479,6 +525,10 @@ namespace Datadog.Trace.Debugger.Snapshots
                     _redactedTypes.Add(type);
                 }
             }
+
+            // Results cached under the previous configuration may be stale.
+            Volatile.Write(ref _typeCache, new RedactionCache<Type>(MaxCachedTypes));
+            Volatile.Write(ref _keywordCache, new RedactionCache<string>(MaxCachedKeywords));
         }
 
         /// <summary>
