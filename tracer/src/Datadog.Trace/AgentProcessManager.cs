@@ -170,7 +170,7 @@ namespace Datadog.Trace
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata, int maxRetryInterval)
         {
             var path = metadata.ProcessPath;
-            Log.Debug("Starting keep alive for {Process}.", path);
+            Log.Debug("Starting keep alive for {AgentPath}.", path);
 
             return Task.Run(
                 async () =>
@@ -215,14 +215,14 @@ namespace Datadog.Trace
                                             }
 
                                             // The previous instance is gone, time to start the process
-                                            Log.Information("Recovering from previous {Process} shutdown. Ready for start.", path);
+                                            Log.Information("Recovering from previous {AgentPath} shutdown. Ready for start.", path);
                                             metadata.ProcessState = ProcessState.ReadyToStart;
                                             break;
                                         }
 
                                         if (metadata.ProcessState == ProcessState.Healthy)
                                         {
-                                            Log.Information("{Process} is already running and was not started by this process. Using it.", path);
+                                            Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", path);
                                         }
                                     }
                                     else
@@ -255,7 +255,7 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.Healthy;
                                         if (previousState == ProcessState.Unhealthy)
                                         {
-                                            Log.Information("{Process} with pid {ChildPid} is now healthy.", path, GetProcessId(metadata.Process));
+                                            Log.Information("{AgentPath} with pid {ChildPid} is now healthy.", path, GetProcessId(metadata.Process));
                                         }
                                     }
                                     else if (action == KeepAliveAction.Start)
@@ -268,11 +268,11 @@ namespace Datadog.Trace
                                             // The process we started exited after the startup wait: back off like any other failure
                                             if (metadata.SequentialFailures == 1)
                                             {
-                                                Log.Warning("{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
+                                                Log.Warning("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
                                             }
                                             else
                                             {
-                                                Log.Debug("{Process} started by this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
+                                                Log.Debug("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
                                             }
 
                                             await Task.Delay(startDelay).ConfigureAwait(false);
@@ -280,7 +280,7 @@ namespace Datadog.Trace
                                         }
                                         else if (previousState == ProcessState.Healthy)
                                         {
-                                            Log.Information("{Process} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
+                                            Log.Information("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
                                         }
                                     }
                                     else if (action == KeepAliveAction.Restart)
@@ -297,11 +297,11 @@ namespace Datadog.Trace
                                             var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
                                             if (metadata.SequentialFailures == 1)
                                             {
-                                                Log.Warning("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
+                                                Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
                                             }
                                             else
                                             {
-                                                Log.Debug("{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
+                                                Log.Debug("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
                                             }
 
                                             await Task.Delay(delay).ConfigureAwait(false);
@@ -312,7 +312,7 @@ namespace Datadog.Trace
                                             if (firstAttempt)
                                             {
                                                 Log.Warning(
-                                                    "{Process} with pid {ChildPid} started by this process failed {Count} health checks in a row ({Reason}) and could not be stopped. Retrying.",
+                                                    "{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}) and could not be stopped. Retrying.",
                                                     new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure });
                                             }
 
@@ -326,7 +326,7 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                         if (previousState != ProcessState.Unhealthy)
                                         {
-                                            Log.Warning("{Process} with pid {ChildPid} started by this process is running but failed its health check ({Reason}).", path, GetProcessId(metadata.Process), metadata.LastHealthCheckFailure);
+                                            Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process is running but failed its health check ({Reason}).", path, GetProcessId(metadata.Process), metadata.LastHealthCheckFailure);
                                         }
                                     }
                                 }
@@ -336,11 +336,11 @@ namespace Datadog.Trace
                                     var isRetry = metadata.SequentialFailures > 0;
                                     if (isRetry)
                                     {
-                                        Log.Debug("Attempting to start {Process}.", path);
+                                        Log.Debug("Attempting to start {AgentPath}.", path);
                                     }
                                     else
                                     {
-                                        Log.Information("Attempting to start {Process}.", path);
+                                        Log.Information("Attempting to start {AgentPath}.", path);
                                     }
 
                                     metadata.FailedHealthChecks = 0;
@@ -359,11 +359,11 @@ namespace Datadog.Trace
                                     var childPid = GetProcessId(metadata.Process);
                                     if (isRetry)
                                     {
-                                        Log.Debug("Started {Process} with pid {ChildPid}.", path, childPid);
+                                        Log.Debug("Started {AgentPath} with pid {ChildPid}.", path, childPid);
                                     }
                                     else
                                     {
-                                        Log.Information("Started {Process} with pid {ChildPid}.", path, childPid);
+                                        Log.Information("Started {AgentPath} with pid {ChildPid}.", path, childPid);
                                     }
 
                                     const int startupTimeout = 2000;
@@ -380,7 +380,7 @@ namespace Datadog.Trace
                                             {
                                                 // The health check passed because of another instance, not the one we started
                                                 Log.Information(
-                                                    "{Process} with pid {ChildPid} exited with code {ExitCode}, but another instance is already running. Using it.",
+                                                    "{AgentPath} with pid {ChildPid} exited with code {ExitCode}, but another instance is already running. Using it.",
                                                     path,
                                                     childPid,
                                                     GetExitCode(metadata.Process));
@@ -388,7 +388,7 @@ namespace Datadog.Trace
                                             }
                                             else
                                             {
-                                                Log.Information("Successfully started {Process} with pid {ChildPid}.", path, childPid);
+                                                Log.Information("Successfully started {AgentPath} with pid {ChildPid}.", path, childPid);
                                             }
 
                                             break;
@@ -399,11 +399,11 @@ namespace Datadog.Trace
                                             // Retried with backoff, so not an Error
                                             if (isRetry)
                                             {
-                                                Log.Debug("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                                Log.Debug("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
                                             }
                                             else
                                             {
-                                                Log.Warning("Failed to start {Process}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                                Log.Warning("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
                                             }
 
                                             ForgetOwnProcess(metadata);
@@ -418,11 +418,11 @@ namespace Datadog.Trace
                                     {
                                         if (isRetry)
                                         {
-                                            Log.Debug("{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
+                                            Log.Debug("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
                                         }
                                         else
                                         {
-                                            Log.Warning("{Process} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
+                                            Log.Warning("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
                                         }
 
                                         metadata.ProcessState = ProcessState.Unhealthy;
@@ -440,7 +440,7 @@ namespace Datadog.Trace
                                 // Expected failures (the agent exits, fails its health check, or does not start in time) are handled
                                 // above without exceptions, so anything that reaches here is unexpected and is logged as an Error.
                                 // The retry backoff limits how often a repeating error is logged.
-                                Log.Error(ex, "Unexpected error in keep-alive for {Process}.", path);
+                                Log.Error(ex, "Unexpected error in keep-alive for {AgentPath}.", path);
                             }
                             finally
                             {
@@ -460,11 +460,11 @@ namespace Datadog.Trace
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error occurred in keep-alive for {Process}.", path);
+                        Log.Error(ex, "Error occurred in keep-alive for {AgentPath}.", path);
                     }
                     finally
                     {
-                        Log.Warning("Keep alive is dropping for {Process}.", path);
+                        Log.Warning("Keep alive is dropping for {AgentPath}.", path);
                         metadata.IsBeingManaged = false;
                     }
                 });
@@ -512,11 +512,11 @@ namespace Datadog.Trace
             {
                 if (firstAttempt)
                 {
-                    Log.Warning<string, int?>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                    Log.Warning<string, int?>(ex, "Error when stopping {AgentPath} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
                 }
                 else
                 {
-                    Log.Debug<string, int?>(ex, "Error when stopping {Process} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
+                    Log.Debug<string, int?>(ex, "Error when stopping {AgentPath} with pid {ChildPid}.", metadata.ProcessPath, GetProcessId(process));
                 }
             }
 
@@ -557,7 +557,7 @@ namespace Datadog.Trace
                 return ProcessState.ReadyToStart;
             }
 
-            Log.Information("{Process} is already running and was not started by this process. Using it.", metadata.ProcessPath);
+            Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", metadata.ProcessPath);
             return ProcessState.Healthy;
         }
 
@@ -598,16 +598,16 @@ namespace Datadog.Trace
 
                 if (metadata.SequentialFailures == 0)
                 {
-                    Log.Information("{Process} with pid {ChildPid} started by this process exited with code {ExitCode}.", metadata.ProcessPath, GetProcessId(process), GetExitCode(process));
+                    Log.Information("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process exited with code {ExitCode}.", metadata.ProcessPath, GetProcessId(process), GetExitCode(process));
                 }
                 else
                 {
-                    Log.Debug("{Process} with pid {ChildPid} started by this process exited with code {ExitCode}.", metadata.ProcessPath, GetProcessId(process), GetExitCode(process));
+                    Log.Debug("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process exited with code {ExitCode}.", metadata.ProcessPath, GetProcessId(process), GetExitCode(process));
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error when checking whether {Process} exited.", metadata.ProcessPath);
+                Log.Error(ex, "Error when checking whether {AgentPath} exited.", metadata.ProcessPath);
                 return false;
             }
 
@@ -740,7 +740,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error when checking whether {Process} is running.", ProcessPath);
+                    Log.Error(ex, "Error when checking whether {AgentPath} is running.", ProcessPath);
                     return false;
                 }
             }
