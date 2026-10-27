@@ -25,22 +25,6 @@ workflow:
       $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
       New-Item -ItemType Directory -Force artifacts/build_data/infra_logs | Out-Null
 
-      if (-not $env:DD_LOGGER_DD_API_KEY) {
-        if (-not $env:DD_STS_OIDC_TOKEN) {
-          throw "DD_STS_OIDC_TOKEN is unavailable"
-        }
-
-        $response = Invoke-RestMethod `
-          -Uri "https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key" `
-          -Headers @{ Authorization = "Bearer $env:DD_STS_OIDC_TOKEN" }
-        if (-not $response.api_key) {
-          throw "The dd-sts response did not contain an API key"
-        }
-
-        $env:DD_LOGGER_DD_API_KEY = $response.api_key
-        Write-Output "CI Visibility API key configured using dd-sts"
-      }
-
       Write-Output "Running managed unit tests for $env:FRAMEWORK with $env:WINDOWS_BUILD_IMAGE"
 
       docker run --rm -m 20480M `
@@ -51,6 +35,7 @@ workflow:
         -e NUGET_CERT_REVOCATION_MODE=offline `
         -e DD_LOGGER_ENABLED=true `
         -e DD_LOGGER_DD_API_KEY `
+        -e DD_STS_OIDC_TOKEN `
         -e DD_LOGGER_DD_SERVICE=dd-trace-dotnet `
         -e DD_LOGGER_DD_TRACE_LOG_PATH=c:\mnt\artifacts\build_data\infra_logs\ci-visibility.log `
         -e "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME" `

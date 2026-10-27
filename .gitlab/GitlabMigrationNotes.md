@@ -50,7 +50,7 @@ Forward required variables explicitly across nested triggers: variables inherite
 
 ## Results and validation
 
-Managed unit tests obtain a temporary Datadog API key through GitLab OIDC and `dd-sts` when no key is already configured. Credential-exchange failures fail the job; never log or persist the returned credentials.
+Managed unit tests obtain a temporary Datadog API key through GitLab OIDC and `dd-sts` when no key is already configured. Windows and Linux forward the OIDC token into the test container; the shared `ConfigureGitlabUnitTestCredentials` NUKE dependency performs the exchange and is skipped outside GitLab. Credential-exchange failures fail the job; never log or persist the returned credentials.
 
 Results, logs, and dumps are retained on failure. Native XML is published as GitLab JUnit reports. Linux profiler producers must collect both `profiler/build_data/tests` and `artifacts/build_data/tests`: native-loader results are written to the latter. Managed TRX files remain downloadable artifacts, not native GitLab test reports; managed test telemetry is sent to CI Visibility.
 

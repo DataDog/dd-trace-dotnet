@@ -1554,26 +1554,13 @@ partial class Build
                 noRestore: !IsGitlab);
         });
 
-    Target RunManagedUnitTests => _ => _
+    Target ConfigureGitlabUnitTestCredentials => _ => _
         .Unlisted()
         .After(CompileManagedUnitTests)
-        .DependsOn(CleanTestLogs)
+        .OnlyWhenDynamic(() => IsGitlab)
         .Executes(() =>
         {
-            var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
-                .Select(x => Solution.GetProject(x))
-                .Where(project => !IsGitlab || Framework is null || TargetsFramework(project, Framework))
-                .ToList();
-
-            testProjects.ForEach(EnsureResultsDirectory);
-            if (IsGitlab && testProjects.Count == 0)
-            {
-                throw new InvalidOperationException($"No managed unit-test projects target {Framework}");
-            }
-
-            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
-            var exceptions = new List<Exception>();
-            if (IsGitlab && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
             {
                 try
                 {
@@ -1606,7 +1593,28 @@ partial class Build
                     throw new InvalidOperationException("CI Visibility credentials are required for GitLab unit tests", ex);
                 }
             }
+        });
 
+    Target RunManagedUnitTests => _ => _
+        .Unlisted()
+        .After(CompileManagedUnitTests)
+        .DependsOn(CleanTestLogs)
+        .DependsOn(ConfigureGitlabUnitTestCredentials)
+        .Executes(() =>
+        {
+            var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
+                .Select(x => Solution.GetProject(x))
+                .Where(project => !IsGitlab || Framework is null || TargetsFramework(project, Framework))
+                .ToList();
+
+            testProjects.ForEach(EnsureResultsDirectory);
+            if (IsGitlab && testProjects.Count == 0)
+            {
+                throw new InvalidOperationException($"No managed unit-test projects target {Framework}");
+            }
+
+            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
+            var exceptions = new List<Exception>();
             var defaultDotNetLogger = DotNetTasks.DotNetLogger;
             if (IsGitlab)
             {
