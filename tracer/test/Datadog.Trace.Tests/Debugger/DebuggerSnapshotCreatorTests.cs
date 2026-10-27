@@ -532,8 +532,8 @@ namespace Datadog.Trace.Tests.Debugger
 
             var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
 
-            snapshot["message"]?.Value<string>().Should().Be(expectedMessage);
-            snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>().Should().Be("The property or field is redacted.");
+            Assert.Equal(expectedMessage, snapshot["message"]?.Value<string>());
+            Assert.Equal("The property or field is redacted.", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
         }
 
         [Fact]
