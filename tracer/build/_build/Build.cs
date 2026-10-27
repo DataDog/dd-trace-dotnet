@@ -467,6 +467,7 @@ partial class Build : NukeBuild
                 .When(!IsGitlab || Framework is null, settings => settings.EnableNoRestore())
                 // The runner has no .NET Framework target; net48 unit tests use net8.0.
                 .When(IsGitlab && Framework is not null, settings => settings.SetFramework(Framework == TargetFramework.NET48 ? TargetFramework.NET8_0 : Framework))
+                // Platform=AnyCPU alone does not override an inherited PlatformTarget=x64 from the build host.
                 .When(IsGitlab && Framework is not null, settings => settings.SetTargetPlatformAnyCPU().SetProperty("PlatformTarget", "AnyCPU"))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
