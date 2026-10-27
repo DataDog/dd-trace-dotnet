@@ -1,46 +1,23 @@
 using System;
-using System.Threading;
+using System.Text.RegularExpressions;
 using Nuke.Common.Tooling;
 
 internal static class UnitTestOutputFilter
 {
+    private static readonly Regex RoutineTestEvent = new(
+        @"^\s*\[xUnit\.net [^\]]+\] [^:\r\n]+: (?:STARTED|SUCCESS):",
+        RegexOptions.Compiled);
+
     public static Action<OutputType, string> Wrap(Action<OutputType, string> logger)
     {
-        var suppressedMessage = new AsyncLocal<string>();
         return (type, text) =>
         {
-            // The Datadog test logger emits STARTED and SUCCESS messages for every
-            // test. Arguments can span multiple lines, so suppress continuations too.
-            if (text.Contains(": STARTED:", StringComparison.Ordinal))
+            // Filter only identified event headers. Unprefixed lines may be theory
+            // arguments or interleaved failure details, so they must remain visible.
+            if (type == OutputType.Err || !RoutineTestEvent.IsMatch(text))
             {
-                suppressedMessage.Value = text.TrimEnd().EndsWith(")", StringComparison.Ordinal) ? null : "started";
-                return;
+                logger(type, text);
             }
-
-            if (text.Contains(": SUCCESS:", StringComparison.Ordinal))
-            {
-                suppressedMessage.Value = text.TrimEnd().EndsWith("s)", StringComparison.Ordinal) ? null : "success";
-                return;
-            }
-
-            // A new xUnit event is never a continuation: preserve failures and skips.
-            if (text.Contains("[xUnit.net ", StringComparison.Ordinal))
-            {
-                suppressedMessage.Value = null;
-            }
-            else if (suppressedMessage.Value is { } message)
-            {
-                var trimmedText = text.TrimEnd();
-                if ((message == "started" && trimmedText.EndsWith(")", StringComparison.Ordinal)) ||
-                    (message == "success" && trimmedText.EndsWith("s)", StringComparison.Ordinal)))
-                {
-                    suppressedMessage.Value = null;
-                }
-
-                return;
-            }
-
-            logger(type, text);
         };
     }
 }
