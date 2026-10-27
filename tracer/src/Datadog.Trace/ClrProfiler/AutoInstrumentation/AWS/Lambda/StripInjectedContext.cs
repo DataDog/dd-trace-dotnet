@@ -6,10 +6,12 @@
 #nullable enable
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
@@ -115,19 +117,15 @@ internal static class StripInjectedContext
             int end = StringEnd(json, start);
             if (end < 0)
             {
-                break;
+                // Unterminated string (malformed JSON): leave this level untouched
+                return KeepOriginal(builder, json);
             }
 
             var match = FindCarrier(json, start, end, copyFrom, out int removeStart, out int removeEnd);
             if (match == CarrierMatch.Unclosed)
             {
                 // Malformed JSON: leave this level untouched
-                if (builder != null)
-                {
-                    StringBuilderCache.Release(builder);
-                }
-
-                return json;
+                return KeepOriginal(builder, json);
             }
 
             if (match == CarrierMatch.Found)
@@ -139,7 +137,7 @@ internal static class StripInjectedContext
             }
             else if (nextKey < end && depth < MaxDepth && !IsKey(json, end))
             {
-                var replacement = StripEncodedJson(json.Substring(start, end - start), depth);
+                var replacement = StripEncodedJson(json, start, end, depth);
                 if (replacement != null)
                 {
                     builder ??= StringBuilderCache.Acquire(json.Length);
@@ -159,6 +157,16 @@ internal static class StripInjectedContext
 
         builder.Append(json, copyFrom, json.Length - copyFrom);
         return StringBuilderCache.GetStringAndRelease(builder);
+    }
+
+    private static string KeepOriginal(StringBuilder? builder, string json)
+    {
+        if (builder != null)
+        {
+            StringBuilderCache.Release(builder);
+        }
+
+        return json;
     }
 
     // Finds a "_datadog":{...} entry starting at the key token [keyStart, keyEnd).
@@ -214,22 +222,12 @@ internal static class StripInjectedContext
         return CarrierMatch.Found;
     }
 
-    // Decodes the JSON string literal, strips it if it contains a JSON object, re-encodes it.
+    // Decodes the JSON string literal json[start, end), strips it if it holds a JSON object, re-encodes it.
     // Returns null if nothing changed.
-    private static string? StripEncodedJson(string literal, int depth)
+    private static string? StripEncodedJson(string json, int start, int end, int depth)
     {
-        string? decoded;
-        try
-        {
-            // Use Newtonsoft to decode the JSON string literal (handles all escape sequences)
-            decoded = JsonHelper.DeserializeObject<string>(literal);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-
-        if (!IsObjectText(decoded))
+        var decoded = DecodeString(json, start, end);
+        if (!IsJsonObject(decoded))
         {
             return null;
         }
@@ -244,8 +242,77 @@ internal static class StripInjectedContext
         return JsonHelper.SerializeObject(stripped);
     }
 
-    // Plain customer text such as "{...} trailing text" is not treated as encoded JSON.
-    private static bool IsObjectText([NotNullWhen(true)] string? text)
+    // Decodes the JSON string literal json[start, end) (quotes included) without copying the literal first.
+    // Returns null on an invalid escape sequence.
+    private static string? DecodeString(string json, int start, int end)
+    {
+        int contentStart = start + 1;
+        int contentEnd = end - 1;
+        var builder = StringBuilderCache.Acquire(contentEnd - contentStart);
+        int copyFrom = contentStart;
+
+        for (int i = contentStart; i < contentEnd; i++)
+        {
+            if (json[i] != '\\')
+            {
+                continue;
+            }
+
+            builder.Append(json, copyFrom, i - copyFrom);
+            if (++i >= contentEnd)
+            {
+                StringBuilderCache.Release(builder);
+                return null;
+            }
+
+            switch (json[i])
+            {
+                case '"':
+                case '\\':
+                case '/':
+                    builder.Append(json[i]);
+                    break;
+                case 'b':
+                    builder.Append('\b');
+                    break;
+                case 'f':
+                    builder.Append('\f');
+                    break;
+                case 'n':
+                    builder.Append('\n');
+                    break;
+                case 'r':
+                    builder.Append('\r');
+                    break;
+                case 't':
+                    builder.Append('\t');
+                    break;
+                case 'u':
+                    if (i + 4 >= contentEnd
+                        || !ushort.TryParse(json.AsSpan(i + 1, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var code))
+                    {
+                        StringBuilderCache.Release(builder);
+                        return null;
+                    }
+
+                    builder.Append((char)code);
+                    i += 4;
+                    break;
+                default:
+                    StringBuilderCache.Release(builder);
+                    return null;
+            }
+
+            copyFrom = i + 1;
+        }
+
+        builder.Append(json, copyFrom, contentEnd - copyFrom);
+        return StringBuilderCache.GetStringAndRelease(builder);
+    }
+
+    // Only a string holding exactly one JSON object is treated as encoded JSON;
+    // brace-delimited customer text such as "{...} is an example {}" is kept as is.
+    private static bool IsJsonObject([NotNullWhen(true)] string? text)
     {
         if (text == null)
         {
@@ -258,7 +325,22 @@ internal static class StripInjectedContext
             return false;
         }
 
-        return text[SkipWhitespaceBackward(text, text.Length - 1)] == '}';
+        try
+        {
+            using var reader = new JsonTextReader(new StringReader(text)) { ArrayPool = JsonArrayPool.Shared };
+            reader.Read();
+            reader.Skip();
+            while (reader.Read())
+            {
+                // throws on trailing content after the object
+            }
+
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     // Returns index just past the closing quote of the string opening at start.

@@ -222,10 +222,62 @@ public class StripInjectedContextTests
         StripInjectedContext.StripInternal(input).Should().Be(input);
     }
 
+    [Theory]
+    [InlineData("{\"note\":\"{\\\"_datadog\\\":{}} is an example {}\"}")]
+    [InlineData("{\"note\":\"{see \\\"_datadog\\\":{\\\"x\\\":1} for details}\"}")]
+    [InlineData("{\"note\":\"{\\\"_datadog\\\":{\\\"a\\\":1} \\\"b\\\"}\"}")]
+    public void EncodedBraceDelimitedText_NotJsonObject_IsNotRewritten(string input)
+    {
+        StripInjectedContext.StripInternal(input).Should().Be(input);
+    }
+
     [Fact]
     public void MalformedJson_UnclosedCarrierAfterValidCarrier_OriginalReturned()
     {
         var input = "{\"_datadog\":{\"a\":1},\"x\":{\"_datadog\":{\"b\":2";
+        StripInjectedContext.StripInternal(input).Should().Be(input);
+    }
+
+    [Theory]
+    [InlineData("{\"_datadog\":{},\"x\":\"_datadog")]
+    [InlineData("{\"_datadog\":{\"a\":1},\"x\":\"abc _datadog")]
+    public void MalformedJson_UnterminatedStringAfterCarrier_OriginalReturned(string input)
+    {
+        StripInjectedContext.StripInternal(input).Should().Be(input);
+    }
+
+    [Fact]
+    public void EncodedJson_WithEscapes_StripsCarrierAndPreservesValues()
+    {
+        var inner = "{\"_datadog\":{\"a\":1},\"s\":\"tab\\tquote\\\"slash\\/e\\u00e9\"}";
+        var input = "{\"Message\":" + JsonSerializer.Serialize(inner) + "}";
+
+        var result = StripInjectedContext.StripInternal(input);
+
+        using var outer = JsonDocument.Parse(result);
+        using var decoded = JsonDocument.Parse(outer.RootElement.GetProperty("Message").GetString()!);
+        decoded.RootElement.TryGetProperty("_datadog", out _).Should().BeFalse();
+        decoded.RootElement.GetProperty("s").GetString().Should().Be("tab\tquote\"slash/e\u00e9");
+    }
+
+    [Fact]
+    public void EncodedJson_DecodesEscapeSequencesInOuterLiteral()
+    {
+        var input = "{\"Message\":\"{\\n\\t\\\"_datadog\\\":{},\\\"k\\\":\\\"a\\/b\\\",\\\"\\u0041\\\":1}\"}";
+
+        var result = StripInjectedContext.StripInternal(input);
+
+        using var outer = JsonDocument.Parse(result);
+        using var decoded = JsonDocument.Parse(outer.RootElement.GetProperty("Message").GetString()!);
+        decoded.RootElement.TryGetProperty("_datadog", out _).Should().BeFalse();
+        decoded.RootElement.GetProperty("k").GetString().Should().Be("a/b");
+        decoded.RootElement.GetProperty("A").GetInt32().Should().Be(1);
+    }
+
+    [Fact]
+    public void EncodedJson_WithInvalidEscape_IsNotRewritten()
+    {
+        var input = "{\"m\":\"{\\\"_datadog\\\":{}}\\x\"}";
         StripInjectedContext.StripInternal(input).Should().Be(input);
     }
 
