@@ -138,6 +138,12 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
+            if (IsRedactedValue(source))
+            {
+                SkipRedactedOperand(reader, parameters);
+                return Expression.Constant(false);
+            }
+
             if (!IsSafeCollection(source.Type) && !IsSafeNonGenericDictionary(source.Type))
             {
                 throw new InvalidOperationException("Source must be an array or implement ICollection, IReadOnlyCollection, or IDictionary");
@@ -193,6 +199,12 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
+            if (IsRedactedValue(source))
+            {
+                SkipRedactedOperand(reader, parameters);
+                return source;
+            }
+
             if (source is not FilterExpression && !IsSafeCollection(source.Type) && !IsSafeNonGenericDictionary(source.Type))
             {
                 throw new InvalidOperationException("Source must be an array or implement ICollection, IReadOnlyCollection, or IDictionary");
@@ -227,6 +239,27 @@ internal partial class ProbeExpressionParser<T>
         {
             AddError($"{source?.ToString() ?? "N/A"}[filter]", e.Message);
             return ReturnDefaultValueExpression();
+        }
+    }
+
+    // Parses and drops the predicate of an operation over a redacted value, so the reader stays aligned and the
+    // predicate adds no errors about the placeholder that replaced the value.
+    private void SkipRedactedOperand(JsonTextReader reader, List<ParameterExpression> parameters)
+    {
+        var errorCount = _errors?.Count ?? 0;
+        var previousIsBoundedFilterCapture = _isBoundedFilterCapture;
+        var previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
+        _isBoundedFilterCapture = false;
+        _deferredFilterSourceArrayStack = -1;
+        try
+        {
+            ParseTree(reader, parameters, itParameter: null);
+        }
+        finally
+        {
+            _isBoundedFilterCapture = previousIsBoundedFilterCapture;
+            _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
+            _errors?.RemoveRange(errorCount, _errors.Count - errorCount);
         }
     }
 

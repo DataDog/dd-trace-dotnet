@@ -23,6 +23,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -4242,6 +4243,28 @@ namespace Datadog.Trace.Tests.Debugger
                 result.Errors.Should().BeNullOrEmpty();
             }
 
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""RedactedListLocal""},{""isDefined"":""@it""}]}")]
+            [InlineData(@"{""all"":[{""ref"":""RedactedListLocal""},{""eq"":[{""getmember"":[""@it"",""Name""]},""x""]}]}")]
+            [InlineData(@"{""filter"":[{""ref"":""RedactedListLocal""},{""isDefined"":""@it""}]}")]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""RedactedListLocal""},{""isDefined"":""@it""}]}}")]
+            [InlineData(@"{""len"":{""ref"":""RedactedListLocal""}}")]
+            [InlineData(@"{""isEmpty"":{""ref"":""RedactedListLocal""}}")]
+            [InlineData(@"{""index"":[{""ref"":""RedactedListLocal""},0]}")]
+            [InlineData(@"{""contains"":[{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]},""SECRET""]}")]
+            [InlineData(@"{""gt"":[{""getmember"":[{""ref"":""PiiLocal""},""Age""]},30]}")]
+            [InlineData(@"{""not"":{""getmember"":[{""ref"":""PiiLocal""},""Enabled""]}}")]
+            [InlineData(@"{""and"":[{""getmember"":[{""ref"":""PiiLocal""},""Enabled""]},true]}")]
+            public void ProbeExpressionEvaluator_TemplateOperationOnRedactedValue_KeepsTemplateAsMessage(string json)
+            {
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
+
+                result.Template.Should().Be("value={redacted}");
+                result.Errors.Should().NotBeEmpty().And.OnlyContain(error => error.IsRedaction);
+                result.HasConditionError.Should().BeFalse();
+                RenderSnapshotMessage(result).Should().Be("value={redacted}");
+            }
+
             private ExpressionEvaluationResult Evaluate(TargetBase target, string template, string condition)
             {
                 Redaction.Instance.ResetInstance();
@@ -4284,6 +4307,30 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.AddMember(new ScopeMember("PublicDictionaryLocal", typeof(Dictionary<string, PublicTarget>), new Dictionary<string, PublicTarget> { { "first", @public } }, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("HolderLocal", typeof(TargetHolder), new TargetHolder { Redacted = redacted, Public = @public }, ScopeMemberKind.Local));
                 return scopeMembers;
+            }
+
+            private string RenderSnapshotMessage(ExpressionEvaluationResult result)
+            {
+                var snapshotCreator = new DebuggerSnapshotCreator(
+                    isFullSnapshot: false,
+                    Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                    hasCondition: false,
+                    tags: [],
+                    limitInfo: new CaptureLimitInfo(MaxReferenceDepth: 3, MaxCollectionSize: 100, MaxLength: 255, MaxFieldCount: 20),
+                    processTagsProvider: static () => null,
+                    serviceNameProvider: static () => "test-service");
+                snapshotCreator.SetEvaluationResult(ref result);
+
+                var captureInfo = new CaptureInfo<object>(
+                    methodMetadataIndex: 0,
+                    methodState: MethodState.EntryEnd,
+                    value: new object(),
+                    method: typeof(RedactedTypeTests).GetMethod(nameof(RenderSnapshotMessage), BindingFlags.NonPublic | BindingFlags.Instance),
+                    type: typeof(object),
+                    invocationTargetType: typeof(object),
+                    memberKind: ScopeMemberKind.This);
+
+                return JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo))["message"]?.Value<string>();
             }
 
             private class TargetBase

@@ -39,6 +39,11 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var pattern = ParseTree(reader, parameters, itParameter);
+        if (IsRedactedValue(source))
+        {
+            return Expression.Constant(false);
+        }
+
         var matchesMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(RegexIsMatch), [typeof(string), typeof(string), typeof(EvaluationBudget).MakeByRefType()]);
         return RedactDictionaryOperation(source, Expression.Call(null, matchesMethod, source, pattern, _evaluationBudgetParameterExpression));
     }
@@ -72,6 +77,11 @@ internal partial class ProbeExpressionParser<T>
 
         var startIndex = ParseTree(reader, parameters, itParameter);
         var endIndex = ParseTree(reader, parameters, itParameter);
+        if (IsRedactedValue(source))
+        {
+            return source;
+        }
+
         var lengthExpr = Expression.Subtract(endIndex, startIndex);
         return RedactDictionaryOperation(
             source,
@@ -86,6 +96,11 @@ internal partial class ProbeExpressionParser<T>
         if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
         {
             return source;
+        }
+
+        if (IsRedactedValue(source))
+        {
+            return Expression.Constant(false);
         }
 
         if (source.Type == typeof(string))
@@ -123,6 +138,11 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var parameter = ParseTree(reader, parameters, itParameter);
+        if (IsRedactedValue(source))
+        {
+            return Expression.Constant(false);
+        }
+
         return RedactDictionaryOperation(
             source,
             Expression.Block(
