@@ -7,8 +7,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
@@ -23,6 +25,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -2550,6 +2553,78 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         settings.KnownTestsEnabled.Should().BeFalse();
         settings.EarlyFlakeDetectionEnabled.Should().BeFalse();
         knownTestsFeature.Enabled.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("true", null, "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
+    [InlineData("false", "true", "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
+    [InlineData("true", "true", null, new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "1", "3,2,1,1,20", new[] { 3, 2, 1, 1, 20 }, true)]
+    [InlineData("true", "true", "3,2,21,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
+    public async Task FlakyRetryCountDependsOnFirstExecutionDurationWhenDynamicRetriesAreEnabled(string flakyRetryEnabled, string dynamicFlakyRetryEnabled, string dynamicFlakyRetryBuckets, int[] expectedRetryCounts, bool? expectedCustomBuckets)
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, flakyRetryEnabled),
+            (ConfigurationKeys.CIVisibility.FlakyRetryCount, "7"),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled, dynamicFlakyRetryEnabled),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets, dynamicFlakyRetryBuckets));
+        var remoteSettings = new TestOptimizationClient.SettingsResponse(
+            codeCoverage: false,
+            testsSkipping: false,
+            requireGit: false,
+            impactedTestsEnabled: false,
+            flakyTestRetries: true,
+            earlyFlakeDetection: new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(
+                enabled: false,
+                slowTestRetries: new TestOptimizationClient.SlowTestRetriesSettingsResponse(fiveSeconds: 4, tenSeconds: null, thirtySeconds: 2, fiveMinutes: 0),
+                faultySessionThreshold: 0),
+            knownTestsEnabled: false,
+            testManagement: default,
+            dynamicInstrumentationEnabled: false);
+
+        var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previousMetrics = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var flakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
+
+            // The slowest first execution of each bucket: up to 5s, 10s, 30s, 5m, and slower. The upper limits are inclusive.
+            TimeSpan[] firstExecutionDurations = [TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5) + TimeSpan.FromTicks(1)];
+            firstExecutionDurations.Select(flakyRetryFeature.GetFlakyRetryCount).Should().Equal(expectedRetryCounts);
+
+            collector.AggregateMetrics();
+            var metrics = (collector.GetMetrics().Metrics ?? []).Where(metric => metric.Metric == "dynamic_atr_retries.enabled").ToList();
+            if (expectedCustomBuckets is { } customBuckets)
+            {
+                metrics.Should().ContainSingle().Which.Tags.Should().BeEquivalentTo(customBuckets ? ["has_custom_buckets:true"] : null);
+            }
+            else
+            {
+                metrics.Should().BeEmpty();
+            }
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previousMetrics);
+            await collector.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [InlineData(null, 10)]
+    [InlineData("4,1,1,1,1", 4)]
+    public void DynamicFlakyRetriesUseDefaultCountsWhenSettingsHaveNoSlowTestRetries(string dynamicFlakyRetryBuckets, int expectedRetryCount)
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryCount, "7"),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets, dynamicFlakyRetryBuckets));
+
+        // The same local response that child processes of `dd-trace ci run` use when they skip the settings request.
+        var localSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement: null);
+
+        TestOptimizationFlakyRetryFeature.Create(settings, localSettings).GetFlakyRetryCount(TimeSpan.FromSeconds(1)).Should().Be(expectedRetryCount);
     }
 
     private static TestOptimizationSettings CreateSettings(params (string Key, string Value)[] values)
