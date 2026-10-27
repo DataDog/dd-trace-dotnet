@@ -24,6 +24,7 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace.Tests.Agent
 {
@@ -257,6 +258,33 @@ namespace Datadog.Trace.Tests.Agent
             AssertPayloadEqual(actualPayload, expectedData2);
 
             await _agentWriter.FlushAndCloseAsync();
+        }
+
+        [Fact]
+        public async Task FlushAndCloseDoesNotWaitForTheBatchInterval()
+        {
+            // After serializing traces, the serialization thread waits for the batch interval before serializing the next
+            // ones: closing the writer doesn't wait for the end of that interval.
+            _api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
+                .ReturnsAsync(true);
+            var writer = new AgentWriter(_api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, batchInterval: (int)TimeSpan.FromMinutes(1).TotalMilliseconds);
+
+            // The trace and the watermark of the flush are enqueued from the serialization thread, so it serializes them in the
+            // same batch: otherwise it could serialize the trace and wait for the batch interval before reaching the watermark.
+            var flushStarted = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+            writer.WriteWatermark(() =>
+            {
+                writer.WriteTrace(CreateTraceChunk(1));
+                flushStarted.SetResult(writer.FlushTracesAsync());
+            });
+
+            // The trace is serialized: the serialization thread now waits for the batch interval
+            await flushStarted.Task.Unwrap();
+
+            var stopwatch = Stopwatch.StartNew();
+            await writer.FlushAndCloseAsync();
+
+            stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(15));
         }
 
         [Fact]

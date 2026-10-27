@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
@@ -20,6 +21,10 @@ namespace Datadog.Trace.Ci.Configuration
 {
     internal sealed class TestOptimizationSettings
     {
+        private const int MaxDynamicFlakyRetryCount = 20;
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestOptimizationSettings>();
+
         private TracerSettings? _tracerSettings;
 
         public TestOptimizationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -117,6 +122,10 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Maximum number of retry attempts for the entire session.
             TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
+
+            // Retry counts that depend on the duration of the first execution
+            DynamicFlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled).AsBool(false);
+            DynamicFlakyRetryCounts = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets).GetAsClass<int[]>(validator: null, converter: ParseDynamicFlakyRetryCounts);
 
             // Test Impact Analysis enablement
             ImpactedTestsDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled).AsBool();
@@ -257,6 +266,18 @@ namespace Datadog.Trace.Ci.Configuration
         public int TotalFlakyRetryCount { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether the retry count of each test depends on the duration of its first execution
+        /// instead of <see cref="FlakyRetryCount"/>.
+        /// </summary>
+        public bool DynamicFlakyRetryEnabled { get; }
+
+        /// <summary>
+        /// Gets the retry counts for <see cref="DynamicFlakyRetryEnabled"/> from DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS, one per duration
+        /// bucket: up to 5s, 10s, 30s, 5m, and slower. Null when the value is missing or invalid.
+        /// </summary>
+        public int[]? DynamicFlakyRetryCounts { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the Impacted Tests Detection feature is enabled.
         /// </summary>
         public bool? ImpactedTestsDetectionEnabled { get; private set; }
@@ -339,6 +360,33 @@ namespace Datadog.Trace.Ci.Configuration
             // then we can disable both GitUpload and Intelligent Test Runner feature (only used by our integration).
             GitUploadEnabled = false;
             IntelligentTestRunnerEnabled = false;
+        }
+
+        private static ParsingResult<int[]> ParseDynamicFlakyRetryCounts(string value)
+        {
+            var values = value.Split(Separators.Comma);
+            if (values.Length == 5)
+            {
+                var counts = new int[5];
+                var valid = true;
+                for (var i = 0; valid && i < counts.Length; i++)
+                {
+                    valid = int.TryParse(values[i], out counts[i]) && counts[i] is >= 1 and <= MaxDynamicFlakyRetryCount;
+                }
+
+                if (valid)
+                {
+                    return ParsingResult<int[]>.Success(counts);
+                }
+            }
+
+            // An empty value is the same as an unset one
+            if (!StringUtil.IsNullOrWhiteSpace(value))
+            {
+                Log.Warning("TestOptimizationSettings: Ignoring DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS={Value}, expected five comma-separated integers from 1 to 20.", value);
+            }
+
+            return ParsingResult<int[]>.Failure();
         }
 
         private TracerSettings InitializeTracerSettings()

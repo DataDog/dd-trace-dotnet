@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                         var queueName = IbmMqHelper.SanitizeQueueName(instance.Name);
                         var edgeTags = dataStreams.GetOrCreateEdgeTags(
                             new IbmMqEdgeTagCacheKey(queueName, IsConsume: true),
-                            static k => ["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]);
+                            static k => new EdgeTags(["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]));
 
                         scope.Span.SetDataStreamsCheckpoint(
                             dataStreams,

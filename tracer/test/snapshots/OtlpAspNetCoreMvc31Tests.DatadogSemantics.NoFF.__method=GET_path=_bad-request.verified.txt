@@ -126,6 +126,36 @@
                   }
                 },
                 {
+                  "key": "_dd.limit_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-3"
+                  }
+                },
+                {
+                  "key": "_dd.p.ksr",
+                  "value": {
+                    "stringValue": "1"
+                  }
+                },
+                {
+                  "key": "_dd.rule_psr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
                   "key": "component",
                   "value": {
                     "stringValue": "aspnet_core"
@@ -219,7 +249,8 @@
               "status": {
                 "message": "This was a bad request.",
                 "code": 2
-              }
+              },
+              "flags": 1
             }
           ]
         }
