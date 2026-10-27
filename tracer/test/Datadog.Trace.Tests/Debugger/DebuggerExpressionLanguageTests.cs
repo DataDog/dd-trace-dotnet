@@ -4316,6 +4316,43 @@ namespace Datadog.Trace.Tests.Debugger
                     Redaction.Instance.ResetInstance();
                 }
             }
+
+            [Theory]
+            [InlineData("value", "{redacted}")]
+            [InlineData("items", "{redacted}")]
+            [InlineData("other", "_data=visible")]
+            public void ProbeExpressionEvaluator_TemplateDump_GetMemberNonSealedField_RedactsConfiguredRuntimeType(string memberName, string expected)
+            {
+                // getmember keeps the declared type (object, IList<string>), so only the runtime type
+                // shows that the value is a redacted type.
+                var scopeMembers = _tests.CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpNonSealedFieldsHolder), new DumpNonSealedFieldsHolder(), ScopeMemberKind.Local));
+
+                try
+                {
+                    Redaction.Instance.ResetInstance();
+                    Redaction.Instance.SetConfig(
+                        new HashSet<string>(),
+                        new HashSet<string>(),
+                        new HashSet<string> { typeof(RedactedRuntimeTypeValue).FullName, typeof(List<string>).FullName });
+
+                    var evaluator = _tests.CreateEvaluator(
+                        templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
+                        condition: null,
+                        metric: null,
+                        spanDecorations: null,
+                        captureExpressions: null);
+
+                    var result = evaluator.Evaluate(scopeMembers);
+
+                    result.Template.Should().Be(expected);
+                    result.Errors.Should().BeNullOrEmpty();
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
         }
 
         internal class GenericReferenceTypeTarget<T>
@@ -4589,6 +4626,35 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly Dictionary<string, string> _headers = new ThrowingEnumerationDictionary { { "public", CustomerDumpMarker } };
 
             private readonly Uri _uri = new ThrowingToStringUri();
+        }
+
+        private sealed class DumpNonSealedFieldsHolder
+        {
+            private readonly object value = new RedactedRuntimeTypeValue("TOP_SECRET_VALUE");
+
+            private readonly IList<string> items = new List<string> { "TOP_SECRET_VALUE" };
+
+            private readonly object other = new VisibleRuntimeTypeValue("visible");
+        }
+
+        private sealed class RedactedRuntimeTypeValue
+        {
+            private readonly string _data;
+
+            public RedactedRuntimeTypeValue(string data)
+            {
+                _data = data;
+            }
+        }
+
+        private sealed class VisibleRuntimeTypeValue
+        {
+            private readonly string _data;
+
+            public VisibleRuntimeTypeValue(string data)
+            {
+                _data = data;
+            }
         }
 
         private sealed class AllowedRuntimeTypesHolder

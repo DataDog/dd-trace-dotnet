@@ -147,82 +147,111 @@ internal partial class ProbeExpressionParser<T>
             }
 
             // Uri and StackTrace aren't sealed, and no subclass of them is allowed, so only an exact match may run ToString.
-            return DumpIfRuntimeTypeAllows(
+            return DumpRuntimeValueExpression(
                 expression,
-                value => Expression.ReferenceEqual(
-                    Expression.Call(value, GetMethodByReflection(typeof(object), nameof(GetType), Type.EmptyTypes)),
-                    Expression.Constant(type, typeof(Type))),
-                value => Expression.Call(value, toStringMethod),
+                Expression.Constant("null"),
+                (value, typedValue) => DumpIfRuntimeTypeAllows(
+                    Expression.ReferenceEqual(
+                        Expression.Call(value, GetMethodByReflection(typeof(object), nameof(GetType), Type.EmptyTypes)),
+                        Expression.Constant(type, typeof(Type))),
+                    Expression.Call(typedValue, toStringMethod),
+                    typedValue,
+                    scopeMembers),
                 scopeMembers);
         }
 
-        var ifNull = IsNullExpression(expression);
+        // A sealed or value type is its own runtime type, so its dump is decided here and needs no runtime check.
+        var isExactType = type.IsValueType || type.IsSealed;
 
-        if (IsSafeException(expression.Type))
+        if (IsSafeException(type))
         {
             // for known Exception types we can assume it's safe to call .Message
             // whereas the others might have overriden it in a way that could cause side effects
             var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
-            var typeNameExpression = Expression.Constant(expression.Type.FullName, typeof(string));
-            var exceptionAsString = Expression.Call(
+            var typeNameExpression = Expression.Constant(type.FullName, typeof(string));
+            Func<Expression, Expression> exceptionAsString = exception => Expression.Call(
                stringConcat,
                Expression.NewArrayInit(
                    typeof(string),
                    typeNameExpression,
                    Expression.Constant(", "),
-                   Expression.Property(expression, nameof(Exception.Message)),
+                   Expression.Property(exception, nameof(Exception.Message)),
                    Expression.Constant(", "),
-                   Expression.Property(expression, nameof(Exception.StackTrace))));
+                   Expression.Property(exception, nameof(Exception.StackTrace))));
 
-            return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
+            return isExactType
+                       ? Expression.Condition(IsNullExpression(expression), typeNameExpression, exceptionAsString(expression))
+                       : DumpRuntimeValueExpression(expression, typeNameExpression, (_, exception) => exceptionAsString(exception), scopeMembers);
         }
 
-        Expression dumpExpression;
         if (IsDictionaryDumpType(type))
         {
-            dumpExpression = DumpDictionaryExpression(expression, scopeMembers);
+            return Expression.Condition(IsNullExpression(expression), Expression.Constant("null"), DumpDictionaryExpression(expression, scopeMembers));
         }
-        else if (type.IsArray)
+
+        if (type.IsArray)
         {
             // An array's runtime type is always an array, whose enumerator can't be customer code.
-            dumpExpression = DumpCollectionExpression(expression, scopeMembers);
+            return Expression.Condition(IsNullExpression(expression), Expression.Constant("null"), DumpCollectionExpression(expression, scopeMembers));
         }
-        else if (IsSafeCollection(type))
+
+        if (IsSafeCollection(type))
         {
-            // The declared type may be an interface or a non-sealed type over a customer collection, so
-            // enumerate only the runtime types snapshot capture supports.
-            return DumpIfRuntimeTypeAllows(
+            // Enumerate only the collection types snapshot capture supports, so a customer enumerator never runs.
+            if (isExactType)
+            {
+                return Expression.Condition(
+                    IsNullExpression(expression),
+                    Expression.Constant("null"),
+                    Redaction.IsSupportedCollection(type) ? DumpCollectionExpression(expression, scopeMembers) : DumpFieldsExpression(expression, scopeMembers));
+            }
+
+            return DumpRuntimeValueExpression(
                 expression,
-                value => Expression.Call(GetMethodByReflection(typeof(Redaction), nameof(Redaction.IsSupportedCollection), [typeof(object)]), value),
-                collection => DumpCollectionExpression(collection, scopeMembers),
+                Expression.Constant("null"),
+                (value, collection) => DumpIfRuntimeTypeAllows(
+                    Expression.Call(GetMethodByReflection(typeof(Redaction), nameof(Redaction.IsSupportedCollection), [typeof(object)]), value),
+                    DumpCollectionExpression(collection, scopeMembers),
+                    collection,
+                    scopeMembers),
                 scopeMembers);
         }
-        else
-        {
-            dumpExpression = DumpFieldsExpression(expression, scopeMembers);
-        }
 
-        return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
+        return isExactType
+                   ? Expression.Condition(IsNullExpression(expression), Expression.Constant("null"), DumpFieldsExpression(expression, scopeMembers))
+                   : DumpRuntimeValueExpression(expression, Expression.Constant("null"), (_, typedValue) => DumpFieldsExpression(typedValue, scopeMembers), scopeMembers);
     }
 
-    // Reads the value once. dumpAllowed runs on it only when isAllowed accepts its runtime type, and any other
-    // runtime type gets its fields dumped, the same output a root local of that type gets.
-    private BlockExpression DumpIfRuntimeTypeAllows(
+    // Reads the value once and redacts it when its runtime type, which a non-sealed declared type can't tell, is
+    // redacted. IsRedactedRuntimeValue skips the lookup when the runtime type is the declared type.
+    private BlockExpression DumpRuntimeValueExpression(
         Expression expression,
-        Func<ParameterExpression, Expression> isAllowed,
-        Func<Expression, Expression> dumpAllowed,
+        Expression nullDump,
+        Func<ParameterExpression, Expression, Expression> dumpValue,
         List<ParameterExpression> scopeMembers)
     {
         var value = Expression.Variable(typeof(object), "dumpValue");
         scopeMembers.Add(value);
-        var typedValue = Expression.Convert(value, expression.Type);
+        var isRedacted = Expression.Call(
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object), typeof(Type)]),
+            value,
+            Expression.Constant(expression.Type, typeof(Type)));
 
         return Expression.Block(
             Expression.Assign(value, Expression.Convert(expression, typeof(object))),
             Expression.Condition(
                 Expression.ReferenceEqual(value, Expression.Constant(null)),
-                Expression.Constant("null"),
-                Expression.Condition(isAllowed(value), dumpAllowed(typedValue), DumpFieldsExpression(typedValue, scopeMembers))));
+                nullDump,
+                Expression.Condition(
+                    isRedacted,
+                    Expression.Constant(RedactedValueDump),
+                    dumpValue(value, Expression.Convert(value, expression.Type)))));
+    }
+
+    // Any runtime type that isAllowed rejects gets its fields dumped, the same output a root local of that type gets.
+    private ConditionalExpression DumpIfRuntimeTypeAllows(Expression isAllowed, Expression dumpAllowed, Expression typedValue, List<ParameterExpression> scopeMembers)
+    {
+        return Expression.Condition(isAllowed, dumpAllowed, DumpFieldsExpression(typedValue, scopeMembers));
     }
 
     private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
