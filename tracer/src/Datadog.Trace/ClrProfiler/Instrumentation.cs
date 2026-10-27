@@ -214,7 +214,12 @@ namespace Datadog.Trace.ClrProfiler
                     // we haven't yet confirmed that). Creating a SHA-256 instance forces the native
                     // OpenSSL library to load and initialize during startup. SHA-256 is used instead of MD5
                     // because MD5 is not FIPS-approved: on FIPS-enabled OpenSSL it can throw or crash the process.
-                    SHA256.Create().Dispose();
+                    // Only Linux hashes through OpenSSL (Windows uses CNG and macOS uses Apple CommonCrypto),
+                    // so the warm-up is skipped on other platforms.
+                    if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux)
+                    {
+                        SHA256.Create().Dispose();
+                    }
                 }
                 catch (Exception ex)
                 {
