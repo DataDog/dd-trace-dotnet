@@ -3170,22 +3170,41 @@ namespace Datadog.Trace.Tests.Debugger
             result.HasConditionError.Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData(@"{""ref"":""DoubleLocal""}", 3.14159)]
-        [InlineData(@"{""len"":{""ref"":""StringLocal""}}", 12)]
-        public void ProbeExpressionEvaluator_Metric_ReturnsValue(string json, double expected)
+        [Fact]
+        public void ProbeExpressionEvaluator_MetricRedactionThatFailsToCompile_ReportsErrorsWithoutValue()
         {
+            // password.Length is undefined, so assigning it to the metric result throws while compiling. The
+            // default delegate would then report 0.
             var scopeMembers = CreateScopeMembers();
             var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
-                metric: new DebuggerExpression(string.Empty, json, null),
+                metric: new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""password""},""Length""]}", null),
                 spanDecorations: null,
                 captureExpressions: null);
 
             var result = evaluator.Evaluate(scopeMembers);
 
-            result.Metric.Should().Be(expected);
+            result.Metric.Should().BeNull();
+            evaluator.CompiledMetric.Value.BudgetedDelegate.Should().BeNull();
+            result.Errors.Should().Contain(error => error.IsRedaction);
+            result.Errors.Should().Contain(error => !error.IsRedaction);
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_Metric_ReturnsValue()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = CreateEvaluator(
+                templates: null,
+                condition: null,
+                metric: new DebuggerExpression(string.Empty, @"{""ref"":""DoubleLocal""}", null),
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Metric.Should().Be(TestObject.DoubleNumber);
             evaluator.CompiledMetric.Value.BudgetedDelegate.Should().NotBeNull();
             result.Errors.Should().BeNullOrEmpty();
         }

@@ -210,6 +210,39 @@ public class ProbeProcessorTests
         Assert.Equal(0, sampler.SampleCalls);
     }
 
+    [Theory]
+    [InlineData(@"{""ref"":""password""}")] // redacted, so it has no delegate
+    [InlineData(@"{""substring"":[""hello"",0,2]}")] // converting "he" to a number throws on every evaluation
+    public void MetricEvaluationErrorsAreRateLimited(string metricJson)
+    {
+        var probe = new MetricProbe
+        {
+            Id = "metric-probe",
+            MetricName = "metric",
+            Kind = MetricKind.GAUGE,
+            EvaluateAt = EvaluateAt.Entry,
+            Value = new SnapshotSegment(dsl: string.Empty, json: metricJson, str: null),
+            Where = new Where
+            {
+                TypeName = typeof(SampleTarget).FullName!,
+                MethodName = nameof(SampleTarget.Execute)
+            },
+            Tags = [],
+        };
+        var processor = CreateProbeProcessor(probe);
+        var sampler = new TestAdaptiveSampler(true, true);
+        var probeData = new ProbeData(probe.Id, sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var firstSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
+
+        var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, secondSnapshotCreator, in probeData, method));
+        Assert.False(ProcessEntryEnd(processor, secondSnapshotCreator, in probeData, method));
+    }
+
     [Fact]
     public void CaptureExpressionOnlyProbeEvaluatesAndSerializesResults()
     {

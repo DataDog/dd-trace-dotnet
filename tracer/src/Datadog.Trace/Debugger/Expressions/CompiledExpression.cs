@@ -24,6 +24,10 @@ namespace Datadog.Trace.Debugger.Expressions
             Errors = errors;
         }
 
+        /// <summary>
+        /// Gets the compiled delegate. It is null for a literal and for an expression created with
+        /// <see cref="WithoutDelegate"/>, which has no value: callers report its <see cref="Errors"/> instead.
+        /// </summary>
         internal CompiledExpressionDelegate<T>? BudgetedDelegate { get; }
 
         internal Expression? ParsedExpression { get; }
@@ -31,5 +35,14 @@ namespace Datadog.Trace.Debugger.Expressions
         internal string? RawExpression { get; }
 
         internal EvaluationError[]? Errors { get; }
+
+        /// <summary>
+        /// Creates an expression that is never evaluated. Because it has errors and no parsed expression, it is
+        /// neither a literal nor an evaluable expression.
+        /// </summary>
+        internal static CompiledExpression<T> WithoutDelegate(string rawExpression, EvaluationError[] errors)
+        {
+            return new CompiledExpression<T>(null, null, rawExpression, errors);
+        }
     }
 }
