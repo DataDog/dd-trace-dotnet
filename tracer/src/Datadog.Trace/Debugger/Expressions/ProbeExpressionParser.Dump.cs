@@ -61,6 +61,18 @@ internal partial class ProbeExpressionParser<T>
         return definition == typeof(IDictionary<,>) || definition == typeof(IReadOnlyDictionary<,>);
     }
 
+    // The declared type was already checked, so only a different runtime type needs another lookup.
+    private static bool IsRedactedRuntimeValue(object value, Type declaredType)
+    {
+        if (value is null)
+        {
+            return false;
+        }
+
+        var runtimeType = value.GetType();
+        return runtimeType != declaredType && ShouldRedactDumpValue(null, runtimeType);
+    }
+
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
         if (ShouldRedactValue(null, expression.Type))
@@ -120,17 +132,18 @@ internal partial class ProbeExpressionParser<T>
     private BlockExpression DumpDictionaryExpression(Expression dictionary, List<ParameterExpression> scopeMembers)
     {
         // The declared type may be an interface over a customer dictionary, a wrapper such as ReadOnlyDictionary,
-        // or a redacted type. Capture once, redact from the runtime type, then enumerate only the dictionary
-        // types snapshot capture supports.
+        // or a redacted type. Read the value once, redact from the runtime type, then enumerate only the
+        // dictionary types snapshot capture supports.
         var value = Expression.Variable(typeof(object), "dictionaryDumpValue");
         scopeMembers.Add(value);
 
         var assignValue = Expression.Assign(value, Expression.Convert(dictionary, typeof(object)));
+        var isNull = Expression.ReferenceEqual(value, Expression.Constant(null));
         var isRedacted = Expression.Call(
-            Expression.Constant(this),
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object)]),
-            value);
-        var isSafe = Expression.Call(
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedRuntimeValue), [typeof(object), typeof(Type)]),
+            value,
+            Expression.Constant(dictionary.Type, typeof(Type)));
+        var isSupportedDictionary = Expression.Call(
             GetMethodByReflection(typeof(Redaction), nameof(Redaction.IsSupportedDictionary), [typeof(object)]),
             value);
         var dumpEntries = Expression.Call(
@@ -139,14 +152,14 @@ internal partial class ProbeExpressionParser<T>
             value,
             Expression.Constant(typeof(IDictionary)));
         var dumpFields = DumpFieldsExpression(Expression.Convert(value, dictionary.Type), scopeMembers);
-        var dump = Expression.Condition(isSafe, dumpEntries, dumpFields);
+        var dump = Expression.Condition(isSupportedDictionary, dumpEntries, dumpFields);
 
-        return Expression.Block(assignValue, Expression.Condition(isRedacted, Expression.Constant(RedactedValueDump), dump));
-    }
-
-    private bool IsRedactedRuntimeValue(object value)
-    {
-        return value != null && ShouldRedactValue(null, value.GetType());
+        return Expression.Block(
+            assignValue,
+            Expression.Condition(
+                isNull,
+                Expression.Constant("null"),
+                Expression.Condition(isRedacted, Expression.Constant(RedactedValueDump), dump)));
     }
 
     // DumpCollectionExpression takes the first generic argument as the item type, which is the key type for a
@@ -155,10 +168,7 @@ internal partial class ProbeExpressionParser<T>
     {
         return IsSafeNonGenericDictionary(type) ||
                (IsMicrosoftType(type) &&
-                (IsGenericDictionaryInterface(type) ||
-                 type.GetInterfaces().Any(i => i.IsGenericType &&
-                                               (i.GetGenericTypeDefinition() == typeof(IDictionary<,>) ||
-                                                i.GetGenericTypeDefinition() == typeof(IReadOnlyDictionary<,>)))));
+                (IsGenericDictionaryInterface(type) || type.GetInterfaces().Any(IsGenericDictionaryInterface)));
     }
 
     private BlockExpression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
@@ -330,7 +340,7 @@ internal partial class ProbeExpressionParser<T>
             assignableFrom ??= typeof(IDictionary);
 
             // The declared type may be an interface. Redact from the runtime type before enumerating.
-            if (IsRedactedRuntimeValue(value))
+            if (IsRedactedRuntimeValue(value, type))
             {
                 return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
             }
