@@ -30,6 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
         internal const int DefaultMaxMessageSize = 128 * 1024;
 
+        // AMQP 0-9-1 defines the timestamp property as POSIX seconds, but some publishers write milliseconds.
+        // A value below 1e11 is unambiguous: 1e11 seconds is the year 5138, while 1e11 milliseconds is 1973.
+        private const long MaxAmqpTimestampInSeconds = 100_000_000_000L;
+
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.RabbitMQ;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
 
@@ -167,6 +171,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
         }
 
+        internal static long GetTimeInQueueMs(long amqpTimestamp)
+        {
+            if (amqpTimestamp == 0)
+            {
+                return 0;
+            }
+
+            var publishedAtMs = amqpTimestamp < MaxAmqpTimestampInSeconds ? amqpTimestamp * 1000 : amqpTimestamp;
+            return Math.Max(0, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - publishedAtMs);
+        }
+
         internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize, long messageTimestamp)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
@@ -252,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     tags.MessageSize = body.Length.ToString() ?? "0";
                 }
 
-                var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
+                var timeInQueue = basicProperties != null ? GetTimeInQueueMs(basicProperties.Timestamp.UnixTime) : 0;
                 SetDataStreamsCheckpointOnConsume(
                     Tracer.Instance,
                     scope.Span,
