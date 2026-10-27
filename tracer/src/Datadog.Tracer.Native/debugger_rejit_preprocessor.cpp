@@ -237,8 +237,13 @@ void DebuggerRejitPreprocessor::ProcessTypesForRejit(
 
     if (nameParts.size() > 1)
     {
-        RejitPreprocessor::ProcessTypesForRejit(rejitRequests, moduleInfo, metadataImport, metadataEmit, assemblyImport,
-                                                assemblyEmit, definition, targetMethod);
+        mdTypeDef typeDef = mdTypeDefNil;
+        if (FindTypeDefByName(instrumentationTargetTypeName, moduleInfo.assembly.name, metadataImport, typeDef))
+        {
+            ProcessTypeDefAndLocalFunctionsForRejit(definition, metadataImport, metadataEmit, assemblyImport,
+                                                    assemblyEmit, moduleInfo, typeDef, rejitRequests);
+        }
+
         return;
     }
 
@@ -260,10 +265,202 @@ void DebuggerRejitPreprocessor::ProcessTypesForRejit(
             EndsWith(shared::ToString(typeInfo.name), asNestedType))
         {
             // Now that we found the type, look for the methods within that type we want to instrument
-            RejitPreprocessor::ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport,
-                                                      assemblyEmit, moduleInfo, typeDef, rejitRequests);
+            ProcessTypeDefAndLocalFunctionsForRejit(definition, metadataImport, metadataEmit, assemblyImport,
+                                                    assemblyEmit, moduleInfo, typeDef, rejitRequests);
         }
     }
+}
+
+void DebuggerRejitPreprocessor::ProcessTypeDefAndLocalFunctionsForRejit(
+    const std::shared_ptr<MethodProbeDefinition>& definition, ComPtr<IMetaDataImport2>& metadataImport,
+    ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+    ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo, mdTypeDef typeDef,
+    std::vector<MethodIdentifier>& rejitRequests)
+{
+    const auto rejitRequestsBefore = rejitRequests.size();
+    RejitPreprocessor::ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                              moduleInfo, typeDef, rejitRequests);
+
+    // Symbol Database exposes C# local functions as methods of their type, under their source name
+    // (e.g. Program.GetProduct). They are only looked up when no method of the type matched the probe, so a method
+    // with that name takes precedence (and probes on regular methods, e.g. Exception Replay ones, pay nothing more).
+    const auto& localFunctionName = definition->target_method.method_name;
+    if (rejitRequests.size() != rejitRequestsBefore || !IsLocalFunctionSourceName(localFunctionName))
+    {
+        return;
+    }
+
+    // Local functions that capture nothing, only `this`, or only locals that no lambda captures are emitted on the
+    // type itself
+    ProcessLocalFunctionsOfType(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit, moduleInfo,
+                                typeDef, rejitRequests);
+
+    // Local functions that share captured locals with a lambda are emitted on a compiler-generated closure class
+    // (e.g. "<>c__DisplayClass0_0") nested in the type. Compiler-generated type names always start with '<'.
+    for (auto nestedTypeDef : EnumTypeDefs(metadataImport))
+    {
+        mdTypeDef enclosingTypeDef = mdTypeDefNil;
+        if (metadataImport->GetNestedClassProps(nestedTypeDef, &enclosingTypeDef) != S_OK ||
+            enclosingTypeDef != typeDef)
+        {
+            continue;
+        }
+
+        WCHAR typeName[kNameMaxSize]{};
+        ULONG typeNameLength = 0;
+        DWORD typeFlags = 0;
+        mdToken typeExtends = mdTokenNil;
+        if (FAILED(metadataImport->GetTypeDefProps(nestedTypeDef, typeName, kNameMaxSize, &typeNameLength, &typeFlags,
+                                                   &typeExtends)) ||
+            typeName[0] != WStr('<'))
+        {
+            continue;
+        }
+
+        ProcessLocalFunctionsOfType(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                    moduleInfo, nestedTypeDef, rejitRequests);
+    }
+}
+
+void DebuggerRejitPreprocessor::ProcessLocalFunctionsOfType(const std::shared_ptr<MethodProbeDefinition>& definition,
+                                                            ComPtr<IMetaDataImport2>& metadataImport,
+                                                            ComPtr<IMetaDataEmit2>& metadataEmit,
+                                                            ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                                                            ComPtr<IMetaDataAssemblyEmit>& assemblyEmit,
+                                                            const ModuleInfo& moduleInfo, mdTypeDef ownerTypeDef,
+                                                            std::vector<MethodIdentifier>& rejitRequests)
+{
+    const auto& localFunctionName = definition->target_method.method_name;
+    std::vector<shared::WSTRING> localFunctionMethodNames;
+    auto enumMethods = trace::Enumerator<mdMethodDef>(
+        [&metadataImport, ownerTypeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+            return metadataImport->EnumMethods(ptr, ownerTypeDef, arr, max, cnt);
+        },
+        [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
+
+    for (auto methodDef : enumMethods)
+    {
+        WCHAR methodName[kNameMaxSize]{};
+        ULONG methodNameLength = 0;
+        mdTypeDef methodTypeDef = mdTypeDefNil;
+        DWORD methodAttributes = 0;
+        PCCOR_SIGNATURE methodSignature = nullptr;
+        ULONG methodSignatureLength = 0;
+        ULONG methodRva = 0;
+        DWORD methodImplFlags = 0;
+        if (FAILED(metadataImport->GetMethodProps(methodDef, &methodTypeDef, methodName, kNameMaxSize,
+                                                  &methodNameLength, &methodAttributes, &methodSignature,
+                                                  &methodSignatureLength, &methodRva, &methodImplFlags)) ||
+            methodName[0] != WStr('<'))
+        {
+            continue;
+        }
+
+        shared::WSTRING metadataName(methodName);
+        if (IsLocalFunctionNamed(metadataName, localFunctionName))
+        {
+            localFunctionMethodNames.push_back(std::move(metadataName));
+        }
+    }
+
+    // Enqueue through the regular path, which keeps the probe definition (and its source name) as is
+    for (const auto& localFunctionMethodName : localFunctionMethodNames)
+    {
+        Logger::Debug("    * Method probe target ", definition->target_method.type.name, ".", localFunctionName,
+                      " matches local function ", localFunctionMethodName);
+        RejitPreprocessor::ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport,
+                                                  assemblyEmit, moduleInfo, ownerTypeDef, rejitRequests,
+                                                  &localFunctionMethodName);
+    }
+}
+
+bool DebuggerRejitPreprocessor::IsLocalFunctionSourceName(const shared::WSTRING& name)
+{
+    return !name.empty() && name != tracemethodintegration_wildcardmethodname &&
+           name.find_first_of(WStr("<>|")) == shared::WSTRING::npos;
+}
+
+bool DebuggerRejitPreprocessor::IsLocalFunctionNamed(const shared::WSTRING& methodName,
+                                                     const shared::WSTRING& localFunctionName)
+{
+    // Roslyn emits a local function as "<{containing member}>g__{local function name}|{unique id}",
+    // e.g. "<<Main>$>g__GetProduct|0_0" for a local function declared in top-level statements.
+    // Keep in sync with SymbolExtractor.TryGetLocalFunctionName, which produces the names probes use.
+    static const shared::WSTRING localFunctionMarker = WStr(">g__");
+    if (!IsLocalFunctionSourceName(localFunctionName) || methodName.empty() || methodName[0] != WStr('<'))
+    {
+        return false;
+    }
+
+    const auto idSeparator = methodName.rfind(WStr('|'));
+    const auto markerAndNameLength = localFunctionMarker.size() + localFunctionName.size();
+    // The containing member name between '<' and the marker must not be empty
+    if (idSeparator == shared::WSTRING::npos || idSeparator < markerAndNameLength + 2)
+    {
+        return false;
+    }
+
+    const auto markerStart = idSeparator - markerAndNameLength;
+    return methodName.compare(markerStart, localFunctionMarker.size(), localFunctionMarker) == 0 &&
+           methodName.compare(markerStart + localFunctionMarker.size(), localFunctionName.size(),
+                              localFunctionName) == 0;
+}
+
+bool DebuggerRejitPreprocessor::IsLocalFunctionSignatureMatch(const std::vector<shared::WSTRING>& parameterTypes,
+                                                              const std::vector<shared::WSTRING>& expectedTypes,
+                                                              bool isInstanceMethod)
+{
+    // Roslyn passes the locals a local function captures (and no lambda does) as trailing by-ref parameters of a
+    // compiler-generated struct (e.g. "<>c__DisplayClass0_0&"). They are not part of the signature the user sees.
+    auto userParameterCount = parameterTypes.size();
+    while (userParameterCount > 0)
+    {
+        // e.g. "Samples.Handlers+<>c__DisplayClass0_0&", or "Samples.Handlers+<>c__DisplayClass0_0`1[System.Int32]&"
+        const auto& parameterType = parameterTypes[userParameterCount - 1];
+        if (parameterType.empty() || parameterType.back() != WStr('&'))
+        {
+            break;
+        }
+
+        const auto separator = parameterType.find_last_of(WStr(".+"), parameterType.find(WStr('[')));
+        const auto simpleNameIndex = separator == shared::WSTRING::npos ? 0 : separator + 1;
+        if (parameterType[simpleNameIndex] != WStr('<'))
+        {
+            break;
+        }
+
+        userParameterCount--;
+    }
+
+    // An instance local function shows `this` only when the user's `this` is in scope (e.g. not when it is an
+    // instance method of a closure class created in static code), so its expected types may start with the
+    // declaring type.
+    const size_t maxThisOffset = isInstanceMethod ? 1 : 0;
+    for (size_t thisOffset = 0; thisOffset <= maxThisOffset && thisOffset <= expectedTypes.size(); thisOffset++)
+    {
+        if (expectedTypes.size() - thisOffset != userParameterCount)
+        {
+            continue;
+        }
+
+        auto isMatch = true;
+        for (size_t i = 0; i < userParameterCount; i++)
+        {
+            const auto& expectedType = expectedTypes[i + thisOffset];
+            if (parameterTypes[i] != expectedType && expectedType != WStr("_"))
+            {
+                isMatch = false;
+                break;
+            }
+        }
+
+        if (isMatch)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 const MethodReference&
@@ -300,6 +497,26 @@ const bool DebuggerRejitPreprocessor::SupportsSelectiveEnablement()
 bool DebuggerRejitPreprocessor::CheckExactSignatureMatch(ComPtr<IMetaDataImport2>& metadataImport,
     const FunctionInfo& functionInfo, const MethodReference& targetMethod)
 {
+    if (IsLocalFunctionNamed(functionInfo.name, targetMethod.method_name))
+    {
+        // The probe signature is the one Symbol Database shows for the local function, not the compiled one
+        std::vector<shared::WSTRING> parameterTypes;
+        for (const auto& argument : functionInfo.method_signature.GetMethodArguments())
+        {
+            parameterTypes.push_back(argument.GetTypeTokName(metadataImport));
+        }
+
+        const auto isInstanceMethod = functionInfo.method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS;
+        if (!IsLocalFunctionSignatureMatch(parameterTypes, targetMethod.signature_types, isInstanceMethod))
+        {
+            Logger::Debug("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
+                          ": the local function doesn't have the right arguments.");
+            return false;
+        }
+
+        return true;
+    }
+
     const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
     const auto isStatic = !(functionInfo.method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     const auto thisArg = isStatic ? 0 : 1;

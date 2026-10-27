@@ -27,6 +27,20 @@ public:
                                      const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
                                      std::shared_ptr<std::promise<std::vector<RejitRequest>>> promise);
 
+    // Returns true when `name` can be the source name of a C# local function: not empty, not the wildcard and
+    // without the characters the compiler uses in generated names.
+    static bool IsLocalFunctionSourceName(const shared::WSTRING& name);
+
+    // Returns true when `methodName` is the metadata name the C# compiler emits for a local function
+    // declared in source as `localFunctionName`, i.e. "<{containing member}>g__{localFunctionName}|{id}".
+    static bool IsLocalFunctionNamed(const shared::WSTRING& methodName, const shared::WSTRING& localFunctionName);
+
+    // Returns true when the parameter types of a local function match the signature Symbol Database shows for it:
+    // without the closure parameters the compiler adds, and for an instance method with or without the declaring
+    // type for `this`.
+    static bool IsLocalFunctionSignatureMatch(const std::vector<shared::WSTRING>& parameterTypes,
+                                              const std::vector<shared::WSTRING>& expectedTypes, bool isInstanceMethod);
+
 protected:
     void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
                                       ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
@@ -68,6 +82,22 @@ protected:
     static std::tuple<HRESULT, mdMethodDef, FunctionInfo> TransformKickOffToMoveNext(const ComPtr<IMetaDataImport2>& metadataImport,
                                                                                      const ComPtr<IMetaDataEmit2>& metadataEmit,
                                                                                      mdMethodDef moveNextMethod, mdTypeDef nestedAsyncClassOrStruct);
+
+private:
+    // Processes the type like ProcessTypeDefForRejit and, when no method of the type matched, the local functions
+    // declared in the type with the probe's method name as source name.
+    void ProcessTypeDefAndLocalFunctionsForRejit(const std::shared_ptr<MethodProbeDefinition>& definition,
+                                                 ComPtr<IMetaDataImport2>& metadataImport,
+                                                 ComPtr<IMetaDataEmit2>& metadataEmit,
+                                                 ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                                                 ComPtr<IMetaDataAssemblyEmit>& assemblyEmit,
+                                                 const ModuleInfo& moduleInfo, mdTypeDef typeDef,
+                                                 std::vector<MethodIdentifier>& rejitRequests);
+    void ProcessLocalFunctionsOfType(const std::shared_ptr<MethodProbeDefinition>& definition,
+                                     ComPtr<IMetaDataImport2>& metadataImport, ComPtr<IMetaDataEmit2>& metadataEmit,
+                                     ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                                     ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
+                                     mdTypeDef ownerTypeDef, std::vector<MethodIdentifier>& rejitRequests);
 };
 
 } // namespace debugger
