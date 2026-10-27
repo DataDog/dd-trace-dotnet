@@ -37,6 +37,16 @@ TEST(IastIntegrationTests, VersionInfo_ToString)
     EXPECT_EQ(WStr("11.22.33.0"), versionInfo.ToString());
 }
 
+TEST(IastIntegrationTests, GetDatadogAssemblyMetadata_UsesFourPartVersion)
+{
+    // The reference to Datadog.Trace must carry the revision (1 for prereleases), or .NET Framework won't resolve it
+    auto metadata = iast::GetDatadogAssemblyMetadata();
+    EXPECT_EQ(DD_VERSION_MAJOR, metadata->usMajorVersion);
+    EXPECT_EQ(DD_VERSION_MINOR, metadata->usMinorVersion);
+    EXPECT_EQ(DD_VERSION_PATCH, metadata->usBuildNumber);
+    EXPECT_EQ(DD_VERSION_REVISION, metadata->usRevisionNumber);
+}
+
 TEST(IastIntegrationTests, Match)
 {
     EXPECT_EQ(iast::MatchResult::Exact, iast::IsMatch("Match", "Match"));

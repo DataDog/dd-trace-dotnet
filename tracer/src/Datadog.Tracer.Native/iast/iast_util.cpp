@@ -120,13 +120,14 @@ namespace iast
     {
         if (!pDatadogAssemblyMetaData)
         {
-            auto versionInfo = GetVersionInfo(GetDatadogVersion());
+            // The four-part version rather than the three-part GetDatadogVersion(), because this is the strong
+            // name of the Datadog.Trace reference that instrumented modules get
             pDatadogAssemblyMetaData = new ASSEMBLYMETADATA();
             ZeroMemory(pDatadogAssemblyMetaData, sizeof(*pDatadogAssemblyMetaData));
-            pDatadogAssemblyMetaData->usMajorVersion = versionInfo.major;
-            pDatadogAssemblyMetaData->usMinorVersion = versionInfo.minor;
-            pDatadogAssemblyMetaData->usBuildNumber = versionInfo.build;
-            pDatadogAssemblyMetaData->usRevisionNumber = versionInfo.rev;
+            pDatadogAssemblyMetaData->usMajorVersion = DD_VERSION_MAJOR;
+            pDatadogAssemblyMetaData->usMinorVersion = DD_VERSION_MINOR;
+            pDatadogAssemblyMetaData->usBuildNumber = DD_VERSION_PATCH;
+            pDatadogAssemblyMetaData->usRevisionNumber = DD_VERSION_REVISION;
         }
         return pDatadogAssemblyMetaData;
     }
