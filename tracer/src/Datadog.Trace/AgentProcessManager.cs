@@ -67,10 +67,6 @@ namespace Datadog.Trace
             ReadyToStart,
             Faulted,
             Healthy,
-
-            /// <summary>
-            /// The process started by this keep-alive is still running but the health check fails.
-            /// </summary>
             Unhealthy
         }
 
@@ -492,7 +488,6 @@ namespace Datadog.Trace
                 return KeepAliveAction.Start;
             }
 
-            // Only the process we started is ever restarted
             return failedHealthChecks >= MaxFailedHealthChecks ? KeepAliveAction.Restart : KeepAliveAction.None;
         }
 
@@ -616,8 +611,9 @@ namespace Datadog.Trace
                 return false;
             }
 
-            // Only report and count each exit once
             metadata.SequentialFailures++;
+
+            // Forget the process so this exit is reported and counted only once
             ForgetOwnProcess(metadata);
             return true;
         }
