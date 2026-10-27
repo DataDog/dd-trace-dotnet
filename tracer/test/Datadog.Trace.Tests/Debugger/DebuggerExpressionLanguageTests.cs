@@ -2967,8 +2967,8 @@ namespace Datadog.Trace.Tests.Debugger
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
             var result = EvaluateCompiled(compiled, scopeMembers);
 
-            Assert.Equal("{[hello, ], }", result);
-            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+            result.Should().Be("dictionary={[hello, ]}");
+            compiled.Errors.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -3598,6 +3598,39 @@ namespace Datadog.Trace.Tests.Debugger
             var result = evaluator.Evaluate(scopeMembers);
 
             result.Template.Should().Be("Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+ThrowingMessageException, customer message");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Theory]
+        [InlineData(new[] { "a", "b" }, "[a, b]", "{[a, a], [b, b]}")]
+        [InlineData(new[] { "a", "b", "c" }, "[a, b, c]", "{[a, a], [b, b], [c, c]}")]
+        [InlineData(new[] { "a", "b", "c", "d" }, "[a, b, c, ...]", "{[a, a], [b, b], [c, c], ...}")]
+        public void ProbeExpressionEvaluator_TemplateDump_CollectionsListAtMostThreeItems(string[] items, string expectedList, string expectedDictionary)
+        {
+            var list = new List<string>(items);
+            var dictionary = items.ToDictionary(item => item);
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("FormatListLocal", typeof(List<string>), list, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("FormatDictionaryLocal", typeof(Dictionary<string, string>), dictionary, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpCollectionFieldsHolder), new DumpCollectionFieldsHolder(list, dictionary, missing: null), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(string.Empty, @"{""ref"":""FormatListLocal""}", null),
+                    new DebuggerExpression(null, null, " | "),
+                    new DebuggerExpression(string.Empty, @"{""ref"":""FormatDictionaryLocal""}", null),
+                    new DebuggerExpression(null, null, " | "),
+                    new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be($"{expectedList} | {expectedDictionary} | _list={expectedList}, _map={expectedDictionary}, _missing=null");
             result.Errors.Should().BeNullOrEmpty();
         }
 
@@ -4876,6 +4909,22 @@ namespace Datadog.Trace.Tests.Debugger
             public VisibleRuntimeTypeValue(string data)
             {
                 _data = data;
+            }
+        }
+
+        private sealed class DumpCollectionFieldsHolder
+        {
+            private readonly List<string> _list;
+
+            private readonly Dictionary<string, string> _map;
+
+            private readonly List<string> _missing;
+
+            public DumpCollectionFieldsHolder(List<string> list, Dictionary<string, string> map, List<string> missing)
+            {
+                _list = list;
+                _map = map;
+                _missing = missing;
             }
         }
 
