@@ -2970,6 +2970,10 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(@"{""ref"":""password""}")]
         [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""password""]}")]
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}")]
+        [InlineData(@"{""len"":{""ref"":""password""}}")]
+        [InlineData(@"{""substring"":[{""ref"":""password""},0,3]}")]
+        [InlineData(@"{""eq"":[{""ref"":""password""},""TOP_SECRET_VALUE""]}")]
+        [InlineData(@"{""isEmpty"":{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}}")]
         public void ProbeExpressionEvaluator_TemplateRedaction_PreservesRenderedPlaceholderAndError(string json)
         {
             var scopeMembers = CreateScopeMembers();
@@ -2997,7 +3001,49 @@ namespace Datadog.Trace.Tests.Debugger
             result.Template.Should().Be("value={redacted}");
             var error = result.Errors.Should().ContainSingle().Subject;
             error.Message.Should().Be("The property or field is redacted.");
-            error.IsTemplateRedaction.Should().BeTrue();
+            error.IsRedaction.Should().BeTrue();
+            result.HasConditionError.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_ConditionRedaction_IsConditionError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(null, null, "message")],
+                condition: new DebuggerExpression(string.Empty, @"{""eq"":[{""ref"":""password""},""TOP_SECRET_VALUE""]}", null),
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.HasConditionError.Should().BeTrue();
+            var error = result.Errors.Should().ContainSingle().Subject;
+            error.IsRedaction.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(@"{""ref"":""password""}")]
+        [InlineData(@"{""len"":{""ref"":""password""}}")]
+        public void ProbeExpressionEvaluator_CaptureExpressionRedaction_CapturesPlaceholder(string json)
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = CreateEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: [new CaptureExpressionDefinition("secret", new DebuggerExpression(string.Empty, json, null), default)]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().Be("{redacted}");
+            var error = result.Errors.Should().ContainSingle().Subject;
+            error.IsRedaction.Should().BeTrue();
+            result.HasConditionError.Should().BeFalse();
         }
 
         [Fact]

@@ -490,31 +490,33 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.Equal("first evaluation error", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
         }
 
-        [Fact]
-        public void Message_UsesRenderedTemplateForTemplateRedaction()
+        [Theory]
+        [InlineData(false, false, "direct={redacted}")]
+        [InlineData(true, false, "other evaluation error")]
+        [InlineData(false, true, "The property or field is redacted.")]
+        public void Message_UsesRenderedTemplateUnlessAnotherErrorOrConditionError(bool hasOtherError, bool hasConditionError, string expectedMessage)
         {
             var captureLimitInfo = CreateCaptureLimitInfo();
             var snapshotCreator = new DebuggerSnapshotCreator(
                 isFullSnapshot: false,
                 Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
-                hasCondition: false,
+                hasCondition: hasConditionError,
                 tags: [],
                 limitInfo: captureLimitInfo,
                 processTagsProvider: static () => null,
                 serviceNameProvider: static () => "test-service");
 
+            List<EvaluationError> errors = [new EvaluationError { Expression = "password", Message = "The property or field is redacted.", IsRedaction = true }];
+            if (hasOtherError)
+            {
+                errors.Add(new EvaluationError { Expression = "other", Message = "other evaluation error" });
+            }
+
             var evaluationResult = new ExpressionEvaluationResult
             {
                 Template = "direct={redacted}",
-                Errors =
-                [
-                    new EvaluationError
-                    {
-                        Expression = "password",
-                        Message = "The property or field is redacted.",
-                        IsTemplateRedaction = true
-                    }
-                ]
+                Errors = errors,
+                HasConditionError = hasConditionError
             };
 
             snapshotCreator.SetEvaluationResult(ref evaluationResult);
@@ -530,8 +532,8 @@ namespace Datadog.Trace.Tests.Debugger
 
             var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
 
-            Assert.Equal("direct={redacted}", snapshot["message"]?.Value<string>());
-            Assert.Equal("The property or field is redacted.", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+            snapshot["message"]?.Value<string>().Should().Be(expectedMessage);
+            snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>().Should().Be("The property or field is redacted.");
         }
 
         [Fact]
