@@ -98,7 +98,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
         // - global sampling rate
         //   - remote
         //   - local = DD_TRACE_SAMPLE_RATE
-        // - agent sampling rates, if using a Datadog encoding (as a single rule)
+        // - agent sampling rates (as a single rule), or keep all traces if exporting over OTLP
 
         // Note: the order that rules are registered is important, as they are evaluated in order.
         // The first rule that matches will be used to determine the sampling rate.
@@ -155,12 +155,15 @@ internal sealed class ManagedTraceSampler : ITraceSampler
             }
         }
 
-        // If OTLP traces are enabled, don't register agent sampling rules
         if (exporterSettings.TracesEncoding is TracesEncoding.DatadogV0_4)
         {
             // AgentSamplingRule handles all sampling rates received from the agent as a single "rule".
             // This rule is always present, even if the agent has not yet provided any sampling rates.
             sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
+        }
+        else
+        {
+            sampler.RegisterRule(new DefaultSamplingRule());
         }
 
         return sampler.Build();
