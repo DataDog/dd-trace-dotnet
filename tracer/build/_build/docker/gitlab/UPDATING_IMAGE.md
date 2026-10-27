@@ -6,6 +6,8 @@ The Windows GitLab CI build container is defined by `gitlab.windows.dockerfile` 
 
 This is a single-PR flow. You do not need a local Windows machine with Docker Desktop, and you do not need to touch `DataDog/images`.
 
+Publication is manual because the job builds branch-controlled Dockerfiles and scripts, then writes shared registry tags used by other pipelines. Keeping this step manual provides a review checkpoint before publication instead of publishing automatically from every PR. Pipelines that can reuse an existing image need no manual action.
+
 ### 1. Edit the image
 
 Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoint.bat`, `requirements.txt`, `constraints.txt`, etc. Every file in this directory contributes to the image hash, so any change produces a new tag.
@@ -16,7 +18,7 @@ Push the branch. `check-windows-ci-image` automatically checks the expected tag 
 
 ### 3. Publish a missing image manually
 
-If the check fails because the image is missing, review the image changes, then manually run `build-windows-ci-image` in the same pipeline. This job is optional so pipelines with an existing image do not wait for approval. It will:
+If the check fails because the image is missing, open the same pipeline in GitLab, review the image changes, and click **Run/play** on `build-windows-ci-image`. Wait for that job to succeed before retrying the check. This job is optional so pipelines with an existing image do not wait for approval. It will:
 
 1. Compute the hash via `compute-image-hash.ps1`.
 2. Short-circuit if the tag already exists in `registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build`.

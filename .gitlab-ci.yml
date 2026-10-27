@@ -90,9 +90,14 @@ check-windows-ci-image:
       docker manifest inspect $image
       if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Cannot access the expected Windows build image: $image"
-        Write-Host "If the tag is missing, review the image changes and manually run 'build-windows-ci-image' in this pipeline."
-        Write-Host "After publication succeeds, retry 'check-windows-ci-image', then retry any skipped or failed consumers."
-        Write-Host "For authentication or network errors, resolve those first and retry this check."
+        Write-Host "This job only checks availability; retrying it does NOT build or publish the image."
+        Write-Host "If Docker reported 'no such manifest' or 'manifest unknown', the image must be published manually:"
+        Write-Host "  1. Open this pipeline in GitLab: $env:CI_PIPELINE_URL"
+        Write-Host "  2. Review the image changes, then manually run 'build-windows-ci-image' using its Run/play button."
+        Write-Host "  3. Wait for 'build-windows-ci-image' to finish successfully."
+        Write-Host "  4. Retry 'check-windows-ci-image' (this job)."
+        Write-Host "  5. After the check succeeds, retry any consumers that remain skipped or failed."
+        Write-Host "If Docker reported an authentication or network error instead, resolve that error and retry this check; rebuilding may not be needed."
         exit 1
       }
   id_tokens:
@@ -164,9 +169,11 @@ build:
 
       docker manifest inspect $env:WINDOWS_BUILD_IMAGE
       if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
-        Write-Host "The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed."
-        Write-Host "Review the image changes, manually run 'build-windows-ci-image', then retry 'check-windows-ci-image' and this job."
+        Write-Host "ERROR: Cannot access the expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
+        Write-Host "Open this pipeline in GitLab: $env:CI_PIPELINE_URL"
+        Write-Host "If Docker reported a missing manifest, review the image changes and click Run/play on 'build-windows-ci-image'."
+        Write-Host "Wait for publication to succeed, retry 'check-windows-ci-image', then retry this job. Retrying this job alone does not publish the image."
+        Write-Host "For authentication or network errors, resolve those first. See 'check-windows-ci-image' for detailed recovery steps."
         exit 1
       }
     - |
