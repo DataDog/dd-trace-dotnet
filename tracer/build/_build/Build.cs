@@ -117,6 +117,15 @@ partial class Build : NukeBuild
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
 
+    string CppCheckVersionDefines
+    {
+        get
+        {
+            var version = new System.Version(Version);
+            return $"-DDD_VERSION_MAJOR={version.Major} -DDD_VERSION_MINOR={version.Minor} -DDD_VERSION_PATCH={version.Build}";
+        }
+    }
+
     public Build()
     {
         RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
