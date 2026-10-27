@@ -44,6 +44,9 @@ partial class Build : NukeBuild
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
 
+    [Parameter("Build managed unit tests only for --framework and restore dependencies, using existing producer artifacts. Defaults to false.")]
+    readonly bool UnitTestFrameworkOnly;
+
     [Parameter("Should all versions of integration NuGet packages be tested")]
     readonly bool TestAllPackageVersions;
 
@@ -274,6 +277,7 @@ partial class Build : NukeBuild
 
     Target BuildManagedUnitTests => _ => _
         .Description("Builds the managed unit tests")
+        .Requires(() => !UnitTestFrameworkOnly || Framework != null)
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(RestoreManagedUnitTestPackages)
@@ -464,11 +468,11 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
-                .When(!IsGitlab || Framework is null, settings => settings.EnableNoRestore())
+                .When(!UnitTestFrameworkOnly, settings => settings.EnableNoRestore())
                 // The runner has no .NET Framework target; net48 unit tests use net8.0.
-                .When(IsGitlab && Framework is not null, settings => settings.SetFramework(Framework == TargetFramework.NET48 ? TargetFramework.NET8_0 : Framework))
+                .When(UnitTestFrameworkOnly, settings => settings.SetFramework(Framework == TargetFramework.NET48 ? TargetFramework.NET8_0 : Framework))
                 // Platform=AnyCPU alone does not override an inherited PlatformTarget=x64 from the build host.
-                .When(IsGitlab && Framework is not null, settings => settings.SetTargetPlatformAnyCPU().SetProperty("PlatformTarget", "AnyCPU"))
+                .When(UnitTestFrameworkOnly, settings => settings.SetTargetPlatformAnyCPU().SetProperty("PlatformTarget", "AnyCPU"))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()

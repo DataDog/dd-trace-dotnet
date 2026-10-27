@@ -1,4 +1,5 @@
-ARG TESTER_IMAGE=dd-trace-dotnet/debian-tester:latest
+# The caller must supply the job-specific tester image built with the selected SDK.
+ARG TESTER_IMAGE
 
 FROM ${TESTER_IMAGE}
 

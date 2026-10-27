@@ -72,7 +72,9 @@ shadow-build-unit-tests:
     SHADOW_ALL_TEST_FRAMEWORKS: $run_all_test_frameworks
 
 check-windows-ci-image:
-  stage: .pre
+  stage: build
+  # Start immediately without making image availability a global .pre barrier.
+  needs: []
   timeout: 15m
   tags: ["windows-v2:2022"]
   rules:
@@ -155,6 +157,9 @@ build:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
+  needs:
+    - job: check-windows-ci-image
+      artifacts: false
   timeout: 2h
   tags: ["windows-v2:2022"]
   hooks:
@@ -166,16 +171,6 @@ build:
     - |
       $env:WINDOWS_BUILD_IMAGE = & .gitlab/get-windows-build-image.ps1
       Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
-
-      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
-      if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: Cannot access the expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
-        Write-Host "Open this pipeline in GitLab: $env:CI_PIPELINE_URL"
-        Write-Host "If Docker reported a missing manifest, review the image changes and click Run/play on 'build-windows-ci-image'."
-        Write-Host "Wait for publication to succeed, retry 'check-windows-ci-image', then retry this job. Retrying this job alone does not publish the image."
-        Write-Host "For authentication or network errors, resolve those first. See 'check-windows-ci-image' for detailed recovery steps."
-        exit 1
-      }
     - |
       try {
         $computerSystem = Get-CimInstance Win32_ComputerSystem

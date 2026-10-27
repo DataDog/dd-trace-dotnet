@@ -342,18 +342,18 @@ partial class Build
     Target RestoreManagedUnitTestPackages => _ => _
         .Unlisted()
         .Before(BuildRunnerTool, CompileManagedUnitTests)
-        .OnlyWhenDynamic(() => IsGitlab && !string.IsNullOrEmpty(NugetPackageDirectory))
+        .OnlyWhenDynamic(() => UnitTestFrameworkOnly)
         .Executes(() =>
         {
             // NuGet.exe restore does not fully populate all SDK-style PackageReference
-            // dependencies required by the managed test graph. GitLab runs the build and
-            // tests in separate containers, so restore them into the mounted package directory.
+            // dependencies required by the managed test graph. Framework-only builds consume
+            // producer artifacts without restore state, so restore into the requested package directory.
             DotNetRestore(s => s
                 .SetProjectFile(Solution)
                 .SetVerbosity(DotNetVerbosity.Minimal)
                 .SetProperty("configuration", BuildConfiguration.ToString())
                 .SetProperty("Platform", "Any CPU")
-                .SetPackageDirectory(NugetPackageDirectory));
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), s => s.SetPackageDirectory(NugetPackageDirectory)));
         });
 
     Target CompileTracerNativeSrcWindows => _ => _
@@ -875,7 +875,7 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var frameworks = project.TryGetTargetFrameworks();
-                    if (IsGitlab && Framework is not null)
+                    if (UnitTestFrameworkOnly)
                     {
                         frameworks = frameworks.Where(x => x == Framework).ToList();
                     }
@@ -1510,7 +1510,7 @@ partial class Build
         {
             DotnetBuild(
                 TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"),
-                noRestore: !IsGitlab || Framework is null,
+                noRestore: !UnitTestFrameworkOnly,
                 noDependencies: false);
         });
 
@@ -1522,11 +1522,11 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order
-            var framework = IsGitlab ? Framework : null;
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"), noRestore: !IsGitlab);
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"), noRestore: !IsGitlab);
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: framework, noRestore: !IsGitlab);
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: framework, noRestore: !IsGitlab);
+            var framework = UnitTestFrameworkOnly ? Framework : null;
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"), noRestore: !UnitTestFrameworkOnly);
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"), noRestore: !UnitTestFrameworkOnly);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: framework, noRestore: !UnitTestFrameworkOnly);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: framework, noRestore: !UnitTestFrameworkOnly);
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -1541,7 +1541,7 @@ partial class Build
         .Executes(() =>
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj");
-            if (IsGitlab && Framework is not null)
+            if (UnitTestFrameworkOnly)
             {
                 testProjects = testProjects
                               .Where(path => TargetsFramework(Solution.GetProject(path), Framework))
@@ -1550,8 +1550,8 @@ partial class Build
 
             DotnetBuild(
                 testProjects,
-                framework: IsGitlab ? Framework : null,
-                noRestore: !IsGitlab);
+                framework: UnitTestFrameworkOnly ? Framework : null,
+                noRestore: !UnitTestFrameworkOnly);
         });
 
     Target ConfigureGitlabUnitTestCredentials => _ => _
@@ -1597,6 +1597,7 @@ partial class Build
 
     Target RunManagedUnitTests => _ => _
         .Unlisted()
+        .Requires(() => !UnitTestFrameworkOnly || Framework != null)
         .After(CompileManagedUnitTests)
         .DependsOn(CleanTestLogs)
         .DependsOn(ConfigureGitlabUnitTestCredentials)
@@ -1604,11 +1605,11 @@ partial class Build
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
-                .Where(project => !IsGitlab || Framework is null || TargetsFramework(project, Framework))
+                .Where(project => !UnitTestFrameworkOnly || TargetsFramework(project, Framework))
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            if (IsGitlab && testProjects.Count == 0)
+            if (UnitTestFrameworkOnly && testProjects.Count == 0)
             {
                 throw new InvalidOperationException($"No managed unit-test projects target {Framework}");
             }
@@ -1618,44 +1619,7 @@ partial class Build
             var defaultDotNetLogger = DotNetTasks.DotNetLogger;
             if (IsGitlab)
             {
-                var suppressedDatadogTestMessage = new AsyncLocal<string>();
-                DotNetTasks.DotNetLogger = (type, text) =>
-                {
-                    // The Datadog test logger emits STARTED and SUCCESS messages for every
-                    // test. Test arguments can span multiple lines, so suppress their
-                    // continuations too while preserving failures, skips, and diagnostics.
-                    if (text.Contains(": STARTED:", StringComparison.Ordinal))
-                    {
-                        suppressedDatadogTestMessage.Value = text.TrimEnd().EndsWith(")", StringComparison.Ordinal) ? null : "started";
-                        return;
-                    }
-
-                    if (text.Contains(": SUCCESS:", StringComparison.Ordinal))
-                    {
-                        suppressedDatadogTestMessage.Value = text.TrimEnd().EndsWith("s)", StringComparison.Ordinal) ? null : "success";
-                        return;
-                    }
-
-                    // A new xUnit event is never a continuation of the suppressed message.
-                    // Reset first so failures and skips cannot be hidden.
-                    if (text.Contains("[xUnit.net ", StringComparison.Ordinal))
-                    {
-                        suppressedDatadogTestMessage.Value = null;
-                    }
-                    else if (suppressedDatadogTestMessage.Value is { } suppressedMessage)
-                    {
-                        var trimmedText = text.TrimEnd();
-                        if ((suppressedMessage == "started" && trimmedText.EndsWith(")", StringComparison.Ordinal)) ||
-                            (suppressedMessage == "success" && trimmedText.EndsWith("s)", StringComparison.Ordinal)))
-                        {
-                            suppressedDatadogTestMessage.Value = null;
-                        }
-
-                        return;
-                    }
-
-                    defaultDotNetLogger(type, text);
-                };
+                DotNetTasks.DotNetLogger = UnitTestOutputFilter.Wrap(defaultDotNetLogger);
             }
 
             try

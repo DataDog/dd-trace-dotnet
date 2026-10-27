@@ -14,7 +14,7 @@ Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoin
 
 ### 2. Open a PR
 
-Push the branch. `check-windows-ci-image` automatically checks the expected tag in `.pre`, without building or pushing images. If it exists, consumers proceed without manual approval. Both image jobs are excluded when all consumers are excluded: tag pipelines, or pipelines with both `DEPLOY_TO_REL_ENV=true` and a nonempty `DOTNET_PACKAGE_VERSION`.
+Push the branch. `check-windows-ci-image` starts immediately in the `build` stage, without building or pushing images. Windows consumers depend on it explicitly, so unrelated build jobs do not wait for a global `.pre` check. If the image exists, consumers proceed without manual approval. Both image jobs are excluded when all consumers are excluded: tag pipelines, or pipelines with both `DEPLOY_TO_REL_ENV=true` and a nonempty `DOTNET_PACKAGE_VERSION`.
 
 ### 3. Publish a missing image manually
 
