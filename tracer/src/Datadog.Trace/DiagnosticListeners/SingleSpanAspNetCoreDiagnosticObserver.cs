@@ -290,9 +290,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
                     tags.AspNetCoreRoute = normalizedRoute;
 
-                    if (normalizedRoute is not null)
+                    if (normalizedRoute is not null && NormalizedRoute.IsEnabled(_security))
                     {
-                        NormalizedRoute.SetTag(_security, rootSpan, routePattern, routeValues);
+                        NormalizedRoute.SetTag(rootSpan, routePattern, routeValues, request.PathBase.Value);
                     }
                 }
 

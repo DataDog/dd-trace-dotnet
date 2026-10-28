@@ -9,6 +9,7 @@ using Datadog.Trace.DuckTyping;
 using FluentAssertions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Patterns;
+using Microsoft.AspNetCore.Routing.Template;
 using Xunit;
 
 namespace Datadog.Trace.Tests.AppSec;
@@ -68,13 +69,68 @@ public class NormalizedRouteTests
         { "{controller}/{action}", "controller=My Home&action=Index", "/My%20Home/Index" },
     };
 
+    /// <summary>
+    /// Gets the <see cref="Routes"/> that <see cref="TemplateParser"/> accepts in every ASP.NET Core version
+    /// </summary>
+    public static TheoryData<string, string, string> TemplateRoutes { get; } = GetTemplateRoutes();
+
+    /// <summary>
+    /// Gets the route template, the path base, and the expected normalized route
+    /// </summary>
+    public static TheoryData<string, string, string> PathBaseRoutes { get; } = new()
+    {
+        { "users/{id}", "/api", "/api/users/{id}" },
+        { "users/{id}", "/api/v1/", "/api/v1/users/{id}" },
+        { "users/{id}", "/my app", "/my%20app/users/{id}" },
+        { "users/{id}", string.Empty, "/users/{id}" },
+        { string.Empty, "/api", "/api" },
+    };
+
     [Theory]
     [MemberData(nameof(Routes))]
-    public void Get_NormalizesRoute(string template, string routeValues, string expected)
+    public void Get_NormalizesRoutePattern(string template, string routeValues, string expected)
     {
         var routePattern = RoutePatternFactory.Parse(template).DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
 
         NormalizedRoute.Get(routePattern, ParseRouteValues(routeValues)).Should().Be(expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(TemplateRoutes))]
+    public void Get_NormalizesRouteTemplate(string template, string routeValues, string expected)
+    {
+        var routeTemplate = TemplateParser.Parse(template);
+
+        NormalizedRoute.Get(routeTemplate, ParseRouteValues(routeValues)).Should().Be(expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(PathBaseRoutes))]
+    public void Get_IncludesPathBase(string template, string pathBase, string expected)
+    {
+        var routePattern = RoutePatternFactory.Parse(template).DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var routeTemplate = TemplateParser.Parse(template);
+        var routeValues = ParseRouteValues("id=1");
+
+        NormalizedRoute.Get(routePattern, routeValues, pathBase).Should().Be(expected);
+        NormalizedRoute.Get(routeTemplate, routeValues, pathBase).Should().Be(expected);
+    }
+
+    private static TheoryData<string, string, string> GetTemplateRoutes()
+    {
+        var data = new TheoryData<string, string, string>();
+        foreach (var row in Routes)
+        {
+            var template = (string)row[0];
+
+            // MVC templates have no leading slash, and "**" catch-alls only exist since ASP.NET Core 3.0
+            if (!template.StartsWith("/") && !template.Contains("{**"))
+            {
+                data.Add(template, (string)row[1], (string)row[2]);
+            }
+        }
+
+        return data;
     }
 
     private static RouteValueDictionary ParseRouteValues(string routeValues)

@@ -300,6 +300,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static Span StartMvcCoreSpan(
             Tracer tracer,
+            Security security,
             AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
             BeforeActionStruct typedArg,
             HttpContext httpContext,
@@ -342,12 +343,12 @@ namespace Datadog.Trace.DiagnosticListeners
                                   : null;
             string aspNetRoute = trackingFeature.Route;
             string resourceName = trackingFeature.ResourceName;
+            RouteTemplate routeTemplate = null;
 
             if (aspNetRoute is null || resourceName is null)
             {
                 // Not using endpoint routing
                 string rawRouteTemplate = actionDescriptor.AttributeRouteInfo?.Template;
-                RouteTemplate routeTemplate = null;
                 if (rawRouteTemplate is not null)
                 {
                     try
@@ -407,6 +408,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 rootSpan.ResourceName = effectiveResourceName;
+
+                if (aspNetRoute is not null && routeTemplate is not null && NormalizedRoute.IsEnabled(security))
+                {
+                    NormalizedRoute.SetTag(rootSpan, routeTemplate, typedArg.RouteData.Values, request.PathBase.Value);
+                }
             }
 
             if (otelSemanticsEnabled)
@@ -617,9 +623,9 @@ namespace Datadog.Trace.DiagnosticListeners
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
 
-                    if (normalizedRoute is not null)
+                    if (normalizedRoute is not null && NormalizedRoute.IsEnabled(_security))
                     {
-                        NormalizedRoute.SetTag(_security, rootSpan, routePattern, routeValues);
+                        NormalizedRoute.SetTag(rootSpan, routePattern, routeValues, request.PathBase.Value);
                     }
                 }
 
@@ -664,7 +670,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     else
                     {
                         // Returns null when OTel semantics are enabled: a single server span is generated
-                        span = StartMvcCoreSpan(_tracer, trackingFeature, typedArg, httpContext, request);
+                        span = StartMvcCoreSpan(_tracer, _security, trackingFeature, typedArg, httpContext, request);
                     }
                 }
 
