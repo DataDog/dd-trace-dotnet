@@ -5,7 +5,7 @@ These notes describe the build and unit-test shadow implementation, not the broa
 ## Scope and merge authority
 
 - Windows x64 runners build the tracer, loader, Continuous Profiler, and tools, run the existing x64/x86 native-test targets, and run managed unit tests.
-- Linux x64/ARM64 producers cover glibc/musl, including universal loader/wrapper builds. Managed unit tests run on both architectures; native suites run on x64.
+- Linux x64/ARM64 runners build the tracer, loader, Continuous Profiler, and tools for glibc/musl, including universal loader/wrapper builds. Managed unit tests run on both architectures; native test suites run on x64.
 - Integration tests, macOS jobs, coverage aggregation, and migration of signing/publication are outside this shadow's scope. Existing publication jobs do not consume shadow artifacts.
 
 `shadow-build-unit-tests` is the only optional boundary: failures inside its child pipelines propagate to that trigger through `strategy: depend`. Individual shadow jobs are not marked `allow_failure`. Azure remains authoritative.
@@ -14,14 +14,16 @@ Windows image preparation is a shared prerequisite for existing build/signing jo
 
 ## Why generate child-pipeline YAML?
 
-Both providers use NUKE to choose frameworks at runtime; they consume that selection differently:
+We generate YAML to keep framework lists and selection rules in NUKE, shared with Azure. Maintaining static GitLab matrices would duplicate those lists and require separate selection rules or jobs that start only to skip themselves. That creates another place to update when supported frameworks or test-selection behavior changes.
+
+NUKE determines the applicable matrix during a job, after the parent pipeline has been created. GitLab cannot use that job's output to expand a matrix in the same pipeline. [Dynamic child pipelines](https://docs.gitlab.com/ci/pipelines/downstream_pipelines/#dynamic-child-pipelines) let us create only the selected jobs afterward, while keeping their execution steps in static templates.
+
+Both providers therefore consume the same NUKE selection through different mechanisms:
 
 | Provider | How the selected matrix becomes jobs |
 | --- | --- |
 | Azure | `GenerateVariables` publishes JSON output variables consumed by `strategy.matrix` in the static pipeline. |
 | GitLab | `GenerateGitlabUnitTestsPipelines` writes YAML artifacts that trigger child pipelines. Generated jobs extend committed, static templates. |
-
-GitLab's matrix configuration is resolved when a pipeline is created, rather than from the output of a preceding job in that pipeline. [Dynamic child pipelines](https://docs.gitlab.com/ci/pipelines/downstream_pipelines/#dynamic-child-pipelines) let NUKE select the jobs without duplicating its selection rules in GitLab YAML.
 
 Ordinary changes use reduced framework lists. Mainline, relevant broad-impact changes, or `run_all_test_frameworks=true` select the full framework lists. That flag expands frameworks only; it does not enable integration tests or other test families. Keep framework and thorough-testing selection in NUKE, shared with Azure.
 
