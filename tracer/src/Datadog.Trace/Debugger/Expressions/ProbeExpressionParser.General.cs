@@ -561,7 +561,7 @@ internal partial class ProbeExpressionParser<T>
                     DeriveRedactionCheck(dictionaryEntryMember, entryGuard.SourceCheck);
                 }
 
-                return RedactByType(dictionaryEntryMember, expression, propertyOrFieldValue, CurrentRedactionGuardScope);
+                return RedactByType(dictionaryEntryMember, expression, propertyOrFieldValue);
             }
 
             if (TryGetRedactionGuard(expression, out var guard))
@@ -575,7 +575,7 @@ internal partial class ProbeExpressionParser<T>
                 return UndefinedValue();
             }
 
-            return RedactByType(memberExpression, expression, propertyOrFieldValue, CurrentRedactionGuardScope);
+            return RedactByType(memberExpression, expression, propertyOrFieldValue);
         }
         catch (Exception e)
         {

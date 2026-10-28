@@ -4315,6 +4315,16 @@ namespace Datadog.Trace.Tests.Debugger
             {
             }
 
+            // A value read from outside the items of a predicate, and whether it is redacted. The second one is an item of
+            // a guarded array, so its guard reads the array's guard variable.
+            public static IEnumerable<object[]> ValuesReadFromOutsideTheItems()
+            {
+                yield return [@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}", true];
+                yield return [@"{""getmember"":[{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""BaseArrayWithRedactedItem""]},0]},""TestValue""]}", true];
+                yield return [@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBasePublic""]},""TestValue""]}", false];
+                yield return [@"{""getmember"":[{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""PublicBaseArray""]},0]},""TestValue""]}", false];
+            }
+
             [Theory]
             [InlineData(@"{""ref"":""PiiLocal""}")]
             [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]}")]
@@ -4663,6 +4673,116 @@ namespace Datadog.Trace.Tests.Debugger
                 AssertRedactionError(result, isRedactedType);
             }
 
+            // A value read in a predicate but not from its item, such as HolderLocal.AsBase, is the same for every item,
+            // so it is checked once per evaluation and its redaction is reported like a read outside the predicate.
+            [Theory]
+            [MemberData(nameof(ValuesReadFromOutsideTheItems))]
+            public void ProbeExpressionEvaluator_TemplateOverItemsReadingAValueFromOutsideThem_ReportsItsRedaction(string value, bool isRedacted)
+            {
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: $$"""{"any":[{"ref":"PublicListLocal"},{"eq":[{"getmember":["@it","TestValue"]},{{value}}]}]}""",
+                    condition: null);
+
+                result.Template.Should().Be("value=" + (isRedacted ? "{redacted}" : "True"));
+                AssertRedactionError(result, isRedacted);
+            }
+
+            [Theory]
+            [MemberData(nameof(ValuesReadFromOutsideTheItems))]
+            public void ProbeExpressionEvaluator_ConditionOverItemsReadingAValueFromOutsideThem_ReportsItsRedaction(string value, bool isRedacted)
+            {
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: null,
+                    condition: $$"""{"all":[{"ref":"PublicListLocal"},{"eq":[{"getmember":["@it","TestValue"]},{{value}}]}]}""");
+
+                result.Condition.Should().Be(!isRedacted);
+                result.HasConditionError.Should().Be(isRedacted);
+                AssertRedactionError(result, isRedacted);
+            }
+
+            [Theory]
+            [MemberData(nameof(ValuesReadFromOutsideTheItems))]
+            public void ProbeExpressionEvaluator_CaptureFilterReadingAValueFromOutsideTheItems_ReportsItsRedaction(string value, bool isRedacted)
+            {
+                // A capture filter's predicate runs as its own delegate, which reports through the budget it is passed.
+                var result = EvaluateProbe(
+                    captures:
+                    [
+                        new CaptureExpressionDefinition(
+                            "captured",
+                            ExpressionSegment($$"""{"filter":[{"ref":"PublicListLocal"},{"eq":[{"getmember":["@it","TestValue"]},{{value}}]}]}"""),
+                            new CaptureLimitInfo(MaxReferenceDepth: 3, MaxCollectionSize: 10, MaxLength: 255, MaxFieldCount: 20))
+                    ]);
+
+                result.CaptureExpressionCount.Should().Be(1);
+                if (isRedacted)
+                {
+                    result.CaptureExpressions[0].Value.Should().Be("{redacted}");
+                }
+                else
+                {
+                    ((IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value).Count.Should().Be(1);
+                }
+
+                AssertRedactionError(result, isRedacted);
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_ValueFromOutsideTheItemsOfAnEmptyCollection_IsNotReported()
+            {
+                // The check runs the first time an item reads the value, so a predicate that never runs reports nothing.
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: @"{""any"":[{""filter"":[{""ref"":""PublicListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""x""]}]},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}",
+                    condition: null);
+
+                result.Template.Should().Be("value=False");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_ValueFromOutsideTheItems_IsReadOncePerEvaluation(bool isRedactedType)
+            {
+                TargetBase item = isRedactedType
+                                      ? new RedactedTarget { TestValue = Secret, CustomKey = Secret }
+                                      : new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
+                CountingList<TargetBase> countedItems = [item];
+
+                // With a public value, all runs the predicate on both items, and only the first one reads and checks the
+                // value. A redacted one makes all stop at the first item.
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: null,
+                    condition: @"{""all"":[{""ref"":""BaseListLocal""},{""ne"":[{""getmember"":[{""index"":[{""ref"":""CountedLocal""},0]},""TestValue""]},""x""]}]}",
+                    countedItems: countedItems);
+
+                result.Condition.Should().Be(!isRedactedType);
+                AssertRedactionError(result, isRedactedType);
+                countedItems.Reads.Should().Be(1);
+            }
+
+            // A capture filter's predicate reads the value from the root block's members, so its delegate closes over the
+            // root block either way.
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[""@return"",""TestValue""]}]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}", false)]
+            [InlineData(@"{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[""@return"",""TestValue""]}]}]}", true)]
+            [InlineData(@"{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}", true)]
+            public void ProbeExpressionParser_GuardOfValueFromOutsideTheItems_IsDeclaredInRootBlock(string json, bool isCaptureExpression)
+            {
+                var lambda = isCaptureExpression
+                                 ? CompileCapture(json, returnType: typeof(TargetBase))
+                                 : Compile(json, returnType: typeof(TargetBase));
+
+                var states = new GuardStateCounter(lambda.Body);
+                states.Visit(lambda.Body);
+                states.Root.Should().Be(1, "the check of the value read from outside the items is stored once per evaluation");
+                states.Nested.Should().Be(1, "the @it check is reset on every item");
+            }
+
             [Theory]
             [CombinatorialData]
             public void ProbeExpressionEvaluator_NestedOperationsOnGuardedItem_ReadTheItemOnce(bool isRedactedType)
@@ -4685,26 +4805,16 @@ namespace Datadog.Trace.Tests.Debugger
                 countedItems.Reads.Should().Be(1);
             }
 
-            // @value and @it are read from the loop, which no test double can observe, so these count the checks built.
+            // @value and @it are read from the loop, which no test double can observe, so these count the checks built: one
+            // per guarded value. HolderLocal.AsBase is read inside and outside a predicate, in either order.
             [Theory]
-            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""and"":[{""eq"":[{""getmember"":[""@value"",""TestValue""]},""x""]},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""y""]}]}]}")]
-            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""and"":[{""eq"":[{""getmember"":[""@it"",""TestValue""]},""x""]},{""getmember"":[""@it"",""Enabled""]}]}]}")]
-            public void ProbeExpressionParser_RepeatedReadsOfGuardedValue_ShareOneRuntimeGuard(string json)
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""and"":[{""eq"":[{""getmember"":[""@value"",""TestValue""]},""x""]},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""y""]}]}]}", 1)]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""and"":[{""eq"":[{""getmember"":[""@it"",""TestValue""]},""x""]},{""getmember"":[""@it"",""Enabled""]}]}]}", 1)]
+            [InlineData(@"{""and"":[{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]},{""eq"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""x""]}]}", 2)]
+            [InlineData(@"{""and"":[{""eq"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""x""]},{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}]}", 2)]
+            public void ProbeExpressionParser_RepeatedReadsOfGuardedValue_ShareOneRuntimeGuard(string json, int guards)
             {
-                CountRuntimeGuards(Compile(json)).Should().Be(1);
-            }
-
-            [Fact]
-            public void ProbeExpressionParser_ReturnGuardInsidePredicate_IsDeclaredInRootBlock()
-            {
-                var lambda = Compile(
-                    @"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[""@return"",""TestValue""]}]}]}",
-                    returnType: typeof(TargetBase));
-
-                var states = new GuardStateCounter(lambda.Body);
-                states.Visit(lambda.Body);
-                states.Root.Should().Be(1, "the @return check is stored once per evaluation");
-                states.Nested.Should().Be(1, "the @it check is reset on every item");
+                CountRuntimeGuards(Compile(json)).Should().Be(guards);
             }
 
             [Theory]
@@ -4861,22 +4971,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 // The item guard's variables are declared by the predicate's block, so the predicate is compiled once
                 // instead of closing over the outer block on every evaluation.
-                Redaction.Instance.ResetInstance();
-                try
-                {
-                    ConfigureRedactedTypes();
-                    var compiled = ProbeExpressionParser<object>.ParseCaptureExpression(
-                        @"{""filter"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}",
-                        CreateScopeMembers(new PublicTarget()),
-                        new CaptureLimitInfo(MaxReferenceDepth: 3, MaxCollectionSize: 100, MaxLength: 255, MaxFieldCount: 20));
-
-                    compiled.Errors.Should().BeNullOrEmpty();
-                    AssertCaptureFilterPredicateIsConstant(compiled.ParsedExpression);
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                AssertCaptureFilterPredicateIsConstant(CompileCapture(@"{""filter"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}"));
             }
 
             private static KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]> Decoration(string when, params DebuggerExpression?[] value)
@@ -4920,6 +5015,25 @@ namespace Datadog.Trace.Tests.Debugger
                 var counter = new RuntimeGuardCounter();
                 counter.Visit(expression);
                 return counter.Count;
+            }
+
+            private System.Linq.Expressions.LambdaExpression CompileCapture(string json, Type returnType = null)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    ConfigureRedactedTypes();
+                    var compiled = ProbeExpressionParser<object>.ParseCaptureExpression(
+                        json,
+                        CreateScopeMembers(new PublicTarget(), returnType: returnType),
+                        new CaptureLimitInfo(MaxReferenceDepth: 3, MaxCollectionSize: 100, MaxLength: 255, MaxFieldCount: 20));
+                    compiled.Errors.Should().BeNullOrEmpty();
+                    return (System.Linq.Expressions.LambdaExpression)compiled.ParsedExpression;
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
             }
 
             private System.Linq.Expressions.LambdaExpression Compile(string json, bool configureRedactedTypes = true, Type returnType = null)
@@ -5027,6 +5141,7 @@ namespace Datadog.Trace.Tests.Debugger
                     Sealed = new SealedTarget { TestValue = PublicValue },
                     NameArray = [PublicValue],
                     BaseArray = new RedactedTarget[] { redacted },
+                    BaseArrayWithRedactedItem = [redacted],
                     PublicBaseArray = [@public]
                 };
                 var scopeMembers = _tests.CreateScopeMembers();
@@ -5130,6 +5245,8 @@ namespace Datadog.Trace.Tests.Debugger
                 public string[] NameArray { get; set; }
 
                 public TargetBase[] BaseArray { get; set; }
+
+                public TargetBase[] BaseArrayWithRedactedItem { get; set; }
 
                 public TargetBase[] PublicBaseArray { get; set; }
             }
@@ -5554,6 +5671,50 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_RuntimeKeyFromOutsideThePredicateItems_IsReadOncePerEvaluation(bool isSensitive)
+            {
+                CountingList<string> countedKeys = [isSensitive ? "password" : "public"];
+                var scopeMembers = CreateScopeMembers(countedKeys: countedKeys);
+                AddLocal(
+                    scopeMembers,
+                    "DictionariesLocal",
+                    new List<Dictionary<string, string>>
+                    {
+                        new() { { "password", Secret }, { "public", "a" } },
+                        new() { { "password", Secret }, { "public", "b" } }
+                    });
+
+                // With a public key, all runs the predicate on both items, and only the first one reads and checks the key.
+                // A sensitive one makes all stop at the first item.
+                var result = _tests.CreateTemplateEvaluator(
+                                         template: null,
+                                         condition: @"{""all"":[{""ref"":""DictionariesLocal""},{""ne"":[{""index"":[""@it"",{""index"":[{""ref"":""CountedKeysLocal""},0]}]},""x""]}]}")
+                                    .Evaluate(scopeMembers);
+
+                result.Condition.Should().Be(!isSensitive);
+                result.HasConditionError.Should().Be(isSensitive);
+                AssertRedactionError(result, isSensitive);
+                countedKeys.Reads.Should().Be(1);
+            }
+
+            // A key that doesn't come from the item, such as a local, is the same for every item, so a sensitive one is
+            // reported like a lookup outside the predicate.
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""MapLocal""},{""startsWith"":[""TOP_SECRET_VALUE"",{""index"":[{""ref"":""PrefixDictionaryLocal""},{""ref"":""KeyLocal""}]}]}]}", true)]
+            [InlineData(@"{""any"":[{""ref"":""DictionaryListLocal""},{""eq"":[{""index"":[""@it"",{""ref"":""KeyLocal""}]},""TOP_SECRET_VALUE""]}]}", true)]
+            [InlineData(@"{""any"":[{""ref"":""MapLocal""},{""startsWith"":[""nomatch_suffix"",{""index"":[{""ref"":""PrefixDictionaryLocal""},{""ref"":""PublicKeyLocal""}]}]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""DictionaryListLocal""},{""eq"":[{""index"":[""@it"",{""ref"":""PublicKeyLocal""}]},""x""]}]}", false)]
+            public void ProbeExpressionEvaluator_ConditionOverItemsReadingAKeyFromOutsideThem_ReportsASensitiveKey(string json, bool isSensitive)
+            {
+                var result = _tests.CreateTemplateEvaluator(template: null, condition: json).Evaluate(CreateLeakScopeMembers());
+
+                result.Condition.Should().Be(!isSensitive);
+                result.HasConditionError.Should().Be(isSensitive);
+                AssertRedactionError(result, isSensitive);
+            }
+
+            [Theory]
             [MemberData(nameof(RedactedDictionaryValueHoles))]
             public void ProbeExpressionParser_DictionaryIteratorValue_RedactsIndexAndNestedPredicates(string json)
             {
@@ -5826,6 +5987,7 @@ namespace Datadog.Trace.Tests.Debugger
                     });
                 AddLocal(scopeMembers, "EntryDictionaryLocal", new Dictionary<string, KeyValuePair<string, string>> { { "public", new KeyValuePair<string, string>("password", Secret) } });
                 AddLocal(scopeMembers, "PublicEntryDictionaryLocal", new Dictionary<string, KeyValuePair<string, string>> { { "public", new KeyValuePair<string, string>("inner", Secret) } });
+                AddLocal(scopeMembers, "DictionaryListLocal", new List<Dictionary<string, string>> { new() { { "password", Secret }, { "public", "x" } } });
                 AddLocal(scopeMembers, "KeyLocal", "password");
                 AddLocal(scopeMembers, "PublicKeyLocal", "public");
                 return scopeMembers;
