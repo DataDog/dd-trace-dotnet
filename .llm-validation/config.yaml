@@ -7,7 +7,7 @@ instruction_files:
   - .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh
 
 # Complete guidance inventory for setup comparison; instruction-change targeting above is unchanged.
-# Use --comparison setup --level setup for the repeated calibration run, or add --dry-run to inspect it.
+# Use --comparison setup --level setup-calibration for the repeated calibration run, or add --dry-run to inspect it.
 # .claude/settings.json contains telemetry attributes only and is retained as common configuration.
 # Personal settings.local.json must be excluded from both variants by the isolated runner.
 setup:
@@ -26,7 +26,7 @@ presets:
   # Three guidance cases, four skill workflows, and two general-language controls.
   # sdk-review is included in the setup inventory but has no dedicated case yet.
   # This is a calibration subset, not full-suite coverage or proof of individual skill benefit.
-  setup:
+  setup-calibration:
     cases:
       - dotnet-tracer-repo-nav-integration-001
       - dotnet-tracer-logging-terminology-004
