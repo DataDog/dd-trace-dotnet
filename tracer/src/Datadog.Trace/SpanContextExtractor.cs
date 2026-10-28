@@ -46,7 +46,7 @@ namespace Datadog.Trace
                 else if (!string.IsNullOrEmpty(messageType) && !string.IsNullOrEmpty(source))
                 {
                     var parentPathwayContext = dsm.ExtractPathwayContextAsBase64String(new CarrierWithDelegate<TCarrier>(carrier, getter));
-                    var edgeTags = new[] { "direction:in", $"topic:{source}", $"type:{messageType}" };
+                    var edgeTags = new EdgeTags(["direction:in", $"topic:{source}", $"type:{messageType}"], cacheNodeHash: false);
                     spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parentPathwayContext);
                 }
             }

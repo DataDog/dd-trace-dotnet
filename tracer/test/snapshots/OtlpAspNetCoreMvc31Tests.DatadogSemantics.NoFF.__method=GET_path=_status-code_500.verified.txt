@@ -126,6 +126,18 @@
                   }
                 },
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "component",
                   "value": {
                     "stringValue": "aspnet_core"
@@ -207,7 +219,8 @@
               "status": {
                 "message": "The HTTP response has status code 500.",
                 "code": 2
-              }
+              },
+              "flags": 1
             }
           ]
         }

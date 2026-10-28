@@ -84,6 +84,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "operation.name",
                   "value": {
                     "stringValue": "WebRequestRequestAsync"
@@ -111,7 +117,8 @@
                   "key": "span.type",
                   "value": {}
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -123,6 +130,12 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
                 {
                   "key": "component",
                   "value": {
@@ -189,7 +202,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -267,7 +281,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -345,7 +360,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -423,7 +439,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -523,7 +540,8 @@
               "status": {
                 "message": "The remote server returned an error: (400) Bad Request.",
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -619,7 +637,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -697,7 +716,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }
