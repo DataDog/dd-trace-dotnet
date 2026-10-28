@@ -3441,7 +3441,8 @@ supportedConfigurations:
     const_name: OtelSemanticsEnabled
     documentation: |-
       When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
-      emitting only OpenTelemetry semantic-convention attributes.
+      emitting only OpenTelemetry semantic-convention attributes. Also makes 'otlp' the default value of
+      <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>.
   DD_TRACE_PARTIAL_FLUSH_ENABLED:
   - implementation: A
     scope: managed
@@ -4127,6 +4128,7 @@ supportedConfigurations:
       the experimental export of traces using OTLP. The value 'none' disables
       the export of traces entirely, which is the equivalent of setting
       <see cref="ConfigurationKeys.TraceEnabled"/> to false.
+      When unset, defaults to 'otlp' if <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/> is enabled.
   OTEL_TRACES_SAMPLER:
   - implementation: C
     scope: managed
