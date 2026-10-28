@@ -12,6 +12,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Template;
 using static Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver;
 
 namespace Datadog.Trace.AppSec.ApiSec;
@@ -27,19 +28,13 @@ internal static class NormalizedRoute
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NormalizedRoute));
 
-    internal static void SetTag(Security security, Span span, RoutePattern routePattern, RouteValueDictionary routeValues)
-    {
-        if (!security.AppsecEnabled || !security.Settings.ApiSecurityEnabled)
-        {
-            return;
-        }
+    internal static bool IsEnabled(Security security) => security.AppsecEnabled && security.Settings.ApiSecurityEnabled;
 
+    internal static void SetTag(Span span, RoutePattern routePattern, RouteValueDictionary routeValues, string? pathBase)
+    {
         try
         {
-            if (Get(routePattern, routeValues) is { } normalizedRoute)
-            {
-                span.Tags.SetTag(Tags.AppSecNormalizedRoute, normalizedRoute);
-            }
+            SetTag(span, Get(routePattern, routeValues, pathBase));
         }
         catch (Exception ex)
         {
@@ -47,85 +42,82 @@ internal static class NormalizedRoute
         }
     }
 
-    internal static string? Get(RoutePattern routePattern, RouteValueDictionary routeValues)
+    internal static void SetTag(Span span, RouteTemplate routeTemplate, RouteValueDictionary routeValues, string? pathBase)
+    {
+        try
+        {
+            SetTag(span, Get(routeTemplate, routeValues, pathBase));
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Error computing the normalized route for {Route}", routeTemplate.TemplateText);
+        }
+    }
+
+    internal static string? Get(RoutePattern routePattern, RouteValueDictionary routeValues, string? pathBase = null)
     {
         if (routePattern.RawText is null)
         {
             return null;
         }
 
-        var sb = StringBuilderCache.Acquire();
+        var builder = new Builder(routeValues, pathBase);
         foreach (var pathSegment in routePattern.PathSegments)
         {
-            var segmentStart = sb.Length;
-            var hasParameter = false;
-            sb.Append('/');
-
+            builder.StartSegment();
             foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
             {
                 if (part.TryDuckCast(out RoutePatternContentPartStruct content))
                 {
-                    // Static text next to a parameter is folded into the parameter (rule 5)
-                    if (!hasParameter)
-                    {
-                        AppendStaticConstant(sb, content.Content);
-                    }
+                    builder.AddStaticText(content.Content);
                 }
                 else if (part.TryDuckCast(out RoutePatternParameterPartStruct parameter))
                 {
-                    routeValues.TryGetValue(parameter.Name, out var value);
-
-                    // Optional elements are resolved against the values the framework matched for this request
-                    if ((parameter.IsOptional || parameter.IsCatchAll) && value is null or string { Length: 0 })
-                    {
-                        continue;
-                    }
-
-                    // Conventional routing declares the MVC action as parameters, but they identify the
-                    // endpoint, so report them as static constants, as we do for the resource name.
-                    if (!hasParameter && IsMvcRouteValue(parameter.Name) && value is string { Length: > 0 } mvcValue)
-                    {
-                        AppendStaticConstant(sb, mvcValue);
-                        continue;
-                    }
-
-                    if (hasParameter)
-                    {
-                        sb.Append('+');
-                    }
-                    else
-                    {
-                        sb.Length = segmentStart + 1;
-                        sb.Append('{');
-                        hasParameter = true;
-                    }
-
-                    AppendParameterName(sb, parameter.Name);
+                    builder.AddParameter(parameter.Name, parameter.IsOptional || parameter.IsCatchAll);
                 }
             }
 
-            if (hasParameter)
-            {
-                sb.Append('}');
-            }
-            else if (sb.Length == segmentStart + 1)
-            {
-                // Every element of the segment was optional and absent from the request
-                sb.Length = segmentStart;
-            }
+            builder.EndSegment();
         }
 
-        if (sb.Length == 0)
+        return builder.Complete(routePattern.RawText);
+    }
+
+    internal static string? Get(RouteTemplate routeTemplate, RouteValueDictionary routeValues, string? pathBase = null)
+    {
+        if (routeTemplate.TemplateText is null)
         {
-            sb.Append('/');
-        }
-        else if (routePattern.RawText.EndsWith("/", StringComparison.Ordinal))
-        {
-            // The trailing slash is kept only when the route declares it (rule 1)
-            sb.Append('/');
+            return null;
         }
 
-        return StringBuilderCache.GetStringAndRelease(sb);
+        var builder = new Builder(routeValues, pathBase);
+        foreach (var segment in routeTemplate.Segments)
+        {
+            builder.StartSegment();
+            foreach (var part in segment.Parts)
+            {
+                if (part.IsParameter)
+                {
+                    builder.AddParameter(part.Name, part.IsOptional || part.IsCatchAll);
+                }
+                else
+                {
+                    builder.AddStaticText(part.Text);
+                }
+            }
+
+            builder.EndSegment();
+        }
+
+        return builder.Complete(routeTemplate.TemplateText);
+    }
+
+    private static void SetTag(Span span, string? normalizedRoute)
+    {
+        if (normalizedRoute is not null)
+        {
+            span.Tags.SetTag(Tags.AppSecNormalizedRoute, normalizedRoute);
+        }
     }
 
     private static bool IsMvcRouteValue(string name)
@@ -168,5 +160,116 @@ internal static class NormalizedRoute
 
     private static void AppendPercentEncoded(StringBuilder sb, byte b)
         => sb.Append('%').Append(HexDigits[b >> 4]).Append(HexDigits[b & 0xF]);
+
+    private struct Builder
+    {
+        private readonly StringBuilder _sb;
+        private readonly RouteValueDictionary _routeValues;
+        private int _segmentStart;
+        private bool _hasParameter;
+
+        public Builder(RouteValueDictionary routeValues, string? pathBase)
+        {
+            _sb = StringBuilderCache.Acquire();
+            _routeValues = routeValues;
+            _segmentStart = 0;
+            _hasParameter = false;
+
+            // The normalized route is the path as served to the caller, so it includes the mount prefix
+            if (pathBase is not null)
+            {
+                var start = 0;
+                for (var i = 0; i <= pathBase.Length; i++)
+                {
+                    if (i == pathBase.Length || pathBase[i] == '/')
+                    {
+                        if (i > start)
+                        {
+                            _sb.Append('/');
+                            AppendStaticConstant(_sb, pathBase.Substring(start, i - start));
+                        }
+
+                        start = i + 1;
+                    }
+                }
+            }
+        }
+
+        public void StartSegment()
+        {
+            _segmentStart = _sb.Length;
+            _hasParameter = false;
+            _sb.Append('/');
+        }
+
+        public void AddStaticText(string text)
+        {
+            // Static text next to a parameter is folded into the parameter (rule 5)
+            if (!_hasParameter)
+            {
+                AppendStaticConstant(_sb, text);
+            }
+        }
+
+        public void AddParameter(string name, bool isOptional)
+        {
+            _routeValues.TryGetValue(name, out var value);
+
+            // Optional elements are resolved against the values the framework matched for this request
+            if (isOptional && value is null or string { Length: 0 })
+            {
+                return;
+            }
+
+            // Conventional routing declares the MVC action as parameters, but they identify the
+            // endpoint, so report them as static constants, as we do for the resource name.
+            if (!_hasParameter && IsMvcRouteValue(name) && value is string { Length: > 0 } mvcValue)
+            {
+                AppendStaticConstant(_sb, mvcValue);
+                return;
+            }
+
+            if (_hasParameter)
+            {
+                _sb.Append('+');
+            }
+            else
+            {
+                _sb.Length = _segmentStart + 1;
+                _sb.Append('{');
+                _hasParameter = true;
+            }
+
+            AppendParameterName(_sb, name);
+        }
+
+        public void EndSegment()
+        {
+            if (_hasParameter)
+            {
+                _sb.Append('}');
+            }
+            else if (_sb.Length == _segmentStart + 1)
+            {
+                // Every element of the segment was optional and absent from the request
+                _sb.Length = _segmentStart;
+            }
+        }
+
+        public string Complete(string template)
+        {
+            if (_sb.Length == 0)
+            {
+                _sb.Append('/');
+            }
+            else if (template.Length > 1 && template.EndsWith("/", StringComparison.Ordinal))
+            {
+                // The trailing slash is kept only when the route declares it (rule 1)
+                _sb.Append('/');
+            }
+
+            return StringBuilderCache.GetStringAndRelease(_sb);
+        }
+    }
 }
 #endif
