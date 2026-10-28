@@ -46,6 +46,64 @@ public class FlagEvaluationContextSnapshotTests
         reasons.Should().Be(0);
     }
 
+    [Theory]
+    [CombinatorialData]
+    public void RootTargetingKeyDoesNotConsumeAttributeBudget([CombinatorialValues(255, 256, 257)] int attributeCount, bool includeTargetingKey)
+    {
+        var values = Enumerable.Range(0, attributeCount).ToDictionary(i => "field" + i, i => "value" + i);
+        var builder = EvaluationContext.Builder();
+        foreach (var pair in values)
+        {
+            builder.Set(pair.Key, pair.Value);
+        }
+
+        if (includeTargetingKey)
+        {
+            builder.Set("targetingKey", "subject");
+        }
+
+        var snapshot = FlagEvaluationContextSnapshot.Capture(builder.Build(), out var reasons);
+
+        snapshot.Should().HaveCount(Math.Min(attributeCount, 256));
+        snapshot.Should().NotContainKey("targetingKey");
+        foreach (var pair in snapshot)
+        {
+            values.Should().ContainKey(pair.Key);
+            pair.Value.Should().Be(values[pair.Key]);
+        }
+
+        reasons.Should().Be(attributeCount > 256 ? (int)ContextOmissionReason.MaxContextFields : 0);
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void RootTargetingKeyDoesNotConsumeVisitBudget(bool overBudget)
+    {
+        // The baseline fills the visit budget; overBudget adds one discarded element.
+        var builder = EvaluationContext.Builder().SetTargetingKey("subject");
+        for (var i = 0; i < 256; i++)
+        {
+            var discarded = overBudget && i == 0 ? 4 : 3;
+            builder.Set("field" + i, new Value(Enumerable.Repeat(new Value(double.NaN), discarded).Concat([new Value("value" + i)]).ToList()));
+        }
+
+        var snapshot = FlagEvaluationContextSnapshot.Capture(builder.Build(), out var reasons);
+
+        snapshot.Should().HaveCount(overBudget ? 255 : 256);
+        reasons.Should().Be((int)(ContextOmissionReason.UnsupportedValue | (overBudget ? ContextOmissionReason.MaxVisitedNodes : ContextOmissionReason.None)));
+    }
+
+    [Fact]
+    public void KeysOmittedForLengthStillConsumeContainerSlots()
+    {
+        // Rejected keys must consume container slots before traversal exhausts the visit budget.
+        var entries = Enumerable.Range(0, 1280).ToDictionary(i => new string('k', 257) + i, _ => new Value(true));
+        var context = EvaluationContext.Builder().Set("data", new Value(new Structure(entries))).Build();
+
+        FlagEvaluationContextSnapshot.Capture(context, out var reasons).Should().BeEmpty();
+        reasons.Should().Be((int)(ContextOmissionReason.MaxStructureProperties | ContextOmissionReason.MaxKeyLength));
+    }
+
     [Fact]
     public void OversizedMapsUseRepeatableBoundedSelection()
     {
@@ -56,7 +114,7 @@ public class FlagEvaluationContextSnapshotTests
         var first = FlagEvaluationContextSnapshot.Capture(firstContext, out var reasons);
 
         first.Should().HaveCount(256);
-        reasons.Should().NotBe(0);
+        reasons.Should().Be((int)ContextOmissionReason.MaxStructureProperties);
         FlagEvaluationContextSnapshot.Capture(firstContext, out _).Should().BeEquivalentTo(first);
         FlagEvaluationContextSnapshot.Capture(rebuiltContext, out _).Should().BeEquivalentTo(first);
     }

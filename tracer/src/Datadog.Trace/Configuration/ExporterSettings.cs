@@ -105,7 +105,9 @@ namespace Datadog.Trace.Configuration
             OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
             var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+                                                 .ToArray() ?? [];
             OtlpTracesTimeoutMs = rawSettings.OtlpTracesTimeoutMs;
 
             if (rawSettings.OtelTracesExporter == "otlp")
@@ -144,7 +146,9 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
             var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+                                                 .ToArray() ?? [];
             OtlpMetricsTimeoutMs = rawSettings.OtlpMetricsTimeoutMs;
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;

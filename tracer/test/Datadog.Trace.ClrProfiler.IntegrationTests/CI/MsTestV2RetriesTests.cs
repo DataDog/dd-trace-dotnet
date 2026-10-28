@@ -60,6 +60,16 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
+    public override Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+    {
+        return DynamicFlakyRetriesWithArguments(packageVersion, TestSuiteFilter);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.MSTest2Retries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
     [Flaky("Under investigation", 5)]
     public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
     {

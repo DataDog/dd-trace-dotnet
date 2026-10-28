@@ -331,7 +331,7 @@ namespace Datadog.Trace.Configuration
                             .AsRedactedDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => Uri.UnescapeDataString(kvp.Value?.Trim() ?? string.Empty));
 
             OtlpLogsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs)
