@@ -249,10 +249,12 @@ namespace Datadog.Trace.Tests.Configuration
 
         [SkippableTheory]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "  ", false)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc", true)]
         [InlineData(ConfigurationKeys.ServiceName, "", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "  ", true)]
         [EnvironmentRestorer(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, ConfigurationKeys.ServiceName)]
-        public void EnvironmentConfigurationSource_EmptyOtelValueIsUnset(string key, string value, bool expectedFound)
+        public void EnvironmentConfigurationSource_BlankOtelValueIsUnset(string key, string value, bool expectedFound)
         {
             Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
             // Windows and .NET 8 or earlier remove a variable set to an empty value

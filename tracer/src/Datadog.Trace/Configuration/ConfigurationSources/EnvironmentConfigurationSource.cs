@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -31,7 +32,8 @@ namespace Datadog.Trace.Configuration
 
                 // The OpenTelemetry spec requires an empty environment variable to be treated as unset
                 // https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#parsing-empty-value
-                if (value is { Length: 0 } && key.StartsWith("OTEL_", StringComparison.Ordinal))
+                // The upstream OpenTelemetry .NET SDK also treats whitespace-only values as unset
+                if (value is not null && StringUtil.IsNullOrWhiteSpace(value) && key.StartsWith("OTEL_", StringComparison.Ordinal))
                 {
                     return null;
                 }
