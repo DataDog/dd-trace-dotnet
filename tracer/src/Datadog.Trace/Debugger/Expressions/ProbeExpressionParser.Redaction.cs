@@ -24,6 +24,7 @@ internal partial class ProbeExpressionParser<T>
     private const int CheckedRedacted = 2;
 
     private static readonly MethodInfo IsRedactedRuntimeValueMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParserHelper), nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue), [typeof(object), typeof(Type)]);
+    private static readonly MethodInfo MarkRuntimeRedactionMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.MarkRuntimeRedaction), [typeof(EvaluationBudget).MakeByRefType()]);
     private static readonly MethodInfo ShouldRedactDictionaryKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
 
     private Dictionary<Expression, RedactionGuard> _redactionGuards;
@@ -362,15 +363,18 @@ internal partial class ProbeExpressionParser<T>
     }
 
     // Wraps a check so it runs once per entry of its block: consumers are nested, and and/or short-circuits, so which
-    // guard runs first isn't known at compile time.
+    // guard runs first isn't known at compile time. A redaction is reported through the evaluation budget.
     private BinaryExpression MemoizedRedactionCheck(RedactionGuardScope scope, Expression check)
     {
         var state = DeclareRedactionGuardVariable(scope, typeof(int), ProbeExpressionParserHelper.RedactionCheckStateVariableName);
         scope.Resets.Add(Expression.Assign(state, Expression.Constant(CheckPending)));
+        var redacted = Expression.Block(
+            Expression.Call(MarkRuntimeRedactionMethod, _evaluationBudgetParameterExpression),
+            Expression.Constant(CheckedRedacted));
         return Expression.Equal(
             Expression.Condition(
                 Expression.Equal(state, Expression.Constant(CheckPending)),
-                Expression.Assign(state, Expression.Condition(check, Expression.Constant(CheckedRedacted), Expression.Constant(CheckedNotRedacted))),
+                Expression.Assign(state, Expression.Condition(check, redacted, Expression.Constant(CheckedNotRedacted))),
                 state),
             Expression.Constant(CheckedRedacted));
     }

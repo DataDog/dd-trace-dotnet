@@ -4379,12 +4379,18 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseListLocal""},0]},""TestValue""]}")]
             [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseDictionaryLocal""},""first""]},""TestValue""]}")]
             [InlineData(@"{""len"":{""getmember"":[{""ref"":""HolderLocal""},""BaseArray""]}}")]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}}")]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}}")]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""PUBLIC_VALUE""]}]}")]
+            [InlineData(@"{""and"":[{""isDefined"":{""ref"":""HolderLocal""}},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]}]}")]
+            [InlineData(@"{""or"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]},true]}")]
             public void ProbeExpressionEvaluator_TemplateReadingRedactedRuntimeType_IsRedacted(string json)
             {
                 var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
 
                 result.Template.Should().Be("value={redacted}");
-                result.Errors.Should().BeNullOrEmpty();
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
             }
 
             [Theory]
@@ -4399,12 +4405,13 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""getmember"":[""@it"",""Enabled""]}]}")]
             [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}")]
             [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""TOP_SECRET_VALUE""]}]}")]
-            public void ProbeExpressionEvaluator_ConditionReadingRedactedRuntimeType_IsFalse(string json)
+            public void ProbeExpressionEvaluator_ConditionReadingRedactedRuntimeType_IsFalseWithRedactionError(string json)
             {
                 var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: null, condition: json);
 
                 result.Condition.Should().BeFalse();
-                result.Errors.Should().BeNullOrEmpty();
+                result.HasConditionError.Should().BeTrue();
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
             }
 
             [Theory]
@@ -4424,19 +4431,6 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             [Theory]
-            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}", "True")]
-            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}}", "1")]
-            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}}", "0")]
-            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""PUBLIC_VALUE""]}]}", "True")]
-            public void ProbeExpressionEvaluator_TemplateOverItemsWithRedactedRuntimeType_RedactsOnlyThoseItems(string json, string expected)
-            {
-                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
-
-                result.Template.Should().Be("value=" + expected);
-                result.Errors.Should().BeNullOrEmpty();
-            }
-
-            [Theory]
             [InlineData(true, @"{""getmember"":[""@exception"",""_message""]}", "{redacted}")]
             [InlineData(true, @"{""len"":{""getmember"":[""@exception"",""_message""]}}", "{redacted}")]
             [InlineData(false, @"{""getmember"":[""@exception"",""_message""]}", Secret)]
@@ -4448,7 +4442,7 @@ namespace Datadog.Trace.Tests.Debugger
                 var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null, exception: exception);
 
                 result.Template.Should().Be("value=" + expected);
-                result.Errors.Should().BeNullOrEmpty();
+                AssertRedactionError(result, isRedactedType);
             }
 
             [Fact]
@@ -4462,6 +4456,7 @@ namespace Datadog.Trace.Tests.Debugger
                     exception: new SecretException(Secret));
 
                 result.Template.Should().Be("value={redacted}");
+                result.Errors.Should().Contain(error => error.IsRedaction);
             }
 
             [Theory]
@@ -4477,7 +4472,8 @@ namespace Datadog.Trace.Tests.Debugger
                     exception: exception);
 
                 result.Condition.Should().Be(!isRedactedType);
-                result.Errors.Should().BeNullOrEmpty();
+                result.HasConditionError.Should().Be(isRedactedType);
+                AssertRedactionError(result, isRedactedType);
             }
 
             [Theory]
@@ -4516,7 +4512,7 @@ namespace Datadog.Trace.Tests.Debugger
                     configureRedactedTypes: false);
 
                 result.Template.Should().Be("value={redacted}");
-                result.Errors.Should().BeNullOrEmpty();
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
             }
 
             [Theory]
@@ -4533,7 +4529,7 @@ namespace Datadog.Trace.Tests.Debugger
                 var result = Evaluate(target, template: json, condition: null, returnType: typeof(TargetBase));
 
                 result.Template.Should().Be("value=" + expected);
-                result.Errors.Should().BeNullOrEmpty();
+                AssertRedactionError(result, isRedactedType);
             }
 
             [Theory]
@@ -4551,7 +4547,8 @@ namespace Datadog.Trace.Tests.Debugger
                     returnType: typeof(TargetBase));
 
                 result.Condition.Should().Be(!isRedactedType);
-                result.Errors.Should().BeNullOrEmpty();
+                result.HasConditionError.Should().Be(isRedactedType);
+                AssertRedactionError(result, isRedactedType);
             }
 
             [Theory]
@@ -4572,7 +4569,7 @@ namespace Datadog.Trace.Tests.Debugger
                     returnValue: new List<TargetBase> { item });
 
                 result.Condition.Should().Be(!isRedactedType);
-                result.Errors.Should().BeNullOrEmpty();
+                AssertRedactionError(result, isRedactedType);
             }
 
             [Theory]
@@ -4593,7 +4590,7 @@ namespace Datadog.Trace.Tests.Debugger
                     countedItems: countedItems);
 
                 result.Condition.Should().Be(!isRedactedType);
-                result.Errors.Should().BeNullOrEmpty();
+                AssertRedactionError(result, isRedactedType);
                 countedItems.Reads.Should().Be(1);
             }
 
@@ -4617,6 +4614,75 @@ namespace Datadog.Trace.Tests.Debugger
                 states.Visit(lambda.Body);
                 states.Root.Should().Be(1, "the @return check is stored once per evaluation");
                 states.Nested.Should().Be(1, "the @it check is reset on every item");
+            }
+
+            [Theory]
+            [InlineData("metric")]
+            [InlineData("decoration condition")]
+            [InlineData("decoration value")]
+            [InlineData("capture expression")]
+            [InlineData("exception after the redaction")]
+            public void ProbeExpressionEvaluator_RuntimeRedaction_IsReportedWhereEachProbePartReportsErrors(string part)
+            {
+                const string redactedValue = @"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}";
+                DebuggerExpression? condition = null;
+                DebuggerExpression? metric = null;
+                KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] decorations = null;
+                CaptureExpressionDefinition[] captures = null;
+                switch (part)
+                {
+                    case "metric":
+                        metric = new DebuggerExpression(string.Empty, @"{""len"":" + redactedValue + "}", null);
+                        break;
+                    case "decoration condition":
+                        decorations = [Decoration(@"{""eq"":[" + redactedValue + @",""x""]}", new DebuggerExpression(null, null, "decorated"))];
+                        break;
+                    case "decoration value":
+                        decorations = [Decoration(@"{""isDefined"":{""ref"":""HolderLocal""}}", new DebuggerExpression(null, null, "value="), new DebuggerExpression(string.Empty, redactedValue, null))];
+                        break;
+                    case "capture expression":
+                        captures = [new CaptureExpressionDefinition("captured", new DebuggerExpression(string.Empty, redactedValue, null), default)];
+                        break;
+                    default:
+                        // The or reads the redacted value first, then the index throws.
+                        condition = new DebuggerExpression(
+                            string.Empty,
+                            @"{""or"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]},{""eq"":[{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""PublicNamesAsList""]},5]},""x""]}]}",
+                            null);
+                        break;
+                }
+
+                var result = EvaluateProbe(condition, metric, decorations, captures);
+
+                switch (part)
+                {
+                    case "metric":
+                        result.Metric.Should().BeNull();
+                        result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+                        break;
+                    case "decoration condition":
+                        result.Decorations.Should().BeNullOrEmpty();
+                        result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+                        break;
+                    case "decoration value":
+                        result.Decorations.Should().ContainSingle();
+                        result.Decorations[0].Value.Should().Be("value={redacted}");
+                        result.Decorations[0].Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+                        result.Errors.Should().BeNullOrEmpty();
+                        break;
+                    case "capture expression":
+                        result.CaptureExpressionCount.Should().Be(1);
+                        result.CaptureExpressions[0].Value.Should().Be("{redacted}");
+                        result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+                        break;
+                    default:
+                        result.Condition.Should().BeTrue();
+                        result.HasConditionError.Should().BeTrue();
+                        result.Errors.Should().HaveCount(2);
+                        result.Errors.Should().ContainSingle(error => error.IsRedaction);
+                        result.HasNonRedactionError.Should().BeTrue();
+                        break;
+                }
             }
 
             [Fact]
@@ -4645,6 +4711,13 @@ namespace Datadog.Trace.Tests.Debugger
                 }
             }
 
+            private static KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]> Decoration(string when, params DebuggerExpression?[] value)
+            {
+                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>(
+                    new DebuggerExpression(string.Empty, when, null),
+                    [new KeyValuePair<string, DebuggerExpression?[]>("tag", value)]);
+            }
+
             private static void ConfigureRedactedTypes()
             {
                 Redaction.Instance.SetConfig(
@@ -4666,6 +4739,18 @@ namespace Datadog.Trace.Tests.Debugger
                 return counter.Count;
             }
 
+            private static void AssertRedactionError(ExpressionEvaluationResult result, bool isRedacted)
+            {
+                if (isRedacted)
+                {
+                    result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+                }
+                else
+                {
+                    result.Errors.Should().BeNullOrEmpty();
+                }
+            }
+
             private System.Linq.Expressions.LambdaExpression Compile(string json, bool configureRedactedTypes = true, Type returnType = null)
             {
                 Redaction.Instance.ResetInstance();
@@ -4679,6 +4764,37 @@ namespace Datadog.Trace.Tests.Debugger
                     var compiled = ProbeExpressionParser<string>.ParseExpression(json, CreateScopeMembers(new PublicTarget(), returnType: returnType));
                     compiled.Errors.Should().BeNullOrEmpty();
                     return (System.Linq.Expressions.LambdaExpression)compiled.ParsedExpression;
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            private ExpressionEvaluationResult EvaluateProbe(
+                DebuggerExpression? condition,
+                DebuggerExpression? metric,
+                KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] decorations,
+                CaptureExpressionDefinition[] captures)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    ConfigureRedactedTypes();
+                    var evaluator = _tests.CreateEvaluator(
+                        templates: null,
+                        condition: condition,
+                        metric: metric,
+                        spanDecorations: decorations,
+                        captureExpressions: captures);
+                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue });
+                    var result = evaluator.Evaluate(scopeMembers);
+                    if (captures is not null)
+                    {
+                        evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+                    }
+
+                    return result;
                 }
                 finally
                 {

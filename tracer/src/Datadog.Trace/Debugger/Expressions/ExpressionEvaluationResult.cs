@@ -16,6 +16,9 @@ internal ref struct ExpressionEvaluationResult
     // This must be a field so compiled expressions can mutate the authoritative budget by reference.
     internal EvaluationBudget EvaluationBudget;
 
+    // A field so a runtime redaction can be reported into it by reference.
+    internal List<EvaluationError>? Errors;
+
     internal string? Template { get; set; }
 
     internal bool? Condition { get; set; }
@@ -28,9 +31,11 @@ internal ref struct ExpressionEvaluationResult
 
     internal int CaptureExpressionCount { get; set; }
 
-    internal List<EvaluationError>? Errors { get; set; }
-
     internal bool HasConditionError { get; set; }
+
+    // Whether Errors holds an error other than a redaction. A redaction alone keeps the rendered message and isn't an
+    // evaluation error of the probe.
+    internal bool HasNonRedactionError { get; set; }
 
     internal readonly bool HasError => Errors is { Count: > 0 };
 
