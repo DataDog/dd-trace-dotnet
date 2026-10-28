@@ -45,7 +45,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var matchesMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(RegexIsMatch), [typeof(string), typeof(string), typeof(EvaluationBudget).MakeByRefType()]);
-        return RedactDictionaryOperation(source, Expression.Call(null, matchesMethod, source, pattern, _evaluationBudgetParameterExpression));
+        return RedactOperation(source, Expression.Call(null, matchesMethod, source, pattern, _evaluationBudgetParameterExpression));
     }
 
     private Expression Contains(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -83,7 +83,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var lengthExpr = Expression.Subtract(endIndex, startIndex);
-        return RedactDictionaryOperation(
+        return RedactOperation(
             source,
             Expression.Block(
                 BudgetCheck(),
@@ -106,7 +106,7 @@ internal partial class ProbeExpressionParser<T>
         if (source.Type == typeof(string))
         {
             var emptyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), nameof(string.IsNullOrEmpty), [typeof(string)]);
-            return RedactDictionaryOperation(
+            return RedactOperation(
                 source,
                 Expression.Block(
                     BudgetCheck(),
@@ -116,7 +116,7 @@ internal partial class ProbeExpressionParser<T>
         try
         {
             var collectionCount = CollectionAndStringLengthExpression(source);
-            return RedactDictionaryOperation(
+            return RedactOperation(
                 source,
                 Expression.Block(
                     BudgetCheck(),
@@ -143,7 +143,7 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Constant(false);
         }
 
-        return RedactDictionaryOperation(
+        return RedactOperation(
             source,
             Expression.Block(
                 BudgetCheck(),

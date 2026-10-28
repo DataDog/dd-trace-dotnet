@@ -519,9 +519,9 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression HandleReturnType(Expression finalExpr, List<ParameterExpression> scopeMembers)
     {
-        if (TryGetRedactedDictionaryValue(finalExpr, out var redactedDictionaryValue))
+        if (TryGetRedactionGuard(finalExpr, out var guard))
         {
-            return RedactDictionaryValueForReturn(redactedDictionaryValue, finalExpr, scopeMembers);
+            return RedactGuardedValueForReturn(guard, finalExpr, scopeMembers);
         }
 
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
@@ -678,7 +678,7 @@ internal partial class ProbeExpressionParser<T>
             body = body.ReduceAndCheck();
         }
 
-        _redactedDictionaryValues = null;
+        _redactionGuards = null;
         return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, durationParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression, _evaluationBudgetParameterExpression);
     }
 
