@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.ApiSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
@@ -615,6 +616,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
+
+                    if (normalizedRoute is not null)
+                    {
+                        NormalizedRoute.SetTag(_security, rootSpan, routePattern, routeValues);
+                    }
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
