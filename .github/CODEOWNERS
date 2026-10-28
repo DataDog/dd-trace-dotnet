@@ -326,6 +326,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 
 ## Shared ownership conventions
 /tracer/test/**/AutoInstrumentation/                                  @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
+/tracer/test/**/AutoInstrumentation/AWS/                              @DataDog/apm-serverless
 /tracer/test/**/CI/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/**/Ci/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.*Tests/DataStreamsMonitoring/              @DataDog/data-streams-monitoring
