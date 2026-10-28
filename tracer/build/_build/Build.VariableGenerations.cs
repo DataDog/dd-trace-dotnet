@@ -953,7 +953,7 @@ partial class Build : NukeBuild
 
         // GitLab containers may not have access to the runner's Git alternates.
         // A provider-reported branch is sufficient to determine this comparison.
-        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI_JOB_ID")) && !string.IsNullOrWhiteSpace(branch))
+        if (IsGitlab && !string.IsNullOrWhiteSpace(branch))
         {
             return false;
         }
