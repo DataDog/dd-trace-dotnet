@@ -244,14 +244,23 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    // A predicate that is itself a redacted value, such as a member of a redacted item, never matches. One that
-    // uses a guarded value is false when the guard redacts it.
+    // A predicate declares the variables of its own runtime-type guards, so a filter predicate compiled on its own
+    // doesn't close over the outer block. A predicate that is itself a redacted value, such as a member of a redacted
+    // item, never matches.
     private Expression ParsePredicate(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, bool outsideFilterCapture)
     {
-        var predicate = outsideFilterCapture
-                            ? ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1)
-                            : ParseTree(reader, parameters, itParameter);
-        return IsRedactedValue(predicate) ? Expression.Constant(false) : RedactBooleanOperand(predicate);
+        var outerScope = EnterPredicateRedactionGuardScope();
+        try
+        {
+            var predicate = outsideFilterCapture
+                                ? ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1)
+                                : ParseTree(reader, parameters, itParameter);
+            return IsRedactedValue(predicate) ? Expression.Constant(false) : ScopePredicateRedactionGuards(RedactBooleanOperand(predicate));
+        }
+        finally
+        {
+            ExitPredicateRedactionGuardScope(outerScope);
+        }
     }
 
     private BlockExpression MaterializeFilterExpression(FilterExpression filterExpression)
@@ -477,7 +486,7 @@ internal partial class ProbeExpressionParser<T>
 
             var item = CallGetItem(source, assignableFrom, indexOrKey);
             DeriveRedactionGuard(item, source, indexOrKey);
-            return RedactIfRedactedType(item, source, indexOrKey);
+            return RedactByType(item, source, indexOrKey, CurrentRedactionGuardScope);
         }
         catch (Exception e)
         {
@@ -648,9 +657,28 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Call(null, castMethod, source);
     }
 
-    private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out Expression propertyExpression)
+    // @key and @value share one memoized guard with getmember(@it, "Key") and getmember(@it, "Value").
+    private bool TryGetIteratorEntryMember(ParameterExpression itParameter, string propertyName, string readerValue, out Expression member)
     {
-        return TryGetDictionaryEntryMember(itParameter, propertyName, out propertyExpression);
+        // Checked first: getmember(@it, "Key") on an item that isn't an entry may have memoized a member of that name.
+        if (!IsDictionaryEntryType(itParameter.Type))
+        {
+            member = null;
+            return false;
+        }
+
+        if (TryGetGuardedMember(itParameter, propertyName, out member))
+        {
+            return true;
+        }
+
+        if (!TryGetDictionaryEntryMember(itParameter, propertyName, out member))
+        {
+            return false;
+        }
+
+        member = MemoizeGuardedMember(itParameter, propertyName, RedactByType(member, null, readerValue, CurrentRedactionGuardScope));
+        return true;
     }
 
     private bool TryGetDictionaryEntryMember(Expression dictionaryEntryExpression, string propertyName, out Expression memberExpression)

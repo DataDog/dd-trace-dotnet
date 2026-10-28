@@ -8,11 +8,15 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 internal static class ProbeExpressionParserHelper
 {
+    // The variable that stores whether a runtime redaction check ran and what it found.
+    internal const string RedactionCheckStateVariableName = "$dd_el_redacted";
+
     private static readonly ConcurrentDictionary<ReflectionMethodIdentifier, MethodInfo> Methods = new();
 
     internal static readonly Type UndefinedValueType = typeof(UndefinedValue);
@@ -54,6 +58,18 @@ internal static class ProbeExpressionParserHelper
 
             return method;
         }
+    }
+
+    // The declared type was already checked at compile time, so only a different runtime type needs the lookup.
+    internal static bool IsRedactedRuntimeValue(object value, Type declaredType)
+    {
+        if (value is null)
+        {
+            return false;
+        }
+
+        var runtimeType = value.GetType();
+        return runtimeType != declaredType && Redaction.Instance.IsRedactedRuntimeType(runtimeType);
     }
 
     private static bool ParameterTypesMatch(MethodInfo method, Type[] parameters, Type[] genericArguments)

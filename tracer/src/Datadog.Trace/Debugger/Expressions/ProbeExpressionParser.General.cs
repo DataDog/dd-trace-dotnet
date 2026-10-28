@@ -534,6 +534,18 @@ internal partial class ProbeExpressionParser<T>
             return expression;
         }
 
+        if (expression is not ParameterExpression parameter)
+        {
+            return ResolveMemberPath(expression, propertyOrFieldValue);
+        }
+
+        return TryGetGuardedMember(parameter, propertyOrFieldValue, out var member)
+                   ? member
+                   : MemoizeGuardedMember(parameter, propertyOrFieldValue, ResolveMemberPath(expression, propertyOrFieldValue));
+    }
+
+    private Expression ResolveMemberPath(Expression expression, string propertyOrFieldValue)
+    {
         try
         {
             if (ShouldRedactValue(propertyOrFieldValue, expression.Type))
@@ -549,7 +561,7 @@ internal partial class ProbeExpressionParser<T>
                     DeriveRedactionCheck(dictionaryEntryMember, entryGuard.SourceCheck);
                 }
 
-                return RedactIfRedactedType(dictionaryEntryMember, expression, propertyOrFieldValue);
+                return RedactByType(dictionaryEntryMember, expression, propertyOrFieldValue, CurrentRedactionGuardScope);
             }
 
             if (TryGetRedactionGuard(expression, out var guard))
@@ -563,7 +575,7 @@ internal partial class ProbeExpressionParser<T>
                 return UndefinedValue();
             }
 
-            return RedactIfRedactedType(memberExpression, expression, propertyOrFieldValue);
+            return RedactByType(memberExpression, expression, propertyOrFieldValue, CurrentRedactionGuardScope);
         }
         catch (Exception e)
         {
@@ -585,30 +597,6 @@ internal partial class ProbeExpressionParser<T>
     private bool IsRedactedValue(Expression expression)
     {
         return _redactedValue is not null && ReferenceEquals(expression, _redactedValue);
-    }
-
-    // Compile-time check: exact for this, arguments and locals (compiled per runtime type), declared type for anything
-    // read from them. @exception is declared as Exception.
-    private Expression RedactIfRedactedType(Expression value, Expression source, string name)
-    {
-        if (!Redaction.Instance.IsRedactedType(value.Type))
-        {
-            return value;
-        }
-
-        AddRedactionError(source is null ? name : $"{source}.{name}");
-        return RedactedValue();
-    }
-
-    private Expression RedactIfRedactedType(Expression value, Expression source, Expression indexOrKey)
-    {
-        if (!Redaction.Instance.IsRedactedType(value.Type))
-        {
-            return value;
-        }
-
-        AddRedactionError($"{source}[{indexOrKey}]");
-        return RedactedValue();
     }
 
     private GotoExpression ReturnDefaultValueExpression()
