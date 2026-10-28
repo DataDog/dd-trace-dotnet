@@ -1135,6 +1135,21 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(null, true, true)] // semantics mode exports traces over OTLP by default
+        [InlineData(null, false, false)]
+        [InlineData("none", true, false)]
+        public void OtelTracesSpanMetricsEnabled_AutoEnabledWithOtelSemanticsEnabled(string tracesExporter, bool otelSemanticsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.OtelTracesSpanMetricsEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData(null, 10000)]
         [InlineData("5000", 5000)]  // User custom value
         [InlineData("60000", 60000)]  // OTel spec default
