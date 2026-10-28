@@ -363,14 +363,18 @@ internal partial class ProbeExpressionParser<T>
     }
 
     // Wraps a check so it runs once per entry of its block: consumers are nested, and and/or short-circuits, so which
-    // guard runs first isn't known at compile time. A redaction is reported through the evaluation budget.
+    // guard runs first isn't known at compile time. A redaction in the root block is reported through the evaluation
+    // budget. One in a predicate only makes that item not match, so any skips it, filter drops it and all is false.
     private BinaryExpression MemoizedRedactionCheck(RedactionGuardScope scope, Expression check)
     {
         var state = DeclareRedactionGuardVariable(scope, typeof(int), ProbeExpressionParserHelper.RedactionCheckStateVariableName);
         scope.Resets.Add(Expression.Assign(state, Expression.Constant(CheckPending)));
-        var redacted = Expression.Block(
-            Expression.Call(MarkRuntimeRedactionMethod, _evaluationBudgetParameterExpression),
-            Expression.Constant(CheckedRedacted));
+        Expression redacted = Expression.Constant(CheckedRedacted);
+        if (scope.Parent is null)
+        {
+            redacted = Expression.Block(Expression.Call(MarkRuntimeRedactionMethod, _evaluationBudgetParameterExpression), redacted);
+        }
+
         return Expression.Equal(
             Expression.Condition(
                 Expression.Equal(state, Expression.Constant(CheckPending)),

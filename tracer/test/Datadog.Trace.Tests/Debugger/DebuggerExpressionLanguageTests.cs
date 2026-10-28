@@ -4379,10 +4379,6 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseListLocal""},0]},""TestValue""]}")]
             [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseDictionaryLocal""},""first""]},""TestValue""]}")]
             [InlineData(@"{""len"":{""getmember"":[{""ref"":""HolderLocal""},""BaseArray""]}}")]
-            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")]
-            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}}")]
-            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}}")]
-            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""PUBLIC_VALUE""]}]}")]
             [InlineData(@"{""and"":[{""isDefined"":{""ref"":""HolderLocal""}},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]}]}")]
             [InlineData(@"{""or"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]},true]}")]
             public void ProbeExpressionEvaluator_TemplateReadingRedactedRuntimeType_IsRedacted(string json)
@@ -4401,10 +4397,6 @@ namespace Datadog.Trace.Tests.Debugger
             [InlineData(@"{""and"":[{""isDefined"":{""ref"":""HolderLocal""}},{""eq"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""TOP_SECRET_VALUE""]}]}")]
             [InlineData(@"{""or"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]},false]}")]
             [InlineData(@"{""eq"":[{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""NamesAsList""]},0]},""TOP_SECRET_VALUE""]}")]
-            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}")]
-            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""getmember"":[""@it"",""Enabled""]}]}")]
-            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}")]
-            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""TOP_SECRET_VALUE""]}]}")]
             public void ProbeExpressionEvaluator_ConditionReadingRedactedRuntimeType_IsFalseWithRedactionError(string json)
             {
                 var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: null, condition: json);
@@ -4412,6 +4404,41 @@ namespace Datadog.Trace.Tests.Debugger
                 result.Condition.Should().BeFalse();
                 result.HasConditionError.Should().BeTrue();
                 result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+            }
+
+            // In a predicate, an item of a redacted runtime type doesn't match and isn't reported: any skips it, filter
+            // drops it and all is false. The redacted item's TestValue is TOP_SECRET_VALUE and its Enabled is true.
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}", "True")]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}", "False")]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""getmember"":[""@it"",""Enabled""]}]}", "False")]
+            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}", "False")]
+            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""not"":{""eq"":[{""getmember"":[""@it"",""TestValue""]},""x""]}}]}", "False")]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}}", "1")]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}}", "0")]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""PUBLIC_VALUE""]}]}", "True")]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""TOP_SECRET_VALUE""]}]}", "False")]
+            public void ProbeExpressionEvaluator_TemplateOverItemsOfRedactedRuntimeType_SkipsThemWithoutError(string json, string expected)
+            {
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
+
+                result.Template.Should().Be("value=" + expected);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}", true)]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""getmember"":[""@it"",""Enabled""]}]}", false)]
+            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""TOP_SECRET_VALUE""]}]}", false)]
+            public void ProbeExpressionEvaluator_ConditionOverItemsOfRedactedRuntimeType_SkipsThemWithoutError(string json, bool expected)
+            {
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: null, condition: json);
+
+                result.Condition.Should().Be(expected);
+                result.HasConditionError.Should().BeFalse();
+                result.Errors.Should().BeNullOrEmpty();
             }
 
             [Theory]
@@ -4553,10 +4580,11 @@ namespace Datadog.Trace.Tests.Debugger
 
             [Theory]
             [CombinatorialData]
-            public void ProbeExpressionEvaluator_ReturnGuardedInsideAndOutsidePredicate_CompilesAndRedacts(bool isRedactedType)
+            public void ProbeExpressionEvaluator_ReturnGuardedInsideAndOutsidePredicate_CompilesAndSkipsRedactedItem(bool isRedactedType)
             {
                 // @return is guarded outside the predicate (the any source) and inside it (the index). Both share the
-                // root block's guard, so the any operation outside the predicate never reads a predicate variable.
+                // root block's guard, so the any operation outside the predicate never reads a predicate variable. The
+                // item of a redacted runtime type doesn't match, and isn't reported.
                 TargetBase item = isRedactedType
                                       ? new RedactedTarget { TestValue = Secret, CustomKey = Secret }
                                       : new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
@@ -4569,6 +4597,27 @@ namespace Datadog.Trace.Tests.Debugger
                     returnValue: new List<TargetBase> { item });
 
                 result.Condition.Should().Be(!isRedactedType);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_ReturnReadInsidePredicate_ReportsItsRedaction(bool isRedactedType)
+            {
+                // @return is checked by the root block, so a predicate that reads it reports its redaction like a read
+                // outside a predicate does.
+                TargetBase target = isRedactedType
+                                        ? new RedactedTarget { TestValue = Secret, CustomKey = Secret }
+                                        : new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
+
+                var result = Evaluate(
+                    target,
+                    template: null,
+                    condition: @"{""any"":[{""ref"":""PublicListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[""@return"",""TestValue""]}]}]}",
+                    returnType: typeof(TargetBase));
+
+                result.Condition.Should().Be(!isRedactedType);
+                result.HasConditionError.Should().Be(isRedactedType);
                 AssertRedactionError(result, isRedactedType);
             }
 
@@ -4688,19 +4737,29 @@ namespace Datadog.Trace.Tests.Debugger
             [Theory]
             [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}")]
             [InlineData(@"{""len"":{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}}")]
-            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")]
-            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}")]
             [InlineData(@"{""and"":[{""isDefined"":{""ref"":""HolderLocal""}},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]}]}")]
             public void ProbeExpressionEvaluator_CaptureExpressionReadingRedactedRuntimeType_CapturesRedactedPlaceholder(string json)
             {
                 // Like a capture redacted at compile time, an operator over a redacted value can't capture a made-up
-                // result, such as any() being true for the items that aren't redacted.
+                // result, such as and() being false because its operand is redacted.
                 var result = EvaluateProbe(captures: [new CaptureExpressionDefinition("captured", ExpressionSegment(json), default)]);
 
                 result.CaptureExpressionCount.Should().Be(1);
                 result.CaptureExpressions[0].Value.Should().Be("{redacted}");
                 result.CaptureExpressions[0].Type.Should().Be(typeof(string));
                 result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+            }
+
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}", true)]
+            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}", false)]
+            public void ProbeExpressionEvaluator_CaptureExpressionOverItemsOfRedactedRuntimeType_CapturesTheResultWithoutError(string json, bool expected)
+            {
+                var result = EvaluateProbe(captures: [new CaptureExpressionDefinition("captured", ExpressionSegment(json), default)]);
+
+                result.CaptureExpressionCount.Should().Be(1);
+                result.CaptureExpressions[0].Value.Should().Be(expected);
+                result.Errors.Should().BeNullOrEmpty();
             }
 
             [Fact]
@@ -4712,11 +4771,11 @@ namespace Datadog.Trace.Tests.Debugger
                     [
                         LiteralSegment("public="),
                         ExpressionSegment(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBasePublic""]},""TestValue""]}"),
-                        LiteralSegment(", any="),
-                        ExpressionSegment(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")
+                        LiteralSegment(", secret="),
+                        ExpressionSegment(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}")
                     ]);
 
-                result.Template.Should().Be("public=PUBLIC_VALUE, any={redacted}");
+                result.Template.Should().Be("public=PUBLIC_VALUE, secret={redacted}");
                 result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
                 result.HasNonRedactionError.Should().BeFalse();
             }
@@ -4735,8 +4794,8 @@ namespace Datadog.Trace.Tests.Debugger
                 [
                     LiteralSegment("object="),
                     ExpressionSegment(@"{""getmember"":[{""ref"":""HolderLocal""},""AsObject""]}"),
-                    LiteralSegment(", any="),
-                    ExpressionSegment(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")
+                    LiteralSegment(", secret="),
+                    ExpressionSegment(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}")
                 ];
                 var decoration = Decoration(
                     @"{""isDefined"":{""ref"":""HolderLocal""}}",
@@ -4750,7 +4809,7 @@ namespace Datadog.Trace.Tests.Debugger
                 result.Decorations[0].Value.Should().Be("public=PUBLIC_VALUE");
                 result.Decorations[0].Errors.Should().BeNullOrEmpty();
                 result.Decorations[1].TagName.Should().Be("second");
-                result.Decorations[1].Value.Should().Be("object={[hello, ], }, any={redacted}");
+                result.Decorations[1].Value.Should().Be("object={[hello, ], }, secret={redacted}");
                 result.Decorations[1].Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
                 result.Errors.Should().BeNullOrEmpty();
             }
