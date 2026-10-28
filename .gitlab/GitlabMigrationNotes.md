@@ -10,7 +10,7 @@ These notes describe the build and unit-test shadow implementation, not the broa
 
 `shadow-build-unit-tests` is the only optional boundary: failures inside its child pipelines propagate to that trigger through `strategy: depend`. Individual shadow jobs are not marked `allow_failure`. Azure remains authoritative.
 
-Windows image preparation is a shared prerequisite for existing build/signing jobs as well as the shadow, so it remains blocking when needed. It is skipped when all consumers are excluded. The shadow itself is excluded for tags, release-environment deployments, and package-version runs; see the rules in [the root pipeline](../.gitlab-ci.yml).
+Windows image preparation is a shared prerequisite for existing build/signing jobs as well as the shadow, so it remains blocking when needed. The image check currently gates the entire shadow, including Linux jobs; matrix generation also uses the Windows image. It is skipped when all consumers are excluded. The shadow itself is excluded for tags, release-environment deployments, and package-version runs; see the rules in [the root pipeline](../.gitlab-ci.yml).
 
 ## Why generate child-pipeline YAML?
 
@@ -40,12 +40,14 @@ The generated files are **CI artifacts, not checked-in files**:
 
 Forward required variables explicitly across nested triggers: variables inherited from the root are not automatically forwarded again. In particular, the Windows test trigger forwards `WINDOWS_BUILD_IMAGE_BASE`.
 
+Generator containers must also receive `GITLAB_CI` for NUKE to detect the GitLab host. `CI_JOB_ID` alone is insufficient: without host detection, NUKE treats execution as local and selects all frameworks.
+
 ## Images, SDKs, and shared setup
 
 - Linux managed builds, validation images, and unit-test images read the SDK from `global.json` through [get-dotnet-sdk-version.sh](get-dotnet-sdk-version.sh). CentOS and universal builds intentionally retain their older native-toolchain SDK pin; do not replace it with the managed SDK automatically.
 - The Windows SDK remains pinned in its image definition and must be kept compatible with `global.json`. [install-windows-test-runtime.ps1](install-windows-test-runtime.ps1) supplies older runtimes needed by individual test jobs.
 - Windows images use content-addressed tags with automatic availability checks and manual publication after review; see [UPDATING_IMAGE.md](../tracer/build/_build/docker/gitlab/UPDATING_IMAGE.md) for the workflow and recovery steps.
-- Linux builds and unit tests share the Docker CLI image and BuildKit setting in [linux-build-common.yml](linux-build-common.yml), and build SDK images through [build-linux-image.sh](build-linux-image.sh). The legacy native SDK pin is defined once in `build-unit-tests.yml`, separately from the managed SDK in `global.json`.
+- Linux builds and unit tests share the Docker CLI image and BuildKit setting in [linux-build-common.yml](linux-build-common.yml), and build SDK images through [build-linux-image.sh](build-linux-image.sh). Within GitLab, the legacy native SDK pin is defined once in `build-unit-tests.yml`, separately from the managed SDK in `global.json`; keep it aligned with `nativeBuildDotnetSdkVersion` in [Azure's pipeline](../.azure-pipelines/ultimate-pipeline.yml).
 - Linux tracer, profiler, and universal producers share [run-nuke-linux.sh](run-nuke-linux.sh), and universal jobs share a YAML template. Within this shadow, only managed-test jobs receive CI Visibility credentials.
 - [linux-unit-tests.dockerfile](linux-unit-tests.dockerfile) adds Datadog CA certificates using a pinned multi-architecture image digest. Preserve both x64 and ARM64 support when updating it.
 
