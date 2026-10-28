@@ -544,6 +544,11 @@ internal partial class ProbeExpressionParser<T>
 
             if (TryGetDictionaryEntryMember(expression, propertyOrFieldValue, out var dictionaryEntryMember))
             {
+                if (TryGetRedactionGuard(expression, out var entryGuard))
+                {
+                    DeriveRedactionCheck(dictionaryEntryMember, entryGuard.SourceCheck);
+                }
+
                 return RedactIfRedactedType(dictionaryEntryMember, expression, propertyOrFieldValue);
             }
 

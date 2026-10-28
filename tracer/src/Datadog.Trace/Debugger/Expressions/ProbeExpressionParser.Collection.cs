@@ -66,6 +66,17 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
+    private static Expression InnermostFilterSource(FilterExpression filterExpression)
+    {
+        var source = filterExpression.Source;
+        while (source is FilterExpression sourceFilterExpression)
+        {
+            source = sourceFilterExpression.Source;
+        }
+
+        return source;
+    }
+
     // Skips the predicate of an operation over a redacted value by its JSON structure. Parsing it would stop early
     // at the first operator whose operand is the placeholder, and leave tokens for the enclosing operator to read.
     private void SkipPredicateOfRedactedSource(JsonTextReader reader)
@@ -114,9 +125,10 @@ internal partial class ProbeExpressionParser<T>
             return parsedFilterExpression;
         }
 
-        return _isBoundedFilterCapture
-                   ? BoundedFilterExpression(parsedFilterExpression, _boundedFilterMaxCollectionSize)
-                   : MaterializeFilterExpression(parsedFilterExpression);
+        Expression filtered = _isBoundedFilterCapture
+                                  ? BoundedFilterExpression(parsedFilterExpression, _boundedFilterMaxCollectionSize)
+                                  : MaterializeFilterExpression(parsedFilterExpression);
+        return RedactOperation(InnermostFilterSource(parsedFilterExpression), filtered);
     }
 
     private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, PredicateOperation operation, ParameterExpression outerItParameter)
@@ -149,21 +161,16 @@ internal partial class ProbeExpressionParser<T>
 
             var itParameterType = GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            predicateExpression = ParseTree(reader, parameters, itParameter);
+            predicateExpression = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: false);
 
-            // A predicate that is itself a redacted value, such as a member of a redacted item, never matches.
-            if (IsRedactedValue(predicateExpression))
-            {
-                predicateExpression = Expression.Constant(false);
-            }
-
-            return operation switch
+            Expression loop = operation switch
             {
                 PredicateOperation.Any => EnumerableAnyExpression(source, itParameter, predicateExpression),
                 PredicateOperation.All => EnumerableAllExpression(source, itParameter, predicateExpression),
                 PredicateOperation.Filter => EnumerableFilterExpression(source, itParameter, predicateExpression),
                 _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unsupported predicate operation")
             };
+            return RedactOperation(source, loop);
         }
         catch (Exception e)
         {
@@ -205,11 +212,7 @@ internal partial class ProbeExpressionParser<T>
                                       ? sourceFilterExpression.IteratorType
                                       : GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            var predicate = ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1);
-            if (IsRedactedValue(predicate))
-            {
-                predicate = Expression.Constant(false);
-            }
+            var predicate = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: true);
 
             var lambda = Expression.Lambda(predicate, itParameter);
             var isDictionary = source is FilterExpression filterSource
@@ -239,6 +242,16 @@ internal partial class ProbeExpressionParser<T>
             _isBoundedFilterCapture = previousIsBoundedFilterCapture;
             _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
         }
+    }
+
+    // A predicate that is itself a redacted value, such as a member of a redacted item, never matches. One that
+    // uses a guarded value is false when the guard redacts it.
+    private Expression ParsePredicate(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, bool outsideFilterCapture)
+    {
+        var predicate = outsideFilterCapture
+                            ? ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1)
+                            : ParseTree(reader, parameters, itParameter);
+        return IsRedactedValue(predicate) ? Expression.Constant(false) : RedactBooleanOperand(predicate);
     }
 
     private BlockExpression MaterializeFilterExpression(FilterExpression filterExpression)
@@ -462,7 +475,9 @@ internal partial class ProbeExpressionParser<T>
                 }
             }
 
-            return RedactIfRedactedType(CallGetItem(source, assignableFrom, indexOrKey), source, indexOrKey);
+            var item = CallGetItem(source, assignableFrom, indexOrKey);
+            DeriveRedactionGuard(item, source, indexOrKey);
+            return RedactIfRedactedType(item, source, indexOrKey);
         }
         catch (Exception e)
         {
