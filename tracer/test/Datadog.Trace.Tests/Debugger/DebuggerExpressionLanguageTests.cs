@@ -3783,6 +3783,42 @@ namespace Datadog.Trace.Tests.Debugger
             return builder.ToString();
         }
 
+        private static (T Value, bool IsRedacted) EvaluateCompiledWithRedaction<T>(CompiledExpression<T> compiled, MethodScopeMembers scopeMembers)
+        {
+            compiled.BudgetedDelegate.Should().NotBeNull();
+            var budget = EvaluationBudget.Create(TestMaxEvaluationTimeInMilliseconds);
+            var value = compiled.BudgetedDelegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members,
+                ref budget);
+            return (value, budget.TakeRuntimeRedaction());
+        }
+
+        private static void AssertRedactionError(ExpressionEvaluationResult result, bool isRedacted)
+        {
+            if (isRedacted)
+            {
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+            }
+            else
+            {
+                result.Errors.Should().BeNullOrEmpty();
+            }
+        }
+
+        // The capture filter's predicate is compiled once and embedded as a constant, instead of closing over the outer
+        // block on every evaluation.
+        private static void AssertCaptureFilterPredicateIsConstant(System.Linq.Expressions.Expression expression)
+        {
+            var filter = new CallFinder(nameof(FilterEvaluationHelpers.FilterForCapture));
+            filter.Visit(expression);
+            filter.Found.Should().NotBeNull();
+            filter.Found.Arguments[1].Should().BeAssignableTo<System.Linq.Expressions.ConstantExpression>();
+        }
+
         private async Task Test(string expressionTestFilePath)
         {
             // Arrange
@@ -3921,17 +3957,23 @@ namespace Datadog.Trace.Tests.Debugger
             return new ProbeExpressionEvaluator(templates, condition, metric, spanDecorations, captureExpressions, maxEvaluationTimeInMilliseconds);
         }
 
+        // A probe template: a "value=" literal, then the template expression when there is one.
+        private ProbeExpressionEvaluator CreateTemplateEvaluator(string template, string condition)
+        {
+            DebuggerExpression?[] templates = template is null
+                                                  ? [new DebuggerExpression(null, null, "value=")]
+                                                  : [new DebuggerExpression(null, null, "value="), new DebuggerExpression(string.Empty, template, null)];
+            return CreateEvaluator(
+                templates: templates,
+                condition: condition is null ? null : new DebuggerExpression(string.Empty, condition, null),
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+        }
+
         private T EvaluateCompiled<T>(CompiledExpression<T> compiled, MethodScopeMembers scopeMembers)
         {
-            compiled.BudgetedDelegate.Should().NotBeNull();
-            var budget = EvaluationBudget.Create(TestMaxEvaluationTimeInMilliseconds);
-            return compiled.BudgetedDelegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members,
-                ref budget);
+            return EvaluateCompiledWithRedaction(compiled, scopeMembers).Value;
         }
 
         private MethodScopeMembers CreateScopeMembersWithDictionaries(string key)
@@ -4829,10 +4871,7 @@ namespace Datadog.Trace.Tests.Debugger
                         new CaptureLimitInfo(MaxReferenceDepth: 3, MaxCollectionSize: 100, MaxLength: 255, MaxFieldCount: 20));
 
                     compiled.Errors.Should().BeNullOrEmpty();
-                    var filter = new CallFinder(nameof(FilterEvaluationHelpers.FilterForCapture));
-                    filter.Visit(compiled.ParsedExpression);
-                    filter.Found.Should().NotBeNull();
-                    filter.Found.Arguments[1].Should().BeAssignableTo<System.Linq.Expressions.ConstantExpression>();
+                    AssertCaptureFilterPredicateIsConstant(compiled.ParsedExpression);
                 }
                 finally
                 {
@@ -4881,18 +4920,6 @@ namespace Datadog.Trace.Tests.Debugger
                 var counter = new RuntimeGuardCounter();
                 counter.Visit(expression);
                 return counter.Count;
-            }
-
-            private static void AssertRedactionError(ExpressionEvaluationResult result, bool isRedacted)
-            {
-                if (isRedacted)
-                {
-                    result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
-                }
-                else
-                {
-                    result.Errors.Should().BeNullOrEmpty();
-                }
             }
 
             private System.Linq.Expressions.LambdaExpression Compile(string json, bool configureRedactedTypes = true, Type returnType = null)
@@ -4967,17 +4994,8 @@ namespace Datadog.Trace.Tests.Debugger
                         ConfigureRedactedTypes();
                     }
 
-                    DebuggerExpression?[] templates = template is null
-                                                          ? [new DebuggerExpression(null, null, "value=")]
-                                                          : [new DebuggerExpression(null, null, "value="), new DebuggerExpression(string.Empty, template, null)];
-                    var evaluator = _tests.CreateEvaluator(
-                        templates: templates,
-                        condition: condition is null ? null : new DebuggerExpression(string.Empty, condition, null),
-                        metric: null,
-                        spanDecorations: null,
-                        captureExpressions: null);
-
-                    return evaluator.Evaluate(CreateScopeMembers(target, exception, asObject, returnType, returnValue, countedItems));
+                    return _tests.CreateTemplateEvaluator(template, condition)
+                                 .Evaluate(CreateScopeMembers(target, exception, asObject, returnType, returnValue, countedItems));
                 }
                 finally
                 {
@@ -5133,48 +5151,6 @@ namespace Datadog.Trace.Tests.Debugger
             {
             }
 
-            private sealed class CountingList<T> : IList<T>
-            {
-                private readonly List<T> _items = [];
-
-                public int Count => _items.Count;
-
-                public bool IsReadOnly => false;
-
-                internal int Reads { get; private set; }
-
-                public T this[int index]
-                {
-                    get
-                    {
-                        Reads++;
-                        return _items[index];
-                    }
-
-                    set => _items[index] = value;
-                }
-
-                public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
-
-                IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-                public void Add(T item) => _items.Add(item);
-
-                public void Clear() => _items.Clear();
-
-                public bool Contains(T item) => _items.Contains(item);
-
-                public void CopyTo(T[] array, int arrayIndex) => _items.CopyTo(array, arrayIndex);
-
-                public int IndexOf(T item) => _items.IndexOf(item);
-
-                public void Insert(int index, T item) => _items.Insert(index, item);
-
-                public bool Remove(T item) => _items.Remove(item);
-
-                public void RemoveAt(int index) => _items.RemoveAt(index);
-            }
-
             // Counts distinct check nodes: a guard shared by nested operations is one node.
             private sealed class RuntimeGuardCounter : System.Linq.Expressions.ExpressionVisitor
             {
@@ -5188,21 +5164,6 @@ namespace Datadog.Trace.Tests.Debugger
                         node.Method.Name == nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue))
                     {
                         _guards.Add(node);
-                    }
-
-                    return base.VisitMethodCall(node);
-                }
-            }
-
-            private sealed class CallFinder(string methodName) : System.Linq.Expressions.ExpressionVisitor
-            {
-                internal System.Linq.Expressions.MethodCallExpression Found { get; private set; }
-
-                protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
-                {
-                    if (node.Method.Name == methodName)
-                    {
-                        Found ??= node;
                     }
 
                     return base.VisitMethodCall(node);
@@ -5228,6 +5189,697 @@ namespace Datadog.Trace.Tests.Debugger
                         Nested += states;
                     }
 
+                    return base.VisitBlock(node);
+                }
+            }
+        }
+
+        [Collection(nameof(RedactionTests))]
+        public class DictionaryKeyRedactionTests
+        {
+            private const string Secret = "TOP_SECRET_VALUE";
+            private const string Redacted = "{redacted}";
+            private const string IsRedactedStringKey = nameof(ProbeExpressionParser<object>.IsRedactedStringKey);
+            private const string IsRedactedObjectKey = nameof(ProbeExpressionParser<object>.IsRedactedObjectKey);
+            private const string IsRedactedEntryKey = nameof(ProbeExpressionParser<object>.IsRedactedEntryKey);
+
+            private readonly DebuggerExpressionLanguageTests _tests = new();
+
+            private enum CredentialKind
+            {
+                Public,
+                Password,
+                Login,
+
+                // An alias named like a keyword: the value is redacted whichever name ToString yields.
+                Token = Login
+            }
+
+            private enum PlainKind
+            {
+                First,
+                Second
+            }
+
+            [Flags]
+            private enum CredentialFlags
+            {
+                None = 0,
+                Public = 1,
+                Password = 2,
+                Other = 4,
+                Login = 8,
+                Token = Login
+            }
+
+            public static IEnumerable<object[]> RuntimeKeyRedactedOperations()
+            {
+                const string value = """{ "index": [ { "ref": "SafeDictionaryLocal" }, { "ref": "KeyLocal" } ] }""";
+                const string nestedValue = """{ "index": [ { "ref": "NestedDictionaryLocal" }, { "ref": "KeyLocal" } ] }""";
+                yield return [$$"""{ "eq": [ {{value}}, "TOP_SECRET_VALUE" ] }"""];
+                yield return [$$"""{ "eq": [ {{value}}, {{value}} ] }"""];
+                yield return [$$"""{ "startsWith": [ {{value}}, "TOP" ] }"""];
+                yield return [$$"""{ "gt": [ { "len": {{value}} }, 10 ] }"""];
+                yield return [$$"""{ "eq": [ { "substring": [ {{value}}, 0, 3 ] }, "TOP" ] }"""];
+                yield return [$$"""{ "not": { "isEmpty": {{value}} } }"""];
+                yield return [$$"""{ "eq": [ { "index": [ {{nestedValue}}, 0 ] }, "TOP_SECRET_VALUE" ] }"""];
+                yield return [$$"""{ "any": [ {{nestedValue}}, { "eq": [ "@it", "TOP_SECRET_VALUE" ] } ] }"""];
+                yield return [$$"""{ "gt": [ { "len": { "filter": [ {{nestedValue}}, { "eq": [ "@it", "TOP_SECRET_VALUE" ] } ] } }, 0 ] }"""];
+                yield return [$$"""{ "and": [ { "isDefined": {{value}} }, { "eq": [ {{value}}, "TOP_SECRET_VALUE" ] } ] }"""];
+            }
+
+            public static IEnumerable<object[]> RedactedDictionaryValueHoles()
+            {
+                const string entries = """{ "filter": [ { "ref": "NestedDictionaryLocal" }, { "eq": [ "@key", "__KEY__" ] } ] }""";
+                yield return [$$"""{ "any": [ {{entries}}, { "eq": [ { "index": [ "@value", 0 ] }, "TOP_SECRET_VALUE" ] } ] }"""];
+                yield return [$$"""{ "any": [ {{entries}}, { "startsWith": [ { "index": [ "@value", 0 ] }, "TOP" ] } ] }"""];
+                yield return [$$"""{ "any": [ {{entries}}, { "any": [ "@value", { "eq": [ "@it", "TOP_SECRET_VALUE" ] } ] } ] }"""];
+                yield return [$$"""{ "any": [ {{entries}}, { "any": [ "@value", { "startsWith": [ "@it", "TOP" ] } ] } ] }"""];
+                yield return [$$"""{ "any": [ {{entries}}, { "not": { "all": [ "@value", { "ne": [ "@it", "TOP_SECRET_VALUE" ] } ] } } ] }"""];
+                yield return [$$"""{ "gt": [ { "len": { "filter": [ {{entries}}, { "eq": [ { "index": [ "@value", 0 ] }, "TOP_SECRET_VALUE" ] } ] } }, 0 ] }"""];
+                yield return [$$"""{ "gt": [ { "len": { "filter": [ {{entries}}, { "any": [ "@value", { "eq": [ "@it", "TOP_SECRET_VALUE" ] } ] } ] } }, 0 ] }"""];
+            }
+
+            public static IEnumerable<object[]> KeysWithoutRuntimeCheck()
+            {
+                yield return Keyed(1L);
+                yield return Keyed((byte)5);
+                yield return Keyed(2.5d);
+                yield return Keyed(3.5m);
+                yield return Keyed(true);
+                yield return Keyed('p');
+                yield return Keyed(new Guid("6f9619ff-8b86-d011-b42d-00c04fc964ff"));
+                yield return Keyed(new DateTime(2020, 1, 1));
+                yield return Keyed(new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero));
+                yield return Keyed(TimeSpan.FromSeconds(1));
+                yield return Keyed(new Version(1, 2));
+                yield return Keyed<int?>(1);
+                yield return Keyed(PlainKind.Second);
+                yield return Keyed<PlainKind?>(PlainKind.Second);
+                yield return Keyed(new OpaqueKey { Id = 1 });
+
+                // Unsafe to ToString, so it is redacted only by its type: its ToString, which throws, isn't called.
+                yield return Keyed(new ThrowsOnToStringKey());
+
+                // No string, enum or type safe to ToString derives from it, so no value of it can be matched by name.
+                yield return Keyed(new CustomKey { Id = 1 });
+            }
+
+            public static IEnumerable<object[]> EnumKeys()
+            {
+                yield return EnumKeyed(CredentialKind.Public, "hello");
+                yield return EnumKeyed(CredentialKind.Password, Redacted);
+                yield return EnumKeyed(CredentialKind.Login, Redacted);
+                yield return EnumKeyed((CredentialKind)42, "undefined");
+                yield return EnumKeyed((CredentialKind)(-1), "negative");
+                yield return EnumKeyed<CredentialKind?>(CredentialKind.Public, "hello");
+                yield return EnumKeyed<CredentialKind?>(CredentialKind.Password, Redacted);
+                yield return EnumKeyed(CredentialFlags.Public, "hello");
+                yield return EnumKeyed(CredentialFlags.Password, Redacted);
+                yield return EnumKeyed(CredentialFlags.Login, Redacted);
+
+                // The name of a combination ("Other, Password") is never a keyword.
+                yield return EnumKeyed(CredentialFlags.Public | CredentialFlags.Other, "combination");
+                yield return EnumKeyed(CredentialFlags.Password | CredentialFlags.Other, "combination");
+                yield return EnumKeyed((CredentialFlags)16, "undefined");
+                yield return EnumKeyed((CredentialFlags)(-1), "negative");
+                yield return EnumKeyed<CredentialFlags?>(CredentialFlags.Public, "hello");
+                yield return EnumKeyed<CredentialFlags?>(CredentialFlags.Password, Redacted);
+            }
+
+            public static IEnumerable<object[]> ObjectKeys()
+            {
+                yield return ["password", Redacted];
+                yield return ["public", "hello"];
+                yield return [CredentialKind.Password, Redacted];
+                yield return [new StringBuilder("password"), Redacted];
+
+                // A number is never matched as a keyword, and a key unsafe to ToString is redacted only by its type.
+                yield return [42, "found"];
+                yield return [new ThrowsOnToStringKey(), "found"];
+
+                // A key of a redacted runtime type isn't matched by the key check: the key's own guard redacts the lookup.
+                yield return [new SecureString(), Redacted];
+            }
+
+            public static IEnumerable<object[]> IteratedDictionaries()
+            {
+                yield return [new Dictionary<string, string> { { "password", Secret } }, true, IsRedactedStringKey];
+                yield return [new Dictionary<string, string> { { "public", Secret } }, false, IsRedactedStringKey];
+                yield return [new Hashtable { { "password", Secret } }, true, IsRedactedEntryKey];
+                yield return [new Hashtable { { new SecureString(), Secret } }, true, IsRedactedEntryKey];
+                yield return [new Dictionary<object, string> { { CredentialKind.Password, Secret } }, true, IsRedactedEntryKey];
+                yield return [new Dictionary<object, string> { { new SecureString(), Secret } }, true, IsRedactedEntryKey];
+                yield return [new Dictionary<object, string> { { 42, Secret } }, false, IsRedactedEntryKey];
+                yield return [new Dictionary<CredentialKind, string> { { CredentialKind.Login, Secret } }, true, null];
+                yield return [new Dictionary<CredentialKind, string> { { CredentialKind.Public, Secret } }, false, null];
+                yield return [new Dictionary<CredentialKind?, string> { { CredentialKind.Password, Secret } }, true, null];
+                yield return [new Dictionary<CredentialFlags, string> { { CredentialFlags.Password, Secret } }, true, null];
+                yield return [new Dictionary<CredentialFlags, string> { { CredentialFlags.Password | CredentialFlags.Other, Secret } }, false, null];
+                yield return [new Dictionary<int, string> { { 1, Secret } }, false, null];
+            }
+
+            // Unlike an index key, an iterated key has no guard of its own, so its runtime type redacts the entry's value.
+            // In a predicate the entry doesn't match and isn't reported. Read outside a predicate, it is.
+            public static IEnumerable<object[]> EntryReadsUnderKeyOfRedactedRuntimeType()
+            {
+                const string any = @"{""any"":[{""ref"":""EntryKeyDictionaryLocal""},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}";
+                const string filter = @"{""len"":{""filter"":[{""ref"":""EntryKeyDictionaryLocal""},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}}";
+                const string value = @"{""eq"":[{""getmember"":[{""index"":[{""filter"":[{""ref"":""EntryKeyDictionaryLocal""},{""isDefined"":""@it""}]},0]},""Value""]},""TOP_SECRET_VALUE""]}";
+                foreach (var isHashtable in new[] { true, false })
+                {
+                    yield return [isHashtable, any, false, "True"];
+                    yield return [isHashtable, filter, false, "1"];
+                    yield return [isHashtable, value, false, "True"];
+                    yield return [isHashtable, any, true, "False"];
+                    yield return [isHashtable, filter, true, "0"];
+                    yield return [isHashtable, value, true, Redacted];
+                }
+            }
+
+            [Theory]
+            [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""ref"":""KeyLocal""}]}", "password", Redacted)]
+            [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[{""ref"":""KeyLocal""},1,9]}]}", "xpasswordx", Redacted)]
+            [InlineData(@"{""index"":[{""ref"":""HashtableLocal""},{""ref"":""KeyLocal""}]}", "password", Redacted)]
+            [InlineData(@"{""len"":{""index"":[{""ref"":""SafeDictionaryLocal""},{""ref"":""KeyLocal""}]}}", "password", Redacted)]
+            [InlineData(@"{""index"":[{""index"":[{""ref"":""NestedDictionaryLocal""},{""ref"":""KeyLocal""}]},0]}", "password", Redacted)]
+            [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""ref"":""KeyLocal""}]}", "public", "hello")]
+            [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[{""ref"":""KeyLocal""},1,7]}]}", "xpublicx", "hello")]
+            [InlineData(@"{""len"":{""index"":[{""ref"":""SafeDictionaryLocal""},{""ref"":""KeyLocal""}]}}", "public", "5")]
+            [InlineData(@"{""index"":[{""index"":[{""ref"":""NestedDictionaryLocal""},{""ref"":""KeyLocal""}]},0]}", "public", "hello")]
+            public void ProbeExpressionEvaluator_RuntimeStringKey_RedactsSensitiveKeysThroughOneStringKeyCheck(string json, string key, string expected)
+            {
+                var isRedacted = expected == Redacted;
+                var scopeMembers = CreateScopeMembers(key);
+                var evaluator = _tests.CreateTemplateEvaluator(json, condition: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Be("value=" + expected);
+                AssertRedactionError(result, isRedacted);
+                var counter = KeyCheckCounter.Count(evaluator.CompiledTemplates[1].ParsedExpression);
+                counter.CallsTo(IsRedactedStringKey).Should().Be(1);
+                counter.CallsTo(IsRedactedObjectKey).Should().Be(0);
+
+                var capture = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+                var (captured, captureRedacted) = EvaluateCompiledWithRedaction(capture, scopeMembers);
+                captured.ToString().Should().Be(expected);
+                captureRedacted.Should().Be(isRedacted);
+                capture.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [MemberData(nameof(RuntimeKeyRedactedOperations))]
+            public void ProbeExpressionParser_RuntimeKey_RedactsDerivedOperations(string json)
+            {
+                var compiled = ProbeExpressionParser<bool>.ParseExpression(json, CreateScopeMembers("public", publicValue: Secret));
+
+                EvaluateCompiledWithRedaction(compiled, CreateScopeMembers("public", publicValue: Secret)).Should().Be((true, false));
+                EvaluateCompiledWithRedaction(compiled, CreateScopeMembers("password", publicValue: Secret)).Should().Be((false, true));
+                EvaluateCompiledWithRedaction(compiled, CreateScopeMembers("public", publicValue: Secret)).Should().Be((true, false));
+                compiled.Errors.Should().BeNullOrEmpty();
+
+                var result = _tests.CreateTemplateEvaluator(template: null, condition: json).Evaluate(CreateScopeMembers("password", publicValue: Secret));
+                result.Condition.Should().BeFalse();
+                result.HasConditionError.Should().BeTrue();
+                AssertRedactionError(result, isRedacted: true);
+            }
+
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""KeysLocal""},{""eq"":[{""index"":[{""ref"":""SafeDictionaryLocal""},""@it""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""any"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[{""index"":[{""ref"":""OtherDictionaryLocal""},""@key""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""any"":[{""ref"":""WrappedKeysLocal""},{""eq"":[{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""@it"",1,9]}]},""TOP_SECRET_VALUE""]}]}")]
+            public void ProbeExpressionEvaluator_IteratorKey_SkipsSensitiveKeysWithoutError(string json)
+            {
+                var result = _tests.CreateTemplateEvaluator(template: null, condition: json).Evaluate(CreateScopeMembers());
+
+                result.Condition.Should().BeFalse();
+                result.HasConditionError.Should().BeFalse();
+                AssertRedactionError(result, isRedacted: false);
+            }
+
+            [Theory]
+            [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},""public""]}", "hello")]
+            [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""xpublicx"",1,7]}]}", "hello")]
+            [InlineData(@"{""index"":[{""ref"":""CollectionLocal""},{""ref"":""IndexLocal""}]}", "1st Item")]
+            [InlineData(@"{""index"":[{""ref"":""IntKeyDictionaryLocal""},{""ref"":""IndexLocal""}]}", "one")]
+            public void ProbeExpressionParser_ConstantKeyListIndexAndNumericKey_AddNoKeyCheck(string json, string expected)
+            {
+                var scopeMembers = CreateScopeMembers("password");
+
+                var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+
+                EvaluateCompiledWithRedaction(compiled, scopeMembers).Should().Be((expected, false));
+                compiled.Errors.Should().BeNullOrEmpty();
+                AssertNoKeyCheck(compiled.ParsedExpression);
+            }
+
+            [Theory]
+            [MemberData(nameof(KeysWithoutRuntimeCheck))]
+            public void ProbeExpressionParser_KeyTypeThatCannotBeAKeyword_AddsNoKeyCheck(object dictionary, object key, Type keyType)
+            {
+                var scopeMembers = CreateScopeMembers();
+                AddLocal(scopeMembers, "KeyedDictionaryLocal", dictionary);
+                AddLocal(scopeMembers, "TypedKeyLocal", key, keyType);
+
+                var compiled = ProbeExpressionParser<string>.ParseExpression(@"{""index"":[{""ref"":""KeyedDictionaryLocal""},{""ref"":""TypedKeyLocal""}]}", scopeMembers);
+
+                EvaluateCompiledWithRedaction(compiled, scopeMembers).Should().Be(("found", false));
+                compiled.Errors.Should().BeNullOrEmpty();
+                AssertNoKeyCheck(compiled.ParsedExpression);
+            }
+
+            [Theory]
+            [InlineData(@"{""index"":[{""ref"":""IntKeyDictionaryLocal""},{""len"":""a""}]}", true, Redacted)]
+            [InlineData(@"{""index"":[{""ref"":""IntKeyDictionaryLocal""},{""len"":""a""}]}", false, "one")]
+            [InlineData(@"{""any"":[{""ref"":""IntKeyDictionaryLocal""},{""eq"":[""@value"",""one""]}]}", true, Redacted)]
+            [InlineData(@"{""any"":[{""ref"":""IntKeyDictionaryLocal""},{""eq"":[""@value"",""one""]}]}", false, "True")]
+            public void ProbeExpressionEvaluator_RedactedKeyType_RedactsIndexAndIteratorValues(string json, bool isRedactedType, string expected)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    if (isRedactedType)
+                    {
+                        Redaction.Instance.SetConfig([], [], [typeof(int).FullName]);
+                    }
+
+                    var result = _tests.CreateTemplateEvaluator(json, condition: null).Evaluate(CreateScopeMembers());
+
+                    result.Template.Should().Be("value=" + expected);
+                    AssertRedactionError(result, isRedactedType);
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            // Decided at compile time: the key is compared with the members named like a keyword, without a runtime call.
+            [Theory]
+            [MemberData(nameof(EnumKeys))]
+            public void ProbeExpressionEvaluator_EnumKey_IsComparedWithSensitiveMembersWithoutRuntimeCall(object dictionary, object key, Type keyType, string expected)
+            {
+                var scopeMembers = CreateScopeMembers();
+                AddLocal(scopeMembers, "EnumKeyDictionaryLocal", dictionary);
+                AddLocal(scopeMembers, "KindLocal", key, keyType);
+                var evaluator = _tests.CreateTemplateEvaluator(@"{""index"":[{""ref"":""EnumKeyDictionaryLocal""},{""ref"":""KindLocal""}]}", condition: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Be("value=" + expected);
+                AssertRedactionError(result, expected == Redacted);
+                var counter = KeyCheckCounter.Count(evaluator.CompiledTemplates[1].ParsedExpression);
+                counter.CallsTo(IsRedactedStringKey).Should().Be(0);
+                counter.CallsTo(IsRedactedObjectKey).Should().Be(0);
+            }
+
+            [Theory]
+            [MemberData(nameof(ObjectKeys))]
+            public void ProbeExpressionEvaluator_ObjectKey_IsCheckedByNameAtRuntime(object key, string expected)
+            {
+                var scopeMembers = CreateScopeMembers();
+                AddLocal(scopeMembers, "ObjectKeyDictionaryLocal", new Dictionary<object, string> { { key, expected == Redacted ? Secret : expected } });
+                AddLocal(scopeMembers, "KeyHolderLocal", new KeyHolder { Key = key });
+                var evaluator = _tests.CreateTemplateEvaluator(@"{""index"":[{""ref"":""ObjectKeyDictionaryLocal""},{""getmember"":[{""ref"":""KeyHolderLocal""},""Key""]}]}", condition: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Be("value=" + expected);
+                AssertRedactionError(result, expected == Redacted);
+                var counter = KeyCheckCounter.Count(evaluator.CompiledTemplates[1].ParsedExpression);
+                counter.CallsTo(IsRedactedObjectKey).Should().Be(1);
+                counter.CallsTo(IsRedactedStringKey).Should().Be(0);
+            }
+
+            // The key check doesn't change the lookup: a null key still fails it, and a missing key still reads nothing.
+            [Theory]
+            [InlineData("SafeDictionaryLocal", @"{""ref"":""NullKeyLocal""}", true)]
+            [InlineData("KindDictionaryLocal", @"{""ref"":""NullKindLocal""}", true)]
+            [InlineData("ObjectDictionaryLocal", @"{""getmember"":[{""ref"":""NullKeyHolderLocal""},""Key""]}", true)]
+            [InlineData("SafeDictionaryLocal", @"{""ref"":""MissingKeyLocal""}", false)]
+            [InlineData("KindDictionaryLocal", @"{""ref"":""MissingKindLocal""}", false)]
+            [InlineData("ObjectDictionaryLocal", @"{""getmember"":[{""ref"":""MissingKeyHolderLocal""},""Key""]}", false)]
+            public void ProbeExpressionEvaluator_NullOrMissingRuntimeKey_LooksUpAsWithoutTheKeyCheck(string dictionary, string keyJson, bool isNullKey)
+            {
+                var json = $$"""{"index":[{"ref":"{{dictionary}}"},{{keyJson}}]}""";
+
+                var result = _tests.CreateTemplateEvaluator(json, condition: null).Evaluate(CreateScopeMembers());
+
+                result.Template.Should().Be("value=");
+                if (isNullKey)
+                {
+                    result.Errors.Should().ContainSingle().Which.Message.Should().Be(new ArgumentNullException("key").Message);
+                }
+                else
+                {
+                    result.Errors.Should().BeNullOrEmpty();
+                }
+            }
+
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_RuntimeKeyUsedByNestedOperations_IsReadOnce(bool isSensitive)
+            {
+                CountingList<string> countedKeys = [isSensitive ? "password" : "public"];
+
+                var result = _tests.CreateTemplateEvaluator(
+                                         template: null,
+                                         condition: @"{""gt"":[{""len"":{""index"":[{""ref"":""SafeDictionaryLocal""},{""index"":[{""ref"":""CountedKeysLocal""},0]}]}},0]}")
+                                    .Evaluate(CreateScopeMembers(countedKeys: countedKeys));
+
+                result.Condition.Should().Be(!isSensitive);
+                AssertRedactionError(result, isSensitive);
+                countedKeys.Reads.Should().Be(1);
+            }
+
+            [Theory]
+            [MemberData(nameof(RedactedDictionaryValueHoles))]
+            public void ProbeExpressionParser_DictionaryIteratorValue_RedactsIndexAndNestedPredicates(string json)
+            {
+                var scopeMembers = CreateScopeMembers(publicValue: Secret);
+
+                var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(json.Replace("__KEY__", "public"), scopeMembers);
+                var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(json.Replace("__KEY__", "password"), scopeMembers);
+
+                EvaluateCompiledWithRedaction(publicCompiled, scopeMembers).Should().Be((true, false));
+                EvaluateCompiledWithRedaction(sensitiveCompiled, scopeMembers).Should().Be((false, false));
+                publicCompiled.Errors.Should().BeNullOrEmpty();
+                sensitiveCompiled.Errors.Should().BeNullOrEmpty();
+            }
+
+            // @value is guarded by its key, checked as an index key of the declared key type, an object key also by its
+            // runtime type.
+            [Theory]
+            [MemberData(nameof(IteratedDictionaries))]
+            public void ProbeExpressionParser_IteratorValue_IsGuardedByTheCheckOfItsDeclaredKeyType(object dictionary, bool isRedacted, string keyCheck)
+            {
+                var scopeMembers = CreateScopeMembers();
+                AddLocal(scopeMembers, "IteratedDictionaryLocal", dictionary);
+
+                var compiled = ProbeExpressionParser<bool>.ParseExpression(@"{""any"":[{""ref"":""IteratedDictionaryLocal""},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}", scopeMembers);
+
+                EvaluateCompiledWithRedaction(compiled, scopeMembers).Should().Be((!isRedacted, false));
+                compiled.Errors.Should().BeNullOrEmpty();
+                var counter = KeyCheckCounter.Count(compiled.ParsedExpression);
+                counter.CallsTo(IsRedactedStringKey).Should().Be(keyCheck == IsRedactedStringKey ? 1 : 0);
+                counter.CallsTo(IsRedactedEntryKey).Should().Be(keyCheck == IsRedactedEntryKey ? 1 : 0);
+                counter.CallsTo(IsRedactedObjectKey).Should().Be(0);
+            }
+
+            // A key type that can't be matched by name adds no name check, but an iterated key of that type can still have a
+            // redacted runtime type, which redacts the entry's value.
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionParser_IteratorValueUnderCustomKeyType_IsGuardedOnlyByTheKeyRuntimeType(bool isRedactedKeyType)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    Redaction.Instance.SetConfig([], [], [typeof(SecretKey).FullName]);
+                    var scopeMembers = CreateScopeMembers();
+                    var key = isRedactedKeyType ? new SecretKey() : new CustomKey();
+                    AddLocal(scopeMembers, "CustomKeyDictionaryLocal", new Dictionary<CustomKey, string> { { key, Secret } });
+
+                    var compiled = ProbeExpressionParser<bool>.ParseExpression(@"{""any"":[{""ref"":""CustomKeyDictionaryLocal""},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}", scopeMembers);
+
+                    EvaluateCompiledWithRedaction(compiled, scopeMembers).Should().Be((!isRedactedKeyType, false));
+                    compiled.Errors.Should().BeNullOrEmpty();
+                    var counter = KeyCheckCounter.Count(compiled.ParsedExpression);
+                    counter.CallsTo(IsRedactedEntryKey).Should().Be(0);
+                    counter.CallsTo(IsRedactedObjectKey).Should().Be(0);
+                    counter.HasCheckState.Should().BeTrue("the key's runtime type is checked");
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            [Theory]
+            [MemberData(nameof(EntryReadsUnderKeyOfRedactedRuntimeType))]
+            public void ProbeExpressionEvaluator_TemplateOverEntryUnderKeyOfRedactedRuntimeType_IsSkippedOrRedacted(bool isHashtable, string json, bool isRedactedKeyType, string expected)
+            {
+                object key = isRedactedKeyType ? new SecureString() : "public";
+                var scopeMembers = CreateScopeMembers();
+                AddLocal(scopeMembers, "EntryKeyDictionaryLocal", isHashtable ? new Hashtable { { key, Secret } } : (object)new Dictionary<object, string> { { key, Secret } });
+
+                var result = _tests.CreateTemplateEvaluator(json, condition: null).Evaluate(scopeMembers);
+
+                result.Template.Should().Be("value=" + expected);
+                AssertRedactionError(result, expected == Redacted);
+            }
+
+            [Theory]
+            [InlineData("BoolDictionaryLocal", @"""@value""")]
+            [InlineData("BoolDictionaryLocal", @"{""eq"":[""@value"",true]}")]
+            [InlineData("BoolListDictionaryLocal", @"{""index"":[""@value"",0]}")]
+            public void ProbeExpressionParser_BoolDictionaryValuePredicate_IsGuardedOnce(string dictionaryName, string predicateJson)
+            {
+                var scopeMembers = CreateScopeMembers();
+                var json = $$"""{ "any": [ { "filter": [ { "ref": "{{dictionaryName}}" }, { "eq": [ "@key", "__KEY__" ] } ] }, {{predicateJson}} ] }""";
+
+                var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(json.Replace("__KEY__", "public"), scopeMembers);
+                var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(json.Replace("__KEY__", "password"), scopeMembers);
+
+                EvaluateCompiledWithRedaction(publicCompiled, scopeMembers).Should().Be((true, false));
+                EvaluateCompiledWithRedaction(sensitiveCompiled, scopeMembers).Should().Be((false, false));
+                publicCompiled.Errors.Should().BeNullOrEmpty();
+                KeyCheckCounter.Count(sensitiveCompiled.ParsedExpression).CallsTo(IsRedactedStringKey).Should().Be(1);
+            }
+
+            // Nothing runs on a redacted value: a regex parse error, an out-of-range bound or index, or a missing key error
+            // would reveal it.
+            [Theory]
+            [InlineData(@"{""matches"":[""x"",{""index"":[{""ref"":""RegexDictionaryLocal""},{""ref"":""KeyLocal""}]}]}")]
+            [InlineData(@"{""startsWith"":[""TOP_SECRET_VALUE"",{""index"":[{""ref"":""PrefixDictionaryLocal""},{""ref"":""KeyLocal""}]}]}")]
+            [InlineData(@"{""eq"":[{""getmember"":[{""index"":[{""index"":[{""ref"":""EntryListDictionaryLocal""},{""ref"":""KeyLocal""}]},0]},""Key""]},""inner""]}")]
+            public void ProbeExpressionEvaluator_ConditionOnRedactedValue_ReportsOnlyTheRedaction(string json)
+            {
+                var result = _tests.CreateTemplateEvaluator(template: null, condition: json).Evaluate(CreateLeakScopeMembers());
+
+                result.Condition.Should().BeFalse();
+                result.HasConditionError.Should().BeTrue();
+                AssertRedactionError(result, isRedacted: true);
+            }
+
+            // In a predicate, an entry under a sensitive key doesn't match, and nothing that would reveal its value runs
+            // or is reported.
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""RegexDictionaryLocal""},{""matches"":[""x"",""@value""]}]}", true)]
+            [InlineData(@"{""any"":[{""ref"":""BoolValueDictionaryLocal""},{""and"":[{""eq"":[""@key"",""password""]},""@value""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""BoolValueDictionaryLocal""},{""or"":[{""eq"":[""@key"",""none""]},""@value""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""PrefixDictionaryLocal""},{""startsWith"":[""TOP_SECRET_VALUE"",""@value""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""OutOfRangeDictionaryLocal""},{""eq"":[{""substring"":[""0123456789"",0,""@value""]},""012""]}]}", true)]
+            [InlineData(@"{""any"":[{""ref"":""InRangeDictionaryLocal""},{""eq"":[{""substring"":[""0123456789"",0,""@value""]},""""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""OutOfRangeDictionaryLocal""},{""eq"":[{""index"":[{""ref"":""CollectionLocal""},""@value""]},""3rd item""]}]}", true)]
+            [InlineData(@"{""any"":[{""ref"":""InRangeDictionaryLocal""},{""eq"":[{""index"":[{""ref"":""CollectionLocal""},""@value""]},""hello""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""KeyDictionaryLocal""},{""eq"":[{""index"":[{""ref"":""MapLocal""},""@value""]},""v""]}]}", true)]
+            [InlineData(@"{""any"":[{""ref"":""KeyDictionaryLocal""},{""eq"":[{""index"":[{""ref"":""SecretMapLocal""},""@value""]},""v""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""EntryListDictionaryLocal""},{""eq"":[{""getmember"":[{""index"":[""@value"",0]},""Key""]},""inner""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""EntryListDictionaryLocal""},{""eq"":[{""getmember"":[{""index"":[""@value"",0]},""Value""]},""TOP_SECRET_VALUE""]}]}", false)]
+            [InlineData(@"{""any"":[{""ref"":""EntryDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""Value""]},""TOP_SECRET_VALUE""]}]}", false)]
+            public void ProbeExpressionEvaluator_ConditionOverEntriesUnderSensitiveKeys_SkipsThemWithoutError(string json, bool expected)
+            {
+                var result = _tests.CreateTemplateEvaluator(template: null, condition: json).Evaluate(CreateLeakScopeMembers());
+
+                result.Condition.Should().Be(expected);
+                result.HasConditionError.Should().BeFalse();
+                AssertRedactionError(result, isRedacted: false);
+            }
+
+            [Theory]
+            [InlineData(@"{""matches"":[""x"",{""index"":[{""ref"":""RegexDictionaryLocal""},{""ref"":""PublicKeyLocal""}]}]}")]
+            [InlineData(@"{""startsWith"":[""nomatch_suffix"",{""index"":[{""ref"":""PrefixDictionaryLocal""},{""ref"":""PublicKeyLocal""}]}]}")]
+            [InlineData(@"{""eq"":[{""getmember"":[{""index"":[{""index"":[{""ref"":""EntryListDictionaryLocal""},{""ref"":""PublicKeyLocal""}]},0]},""Key""]},""other""]}")]
+            [InlineData(@"{""any"":[{""ref"":""PublicEntryDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""Value""]},""TOP_SECRET_VALUE""]}]}")]
+            public void ProbeExpressionEvaluator_ConditionOnNonRedactedValue_IsUnchanged(string json)
+            {
+                var result = _tests.CreateTemplateEvaluator(template: null, condition: json).Evaluate(CreateLeakScopeMembers());
+
+                result.Condition.Should().BeTrue();
+                result.HasConditionError.Should().BeFalse();
+                AssertRedactionError(result, isRedacted: false);
+            }
+
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}", "False")]
+            [InlineData(@"{""getmember"":[{""index"":[{""filter"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@key"",""password""]}]},0]},""Value""]}", Redacted)]
+            [InlineData(@"{""any"":[{""filter"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@key"",""public""]}]},{""eq"":[""@value"",""hello""]}]}", "True")]
+            public void ProbeExpressionEvaluator_TemplateOverSensitiveKeyValue_ReportsOnlyOutsidePredicates(string json, string expected)
+            {
+                var result = _tests.CreateTemplateEvaluator(json, condition: null).Evaluate(CreateScopeMembers());
+
+                result.Template.Should().Be("value=" + expected);
+                result.HasConditionError.Should().BeFalse();
+                AssertRedactionError(result, expected == Redacted);
+            }
+
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}", false, false)]
+            [InlineData(@"{""eq"":[{""getmember"":[{""index"":[{""filter"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@key"",""password""]}]},0]},""Value""]},""TOP_SECRET_VALUE""]}", false, true)]
+            [InlineData(@"{""any"":[{""filter"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@key"",""public""]}]},{""eq"":[""@value"",""hello""]}]}", true, false)]
+            public void ProbeExpressionEvaluator_ConditionOverSensitiveKeyValue_ReportsOnlyOutsidePredicates(string json, bool expected, bool isReported)
+            {
+                var result = _tests.CreateTemplateEvaluator(template: null, condition: json).Evaluate(CreateScopeMembers());
+
+                result.Condition.Should().Be(expected);
+                result.HasConditionError.Should().Be(isReported);
+                AssertRedactionError(result, isReported);
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_CaptureFilterWithRuntimeKey_KeepsPredicateAConstantDelegate()
+            {
+                var scopeMembers = CreateScopeMembers();
+                AddLocal(
+                    scopeMembers,
+                    "NestedMapLocal",
+                    new Dictionary<string, Dictionary<string, string>>
+                    {
+                        { "a", new Dictionary<string, string> { { "a", "x" } } },
+                        { "password", new Dictionary<string, string> { { "password", "x" } } },
+                        { "b", new Dictionary<string, string> { { "b", "y" } } }
+                    });
+                var compiled = ProbeExpressionParser<object>.ParseCaptureExpression(
+                    @"{""filter"":[{""ref"":""NestedMapLocal""},{""eq"":[{""index"":[""@value"",""@key""]},""x""]}]}",
+                    scopeMembers,
+                    new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 10, MaxLength: 255, MaxFieldCount: 20));
+
+                var (filtered, isRedacted) = EvaluateCompiledWithRedaction(compiled, scopeMembers);
+
+                // The entry under the sensitive key is dropped without a report.
+                ((IBoundedCaptureCollectionResult)filtered).Count.Should().Be(1);
+                isRedacted.Should().BeFalse();
+                compiled.Errors.Should().BeNullOrEmpty();
+                AssertCaptureFilterPredicateIsConstant(compiled.ParsedExpression);
+            }
+
+            private static object[] Keyed<TKey>(TKey key)
+            {
+                return [new Dictionary<TKey, string> { { key, "found" } }, key, typeof(TKey)];
+            }
+
+            private static object[] EnumKeyed<TKey>(TKey key, string expected)
+            {
+                return [new Dictionary<TKey, string> { { key, expected == Redacted ? Secret : expected } }, key, typeof(TKey), expected];
+            }
+
+            private static void AddLocal(MethodScopeMembers scopeMembers, string name, object value, Type type = null)
+            {
+                scopeMembers.AddMember(new ScopeMember(name, type ?? value.GetType(), value, ScopeMemberKind.Local));
+            }
+
+            // Constant keys, list indexes and keys that can't be a keyword add no runtime key check.
+            private static void AssertNoKeyCheck(System.Linq.Expressions.Expression expression)
+            {
+                var counter = KeyCheckCounter.Count(expression);
+                counter.CallsTo(IsRedactedStringKey).Should().Be(0);
+                counter.CallsTo(IsRedactedObjectKey).Should().Be(0);
+                counter.HasCheckState.Should().BeFalse("no check is memoized");
+            }
+
+            private MethodScopeMembers CreateScopeMembers(string key = "public", string publicValue = "hello", IList<string> countedKeys = null)
+            {
+                var scopeMembers = _tests.CreateScopeMembers();
+                AddLocal(scopeMembers, "SafeDictionaryLocal", new Dictionary<string, string> { { "password", Secret }, { "public", publicValue } });
+                AddLocal(scopeMembers, "OtherDictionaryLocal", new Dictionary<string, string> { { "password", Secret }, { "public", "other" } });
+                AddLocal(scopeMembers, "HashtableLocal", new Hashtable { { "password", Secret }, { "public", publicValue } });
+                AddLocal(scopeMembers, "NestedDictionaryLocal", new Dictionary<string, List<string>> { { "password", [Secret] }, { "public", [publicValue] } });
+                AddLocal(scopeMembers, "IntKeyDictionaryLocal", new Dictionary<int, string> { { 1, "one" } });
+                AddLocal(scopeMembers, "KindDictionaryLocal", new Dictionary<CredentialKind, string> { { CredentialKind.Password, Secret } });
+                AddLocal(scopeMembers, "ObjectDictionaryLocal", new Dictionary<object, string> { { "password", Secret } });
+                AddLocal(scopeMembers, "BoolDictionaryLocal", new Dictionary<string, bool> { { "password", true }, { "public", true } });
+                AddLocal(scopeMembers, "BoolListDictionaryLocal", new Dictionary<string, List<bool>> { { "password", [true] }, { "public", [true] } });
+                AddLocal(scopeMembers, "KeysLocal", new List<string> { "public", "password" });
+                AddLocal(scopeMembers, "WrappedKeysLocal", new List<string> { "xpasswordx" });
+                AddLocal(scopeMembers, "CountedKeysLocal", new Collection<string>(countedKeys ?? [key]));
+                AddLocal(scopeMembers, "KeyLocal", key);
+                AddLocal(scopeMembers, "IndexLocal", 1);
+                AddLocal(scopeMembers, "NullKeyLocal", null, typeof(string));
+                AddLocal(scopeMembers, "NullKindLocal", null, typeof(CredentialKind?));
+                AddLocal(scopeMembers, "NullKeyHolderLocal", new KeyHolder());
+                AddLocal(scopeMembers, "MissingKeyLocal", "missing");
+                AddLocal(scopeMembers, "MissingKindLocal", CredentialKind.Public);
+                AddLocal(scopeMembers, "MissingKeyHolderLocal", new KeyHolder { Key = "missing" });
+                return scopeMembers;
+            }
+
+            private MethodScopeMembers CreateLeakScopeMembers()
+            {
+                var scopeMembers = _tests.CreateScopeMembers();
+                AddLocal(scopeMembers, "RegexDictionaryLocal", new Dictionary<string, string> { { "password", "TOP_SECRET_(VALUE" }, { "public", "x" } });
+                AddLocal(scopeMembers, "BoolValueDictionaryLocal", new Dictionary<string, bool> { { "password", true }, { "public", false } });
+                AddLocal(scopeMembers, "PrefixDictionaryLocal", new Dictionary<string, string> { { "password", "TOP_SECRET" }, { "public", "nomatch" } });
+                AddLocal(scopeMembers, "OutOfRangeDictionaryLocal", new Dictionary<string, int> { { "password", 100 }, { "public", 3 } });
+                AddLocal(scopeMembers, "InRangeDictionaryLocal", new Dictionary<string, int> { { "password", 0 }, { "public", 1 } });
+                AddLocal(scopeMembers, "KeyDictionaryLocal", new Dictionary<string, string> { { "password", Secret }, { "public", "k" } });
+                AddLocal(scopeMembers, "MapLocal", new Dictionary<string, string> { { "k", "v" } });
+                AddLocal(scopeMembers, "SecretMapLocal", new Dictionary<string, string> { { Secret, "v" }, { "k", "w" } });
+                AddLocal(
+                    scopeMembers,
+                    "EntryListDictionaryLocal",
+                    new Dictionary<string, List<KeyValuePair<string, string>>>
+                    {
+                        { "password", [new KeyValuePair<string, string>("inner", Secret)] },
+                        { "public", [new KeyValuePair<string, string>("other", "x")] }
+                    });
+                AddLocal(scopeMembers, "EntryDictionaryLocal", new Dictionary<string, KeyValuePair<string, string>> { { "public", new KeyValuePair<string, string>("password", Secret) } });
+                AddLocal(scopeMembers, "PublicEntryDictionaryLocal", new Dictionary<string, KeyValuePair<string, string>> { { "public", new KeyValuePair<string, string>("inner", Secret) } });
+                AddLocal(scopeMembers, "KeyLocal", "password");
+                AddLocal(scopeMembers, "PublicKeyLocal", "public");
+                return scopeMembers;
+            }
+
+            private struct OpaqueKey
+            {
+                public int Id;
+            }
+
+            private class KeyHolder
+            {
+                public object Key { get; set; }
+            }
+
+            private class CustomKey
+            {
+                public int Id { get; set; }
+            }
+
+            private class SecretKey : CustomKey
+            {
+            }
+
+            // Counts the distinct call sites of the runtime key checks, and finds whether a block declares a check state.
+            private sealed class KeyCheckCounter : System.Linq.Expressions.ExpressionVisitor
+            {
+                private readonly HashSet<System.Linq.Expressions.MethodCallExpression> _calls = [];
+
+                internal bool HasCheckState { get; private set; }
+
+                internal static KeyCheckCounter Count(System.Linq.Expressions.Expression expression)
+                {
+                    var counter = new KeyCheckCounter();
+                    counter.Visit(expression);
+                    return counter;
+                }
+
+                internal int CallsTo(string methodName) => _calls.Count(call => call.Method.Name == methodName);
+
+                protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
+                {
+                    if (node.Method.DeclaringType is { IsGenericType: true } declaringType &&
+                        declaringType.GetGenericTypeDefinition() == typeof(ProbeExpressionParser<>))
+                    {
+                        _calls.Add(node);
+                    }
+
+                    return base.VisitMethodCall(node);
+                }
+
+                protected override System.Linq.Expressions.Expression VisitBlock(System.Linq.Expressions.BlockExpression node)
+                {
+                    HasCheckState |= node.Variables.Any(variable => variable.Name == ProbeExpressionParserHelper.RedactionCheckStateVariableName);
                     return base.VisitBlock(node);
                 }
             }
@@ -5260,6 +5912,48 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        internal sealed class CountingList<T> : IList<T>
+        {
+            private readonly List<T> _items = [];
+
+            public int Count => _items.Count;
+
+            public bool IsReadOnly => false;
+
+            internal int Reads { get; private set; }
+
+            public T this[int index]
+            {
+                get
+                {
+                    Reads++;
+                    return _items[index];
+                }
+
+                set => _items[index] = value;
+            }
+
+            public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            public void Add(T item) => _items.Add(item);
+
+            public void Clear() => _items.Clear();
+
+            public bool Contains(T item) => _items.Contains(item);
+
+            public void CopyTo(T[] array, int arrayIndex) => _items.CopyTo(array, arrayIndex);
+
+            public int IndexOf(T item) => _items.IndexOf(item);
+
+            public void Insert(int index, T item) => _items.Insert(index, item);
+
+            public bool Remove(T item) => _items.Remove(item);
+
+            public void RemoveAt(int index) => _items.RemoveAt(index);
         }
 
         internal class StaticExpressionWithoutCctor
@@ -5322,6 +6016,21 @@ namespace Datadog.Trace.Tests.Debugger
                 var password = "TOP_SECRET_VALUE";
                 yield return "first";
                 yield return password;
+            }
+        }
+
+        private sealed class CallFinder(string methodName) : System.Linq.Expressions.ExpressionVisitor
+        {
+            internal System.Linq.Expressions.MethodCallExpression Found { get; private set; }
+
+            protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
+            {
+                if (node.Method.Name == methodName)
+                {
+                    Found ??= node;
+                }
+
+                return base.VisitMethodCall(node);
             }
         }
 
