@@ -4685,6 +4685,76 @@ namespace Datadog.Trace.Tests.Debugger
                 }
             }
 
+            [Theory]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}")]
+            [InlineData(@"{""len"":{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}}")]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")]
+            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}")]
+            [InlineData(@"{""and"":[{""isDefined"":{""ref"":""HolderLocal""}},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]}]}")]
+            public void ProbeExpressionEvaluator_CaptureExpressionReadingRedactedRuntimeType_CapturesRedactedPlaceholder(string json)
+            {
+                // Like a capture redacted at compile time, an operator over a redacted value can't capture a made-up
+                // result, such as any() being true for the items that aren't redacted.
+                var result = EvaluateProbe(captures: [new CaptureExpressionDefinition("captured", ExpressionSegment(json), default)]);
+
+                result.CaptureExpressionCount.Should().Be(1);
+                result.CaptureExpressions[0].Value.Should().Be("{redacted}");
+                result.CaptureExpressions[0].Type.Should().Be(typeof(string));
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_TemplateWithTwoRuntimeCheckedSegments_CollapsesOnlyTheRedactedOne()
+            {
+                // Both segments read values whose runtime type is checked, and only the second one reads a redacted one.
+                var result = EvaluateProbe(
+                    templates:
+                    [
+                        LiteralSegment("public="),
+                        ExpressionSegment(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBasePublic""]},""TestValue""]}"),
+                        LiteralSegment(", any="),
+                        ExpressionSegment(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")
+                    ]);
+
+                result.Template.Should().Be("public=PUBLIC_VALUE, any={redacted}");
+                result.Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+                result.HasNonRedactionError.Should().BeFalse();
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_DecorationWithTwoTags_CollapsesOnlyTheRedactedSegment()
+            {
+                // The second tag first dumps an object, which uses the cached string builder, then collapses its last
+                // segment. The segments before it, and the first tag, keep their text.
+                DebuggerExpression?[] first =
+                [
+                    LiteralSegment("public="),
+                    ExpressionSegment(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBasePublic""]},""TestValue""]}")
+                ];
+                DebuggerExpression?[] second =
+                [
+                    LiteralSegment("object="),
+                    ExpressionSegment(@"{""getmember"":[{""ref"":""HolderLocal""},""AsObject""]}"),
+                    LiteralSegment(", any="),
+                    ExpressionSegment(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}")
+                ];
+                var decoration = Decoration(
+                    @"{""isDefined"":{""ref"":""HolderLocal""}}",
+                    new KeyValuePair<string, DebuggerExpression?[]>("first", first),
+                    new KeyValuePair<string, DebuggerExpression?[]>("second", second));
+
+                var result = EvaluateProbe(decorations: [decoration], asObject: new HashtableHolder());
+
+                result.Decorations.Should().HaveCount(2);
+                result.Decorations[0].TagName.Should().Be("first");
+                result.Decorations[0].Value.Should().Be("public=PUBLIC_VALUE");
+                result.Decorations[0].Errors.Should().BeNullOrEmpty();
+                result.Decorations[1].TagName.Should().Be("second");
+                result.Decorations[1].Value.Should().Be("object={[hello, ], }, any={redacted}");
+                result.Decorations[1].Errors.Should().ContainSingle().Which.IsRedaction.Should().BeTrue();
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
             [Fact]
             public void ProbeExpressionParser_CaptureFilterOverGuardedItems_KeepsAConstantPredicate()
             {
@@ -4713,9 +4783,24 @@ namespace Datadog.Trace.Tests.Debugger
 
             private static KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]> Decoration(string when, params DebuggerExpression?[] value)
             {
+                return Decoration(when, new KeyValuePair<string, DebuggerExpression?[]>("tag", value));
+            }
+
+            private static KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]> Decoration(string when, params KeyValuePair<string, DebuggerExpression?[]>[] tags)
+            {
                 return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>(
                     new DebuggerExpression(string.Empty, when, null),
-                    [new KeyValuePair<string, DebuggerExpression?[]>("tag", value)]);
+                    tags);
+            }
+
+            private static DebuggerExpression LiteralSegment(string text)
+            {
+                return new DebuggerExpression(null, null, text);
+            }
+
+            private static DebuggerExpression ExpressionSegment(string json)
+            {
+                return new DebuggerExpression(string.Empty, json, null);
             }
 
             private static void ConfigureRedactedTypes()
@@ -4772,22 +4857,24 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             private ExpressionEvaluationResult EvaluateProbe(
-                DebuggerExpression? condition,
-                DebuggerExpression? metric,
-                KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] decorations,
-                CaptureExpressionDefinition[] captures)
+                DebuggerExpression? condition = null,
+                DebuggerExpression? metric = null,
+                KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] decorations = null,
+                CaptureExpressionDefinition[] captures = null,
+                DebuggerExpression?[] templates = null,
+                object asObject = null)
             {
                 Redaction.Instance.ResetInstance();
                 try
                 {
                     ConfigureRedactedTypes();
                     var evaluator = _tests.CreateEvaluator(
-                        templates: null,
+                        templates: templates,
                         condition: condition,
                         metric: metric,
                         spanDecorations: decorations,
                         captureExpressions: captures);
-                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue });
+                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, asObject: asObject);
                     var result = evaluator.Evaluate(scopeMembers);
                     if (captures is not null)
                     {

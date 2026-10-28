@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
@@ -31,6 +32,14 @@ public class ProbeProcessorTests
 }";
 
     private const string FalseConditionJson = @"{ ""eq"": [1, 0] }";
+
+    private const string TrueConditionJson = @"{ ""eq"": [1, 1] }";
+
+    // Redacted at compile time by its name.
+    private const string CompileTimeRedactedTemplateJson = @"{""ref"":""password""}";
+
+    // Redacted at runtime: the member is declared as object and holds a SecureString.
+    private const string RuntimeRedactedTemplateJson = @"{""getmember"":[{""ref"":""holder""},""Value""]}";
 
     private const string UpdatedInvalidConditionJson = @"{
     ""gt"": [
@@ -210,16 +219,15 @@ public class ProbeProcessorTests
         Assert.Equal(0, sampler.SampleCalls);
     }
 
-    [Fact]
-    public void ConditionalProbeWithFalseConditionAndRedactedTemplateSendsNoSnapshot()
+    [Theory]
+    [InlineData(CompileTimeRedactedTemplateJson)]
+    [InlineData(RuntimeRedactedTemplateJson)]
+    public void ConditionalProbeWithFalseConditionAndRedactedTemplateSendsNoSnapshot(string templateJson)
     {
         // A redaction isn't an evaluation error, so the false condition still drops the snapshot.
+        using var secureString = new SecureString();
         var probe = CreateConditionalLogProbe("probe-id", FalseConditionJson, captureSnapshot: false);
-        probe.Segments =
-        [
-            new SnapshotSegment(dsl: null, json: null, str: "value="),
-            new SnapshotSegment(dsl: string.Empty, json: @"{""ref"":""password""}", str: null)
-        ];
+        probe.Segments = CreateRedactedTemplateSegments(templateJson);
         var processor = CreateProbeProcessor(probe);
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData(probe.Id, sampler, processor);
@@ -227,7 +235,34 @@ public class ProbeProcessorTests
 
         var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "holder", new ValueHolder { Value = secureString }));
         Assert.False(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+        Assert.Equal(0, sampler.SampleCalls);
+    }
+
+    [Theory]
+    [InlineData(CompileTimeRedactedTemplateJson)]
+    [InlineData(RuntimeRedactedTemplateJson)]
+    public void ConditionalProbeWithTrueConditionAndRedactedTemplateIsSampledLikeAnyHit(string templateJson)
+    {
+        // A redaction isn't an evaluation error, so the snapshot goes through the sampler instead of the
+        // evaluation-error path and keeps its rendered message.
+        using var secureString = new SecureString();
+        var probe = CreateConditionalLogProbe("probe-id", TrueConditionJson, captureSnapshot: true);
+        probe.Segments = CreateRedactedTemplateSegments(templateJson);
+        var processor = CreateProbeProcessor(probe, new GlobalRateLimiterMock(true));
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData(probe.Id, sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "holder", new ValueHolder { Value = secureString }));
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+        Assert.Equal(1, sampler.SampleCalls);
+
+        var snapshot = JObject.Parse(FinalizeMethodSnapshot(snapshotCreator, probe.Id, method));
+        Assert.Equal("value={redacted}", snapshot["message"]?.Value<string>());
     }
 
     [Theory]
@@ -586,6 +621,15 @@ public class ProbeProcessorTests
         return probe;
     }
 
+    private static SnapshotSegment[] CreateRedactedTemplateSegments(string templateJson)
+    {
+        return
+        [
+            new SnapshotSegment(dsl: null, json: null, str: "value="),
+            new SnapshotSegment(dsl: string.Empty, json: templateJson, str: null)
+        ];
+    }
+
     private static CaptureInfo<object> CreateAsyncEvaluateCaptureInfo()
     {
         return new CaptureInfo<object>(
@@ -824,6 +868,11 @@ public class ProbeProcessorTests
             var localValue = inputValue.Length;
             return localValue.ToString();
         }
+    }
+
+    private sealed class ValueHolder
+    {
+        public object Value { get; set; }
     }
 
     private sealed class TestAdaptiveSampler(params bool[] samples) : IAdaptiveSampler

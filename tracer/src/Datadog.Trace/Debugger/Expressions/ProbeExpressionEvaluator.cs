@@ -21,7 +21,6 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal sealed class ProbeExpressionEvaluator
 {
     private const string RuntimeRedactionMessage = "A value used by the expression is redacted.";
-    private const string RedactedSegment = "{redacted}";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionEvaluator));
     private static readonly CompiledExpressionDelegate<bool> FalseDelegate = ReturnFalse;
@@ -159,26 +158,27 @@ internal sealed class ProbeExpressionEvaluator
     // is attributed to the expression that made it, and reported into errors after it, like a redaction known at compile
     // time.
     private static TResult InvokeAndReport<TResult>(
-        CompiledExpression<TResult> compiledExpression,
+        CompiledExpressionDelegate<TResult> budgetedDelegate,
+        string? rawExpression,
         MethodScopeMembers scopeMembers,
         ref EvaluationBudget budget,
         ref List<EvaluationError>? errors,
         out bool isRedacted)
     {
         budget.ClearRuntimeRedaction();
-        var value = compiledExpression.BudgetedDelegate!(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget);
+        var value = budgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget);
         isRedacted = budget.TakeRuntimeRedaction();
         if (isRedacted)
         {
-            ReportRuntimeRedaction(ref errors, compiledExpression);
+            ReportRuntimeRedaction(ref errors, rawExpression);
         }
 
         return value;
     }
 
-    private static void ReportRuntimeRedaction<T>([NotNull] ref List<EvaluationError>? errors, CompiledExpression<T> compiledExpression)
+    private static void ReportRuntimeRedaction([NotNull] ref List<EvaluationError>? errors, string? rawExpression)
     {
-        (errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = compiledExpression.RawExpression, Message = RuntimeRedactionMessage, IsRedaction = true });
+        (errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = rawExpression, Message = RuntimeRedactionMessage, IsRedaction = true });
     }
 
     // Like the compile-time collapse, a segment that used a redacted value renders as {redacted} as a whole, so an
@@ -186,7 +186,7 @@ internal sealed class ProbeExpressionEvaluator
     private static void CollapseRedactedSegment(StringBuilder builder, int segmentStart)
     {
         builder.Length = segmentStart;
-        builder.Append(RedactedSegment);
+        builder.Append(ProbeExpressionParserHelper.RedactedPlaceholder);
     }
 
     private static void AddCompiledErrors<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression)
@@ -330,13 +330,13 @@ internal sealed class ProbeExpressionEvaluator
                     else if (IsExpression(template) == true)
                     {
                         var compiledExpression = compiledExpressions[i];
-                        if (compiledExpression.BudgetedDelegate is null)
+                        if (compiledExpression.BudgetedDelegate is not { } budgetedDelegate)
                         {
                             continue;
                         }
 
                         var segmentStart = resultBuilder.Length;
-                        resultBuilder.Append(InvokeAndReport(compiledExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted));
+                        resultBuilder.Append(InvokeAndReport(budgetedDelegate, compiledExpression.RawExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted));
                         if (isRedacted)
                         {
                             CollapseRedactedSegment(resultBuilder, segmentStart);
@@ -388,12 +388,12 @@ internal sealed class ProbeExpressionEvaluator
             }
 
             compiledExpression = cached.Value;
-            if (compiledExpression.BudgetedDelegate is null)
+            if (compiledExpression.BudgetedDelegate is not { } budgetedDelegate)
             {
                 return;
             }
 
-            var condition = InvokeAndReport(compiledExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
+            var condition = InvokeAndReport(budgetedDelegate, compiledExpression.RawExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
             result.Condition = condition;
             if (compiledExpression.Errors != null)
             {
@@ -430,14 +430,14 @@ internal sealed class ProbeExpressionEvaluator
             }
 
             compiledExpression = cached.Value;
-            if (compiledExpression.BudgetedDelegate is null)
+            if (compiledExpression.BudgetedDelegate is not { } budgetedDelegate)
             {
                 // See CompiledExpression<T>.WithoutDelegate: report the errors and no value.
                 AddCompiledErrors(ref result, compiledExpression);
                 return;
             }
 
-            var metric = InvokeAndReport(compiledExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
+            var metric = InvokeAndReport(budgetedDelegate, compiledExpression.RawExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
             if (!isRedacted)
             {
                 // Like a redaction known at compile time, a metric computed from a redacted value has no value.
@@ -476,12 +476,12 @@ internal sealed class ProbeExpressionEvaluator
                     if (current.Key != default || IsExpression(current.Key))
                     {
                         // span decoration has an expression condition
-                        if (current.Key.BudgetedDelegate is null)
+                        if (current.Key.BudgetedDelegate is not { } whenDelegate)
                         {
                             continue;
                         }
 
-                        var when = InvokeAndReport(current.Key, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
+                        var when = InvokeAndReport(whenDelegate, current.Key.RawExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
                         if (isRedacted)
                         {
                             continue;
@@ -524,14 +524,16 @@ internal sealed class ProbeExpressionEvaluator
                 var tagsAndValues = current.Value;
 
                 List<EvaluationError>? errors = null;
-                var resultBuilder = StringBuilderCache.Acquire();
 
-                for (int j = 0; j < tagsAndValues.Length; j++)
+                // One builder renders every tag of the decoration and is released once, after the last one: a builder
+                // released earlier could be acquired again by an expression rendering a value, which would clear it.
+                var resultBuilder = StringBuilderCache.Acquire();
+                try
                 {
-                    // tags[key] = expression[] /* e.g. Name is {name} */
-                    var tagAndValues = tagsAndValues[j];
-                    try
+                    for (int j = 0; j < tagsAndValues.Length; j++)
                     {
+                        // tags[key] = expression[] /* e.g. Name is {name} */
+                        var tagAndValues = tagsAndValues[j];
                         for (int k = 0; k < tagAndValues.Value.Length; k++)
                         {
                             var compiledExpression = tagAndValues.Value[k];
@@ -543,13 +545,13 @@ internal sealed class ProbeExpressionEvaluator
                                 }
                                 else if (IsExpression(compiledExpression))
                                 {
-                                    if (compiledExpression.BudgetedDelegate is null)
+                                    if (compiledExpression.BudgetedDelegate is not { } budgetedDelegate)
                                     {
                                         continue;
                                     }
 
                                     var segmentStart = resultBuilder.Length;
-                                    resultBuilder.Append(InvokeAndReport(compiledExpression, scopeMembers, ref result.EvaluationBudget, ref errors, out var isRedacted));
+                                    resultBuilder.Append(InvokeAndReport(budgetedDelegate, compiledExpression.RawExpression, scopeMembers, ref result.EvaluationBudget, ref errors, out var isRedacted));
                                     if (isRedacted)
                                     {
                                         CollapseRedactedSegment(resultBuilder, segmentStart);
@@ -571,7 +573,7 @@ internal sealed class ProbeExpressionEvaluator
                                 (errors ??= new List<EvaluationError>()).Add(new() { Message = message, Expression = GetRelevantExpression(compiledExpression) });
                                 if (result.EvaluationBudget.TakeRuntimeRedaction())
                                 {
-                                    ReportRuntimeRedaction(ref errors, compiledExpression);
+                                    ReportRuntimeRedaction(ref errors, compiledExpression.RawExpression);
                                 }
 
                                 if (compiledExpression.Errors != null)
@@ -596,16 +598,16 @@ internal sealed class ProbeExpressionEvaluator
                             new ExpressionEvaluationResult.DecorationResult { TagName = tagAndValues.Key, Value = resultBuilder.ToString(), Errors = errors?.ToArray() });
                         resultBuilder.Clear();
                         errors = null;
-                    }
-                    finally
-                    {
-                        StringBuilderCache.Release(resultBuilder);
-                    }
 
-                    if (result.EvaluationBudget.TimedOut)
-                    {
-                        break;
+                        if (result.EvaluationBudget.TimedOut)
+                        {
+                            break;
+                        }
                     }
+                }
+                finally
+                {
+                    StringBuilderCache.Release(resultBuilder);
                 }
 
                 if (result.EvaluationBudget.TimedOut)
@@ -649,13 +651,19 @@ internal sealed class ProbeExpressionEvaluator
                     continue;
                 }
 
-                if (compiledExpression.BudgetedDelegate is null)
+                if (compiledExpression.BudgetedDelegate is not { } budgetedDelegate)
                 {
                     continue;
                 }
 
-                var value = InvokeAndReport(compiledExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out _);
-                if (value is UndefinedValue)
+                var value = InvokeAndReport(budgetedDelegate, compiledExpression.RawExpression, scopeMembers, ref result.EvaluationBudget, ref result.Errors, out var isRedacted);
+                if (isRedacted)
+                {
+                    // Like the compile-time collapse, a value computed from a redacted value is captured as {redacted},
+                    // so an operator over the value can't capture a made-up result.
+                    value = ProbeExpressionParserHelper.RedactedPlaceholder;
+                }
+                else if (value is UndefinedValue)
                 {
                     AddCompiledErrors(ref result, compiledExpression);
                     continue;
@@ -860,7 +868,7 @@ internal sealed class ProbeExpressionEvaluator
         // A guard that redacted a value before the exception is still reported.
         if (result.EvaluationBudget.TakeRuntimeRedaction())
         {
-            ReportRuntimeRedaction(ref result.Errors, compiledExpression);
+            ReportRuntimeRedaction(ref result.Errors, compiledExpression.RawExpression);
         }
 
         AddCompiledErrors(ref result, compiledExpression);
