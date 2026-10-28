@@ -17,6 +17,9 @@ internal static class ProbeExpressionParserHelper
     // The variable that stores whether a runtime redaction check ran and what it found.
     internal const string RedactionCheckStateVariableName = "$dd_el_redacted";
 
+    // What a redacted value renders and captures as, whether it is redacted at compile time or at runtime.
+    internal const string RedactedPlaceholder = "{redacted}";
+
     private static readonly ConcurrentDictionary<ReflectionMethodIdentifier, MethodInfo> Methods = new();
 
     internal static readonly Type UndefinedValueType = typeof(UndefinedValue);

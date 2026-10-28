@@ -591,7 +591,7 @@ internal partial class ProbeExpressionParser<T>
 
     private ConstantExpression RedactedValue()
     {
-        return _redactedValue ??= Expression.Constant(RedactedValueDump);
+        return _redactedValue ??= Expression.Constant(ProbeExpressionParserHelper.RedactedPlaceholder);
     }
 
     private bool IsRedactedValue(Expression expression)
