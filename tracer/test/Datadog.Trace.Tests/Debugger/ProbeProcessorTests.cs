@@ -210,6 +210,26 @@ public class ProbeProcessorTests
         Assert.Equal(0, sampler.SampleCalls);
     }
 
+    [Fact]
+    public void ConditionalProbeWithFalseConditionAndRedactedTemplateSendsNoSnapshot()
+    {
+        // A redaction isn't an evaluation error, so the false condition still drops the snapshot.
+        var probe = CreateConditionalLogProbe("probe-id", FalseConditionJson, captureSnapshot: false);
+        probe.Segments =
+        [
+            new SnapshotSegment(dsl: null, json: null, str: "value="),
+            new SnapshotSegment(dsl: string.Empty, json: @"{""ref"":""password""}", str: null)
+        ];
+        var processor = CreateProbeProcessor(probe);
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData(probe.Id, sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.False(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+    }
+
     [Theory]
     [InlineData(@"{""ref"":""password""}")] // redacted, so it has no delegate
     [InlineData(@"{""substring"":[""hello"",0,2]}")] // converting "he" to a number throws on every evaluation

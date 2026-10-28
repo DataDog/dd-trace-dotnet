@@ -443,6 +443,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 evaluationResult.Errors ??= new List<EvaluationError>();
                 evaluationResult.Errors.Add(new EvaluationError { Message = $"Failed to evaluate expression for probe ID: {probeInfo.ProbeId}. Error: {e.Message}" });
+                evaluationResult.HasNonRedactionError = true;
             }
 
             if (state.ShouldCaptureExpressions && evaluationResult.IsNull())
@@ -466,6 +467,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 Log.Error("Evaluation result should not be null. Probe: {ProbeId}", probeInfo.ProbeId);
                 evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {probeInfo.ProbeId}" } };
+                evaluationResult.HasNonRedactionError = true;
             }
 
             if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.Errors is { Count: > 0 } errors)
@@ -487,7 +489,11 @@ namespace Datadog.Trace.Debugger.Expressions
                 SetSpanDecoration(state, in probeInfo, snapshotCreator, ref shouldStopCapture, evaluationResult);
             }
 
-            if (evaluationResult.HasError)
+            // A redaction isn't an evaluation error: a log probe keeps its rendered message and goes on to the condition
+            // and the sampler. A metric reports its redaction in place of its value.
+            if (evaluationResult.HasConditionError ||
+                evaluationResult.HasNonRedactionError ||
+                (evaluationResult.HasError && probeInfo.ProbeType == ProbeType.Metric))
             {
                 // Condition evaluation errors bypass the per-probe sampler and global limiter, and metric probes have
                 // no sampler. A hard one-per-5-min cap guarantees at least one diagnostic snapshot per window without flooding.
