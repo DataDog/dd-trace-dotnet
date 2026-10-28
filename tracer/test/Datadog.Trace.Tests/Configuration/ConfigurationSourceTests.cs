@@ -266,6 +266,37 @@ namespace Datadog.Trace.Tests.Configuration
             result.IsPresent.Should().Be(expectedFound);
         }
 
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "  ", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "  ", true)]
+        public void NameValueConfigurationSource_BlankOtelValueIsUnset(string key, string value, bool expectedFound)
+        {
+            IConfigurationSource source = new NameValueConfigurationSource(new NameValueCollection { { key, value } });
+
+            var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
+
+            result.IsPresent.Should().Be(expectedFound);
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "  ", false)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "grpc", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "", true)]
+        [InlineData(ConfigurationKeys.ServiceName, "  ", true)]
+        public void JsonConfigurationSource_BlankOtelValueIsUnset(string key, string value, bool expectedFound)
+        {
+            var json = JsonConvert.SerializeObject(new Dictionary<string, string> { { key, value } });
+            IConfigurationSource source = new JsonConfigurationSource(json, ConfigurationOrigins.Code);
+
+            var result = source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
+
+            result.IsPresent.Should().Be(expectedFound);
+        }
+
         // Special case for dictionary-typed settings in JSON
         [Fact]
         public void JsonConfigurationSourceWithJsonTypedSetting()

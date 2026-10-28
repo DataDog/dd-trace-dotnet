@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -102,10 +103,26 @@ namespace Datadog.Trace.Configuration
 
         protected abstract string? GetString(string key);
 
+        /// <summary>
+        /// Returns true when <paramref name="key"/> is an OTEL_* setting and <paramref name="value"/> is empty or whitespace-only.
+        /// The OpenTelemetry spec requires an empty value to be treated as unset
+        /// https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#parsing-empty-value
+        /// and the upstream OpenTelemetry .NET SDK also treats whitespace-only values as unset.
+        /// </summary>
+        internal static bool IsBlankOtelValue(string key, string? value)
+            => value is not null && StringUtil.IsNullOrWhiteSpace(value) && key.StartsWith("OTEL_", StringComparison.Ordinal);
+
+        // Applied per source, so that a blank value in a higher-priority source doesn't hide a lower-priority one
+        private string? GetValue(string key)
+        {
+            var value = GetString(key);
+            return IsBlankOtelValue(key, value) ? null : value;
+        }
+
         /// <inheritdoc />
         public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
-            var value = GetString(key);
+            var value = GetValue(key);
 
             if (value is null)
             {
@@ -125,7 +142,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
         {
-            var value = GetString(key);
+            var value = GetValue(key);
 
             if (value is null)
             {
@@ -151,7 +168,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
         {
-            var value = GetString(key);
+            var value = GetValue(key);
 
             if (value is null)
             {
@@ -177,7 +194,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         {
-            var value = GetString(key);
+            var value = GetValue(key);
 
             if (value is null)
             {
@@ -204,7 +221,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
-            var value = GetString(key);
+            var value = GetValue(key);
 
             if (value is null)
             {
@@ -238,7 +255,7 @@ namespace Datadog.Trace.Configuration
 
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue)
         {
-            var value = GetString(key);
+            var value = GetValue(key);
 
             if (value is null)
             {
@@ -263,7 +280,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
         {
-            var value = GetString(key);
+            var value = GetValue(key);
 
             if (value is null)
             {

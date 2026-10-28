@@ -7,7 +7,6 @@
 
 using System;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -27,18 +26,8 @@ namespace Datadog.Trace.Configuration
             {
 // one of the few places where it's legit to use Environment.GetEnvironmentVariable but key must come from ConfigurationKeys or PlatformKeys
 #pragma warning disable RS0030
-                var value = Environment.GetEnvironmentVariable(key);
+                return Environment.GetEnvironmentVariable(key);
 #pragma warning restore RS0030
-
-                // The OpenTelemetry spec requires an empty environment variable to be treated as unset
-                // https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#parsing-empty-value
-                // The upstream OpenTelemetry .NET SDK also treats whitespace-only values as unset
-                if (value is not null && StringUtil.IsNullOrWhiteSpace(value) && key.StartsWith("OTEL_", StringComparison.Ordinal))
-                {
-                    return null;
-                }
-
-                return value;
             }
             catch
             {
