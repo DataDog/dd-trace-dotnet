@@ -1607,8 +1607,9 @@ partial class Build
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
-                                .When(IsGitlab, c => c.SetProcessCustomLogger(UnitTestOutputFilter.Wrap(DotNetTasks.DotNetLogger)))
-                                .SetProjectFile(project)));
+                                .SetProjectFile(project)
+                                // Keep the logger last: NUKE 6.3 clones settings by serialization, which cannot copy delegates.
+                                .When(IsGitlab, c => c.SetProcessCustomLogger(UnitTestOutputFilter.Wrap(DotNetTasks.DotNetLogger)))));
                     }
                     catch (Exception ex)
                     {
