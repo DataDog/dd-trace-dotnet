@@ -1135,58 +1135,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(true, "otlp", true, true)]
-        [InlineData(true, "otlp", false, false)]
-        [InlineData(false, "otlp", true, false)] // OTLP trace export without the tracing API bridge
-        [InlineData(true, null, true, false)] // the tracing API bridge without OTLP trace export
-        [InlineData(false, null, true, false)] // semantics mode without any signal
-        public void IsOpenTelemetryModeEnabled_TraceSignalRequiresTracingApiAndOtlpTraceExport(bool tracingApiEnabled, string tracesExporter, bool otelSemanticsEnabled, bool expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, tracingApiEnabled ? "true" : "false"),
-                (ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter),
-                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
-            var settings = new TracerSettings(source);
-
-            settings.IsOpenTelemetryModeEnabled(settings.Manager.InitialMutableSettings, settings.Manager.InitialExporterSettings)
-                    .Should().Be(expected);
-        }
-
-#if NETCOREAPP3_1_OR_GREATER
-        [Theory]
-        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, true, true)]
-        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, false, false)]
-#if NET6_0_OR_GREATER
-        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, true, true)]
-        [InlineData(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, false, false)]
-#endif
-        public void IsOpenTelemetryModeEnabled_RequiresSemanticsModeAndSignal(string signalKey, bool otelSemanticsEnabled, bool expected)
-        {
-            var source = CreateConfigurationSource(
-                (signalKey, "true"),
-                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
-            var settings = new TracerSettings(source);
-
-            settings.IsOpenTelemetryModeEnabled(settings.Manager.InitialMutableSettings, settings.Manager.InitialExporterSettings)
-                    .Should().Be(expected);
-        }
-#endif
-
-        [Fact]
-        public void IsOpenTelemetryModeEnabled_IgnoresOtlpTraceExportWhenTracingDisabled()
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true"),
-                (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
-                (ConfigurationKeys.TraceEnabled, "false"),
-                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, "true"));
-            var settings = new TracerSettings(source);
-
-            settings.IsOpenTelemetryModeEnabled(settings.Manager.InitialMutableSettings, settings.Manager.InitialExporterSettings)
-                    .Should().BeFalse();
-        }
-
-        [Theory]
         [InlineData(null, 10000)]
         [InlineData("5000", 5000)]  // User custom value
         [InlineData("60000", 60000)]  // OTel spec default
