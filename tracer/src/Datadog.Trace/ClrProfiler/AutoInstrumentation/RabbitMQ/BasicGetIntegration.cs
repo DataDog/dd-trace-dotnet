@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                             tags,
                             basicProperties.Headers,
                             basicGetResult.Body?.Length ?? 0,
-                            basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0);
+                            RabbitMQIntegration.GetTimeInQueueMs(basicProperties.Timestamp.UnixTime));
                     }
                 }
             }

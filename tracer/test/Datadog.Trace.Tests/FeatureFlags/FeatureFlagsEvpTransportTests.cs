@@ -722,6 +722,30 @@ public class FeatureFlagsEvpTransportTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NetworkFailureUsesInjectedLogger(bool useLocalRoute)
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var failure = new IOException("connection reset");
+        var local = CreateFactory("http://agent:8126/", uri => new ThrowingApiRequest(uri, failure));
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/", uri => new ThrowingApiRequest(uri, failure));
+        using var transport = new FeatureFlagsEvpTransport(
+            FeatureFlagsSource.Agentless,
+            local,
+            direct,
+            NullDiscoveryService.Instance,
+            initialLocalProxyEndpoint: useLocalRoute ? FeatureFlagsEvpTransport.EventPlatformProxyV4 : null,
+            logger: logger.Object);
+
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+
+        logger.Verify(l => l.ErrorSkipTelemetry(failure, It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        (useLocalRoute ? local : direct).RequestsSent.Should().ContainSingle();
+        (useLocalRoute ? direct : local).RequestsSent.Should().BeEmpty();
+    }
+
+    [Theory]
     [InlineData(400)]
     [InlineData(403)]
     [InlineData(429)]
