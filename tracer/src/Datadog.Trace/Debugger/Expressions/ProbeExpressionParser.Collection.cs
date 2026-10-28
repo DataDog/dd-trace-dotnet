@@ -65,6 +65,17 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
+    private static Expression InnermostFilterSource(FilterExpression filterExpression)
+    {
+        var source = filterExpression.Source;
+        while (source is FilterExpression sourceFilterExpression)
+        {
+            source = sourceFilterExpression.Source;
+        }
+
+        return source;
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Predicate(reader, parameters, PredicateOperation.Any, itParameter);
@@ -89,9 +100,10 @@ internal partial class ProbeExpressionParser<T>
             return parsedFilterExpression;
         }
 
-        return _isBoundedFilterCapture
-                   ? BoundedFilterExpression(parsedFilterExpression, _boundedFilterMaxCollectionSize)
-                   : MaterializeFilterExpression(parsedFilterExpression);
+        Expression filtered = _isBoundedFilterCapture
+                                  ? BoundedFilterExpression(parsedFilterExpression, _boundedFilterMaxCollectionSize)
+                                  : MaterializeFilterExpression(parsedFilterExpression);
+        return RedactOperation(InnermostFilterSource(parsedFilterExpression), filtered);
     }
 
     private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, PredicateOperation operation, ParameterExpression outerItParameter)
@@ -124,15 +136,16 @@ internal partial class ProbeExpressionParser<T>
 
             var itParameterType = GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            predicateExpression = ParseTree(reader, parameters, itParameter);
+            predicateExpression = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: false);
 
-            return operation switch
+            Expression loop = operation switch
             {
                 PredicateOperation.Any => EnumerableAnyExpression(source, itParameter, predicateExpression),
                 PredicateOperation.All => EnumerableAllExpression(source, itParameter, predicateExpression),
                 PredicateOperation.Filter => EnumerableFilterExpression(source, itParameter, predicateExpression),
                 _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unsupported predicate operation")
             };
+            return RedactOperation(source, loop);
         }
         catch (Exception e)
         {
@@ -174,7 +187,7 @@ internal partial class ProbeExpressionParser<T>
                                       ? sourceFilterExpression.IteratorType
                                       : GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            var predicate = ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1);
+            var predicate = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: true);
 
             var lambda = Expression.Lambda(predicate, itParameter);
             var isDictionary = source is FilterExpression filterSource
@@ -213,12 +226,21 @@ internal partial class ProbeExpressionParser<T>
         var errorCount = _errors?.Count ?? 0;
         try
         {
-            ParseTreeOutsideFilterCapture(reader, parameters, itParameter: null, deferredFilterSourceArrayStack: -1);
+            ParsePredicate(reader, parameters, itParameter: null, outsideFilterCapture: true);
         }
         finally
         {
             _errors?.RemoveRange(errorCount, _errors.Count - errorCount);
         }
+    }
+
+    // A predicate that uses a guarded value is false when the guard redacts it.
+    private Expression ParsePredicate(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, bool outsideFilterCapture)
+    {
+        return RedactBooleanOperand(
+            outsideFilterCapture
+                ? ParseTreeOutsideFilterCapture(reader, parameters, itParameter, deferredFilterSourceArrayStack: -1)
+                : ParseTree(reader, parameters, itParameter));
     }
 
     private BlockExpression MaterializeFilterExpression(FilterExpression filterExpression)
@@ -442,7 +464,9 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            return RedactIfRedactedType(CallGetItem(source, assignableFrom, indexOrKey), source, indexOrKey);
+            var item = CallGetItem(source, assignableFrom, indexOrKey);
+            DeriveRedactionGuard(item, source, indexOrKey);
+            return RedactIfRedactedType(item, source, indexOrKey);
         }
         catch (Exception e)
         {

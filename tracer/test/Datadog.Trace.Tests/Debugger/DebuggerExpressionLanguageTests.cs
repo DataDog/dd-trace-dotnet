@@ -2396,6 +2396,49 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
         }
 
+        [Theory]
+        [CombinatorialData]
+        public void ProbeExpressionParser_DictionaryValueUnderSensitiveKey_IsRedactedInEveryOperand(
+            [CombinatorialValues(
+                @"{""any"":[{""ref"":""BoolDictionaryLocal""},{""and"":[""@value"",true]}]}",
+                @"{""any"":[{""ref"":""BoolDictionaryLocal""},{""or"":[""@value"",false]}]}",
+                @"{""any"":[{""ref"":""BoolDictionaryLocal""},""@value""]}",
+                @"{""any"":[{""ref"":""StringDictionaryLocal""},{""matches"":[""TOP_SECRET_VALUE"",""@value""]}]}",
+                @"{""any"":[{""ref"":""StringDictionaryLocal""},{""contains"":[""xTOP_SECRET_VALUEx"",""@value""]}]}",
+                @"{""any"":[{""ref"":""IntDictionaryLocal""},{""eq"":[{""substring"":[""abcdef"",0,""@value""]},""abc""]}]}",
+                @"{""any"":[{""ref"":""ListDictionaryLocal""},{""any"":[""@value"",{""eq"":[""@it"",""TOP_SECRET_VALUE""]}]}]}",
+                @"{""any"":[{""ref"":""ListDictionaryLocal""},{""all"":[""@value"",{""eq"":[""@it"",""TOP_SECRET_VALUE""]}]}]}",
+                @"{""gt"":[{""len"":{""filter"":[{""getmember"":[{""index"":[{""filter"":[{""ref"":""ListDictionaryLocal""},{""isDefined"":""@key""}]},0]},""Value""]},{""eq"":[""@it"",""TOP_SECRET_VALUE""]}]}},0]}",
+                @"{""any"":[{""ref"":""ListDictionaryLocal""},{""eq"":[{""index"":[""@value"",0]},""TOP_SECRET_VALUE""]}]}",
+                @"{""any"":[{""ref"":""StringDictionaryLocal""},{""eq"":[{""index"":[{""ref"":""LookupDictionaryLocal""},""@value""]},""found""]}]}")]
+            string json,
+            bool isSensitiveKey)
+        {
+            // Each expression is true for the value under a public key. Under a sensitive key the value is redacted
+            // wherever it is used, so the expression is false and can't reveal it.
+            var scopeMembers = CreateScopeMembersWithDictionaries(isSensitiveKey ? "password" : "public");
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+
+            compiled.Errors.Should().BeNullOrEmpty();
+            EvaluateCompiled(compiled, scopeMembers).Should().Be(!isSensitiveKey);
+        }
+
+        [Theory]
+        [InlineData(@"{""any"":[{""ref"":""PairListDictionaryLocal""},{""eq"":[{""getmember"":[{""index"":[""@value"",0]},""Key""]},""password""]}]}", true)]
+        [InlineData(@"{""any"":[{""ref"":""PairListDictionaryLocal""},{""eq"":[{""getmember"":[{""index"":[""@value"",0]},""Value""]},""TOP_SECRET_VALUE""]}]}", false)]
+        public void ProbeExpressionParser_EntryReadFromGuardedValue_RedactsOnlyItsSensitiveValue(string json, bool expected)
+        {
+            // The entry is read from a value under a public key: its Key only carries that value's guard, while its
+            // Value is also redacted by its own sensitive key.
+            var scopeMembers = CreateScopeMembersWithDictionaries("public");
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+
+            compiled.Errors.Should().BeNullOrEmpty();
+            EvaluateCompiled(compiled, scopeMembers).Should().Be(expected);
+        }
+
         [Fact]
         public void ProbeExpressionParser_DictionaryIteratorEntry_CanUseExplicitKeyMemberInPredicate()
         {
@@ -3887,6 +3930,23 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.Exception,
                 scopeMembers.Members,
                 ref budget);
+        }
+
+        private MethodScopeMembers CreateScopeMembersWithDictionaries(string key)
+        {
+            const string secret = "TOP_SECRET_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("BoolDictionaryLocal", typeof(Dictionary<string, bool>), new Dictionary<string, bool> { { key, true } }, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("StringDictionaryLocal", typeof(Dictionary<string, string>), new Dictionary<string, string> { { key, secret } }, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("IntDictionaryLocal", typeof(Dictionary<string, int>), new Dictionary<string, int> { { key, 3 } }, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("ListDictionaryLocal", typeof(Dictionary<string, List<string>>), new Dictionary<string, List<string>> { { key, [secret] } }, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("LookupDictionaryLocal", typeof(Dictionary<string, string>), new Dictionary<string, string> { { secret, "found" } }, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember(
+                "PairListDictionaryLocal",
+                typeof(Dictionary<string, List<KeyValuePair<string, string>>>),
+                new Dictionary<string, List<KeyValuePair<string, string>>> { { key, [new KeyValuePair<string, string>("password", secret)] } },
+                ScopeMemberKind.Local));
+            return scopeMembers;
         }
 
         private SensitiveAutoPropertyHolder CreateSensitiveAutoPropertyHolder()

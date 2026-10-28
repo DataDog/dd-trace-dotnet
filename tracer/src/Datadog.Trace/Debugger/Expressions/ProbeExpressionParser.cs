@@ -158,7 +158,7 @@ internal partial class ProbeExpressionParser<T>
 
             return operand?.Type == ProbeExpressionParserHelper.UndefinedValueType
                        ? Expression.Constant(true)
-                       : operand;
+                       : RedactBooleanOperand(operand);
         }
     }
 

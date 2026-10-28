@@ -81,9 +81,9 @@ internal partial class ProbeExpressionParser<T>
         return false;
     }
 
-    private void TrackRedactionGuard(Expression expression, Expression check, RedactionGuardKind kind = RedactionGuardKind.Value)
+    private void TrackRedactionGuard(Expression expression, Expression check, RedactionGuardKind kind = RedactionGuardKind.Value, Expression sourceCheck = null)
     {
-        (_redactionGuards ??= [])[expression] = new RedactionGuard(check, expression, kind);
+        (_redactionGuards ??= [])[expression] = new RedactionGuard(check, expression, kind, sourceCheck);
     }
 
     private Expression CombineRedactionChecks(Expression check, Expression operand)
@@ -94,6 +94,39 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return check is null ? guard.Check : Expression.OrElse(check, guard.Check);
+    }
+
+    // A value read from guarded values without an operation, such as a member or an item, is only evaluated after their
+    // checks, so it carries them on, before its own.
+    private void DeriveRedactionGuard(Expression derived, Expression source, Expression other = null)
+    {
+        DeriveRedactionCheck(derived, CombineRedactionChecks(CombineRedactionChecks(null, source), other));
+    }
+
+    private void DeriveRedactionCheck(Expression derived, Expression sourceCheck)
+    {
+        if (sourceCheck is null)
+        {
+            return;
+        }
+
+        if (!TryGetRedactionGuard(derived, out var derivedGuard))
+        {
+            TrackRedactionGuard(derived, sourceCheck);
+            return;
+        }
+
+        var check = Expression.OrElse(sourceCheck, derivedGuard.Check);
+        if (derivedGuard.Kind != RedactionGuardKind.DictionaryEntry)
+        {
+            TrackRedactionGuard(derived, check);
+            return;
+        }
+
+        // An entry keeps its key check apart, so its Key member, which that check doesn't redact, only carries the
+        // checks of the values the entry was read from.
+        var entrySourceCheck = derivedGuard.SourceCheck is null ? sourceCheck : Expression.OrElse(sourceCheck, derivedGuard.SourceCheck);
+        TrackRedactionGuard(derived, check, RedactionGuardKind.DictionaryEntry, entrySourceCheck);
     }
 
     private Expression RedactOperation(Expression source, Expression operation)
@@ -121,6 +154,18 @@ internal partial class ProbeExpressionParser<T>
         var redactedOperation = Expression.Condition(check, RedactedDefault(operation.Type), operation);
         TrackRedactionGuard(redactedOperation, check, RedactionGuardKind.RedactedOperation);
         return redactedOperation;
+    }
+
+    // An and/or operand or a predicate that uses a guarded value is false when redacted. Only the operand is guarded,
+    // not the and/or result, so checks stay behind the short circuit: and(x != null, x.y == 1) never reads x.y early.
+    private Expression RedactBooleanOperand(Expression operand)
+    {
+        if (!TryGetRedactionGuard(operand, out var guard) || guard.YieldsRedactedDefault(operand))
+        {
+            return operand;
+        }
+
+        return RedactOperationWithCheck(guard.Check, operand);
     }
 
     private Expression RedactGuardedValueForReturn(RedactionGuard guard, Expression finalExpr, List<ParameterExpression> scopeMembers)
@@ -203,7 +248,7 @@ internal partial class ProbeExpressionParser<T>
         return valueExpression;
     }
 
-    private readonly struct RedactionGuard(Expression check, Expression value, RedactionGuardKind kind)
+    private readonly struct RedactionGuard(Expression check, Expression value, RedactionGuardKind kind, Expression sourceCheck = null)
     {
         // True when the value is redacted.
         internal Expression Check { get; } = check;
@@ -211,6 +256,10 @@ internal partial class ProbeExpressionParser<T>
         internal Expression Value { get; } = value;
 
         internal RedactionGuardKind Kind { get; } = kind;
+
+        // The part of Check that comes from the values this one was read from. An entry leaves out its own key check, and
+        // an entry read from unguarded values has none.
+        internal Expression SourceCheck { get; } = kind == RedactionGuardKind.DictionaryEntry ? sourceCheck : check;
 
         internal bool YieldsRedactedDefault(Expression expression)
         {

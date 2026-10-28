@@ -45,7 +45,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var matchesMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(RegexIsMatch), [typeof(string), typeof(string), typeof(EvaluationBudget).MakeByRefType()]);
-        return RedactOperation(source, Expression.Call(null, matchesMethod, source, pattern, _evaluationBudgetParameterExpression));
+        return RedactOperation(source, pattern, Expression.Call(null, matchesMethod, source, pattern, _evaluationBudgetParameterExpression));
     }
 
     private Expression Contains(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -83,8 +83,8 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var lengthExpr = Expression.Subtract(endIndex, startIndex);
-        return RedactOperation(
-            source,
+        return RedactOperationWithCheck(
+            CombineRedactionChecks(CombineRedactionChecks(CombineRedactionChecks(null, source), startIndex), endIndex),
             Expression.Block(
                 BudgetCheck(),
                 Expression.Call(source, substringMethod, startIndex, lengthExpr)));
@@ -145,6 +145,7 @@ internal partial class ProbeExpressionParser<T>
 
         return RedactOperation(
             source,
+            parameter,
             Expression.Block(
                 BudgetCheck(),
                 Expression.Call(source, method, parameter)));
