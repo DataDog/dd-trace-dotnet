@@ -168,6 +168,47 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.Equal(expected, Redaction.Instance.IsRedactedType(type));
         }
 
+        [Theory]
+        [InlineData(null, typeof(object), true)]
+        [InlineData(null, typeof(IDisposable), true)]
+        [InlineData(null, typeof(System.Collections.IEnumerable), false)]
+        [InlineData(null, typeof(Exception), false)]
+        [InlineData(null, typeof(object[]), false)]
+        [InlineData(null, typeof(int), false)]
+        [InlineData("Namespace.Sensitive*", typeof(Exception), true)]
+        [InlineData("Namespace.Sensitive*", typeof(System.Collections.IEnumerable), true)]
+        [InlineData("Namespace.Sensitive*", typeof(Exception[]), true)]
+        [InlineData("Namespace.Sensitive*", typeof(object[][]), true)]
+        [InlineData("Namespace.Sensitive*", typeof(string[]), false)]
+        [InlineData("Namespace.Sensitive*", typeof(int[][]), false)]
+        [InlineData("Namespace.Sensitive*", typeof(string), false)]
+        [InlineData("Namespace.Sensitive*", typeof(int), false)]
+        [InlineData("Namespace.Sensitive*", typeof(int?), false)]
+        public void CanHaveRedactedRuntimeType_Test(string redactedType, Type declaredType, bool expected)
+        {
+            if (redactedType is not null)
+            {
+                Redaction.Instance.SetConfig(new HashSet<string>(), new HashSet<string>(), new HashSet<string> { redactedType });
+            }
+
+            Assert.Equal(expected, Redaction.Instance.CanHaveRedactedRuntimeType(declaredType));
+        }
+
+        [Theory]
+        [InlineData(null, typeof(System.Security.SecureString), true)]
+        [InlineData(null, typeof(string), false)]
+        [InlineData("System.Security.*", typeof(System.Security.SecureString), true)]
+        [InlineData("Namespace.Sensitive*", typeof(string), false)]
+        public void IsRedactedRuntimeType_Test(string redactedType, Type runtimeType, bool expected)
+        {
+            if (redactedType is not null)
+            {
+                Redaction.Instance.SetConfig(new HashSet<string>(), new HashSet<string>(), new HashSet<string> { redactedType });
+            }
+
+            Assert.Equal(expected, Redaction.Instance.IsRedactedRuntimeType(runtimeType));
+        }
+
         [Fact]
         public void IsRedactedType_WithConfiguredTypes_Test()
         {

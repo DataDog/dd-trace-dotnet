@@ -7,10 +7,12 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -4267,6 +4269,10 @@ namespace Datadog.Trace.Tests.Debugger
 
             private readonly DebuggerExpressionLanguageTests _tests = new();
 
+            private interface ITarget
+            {
+            }
+
             [Theory]
             [InlineData(@"{""ref"":""PiiLocal""}")]
             [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""CustomKey""]}")]
@@ -4357,26 +4363,347 @@ namespace Datadog.Trace.Tests.Debugger
                 RenderSnapshotMessage(result).Should().Be("value={redacted}");
             }
 
-            [Fact]
-            public void ProbeExpressionEvaluator_RedactedRuntimeTypeBehindBaseTypedMember_IsNotRedactedYet()
+            [Theory]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}")]
+            [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]}")]
+            [InlineData(@"{""len"":{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}}")]
+            [InlineData(@"{""contains"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""SECRET""]}")]
+            [InlineData(@"{""contains"":[""TOP_SECRET_VALUE"",{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}")]
+            [InlineData(@"{""typeof"":{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]}}")]
+            [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""AsInterface""]}")]
+            [InlineData(@"{""isDefined"":{""getmember"":[{""ref"":""HolderLocal""},""AsInterface""]}}")]
+            [InlineData(@"{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""NamesAsList""]},0]}")]
+            [InlineData(@"{""len"":{""getmember"":[{""ref"":""HolderLocal""},""NamesAsList""]}}")]
+            [InlineData(@"{""any"":[{""getmember"":[{""ref"":""HolderLocal""},""NamesAsList""]},{""eq"":[""@it"",""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""filter"":[{""getmember"":[{""ref"":""HolderLocal""},""NamesAsList""]},{""isDefined"":""@it""}]}")]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseListLocal""},0]},""TestValue""]}")]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseDictionaryLocal""},""first""]},""TestValue""]}")]
+            [InlineData(@"{""len"":{""getmember"":[{""ref"":""HolderLocal""},""BaseArray""]}}")]
+            public void ProbeExpressionEvaluator_TemplateReadingRedactedRuntimeType_IsRedacted(string json)
             {
-                // Known gap: members are checked by declared type at compile time, so a redacted runtime type behind
-                // a base-typed member stays visible. The follow-up runtime-type check closes it.
-                var result = Evaluate(
-                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
-                    template: @"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}",
-                    condition: null);
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
 
-                result.Template.Should().Be("value=" + Secret);
+                result.Template.Should().Be("value={redacted}");
                 result.Errors.Should().BeNullOrEmpty();
             }
 
-            private ExpressionEvaluationResult Evaluate(TargetBase target, string template, string condition)
+            [Theory]
+            [InlineData(@"{""eq"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""ne"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""startsWith"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""TOP""]}")]
+            [InlineData(@"{""gt"":[{""len"":{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}},0]}")]
+            [InlineData(@"{""and"":[{""isDefined"":{""ref"":""HolderLocal""}},{""eq"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""or"":[{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""Enabled""]},false]}")]
+            [InlineData(@"{""eq"":[{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""NamesAsList""]},0]},""TOP_SECRET_VALUE""]}")]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}")]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""getmember"":[""@it"",""Enabled""]}]}")]
+            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}")]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""TOP_SECRET_VALUE""]}]}")]
+            public void ProbeExpressionEvaluator_ConditionReadingRedactedRuntimeType_IsFalse(string json)
+            {
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: null, condition: json);
+
+                result.Condition.Should().BeFalse();
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBasePublic""]},""TestValue""]}", PublicValue)]
+            [InlineData(@"{""isDefined"":{""getmember"":[{""ref"":""HolderLocal""},""AsInterfacePublic""]}}", "True")]
+            [InlineData(@"{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""PublicNamesAsList""]},0]}", PublicValue)]
+            [InlineData(@"{""len"":{""getmember"":[{""ref"":""HolderLocal""},""PublicNamesAsList""]}}", "1")]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseListLocal""},1]},""TestValue""]}", PublicValue)]
+            [InlineData(@"{""getmember"":[{""index"":[{""ref"":""BaseDictionaryLocal""},""second""]},""TestValue""]}", PublicValue)]
+            [InlineData(@"{""len"":{""getmember"":[{""ref"":""HolderLocal""},""PublicBaseArray""]}}", "1")]
+            public void ProbeExpressionEvaluator_TemplateReadingNonRedactedRuntimeType_IsUnchanged(string json, string expected)
+            {
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
+
+                result.Template.Should().Be("value=" + expected);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}", "True")]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""PUBLIC_VALUE""]}]}}", "1")]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}}", "0")]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""PUBLIC_VALUE""]}]}", "True")]
+            public void ProbeExpressionEvaluator_TemplateOverItemsWithRedactedRuntimeType_RedactsOnlyThoseItems(string json, string expected)
+            {
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null);
+
+                result.Template.Should().Be("value=" + expected);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [InlineData(true, @"{""getmember"":[""@exception"",""_message""]}", "{redacted}")]
+            [InlineData(true, @"{""len"":{""getmember"":[""@exception"",""_message""]}}", "{redacted}")]
+            [InlineData(false, @"{""getmember"":[""@exception"",""_message""]}", Secret)]
+            [InlineData(false, @"{""len"":{""getmember"":[""@exception"",""_message""]}}", "16")]
+            public void ProbeExpressionEvaluator_TemplateReadingException_RedactsRedactedSubtype(bool isRedactedType, string json, string expected)
+            {
+                Exception exception = isRedactedType ? new SecretException(Secret) : new InvalidOperationException(Secret);
+
+                var result = Evaluate(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, template: json, condition: null, exception: exception);
+
+                result.Template.Should().Be("value=" + expected);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_TemplateReadingExceptionMessage_IsRedactedForRedactedSubtype()
+            {
+                // Message has no backing field, so it is never read; for a redacted subtype even that is redacted.
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: @"{""getmember"":[""@exception"",""Message""]}",
+                    condition: null,
+                    exception: new SecretException(Secret));
+
+                result.Template.Should().Be("value={redacted}");
+            }
+
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_ConditionReadingException_IsFalseForRedactedSubtype(bool isRedactedType)
+            {
+                Exception exception = isRedactedType ? new SecretException(Secret) : new InvalidOperationException(Secret);
+
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: null,
+                    condition: @"{""eq"":[{""getmember"":[""@exception"",""_message""]},""TOP_SECRET_VALUE""]}",
+                    exception: exception);
+
+                result.Condition.Should().Be(!isRedactedType);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""Sealed""]}")]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""Sealed""]},""TestValue""]}")]
+            [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""Count""]}")]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""Point""]},""X""]}")]
+            [InlineData(@"{""index"":[{""getmember"":[{""ref"":""HolderLocal""},""NameArray""]},0]}")]
+            [InlineData(@"{""any"":[{""getmember"":[{""ref"":""HolderLocal""},""NameArray""]},{""eq"":[""@it"",""x""]}]}")]
+            [InlineData(@"{""getmember"":[{""ref"":""PublicLocal""},""CustomKey""]}")]
+            public void ProbeExpressionParser_SealedOrValueDeclaredType_BuildsNoRuntimeGuard(string json)
+            {
+                CountRuntimeGuards(Compile(json)).Should().Be(0);
+            }
+
+            [Theory]
+            [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]}")]
+            [InlineData(@"{""getmember"":[{""ref"":""HolderLocal""},""BaseArray""]}")]
+            [InlineData(@"{""getmember"":[""@exception"",""_message""]}")]
+            public void ProbeExpressionParser_WithoutRedactedTypes_BuildsNoGuardForTypesThatCantHoldADeniedType(string json)
+            {
+                // Without configured redacted types only SecureString is redacted, which only object and IDisposable can hold.
+                CountRuntimeGuards(Compile(json, configureRedactedTypes: false)).Should().Be(0);
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_DeniedTypeBehindObjectMember_IsRedactedWithoutConfiguredTypes()
+            {
+                using var secureString = new SecureString();
+
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: @"{""getmember"":[{""ref"":""HolderLocal""},""AsObject""]}",
+                    condition: null,
+                    asObject: secureString,
+                    configureRedactedTypes: false);
+
+                result.Template.Should().Be("value={redacted}");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [InlineData(true, @"{""getmember"":[""@return"",""TestValue""]}", "{redacted}")]
+            [InlineData(true, @"{""len"":{""getmember"":[""@return"",""TestValue""]}}", "{redacted}")]
+            [InlineData(false, @"{""getmember"":[""@return"",""TestValue""]}", PublicValue)]
+            [InlineData(false, @"{""len"":{""getmember"":[""@return"",""TestValue""]}}", "12")]
+            public void ProbeExpressionEvaluator_ReturnWithBaseDeclaredType_RedactsRedactedRuntimeType(bool isRedactedType, string json, string expected)
+            {
+                TargetBase target = isRedactedType
+                                        ? new RedactedTarget { TestValue = Secret, CustomKey = Secret }
+                                        : new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
+
+                var result = Evaluate(target, template: json, condition: null, returnType: typeof(TargetBase));
+
+                result.Template.Should().Be("value=" + expected);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_ConditionOnReturnWithBaseDeclaredType_IsFalseForRedactedRuntimeType(bool isRedactedType)
+            {
+                TargetBase target = isRedactedType
+                                        ? new RedactedTarget { TestValue = Secret, CustomKey = Secret }
+                                        : new PublicTarget { TestValue = Secret, CustomKey = PublicValue };
+
+                var result = Evaluate(
+                    target,
+                    template: null,
+                    condition: @"{""eq"":[{""getmember"":[""@return"",""TestValue""]},""TOP_SECRET_VALUE""]}",
+                    returnType: typeof(TargetBase));
+
+                result.Condition.Should().Be(!isRedactedType);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_ReturnGuardedInsideAndOutsidePredicate_CompilesAndRedacts(bool isRedactedType)
+            {
+                // @return is guarded outside the predicate (the any source) and inside it (the index). Both share the
+                // root block's guard, so the any operation outside the predicate never reads a predicate variable.
+                TargetBase item = isRedactedType
+                                      ? new RedactedTarget { TestValue = Secret, CustomKey = Secret }
+                                      : new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
+
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: null,
+                    condition: @"{""any"":[""@return"",{""eq"":[""@it"",{""index"":[""@return"",0]}]}]}",
+                    returnType: typeof(List<TargetBase>),
+                    returnValue: new List<TargetBase> { item });
+
+                result.Condition.Should().Be(!isRedactedType);
+                result.Errors.Should().BeNullOrEmpty();
+            }
+
+            [Theory]
+            [CombinatorialData]
+            public void ProbeExpressionEvaluator_NestedOperationsOnGuardedItem_ReadTheItemOnce(bool isRedactedType)
+            {
+                TargetBase item = isRedactedType
+                                      ? new RedactedTarget { TestValue = Secret, CustomKey = Secret }
+                                      : new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
+                CountingList<TargetBase> countedItems = [item];
+
+                // gt and len both guard the item. The first guard reads it and checks its runtime type, and the other
+                // one reads the stored result, so the item is read once.
+                var result = Evaluate(
+                    new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue },
+                    template: null,
+                    condition: @"{""gt"":[{""len"":{""getmember"":[{""index"":[{""ref"":""CountedLocal""},0]},""TestValue""]}},0]}",
+                    countedItems: countedItems);
+
+                result.Condition.Should().Be(!isRedactedType);
+                result.Errors.Should().BeNullOrEmpty();
+                countedItems.Reads.Should().Be(1);
+            }
+
+            // @value and @it are read from the loop, which no test double can observe, so these count the checks built.
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""and"":[{""eq"":[{""getmember"":[""@value"",""TestValue""]},""x""]},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""y""]}]}]}")]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""and"":[{""eq"":[{""getmember"":[""@it"",""TestValue""]},""x""]},{""getmember"":[""@it"",""Enabled""]}]}]}")]
+            public void ProbeExpressionParser_RepeatedReadsOfGuardedValue_ShareOneRuntimeGuard(string json)
+            {
+                CountRuntimeGuards(Compile(json)).Should().Be(1);
+            }
+
+            [Fact]
+            public void ProbeExpressionParser_ReturnGuardInsidePredicate_IsDeclaredInRootBlock()
+            {
+                var lambda = Compile(
+                    @"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[""@return"",""TestValue""]}]}]}",
+                    returnType: typeof(TargetBase));
+
+                var states = new GuardStateCounter(lambda.Body);
+                states.Visit(lambda.Body);
+                states.Root.Should().Be(1, "the @return check is stored once per evaluation");
+                states.Nested.Should().Be(1, "the @it check is reset on every item");
+            }
+
+            [Fact]
+            public void ProbeExpressionParser_CaptureFilterOverGuardedItems_KeepsAConstantPredicate()
+            {
+                // The item guard's variables are declared by the predicate's block, so the predicate is compiled once
+                // instead of closing over the outer block on every evaluation.
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    ConfigureRedactedTypes();
+                    var compiled = ProbeExpressionParser<object>.ParseCaptureExpression(
+                        @"{""filter"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}",
+                        CreateScopeMembers(new PublicTarget()),
+                        new CaptureLimitInfo(MaxReferenceDepth: 3, MaxCollectionSize: 100, MaxLength: 255, MaxFieldCount: 20));
+
+                    compiled.Errors.Should().BeNullOrEmpty();
+                    var filter = new CallFinder(nameof(FilterEvaluationHelpers.FilterForCapture));
+                    filter.Visit(compiled.ParsedExpression);
+                    filter.Found.Should().NotBeNull();
+                    filter.Found.Arguments[1].Should().BeAssignableTo<System.Linq.Expressions.ConstantExpression>();
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            private static void ConfigureRedactedTypes()
+            {
+                Redaction.Instance.SetConfig(
+                    [],
+                    [],
+                    [
+                        typeof(RedactedTarget).FullName,
+                        typeof(RedactedTarget[]).FullName,
+                        typeof(List<RedactedListItem>).FullName,
+                        typeof(SecretNames).FullName,
+                        typeof(SecretException).FullName
+                    ]);
+            }
+
+            private static int CountRuntimeGuards(System.Linq.Expressions.Expression expression)
+            {
+                var counter = new RuntimeGuardCounter();
+                counter.Visit(expression);
+                return counter.Count;
+            }
+
+            private System.Linq.Expressions.LambdaExpression Compile(string json, bool configureRedactedTypes = true, Type returnType = null)
             {
                 Redaction.Instance.ResetInstance();
                 try
                 {
-                    Redaction.Instance.SetConfig([], [], [typeof(RedactedTarget).FullName, typeof(List<RedactedListItem>).FullName]);
+                    if (configureRedactedTypes)
+                    {
+                        ConfigureRedactedTypes();
+                    }
+
+                    var compiled = ProbeExpressionParser<string>.ParseExpression(json, CreateScopeMembers(new PublicTarget(), returnType: returnType));
+                    compiled.Errors.Should().BeNullOrEmpty();
+                    return (System.Linq.Expressions.LambdaExpression)compiled.ParsedExpression;
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            private ExpressionEvaluationResult Evaluate(
+                TargetBase target,
+                string template,
+                string condition,
+                Exception exception = null,
+                object asObject = null,
+                bool configureRedactedTypes = true,
+                Type returnType = null,
+                object returnValue = null,
+                CountingList<TargetBase> countedItems = null)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    if (configureRedactedTypes)
+                    {
+                        ConfigureRedactedTypes();
+                    }
 
                     DebuggerExpression?[] templates = template is null
                                                           ? [new DebuggerExpression(null, null, "value=")]
@@ -4388,7 +4715,7 @@ namespace Datadog.Trace.Tests.Debugger
                         spanDecorations: null,
                         captureExpressions: null);
 
-                    return evaluator.Evaluate(CreateScopeMembers(target));
+                    return evaluator.Evaluate(CreateScopeMembers(target, exception, asObject, returnType, returnValue, countedItems));
                 }
                 finally
                 {
@@ -4396,13 +4723,40 @@ namespace Datadog.Trace.Tests.Debugger
                 }
             }
 
-            private MethodScopeMembers CreateScopeMembers(TargetBase target)
+            private MethodScopeMembers CreateScopeMembers(
+                TargetBase target,
+                Exception exception = null,
+                object asObject = null,
+                Type returnType = null,
+                object returnValue = null,
+                CountingList<TargetBase> countedItems = null)
             {
-                var redacted = new RedactedTarget { TestValue = Secret, CustomKey = Secret };
+                var redacted = new RedactedTarget { TestValue = Secret, CustomKey = Secret, Enabled = true };
                 var @public = new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue };
+                var holder = new TargetHolder
+                {
+                    Redacted = redacted,
+                    Public = @public,
+                    AsBase = redacted,
+                    AsBasePublic = @public,
+                    AsInterface = redacted,
+                    AsInterfacePublic = @public,
+                    NamesAsList = new SecretNames { Secret },
+                    PublicNamesAsList = [PublicValue],
+                    AsObject = asObject,
+                    Sealed = new SealedTarget { TestValue = PublicValue },
+                    NameArray = [PublicValue],
+                    BaseArray = new RedactedTarget[] { redacted },
+                    PublicBaseArray = [@public]
+                };
                 var scopeMembers = _tests.CreateScopeMembers();
+                if (exception is not null)
+                {
+                    scopeMembers.Exception = exception;
+                }
+
                 scopeMembers.InvocationTarget = new ScopeMember("this", target.GetType(), target, ScopeMemberKind.This);
-                scopeMembers.Return = new ScopeMember("@return", target.GetType(), target, ScopeMemberKind.Return);
+                scopeMembers.Return = new ScopeMember("@return", returnType ?? target.GetType(), returnValue ?? target, ScopeMemberKind.Return);
                 scopeMembers.AddMember(new ScopeMember("PiiLocal", typeof(RedactedTarget), redacted, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PiiAsBaseLocal", typeof(TargetBase), redacted, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PiiListLocal", typeof(List<RedactedTarget>), new List<RedactedTarget> { redacted }, ScopeMemberKind.Local));
@@ -4412,7 +4766,10 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.AddMember(new ScopeMember("PublicLocal", typeof(PublicTarget), @public, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PublicListLocal", typeof(List<PublicTarget>), new List<PublicTarget> { @public }, ScopeMemberKind.Local));
                 scopeMembers.AddMember(new ScopeMember("PublicDictionaryLocal", typeof(Dictionary<string, PublicTarget>), new Dictionary<string, PublicTarget> { { "first", @public } }, ScopeMemberKind.Local));
-                scopeMembers.AddMember(new ScopeMember("HolderLocal", typeof(TargetHolder), new TargetHolder { Redacted = redacted, Public = @public, AsBase = redacted }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("HolderLocal", typeof(TargetHolder), holder, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("BaseListLocal", typeof(List<TargetBase>), new List<TargetBase> { redacted, @public }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("BaseDictionaryLocal", typeof(Dictionary<string, TargetBase>), new Dictionary<string, TargetBase> { { "first", redacted }, { "second", @public } }, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("CountedLocal", typeof(Collection<TargetBase>), new Collection<TargetBase>(countedItems ?? []), ScopeMemberKind.Local));
                 return scopeMembers;
             }
 
@@ -4440,6 +4797,11 @@ namespace Datadog.Trace.Tests.Debugger
                 return JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo))["message"]?.Value<string>();
             }
 
+            private struct TargetPoint
+            {
+                public int X { get; set; }
+            }
+
             private class TargetBase
             {
                 public string TestValue { get; set; }
@@ -4449,12 +4811,12 @@ namespace Datadog.Trace.Tests.Debugger
                 public bool Enabled { get; set; }
             }
 
-            private class RedactedTarget : TargetBase
+            private class RedactedTarget : TargetBase, ITarget
             {
                 public string CustomKey { get; set; }
             }
 
-            private class PublicTarget : TargetBase
+            private class PublicTarget : TargetBase, ITarget
             {
                 public string CustomKey { get; set; }
             }
@@ -4466,10 +4828,146 @@ namespace Datadog.Trace.Tests.Debugger
                 public PublicTarget Public { get; set; }
 
                 public TargetBase AsBase { get; set; }
+
+                public TargetBase AsBasePublic { get; set; }
+
+                public ITarget AsInterface { get; set; }
+
+                public ITarget AsInterfacePublic { get; set; }
+
+                public List<string> NamesAsList { get; set; }
+
+                public List<string> PublicNamesAsList { get; set; }
+
+                public object AsObject { get; set; }
+
+                public SealedTarget Sealed { get; set; }
+
+                public int Count { get; set; }
+
+                public TargetPoint Point { get; set; }
+
+                public string[] NameArray { get; set; }
+
+                public TargetBase[] BaseArray { get; set; }
+
+                public TargetBase[] PublicBaseArray { get; set; }
+            }
+
+            private sealed class SealedTarget
+            {
+                public string TestValue { get; set; }
             }
 
             private class RedactedListItem
             {
+            }
+
+            private class SecretNames : List<string>
+            {
+            }
+
+            private class SecretException(string message) : Exception(message)
+            {
+            }
+
+            private sealed class CountingList<T> : IList<T>
+            {
+                private readonly List<T> _items = [];
+
+                public int Count => _items.Count;
+
+                public bool IsReadOnly => false;
+
+                internal int Reads { get; private set; }
+
+                public T this[int index]
+                {
+                    get
+                    {
+                        Reads++;
+                        return _items[index];
+                    }
+
+                    set => _items[index] = value;
+                }
+
+                public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
+
+                IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+                public void Add(T item) => _items.Add(item);
+
+                public void Clear() => _items.Clear();
+
+                public bool Contains(T item) => _items.Contains(item);
+
+                public void CopyTo(T[] array, int arrayIndex) => _items.CopyTo(array, arrayIndex);
+
+                public int IndexOf(T item) => _items.IndexOf(item);
+
+                public void Insert(int index, T item) => _items.Insert(index, item);
+
+                public bool Remove(T item) => _items.Remove(item);
+
+                public void RemoveAt(int index) => _items.RemoveAt(index);
+            }
+
+            // Counts distinct check nodes: a guard shared by nested operations is one node.
+            private sealed class RuntimeGuardCounter : System.Linq.Expressions.ExpressionVisitor
+            {
+                private readonly HashSet<System.Linq.Expressions.MethodCallExpression> _guards = [];
+
+                internal int Count => _guards.Count;
+
+                protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
+                {
+                    if (node.Method.DeclaringType == typeof(ProbeExpressionParserHelper) &&
+                        node.Method.Name == nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue))
+                    {
+                        _guards.Add(node);
+                    }
+
+                    return base.VisitMethodCall(node);
+                }
+            }
+
+            private sealed class CallFinder(string methodName) : System.Linq.Expressions.ExpressionVisitor
+            {
+                internal System.Linq.Expressions.MethodCallExpression Found { get; private set; }
+
+                protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
+                {
+                    if (node.Method.Name == methodName)
+                    {
+                        Found ??= node;
+                    }
+
+                    return base.VisitMethodCall(node);
+                }
+            }
+
+            // Counts the check states declared by the root block and by nested (predicate) blocks.
+            private sealed class GuardStateCounter(System.Linq.Expressions.Expression rootBlock) : System.Linq.Expressions.ExpressionVisitor
+            {
+                internal int Root { get; private set; }
+
+                internal int Nested { get; private set; }
+
+                protected override System.Linq.Expressions.Expression VisitBlock(System.Linq.Expressions.BlockExpression node)
+                {
+                    var states = node.Variables.Count(variable => variable.Name == ProbeExpressionParserHelper.RedactionCheckStateVariableName);
+                    if (ReferenceEquals(node, rootBlock))
+                    {
+                        Root += states;
+                    }
+                    else
+                    {
+                        Nested += states;
+                    }
+
+                    return base.VisitBlock(node);
+                }
             }
         }
 

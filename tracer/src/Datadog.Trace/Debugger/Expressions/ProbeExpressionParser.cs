@@ -365,12 +365,13 @@ internal partial class ProbeExpressionParser<T>
 
                             if (readerValue == Return)
                             {
-                                return RedactIfRedactedType(GetParameterExpression(parameters, ScopeMemberKind.Return), null, readerValue);
+                                // Unlike `this`, @return is compiled with its declared type.
+                                return RedactByType(GetParameterExpression(parameters, ScopeMemberKind.Return), null, readerValue, RootRedactionGuardScope);
                             }
 
                             if (readerValue == Exceptions)
                             {
-                                return RedactIfRedactedType(GetParameterExpression(parameters, ScopeMemberKind.Exception), null, readerValue);
+                                return RedactByType(GetParameterExpression(parameters, ScopeMemberKind.Exception), null, readerValue, RootRedactionGuardScope);
                             }
 
                             if (readerValue == Duration)
@@ -387,7 +388,7 @@ internal partial class ProbeExpressionParser<T>
                                     return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
                                 }
 
-                                return RedactIfRedactedType(itParameter, null, readerValue);
+                                return RedactByType(itParameter, null, readerValue, CurrentRedactionGuardScope);
                             }
 
                             if (readerValue == Key)
@@ -398,9 +399,9 @@ internal partial class ProbeExpressionParser<T>
                                     return UndefinedValue();
                                 }
 
-                                if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Key), out var keyExpression))
+                                if (TryGetIteratorEntryMember(itParameter, nameof(KeyValuePair<int, int>.Key), readerValue, out var keyExpression))
                                 {
-                                    return RedactIfRedactedType(keyExpression, null, readerValue);
+                                    return keyExpression;
                                 }
 
                                 AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
@@ -415,9 +416,9 @@ internal partial class ProbeExpressionParser<T>
                                     return UndefinedValue();
                                 }
 
-                                if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Value), out var valueExpression))
+                                if (TryGetIteratorEntryMember(itParameter, nameof(KeyValuePair<int, int>.Value), readerValue, out var valueExpression))
                                 {
-                                    return RedactIfRedactedType(valueExpression, null, readerValue);
+                                    return valueExpression;
                                 }
 
                                 AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
@@ -656,6 +657,8 @@ internal partial class ProbeExpressionParser<T>
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);
+        AddRootRedactionGuards(scopeMembers, expressions);
+
         if (_hasRedaction && (typeof(T) == typeof(string) || typeof(T) == typeof(object)))
         {
             // A rendered or captured value that uses a redacted value is itself redacted. Otherwise operators would

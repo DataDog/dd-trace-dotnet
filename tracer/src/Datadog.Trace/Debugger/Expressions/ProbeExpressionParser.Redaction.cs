@@ -13,14 +13,22 @@ using Datadog.Trace.Debugger.Snapshots;
 namespace Datadog.Trace.Debugger.Expressions;
 
 // Runtime redaction guards. A guard is a bool check attached to an expression that is true when a value the
-// expression depends on is redacted at runtime, such as a value under a sensitive dictionary key. An operation over a
-// guarded expression yields the redacted default when the check is true, and a member or item read from it carries the
-// check on. Compile-time redaction (RedactedValue) is handled separately.
+// expression depends on is redacted at runtime: a value under a sensitive dictionary key, or a value whose runtime type
+// is redacted. An operation over a guarded expression yields the redacted default when the check is true, and a member
+// or item read from it carries the check on. Compile-time redaction (RedactedValue) is handled separately.
 internal partial class ProbeExpressionParser<T>
 {
+    // States of a memoized check: the first guard to run stores the result, the others read it.
+    private const int CheckPending = 0;
+    private const int CheckedNotRedacted = 1;
+    private const int CheckedRedacted = 2;
+
+    private static readonly MethodInfo IsRedactedRuntimeValueMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParserHelper), nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue), [typeof(object), typeof(Type)]);
     private static readonly MethodInfo ShouldRedactDictionaryKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
 
     private Dictionary<Expression, RedactionGuard> _redactionGuards;
+    private RedactionGuardScope _rootRedactionGuardScope;
+    private RedactionGuardScope _predicateRedactionGuardScope;
 
     private enum RedactionGuardKind : byte
     {
@@ -33,6 +41,10 @@ internal partial class ProbeExpressionParser<T>
         // The result of an operation that already yields the redacted default when the guard is true.
         RedactedOperation
     }
+
+    private RedactionGuardScope RootRedactionGuardScope => _rootRedactionGuardScope ??= new RedactionGuardScope(parent: null);
+
+    private RedactionGuardScope CurrentRedactionGuardScope => _predicateRedactionGuardScope ?? RootRedactionGuardScope;
 
     private static bool ShouldRedactDictionaryKey(object key)
     {
@@ -60,12 +72,26 @@ internal partial class ProbeExpressionParser<T>
                    : Expression.Default(type);
     }
 
+    private static MethodCallExpression RuntimeTypeCheck(Expression read, Type declaredType)
+    {
+        return Expression.Call(
+            IsRedactedRuntimeValueMethod,
+            declaredType == typeof(object) ? read : Expression.Convert(read, typeof(object)),
+            Expression.Constant(declaredType, typeof(Type)));
+    }
+
     private bool TryGetRedactionGuard(Expression expression, out RedactionGuard guard)
     {
         while (expression != null)
         {
             if (_redactionGuards != null && _redactionGuards.TryGetValue(expression, out guard))
             {
+                return true;
+            }
+
+            if (expression is ParameterExpression parameter && TryGetParameterCheck(parameter, out var parameterCheck))
+            {
+                guard = new RedactionGuard(parameterCheck, parameter, RedactionGuardKind.Value);
                 return true;
             }
 
@@ -78,6 +104,22 @@ internal partial class ProbeExpressionParser<T>
         }
 
         guard = default;
+        return false;
+    }
+
+    // A parameter (@it, @exception, @return) is guarded by its scope. The scopes enclosing the predicate being parsed are
+    // searched, so a predicate's guard is out of reach once its block ends.
+    private bool TryGetParameterCheck(ParameterExpression parameter, out Expression check)
+    {
+        for (var scope = CurrentRedactionGuardScope; scope is not null; scope = scope.Parent)
+        {
+            if (scope.ParameterChecks is not null && scope.ParameterChecks.TryGetValue(parameter, out check))
+            {
+                return true;
+            }
+        }
+
+        check = null;
         return false;
     }
 
@@ -225,7 +267,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         TrackRedactionGuard(memberExpression, guard.Check);
-        return memberExpression;
+        return GuardRedactedRuntimeType(memberExpression, CurrentRedactionGuardScope);
     }
 
     // The value of a dictionary entry is redacted when its key is sensitive.
@@ -248,6 +290,147 @@ internal partial class ProbeExpressionParser<T>
         return valueExpression;
     }
 
+    // Compile-time check: exact for root scope members (compiled per runtime type), declared type for anything read from
+    // them. GuardRedactedRuntimeType covers the runtime type of the latter.
+    private Expression RedactIfRedactedType(Expression value, Expression source, string name)
+    {
+        if (!Redaction.Instance.IsRedactedType(value.Type))
+        {
+            return value;
+        }
+
+        AddRedactionError(source is null ? name : $"{source}.{name}");
+        return RedactedValue();
+    }
+
+    private Expression RedactIfRedactedType(Expression value, Expression source, Expression indexOrKey)
+    {
+        if (!Redaction.Instance.IsRedactedType(value.Type))
+        {
+            return value;
+        }
+
+        AddRedactionError($"{source}[{indexOrKey}]");
+        return RedactedValue();
+    }
+
+    // Redacts a value of a redacted declared type, and guards one whose declared type can hold a redacted runtime type.
+    private Expression RedactByType(Expression value, Expression source, string name, RedactionGuardScope scope)
+    {
+        return GuardRedactedRuntimeType(RedactIfRedactedType(value, source, name), scope);
+    }
+
+    private Expression RedactByType(Expression value, Expression source, Expression indexOrKey, RedactionGuardScope scope)
+    {
+        return GuardRedactedRuntimeType(RedactIfRedactedType(value, source, indexOrKey), scope);
+    }
+
+    // A value read through a member, an index, an iterator, @exception or @return has only its declared type at compile
+    // time. When that type can hold a redacted runtime type, the value is read once into a variable of the scope's block
+    // and its runtime type is checked once per entry of that block. A root value (@exception, @return) belongs to the
+    // root scope, so a predicate doesn't check it again on every item.
+    private Expression GuardRedactedRuntimeType(Expression value, RedactionGuardScope scope)
+    {
+        if (!Redaction.Instance.CanHaveRedactedRuntimeType(value.Type))
+        {
+            return value;
+        }
+
+        if (value is ParameterExpression parameter)
+        {
+            // A parameter is only ever guarded by its own check, which is shared within its scope.
+            if (scope.ParameterChecks is null || !scope.ParameterChecks.ContainsKey(parameter))
+            {
+                (scope.ParameterChecks ??= []).Add(parameter, MemoizedRedactionCheck(scope, RuntimeTypeCheck(parameter, parameter.Type)));
+            }
+
+            return parameter;
+        }
+
+        var hasParentGuard = TryGetRedactionGuard(value, out var parent);
+        var variable = DeclareRedactionGuardVariable(scope, value.Type, "$dd_el_value");
+        var check = MemoizedRedactionCheck(scope, RuntimeTypeCheck(Expression.Assign(variable, value), value.Type));
+        TrackRedactionGuard(variable, hasParentGuard ? Expression.OrElse(parent.Check, check) : check);
+        return variable;
+    }
+
+    private ParameterExpression DeclareRedactionGuardVariable(RedactionGuardScope scope, Type type, string name)
+    {
+        var variable = Expression.Variable(type, name);
+        scope.Variables.Add(variable);
+        return variable;
+    }
+
+    // Wraps a check so it runs once per entry of its block: consumers are nested, and and/or short-circuits, so which
+    // guard runs first isn't known at compile time.
+    private BinaryExpression MemoizedRedactionCheck(RedactionGuardScope scope, Expression check)
+    {
+        var state = DeclareRedactionGuardVariable(scope, typeof(int), ProbeExpressionParserHelper.RedactionCheckStateVariableName);
+        scope.Resets.Add(Expression.Assign(state, Expression.Constant(CheckPending)));
+        return Expression.Equal(
+            Expression.Condition(
+                Expression.Equal(state, Expression.Constant(CheckPending)),
+                Expression.Assign(state, Expression.Condition(check, Expression.Constant(CheckedRedacted), Expression.Constant(CheckedNotRedacted))),
+                state),
+            Expression.Constant(CheckedRedacted));
+    }
+
+    // Values read from a parameter, such as @value, @key or @it.Name, are memoized per block, so repeated reads share
+    // one guard. Values redacted at compile time are not, so each read still reports its redaction.
+    private bool TryGetGuardedMember(ParameterExpression source, string member, out Expression value)
+    {
+        value = null;
+        return CurrentRedactionGuardScope.Members?.TryGetValue(new GuardedMemberKey(source, member), out value) == true;
+    }
+
+    private Expression MemoizeGuardedMember(ParameterExpression source, string member, Expression value)
+    {
+        if (value is GotoExpression || IsRedactedValue(value) || value.Type == ProbeExpressionParserHelper.UndefinedValueType)
+        {
+            return value;
+        }
+
+        (CurrentRedactionGuardScope.Members ??= [])[new GuardedMemberKey(source, member)] = value;
+        return value;
+    }
+
+    private RedactionGuardScope EnterPredicateRedactionGuardScope()
+    {
+        var outerScope = _predicateRedactionGuardScope;
+        _predicateRedactionGuardScope = new RedactionGuardScope(CurrentRedactionGuardScope);
+        return outerScope;
+    }
+
+    // Declares the predicate's guard variables in a block that resets their checks on every item: a block that a loop
+    // re-enters keeps its variables' values.
+    private Expression ScopePredicateRedactionGuards(Expression predicate)
+    {
+        var scope = _predicateRedactionGuardScope;
+        if (predicate is null || scope.Variables.Count == 0)
+        {
+            return predicate;
+        }
+
+        List<Expression> expressions = [.. scope.Resets, predicate];
+        return Expression.Block(scope.Variables, expressions);
+    }
+
+    private void ExitPredicateRedactionGuardScope(RedactionGuardScope outerScope)
+    {
+        _predicateRedactionGuardScope = outerScope;
+    }
+
+    private void AddRootRedactionGuards(List<ParameterExpression> scopeMembers, List<Expression> expressions)
+    {
+        if (_rootRedactionGuardScope is null)
+        {
+            return;
+        }
+
+        scopeMembers.AddRange(_rootRedactionGuardScope.Variables);
+        expressions.AddRange(_rootRedactionGuardScope.Resets);
+    }
+
     private readonly struct RedactionGuard(Expression check, Expression value, RedactionGuardKind kind, Expression sourceCheck = null)
     {
         // True when the value is redacted.
@@ -265,5 +448,22 @@ internal partial class ProbeExpressionParser<T>
         {
             return Kind == RedactionGuardKind.RedactedOperation && ReferenceEquals(Value, expression);
         }
+    }
+
+    private readonly record struct GuardedMemberKey(ParameterExpression Source, string Member);
+
+    // The guard variables of one block (the root block or a predicate's) and the resets of their checks. A predicate's
+    // scope is nested in the scope of the block that encloses it.
+    private sealed class RedactionGuardScope(RedactionGuardScope parent)
+    {
+        internal RedactionGuardScope Parent { get; } = parent;
+
+        internal List<ParameterExpression> Variables { get; } = [];
+
+        internal List<Expression> Resets { get; } = [];
+
+        internal Dictionary<ParameterExpression, Expression> ParameterChecks { get; set; }
+
+        internal Dictionary<GuardedMemberKey, Expression> Members { get; set; }
     }
 }
