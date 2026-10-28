@@ -173,7 +173,7 @@ namespace Datadog.Trace.Configuration
         {
             // TODO: Treat empty OTEL settings as unset at the config source level instead of per setting
             // An unset signal protocol is read from its OTEL_EXPORTER_OTLP_PROTOCOL alias, so a value equal to the general protocol is treated as inherited
-            var isSignalProtocolSet = !string.IsNullOrEmpty(signalProtocol) && signalProtocol != generalProtocol;
+            var isSignalProtocolSet = !string.IsNullOrEmpty(signalProtocol);
             var configuredProtocol = isSignalProtocolSet ? signalProtocol : generalProtocol;
             var parsedProtocol = ParseOtlpProtocol(configuredProtocol);
             if (parsedProtocol is null && !string.IsNullOrEmpty(configuredProtocol))
