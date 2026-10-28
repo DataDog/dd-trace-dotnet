@@ -449,13 +449,13 @@ internal partial class ProbeExpressionParser<T>
             Expression.Constant(typeName),
             _evaluationBudgetParameterExpression);
 
-        return RedactDictionaryOperation(value, isInstanceOfExpression);
+        return RedactOperation(value, isInstanceOfExpression);
     }
 
     private Expression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var source = ParseTree(reader, parameters, itParameter);
-        return RedactDictionaryOperation(source, Expression.Property(
+        return RedactOperation(source, Expression.Property(
             Expression.Call(
                 source,
                 ProbeExpressionParserHelper.GetMethodByReflection(typeof(object), "GetType", Type.EmptyTypes)),
@@ -465,13 +465,13 @@ internal partial class ProbeExpressionParser<T>
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
-        return RedactDictionaryOperation(value, Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType));
+        return RedactOperation(value, Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType));
     }
 
     private Expression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
-        return RedactDictionaryOperation(value, Expression.Not(Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType)));
+        return RedactOperation(value, Expression.Not(Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType)));
     }
 
     private Expression GetMember(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -547,9 +547,9 @@ internal partial class ProbeExpressionParser<T>
                 return RedactIfRedactedType(dictionaryEntryMember, expression, propertyOrFieldValue);
             }
 
-            if (TryGetRedactedDictionaryValue(expression, out var redactedDictionaryValue))
+            if (TryGetRedactionGuard(expression, out var guard))
             {
-                return RedactedDictionaryValueMember(redactedDictionaryValue, propertyOrFieldValue);
+                return GuardedValueMember(guard, propertyOrFieldValue);
             }
 
             if (!TryResolveSafeMemberExpression(expression, propertyOrFieldValue, out var memberExpression, out var reason))
