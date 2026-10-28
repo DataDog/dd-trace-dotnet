@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
             { false, 0, "gateway" },
             { false, 1, "direct" },
             { false, 2, "other" },
-            // Disposed contexts fail before the connection mode can be read.
+            // Disposal must not prevent reading metadata directly from the fields.
             { true, 0, "gateway" },
         };
 
@@ -39,13 +39,14 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
             scope.Span.ResourceName.Should().Be("Read dbs/myDb/colls/myColl/docs/?");
             scope.Span.Type.Should().Be(SpanTypes.Sql);
             var tags = scope.Span.Tags.Should().BeAssignableTo<CosmosDbTags>().Subject;
-            tags.UserAgent.Should().Be(disposed ? null : "cosmos-test-agent");
-            tags.ConnectionMode.Should().Be(disposed ? null : expectedMode);
+            tags.UserAgent.Should().Be("cosmos-test-agent");
+            tags.ConnectionMode.Should().Be(expectedMode);
             tags.ContainerId.Should().Be("myColl");
             tags.DatabaseId.Should().Be("myDb");
             var expectedTags = Tracer.Instance.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
             expectedTags.SetEndpoint(new Uri("https://localhost:8081"));
             tags.Host.Should().Be(expectedTags.Host);
+            context.PropertyReads.Should().Be(0);
         }
 
         [Theory]
@@ -81,21 +82,29 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
         private class ClientContext
         {
             private readonly bool _disposed;
-            private readonly ClientOptions _clientOptions;
+            // Match the SDK fields accessed through duck typing.
+            private readonly ClientOptions clientOptions;
+            private readonly string userAgent = "cosmos-test-agent";
 
             public ClientContext(bool disposed, int connectionMode)
             {
                 _disposed = disposed;
-                _clientOptions = new ClientOptions { ConnectionMode = connectionMode };
+                clientOptions = new ClientOptions { ConnectionMode = connectionMode };
             }
+
+            public int PropertyReads { get; private set; }
 
             public Client Client => ThrowIfDisposed(new Client(this));
 
-            public string UserAgent => ThrowIfDisposed("cosmos-test-agent");
+            public string UserAgent => ThrowIfDisposed(userAgent);
 
-            public ClientOptions ClientOptions => ThrowIfDisposed(_clientOptions);
+            public ClientOptions ClientOptions => ThrowIfDisposed(clientOptions);
 
-            private T ThrowIfDisposed<T>(T value) => _disposed ? throw new ObjectDisposedException(nameof(ClientContext)) : value;
+            private T ThrowIfDisposed<T>(T value)
+            {
+                PropertyReads++;
+                return _disposed ? throw new ObjectDisposedException(nameof(ClientContext)) : value;
+            }
         }
 
         private class ClientOptions

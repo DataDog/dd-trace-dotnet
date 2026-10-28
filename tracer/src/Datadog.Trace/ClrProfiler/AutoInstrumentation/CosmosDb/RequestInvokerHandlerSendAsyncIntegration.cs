@@ -79,26 +79,18 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             tags.DatabaseId = databaseId;
             tags.SetEndpoint(instance?.Client.Endpoint);
 
-            try
+            var clientContextObject = instance?.Client.ClientContext;
+            if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosClientContextMetadataStruct>(out var clientContext))
             {
-                var clientContextObject = instance?.Client.ClientContext;
-                if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
-                {
-                    tags.UserAgent = clientContext.UserAgent;
+                tags.UserAgent = clientContext.UserAgent;
 
-                    var connectionMode = clientContext.ClientOptions.ConnectionMode;
-                    tags.ConnectionMode = connectionMode switch
-                    {
-                        0 => "gateway",
-                        1 => "direct",
-                        _ => "other"
-                    };
-                }
-            }
-            catch (ObjectDisposedException)
-            {
-                // Context metadata may be unavailable if the client is disposed during an operation.
-                // Still create the span so the operation's result or exception can be recorded.
+                var connectionMode = clientContext.ClientOptions.ConnectionMode;
+                tags.ConnectionMode = connectionMode switch
+                {
+                    0 => "gateway",
+                    1 => "direct",
+                    _ => "other"
+                };
             }
 
             tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);
