@@ -1652,7 +1652,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry mode is enabled: OpenTelemetry semantics mode is enabled
-        /// and at least one signal is exported over OTLP. The OpenTelemetry tracing API bridge does not count.
+        /// and at least one signal is on. The trace signal needs both the OpenTelemetry tracing API bridge
+        /// and OTLP trace export; the metrics and logs signals need their OTLP export.
         /// </summary>
         /// <param name="mutableSettings">The current mutable settings.</param>
         /// <param name="exporterSettings">The current exporter settings.</param>
@@ -1661,7 +1662,7 @@ namespace Datadog.Trace.Configuration
             => OtelSemanticsEnabled
             && (OtlpMetricsExportEnabled
                 || OtlpLogsExportEnabled
-                || (mutableSettings.TraceEnabled && exporterSettings.IsOtlpTraceExport));
+                || (IsActivityListenerEnabled && mutableSettings.TraceEnabled && exporterSettings.IsOtlpTraceExport));
 
         private static DbmPropagationResult? ToDbmPropagationInput(string inputValue)
         {
