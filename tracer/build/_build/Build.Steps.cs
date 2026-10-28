@@ -1592,7 +1592,7 @@ partial class Build
 
                     try
                     {
-                        DotNetTest(x => x
+                        var testSettings = new DotNetTestSettings()
                             .EnableNoRestore()
                             .EnableNoBuild()
                             .SetFilter(filter)
@@ -1607,9 +1607,14 @@ partial class Build
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
-                                .SetProjectFile(project)
-                                // Keep the logger last: NUKE 6.3 clones settings by serialization, which cannot copy delegates.
-                                .When(IsGitlab, c => c.SetProcessCustomLogger(UnitTestOutputFilter.Wrap(DotNetTasks.DotNetLogger)))));
+                                .SetProjectFile(project));
+
+                        // NUKE 6.3's batch executor clones settings and cannot serialize logger delegates.
+                        // Attach the logger after configuration and execute each settings object directly.
+                        foreach (var settings in testSettings)
+                        {
+                            DotNetTest(settings.When(IsGitlab, c => c.SetProcessCustomLogger(UnitTestOutputFilter.Wrap(DotNetTasks.DotNetLogger))));
+                        }
                     }
                     catch (Exception ex)
                     {
