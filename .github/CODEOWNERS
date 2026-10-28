@@ -84,6 +84,7 @@ tracer/                                   @DataDog/tracing-dotnet
 
 ## Serverless (AWS)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/                    @DataDog/apm-serverless
+/tracer/test/test-applications/integrations/Samples.AWS.*/                       @DataDog/apm-serverless
 /tracer/src/**/*Lambda*                                                         @DataDog/apm-serverless
 /tracer/test/**/*Lambda*                                                        @DataDog/apm-serverless
 /tracer/build/_build/docker/serverless.lambda.dockerfile                        @DataDog/apm-serverless
