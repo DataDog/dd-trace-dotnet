@@ -156,7 +156,7 @@ services:
 
   couchbase:
     # Keep the pinned image for Testcontainers without starting it in normal Compose workflows.
-    image: couchbase:community-6.6.0@sha256:43103efdd4b562366c7a48afa977c4ad148e09c877da28a83a86b2c5ee2daa97
+    image: couchbase:community-7.6.2@sha256:b189eeb7bebb141e5122064e6112e8178b459e2d639f37ffe97823d7a31ded81
     profiles: ["testcontainers"]
 
   elasticsearch7:

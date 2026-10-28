@@ -33,7 +33,7 @@ public class CouchbaseFixture : ContainerFixture
     private const ushort QuerySslPort = 18093;
     private const ushort KeyValuePort = 11210;
     private const ushort KeyValueSslPort = 11207;
-    private const string Image = "couchbase:community-6.6.0@sha256:43103efdd4b562366c7a48afa977c4ad148e09c877da28a83a86b2c5ee2daa97";
+    private const string Image = "couchbase:community-7.6.2@sha256:b189eeb7bebb141e5122064e6112e8178b459e2d639f37ffe97823d7a31ded81";
     private const string AdministratorUsername = "Administrator";
     private const string Username = "default";
     private const string Password = "password";
@@ -166,6 +166,10 @@ public class CouchbaseFixture : ContainerFixture
              client,
              "/pools/default/buckets/default",
              content => content.IndexOf(@"""status"":""healthy""", StringComparison.OrdinalIgnoreCase) >= 0).ConfigureAwait(false);
+
+        // SDK 3 samples use a named collection, which must exist on servers that support collections.
+        await PostFormAsync(client, "/pools/default/buckets/default/scopes", new() { ["name"] = "tenant_agent_00" }).ConfigureAwait(false);
+        await PostFormAsync(client, "/pools/default/buckets/default/scopes/tenant_agent_00/collections", new() { ["name"] = "users" }).ConfigureAwait(false);
 
         using var queryClient = new HttpClient
         {
