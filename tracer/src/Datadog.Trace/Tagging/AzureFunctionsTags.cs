@@ -149,12 +149,23 @@ namespace Datadog.Trace.Tagging
                 tags.SetTag(Tags.InstrumentationName, ComponentName);
             }
 
-            // Works for any ITags: on AzureFunctionsTags the generated SetTag routes these keys to
-            // the matching typed property, and anything else stores them in the tag dictionary.
-            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionName : Trace.Tags.AzureFunctionName, shortName);
-            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionMethod : Trace.Tags.AzureFunctionMethod, fullName);
-            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionBindingSource : Trace.Tags.AzureFunctionBindingSource, bindingSource);
-            tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionTriggerType : Trace.Tags.AzureFunctionTriggerType, triggerType);
+            if (tags is AzureFunctionsTags azureFunctionsTags)
+            {
+                // Direct typed writes; the facade routes each one to the half this instance
+                // targets, so the keys come from the object rather than from isContainerApps.
+                azureFunctionsTags.ShortName = shortName;
+                azureFunctionsTags.FullName = fullName;
+                azureFunctionsTags.BindingSource = bindingSource;
+                azureFunctionsTags.TriggerType = triggerType;
+            }
+            else
+            {
+                // Any other ITags (e.g. AspNetCoreTags) stores these in the tag dictionary.
+                tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionName : Trace.Tags.AzureFunctionName, shortName);
+                tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionMethod : Trace.Tags.AzureFunctionMethod, fullName);
+                tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionBindingSource : Trace.Tags.AzureFunctionBindingSource, bindingSource);
+                tags.SetTag(isContainerApps ? Trace.Tags.AzureContainerAppFunctionTriggerType : Trace.Tags.AzureFunctionTriggerType, triggerType);
+            }
         }
     }
 }

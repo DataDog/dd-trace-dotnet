@@ -87,6 +87,29 @@ namespace Datadog.Trace.Tests.Tagging
         [Theory]
         [InlineData(false, "aas.")]
         [InlineData(true, "aca.")]
+        public void SetRootSpanTags_OnAzureFunctionsTags_PrefersTheInstanceOverTheFlag(bool isContainerApps, string prefix)
+        {
+            // the typed path writes through the facade, so the instance's own environment picks
+            // the keys. Passing the opposite flag must not produce a mixed-prefix span.
+            var tags = new AzureFunctionsTags(isContainerApps);
+
+            AzureFunctionsTags.SetRootSpanTags(tags, !isContainerApps, ShortName, FullName, BindingSource, TriggerType);
+
+            tags.GetTag(prefix + "function.name").Should().Be(ShortName);
+            tags.GetTag(prefix + "function.method").Should().Be(FullName);
+            tags.GetTag(prefix + "function.binding").Should().Be(BindingSource);
+            tags.GetTag(prefix + "function.trigger").Should().Be(TriggerType);
+
+            var unexpectedPrefix = isContainerApps ? "aas." : "aca.";
+            tags.GetTag(unexpectedPrefix + "function.name").Should().BeNull();
+            tags.GetTag(unexpectedPrefix + "function.method").Should().BeNull();
+            tags.GetTag(unexpectedPrefix + "function.binding").Should().BeNull();
+            tags.GetTag(unexpectedPrefix + "function.trigger").Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false, "aas.")]
+        [InlineData(true, "aca.")]
         public void SetRootSpanTags_OnForeignTags_UsesPrefixedKeys(bool isContainerApps, string prefix)
         {
             // the root span is frequently tagged with something other than AzureFunctionsTags

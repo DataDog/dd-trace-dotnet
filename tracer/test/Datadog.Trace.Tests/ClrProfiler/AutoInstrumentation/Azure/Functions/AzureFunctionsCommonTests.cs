@@ -1,4 +1,4 @@
-// <copyright file="AzureFunctionsCommonTests.cs" company="Datadog">
+﻿// <copyright file="AzureFunctionsCommonTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 #pragma warning restore SA1403
 
     [Collection(nameof(TracerInstanceTestCollection))]
-    [TracerRestorer]
     public class AzureFunctionsCommonTests
     {
         // Guards the wiring between AzureInfo.IsAzureContainerApp and the tag prefix actually
@@ -52,12 +51,12 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName, containerAppName);
 
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var functionContext = CreateMockFunctionContext("httpTrigger");
 
-            // A fresh AzureInfo reads the environment above; the production overload uses the singleton.
-            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(functionContext, triggerType: null, startTime: null, new AzureInfo());
+            // A fresh AzureInfo reads the environment above, and the tracer is passed explicitly, so
+            // this never touches global state. The production overload supplies the singletons.
+            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(functionContext, triggerType: null, startTime: null, new AzureInfo(), tracer);
 
             var scope = state.Scope;
             scope.Should().NotBeNull();
