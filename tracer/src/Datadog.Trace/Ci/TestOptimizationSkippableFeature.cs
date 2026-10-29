@@ -194,7 +194,9 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         if (StringUtil.IsNullOrWhiteSpace(moduleName))
         {
             Log.Debug("TestOptimizationSkippableFeature: coverage-active skipping requires a test bundle scope, but none is available.");
+#pragma warning disable MA0022 // Return Task.FromResult instead of returning null - null is the documented "scope unavailable" result
             return null;
+#pragma warning restore MA0022
         }
 
         var scopeModuleName = moduleName!;

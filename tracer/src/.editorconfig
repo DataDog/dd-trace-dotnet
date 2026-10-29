@@ -113,7 +113,6 @@ dotnet_diagnostic.MA0012.severity = none # Do not raise reserved exception type
 dotnet_diagnostic.MA0015.severity = none # Specify the parameter name in ArgumentException
 dotnet_diagnostic.MA0017.severity = none # Abstract types should not have public or internal constructors
 dotnet_diagnostic.MA0020.severity = none # Use direct methods instead of LINQ methods
-dotnet_diagnostic.MA0022.severity = none # Return Task.FromResult instead of returning null
 dotnet_diagnostic.MA0023.severity = none # Use RegexOptions.ExplicitCapture or named groups
 dotnet_diagnostic.MA0025.severity = none # Implement the functionality instead of throwing NotImplementedException
 dotnet_diagnostic.MA0028.severity = none # Optimize StringBuilder usage
