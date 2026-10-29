@@ -156,7 +156,7 @@ namespace Datadog.Trace.MSBuild
                 }
 
                 _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
-                _buildSpan.Finish(e.Timestamp);
+                _buildSpan.Finish(new DateTimeOffset(e.Timestamp));
             }
             catch (Exception ex)
             {
@@ -239,7 +239,7 @@ namespace Datadog.Trace.MSBuild
                     }
 
                     _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
-                    projectSpan.Finish(e.Timestamp);
+                    projectSpan.Finish(new DateTimeOffset(e.Timestamp));
                 }
             }
             catch (Exception ex)

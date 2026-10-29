@@ -152,7 +152,6 @@ dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from
 dotnet_diagnostic.MA0105.severity = none # Use the lambda parameters instead of using a closure
 dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter
 dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
-dotnet_diagnostic.MA0132.severity = none # Do not convert implicitly to DateTimeOffset
 dotnet_diagnostic.MA0133.severity = none # Use DateTimeOffset instead of relying on the implicit conversion
 dotnet_diagnostic.MA0134.severity = none # Observe result of async calls
 dotnet_diagnostic.MA0136.severity = none # Raw String contains an implicit end of line character

@@ -27,7 +27,7 @@ namespace Datadog.Trace.Processors
         internal const int MaxTypeLen = 100;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NormalizerTraceProcessor>();
-        private static readonly DateTime Year2000Time = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTimeOffset Year2000Time = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         public NormalizerTraceProcessor()
         {

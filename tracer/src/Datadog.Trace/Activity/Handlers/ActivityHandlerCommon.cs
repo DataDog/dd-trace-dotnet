@@ -239,7 +239,7 @@ namespace Datadog.Trace.Activity.Handlers
                     activity.OperationName,
                     tags: tags ?? new OpenTelemetryTags(),
                     parent: parent,
-                    startTime: activity.StartTimeUtc,
+                    startTime: new DateTimeOffset(activity.StartTimeUtc),
                     traceId: traceId,
                     spanId: spanId,
                     rawTraceId: rawTraceId,
@@ -497,7 +497,7 @@ namespace Datadog.Trace.Activity.Handlers
             // - service.name
             // - service.namespace
             // - service.version
-            span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+            span.Finish(new DateTimeOffset(activity.StartTimeUtc.Add(activity.Duration)));
 
             scope.Close();
         }

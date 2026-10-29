@@ -144,7 +144,7 @@ namespace Datadog.Trace.Debugger.Caching
             }
 
             var expirationTime = item.LastAccessed + item.SlidingExpiration.Value;
-            return now >= expirationTime;
+            return new DateTimeOffset(now) >= expirationTime;
         }
 
         internal void Add(TValue value, TimeSpan? slidingExpiration = null, params TKey[] keys)

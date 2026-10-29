@@ -80,7 +80,7 @@ internal class DatadogExporter : IExporter
                     var framework = CommonTags.TestingFrameworkNameBenchmarkDotNet;
                     testModule = moduleStartTime is null ?
                                      TestSession.CreateModule(moduleName, framework, version) :
-                                     TestSession.CreateModule(moduleName, framework, version, startDate: moduleStartTime.Value);
+                                     TestSession.CreateModule(moduleName, framework, version, startDate: new DateTimeOffset(moduleStartTime.Value));
                     _testModules[benchmarkModule.Key] = testModule;
                 }
 

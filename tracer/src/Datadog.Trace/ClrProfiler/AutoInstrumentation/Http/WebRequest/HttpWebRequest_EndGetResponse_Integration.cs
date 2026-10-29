@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         out _,
                         traceId: existingSpanContext?.TraceId128 ?? TraceId.Zero,
                         spanId: existingSpanContext?.SpanId ?? 0,
-                        startTime);
+                        new DateTimeOffset(startTime));
 
                     if (scope is not null)
                     {
