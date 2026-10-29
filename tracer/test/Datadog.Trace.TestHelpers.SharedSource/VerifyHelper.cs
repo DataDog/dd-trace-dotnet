@@ -39,6 +39,7 @@ namespace Datadog.Trace.TestHelpers
             (new(@"process_id: \d+\.0", RegOptions), "process_id: 0"),
             (new(@"http.client_ip: (.)*(?=,)", RegOptions), "http.client_ip: 127.0.0.1"),
             (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123"),
+            (new(@"http\.useragent: cosmos-netstandard-sdk\/[^\,]+", RegOptions), "http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|"),
             // OpenTelemetry semantic convention equivalents of the above (DD_TRACE_OTEL_SEMANTICS_ENABLED=true)
             (new(@"client.address: (.)*(?=,)", RegOptions), "client.address: 127.0.0.1"),
             (new(@"network.peer.address: (.)*(?=,)", RegOptions), "network.peer.address: 127.0.0.1"),

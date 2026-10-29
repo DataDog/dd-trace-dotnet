@@ -60,7 +60,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.AddRegexScrubber(new(@"http\.useragent: cosmos-netstandard-sdk\/[^\,]+", VerifyHelper.RegOptions), "http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}{snapshotSuffix}")
                                   .DisableRequireUniquePrefix();
