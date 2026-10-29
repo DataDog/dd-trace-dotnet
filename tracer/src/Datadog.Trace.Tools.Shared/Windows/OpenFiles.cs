@@ -331,11 +331,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
 
         private static void EnsureDeviceMap()
         {
-            if (_deviceMap == null)
-            {
-                var localDeviceMap = BuildDeviceMap();
-                Interlocked.CompareExchange(ref _deviceMap, localDeviceMap, null);
-            }
+            LazyInitializer.EnsureInitialized(ref _deviceMap, BuildDeviceMap);
         }
 
         private static Dictionary<string, string> BuildDeviceMap()

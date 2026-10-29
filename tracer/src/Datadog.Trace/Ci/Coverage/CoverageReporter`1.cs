@@ -101,8 +101,9 @@ public static class CoverageReporter<TMeta>
             return null;
         }
 
-        Interlocked.CompareExchange(ref _globalModuleValue, module, null);
-        return Volatile.Read(ref _globalModuleValue)!;
+#pragma warning disable MA0173 // Use LazyInitializer.EnsureInitialize - the value is already computed above, so a factory would need a capturing closure allocated on every call
+        return Interlocked.CompareExchange(ref _globalModuleValue, module, null) ?? module;
+#pragma warning restore MA0173
     }
 
     private static int GetByteOffset(int fileIndex)
