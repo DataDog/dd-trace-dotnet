@@ -437,7 +437,7 @@ internal static partial class IastModule
 
         var vulnerability = new Vulnerability(
             VulnerabilityTypeUtils.SessionTimeout,
-            (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes).GetStaticHashCode(),
+            (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes.ToStringInvariant()).GetStaticHashCode(),
             GetLocation(),
             new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
             IntegrationId.SessionTimeout);

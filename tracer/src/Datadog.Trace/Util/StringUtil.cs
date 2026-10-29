@@ -16,7 +16,7 @@ namespace System;
 /// Provides some simple wrappers around string operations, primarily to provide nullable annotations for frameworks
 /// that don't support them i.e. .NET FX, .NET Standard 2.0.
 /// </summary>
-internal static class StringUtil
+internal static partial class StringUtil
 {
     /// <summary>
     /// Indicates whether the specified string is null or an empty string ("").

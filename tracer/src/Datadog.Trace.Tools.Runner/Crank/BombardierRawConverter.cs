@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                     if (valueArray.Count != 1)
                     {
-                        prefix += i + ".";
+                        prefix += i.ToStringInvariant() + ".";
                     }
 
                     SetSpan(span, prefix, valueArray[i]);

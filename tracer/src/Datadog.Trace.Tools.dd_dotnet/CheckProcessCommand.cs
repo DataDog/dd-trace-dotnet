@@ -32,7 +32,7 @@ internal class CheckProcessCommand : Command
     {
         var pid = _pidArgument.GetValue(context);
 
-        AnsiConsole.WriteLine("Running checks on process " + pid);
+        AnsiConsole.WriteLine("Running checks on process " + pid.ToStringInvariant());
 
         ProcessInfo process;
 
