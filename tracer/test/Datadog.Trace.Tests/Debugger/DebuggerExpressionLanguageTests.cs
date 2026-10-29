@@ -2970,6 +2970,8 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(@"{""ref"":""password""}")]
         [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""password""]}")]
         [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}")]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""xpasswordx"",1,9]}]}")]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[{""substring"":[""xxpasswordxx"",1,11]},1,9]}]}")]
         [InlineData(@"{""len"":{""ref"":""password""}}")]
         [InlineData(@"{""substring"":[{""ref"":""password""},0,3]}")]
         [InlineData(@"{""eq"":[{""ref"":""password""},""TOP_SECRET_VALUE""]}")]
@@ -3003,6 +3005,94 @@ namespace Datadog.Trace.Tests.Debugger
             error.Message.Should().Be("The property or field is redacted.");
             error.IsRedaction.Should().BeTrue();
             result.HasConditionError.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""xpublicx"",1,7]}]}")]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[{""substring"":[""xxpublicxx"",1,9]},1,7]}]}")]
+        public void ProbeExpressionParser_ConstantComputedKey_IsFoldedAndReturnsValue(string json)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(
+                new ScopeMember(
+                    "SafeDictionaryLocal",
+                    typeof(Dictionary<string, string>),
+                    new Dictionary<string, string> { { "password", "TOP_SECRET_VALUE" }, { "public", "hello" } },
+                    ScopeMemberKind.Local));
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+
+            EvaluateCompiled(compiled, scopeMembers).Should().Be("hello");
+            compiled.Errors.Should().BeNullOrEmpty();
+            var parsedExpression = compiled.ParsedExpression.ToReadableString();
+            parsedExpression.Should().NotContain(nameof(string.Substring));
+            parsedExpression.Should().Contain(@"""public""");
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_ConstantKeyThatThrowsWhenFolded_KeepsRuntimeError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(
+                new ScopeMember(
+                    "SafeDictionaryLocal",
+                    typeof(Dictionary<string, string>),
+                    new Dictionary<string, string> { { "public", "hello" } },
+                    ScopeMemberKind.Local));
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(null, null, "value="),
+                    new DebuggerExpression(string.Empty, @"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[""abc"",5,9]}]}", null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+            var expectedError = Record.Exception(() => "abc".Substring(5, 4));
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("value=");
+            var error = result.Errors.Should().ContainSingle().Subject;
+            error.Message.Should().Be(expectedError.Message);
+            error.IsRedaction.Should().BeFalse();
+            evaluator.CompiledTemplates[1].ParsedExpression.ToReadableString().Should().Contain(nameof(string.Substring));
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ConstantComputedListIndex_IsEvaluatedAtRuntime()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string json = @"{""index"":[{""ref"":""CollectionLocal""},{""len"":""ab""}]}";
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+
+            EvaluateCompiled(compiled, scopeMembers).Should().Be("2nd item");
+            compiled.Errors.Should().BeNullOrEmpty();
+            compiled.ParsedExpression.ToReadableString().Should().Contain(@"""ab""");
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_RuntimeComputedKey_IsEvaluatedOnEachCall()
+        {
+            const string json = @"{""index"":[{""ref"":""SafeDictionaryLocal""},{""substring"":[{""ref"":""KeyLocal""},1,7]}]}";
+            var dictionary = new Dictionary<string, string> { { "public", "hello" }, { "others", "world" } };
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, CreateKeyScopeMembers("xpublicx"));
+
+            EvaluateCompiled(compiled, CreateKeyScopeMembers("xpublicx")).Should().Be("hello");
+            EvaluateCompiled(compiled, CreateKeyScopeMembers("xothersx")).Should().Be("world");
+            compiled.Errors.Should().BeNullOrEmpty();
+            compiled.ParsedExpression.ToReadableString().Should().Contain(nameof(string.Substring));
+
+            MethodScopeMembers CreateKeyScopeMembers(string key)
+            {
+                var scopeMembers = CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("SafeDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+                scopeMembers.AddMember(new ScopeMember("KeyLocal", typeof(string), key, ScopeMemberKind.Local));
+                return scopeMembers;
+            }
         }
 
         [Fact]

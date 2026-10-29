@@ -71,6 +71,27 @@ internal partial class ProbeExpressionParser<T>
                type == typeof(char);
     }
 
+    private static bool TryFoldStringKey(Expression key, out ConstantExpression constant)
+    {
+        constant = null;
+        try
+        {
+            var visitor = new FoldableKeyVisitor();
+            var body = visitor.Visit(key);
+            if (visitor.IsRejected)
+            {
+                return false;
+            }
+
+            constant = Expression.Constant(Expression.Lambda<Func<string>>(body).Compile()(), typeof(string));
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Predicate(reader, parameters, PredicateOperation.Any, itParameter);
@@ -401,6 +422,14 @@ internal partial class ProbeExpressionParser<T>
             if (!IsTypeSupportIndex(source.Type, out var assignableFrom))
             {
                 throw new InvalidOperationException("Source must implement IList or IDictionary");
+            }
+
+            // Fold string keys computed only from constants so they are redaction-checked like literal keys.
+            if (indexOrKey?.Type == typeof(string) &&
+                indexOrKey is not ConstantExpression &&
+                TryFoldStringKey(indexOrKey, out var foldedKey))
+            {
+                indexOrKey = foldedKey;
             }
 
             if (indexOrKey.Type == typeof(string) &&
@@ -882,6 +911,54 @@ internal partial class ProbeExpressionParser<T>
             }
 
             return node;
+        }
+    }
+
+    /// <summary>
+    /// Checks that a key can be folded at compile time and strips the parser budget checks from it.
+    /// Accepts only: string, primitive or null constants; blocks without variables; unary and binary nodes
+    /// over primitives without an operator method (including conversions between primitives); conditionals;
+    /// instance members declared on <see cref="string"/>; and methods declared on <see cref="string"/>.
+    /// Anything else rejects the key.
+    /// </summary>
+    private sealed class FoldableKeyVisitor : ExpressionVisitor
+    {
+        internal bool IsRejected { get; private set; }
+
+        public override Expression Visit(Expression node)
+        {
+            if (IsRejected || node is null)
+            {
+                return node;
+            }
+
+            if (node is MethodCallExpression call && (call.Method == ThrowIfExceededMethod || call.Method == ThrowIfExceededImmediatelyMethod))
+            {
+                return Expression.Empty();
+            }
+
+            if (!IsFoldable(node))
+            {
+                IsRejected = true;
+                return node;
+            }
+
+            return base.Visit(node);
+        }
+
+        private static bool IsFoldable(Expression node)
+        {
+            return node switch
+            {
+                ConstantExpression constant => constant.Value is null or string || constant.Value.GetType().IsPrimitive,
+                BlockExpression block => block.Variables.Count == 0,
+                UnaryExpression unary => unary.Method is null && unary.Operand is not null && unary.Operand.Type.IsPrimitive && unary.Type.IsPrimitive,
+                BinaryExpression binary => binary.Method is null && binary.Conversion is null && binary.Left.Type.IsPrimitive && binary.Right.Type.IsPrimitive,
+                ConditionalExpression => true,
+                MemberExpression member => member.Expression is not null && member.Member.DeclaringType == typeof(string),
+                MethodCallExpression call => call.Method.DeclaringType == typeof(string),
+                _ => false
+            };
         }
     }
 }
