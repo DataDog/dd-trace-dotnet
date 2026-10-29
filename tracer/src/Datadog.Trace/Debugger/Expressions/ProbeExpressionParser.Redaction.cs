@@ -9,13 +9,16 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 // Runtime redaction guards. A guard is a bool check attached to an expression that is true when a value the
 // expression depends on is redacted at runtime: a value under a sensitive dictionary key, or a value whose runtime type
 // is redacted. An operation over a guarded expression yields the redacted default when the check is true, and a member
-// or item read from it carries the check on. Compile-time redaction (RedactedValue) is handled separately.
+// or item read from it carries the check on. Every check runs once per entry of its block. A check of the root block that
+// redacts sets a flag on the evaluation budget that the evaluator reports, and one of a predicate's block only makes that
+// item not match. Compile-time redaction (RedactedValue) is handled separately.
 internal partial class ProbeExpressionParser<T>
 {
     // States of a memoized check: the first guard to run stores the result, the others read it.
@@ -25,7 +28,9 @@ internal partial class ProbeExpressionParser<T>
 
     private static readonly MethodInfo IsRedactedRuntimeValueMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParserHelper), nameof(ProbeExpressionParserHelper.IsRedactedRuntimeValue), [typeof(object), typeof(Type)]);
     private static readonly MethodInfo MarkRuntimeRedactionMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.MarkRuntimeRedaction), [typeof(EvaluationBudget).MakeByRefType()]);
-    private static readonly MethodInfo ShouldRedactDictionaryKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
+    private static readonly MethodInfo IsRedactedStringKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedStringKey), [typeof(string)]);
+    private static readonly MethodInfo IsRedactedObjectKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedObjectKey), [typeof(object)]);
+    private static readonly MethodInfo IsRedactedEntryKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(IsRedactedEntryKey), [typeof(object)]);
 
     private Dictionary<Expression, RedactionGuard> _redactionGuards;
     private RedactionGuardScope _rootRedactionGuardScope;
@@ -43,9 +48,67 @@ internal partial class ProbeExpressionParser<T>
         RedactedOperation
     }
 
+    // How a dictionary key that isn't a compile-time constant is checked at runtime, decided from its declared type.
+    private enum IndexKeyCheck : byte
+    {
+        // No value of the type can be a redacted key.
+        None,
+
+        // A string, looked up in the redacted keywords.
+        Keyword,
+
+        // An enum compared with its members whose names are redacted keywords.
+        EnumValue,
+
+        // Any other key, checked by its runtime value.
+        ObjectKey
+    }
+
     private RedactionGuardScope RootRedactionGuardScope => _rootRedactionGuardScope ??= new RedactionGuardScope(parent: null);
 
     private RedactionGuardScope CurrentRedactionGuardScope => _predicateRedactionGuardScope ?? RootRedactionGuardScope;
+
+    // The string type itself is checked at compile time.
+    [TestingAndPrivateOnly]
+    internal static bool IsRedactedStringKey(string key)
+    {
+        return Redaction.Instance.IsRedactedKeyword(key);
+    }
+
+    // An index key whose declared type doesn't decide its check, matched by name. Its runtime type isn't checked: an index
+    // key that can hold a redacted runtime type carries its own guard.
+    [TestingAndPrivateOnly]
+    internal static bool IsRedactedObjectKey(object key)
+    {
+        if (key is string name)
+        {
+            return Redaction.Instance.IsRedactedKeyword(name);
+        }
+
+        if (key is null)
+        {
+            return false;
+        }
+
+        if (key is Enum)
+        {
+            return Redaction.Instance.IsRedactedKeyword(key.ToString());
+        }
+
+        var type = key.GetType();
+        return !IsUncheckedKeyType(type) &&
+               Redaction.IsSafeToCallToString(type) &&
+               Redaction.Instance.IsRedactedKeyword(key.ToString());
+    }
+
+    // The key of an iterated entry whose declared type doesn't decide its check. Nothing guards the key before the entry's
+    // value is read, so a key of a redacted runtime type redacts the value too.
+    [TestingAndPrivateOnly]
+    internal static bool IsRedactedEntryKey(object key)
+    {
+        return key is not null &&
+               (Redaction.Instance.IsRedactedRuntimeType(key.GetType()) || IsRedactedObjectKey(key));
+    }
 
     private static bool ShouldRedactDictionaryKey(object key)
     {
@@ -59,6 +122,104 @@ internal partial class ProbeExpressionParser<T>
         };
 
         return Redaction.Instance.ShouldRedact(name, type, out _);
+    }
+
+    // Keys of these types are not checked: no default keyword is a number, a bool, a single character, a Guid, a date, a
+    // time span or a version. A configured keyword of that shape is not matched by runtime index keys or iteration keys.
+    private static bool IsUncheckedKeyType(Type type)
+    {
+        return type.IsPrimitive ||
+               type == typeof(decimal) ||
+               type == typeof(Guid) ||
+               type == typeof(DateTime) ||
+               type == typeof(DateTimeOffset) ||
+               type == typeof(TimeSpan) ||
+               type == typeof(Version);
+    }
+
+    // Whether a value of the declared type can be a key that IsRedactedObjectKey matches by name: a string, an enum, or
+    // a checked type that is safe to ToString.
+    private static bool CanBeNamedKey(Type declaredType)
+    {
+        if (declaredType.IsAssignableFrom(typeof(string)) || declaredType.IsAssignableFrom(typeof(Enum)))
+        {
+            return true;
+        }
+
+        foreach (var type in Redaction.AllowedTypesSafeToCallToString)
+        {
+            if (!IsUncheckedKeyType(type) && declaredType.IsAssignableFrom(type))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A key that can't be matched by name, such as a customer class, is redacted only by its type: the declared type is
+    // checked at compile time, and the runtime type by the key's own guard or, for an iterated key, by the entry's guard.
+    private static IndexKeyCheck GetIndexKeyCheck(Type keyType, out List<object> redactedEnumValues)
+    {
+        redactedEnumValues = null;
+        var type = Nullable.GetUnderlyingType(keyType) ?? keyType;
+        if (type == typeof(string))
+        {
+            return IndexKeyCheck.Keyword;
+        }
+
+        if (type.IsEnum)
+        {
+            // ToString yields a single name only for a value equal to a member: a [Flags] combination ("A, B") or a
+            // number never matches a keyword. A value with several names is redacted when any of them is a keyword.
+            var names = Enum.GetNames(type);
+            var values = Enum.GetValues(type);
+            for (var i = 0; i < names.Length; i++)
+            {
+                var value = values.GetValue(i);
+                if (Redaction.Instance.IsRedactedKeyword(names[i]) && redactedEnumValues?.Contains(value) != true)
+                {
+                    (redactedEnumValues ??= []).Add(value);
+                }
+            }
+
+            return redactedEnumValues is null ? IndexKeyCheck.None : IndexKeyCheck.EnumValue;
+        }
+
+        if (IsUncheckedKeyType(type))
+        {
+            return IndexKeyCheck.None;
+        }
+
+        return CanBeNamedKey(type) ? IndexKeyCheck.ObjectKey : IndexKeyCheck.None;
+    }
+
+    // Reads the key once per redacted member.
+    private static Expression RedactedEnumValueCheck(Expression key, List<object> redactedValues)
+    {
+        Expression check = null;
+        foreach (var value in redactedValues)
+        {
+            var isValue = Expression.Equal(key, Expression.Constant(value, key.Type));
+            check = check is null ? isValue : Expression.OrElse(check, isValue);
+        }
+
+        return check;
+    }
+
+    private static Expression CheckKey(Expression key, IndexKeyCheck kind, List<object> redactedEnumValues)
+    {
+        return kind switch
+        {
+            IndexKeyCheck.Keyword => Expression.Call(IsRedactedStringKeyMethod, key),
+            IndexKeyCheck.EnumValue => RedactedEnumValueCheck(key, redactedEnumValues),
+            _ => Expression.Call(IsRedactedObjectKeyMethod, AsObject(key))
+        };
+    }
+
+    private static Expression AsObject(Expression expression)
+    {
+        return expression.Type == typeof(object) ? expression : Expression.Convert(expression, typeof(object));
     }
 
     private static Expression RedactedDefault(Type type)
@@ -141,9 +302,15 @@ internal partial class ProbeExpressionParser<T>
 
     // A value read from guarded values without an operation, such as a member or an item, is only evaluated after their
     // checks, so it carries them on, before its own.
-    private void DeriveRedactionGuard(Expression derived, Expression source, Expression other = null)
+    private void DeriveRedactionGuard(Expression derived, Expression source, Expression other, Expression ownCheck)
     {
-        DeriveRedactionCheck(derived, CombineRedactionChecks(CombineRedactionChecks(null, source), other));
+        var sourceCheck = CombineRedactionChecks(CombineRedactionChecks(null, source), other);
+        if (ownCheck is not null)
+        {
+            sourceCheck = sourceCheck is null ? ownCheck : Expression.OrElse(sourceCheck, ownCheck);
+        }
+
+        DeriveRedactionCheck(derived, sourceCheck);
     }
 
     private void DeriveRedactionCheck(Expression derived, Expression sourceCheck)
@@ -271,23 +438,87 @@ internal partial class ProbeExpressionParser<T>
         return GuardRedactedRuntimeType(memberExpression, CurrentRedactionGuardScope);
     }
 
-    // The value of a dictionary entry is redacted when its key is sensitive.
-    private void GuardByDictionaryKey(Expression expression, Expression keyExpression, RedactionGuardKind kind = RedactionGuardKind.Value)
+    // The value of a dictionary entry is redacted when its key is sensitive. The key is checked as an index key of its
+    // declared type, and also by its runtime type, since nothing guards an iterated key before the value is read. A key
+    // of a redacted declared type redacts every value, which is known at compile time, so it is reported like other
+    // compile-time redactions, inside a predicate too.
+    private void GuardByDictionaryKey(Expression expression, Expression dictionaryEntryExpression, RedactionGuardKind kind)
     {
-        var check = Expression.Call(null, ShouldRedactDictionaryKeyMethod, Expression.Convert(keyExpression, typeof(object)));
-        TrackRedactionGuard(expression, check, kind);
+        var key = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Key));
+        if (Redaction.Instance.IsRedactedType(key.Type))
+        {
+            AddRedactionError($"{dictionaryEntryExpression}.{nameof(KeyValuePair<int, int>.Key)}");
+            TrackRedactionGuard(expression, Expression.Constant(true), kind);
+            return;
+        }
+
+        var scope = CurrentRedactionGuardScope;
+        var keyKind = GetIndexKeyCheck(key.Type, out var redactedEnumValues);
+        Expression keyCheck;
+        if (keyKind == IndexKeyCheck.None)
+        {
+            if (!Redaction.Instance.CanHaveRedactedRuntimeType(key.Type))
+            {
+                return;
+            }
+
+            keyCheck = RuntimeTypeCheck(key, key.Type);
+        }
+        else
+        {
+            keyCheck = keyKind switch
+            {
+                IndexKeyCheck.ObjectKey => Expression.Call(IsRedactedEntryKeyMethod, AsObject(key)),
+
+                // An enum key compared with several members is read once.
+                IndexKeyCheck.EnumValue when redactedEnumValues.Count > 1 => CheckKeyVariable(scope, key, keyKind, redactedEnumValues, out _),
+                _ => CheckKey(key, keyKind, redactedEnumValues)
+            };
+        }
+
+        TrackRedactionGuard(expression, MemoizedRedactionCheck(scope, keyCheck), kind);
+    }
+
+    // The key of an index lookup that isn't a compile-time constant: the check reads it once into the variable that the
+    // lookup reads, so the caller guards the lookup with the check, after the key's own guard. Returns the key for the
+    // lookup, and a null check when no value of the key type can be a redacted key.
+    private Expression CheckIndexKey(Expression key, out Expression check)
+    {
+        var kind = GetIndexKeyCheck(key.Type, out var redactedEnumValues);
+        if (kind == IndexKeyCheck.None)
+        {
+            check = null;
+            return key;
+        }
+
+        var scope = CurrentRedactionGuardScope;
+        check = MemoizedRedactionCheck(scope, CheckKeyVariable(scope, key, kind, redactedEnumValues, out var keyValue));
+        return keyValue;
+    }
+
+    // Checks a key read once into a variable, unless it's a parameter already.
+    private Expression CheckKeyVariable(RedactionGuardScope scope, Expression key, IndexKeyCheck kind, List<object> redactedEnumValues, out ParameterExpression keyValue)
+    {
+        if (key is ParameterExpression parameter)
+        {
+            keyValue = parameter;
+            return CheckKey(parameter, kind, redactedEnumValues);
+        }
+
+        keyValue = DeclareRedactionGuardVariable(scope, key.Type, "$dd_el_key");
+        return Expression.Block(Expression.Assign(keyValue, key), CheckKey(keyValue, kind, redactedEnumValues));
     }
 
     private Expression GuardDictionaryEntry(Expression dictionaryEntryExpression)
     {
-        GuardByDictionaryKey(dictionaryEntryExpression, Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Key)), RedactionGuardKind.DictionaryEntry);
+        GuardByDictionaryKey(dictionaryEntryExpression, dictionaryEntryExpression, RedactionGuardKind.DictionaryEntry);
         return dictionaryEntryExpression;
     }
 
     private MemberExpression GuardDictionaryValue(Expression dictionaryEntryExpression)
     {
         var valueExpression = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Value));
-        GuardByDictionaryKey(valueExpression, Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Key)));
+        GuardByDictionaryKey(valueExpression, dictionaryEntryExpression, RedactionGuardKind.Value);
         return valueExpression;
     }
 

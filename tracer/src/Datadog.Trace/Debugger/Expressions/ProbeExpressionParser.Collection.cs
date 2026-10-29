@@ -474,8 +474,22 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            var item = CallGetItem(source, assignableFrom, indexOrKey);
-            DeriveRedactionGuard(item, source, indexOrKey);
+            // A key known only at runtime is checked before the lookup. Constant keys and list indexes add no check.
+            var lookupKey = indexOrKey;
+            Expression keyCheck = null;
+            if (assignableFrom == typeof(IDictionary) && indexOrKey is not (ConstantExpression or GotoExpression))
+            {
+                var redactedKey = RedactIfRedactedType(indexOrKey, source, indexOrKey);
+                if (IsRedactedValue(redactedKey))
+                {
+                    return redactedKey;
+                }
+
+                lookupKey = CheckIndexKey(indexOrKey, out keyCheck);
+            }
+
+            var item = CallGetItem(source, assignableFrom, lookupKey);
+            DeriveRedactionGuard(item, source, indexOrKey, keyCheck);
             return RedactByType(item, source, indexOrKey, CurrentRedactionGuardScope);
         }
         catch (Exception e)
