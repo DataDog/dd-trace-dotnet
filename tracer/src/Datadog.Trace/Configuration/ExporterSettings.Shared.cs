@@ -54,13 +54,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal const string DefaultTracesUnixDomainSocket = "/var/run/datadog/apm.socket";
 
-        internal static string GetOtlpProtocolName(OtlpProtocol protocol)
+        internal static string? GetOtlpProtocolName(OtlpProtocol protocol)
             => protocol switch
             {
                 OtlpProtocol.Grpc => "grpc",
                 OtlpProtocol.HttpProtobuf => "http/protobuf",
                 OtlpProtocol.HttpJson => "http/json",
-                _ => protocol.ToString(),
+                _ => null,
             };
 
         private static OtlpProtocol? ParseOtlpProtocol(string? protocol)
