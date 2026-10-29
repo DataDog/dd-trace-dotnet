@@ -181,6 +181,13 @@ namespace Datadog.Trace.Configuration
             {
                 RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
             }
+            else if (OtelSdkDisabled)
+            {
+                // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false.
+                // Only a valid DD_RUNTIME_METRICS_ENABLED overrides it: an empty or invalid value is treated as unset.
+                RuntimeMetricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.RuntimeMetricsEnabled, false, ConfigurationOrigins.Calculated);
+            }
             else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true, Result: false })
             {
                 // OTEL_METRICS_EXPORTER=none explicitly disables metrics export, which takes precedence
@@ -1448,8 +1455,9 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry mode is disabled for every signal.
-        /// When <c>true</c>, the OpenTelemetry tracing and metrics APIs, OTLP metrics and logs export, and tracing
-        /// (unless <see cref="ConfigurationKeys.TraceEnabled"/> is set to a valid value) are all disabled.
+        /// When <c>true</c>, the OpenTelemetry tracing and metrics APIs and OTLP metrics and logs export are disabled.
+        /// So are tracing and runtime metrics, unless <see cref="ConfigurationKeys.TraceEnabled"/> or
+        /// <see cref="ConfigurationKeys.RuntimeMetricsEnabled"/> is set to a valid value.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/>
         internal bool OtelSdkDisabled { get; }

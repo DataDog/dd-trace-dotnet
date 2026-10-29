@@ -343,6 +343,36 @@ namespace Datadog.Trace.Tests.Configuration
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter.ToLowerInvariant(), ConfigurationKeys.RuntimeMetricsEnabled.ToLowerInvariant());
         }
 
+        [Theory]
+        // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false, and an empty or invalid value is treated as unset
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("invalid", false)]
+        // Only a valid DD_RUNTIME_METRICS_ENABLED overrides it
+        [InlineData("true", true)]
+        [InlineData("1", true)]
+        [InlineData("false", false)]
+        public void RuntimeMetricsEnabledWithOtelSdkDisabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                (ConfigurationKeys.RuntimeMetricsEnabled, value),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            using var scope = new AssertionScope();
+            settings.RuntimeMetricsEnabled.Should().Be(expected);
+            // OpenTelemetry metrics stay disabled, so re-enabled runtime metrics are sent to DogStatsD rather than over OTLP
+            settings.OtlpRuntimeMetricsEnabled.Should().BeFalse();
+
+            var mappedToFalse = value is null or "" or "invalid";
+            telemetry.GetQueueForTesting()
+                     .Any(e => e is { Key: ConfigurationKeys.RuntimeMetricsEnabled, Origin: ConfigurationOrigins.Calculated, BoolValue: false })
+                     .Should()
+                     .Be(mappedToFalse);
+        }
+
 #if NET6_0_OR_GREATER
         [Fact]
         public void RuntimeMetrics_DefaultsToDiagnosticsOnNet6Plus_WhenNotExplicitlySet()
@@ -678,6 +708,7 @@ namespace Datadog.Trace.Tests.Configuration
             settings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(expectedEnabled);
 #if NET6_0_OR_GREATER
             settings.OtlpMetricsExportEnabled.Should().Be(expectedEnabled);
+            settings.RuntimeMetricsEnabled.Should().Be(expectedEnabled);
 #endif
 #if NETCOREAPP3_1_OR_GREATER
             settings.OtlpLogsExportEnabled.Should().Be(expectedEnabled);
@@ -691,6 +722,7 @@ namespace Datadog.Trace.Tests.Configuration
                 ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled,
                 ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
                 ConfigurationKeys.TraceEnabled,
+                ConfigurationKeys.RuntimeMetricsEnabled,
             ];
 
             var entries = telemetry.GetQueueForTesting().ToList();
