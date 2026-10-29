@@ -104,7 +104,7 @@ namespace Datadog.Trace
 
             // If is not an internal span, we add the numeric value as string as a fallback only
             // so it can be converted automatically by the backend (only if a measurement facet is created for this tag)
-            return span.SetTag(key, value?.ToString());
+            return span.SetTag(key, value?.ToStringInvariant());
         }
 
         internal static bool IsCiVisibilitySpan(this ISpan span)

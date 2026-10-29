@@ -371,7 +371,7 @@ namespace Datadog.Trace.Ci.Configuration
                 var valid = true;
                 for (var i = 0; valid && i < counts.Length; i++)
                 {
-                    valid = int.TryParse(values[i], out counts[i]) && counts[i] is >= 1 and <= MaxDynamicFlakyRetryCount;
+                    valid = int.TryParseInvariant(values[i], out counts[i]) && counts[i] is >= 1 and <= MaxDynamicFlakyRetryCount;
                 }
 
                 if (valid)

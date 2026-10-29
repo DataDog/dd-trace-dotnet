@@ -151,7 +151,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                     if (Directory.Exists(path) && TryGetInode(path, out long output))
                     {
-                        return output.ToString();
+                        return output.ToStringInvariant();
                     }
                 }
             }
@@ -223,7 +223,7 @@ namespace Datadog.Trace.PlatformHelpers
             try
             {
                 var statCommand = ProcessHelpers.RunCommand(new ProcessHelpers.Command("stat", $"-c %i {path}"));
-                return long.TryParse(statCommand?.Output, out result);
+                return long.TryParseInvariant(statCommand?.Output, out result);
             }
             catch (Exception ex)
             {

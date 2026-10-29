@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
@@ -225,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 // Do our best to not block other processes on write by using the process name and id
                 using var process = Process.GetCurrentProcess();
-                var fileName = string.Concat("dotnet-tracer-loader-", process.ProcessName, "-", process.Id.ToString(), ".log");
+                var fileName = string.Concat("dotnet-tracer-loader-", process.ProcessName, "-", process.Id.ToString(CultureInfo.InvariantCulture), ".log");
                 return Path.Combine(logDirectory, fileName);
             }
             catch

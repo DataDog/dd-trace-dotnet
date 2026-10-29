@@ -32,7 +32,7 @@ internal static class EventHubsCommon
         var networkDestinationName = endpoint?.Host;
         var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
                                         "5671" :
-                                        endpoint.Port.ToString();
+                                        endpoint.Port.ToStringInvariant();
 
         return CreateSenderSpanInternal(
             instance.EventHubName,
@@ -108,7 +108,7 @@ internal static class EventHubsCommon
 
             if (actualMessageCount > 1)
             {
-                tags.MessagingBatchMessageCount = actualMessageCount.ToString();
+                tags.MessagingBatchMessageCount = actualMessageCount.ToStringInvariant();
             }
 
             if (actualMessageCount == 1 && messages != null)

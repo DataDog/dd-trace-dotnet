@@ -57,7 +57,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         // timeUnixNano - string representation of uint64
         writer.WritePropertyName("timeUnixNano");
-        writer.WriteValue(evt.Timestamp.ToUnixTimeNanoseconds().ToString());
+        writer.WriteValue(evt.Timestamp.ToUnixTimeNanoseconds().ToStringInvariant());
 
         // name
         writer.WritePropertyName("name");
@@ -534,11 +534,11 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         // startTimeUnixNano (required) - string representation of uint64
         writer.WritePropertyName("startTimeUnixNano");
-        writer.WriteValue(spanModel.Span.StartTime.ToUnixTimeNanoseconds().ToString());
+        writer.WriteValue(spanModel.Span.StartTime.ToUnixTimeNanoseconds().ToStringInvariant());
 
         // endTimeUnixNano (required) - string representation of uint64
         writer.WritePropertyName("endTimeUnixNano");
-        writer.WriteValue((spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds().ToString());
+        writer.WriteValue((spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds().ToStringInvariant());
 
         // attributes (optional)
         // TODO: Actually implement

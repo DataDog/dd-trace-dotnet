@@ -258,7 +258,7 @@ internal class DatadogExporter : IExporter
         _testModules.Clear();
 
         var testSession = TestSession;
-        testSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
+        testSession.Tags.CommandExitCode = Environment.ExitCode.ToStringInvariant();
         await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTimeOffset.UtcNow - testSession.StartTime).ConfigureAwait(false);
     }
 }

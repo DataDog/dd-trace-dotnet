@@ -109,7 +109,6 @@ dotnet_diagnostic.MA0005.severity = none # Use Array.Empty<T>()
 dotnet_diagnostic.MA0007.severity = none # Add a comma after the last value - StyleCop SA1413 (suppressed in tracer/GlobalSuppressions.cs) should be re-enabled at the same time. Trailing commas simplify merge conflicts
 dotnet_diagnostic.MA0009.severity = none # Add regex evaluation timeout
 dotnet_diagnostic.MA0010.severity = none # Mark attributes with AttributeUsageAttribute
-dotnet_diagnostic.MA0011.severity = none # IFormatProvider is missing
 dotnet_diagnostic.MA0012.severity = none # Do not raise reserved exception type
 dotnet_diagnostic.MA0015.severity = none # Specify the parameter name in ArgumentException
 dotnet_diagnostic.MA0017.severity = none # Abstract types should not have public or internal constructors

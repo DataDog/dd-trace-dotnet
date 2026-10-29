@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                 if (item is JProperty itemProperty)
                 {
                     string name = itemProperty.Name;
-                    if (double.TryParse(name, out _))
+                    if (double.TryParseInvariant(name, out _))
                     {
                         // avoid the string to number conversion in the ui.
                         if (prefix.Contains("percentiles", StringComparison.OrdinalIgnoreCase))
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                     {
                         SetSpan(span, prefix + name + ".", valueObject);
                     }
-                    else if (double.TryParse(itemProperty.Value.ToString(), out var itemValue))
+                    else if (ResultValue.TryGetDouble(itemProperty.Value, out var itemValue))
                     {
                         span.SetMetric(prefix + name, itemValue);
                     }
