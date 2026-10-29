@@ -275,11 +275,11 @@ namespace Datadog.Trace.Util
         /// <param name="relativePath">The relative path, which may or may not start with a <c>/</c>.</param>
         /// <returns>The combined <see cref="Uri"/></returns>
         public static string Combine(string baseUri, string relativePath)
-            => baseUri.EndsWith("/")
-                ? (relativePath.StartsWith("/")
+            => baseUri.EndsWith("/", StringComparison.Ordinal)
+                ? (relativePath.StartsWith("/", StringComparison.Ordinal)
                     ? $"{baseUri.Substring(0, baseUri.Length - 1)}{relativePath}"
                     : $"{baseUri}{relativePath}")
-                : (relativePath.StartsWith("/")
+                : (relativePath.StartsWith("/", StringComparison.Ordinal)
                     ? $"{baseUri}{relativePath}"
                     : $"{baseUri}/{relativePath}");
     }

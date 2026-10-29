@@ -1071,7 +1071,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             var stackFrames = (new StackTrace(true).GetFrames() ?? Array.Empty<StackFrame>())
-                             .SkipWhile(frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWith("Datadog") == true).ToArray();
+                             .SkipWhile(frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWith("Datadog", StringComparison.Ordinal) == true).ToArray();
 
             JsonWriter.WritePropertyName("stack");
             JsonWriter.WriteStartArray();

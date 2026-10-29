@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
+                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix, StringComparison.Ordinal) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 var dbmPropagationMode = tracer.Settings.DbmPropagationMode;
                 if (dbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
-                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
+                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix, StringComparison.Ordinal) ||
                                           // if we appended the comment, we need to look for a potential DBM comment in the whole string.
                                           (DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText) && commandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
                     if (alreadyInjected)
@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                             StringUtil.ToLowerInvariant(namespaceName.Substring(namespaceName.LastIndexOf('.') + 1)),
                         _ when commandTypeName == commandSuffix =>
                             StringUtil.ToLowerInvariant(namespaceName),
-                        _ when commandTypeName.EndsWith(commandSuffix) =>
+                        _ when commandTypeName.EndsWith(commandSuffix, StringComparison.Ordinal) =>
                             StringUtil.ToLowerInvariant(commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length)),
                         _ => StringUtil.ToLowerInvariant(commandTypeName)
                     };

@@ -751,7 +751,7 @@ namespace Datadog.Trace.Debugger
                 {
                     switch (namedRawFile.Path.Id)
                     {
-                        case { } id when id.StartsWith(DefinitionPaths.LogProbe):
+                        case { } id when id.StartsWith(DefinitionPaths.LogProbe, StringComparison.Ordinal):
                             var logProbes = namedRawFile.Deserialize<LogProbe>().TypedFile;
                             if (logProbes != null)
                             {
@@ -759,7 +759,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.MetricProbe):
+                        case { } id when id.StartsWith(DefinitionPaths.MetricProbe, StringComparison.Ordinal):
                             var metricProbes = namedRawFile.Deserialize<MetricProbe>().TypedFile;
                             if (metricProbes != null)
                             {
@@ -767,7 +767,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.SpanDecorationProbe):
+                        case { } id when id.StartsWith(DefinitionPaths.SpanDecorationProbe, StringComparison.Ordinal):
                             var spanDecorationProbes = namedRawFile.Deserialize<SpanDecorationProbe>().TypedFile;
                             if (spanDecorationProbes != null)
                             {
@@ -775,7 +775,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
+                        case { } id when id.StartsWith(DefinitionPaths.SpanProbe, StringComparison.Ordinal):
                             var spanProbes = namedRawFile.Deserialize<SpanProbe>().TypedFile;
                             if (spanProbes != null)
                             {
@@ -783,7 +783,7 @@ namespace Datadog.Trace.Debugger
                             }
 
                             break;
-                        case { } id when id.StartsWith(DefinitionPaths.ServiceConfiguration):
+                        case { } id when id.StartsWith(DefinitionPaths.ServiceConfiguration, StringComparison.Ordinal):
                             serviceConfig = namedRawFile.Deserialize<ServiceConfiguration>().TypedFile;
                             break;
                         default:

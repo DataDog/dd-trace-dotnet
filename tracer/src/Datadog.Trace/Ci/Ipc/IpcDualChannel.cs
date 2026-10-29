@@ -97,7 +97,7 @@ internal abstract class IpcDualChannel : IDisposable
         public Type BindToType(string? assemblyName, string typeName)
         {
             // Let's protect ourselves from deserializing types that we don't want to
-            if (assemblyName?.StartsWith("Datadog.Trace") == true)
+            if (assemblyName?.StartsWith("Datadog.Trace", StringComparison.Ordinal) == true)
             {
                 return DefaultSerializationBinder.Instance.BindToType(assemblyName, typeName);
             }

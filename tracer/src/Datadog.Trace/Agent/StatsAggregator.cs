@@ -458,7 +458,7 @@ namespace Datadog.Trace.Agent
                 span.OperationName,
                 span.Type,
                 span.GetHttpStatusCode() ?? 0,
-                span.Context.Origin?.StartsWith("synthetics") == true,
+                span.Context.Origin?.StartsWith("synthetics", StringComparison.Ordinal) == true,
                 spanKind,
                 _isOtlp ? span.Error : false,
                 _isOtlp ? span.IsTopLevel : false,

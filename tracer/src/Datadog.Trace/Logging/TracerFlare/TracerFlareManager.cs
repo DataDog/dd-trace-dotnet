@@ -333,7 +333,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
 
         static bool TryGetArg(JObject argsObject, string name, string configPath, [NotNullWhen(true)] out string? value, [NotNullWhen(false)] out ApplyDetails? error)
         {
-            if (argsObject.TryGetValue(name, out var token)
+            if (argsObject.TryGetValue(name, StringComparison.Ordinal, out var token)
              && token.Type == JTokenType.String
              && token.Value<string>() is { Length: > 0 } parsedValue)
             {

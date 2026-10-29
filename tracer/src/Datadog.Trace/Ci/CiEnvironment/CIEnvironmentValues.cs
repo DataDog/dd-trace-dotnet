@@ -150,7 +150,7 @@ internal abstract class CIEnvironmentValues
             {
                 var value = uri.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
                 // In some cases `GetComponents` introduces a slash at the end of the url
-                if (!url!.EndsWith("/") && value.EndsWith("/"))
+                if (!url!.EndsWith("/", StringComparison.Ordinal) && value.EndsWith("/", StringComparison.Ordinal))
                 {
                     value = value.Substring(0, value.Length - 1);
                 }

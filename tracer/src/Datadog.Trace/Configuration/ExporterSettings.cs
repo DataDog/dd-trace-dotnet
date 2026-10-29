@@ -371,7 +371,7 @@ namespace Datadog.Trace.Configuration
             MetricsTransportSettings settings;
 
             if (!string.IsNullOrEmpty(traceAgentUrl)
-             && !traceAgentUrl!.StartsWith(UnixDomainSocketPrefix)
+             && !traceAgentUrl!.StartsWith(UnixDomainSocketPrefix, StringComparison.Ordinal)
              && Uri.TryCreate(traceAgentUrl, UriKind.Absolute, out var tcpUri))
             {
                 SetUdp(

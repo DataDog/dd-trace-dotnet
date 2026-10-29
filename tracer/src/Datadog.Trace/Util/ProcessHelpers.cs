@@ -193,7 +193,7 @@ namespace Datadog.Trace.Util
             var parts = output.Split(' ');
 
             // Check if the first part ends with a colon (e.g., "dotnet:")
-            if (parts.Length > 1 && parts[0].EndsWith(":"))
+            if (parts.Length > 1 && parts[0].EndsWith(":", StringComparison.Ordinal))
             {
                 return parts.Skip(1);
             }

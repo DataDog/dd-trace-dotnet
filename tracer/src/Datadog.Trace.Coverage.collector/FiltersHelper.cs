@@ -185,7 +185,7 @@ internal static class FiltersHelper
             return false;
         }
 
-        if (!filter.StartsWith("["))
+        if (!filter.StartsWith("[", StringComparison.Ordinal))
         {
             return false;
         }
@@ -215,7 +215,7 @@ internal static class FiltersHelper
             return false;
         }
 
-        if (filter.EndsWith("]"))
+        if (filter.EndsWith("]", StringComparison.Ordinal))
         {
             return false;
         }

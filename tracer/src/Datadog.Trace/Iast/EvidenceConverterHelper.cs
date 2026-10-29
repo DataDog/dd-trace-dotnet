@@ -119,7 +119,7 @@ internal static class EvidenceConverterHelper
                 else if (Source?.Value != null)
                 {
                     var length = chunk.Length;
-                    var matching = Source.Value.IndexOf(chunk);
+                    var matching = Source.Value.IndexOf(chunk, StringComparison.Ordinal);
                     if (matching >= 0 && Source.RedactedValue != null)
                     {
                         // if matches append the matching part from the redacted value

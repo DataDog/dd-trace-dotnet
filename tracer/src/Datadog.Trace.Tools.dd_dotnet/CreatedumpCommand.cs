@@ -643,7 +643,7 @@ internal class CreatedumpCommand : Command
             return true;
         }
 
-        if (method.Type.Module.IsDynamic && assemblyName.StartsWith("DuckType"))
+        if (method.Type.Module.IsDynamic && assemblyName.StartsWith("DuckType", StringComparison.Ordinal))
         {
             return true;
         }

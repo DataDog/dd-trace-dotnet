@@ -57,7 +57,7 @@ internal static class EntryAssemblyLocator
                 try
                 {
                     if (IsMicrosoftAssembly(assembly!) == false &&
-                        assembly.FullName?.StartsWith("Datadog.Trace") != true &&
+                        assembly.FullName?.StartsWith("Datadog.Trace", StringComparison.Ordinal) != true &&
                         assembly.CustomAttributes.Any(x => x.AttributeType.FullName == "Microsoft.Owin.OwinStartupAttribute"))
                     {
                         return assembly;
@@ -82,7 +82,7 @@ internal static class EntryAssemblyLocator
     }
 
 #if NETFRAMEWORK
-    private static bool IsMicrosoftAssembly(Assembly assembly) => assembly.FullName?.StartsWith("Microsoft.") == true || assembly.FullName?.StartsWith("System.") == true;
+    private static bool IsMicrosoftAssembly(Assembly assembly) => assembly.FullName?.StartsWith("Microsoft.", StringComparison.Ordinal) == true || assembly.FullName?.StartsWith("System.", StringComparison.Ordinal) == true;
 
     /// <summary>
     /// ! This method should be called from within a try-catch block !

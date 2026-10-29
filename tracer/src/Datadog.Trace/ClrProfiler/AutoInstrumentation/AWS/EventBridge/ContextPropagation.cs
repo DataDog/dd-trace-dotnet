@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private static void InjectHeadersIntoDetail(Tracer tracer, IPutEventsRequestEntry entry, Scope? scope, PropagationContext context)
         {
             var detail = entry.Detail?.Trim() ?? "{}";
-            if (!detail.EndsWith("}"))
+            if (!detail.EndsWith("}", StringComparison.Ordinal))
             {
                 // Unable to parse detail string, so just leave it unmodified. Don't inject trace context.
                 Log.Debug("Unable to parse detail string. Not injecting trace context.");

@@ -168,7 +168,7 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                if (e.TargetNames.StartsWith("_"))
+                if (e.TargetNames.StartsWith("_", StringComparison.Ordinal))
                 {
                     // Ignoring internal targetNames
                     return;

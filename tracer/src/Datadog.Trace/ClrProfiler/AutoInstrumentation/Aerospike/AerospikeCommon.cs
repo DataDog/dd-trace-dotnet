@@ -116,14 +116,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
             var typeName = type.Name;
             var startIndex = 0;
 
-            if (typeName.StartsWith(asyncPrefix))
+            if (typeName.StartsWith(asyncPrefix, StringComparison.Ordinal))
             {
                 startIndex = asyncPrefix.Length;
             }
 
             var length = typeName.Length - startIndex;
 
-            if (typeName.EndsWith(commandSuffix))
+            if (typeName.EndsWith(commandSuffix, StringComparison.Ordinal))
             {
                 length -= commandSuffix.Length;
             }

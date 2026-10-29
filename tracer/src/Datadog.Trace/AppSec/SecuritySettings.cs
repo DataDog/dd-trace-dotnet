@@ -345,17 +345,17 @@ namespace Datadog.Trace.AppSec
             int multipler = 1;
             string? intPart = null;
 
-            if (wafTimeoutString.EndsWith("ms"))
+            if (wafTimeoutString.EndsWith("ms", StringComparison.Ordinal))
             {
                 multipler = 1_000;
                 intPart = wafTimeoutString.Substring(0, wafTimeoutString.Length - 2);
             }
-            else if (wafTimeoutString.EndsWith("us"))
+            else if (wafTimeoutString.EndsWith("us", StringComparison.Ordinal))
             {
                 multipler = 1;
                 intPart = wafTimeoutString.Substring(0, wafTimeoutString.Length - 2);
             }
-            else if (wafTimeoutString.EndsWith("s"))
+            else if (wafTimeoutString.EndsWith("s", StringComparison.Ordinal))
             {
                 multipler = 1_000_000;
                 intPart = wafTimeoutString.Substring(0, wafTimeoutString.Length - 1);

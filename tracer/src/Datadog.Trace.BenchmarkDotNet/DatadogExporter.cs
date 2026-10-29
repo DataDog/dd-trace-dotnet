@@ -120,7 +120,7 @@ internal class DatadogExporter : IExporter
                                     // In the example: Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s
                                     description = string.Join(", ", matchCollections.OfType<Match>().Select(x => x.Groups[1].Value));
                                 }
-                                else if (description?.StartsWith("Job-") == true)
+                                else if (description?.StartsWith("Job-", StringComparison.Ordinal) == true)
                                 {
                                     // If we cannot extract the description but we know there's a random Id, we prefer to skip the description value.
                                     description = null;

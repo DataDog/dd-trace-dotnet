@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             foreach (var keyObj in properties.Keys)
             {
                 var name = keyObj as string;
-                if (name is null || name.StartsWith("log4net:"))
+                if (name is null || name.StartsWith("log4net:", StringComparison.Ordinal))
                 {
                     continue;
                 }

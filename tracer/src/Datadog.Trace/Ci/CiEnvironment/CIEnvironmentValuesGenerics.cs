@@ -96,7 +96,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         }
 
         if (valueProvider.GetValue(PlatformKeys.Ci.AwsCodePipeline.BuildInitiator) is { Length: > 0 } initiator &&
-            initiator.StartsWith("codepipeline"))
+            initiator.StartsWith("codepipeline", StringComparison.Ordinal))
         {
             return new AWSCodePipelineEnvironmentValues<TValueProvider>(valueProvider);
         }
@@ -443,7 +443,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected string? ExpandPath(string? path)
     {
-        if (path == "~" || path?.StartsWith("~/") == true)
+        if (path == "~" || path?.StartsWith("~/", StringComparison.Ordinal) == true)
         {
             var homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
                             Environment.OSVersion.Platform == PlatformID.MacOSX)

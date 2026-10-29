@@ -57,7 +57,7 @@ internal static class MethodMatcher
         // Handle .NET Core state machine format: Method()+MoveNext()
         if (methodText.Contains("()+MoveNext()"))
         {
-            var index = methodText.IndexOf("()+MoveNext()");
+            var index = methodText.IndexOf("()+MoveNext()", StringComparison.Ordinal);
             if (index > 0)
             {
                 return methodText.Substring(0, index);
@@ -128,7 +128,7 @@ internal static class MethodMatcher
 
         // For async lambdas, the pattern is different (ends with ">d")
         var typeName = declaringType.Name;
-        var isAsyncLambda = typeName.Contains("b__") && typeName.EndsWith(">d");
+        var isAsyncLambda = typeName.Contains("b__") && typeName.EndsWith(">d", StringComparison.Ordinal);
 
         // Only return true for regular async methods (not lambdas)
         return !isAsyncLambda && typeName.Contains(">d__");
@@ -149,7 +149,7 @@ internal static class MethodMatcher
 
         // Check for the async lambda pattern (double angle brackets and b__)
         var typeName = declaringType.Name;
-        return typeName.Contains("<<") && typeName.Contains("b__") && typeName.EndsWith(">d");
+        return typeName.Contains("<<") && typeName.Contains("b__") && typeName.EndsWith(">d", StringComparison.Ordinal);
     }
 
     private static MethodBase? ResolveSpecialMethod(MethodBase method)
@@ -225,7 +225,7 @@ internal static class MethodMatcher
         var identifier = methodName.Substring(startIndex, endIndex - startIndex);
 
         // If we got the identifier with angle brackets, clean it up
-        if (identifier.StartsWith("<") && identifier.EndsWith(">"))
+        if (identifier.StartsWith("<", StringComparison.Ordinal) && identifier.EndsWith(">", StringComparison.Ordinal))
         {
             identifier = identifier.Substring(1, identifier.Length - 2);
         }
@@ -248,13 +248,13 @@ internal static class MethodMatcher
 
         return declaringType.GetInterfaces()
                           .Any(i => i.FullName == "System.Collections.IEnumerator" ||
-                                  (i.FullName?.StartsWith("System.Collections.Generic.IEnumerator`") ?? false));
+                                  (i.FullName?.StartsWith("System.Collections.Generic.IEnumerator`", StringComparison.Ordinal) ?? false));
     }
 
     private static bool IsLocalFunction(MethodBase method)
     {
         // Local functions have a generated name starting with "<"
-        return method.Name.StartsWith("<") && method.Name.Contains(">");
+        return method.Name.StartsWith("<", StringComparison.Ordinal) && method.Name.Contains(">");
     }
 
     private static MethodInfo? ResolveAsyncMethod(MethodBase moveNextMethod)
@@ -398,7 +398,7 @@ internal static class MethodMatcher
         var normalizedName = fullName;
         if (fullName.Contains(">d__") && !fullName.Contains("+"))
         {
-            var stateMachineIndex = fullName.IndexOf("<");
+            var stateMachineIndex = fullName.IndexOf("<", StringComparison.Ordinal);
             if (stateMachineIndex > 0)
             {
                 var lastDotBeforeStateMachine = fullName.LastIndexOf('.', stateMachineIndex);
@@ -505,8 +505,8 @@ internal static class MethodMatcher
 
         // Check if this is a local function (but not an async lambda)
         var isLocalFunction = methodBase.TypeParts.Length > 0 &&
-                             methodBase.TypeParts.Last().StartsWith("<<") &&
-                             methodBase.TypeParts.Last().EndsWith(">d") &&
+                             methodBase.TypeParts.Last().StartsWith("<<", StringComparison.Ordinal) &&
+                             methodBase.TypeParts.Last().EndsWith(">d", StringComparison.Ordinal) &&
                              !methodBase.TypeParts.Last().Contains("b__");
 
         if (isLocalFunction)

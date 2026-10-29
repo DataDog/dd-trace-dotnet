@@ -88,8 +88,8 @@ internal static class RegexBuilder
 
     private static string WrapWithLineCharacters(string regex)
     {
-        var hasLineStart = regex.StartsWith("^");
-        var hasLineEnd = regex.EndsWith("$");
+        var hasLineStart = regex.StartsWith("^", StringComparison.Ordinal);
+        var hasLineEnd = regex.EndsWith("$", StringComparison.Ordinal);
 
         return hasLineStart
                  ? (hasLineEnd ? regex : $"{regex}$")

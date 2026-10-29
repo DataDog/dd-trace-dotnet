@@ -173,11 +173,11 @@ namespace Datadog.Trace.Configuration
                 }
                 else if (protocol != OtlpProtocol.Grpc && !isUdsEndpoint)
                 {
-                    if (generalEndpoint!.EndsWith("/") && TryGetOtlpUri(signal, $"{generalEndpoint!}v1/{signal}", origin, protocol, agentHost, out var httpSettings))
+                    if (generalEndpoint!.EndsWith("/", StringComparison.Ordinal) && TryGetOtlpUri(signal, $"{generalEndpoint!}v1/{signal}", origin, protocol, agentHost, out var httpSettings))
                     {
                         return httpSettings;
                     }
-                    else if (!generalEndpoint!.EndsWith("/") && TryGetOtlpUri(signal, $"{generalEndpoint!}/v1/{signal}", origin, protocol, agentHost, out var httpAdditionalSlashSettings))
+                    else if (!generalEndpoint!.EndsWith("/", StringComparison.Ordinal) && TryGetOtlpUri(signal, $"{generalEndpoint!}/v1/{signal}", origin, protocol, agentHost, out var httpAdditionalSlashSettings))
                     {
                         return httpAdditionalSlashSettings;
                     }

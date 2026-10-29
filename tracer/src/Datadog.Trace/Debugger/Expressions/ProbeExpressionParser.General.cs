@@ -603,7 +603,7 @@ internal partial class ProbeExpressionParser<T>
         var @namespace = type.Namespace;
         return @namespace != null &&
                (@namespace is "System" or "Microsoft" ||
-                @namespace.StartsWith("System.") ||
-                @namespace.StartsWith("Microsoft."));
+                @namespace.StartsWith("System.", StringComparison.Ordinal) ||
+                @namespace.StartsWith("Microsoft.", StringComparison.Ordinal));
     }
 }

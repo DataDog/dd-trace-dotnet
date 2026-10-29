@@ -138,7 +138,7 @@ internal static class StackWalker
 #if NETCOREAPP3_1_OR_GREATER
                 if (assemblyToSkip.EndsWith('.'))
 #else
-                if (assemblyToSkip.EndsWith("."))
+                if (assemblyToSkip.EndsWith(".", StringComparison.Ordinal))
 #endif
                 {
                     if (assembly.StartsWith(assemblyToSkip, StringComparison.OrdinalIgnoreCase))

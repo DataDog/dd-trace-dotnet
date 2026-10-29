@@ -44,7 +44,7 @@ public sealed class BasicPublishAsyncIntegration
             tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
             var exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
-            var routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey!.StartsWith("amq.gen-") ? "<generated>" : routingKey;
+            var routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey!.StartsWith("amq.gen-", StringComparison.Ordinal) ? "<generated>" : routingKey;
             scope.Span.ResourceName = $"{BasicPublishIntegration.Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
             tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";

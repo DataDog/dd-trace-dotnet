@@ -629,7 +629,7 @@ namespace Datadog.Trace.Ci.CodeOwnership
                 hasDiagnostics = false;
                 SplitRule(raw, out var patternToken, out var ownersSegment, out var hasExplicitOwners);
 
-                var isExclusion = patternToken.StartsWith("!");
+                var isExclusion = patternToken.StartsWith("!", StringComparison.Ordinal);
                 if (isExclusion)
                 {
                     patternToken = patternToken.Substring(1, patternToken.Length - 1);
@@ -679,8 +679,8 @@ namespace Datadog.Trace.Ci.CodeOwnership
                 }
 
                 var normalizedToken = NormalizeGitLabEscapes(patternToken);
-                var normalized = normalizedToken.StartsWith("/") ? normalizedToken : "/**/" + normalizedToken;
-                return normalized.EndsWith("/") ? normalized + "**/*" : normalized;
+                var normalized = normalizedToken.StartsWith("/", StringComparison.Ordinal) ? normalizedToken : "/**/" + normalizedToken;
+                return normalized.EndsWith("/", StringComparison.Ordinal) ? normalized + "**/*" : normalized;
             }
 
             private static string NormalizeGitLabEscapes(string patternToken)

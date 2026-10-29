@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly DefaultActivityHandler DefaultHandler = new();
 
         public bool ShouldListenTo(string sourceName, string? version)
-            => sourceName.StartsWith("Azure.Messaging.ServiceBus");
+            => sourceName.StartsWith("Azure.Messaging.ServiceBus", StringComparison.Ordinal);
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity

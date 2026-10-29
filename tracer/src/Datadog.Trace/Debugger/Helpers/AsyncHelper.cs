@@ -126,7 +126,7 @@ namespace Datadog.Trace.Debugger.Helpers
 
         private static bool IsStateMachineField(FieldInfo field)
         {
-            if (field.Name.StartsWith(StateMachineFieldsNamePrefix))
+            if (field.Name.StartsWith(StateMachineFieldsNamePrefix, StringComparison.Ordinal))
             {
                 Log.Debug("Ignoring local (state machine field): {FieldType} {DeclaringType} {FieldName}", field.FieldType.Name, field.DeclaringType?.Name, field.Name);
                 return true;
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Debugger.Helpers
             }
 
             // awaiter etc. (e.g. <>u__1)
-            if (field.Name.StartsWith(StateMachineFieldsNamePrefix))
+            if (field.Name.StartsWith(StateMachineFieldsNamePrefix, StringComparison.Ordinal))
             {
                 if (field.FieldType.Name is "TaskAwaiter" or "TaskAwaiter`1" or "ValueTaskAwaiter" or "ValueTaskAwaiter`1")
                 {
@@ -203,7 +203,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 for (int i = 0; i < allFields.Length; i++)
                 {
                     var field = allFields[i];
-                    if (char.IsNumber(field.Name[2]) && field.Name.StartsWith(StateMachineFieldsNamePrefix) && field.Name.EndsWith(ThisName))
+                    if (char.IsNumber(field.Name[2]) && field.Name.StartsWith(StateMachineFieldsNamePrefix, StringComparison.Ordinal) && field.Name.EndsWith(ThisName, StringComparison.Ordinal))
                     {
                         thisField = field;
                         break;

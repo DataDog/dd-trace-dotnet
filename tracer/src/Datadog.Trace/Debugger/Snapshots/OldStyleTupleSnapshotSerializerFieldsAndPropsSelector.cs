@@ -14,7 +14,7 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         internal override bool IsApplicable(Type type)
         {
-            return type.Name.StartsWith("Tuple`") && type.Namespace == "System";
+            return type.Name.StartsWith("Tuple`", StringComparison.Ordinal) && type.Namespace == "System";
         }
 
         internal override IEnumerable<MemberInfo> GetFieldsAndProps(

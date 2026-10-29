@@ -33,7 +33,7 @@ namespace Datadog.Trace.Activity.Handlers
         public bool ShouldListenTo(string sourceName, string? version)
         {
             // Listen to Quartz diagnostic source
-            return sourceName.StartsWith("Quartz");
+            return sourceName.StartsWith("Quartz", StringComparison.Ordinal);
         }
 
         public bool ShouldListenToOperationName(string operationName)

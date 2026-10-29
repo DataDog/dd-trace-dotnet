@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
-                string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
+                string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-", StringComparison.Ordinal) ? "<generated>" : routingKey;
                 scope.Span.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
                 tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";

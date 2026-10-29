@@ -140,7 +140,7 @@ internal sealed class ImpactedTestsModule
                     continue;
                 }
 
-                var modifiedFile = ModifiedFiles.FirstOrDefault(x => testFile.Path!.EndsWith(x.Path!));
+                var modifiedFile = ModifiedFiles.FirstOrDefault(x => testFile.Path!.EndsWith(x.Path!, StringComparison.Ordinal));
                 if (modifiedFile is null)
                 {
                     continue;

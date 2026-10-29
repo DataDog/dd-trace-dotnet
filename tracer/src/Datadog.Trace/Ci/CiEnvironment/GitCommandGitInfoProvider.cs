@@ -102,12 +102,12 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             localGitInfo.CommitterName = gitLogDataArray[5];
             localGitInfo.CommitterEmail = gitLogDataArray[6];
             localGitInfo.Message = string.Join("|,|", gitLogDataArray.Skip(7)).Trim();
-            if (localGitInfo.Commit.StartsWith("'"))
+            if (localGitInfo.Commit.StartsWith("'", StringComparison.Ordinal))
             {
                 localGitInfo.Commit = localGitInfo.Commit.Substring(1);
             }
 
-            if (localGitInfo.Message.EndsWith("'"))
+            if (localGitInfo.Message.EndsWith("'", StringComparison.Ordinal))
             {
                 localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1).Trim();
             }

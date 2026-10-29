@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Runtime.CompilerServices;
 
 #if NETCOREAPP
@@ -44,7 +45,7 @@ internal sealed class AsyncStateMachineAttributeTypeProvider : ICustomAttributeT
 
     public bool IsSystemType(string type)
     {
-        return type.StartsWith("System.");
+        return type.StartsWith("System.", StringComparison.Ordinal);
     }
 
     public string GetTypeFromSerializedName(string name)

@@ -465,7 +465,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             foreach (var type in redactedTypes)
             {
-                if (type.EndsWith("*"))
+                if (type.EndsWith("*", StringComparison.Ordinal))
                 {
 #if NETCOREAPP3_1_OR_GREATER
                     _typeTrie.Insert(type[..^1]);

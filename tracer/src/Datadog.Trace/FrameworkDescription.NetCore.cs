@@ -254,7 +254,7 @@ namespace Datadog.Trace
 #else
             static bool TryGetFieldValue(string line, string prefix, ref string? value)
             {
-                if (!line.StartsWith(prefix))
+                if (!line.StartsWith(prefix, StringComparison.Ordinal))
                 {
                     return false;
                 }

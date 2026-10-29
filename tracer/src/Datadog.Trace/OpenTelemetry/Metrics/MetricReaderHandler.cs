@@ -212,31 +212,31 @@ internal sealed class MetricReaderHandler
             return null;
         }
 
-        if (instrumentType.StartsWith("System.Diagnostics.Metrics.Counter`1"))
+        if (instrumentType.StartsWith("System.Diagnostics.Metrics.Counter`1", StringComparison.Ordinal))
         {
             return InstrumentType.Counter;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableCounter`1"))
+        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableCounter`1", StringComparison.Ordinal))
         {
             return InstrumentType.ObservableCounter;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1"))
+        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1", StringComparison.Ordinal))
         {
             return InstrumentType.UpDownCounter;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1"))
+        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1", StringComparison.Ordinal))
         {
             return InstrumentType.ObservableUpDownCounter;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Gauge`1"))
+        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Gauge`1", StringComparison.Ordinal))
         {
             return InstrumentType.Gauge;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableGauge`1"))
+        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableGauge`1", StringComparison.Ordinal))
         {
             return InstrumentType.ObservableGauge;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Histogram`1"))
+        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Histogram`1", StringComparison.Ordinal))
         {
             return InstrumentType.Histogram;
         }
