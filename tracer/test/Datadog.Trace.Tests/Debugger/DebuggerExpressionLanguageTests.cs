@@ -15,6 +15,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
 using AgileObjects.ReadableExpressions;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -41,6 +42,8 @@ namespace Datadog.Trace.Tests.Debugger
         private const string DefaultDslTemplate = @"{""dsl"": ""Ignore""}";
 
         private const string DefaultJsonTemplate = @"{""Ignore"": ""Ignore""}";
+
+        private const string CustomerDumpMarker = "DD_CUSTOMER_DUMP_MARKER";
 
         private const string ConditionsFolder = "Conditions";
 
@@ -3459,6 +3462,239 @@ namespace Datadog.Trace.Tests.Debugger
             result.Errors.Should().BeNullOrEmpty();
         }
 
+        [Theory]
+        [InlineData("_items")]
+        [InlineData("_itemsInterface")]
+        [InlineData("_readOnlyItems")]
+        [InlineData("_headers")]
+        [InlineData("_uri")]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberDumpsFieldsOfCustomerRuntimeType(string memberName)
+        {
+            // getmember keeps the declared type, which allows enumeration or ToString, but the runtime
+            // type is a customer subclass whose members throw, so only its fields are dumped.
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(CustomerRuntimeTypesHolder), new CustomerRuntimeTypesHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("<CustomerField>k__BackingField=1");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_FieldsOfCustomerRuntimeTypeDumpDeclaredTypeName()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(CustomerRuntimeTypesHolder), new CustomerRuntimeTypesHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().StartWith("_items=System.Collections.Generic.List`1");
+            result.Template.Should().Contain(", _itemsInterface=System.Collections.Generic.IList`1");
+            result.Template.Should().Contain(", _readOnlyItems=System.Collections.Generic.IReadOnlyList`1");
+            result.Template.Should().Contain(", _headers=System.Collections.Generic.Dictionary`2");
+            result.Template.Should().EndWith(", _uri=System.Uri");
+            result.Template.Should().NotContain(CustomerDumpMarker);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Theory]
+        [InlineData("items", "[a, b]")]
+        [InlineData("uri", "http://localhost/")]
+        [InlineData("xmlError", "System.Xml.XmlException, bad xml")]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberDumpsAllowedRuntimeType(string memberName, string expected)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(AllowedRuntimeTypesHolder), new AllowedRuntimeTypesHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be(expected);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Theory]
+        [InlineData("coreLib", "System.InvalidOperationException, operation failed, ")]
+        [InlineData("customer", "Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+ThrowingMessageException, customer message")]
+        [InlineData("customerWithoutMessage", "Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+CustomerException")]
+        [InlineData("outsideCoreLib", "System.Xml.XmlException, bad xml")]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberExceptionField(string memberName, string expected)
+        {
+            // getmember keeps the declared Exception type. Only a CoreLib runtime type may run Message and
+            // StackTrace; any other shows its runtime type and the message field, so the throwing overrides never run.
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpExceptionFieldsHolder), new DumpExceptionFieldsHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be(expected);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_ExceptionFieldsCallMembersOnlyOnCoreLibRuntimeType()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpExceptionFieldsHolder), new DumpExceptionFieldsHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be(
+                "coreLib=System.InvalidOperationException, operation failed, , " +
+                "customer=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+ThrowingMessageException, customer message, " +
+                "customerWithoutMessage=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+CustomerException, " +
+                "outsideCoreLib=System.Xml.XmlException, bad xml");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_CustomerExceptionLocalShowsMessageField()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("CustomerExceptionLocal", typeof(ThrowingMessageException), new ThrowingMessageException("customer message"), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""CustomerExceptionLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+ThrowingMessageException, customer message");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_ReflectionTypeLoadExceptionDoesNotReadLoaderExceptionMessages()
+        {
+            // On .NET Core, ReflectionTypeLoadException.Message reads each loader exception's Message.
+            var exception = new ReflectionTypeLoadException(Type.EmptyTypes, [new ThrowingMessageException("loader")], "loader failed");
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("ExceptionLocal", typeof(ReflectionTypeLoadException), exception, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpExceptionFieldHolder), new DumpExceptionFieldHolder(exception), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(string.Empty, @"{""ref"":""ExceptionLocal""}", null),
+                    new DebuggerExpression(null, null, " | "),
+                    new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""DumpHolderLocal""},""error""]}", null),
+                    new DebuggerExpression(null, null, " | "),
+                    new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)
+                ],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            const string expected = "System.Reflection.ReflectionTypeLoadException, loader failed";
+            result.Template.Should().Be($"{expected} | {expected} | error={expected}");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+#if NETCOREAPP3_0_OR_GREATER
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_SwitchExpressionExceptionDoesNotFormatUnmatchedValue()
+        {
+            // SwitchExpressionException.Message formats the unmatched value, which calls its ToString.
+            var exception = new SwitchExpressionException(new ThrowingToStringValue());
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpExceptionFieldHolder), new DumpExceptionFieldHolder(exception), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""DumpHolderLocal""},""error""]}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().StartWith("System.Runtime.CompilerServices.SwitchExpressionException, ");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+#endif
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_GetMemberCollectionClassOutsideAllowlistDumpsFields()
+        {
+            // Collection<T> isn't on the snapshot allowlist, and no allowlisted type derives from it, so the
+            // dump is decided when the expression compiles: its fields, not its items.
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(AllowedRuntimeTypesHolder), new AllowedRuntimeTypesHolder(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""DumpHolderLocal""},""collection""]}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().StartWith("items=");
+            result.Template.Should().NotContain("[a, b]");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_NullCheckDoesNotInvokeEqualityOperator()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("CustomerValueLocal", typeof(ThrowingEqualityOperator), new ThrowingEqualityOperator(), ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""CustomerValueLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("_value=1");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
         [Fact]
         public void ProbeExpressionEvaluator_SpanDecorationDump_RedactsSensitiveObjectFields()
         {
@@ -4224,6 +4460,77 @@ namespace Datadog.Trace.Tests.Debugger
                     Redaction.Instance.ResetInstance();
                 }
             }
+
+            [Theory]
+            [InlineData("value", "{redacted}")]
+            [InlineData("items", "{redacted}")]
+            [InlineData("other", "_data=visible")]
+            [InlineData("error", "{redacted}")]
+            public void ProbeExpressionEvaluator_TemplateDump_GetMemberNonSealedField_RedactsConfiguredRuntimeType(string memberName, string expected)
+            {
+                // getmember keeps the declared type (object, IList<string>, Exception), so only the runtime
+                // type shows that the value is a redacted type.
+                var scopeMembers = _tests.CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpNonSealedFieldsHolder), new DumpNonSealedFieldsHolder(), ScopeMemberKind.Local));
+
+                try
+                {
+                    Redaction.Instance.ResetInstance();
+                    Redaction.Instance.SetConfig(
+                        new HashSet<string>(),
+                        new HashSet<string>(),
+                        new HashSet<string> { typeof(RedactedRuntimeTypeValue).FullName, typeof(List<string>).FullName, typeof(InvalidOperationException).FullName });
+
+                    var evaluator = _tests.CreateEvaluator(
+                        templates: [new DebuggerExpression(string.Empty, $@"{{""getmember"":[{{""ref"":""DumpHolderLocal""}},""{memberName}""]}}", null)],
+                        condition: null,
+                        metric: null,
+                        spanDecorations: null,
+                        captureExpressions: null);
+
+                    var result = evaluator.Evaluate(scopeMembers);
+
+                    result.Template.Should().Be(expected);
+                    result.Errors.Should().BeNullOrEmpty();
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_TemplateDump_ExceptionField_RedactsConfiguredRuntimeType()
+            {
+                var scopeMembers = _tests.CreateScopeMembers();
+                scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpNonSealedFieldsHolder), new DumpNonSealedFieldsHolder(), ScopeMemberKind.Local));
+
+                try
+                {
+                    Redaction.Instance.ResetInstance();
+                    Redaction.Instance.SetConfig(
+                        new HashSet<string>(),
+                        new HashSet<string>(),
+                        new HashSet<string> { typeof(InvalidOperationException).FullName });
+
+                    var evaluator = _tests.CreateEvaluator(
+                        templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                        condition: null,
+                        metric: null,
+                        spanDecorations: null,
+                        captureExpressions: null);
+
+                    var result = evaluator.Evaluate(scopeMembers);
+
+                    result.Template.Should().EndWith(", error={redacted}");
+                    result.Template.Should().NotContain("TOP_SECRET_VALUE");
+                    result.Errors.Should().BeNullOrEmpty();
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
         }
 
         internal class GenericReferenceTypeTarget<T>
@@ -4482,6 +4789,150 @@ namespace Datadog.Trace.Tests.Debugger
                     { "public", publicValue },
                 };
             }
+        }
+
+        // Each field's declared type allows enumeration or ToString, but its runtime type is a customer
+        // subclass whose members throw if called.
+        private sealed class CustomerRuntimeTypesHolder
+        {
+            private readonly List<string> _items = new ThrowingEnumerationList { CustomerDumpMarker };
+
+            private readonly IList<string> _itemsInterface = new ThrowingEnumerationList { CustomerDumpMarker };
+
+            private readonly IReadOnlyList<string> _readOnlyItems = new ThrowingEnumerationList { CustomerDumpMarker };
+
+            private readonly Dictionary<string, string> _headers = new ThrowingEnumerationDictionary { { "public", CustomerDumpMarker } };
+
+            private readonly Uri _uri = new ThrowingToStringUri();
+        }
+
+        private sealed class DumpNonSealedFieldsHolder
+        {
+            private readonly object value = new RedactedRuntimeTypeValue("TOP_SECRET_VALUE");
+
+            private readonly IList<string> items = new List<string> { "TOP_SECRET_VALUE" };
+
+            private readonly object other = new VisibleRuntimeTypeValue("visible");
+
+            private readonly Exception error = new InvalidOperationException("TOP_SECRET_VALUE");
+        }
+
+        private sealed class DumpExceptionFieldsHolder
+        {
+            private readonly Exception coreLib = new InvalidOperationException("operation failed");
+
+            private readonly Exception customer = new ThrowingMessageException("customer message");
+
+            private readonly Exception customerWithoutMessage = new CustomerException();
+
+            private readonly Exception outsideCoreLib = new XmlException("bad xml");
+        }
+
+        private sealed class ThrowingMessageException : InvalidOperationException
+        {
+            public ThrowingMessageException(string message)
+                : base(message)
+            {
+            }
+
+            public override string Message => throw new InvalidOperationException("Customer Message should not be called.");
+
+            public override string StackTrace => throw new InvalidOperationException("Customer StackTrace should not be called.");
+        }
+
+        private sealed class CustomerException : Exception
+        {
+        }
+
+        private sealed class DumpExceptionFieldHolder
+        {
+            private readonly Exception error;
+
+            public DumpExceptionFieldHolder(Exception error)
+            {
+                this.error = error;
+            }
+        }
+
+        private sealed class ThrowingToStringValue
+        {
+            public override string ToString() => throw new InvalidOperationException("Customer ToString should not be called.");
+        }
+
+        private sealed class RedactedRuntimeTypeValue
+        {
+            private readonly string _data;
+
+            public RedactedRuntimeTypeValue(string data)
+            {
+                _data = data;
+            }
+        }
+
+        private sealed class VisibleRuntimeTypeValue
+        {
+            private readonly string _data;
+
+            public VisibleRuntimeTypeValue(string data)
+            {
+                _data = data;
+            }
+        }
+
+        private sealed class AllowedRuntimeTypesHolder
+        {
+            private readonly IList<string> items = new List<string> { "a", "b" };
+
+            private readonly Uri uri = new("http://localhost/");
+
+            private readonly XmlException xmlError = new("bad xml");
+
+            private readonly Collection<string> collection = new() { "a", "b" };
+        }
+
+        private sealed class ThrowingEnumerationList : List<string>, IEnumerable<string>
+        {
+            public int CustomerField { get; } = 1;
+
+            IEnumerator<string> IEnumerable<string>.GetEnumerator() => throw new InvalidOperationException("Customer enumerator should not be called.");
+
+            IEnumerator IEnumerable.GetEnumerator() => throw new InvalidOperationException("Customer enumerator should not be called.");
+        }
+
+        private sealed class ThrowingEnumerationDictionary : Dictionary<string, string>, IDictionary, IEnumerable<KeyValuePair<string, string>>
+        {
+            public int CustomerField { get; } = 1;
+
+            IDictionaryEnumerator IDictionary.GetEnumerator() => throw new InvalidOperationException("Customer enumerator should not be called.");
+
+            IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator() => throw new InvalidOperationException("Customer enumerator should not be called.");
+
+            IEnumerator IEnumerable.GetEnumerator() => throw new InvalidOperationException("Customer enumerator should not be called.");
+        }
+
+        private sealed class ThrowingToStringUri : Uri
+        {
+            public ThrowingToStringUri()
+                : base("http://localhost/")
+            {
+            }
+
+            public int CustomerField { get; } = 1;
+
+            public override string ToString() => throw new InvalidOperationException("Customer ToString should not be called.");
+        }
+
+        private sealed class ThrowingEqualityOperator
+        {
+            private readonly int _value = 1;
+
+            public static bool operator ==(ThrowingEqualityOperator left, object right) => throw new InvalidOperationException("Customer equality operator should not be called.");
+
+            public static bool operator !=(ThrowingEqualityOperator left, object right) => throw new InvalidOperationException("Customer equality operator should not be called.");
+
+            public override bool Equals(object obj) => ReferenceEquals(this, obj);
+
+            public override int GetHashCode() => _value;
         }
 
         private sealed class DumpCustomIDictionaryFieldHolder

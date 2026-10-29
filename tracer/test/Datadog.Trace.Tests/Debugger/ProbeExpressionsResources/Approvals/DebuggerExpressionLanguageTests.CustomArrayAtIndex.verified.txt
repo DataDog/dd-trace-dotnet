@@ -46,49 +46,56 @@ Expressions: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]) == null)
-        ? "null"
-        : {
-            fieldsArray = ProbeExpressionParser<string>
-                .GetSafeFieldsForDump(
-                    ((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]).GetType().GetFields(
-                        BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
-                .OrderBy(fieldInfo => fieldInfo.MetadataToken)
-                .ToArray();
-            fieldValues = new StringBuilder();
-            index = 0;
-            while (true)
-            {
-                if ((index < fieldsArray.Length) && (index < 5))
-                {
-                    fieldValues.Append(
-                        ProbeExpressionParser<string>.DumpObject(
-                            ProbeExpressionParser<string>.GetFieldValueForDump(
-                                fieldsArray[index],
-                                (object)((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0])),
-                            fieldsArray[index].FieldType,
-                            fieldsArray[index].Name,
-                            0));
-                    index++;
+    var $dd_el_result =
+    {
+        var dumpValue = (object)((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]);
 
-                    if ((index < fieldsArray.Length) && (index < 5))
+        return (dumpValue == null)
+            ? "null"
+            : ProbeExpressionParser<string>.IsRedactedRuntimeValue(
+                dumpValue,
+                typeof(DebuggerExpressionLanguageTests.TestStruct.NestedObject))
+                ? "{redacted}"
+                : {
+                    fieldsArray = ProbeExpressionParser<string>
+                        .GetSafeFieldsForDump(
+                            dumpValue.GetType().GetFields(
+                                BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                        .OrderBy(fieldInfo => fieldInfo.MetadataToken)
+                        .ToArray();
+                    fieldValues = new StringBuilder();
+                    index = 0;
+                    while (true)
                     {
-                        return fieldValues.Append(", ");
-                    }
-                }
-                else
-                {
-                    if (index < fieldsArray.Length)
-                    {
-                        return fieldValues.Append(", ...");
+                        if ((index < fieldsArray.Length) && (index < 5))
+                        {
+                            fieldValues.Append(
+                                ProbeExpressionParser<string>.DumpObject(
+                                    ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index], (object)dumpValue),
+                                    fieldsArray[index].FieldType,
+                                    fieldsArray[index].Name,
+                                    0));
+                            index++;
+
+                            if ((index < fieldsArray.Length) && (index < 5))
+                            {
+                                return fieldValues.Append(", ");
+                            }
+                        }
+                        else
+                        {
+                            if (index < fieldsArray.Length)
+                            {
+                                return fieldValues.Append(", ...");
+                            }
+
+                            break;
+                        }
                     }
 
-                    break;
-                }
-            }
-
-            return fieldValues.ToString();
-        };
+                    return fieldValues.ToString();
+                };
+    };
 
     return $dd_el_result;
 }

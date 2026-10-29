@@ -870,6 +870,7 @@
       <type fullname="System.Reflection.ParameterModifier" />
       <type fullname="System.Reflection.PropertyAttributes" />
       <type fullname="System.Reflection.PropertyInfo" />
+      <type fullname="System.Reflection.ReflectionTypeLoadException" />
       <type fullname="System.Reflection.RuntimeReflectionExtensions" />
       <type fullname="System.Reflection.TargetInvocationException" />
       <type fullname="System.Reflection.TargetParameterCountException" />
