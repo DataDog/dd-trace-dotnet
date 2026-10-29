@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
@@ -270,7 +271,7 @@ namespace Datadog.Trace.Processors
                     return -1;
                 }
 
-                throw new IndexOutOfRangeException("Index < -1: " + fromIndex);
+                throw new IndexOutOfRangeException("Index < -1: " + fromIndex.ToString(CultureInfo.InvariantCulture));
             }
 
             for (var i = fromIndex; i > -1; --i)

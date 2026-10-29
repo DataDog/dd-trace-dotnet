@@ -6,6 +6,7 @@
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
@@ -31,7 +32,7 @@ internal class CheckProcessCommand : Command
     {
         var pid = _pidArgument.GetValue(context);
 
-        AnsiConsole.WriteLine("Running checks on process " + pid);
+        AnsiConsole.WriteLine("Running checks on process " + pid.ToString(CultureInfo.InvariantCulture));
 
         ProcessInfo process;
 

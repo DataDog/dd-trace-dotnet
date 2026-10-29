@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Tools.Runner.Crank
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                     if (valueArray.Count != 1)
                     {
-                        prefix += i + ".";
+                        prefix += i.ToString(CultureInfo.InvariantCulture) + ".";
                     }
 
                     SetSpan(span, prefix, valueArray[i]);

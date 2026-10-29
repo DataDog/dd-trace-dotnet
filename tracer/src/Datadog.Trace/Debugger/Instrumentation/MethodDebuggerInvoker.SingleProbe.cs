@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
@@ -351,7 +352,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
             }
 
-            localName = localNamesFromPdb?[index] ?? "local_" + index;
+            localName = localNamesFromPdb?[index] ?? "local_" + index.ToString(CultureInfo.InvariantCulture);
             return true;
         }
 

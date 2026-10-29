@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -150,7 +151,7 @@ internal static class TracerHomeCache
         using var cacheLock = AcquireCacheLock(cachedTracerHome, cacheLockRetryDelay);
         for (var generation = 0; generation < MaxCacheGenerations; generation++)
         {
-            var candidate = generation == 0 ? cachedTracerHome : cachedTracerHome + "." + generation;
+            var candidate = generation == 0 ? cachedTracerHome : cachedTracerHome + "." + generation.ToString(CultureInfo.InvariantCulture);
             if (candidate.Length >= tracerHome.Length)
             {
                 break;

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -50,7 +51,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         var process = $"'{processName ?? "na"}'";
         if (pid != null)
         {
-            process += ", pid: " + pid;
+            process += ", pid: " + pid.Value.ToString(CultureInfo.InvariantCulture);
         }
 
         if (!string.IsNullOrEmpty(logDirectory))

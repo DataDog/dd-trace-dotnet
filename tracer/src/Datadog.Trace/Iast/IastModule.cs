@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -437,7 +438,7 @@ internal static partial class IastModule
 
         var vulnerability = new Vulnerability(
             VulnerabilityTypeUtils.SessionTimeout,
-            (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes).GetStaticHashCode(),
+            (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes.ToString(CultureInfo.InvariantCulture)).GetStaticHashCode(),
             GetLocation(),
             new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
             IntegrationId.SessionTimeout);

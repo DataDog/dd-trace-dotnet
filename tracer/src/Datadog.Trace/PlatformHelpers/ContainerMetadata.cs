@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -171,7 +172,7 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 if (!NativeMethods.TryGetInodeForPath(path, out result))
                 {
-                    LogError(null, "Error obtaining inode using PInvoke, returned " + result);
+                    LogError(null, "Error obtaining inode using PInvoke, returned " + result.ToString(CultureInfo.InvariantCulture));
                     return false;
                 }
 
