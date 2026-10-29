@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Logging;
@@ -81,13 +82,13 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             }
 
             // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
+            if (!long.TryParse(gitLogDataArray[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var authorUnixDate))
             {
                 localGitInfo.Errors.Add("Error parsing author date from git log output");
                 return false;
             }
 
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
+            if (!long.TryParse(gitLogDataArray[4], NumberStyles.Integer, CultureInfo.InvariantCulture, out var committerUnixDate))
             {
                 localGitInfo.Errors.Add("Error parsing committer date from git log output");
                 return false;

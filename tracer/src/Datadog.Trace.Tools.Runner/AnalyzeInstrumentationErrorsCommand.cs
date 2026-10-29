@@ -172,7 +172,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         }
 
         var processNamePattern = string.IsNullOrEmpty(processName) ? "[A-Za-z0-9.]*" : $"({processName})";
-        var pidPattern = pid == null ? "\\d+" : pid.ToString();
+        var pidPattern = pid == null ? "\\d+" : pid.Value.ToString(CultureInfo.InvariantCulture);
         var pattern = $"^{processNamePattern}(_){pidPattern}(_)[0-9-_]+$";
         var candidates = dirs.Where(d => Regex.IsMatch(d.Name, pattern)).ToList();
         if (candidates.Count == 1)

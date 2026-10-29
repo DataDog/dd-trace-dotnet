@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -123,7 +124,7 @@ internal static class GitCommandHelper
                 sb.AppendLine($"  command : git {arguments}");
                 sb.AppendLine($"       wd : {workingDirectory}");
                 sb.AppendLine($"exit code : {gitOutput?.ExitCode}");
-                sb.AppendLine($"  elapsed : {sw.ElapsedMilliseconds}ms");
+                sb.AppendLine($"  elapsed : {sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)}ms");
                 sb.AppendLine($"   output : {gitOutput?.Output ?? "<NULL>"}");
                 if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)
                 {
@@ -264,11 +265,11 @@ internal static class GitCommandHelper
                 // Start tracking new lines
                 var lineChangeMatch = LineChangeRegex.Match(line);
                 if (lineChangeMatch.Success &&
-                    int.TryParse(lineChangeMatch.Groups["start"].Value, out var startLine))
+                    int.TryParse(lineChangeMatch.Groups["start"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var startLine))
                 {
                     var lineCount = 0;
                     if (lineChangeMatch.Groups["count"].Value is { Length: > 0 } countTxt &&
-                        int.TryParse(countTxt.Trim(), out var lCount))
+                        int.TryParse(countTxt.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var lCount))
                     {
                         lineCount = lCount; // Start tracking new lines
                         if (lineCount > 0)
@@ -485,8 +486,8 @@ internal static class GitCommandHelper
 
                 var counts = revListOutput.Output.Split(WhitespaceSeparators, StringSplitOptions.RemoveEmptyEntries);
                 if (counts.Length != 2 ||
-                    !int.TryParse(counts[0], out var behind) ||
-                    !int.TryParse(counts[1], out var ahead))
+                    !int.TryParse(counts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var behind) ||
+                    !int.TryParse(counts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var ahead))
                 {
                     continue; // Skip if unexpected format or cannot parse counts
                 }
@@ -620,13 +621,13 @@ internal static class GitCommandHelper
             }
 
             // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
+            if (!long.TryParse(gitLogDataArray[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var authorUnixDate))
             {
                 Log.Warning("Error parsing author date from git log output");
                 return null;
             }
 
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
+            if (!long.TryParse(gitLogDataArray[4], NumberStyles.Integer, CultureInfo.InvariantCulture, out var committerUnixDate))
             {
                 Log.Warning("Error parsing committer date from git log output");
                 return null;
@@ -707,9 +708,9 @@ internal static class GitCommandHelper
             var lastSpace = span.LastIndexOf(' ');
             var versionText = span.Slice(lastSpace + 1).ToString();
             var segments = versionText.Split('.');
-            var major = int.TryParse(segments.ElementAtOrDefault(0), out var r) ? r : 0;
-            var minor = int.TryParse(segments.ElementAtOrDefault(1), out r) ? r : 0;
-            var patch = int.TryParse(segments.ElementAtOrDefault(2), out r) ? r : 0;
+            var major = int.TryParse(segments.ElementAtOrDefault(0), NumberStyles.Integer, CultureInfo.InvariantCulture, out var r) ? r : 0;
+            var minor = int.TryParse(segments.ElementAtOrDefault(1), NumberStyles.Integer, CultureInfo.InvariantCulture, out r) ? r : 0;
+            var patch = int.TryParse(segments.ElementAtOrDefault(2), NumberStyles.Integer, CultureInfo.InvariantCulture, out r) ? r : 0;
             return new VersionInfo(major, minor, patch);
         }
 

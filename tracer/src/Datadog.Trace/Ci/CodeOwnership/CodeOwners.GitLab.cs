@@ -47,7 +47,7 @@ namespace Datadog.Trace.Ci.CodeOwnership
 
             if (headerMatch.Groups["approvals"].Success)
             {
-                if (int.TryParse(headerMatch.Groups["approvals"].Value, out var approvalCount))
+                if (int.TryParse(headerMatch.Groups["approvals"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var approvalCount))
                 {
                     if (isOptional && approvalCount > 0)
                     {

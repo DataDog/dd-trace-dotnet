@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -286,7 +287,7 @@ namespace Datadog.Trace.Debugger
                         new LineProbeResolutionDiagnostics(ProbeFile: "<empty>", ProbeId: probe.Id));
                 }
 
-                if (probe.Where?.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
+                if (probe.Where?.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var lineNum))
                 {
                     var invalidLineDiagnostics = diagnosticLevel == LineProbeDiagnosticLevel.Full
                                                      ? new LineProbeResolutionDiagnostics(

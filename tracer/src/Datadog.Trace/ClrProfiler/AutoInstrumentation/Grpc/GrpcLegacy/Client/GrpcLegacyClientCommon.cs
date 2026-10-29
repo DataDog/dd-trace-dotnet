@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
 using Datadog.Trace.Configuration;
@@ -192,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 metadata.Add(TemporaryHeaders.Service, serviceName);
             }
 
-            metadata.Add(TemporaryHeaders.StartTime, startTime.ToUnixTimeMilliseconds().ToString());
+            metadata.Add(TemporaryHeaders.StartTime, startTime.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
             if (parentContext is not null)
             {
                 metadata.Add(TemporaryHeaders.ParentId, parentContext.SpanId.ToString());
@@ -225,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             methodName = metadata.Get(TemporaryHeaders.MethodName)?.DuckCast<MetadataEntryStruct>().Value;
             serviceName = metadata.Get(TemporaryHeaders.Service)?.DuckCast<MetadataEntryStruct>().Value;
             var unixTimeMilliseconds = metadata.Get(TemporaryHeaders.StartTime)?.DuckCast<MetadataEntryStruct>().Value;
-            startTime = long.TryParse(unixTimeMilliseconds, out var milliseconds)
+            startTime = long.TryParse(unixTimeMilliseconds, NumberStyles.Integer, CultureInfo.InvariantCulture, out var milliseconds)
                 ? DateTimeOffset.FromUnixTimeMilliseconds(milliseconds)
                 : DateTimeOffset.UtcNow;
 

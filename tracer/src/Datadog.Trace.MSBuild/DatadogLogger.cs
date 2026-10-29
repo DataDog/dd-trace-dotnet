@@ -299,12 +299,12 @@ namespace Datadog.Trace.MSBuild
 
                     if (endLineNumber.HasValue && endLineNumber != 0)
                     {
-                        projectSpan.SetTag(BuildTags.ErrorEndLine, endLineNumber.ToString());
+                        projectSpan.SetTag(BuildTags.ErrorEndLine, endLineNumber.Value.ToString(CultureInfo.InvariantCulture));
                     }
 
                     if (endColumnNumber.HasValue && endColumnNumber != 0)
                     {
-                        projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.ToString());
+                        projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.Value.ToString(CultureInfo.InvariantCulture));
                     }
 
                     _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Error, e.Message, projectSpan));

@@ -365,7 +365,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WriteStartObject();
             _linesOpen = true;
 
-            JsonWriter.WritePropertyName(lineNumber.ToString());
+            JsonWriter.WritePropertyName(lineNumber.ToString(CultureInfo.InvariantCulture));
             JsonWriter.WriteStartObject();
             _lineNumberOpen = true;
         }

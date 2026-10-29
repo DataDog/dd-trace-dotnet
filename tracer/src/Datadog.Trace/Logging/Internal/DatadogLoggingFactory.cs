@@ -303,7 +303,7 @@ internal static class DatadogLoggingFactory
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
                             .GetAs(
                                  defaultValue: new(DefaultMaxLogFileSize, DefaultMaxLogFileSize.ToString(CultureInfo.InvariantCulture)),
-                                 converter: x => long.TryParse(x, out var maxLogSize)
+                                 converter: x => long.TryParse(x, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxLogSize)
                                                      ? maxLogSize
                                                      : ParsingResult<long>.Failure(),
                                  validator: x => x >= 0);

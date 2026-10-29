@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -258,7 +259,7 @@ internal class DatadogExporter : IExporter
         _testModules.Clear();
 
         var testSession = TestSession;
-        testSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
+        testSession.Tags.CommandExitCode = Environment.ExitCode.ToString(CultureInfo.InvariantCulture);
         await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTimeOffset.UtcNow - testSession.StartTime).ConfigureAwait(false);
     }
 }

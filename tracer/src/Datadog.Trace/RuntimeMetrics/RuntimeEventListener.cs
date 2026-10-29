@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Tracing;
+using System.Globalization;
 using System.Threading;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.RuntimeMetrics
         public RuntimeEventListener(IStatsdManager statsd, TimeSpan delay)
         {
             _statsd = statsd;
-            _delayInSeconds = ((int)delay.TotalSeconds).ToString();
+            _delayInSeconds = ((int)delay.TotalSeconds).ToString(CultureInfo.InvariantCulture);
 
             EventSourceCreated += (_, e) => EnableEventSource(e.EventSource);
         }

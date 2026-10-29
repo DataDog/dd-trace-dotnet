@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -294,8 +295,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return false;
             }
 
-            var canParse = int.TryParse(versionWafSplit[1], out _);
-            canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
+            var canParse = int.TryParse(versionWafSplit[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out _);
+            canParse &= int.TryParse(versionWafSplit[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var wafMajor);
             var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version;
             if (tracerVersion is null || !canParse)
             {

@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -301,7 +302,7 @@ namespace Datadog.Trace.AppSec
 #if NETCOREAPP
                     if (!error.Key.Contains("unknown matcher:", StringComparison.OrdinalIgnoreCase))
 #else
-                    if (!error.Key.ToLower().Contains("unknown matcher:"))
+                    if (error.Key.IndexOf("unknown matcher:", StringComparison.OrdinalIgnoreCase) < 0)
 #endif
                     {
                         return false;
@@ -368,7 +369,7 @@ namespace Datadog.Trace.AppSec
                 {
                     return (int)statusCodeInt;
                 }
-                else if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
+                else if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, NumberStyles.Integer, CultureInfo.InvariantCulture, out var statusCode))
                 {
                     return statusCode;
                 }

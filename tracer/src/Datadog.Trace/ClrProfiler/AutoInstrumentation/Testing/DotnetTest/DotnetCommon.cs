@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -2616,7 +2617,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 {
                     for (var i = 0; i < args.Length; i++)
                     {
-                        sb.AppendLine($"\t{i}:{args[i]}");
+                        sb.Append('\t').Append(i.ToString(CultureInfo.InvariantCulture)).Append(':').AppendLine(args[i]);
                     }
                 }
 

@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -22,7 +23,7 @@ internal sealed class AppveyorEnvironmentValues<TValueProvider>(TValueProvider v
         var repoProvider = ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoProvider);
         if (repoProvider == "github")
         {
-            Repository = string.Format("https://github.com/{0}.git", ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoName));
+            Repository = string.Format(CultureInfo.InvariantCulture, "https://github.com/{0}.git", ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoName));
         }
         else
         {
@@ -35,7 +36,7 @@ internal sealed class AppveyorEnvironmentValues<TValueProvider>(TValueProvider v
         PipelineId = ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.BuildId);
         PipelineName = ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoName);
         PipelineNumber = ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.BuildNumber);
-        PipelineUrl = string.Format("https://ci.appveyor.com/project/{0}/builds/{1}", ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoName), ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.BuildId));
+        PipelineUrl = string.Format(CultureInfo.InvariantCulture, "https://ci.appveyor.com/project/{0}/builds/{1}", ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoName), ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.BuildId));
         JobUrl = PipelineUrl;
         Branch = ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.PullRequestHeadRepoBranch);
         Tag = ValueProvider.GetValue(PlatformKeys.Ci.AppVeyor.RepoTagName);

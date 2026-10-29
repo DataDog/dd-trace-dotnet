@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
@@ -371,7 +372,7 @@ namespace Datadog.Trace.Ci.Configuration
                 var valid = true;
                 for (var i = 0; valid && i < counts.Length; i++)
                 {
-                    valid = int.TryParse(values[i], out counts[i]) && counts[i] is >= 1 and <= MaxDynamicFlakyRetryCount;
+                    valid = int.TryParse(values[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out counts[i]) && counts[i] is >= 1 and <= MaxDynamicFlakyRetryCount;
                 }
 
                 if (valid)

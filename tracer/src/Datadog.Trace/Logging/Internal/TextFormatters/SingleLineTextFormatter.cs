@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Formatting;
@@ -22,7 +23,7 @@ internal sealed class SingleLineTextFormatter : ITextFormatter
         var logLevel = LevelOutputFormat.GetLevelMoniker(logEvent.Level, "u3");
 
         output.Write("[");
-        output.Write(utcTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
+        output.Write(utcTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture));
         output.Write(" | DD-TRACE-DOTNET ");
         output.Write(TracerConstants.ThreePartVersion);
         output.Write(" | ");

@@ -9,6 +9,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -169,17 +170,17 @@ internal class CreatedumpCommand : Command
             }
         }
 
-        if (parsedArguments.TryGetValue("--signal", out var rawSignal) && int.TryParse(rawSignal, out var signalValue))
+        if (parsedArguments.TryGetValue("--signal", out var rawSignal) && int.TryParse(rawSignal, NumberStyles.Integer, CultureInfo.InvariantCulture, out var signalValue))
         {
             signal = signalValue;
         }
 
-        if (parsedArguments.TryGetValue("--code", out var rawCode) && int.TryParse(rawCode, out var signalCodeValue))
+        if (parsedArguments.TryGetValue("--code", out var rawCode) && int.TryParse(rawCode, NumberStyles.Integer, CultureInfo.InvariantCulture, out var signalCodeValue))
         {
             signalCode = signalCodeValue;
         }
 
-        if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, out var crashThreadValue))
+        if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, NumberStyles.Integer, CultureInfo.InvariantCulture, out var crashThreadValue))
         {
             crashThread = crashThreadValue;
         }
@@ -193,13 +194,13 @@ internal class CreatedumpCommand : Command
         if (pidCandidates.Count == 1)
         {
             // Best case scenario
-            return int.TryParse(pidCandidates[0], out pid);
+            return int.TryParse(pidCandidates[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out pid);
         }
 
         // Check all the values to check if one is really a pid
         foreach (var candidate in pidCandidates)
         {
-            if (int.TryParse(candidate, out pid))
+            if (int.TryParse(candidate, NumberStyles.Integer, CultureInfo.InvariantCulture, out pid))
             {
                 try
                 {

@@ -91,7 +91,7 @@ internal sealed class SqlInjectionTokenizer : ITokenizer
                 {
                     start += 2;
                 }
-                else if (char.ToLower(startChar) == 'q' && nextChar == '\'')
+                else if (startChar is 'q' or 'Q' && nextChar == '\'')
                 {
                     start += 3;
                     end -= 2;

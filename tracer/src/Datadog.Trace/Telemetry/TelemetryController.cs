@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -107,7 +108,7 @@ internal sealed class TelemetryController : ITelemetryController
     {
         _application.RecordTracerSettings(settings);
         _integrations.RecordTracerSettings(settings.Manager.InitialMutableSettings);
-        _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
+        _namingVersion = ((int)settings.MetadataSchemaVersion).ToString(CultureInfo.InvariantCulture);
         _logTagBuilder.Update(settings);
     }
 

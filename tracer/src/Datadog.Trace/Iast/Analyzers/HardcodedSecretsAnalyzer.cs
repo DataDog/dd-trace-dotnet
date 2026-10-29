@@ -48,7 +48,7 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
                 if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
                     int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
-                    Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());
+                    Log.Debug<int>("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen);
                     if (userStringLen > 0)
                     {
                         for (int x = 0; x < userStringLen; x++)

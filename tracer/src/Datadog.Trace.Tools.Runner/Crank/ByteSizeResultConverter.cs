@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Globalization;
+
 namespace Datadog.Trace.Tools.Runner.Crank
 {
     internal readonly struct ByteSizeResultConverter : IResultConverter
@@ -19,7 +21,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
         public void SetToSpan(Span span, string sanitizedName, object value)
         {
-            if (double.TryParse(value.ToString(), out var doubleValue))
+            if (double.TryParse(value.ToString(), NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var doubleValue))
             {
                 span.SetMetric(sanitizedName + "_bytes", doubleValue);
             }

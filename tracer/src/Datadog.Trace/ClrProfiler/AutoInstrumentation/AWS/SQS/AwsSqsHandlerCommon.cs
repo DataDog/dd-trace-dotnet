@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -168,7 +169,7 @@ internal sealed class AwsSqsHandlerCommon
                     var sentTime = 0;
                     if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
                     {
-                        if (!int.TryParse(sentTimeStr, out sentTime))
+                        if (!int.TryParse(sentTimeStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out sentTime))
                         {
                             sentTime = 0;
                         }

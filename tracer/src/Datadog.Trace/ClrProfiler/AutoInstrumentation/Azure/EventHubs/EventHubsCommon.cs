@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
@@ -32,7 +33,7 @@ internal static class EventHubsCommon
         var networkDestinationName = endpoint?.Host;
         var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
                                         "5671" :
-                                        endpoint.Port.ToString();
+                                        endpoint.Port.ToString(CultureInfo.InvariantCulture);
 
         return CreateSenderSpanInternal(
             instance.EventHubName,
@@ -108,7 +109,7 @@ internal static class EventHubsCommon
 
             if (actualMessageCount > 1)
             {
-                tags.MessagingBatchMessageCount = actualMessageCount.ToString();
+                tags.MessagingBatchMessageCount = actualMessageCount.ToString(CultureInfo.InvariantCulture);
             }
 
             if (actualMessageCount == 1 && messages != null)

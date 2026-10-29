@@ -367,7 +367,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             }
 
             // If statusConfiguration equals a single value i.e. `401` parse the value and save to the array
-            else if (int.TryParse(statusConfiguration, out startStatus))
+            else if (int.TryParse(statusConfiguration, NumberStyles.Integer, CultureInfo.InvariantCulture, out startStatus))
             {
                 TrySetValue(startStatus);
             }
@@ -375,13 +375,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             {
                 string[] statusCodeLimitsRange = statusConfiguration.Split('-');
 
-                startStatus = int.Parse(statusCodeLimitsRange[0]);
-                int endStatus = int.Parse(statusCodeLimitsRange[1]);
+                startStatus = int.Parse(statusCodeLimitsRange[0], CultureInfo.InvariantCulture);
+                int endStatus = int.Parse(statusCodeLimitsRange[1], CultureInfo.InvariantCulture);
 
                 if (endStatus < startStatus)
                 {
                     startStatus = endStatus;
-                    endStatus = int.Parse(statusCodeLimitsRange[0]);
+                    endStatus = int.Parse(statusCodeLimitsRange[0], CultureInfo.InvariantCulture);
                 }
 
                 for (int statusCode = startStatus; statusCode <= endStatus; statusCode++)

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.Net;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using Datadog.Trace.Configuration;
@@ -112,12 +113,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                     if (connection.EndPoint is IPEndPoint ipEndPoint)
                     {
                         host = ipEndPoint.Address.ToString();
-                        port = ipEndPoint.Port.ToString();
+                        port = ipEndPoint.Port.ToString(CultureInfo.InvariantCulture);
                     }
                     else if (connection.EndPoint is DnsEndPoint dnsEndPoint)
                     {
                         host = dnsEndPoint.Host;
-                        port = dnsEndPoint.Port.ToString();
+                        port = dnsEndPoint.Port.ToString(CultureInfo.InvariantCulture);
                     }
                 }
             }

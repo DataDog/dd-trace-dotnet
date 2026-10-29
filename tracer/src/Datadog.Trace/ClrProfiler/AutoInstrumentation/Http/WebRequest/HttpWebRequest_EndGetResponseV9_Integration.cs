@@ -8,6 +8,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -47,7 +48,7 @@ public sealed class HttpWebRequest_EndGetResponseV9_Integration
             // mean it gets sent either, it's just a storage area
             var unixTimespanMs = request.Headers.Get(HttpHeaderNames.InternalStartTime);
 
-            var startTime = unixTimespanMs is not null && long.TryParse(unixTimespanMs, out var ms)
+            var startTime = unixTimespanMs is not null && long.TryParse(unixTimespanMs, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ms)
                                 ? DateTimeOffset.FromUnixTimeMilliseconds(ms)
                                 : DateTimeOffset.UtcNow;
 

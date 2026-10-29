@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Globalization;
+
 namespace Datadog.Trace.Tools.Runner.Gac;
 
 internal static class HresultHelper
@@ -10,7 +12,7 @@ internal static class HresultHelper
     public static string ToStringOrHex(this Hresult hresult)
     {
         var str = hresult.ToString();
-        if (int.TryParse(str, out _))
+        if (int.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
         {
             str = $"0x{((int)hresult):x8}";
         }

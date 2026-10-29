@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.Telemetry;
@@ -47,7 +48,7 @@ public partial class ExporterSettings
         var agentPortStr = GetValue(configuration, ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT");
         var unixDomainSocketPath = GetValue(configuration, ConfigurationKeys.TracesUnixDomainSocketPath);
 
-        int? agentPort = int.TryParse(agentPortStr, out var port) ? port : null;
+        int? agentPort = int.TryParse(agentPortStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var port) ? port : null;
 
         var traceSettings = GetTraceTransport(agentUri, tracePipeName, agentHost, agentPort, unixDomainSocketPath);
         TracesTransport = traceSettings.Transport;

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -78,7 +79,7 @@ internal static class InferredProxySpanHelper
             return false;
         }
 
-        if (!long.TryParse(startTime, out var startTimeMs))
+        if (!long.TryParse(startTime, NumberStyles.Integer, CultureInfo.InvariantCulture, out var startTimeMs))
         {
             Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
             return false;

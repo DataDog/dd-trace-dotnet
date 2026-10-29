@@ -7,6 +7,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.DuckTyping;
@@ -110,7 +111,7 @@ internal static class SecurityCoordinatorHelpers
 
     private static Dictionary<string, object> BuildResponseArgs(int statusCode, IHeaderDictionary headers)
     {
-        var args = new Dictionary<string, object>(2) { { AddressesConstants.ResponseStatus, statusCode.ToString() } };
+        var args = new Dictionary<string, object>(2) { { AddressesConstants.ResponseStatus, statusCode.ToString(CultureInfo.InvariantCulture) } };
 
         if (SecurityCoordinator.ExtractHeadersFromRequest(headers) is { } extractedHeaders)
         {

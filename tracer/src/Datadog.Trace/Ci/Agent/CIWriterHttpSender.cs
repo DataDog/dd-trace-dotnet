@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
@@ -206,7 +207,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 agentlessMemoryStream.TryGetBuffer(out payloadArraySegment);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToString("N0"), uncompressedSize.ToString("N0"));
+                    Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToString("N0", CultureInfo.InvariantCulture), uncompressedSize.ToString("N0", CultureInfo.InvariantCulture));
                 }
             }
             else
@@ -214,7 +215,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 payloadArraySegment = new ArraySegment<byte>(payload.ToArray());
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToString("N0"));
+                    Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToString("N0", CultureInfo.InvariantCulture));
                 }
             }
 

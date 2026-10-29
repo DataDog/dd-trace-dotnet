@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
@@ -546,9 +547,9 @@ namespace Datadog.Trace.Propagators
                        1 when samplingPriority[0] == '0' => 0,
                        2 when samplingPriority[0] == '-' && samplingPriority[1] == '1' => -1,
 #if NETCOREAPP
-                       _ => int.TryParse(samplingPriority, out var result) ? result : null,
+                       _ => int.TryParse(samplingPriority, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : null,
 #else
-                       _ => int.TryParse(samplingPriority.ToString(), out var result) ? result : null,
+                       _ => int.TryParse(samplingPriority.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : null,
 #endif
                    };
         }

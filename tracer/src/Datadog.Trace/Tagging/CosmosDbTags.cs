@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
@@ -84,7 +85,7 @@ namespace Datadog.Trace.Tagging
         public override void SetEndpoint(Uri endpoint)
         {
             Host = endpoint?.Host;
-            Port = endpoint?.Port.ToString();
+            Port = endpoint?.Port.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

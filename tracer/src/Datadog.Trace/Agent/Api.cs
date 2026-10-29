@@ -292,14 +292,14 @@ namespace Datadog.Trace.Agent
             var apmTracingEnabled = state.ApmTracingEnabled;
 
             // Set additional headers
-            request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
+            request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString(CultureInfo.InvariantCulture));
             request.AddContainerMetadataHeaders(_containerMetadata);
 
             if (statsComputationEnabled)
             {
                 request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
-                request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToString());
-                request.AddHeader(AgentHttpHeaderNames.DroppedP0Spans, numberOfDroppedP0Spans.ToString());
+                request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToString(CultureInfo.InvariantCulture));
+                request.AddHeader(AgentHttpHeaderNames.DroppedP0Spans, numberOfDroppedP0Spans.ToString(CultureInfo.InvariantCulture));
             }
             else if (!apmTracingEnabled)
             {

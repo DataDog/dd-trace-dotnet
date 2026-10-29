@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -99,7 +100,7 @@ public sealed class PopulateBasicPropertiesHeadersIntegration
             span,
             tags,
             duckType.Headers,
-            int.TryParse(tags.MessageSize, out var bodyLength) ? bodyLength : 0);
+            int.TryParse(tags.MessageSize, NumberStyles.Integer, CultureInfo.InvariantCulture, out var bodyLength) ? bodyLength : 0);
 
         return new CallTargetReturn<TReturn?>(basicProperties);
     }

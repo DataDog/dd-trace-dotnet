@@ -636,7 +636,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Numeric code path: "0"→"OK", "5"→"NOT_FOUND", etc.
-            if (int.TryParse(grpcStatusCode, out var code) && (uint)code <= 16)
+            if (int.TryParse(grpcStatusCode, NumberStyles.Integer, CultureInfo.InvariantCulture, out var code) && (uint)code <= 16)
             {
                 return GrpcStatusNames[code];
             }

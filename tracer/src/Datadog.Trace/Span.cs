@@ -283,7 +283,7 @@ namespace Datadog.Trace
 
                     // note: this tag allows numeric or string representations of the enum,
                     // (e.g. "AutoKeep" or "1"), but try parsing as `int` first since it's much faster
-                    if (int.TryParse(value, out var samplingPriorityInt32))
+                    if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var samplingPriorityInt32))
                     {
                         Context.TraceContext.SetSamplingPriority(samplingPriorityInt32, SamplingMechanism.Manual);
                     }

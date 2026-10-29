@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 
 namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 {
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
             {
                 using var workerProcess = workerProcessesCollection.GetItem(0);
 
-                if (int.TryParse(workerProcess.GetStringProperty("processId"), out var pid))
+                if (int.TryParse(workerProcess.GetStringProperty("processId"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var pid))
                 {
                     return pid;
                 }

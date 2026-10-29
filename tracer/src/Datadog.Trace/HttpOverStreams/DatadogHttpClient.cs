@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -180,7 +181,7 @@ namespace Datadog.Trace.HttpOverStreams
             var potentialStatusCode = stringBuilder.ToString();
             stringBuilder.Clear();
 
-            if (!int.TryParse(potentialStatusCode, out var statusCode))
+            if (!int.TryParse(potentialStatusCode, NumberStyles.Integer, CultureInfo.InvariantCulture, out var statusCode))
             {
                 DatadogHttpRequestException.Throw("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
             }
@@ -238,7 +239,7 @@ namespace Datadog.Trace.HttpOverStreams
                 }
             }
 
-            var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
+            var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), NumberStyles.Integer, CultureInfo.InvariantCulture, out var headerValue) ? headerValue : (long?)null;
 
             var stream = isChunked ? new ChunkedEncodingReadStream(responseStream) : responseStream;
 

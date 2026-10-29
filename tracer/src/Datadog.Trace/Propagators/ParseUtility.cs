@@ -98,7 +98,7 @@ namespace Datadog.Trace.Propagators
                 // Checking string[] allows to avoid the enumerator allocation.
                 foreach (string? headerValue in stringValues)
                 {
-                    if (int.TryParse(headerValue, out var result))
+                    if (int.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
                     {
                         // note this int value may not be defined in the enum,
                         // but we should pass it along without validation
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Propagators
 
                 foreach (string? headerValue in headerValues)
                 {
-                    if (int.TryParse(headerValue, out result))
+                    if (int.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
                     {
                         // note this int value may not be defined in the enum,
                         // but we should pass it along without validation

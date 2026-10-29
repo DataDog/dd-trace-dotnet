@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
@@ -69,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
         public static void RecordFinalStatus(Span span, int grpcStatusCode, string errorMessage, Exception? ex)
         {
             var tags = (GrpcTags)span.Tags;
-            tags.StatusCode = grpcStatusCode.ToString();
+            tags.StatusCode = grpcStatusCode.ToString(CultureInfo.InvariantCulture);
 
             if (grpcStatusCode != 0)
             {

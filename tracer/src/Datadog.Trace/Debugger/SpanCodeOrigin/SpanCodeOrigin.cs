@@ -336,7 +336,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     }
 
                     span.Tags.SetTag(_tags.Type, "exit");
-                    span.Tags.SetTag(_tags.Index[i], info.FrameIndex.ToString());
+                    span.Tags.SetTag(_tags.Index[i], info.FrameIndex.ToString(CultureInfo.InvariantCulture));
                     span.Tags.SetTag(_tags.Method[i], method.Name);
                     span.Tags.SetTag(_tags.TypeName[i], typeName);
 
@@ -349,10 +349,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     span.Tags.SetTag(_tags.File[i], fileName);
 
                     var line = info.Frame.GetFileLineNumber();
-                    span.Tags.SetTag(_tags.Line[i], line.ToString());
+                    span.Tags.SetTag(_tags.Line[i], line.ToString(CultureInfo.InvariantCulture));
 
                     var column = info.Frame.GetFileColumnNumber();
-                    span.Tags.SetTag(_tags.Column[i], column.ToString());
+                    span.Tags.SetTag(_tags.Column[i], column.ToString(CultureInfo.InvariantCulture));
                 }
             }
             catch (Exception ex)

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -111,7 +112,7 @@ namespace Datadog.Trace.ExtensionMethods
             else
             {
                 var rawHttpStatusCode = span.GetHttpStatusCodeString();
-                if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+                if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, NumberStyles.Integer, CultureInfo.InvariantCulture, out var httpStatusCode))
                 {
                     return null;
                 }

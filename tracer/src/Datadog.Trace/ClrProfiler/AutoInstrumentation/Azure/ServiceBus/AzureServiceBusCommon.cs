@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -56,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             // https://learn.microsoft.com/en-us/dotnet/api/system.uri.port#remarks
             var networkDestinationPort = endpoint?.Port is null or -1 or 5671 ?
                                             "5671" :
-                                            endpoint.Port.ToString();
+                                            endpoint.Port.ToString(CultureInfo.InvariantCulture);
 
             return CreateSenderSpanInternal(
                 entityPath,
@@ -127,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
             if (actualMessageCount > 1)
             {
-                span.SetTag(Tags.MessagingBatchMessageCount, actualMessageCount.ToString());
+                span.SetTag(Tags.MessagingBatchMessageCount, actualMessageCount.ToString(CultureInfo.InvariantCulture));
             }
 
             if (actualMessageCount == 1 && messages != null)

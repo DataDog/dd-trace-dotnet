@@ -7,6 +7,7 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
@@ -47,7 +48,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (lastTime && _httpTransport.StatusCode is { } statusCode)
         {
-            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+            args[AddressesConstants.ResponseStatus] = statusCode.ToString(CultureInfo.InvariantCulture);
         }
 
         return args.Count > 0 ? RunWaf(args, lastTime) : null;

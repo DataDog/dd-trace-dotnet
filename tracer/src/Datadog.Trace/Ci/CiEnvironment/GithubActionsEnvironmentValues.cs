@@ -112,7 +112,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                         else if (inD && prop == "v" && currentKey == "check_run_id")
                         {
                             reader.Read();
-                            jobId = Convert.ToDouble(reader.Value).ToString(CultureInfo.InvariantCulture);
+                            jobId = Convert.ToDouble(reader.Value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
                             return true;
                         }
 

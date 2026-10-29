@@ -425,7 +425,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         // Check if the rate limit header was received.
         if (response.StatusCode == 429 &&
             response.GetHeader("x-ratelimit-reset") is { } strRateLimitDurationInSeconds &&
-            int.TryParse(strRateLimitDurationInSeconds, out var rateLimitDurationInSeconds))
+            int.TryParse(strRateLimitDurationInSeconds, NumberStyles.Integer, CultureInfo.InvariantCulture, out var rateLimitDurationInSeconds))
         {
             if (rateLimitDurationInSeconds > 30)
             {

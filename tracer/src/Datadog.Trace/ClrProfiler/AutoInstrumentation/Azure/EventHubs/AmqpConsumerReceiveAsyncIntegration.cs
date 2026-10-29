@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -128,7 +129,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
 
         if (messageCount > 1)
         {
-            tags.MessagingBatchMessageCount = messageCount.ToString();
+            tags.MessagingBatchMessageCount = messageCount.ToString(CultureInfo.InvariantCulture);
         }
 
         if (messageCount == 1)

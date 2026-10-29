@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.HttpOverStreams
 
         public IHttpContent Content { get; }
 
-        public int? ContentLength => int.TryParse(Headers.GetValue("Content-Length"), out int length) ? length : (int?)null;
+        public int? ContentLength => int.TryParse(Headers.GetValue("Content-Length"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int length) ? length : (int?)null;
 
         public string ContentType => Headers.GetValue("Content-Type");
 

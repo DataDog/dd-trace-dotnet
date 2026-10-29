@@ -241,7 +241,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 switch (value)
                 {
                     case int or uint or long or byte or sbyte or short or ushort:
-                        writer.WriteValue(Convert.ToInt64(value));
+                        writer.WriteValue(Convert.ToInt64(value, CultureInfo.InvariantCulture));
                         return;
                     case ulong ulongValue: // can't safely be cast to long
                         writer.WriteValue(ulongValue);

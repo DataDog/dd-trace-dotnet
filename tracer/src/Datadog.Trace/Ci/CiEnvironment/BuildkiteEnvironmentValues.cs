@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -34,7 +35,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
         PipelineDisplayName = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.PipelineName);
         PipelineUrl = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildUrl);
         JobId = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.JobId);
-        JobUrl = string.Format("{0}#{1}", ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildUrl), ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.JobId));
+        JobUrl = string.Format(CultureInfo.InvariantCulture, "{0}#{1}", ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildUrl), ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.JobId));
 
         Message = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.Message);
         AuthorName = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildAuthor);
