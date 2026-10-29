@@ -1052,7 +1052,7 @@ namespace Datadog.Trace.Debugger
                             .DisposeAll();
             }
 
-            _dogStats?.DisposeAsync().ContinueWith(
+            _ = _dogStats?.DisposeAsync().ContinueWith(
                 t => Log.Error(t.Exception, "Error waiting for StatsD disposal"),
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted,

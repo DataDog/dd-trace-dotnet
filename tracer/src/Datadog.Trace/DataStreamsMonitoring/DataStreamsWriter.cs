@@ -111,10 +111,10 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
             }
 
             _processTask = Task.Factory.StartNew(ProcessQueueLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = Task.Run(FlushTaskLoopAsync);
-            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in data streams flush task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in data streams flush task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTimer = new Timer(
                 x => ((DataStreamsWriter)x!).RequestFlush(),
