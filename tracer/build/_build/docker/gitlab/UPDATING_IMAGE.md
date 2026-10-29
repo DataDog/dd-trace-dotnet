@@ -12,19 +12,11 @@ Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoin
 
 ### 2. Open a PR
 
-Push the branch. The `build:` job will run and fail fast at its preflight step with a message like:
+Push the branch. Every pipeline runs `build-windows-ci-image` automatically in `.pre`, before Windows consumers. Image jobs are serialized across pipelines so a subsequent push waits for an in-progress publication instead of racing it.
 
-```
-ERROR: Windows build image not found at registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build:<hash>.
-The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed.
-Manually trigger the 'build-windows-ci-image' job in this pipeline...
-```
+### 3. Wait for `build-windows-ci-image`
 
-This is expected. The tag does not exist yet because nobody has built it.
-
-### 3. Manually trigger `build-windows-ci-image`
-
-Find the `build-windows-ci-image` job in the pipeline UI and click run. It will:
+After acquiring the shared image-publication lock, the job will:
 
 1. Compute the hash via `compute-image-hash.ps1`.
 2. Short-circuit if the tag already exists in `registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build`.
@@ -32,12 +24,14 @@ Find the `build-windows-ci-image` job in the pipeline UI and click run. It will:
 
 A cold-cache build (e.g., rebasing the base image) takes up to 2 hours. A warm-cache build with only late-stage install changes should be a small fraction of that.
 
-### 4. Re-run the `build:` job
+### 4. Consumers continue automatically
 
-Once `build-windows-ci-image` is green, re-run the `build:` job (or any other Windows job that consumes the image). It recomputes the same hash, finds the image in the registry, and proceeds normally.
+Once `build-windows-ci-image` is green, Windows consumers proceed using the same hash. If image creation fails, fix or retry that job before retrying consumers; an existing image is checked without rebuilding it.
 
 ### Notes
 
+- The `windows-ci-image` resource group serializes image jobs across pipelines, including different hashes. It does not serialize the downstream Windows builds. Existing-image checks may wait behind an active image build, but do not pull or rebuild the image.
+- Documentation in this directory, including this file, also contributes to the image hash and therefore changes the required tag.
 - The `:latest` tag is **only** used to seed the Docker build cache on the next rebuild. Nothing in the pipeline consumes `:latest` as an input at runtime; the consumer always pins to the content hash.
 - Changes to `compute-image-hash.ps1` itself also invalidate the hash, because the script hashes its own directory.
 

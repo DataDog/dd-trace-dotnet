@@ -1,0 +1,30 @@
+.windows-integration-test:
+  stage: test
+  timeout: 2h
+  tags: ["windows-v2:2022"]
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build
+      artifacts: true
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-samples-standalone
+      artifacts: true
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - .gitlab/run-windows-integration-tests.ps1
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "integration-tests-windows-$TARGET_PLATFORM-$FRAMEWORK-$TEST_SUITE-$AREA$DEBUG_TYPE$OPTIMIZE"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/infra_logs
+      - artifacts/build_data/dumps
+      - tracer/test/snapshots
+      - tracer/test/Datadog.Trace.Debugger.IntegrationTests/Approvals
+  id_tokens:
+    DD_STS_OIDC_TOKEN:
+      aud: dd-sts

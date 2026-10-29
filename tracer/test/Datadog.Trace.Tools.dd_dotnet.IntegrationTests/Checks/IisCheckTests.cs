@@ -21,6 +21,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.IntegrationTests.Checks;
 
 [SupportedOSPlatform("windows")]
 [Trait("Category", "LinuxUnsupported")]
+[Trait("IISExpress", "True")]
 [Collection(nameof(ConsoleTestsCollection))]
 public class IisCheckTests : TestHelper
 {
