@@ -12,7 +12,8 @@ endif()
 # Project definition
 # ******************************************************
 
-include("${CMAKE_CURRENT_LIST_DIR}/../../../build/cmake/DdVersion.cmake")
+# DD_VERSION is set by build/cmake/DdVersion.cmake, which the root CMakeLists.txt includes,
+# so configure CMake from the repository root rather than from this directory
 project("Datadog.Trace.ClrProfiler.Native" VERSION ${DD_VERSION})
 
 if (UNIVERSAL)

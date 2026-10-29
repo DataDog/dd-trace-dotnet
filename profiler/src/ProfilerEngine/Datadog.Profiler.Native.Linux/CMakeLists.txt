@@ -2,7 +2,8 @@
 # Project definition
 # ******************************************************
 
-include("${CMAKE_CURRENT_LIST_DIR}/../../../../build/cmake/DdVersion.cmake")
+# DD_VERSION is set by build/cmake/DdVersion.cmake, which the root CMakeLists.txt includes,
+# so configure CMake from the repository root rather than from this directory
 project("Datadog.Profiler.Native.Linux" VERSION ${DD_VERSION})
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)

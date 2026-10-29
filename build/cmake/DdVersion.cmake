@@ -4,7 +4,11 @@
 # expects (build/DdVersion.props defines the same set for the MSBuild builds). dd_version.h derives
 # everything else from them, so new derived values belong there, not here.
 #
-# Deliberately re-read on every include and stored as a normal (not cached) variable, so that a
+# Included only by the root CMakeLists.txt, before any add_subdirectory(), so that every subproject
+# inherits DD_VERSION and the compile definitions. CMake must therefore be configured from the
+# repository root.
+#
+# Deliberately re-read on every configure and stored as a normal (not cached) variable, so that a
 # version bump is picked up by an existing build directory, and you don't get weird instrumentation
 # mismatches locally, just after a release.
 
@@ -28,16 +32,11 @@ endif()
 set(DD_VERSION "${CMAKE_MATCH_1}")
 message(STATUS "Datadog SDK version: ${DD_VERSION}")
 
-# Directory-scoped, so they apply to every target in this directory and below. The subproject
-# CMakeLists include this file again, so only add them once: normal variables are inherited by
-# subdirectories.
-if(NOT DD_VERSION_DEFINITIONS_ADDED)
-    add_compile_definitions(
-        DD_VERSION_MAJOR=${CMAKE_MATCH_2}
-        DD_VERSION_MINOR=${CMAKE_MATCH_3}
-        DD_VERSION_PATCH=${CMAKE_MATCH_4})
-    set(DD_VERSION_DEFINITIONS_ADDED TRUE)
-endif()
+# Directory-scoped, so they apply to every target in this directory and below
+add_compile_definitions(
+    DD_VERSION_MAJOR=${CMAKE_MATCH_2}
+    DD_VERSION_MINOR=${CMAKE_MATCH_3}
+    DD_VERSION_PATCH=${CMAKE_MATCH_4})
 
 unset(_dd_version_props_content)
 unset(_dd_version_match)
