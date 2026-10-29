@@ -65,6 +65,7 @@ public:
 
     std::size_t size() const
     {
+        std::lock_guard<std::mutex> lock(_lock);
         return _samples.Size();
     }
 
@@ -75,7 +76,7 @@ private:
     {
     }
 
-    std::mutex _lock;
+    mutable std::mutex _lock;
     LinkedList<TRawSample> _samples;
     shared::pmr::memory_resource* _memoryResource;
 };
