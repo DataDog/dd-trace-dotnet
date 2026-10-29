@@ -231,7 +231,7 @@ namespace Datadog.Trace
                                         // Count this as the first failed check, so the regular checks wait before starting a copy
                                         metadata.FailedHealthChecks = 1;
                                         metadata.ProcessState = ProcessState.Unhealthy;
-                                        LogFailedAgentNotStartedByUs(metadata);
+                                        LogFailedAgentNotStartedByUs(metadata, IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval));
                                     }
                                     else
                                     {
@@ -282,7 +282,7 @@ namespace Datadog.Trace
                                         if (startDelay > 0)
                                         {
                                             // The process we started exited after the startup wait: back off like any other failure
-                                            if (metadata.SequentialFailures == 1)
+                                            if (IsRetryLoggedAboveDebug(metadata.SequentialFailures, maxRetryInterval))
                                             {
                                                 Log.Warning("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
                                             }
@@ -294,9 +294,14 @@ namespace Datadog.Trace
                                             await Task.Delay(startDelay).ConfigureAwait(false);
                                             metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
                                         }
-                                        else if (previousState is ProcessState.Healthy or ProcessState.Unhealthy)
+                                        else if (previousState == ProcessState.Healthy
+                                              || (previousState == ProcessState.Unhealthy && IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval)))
                                         {
                                             Log.Information("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
+                                        }
+                                        else if (previousState == ProcessState.Unhealthy)
+                                        {
+                                            Log.Debug("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
                                         }
                                     }
                                     else if (action == KeepAliveAction.Restart)
@@ -311,7 +316,7 @@ namespace Datadog.Trace
                                             // A restart counts as a failure, so an agent that never becomes healthy backs off too
                                             metadata.SequentialFailures++;
                                             var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
-                                            if (metadata.SequentialFailures == 1)
+                                            if (IsRetryLoggedAboveDebug(metadata.SequentialFailures, maxRetryInterval))
                                             {
                                                 Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
                                             }
@@ -342,7 +347,7 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.Unhealthy;
                                         if (previousState != ProcessState.Unhealthy)
                                         {
-                                            LogFailedAgentNotStartedByUs(metadata);
+                                            LogFailedAgentNotStartedByUs(metadata, IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval));
                                         }
                                     }
                                     else
@@ -359,14 +364,15 @@ namespace Datadog.Trace
 
                                 if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
-                                    var isRetry = metadata.SequentialFailures > 0;
-                                    if (isRetry)
+                                    // If this attempt fails, it is counted as failure SequentialFailures + 1
+                                    var logAboveDebug = IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval);
+                                    if (logAboveDebug)
                                     {
-                                        Log.Debug("Attempting to start {AgentPath}.", path);
+                                        Log.Information("Attempting to start {AgentPath}.", path);
                                     }
                                     else
                                     {
-                                        Log.Information("Attempting to start {AgentPath}.", path);
+                                        Log.Debug("Attempting to start {AgentPath}.", path);
                                     }
 
                                     metadata.FailedHealthChecks = 0;
@@ -383,13 +389,13 @@ namespace Datadog.Trace
 
                                     metadata.Process = Process.Start(startInfo);
                                     var childPid = GetProcessId(metadata.Process);
-                                    if (isRetry)
+                                    if (logAboveDebug)
                                     {
-                                        Log.Debug("Started {AgentPath} with pid {ChildPid}.", path, childPid);
+                                        Log.Information("Started {AgentPath} with pid {ChildPid}.", path, childPid);
                                     }
                                     else
                                     {
-                                        Log.Information("Started {AgentPath} with pid {ChildPid}.", path, childPid);
+                                        Log.Debug("Started {AgentPath} with pid {ChildPid}.", path, childPid);
                                     }
 
                                     const int startupTimeout = 2000;
@@ -423,13 +429,15 @@ namespace Datadog.Trace
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
                                             // Retried with backoff, so not an Error
-                                            if (isRetry)
+                                            var failures = metadata.SequentialFailures + 1;
+                                            var retryDelay = GetRetryDelay(failures, maxRetryInterval);
+                                            if (logAboveDebug)
                                             {
-                                                Log.Debug("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                                Log.Warning("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, GetExitCode(metadata.Process), retryDelay, failures });
                                             }
                                             else
                                             {
-                                                Log.Warning("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}.", path, childPid, GetExitCode(metadata.Process));
+                                                Log.Debug("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, GetExitCode(metadata.Process), retryDelay, failures });
                                             }
 
                                             ForgetOwnProcess(metadata);
@@ -442,13 +450,13 @@ namespace Datadog.Trace
 
                                     if (metadata.ProcessState == ProcessState.ReadyToStart)
                                     {
-                                        if (isRetry)
+                                        if (logAboveDebug)
                                         {
-                                            Log.Debug("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
+                                            Log.Warning("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
                                         }
                                         else
                                         {
-                                            Log.Warning("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
+                                            Log.Debug("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
                                         }
 
                                         metadata.ProcessState = ProcessState.Unhealthy;
@@ -518,13 +526,16 @@ namespace Datadog.Trace
             return failedHealthChecks >= MaxFailedHealthChecks ? KeepAliveAction.Restart : KeepAliveAction.None;
         }
 
-        private static void LogFailedAgentNotStartedByUs(ProcessMetadata metadata)
+        private static void LogFailedAgentNotStartedByUs(ProcessMetadata metadata, bool aboveDebug)
         {
-            Log.Warning<string, string, int>(
-                "{AgentPath} was not started by the .NET Tracer in this process and failed its health check ({Reason}). Starting a new one if it fails {Count} checks in a row.",
-                metadata.ProcessPath,
-                metadata.LastHealthCheckFailure,
-                MaxFailedHealthChecks);
+            if (aboveDebug)
+            {
+                Log.Warning<string, string, int>("{AgentPath} was not started by the .NET Tracer in this process and failed its health check ({Reason}). Starting a new one if it fails {Count} checks in a row.", metadata.ProcessPath, metadata.LastHealthCheckFailure, MaxFailedHealthChecks);
+            }
+            else
+            {
+                Log.Debug<string, string, int>("{AgentPath} was not started by the .NET Tracer in this process and failed its health check ({Reason}). Starting a new one if it fails {Count} checks in a row.", metadata.ProcessPath, metadata.LastHealthCheckFailure, MaxFailedHealthChecks);
+            }
         }
 
         /// <summary>
@@ -582,6 +593,15 @@ namespace Datadog.Trace
 
             return (int)Math.Min(delay, maxRetryInterval);
         }
+
+        /// <summary>
+        /// Decides whether a retry after <paramref name="sequentialFailures"/> failures in a row logs above Debug. The first
+        /// failure does, and so does every retry once the wait has reached <paramref name="maxRetryInterval"/>, so a lasting
+        /// failure stays visible at the default log level about once per <paramref name="maxRetryInterval"/>.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal static bool IsRetryLoggedAboveDebug(int sequentialFailures, int maxRetryInterval)
+            => sequentialFailures <= 1 || GetRetryDelay(sequentialFailures, maxRetryInterval) >= maxRetryInterval;
 
         /// <summary>
         /// After a retry wait, another worker may have started a healthy agent: use it instead of starting a duplicate.
@@ -733,8 +753,8 @@ namespace Datadog.Trace
 
             /// <summary>
             /// Gets or sets the number of failures in a row, which sets the retry backoff: failed starts, exits of the process
-            /// we started, restarts, and unexpected exceptions. Only the first failed start, exit, or restart in a run logs above
-            /// Debug, because later ones are retries. It resets after the agent stays healthy for <see cref="StableHealthyPeriod"/>.
+            /// we started, restarts, and unexpected exceptions. <see cref="IsRetryLoggedAboveDebug"/> decides which retry logs go
+            /// above Debug. It resets after the agent stays healthy for <see cref="StableHealthyPeriod"/>.
             /// </summary>
             public int SequentialFailures { get; set; }
 

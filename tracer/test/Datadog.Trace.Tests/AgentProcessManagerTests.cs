@@ -140,6 +140,18 @@ public class AgentProcessManagerTests
         AgentProcessManager.GetRetryDelay(sequentialFailures, largestCap).Should().Be(expectedDelay);
     }
 
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(8, false)]
+    [InlineData(9, true)]
+    [InlineData(1_000, true)]
+    public void IsRetryLoggedAboveDebug_LogsTheFirstFailureAndEveryRetryAtTheCap(int sequentialFailures, bool expected)
+    {
+        // The wait doubles from 2 s and reaches a 5 minute cap at the 9th failure in a row
+        AgentProcessManager.IsRetryLoggedAboveDebug(sequentialFailures, maxRetryInterval: 300_000).Should().Be(expected);
+    }
+
     [Fact]
     public void GetStartDelay_IsImmediateUnlessOurOwnProcessJustExited()
     {
