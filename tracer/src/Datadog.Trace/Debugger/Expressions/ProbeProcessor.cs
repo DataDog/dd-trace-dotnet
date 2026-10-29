@@ -1018,7 +1018,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     return evaluator;
                 }
 
-                var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions, MaxEvaluationTimeInMilliseconds);
+                var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions, MaxEvaluationTimeInMilliseconds, ProbeInfo.ProbeId);
                 var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, null);
                 return previousEvaluator ?? newEvaluator;
             }
