@@ -143,10 +143,10 @@ namespace Datadog.Trace.Agent
             _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
 
             _serializationTask = Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
-            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private enum TraceDropReason
