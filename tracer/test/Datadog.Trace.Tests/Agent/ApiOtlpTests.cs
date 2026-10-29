@@ -70,7 +70,9 @@ public class ApiOtlpTests
         var mockTracesFactory = new Mock<IApiRequestFactory>();
         mockTracesFactory.Setup(f => f.GetEndpoint(null)).Returns(new Uri("http://localhost:4317"));
 
+        var metricsEndpoint = new Uri("http://localhost:4318/v1/metrics");
         var mockMetricsFactory = new Mock<IApiRequestFactory>();
+        mockMetricsFactory.Setup(f => f.GetEndpoint(null)).Returns(metricsEndpoint);
         mockMetricsFactory.Setup(f => f.Create(It.IsAny<Uri>())).Returns(mockMetricsRequest.Object);
 
         var api = new ApiOtlp(mockTracesFactory.Object, mockMetricsFactory.Object, settings, exporterSettings);
@@ -78,6 +80,7 @@ public class ApiOtlpTests
         var result = await api.SendStatsAsync(CreateBufferWithOneHit(), bucketDuration: 10_000_000_000L, tracerObfuscationVersion: 0);
 
         result.Should().BeTrue();
+        mockMetricsFactory.Verify(f => f.Create(metricsEndpoint), Times.Once);
         mockMetricsRequest.Verify(r => r.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>()), Times.Once);
     }
 

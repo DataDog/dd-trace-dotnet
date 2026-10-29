@@ -119,6 +119,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 yield return [packageVersion[0], "true", "false", "http/json", true, true];
                 yield return [packageVersion[0], "true", "false", "http/protobuf", false, true];
                 yield return [packageVersion[0], "true", "false", "http/protobuf", true, true];
+                yield return [packageVersion[0], "true", "false", "grpc", false, false];
+                yield return [packageVersion[0], "true", "false", "grpc", true, false];
             }
         }
 
@@ -246,6 +248,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var runtimeMajor = Environment.Version.Major;
             var isJson = protocol == "http/json" && datadogTracesEnabled.Equals("true");
 
+#if !NETCOREAPP3_1_OR_GREATER
+            if (protocol == "grpc")
+            {
+                throw new SkipException("gRPC requires HTTP/2, which isn't supported on .NET Framework.");
+            }
+#endif
+
             var snapshotName = otelTracesEnabled switch
             {
                 "true" when parsedVersion >= new Version("1.15.0") => "1_15_0",
@@ -326,8 +335,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpRegex, @"string_value"": ""System.ArgumentException: Example argument exception""");
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpJsonRegex, @"stringValue"": ""System.ArgumentException: Example argument exception""");
 
-                // Add scrubbers only for http/protobuf
-                if (protocol == "http/protobuf")
+                // Add scrubbers only for protobuf payloads, which gRPC also sends
+                if (protocol is "http/protobuf" or "grpc")
                 {
                     OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
                 }
