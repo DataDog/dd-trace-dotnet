@@ -111,6 +111,13 @@ extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t tr
         return;
     }
 
+    // The managed side keeps calling even if the delayed start failed (it caches the "profiler ready" status).
+    // The exporter would accumulate endpoints that are never exported nor cleared because the SamplesCollector is stopped.
+    if (profiler->IsProfilingPermanentlyDisabled())
+    {
+        return;
+    }
+
     static bool firstEmptyRuntimeId = true;
     if (runtimeId == nullptr)
     {
@@ -182,6 +189,11 @@ extern "C" void __stdcall FlushProfile()
     }
 
     if (!profiler->GetClrLifetime()->IsInitialized())
+    {
+        return;
+    }
+
+    if (profiler->IsProfilingPermanentlyDisabled())
     {
         return;
     }
