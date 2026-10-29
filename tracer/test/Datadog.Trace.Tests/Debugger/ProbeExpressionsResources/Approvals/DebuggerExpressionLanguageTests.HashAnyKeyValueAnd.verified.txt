@@ -78,7 +78,13 @@ Expression: (
                 if ({
                         var $dd_el_redacted = 0;
                         (stringStringKeyValuePair.Key == "hello") && (((($dd_el_redacted == 0)
-                            ? $dd_el_redacted = ProbeExpressionParser<bool>.IsRedactedStringKey(stringStringKeyValuePair.Key) ? 2 : 1
+                            ? $dd_el_redacted = ProbeExpressionParser<bool>.IsRedactedStringKey(stringStringKeyValuePair.Key)
+                                ? {
+                                    EvaluationBudget.MarkSkippedItem(ref evaluationBudget);
+
+                                    return 2;
+                                }
+                                : 1
                             : $dd_el_redacted) == 2)
                             ? false
                             : stringStringKeyValuePair.Value == "world");
