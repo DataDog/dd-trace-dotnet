@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
@@ -1191,8 +1192,20 @@ public class DynamicInstrumentationTests
 
     // ShutdownTasks disposes the global debugger rate limiter, so run with the other DebuggerManager tests
     [Collection(nameof(RedactionTests))]
-    public class ProbeRemovalOnDisableTests
+    public class ProbeRemovalOnDisableTests : IDisposable
     {
+        private readonly List<string> _probeIds = [];
+
+        public void Dispose()
+        {
+            // Disabling DI keeps the probe processors and samplers registered, so clean the global registries here
+            foreach (var probeId in _probeIds)
+            {
+                ProbeRateLimiter.Instance.ResetRate(probeId);
+                ProbeExpressionsProcessor.Instance.Remove(probeId);
+            }
+        }
+
         [Theory]
         [InlineData(null, false)] // enabled remotely, then disabled remotely: applied immediately
         [InlineData(null, null)] // enabled remotely, then the remote config is removed: applied immediately
@@ -1214,14 +1227,40 @@ public class DynamicInstrumentationTests
                 manager.DynamicInstrumentation.Should().BeNull();
                 debugger.IsDisposed.Should().BeTrue();
                 nativeRequests.RevertedProbeIds.Should().BeEquivalentTo(installedProbeIds);
-                foreach (var probeId in installedProbeIds)
-                {
-                    ProbeExpressionsProcessor.Instance.Get(probeId).Should().BeNull();
-                }
             }
             finally
             {
                 DebuggerManagerTests.InvokeShutdownTasks(manager);
+            }
+        }
+
+        [Fact]
+        public void ReEnable_CachedProbeDataUsesTheRegisteredProcessorAndSampler()
+        {
+            // The instrumented code finds a probe's processor and sampler in ProbeDataCollection, by native index and probe ID.
+            // When DI is enabled again the native side usually gives the probe the same index, so the cached entry is used again.
+            const int probeMetadataIndex = 4096;
+            var settings = CreateDebuggerSettings("true");
+            var probe = new LogProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" }, CaptureSnapshot = true };
+
+            try
+            {
+                var firstInstance = CreateDebugger(settings, new NativeInstrumentationRecorder(), out var firstUpdater);
+                firstUpdater.AcceptAdded(new ProbeConfiguration { LogProbes = [probe] });
+                ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probe.Id).IsEmpty().Should().BeFalse("the first hit caches the probe data");
+
+                firstInstance.RemoveProbesAndDispose();
+
+                using var secondInstance = CreateDebugger(settings, new NativeInstrumentationRecorder(), out var secondUpdater);
+                secondUpdater.AcceptAdded(new ProbeConfiguration { LogProbes = [probe] });
+
+                var probeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probe.Id);
+                probeData.Processor.Should().BeSameAs(ProbeExpressionsProcessor.Instance.Get(probe.Id));
+                probeData.Sampler.Should().BeSameAs(ProbeRateLimiter.Instance.GerOrAddSampler(probe.Id), "a disposed sampler never refills its budget");
+            }
+            finally
+            {
+                ProbeDataCollection.Instance.Remove(probeMetadataIndex);
             }
         }
 
@@ -1237,7 +1276,7 @@ public class DynamicInstrumentationTests
             nativeRequests.RevertedProbeIds.Should().BeEquivalentTo(installedProbeIds);
 
             // A probe update that arrives after the removal must not instrument anything
-            updater.AcceptAdded(new ProbeConfiguration { LogProbes = [new LogProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Other" } }] });
+            updater.AcceptAdded(new ProbeConfiguration { LogProbes = [new LogProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Other" } }] });
             nativeRequests.InstrumentedProbeIds.Should().BeEquivalentTo(installedProbeIds);
         }
 
@@ -1288,11 +1327,11 @@ public class DynamicInstrumentationTests
             return DebuggerSettings.FromSource(new NameValueConfigurationSource(source), NullConfigurationTelemetry.Instance);
         }
 
-        private static DynamicInstrumentation CreateDebuggerWithInstalledProbes(DebuggerSettings settings, NativeInstrumentationRecorder nativeRequests, out string[] installedProbeIds, out ConfigurationUpdater updater)
+        private static DynamicInstrumentation CreateDebugger(DebuggerSettings settings, NativeInstrumentationRecorder nativeRequests, out ConfigurationUpdater updater)
         {
             var globalRateLimiter = new GlobalRateLimiterMock();
             updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
-            var debugger = new DynamicInstrumentation(
+            return new DynamicInstrumentation(
                 settings,
                 new DiscoveryServiceMock(),
                 new RcmSubscriptionManagerMock(),
@@ -1305,19 +1344,6 @@ public class DynamicInstrumentationTests
                 NoOpStatsd.Instance,
                 globalRateLimiter,
                 instrumentProbes: nativeRequests.Record);
-
-            var methodProbe = new LogProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" }, CaptureSnapshot = true };
-            var lineProbe = new LogProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { SourceFile = "Target.cs", Lines = ["25"] }, CaptureSnapshot = true };
-            var spanProbe = new SpanProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" } };
-
-            updater.AcceptAdded(new ProbeConfiguration { LogProbes = [methodProbe, lineProbe], SpanProbes = [spanProbe] });
-
-            installedProbeIds = [methodProbe.Id, lineProbe.Id, spanProbe.Id];
-            nativeRequests.InstrumentedProbeIds.Should().BeEquivalentTo(installedProbeIds);
-            nativeRequests.RevertedProbeIds.Should().BeEmpty();
-            ProbeExpressionsProcessor.Instance.Get(methodProbe.Id).Should().NotBeNull();
-            ProbeExpressionsProcessor.Instance.Get(lineProbe.Id).Should().NotBeNull();
-            return debugger;
         }
 
         private static DebuggerManager CreateDebuggerManagerWithRunningDynamicInstrumentation(DynamicInstrumentation debugger)
@@ -1344,6 +1370,31 @@ public class DynamicInstrumentationTests
             var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             field.Should().NotBeNull();
             return (T)field!.GetValue(target)!;
+        }
+
+        private string NewProbeId()
+        {
+            var probeId = Guid.NewGuid().ToString();
+            _probeIds.Add(probeId);
+            return probeId;
+        }
+
+        private DynamicInstrumentation CreateDebuggerWithInstalledProbes(DebuggerSettings settings, NativeInstrumentationRecorder nativeRequests, out string[] installedProbeIds, out ConfigurationUpdater updater)
+        {
+            var debugger = CreateDebugger(settings, nativeRequests, out updater);
+
+            var methodProbe = new LogProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" }, CaptureSnapshot = true };
+            var lineProbe = new LogProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { SourceFile = "Target.cs", Lines = ["25"] }, CaptureSnapshot = true };
+            var spanProbe = new SpanProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" } };
+
+            updater.AcceptAdded(new ProbeConfiguration { LogProbes = [methodProbe, lineProbe], SpanProbes = [spanProbe] });
+
+            installedProbeIds = [methodProbe.Id, lineProbe.Id, spanProbe.Id];
+            nativeRequests.InstrumentedProbeIds.Should().BeEquivalentTo(installedProbeIds);
+            nativeRequests.RevertedProbeIds.Should().BeEmpty();
+            ProbeExpressionsProcessor.Instance.Get(methodProbe.Id).Should().NotBeNull();
+            ProbeExpressionsProcessor.Instance.Get(lineProbe.Id).Should().NotBeNull();
+            return debugger;
         }
     }
 
