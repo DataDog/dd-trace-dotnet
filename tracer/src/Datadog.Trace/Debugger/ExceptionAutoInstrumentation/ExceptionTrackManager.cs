@@ -278,7 +278,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     if (!string.IsNullOrEmpty(noCaptureReason))
                     {
-                        TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame, noCaptureReason);
+                        TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{assignIndex}."), participatingFrame, noCaptureReason);
                     }
 
                     assignIndex += 1;
@@ -391,7 +391,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             frameIndex -= 1;
                         }
 
-                        TagAndUpload(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", capturedFrames[0], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
+                        TagAndUpload(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), capturedFrames[0], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
                         uploadedHeadFrame = true;
                     }
                     else
@@ -408,7 +408,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                 frameIndex -= 1;
                             }
 
-                            TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", probe.Method.Method.Name, noCaptureReason);
+                            TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), probe.Method.Method.Name, noCaptureReason);
                         }
                     }
 
@@ -441,7 +441,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                         break;
                                     }
 
-                                    TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
+                                    TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
                                 }
 
                                 probeIndex -= 1;
@@ -472,7 +472,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                     frameIndex += 1;
                                 }
 
-                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
+                                TagMissingFrame(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
                             }
 
                             probeIndex -= 1;
@@ -495,7 +495,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             break;
                         }
 
-                        TagAndUpload(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", capturedFrames[capturedFrameIndex], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
+                        TagAndUpload(rootSpan, StringUtil.Invariant($"{debugErrorPrefix}.{frameIndex}."), capturedFrames[capturedFrameIndex], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
                         capturedFrameIndex -= 1;
                         probeIndex -= 1;
                         frameIndex += 1;

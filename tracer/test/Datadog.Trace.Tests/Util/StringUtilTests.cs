@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using FluentAssertions;
 using Xunit;
 
@@ -106,6 +107,52 @@ public class StringUtilTests
     {
         value.EndsWith(c).Should().Be(value.EndsWith(c.ToString(), StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Invariant_FormatsHolesUsingInvariantCulture()
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            // Build the culture explicitly rather than using e.g. de-DE, because without ICU (globalization-invariant
+            // mode, e.g. on Alpine) every predefined culture formats like the invariant culture
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            var minusSign = ((char)0x2212).ToString(); // U+2212 MINUS SIGN, used by e.g. sv-SE under ICU
+            culture.NumberFormat.NumberDecimalSeparator = ",";
+            culture.NumberFormat.NumberGroupSeparator = ".";
+            culture.NumberFormat.NegativeSign = minusSign;
+            culture.DateTimeFormat.TimeSeparator = ".";
+            CultureInfo.CurrentCulture = culture;
+
+            var negative = -1;
+            var big = 1234567890123L;
+            var fraction = 1.5;
+            int? missing = null;
+            int? present = 42;
+            var date = new DateTime(2024, 1, 2, 13, 5, 6, DateTimeKind.Utc);
+            string? nullString = null;
+
+            // Make sure the current culture really would format these differently
+            string.Format(CultureInfo.CurrentCulture, "{0}|{1}|{2:HH:mm:ss}", negative, fraction, date).Should().Be(minusSign + "1|1,5|13.05.06");
+
+            StringUtil.Invariant($"{negative}|{big}|{fraction}|{missing}|{present}|{date:HH:mm:ss}|{nullString}|{"text"}|{DayOfWeek.Monday}")
+                      .Should()
+                      .Be("-1|1234567890123|1.5||42|13:05:06||text|Monday");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    [Fact]
+    public void Invariant_AppendsSpans()
+    {
+        var span = "span".AsSpan(1, 2);
+        StringUtil.Invariant($"[{span}]").Should().Be("[pa]");
+    }
+#endif
 
 #if NETFRAMEWORK
     [Theory]

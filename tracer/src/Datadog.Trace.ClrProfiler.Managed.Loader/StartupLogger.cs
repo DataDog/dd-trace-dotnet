@@ -95,11 +95,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     {
                         var currentDomain = AppDomain.CurrentDomain;
                         var isDefaultAppDomain = currentDomain.IsDefaultAppDomain();
-                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}|{currentDomain.Id}|{currentDomain.FriendlyName}|{isDefaultAppDomain}] {message}{Environment.NewLine}", args);
+                        fileSink.Info($"[{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture)}|{currentDomain.Id.ToString(CultureInfo.InvariantCulture)}|{currentDomain.FriendlyName}|{isDefaultAppDomain}] {message}{Environment.NewLine}", args);
                     }
                     else
                     {
-                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}", args);
+                        fileSink.Info($"[{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture)}] {message}{Environment.NewLine}", args);
                     }
                 }
             }

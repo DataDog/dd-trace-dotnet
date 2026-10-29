@@ -290,7 +290,9 @@ namespace Datadog.Trace.MSBuild
 
                         if (lineNumber.HasValue && lineNumber != 0)
                         {
-                            var stack = $" at Source code in {filePath}:line {e.LineNumber}";
+                            // Not StringUtil.Invariant: the runner loads the netstandard2.0 build of this assembly on .NET Core too,
+                            // where the handler's int overload doesn't exist in the .NET Core builds of Datadog.Trace
+                            var stack = $" at Source code in {filePath}:line {e.LineNumber.ToString(CultureInfo.InvariantCulture)}";
                             projectSpan.SetTag(BuildTags.ErrorStack, stack);
                         }
                     }

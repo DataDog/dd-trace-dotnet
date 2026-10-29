@@ -196,7 +196,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             // The instance can contain the pid, which will avoid looking through multiple processes that would have the same name
             // See https://docs.microsoft.com/en-us/dotnet/framework/debug-trace-profile/performance-counters-and-in-process-side-by-side-applications#performance-counters-for-in-process-side-by-side-applications
-            var fullName = instanceNames.FirstOrDefault(n => n.StartsWithOrdinal($"{_processName}_p{_processId}_r"));
+            var fullName = instanceNames.FirstOrDefault(n => n.StartsWithOrdinal(StringUtil.Invariant($"{_processName}_p{_processId}_r")));
 
             if (fullName != null)
             {

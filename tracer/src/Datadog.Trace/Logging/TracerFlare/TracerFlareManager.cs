@@ -164,7 +164,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                     ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var pid);
                     var rid = Tracer.RuntimeId;
                     var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    var telemetryPath = Path.Combine(logDir, $"dotnet-tracer-telemetry-{pid}-{rid}-{timestamp}.log");
+                    var telemetryPath = Path.Combine(logDir, StringUtil.Invariant($"dotnet-tracer-telemetry-{pid}-{rid}-{timestamp}.log"));
                     Log.Debug("Requesting telemetry dump to {FileName}", telemetryPath);
                     await _telemetryController.DumpTelemetry(telemetryPath).ConfigureAwait(false);
                 }

@@ -355,7 +355,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             try
             {
-                var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json");
+                var outputPath = Path.Combine(codeCoveragePath, StringUtil.Invariant($"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json"));
                 var runId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) ?? TestOptimization.Instance.RunId;
                 var runToken = GlobalCoverageProtocol.GetRunToken(runId);
                 if (!CoverageUtils.TryReadAndCombine(codeCoveragePath, outputPath, runToken, out var globalCoverage) ||

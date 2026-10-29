@@ -7,6 +7,7 @@
 
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Meziantou.Analyzer.Annotations;
 
 // ReSharper disable once CheckNamespace - Putting this in system so the helpers are available everywhere
 namespace System;
@@ -125,4 +126,14 @@ internal static partial class StringUtil
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToStringInvariant(string? format) => value.ToString(format, CultureInfo.InvariantCulture);
     }
+
+    /// <summary>
+    /// Creates a string from an interpolated string, formatting every hole using the invariant culture, e.g.
+    /// <c>StringUtil.Invariant($"http://{host}:{port}")</c>. This is equivalent to
+    /// <c>string.Create(CultureInfo.InvariantCulture, $"...")</c>, which is only available on .NET 6+.
+    /// </summary>
+    /// <param name="handler">The interpolated string</param>
+    /// <returns>The formatted string</returns>
+    public static string Invariant([CultureInsensitive] ref InvariantInterpolatedStringHandler handler)
+        => handler.ToStringAndClear();
 }

@@ -135,8 +135,8 @@ internal static class DatadogLoggingFactory
         try
         {
             loggerConfiguration.Enrich.WithProperty("MachineName", domainMetadata.MachineName);
-            loggerConfiguration.Enrich.WithProperty("Process", $"[{domainMetadata.ProcessId} {domainMetadata.ProcessName}]");
-            loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{domainMetadata.AppDomainId} {domainMetadata.AppDomainName}]");
+            loggerConfiguration.Enrich.WithProperty("Process", StringUtil.Invariant($"[{domainMetadata.ProcessId} {domainMetadata.ProcessName}]"));
+            loggerConfiguration.Enrich.WithProperty("AppDomain", StringUtil.Invariant($"[{domainMetadata.AppDomainId} {domainMetadata.AppDomainName}]"));
 #if NETCOREAPP
             loggerConfiguration.Enrich.WithProperty("AssemblyLoadContext", System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(DatadogLogging).Assembly)?.ToString());
 #endif
