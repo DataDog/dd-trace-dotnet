@@ -1269,7 +1269,7 @@ namespace Datadog.Trace.Coverage.Collector
                         _logger.Debug($"GetTracerTarget: Version value {versionValue}");
                         if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var version))
                         {
-                            _logger.Debug($"GetTracerTarget: Parse result {version}");
+                            _logger.Debug($"GetTracerTarget: Parse result {version.ToString(CultureInfo.InvariantCulture)}");
 
                             if (version >= 2.0 && version <= 3.0)
                             {

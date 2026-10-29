@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 #if NETSTANDARD2_0 || NETCOREAPP3_1
 using System.Security.Cryptography;
@@ -298,9 +299,9 @@ namespace Datadog.Trace.ClrProfiler
 #pragma warning disable DDLOG004 // Message templates should be constant
 #if NET5_0_OR_GREATER
                 // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
-                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext.ToString(CultureInfo.InvariantCulture)}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #else
-                Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+                Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext.ToString(CultureInfo.InvariantCulture)}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #endif
 #pragma warning restore DDLOG004 // Message templates should be constant
             }

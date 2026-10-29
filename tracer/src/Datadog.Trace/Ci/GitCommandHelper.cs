@@ -122,8 +122,8 @@ internal static class GitCommandHelper
                 sb.AppendLine(" -> ");
                 sb.AppendLine($"  command : git {arguments}");
                 sb.AppendLine($"       wd : {workingDirectory}");
-                sb.AppendLine($"exit code : {gitOutput?.ExitCode}");
-                sb.AppendLine($"  elapsed : {sw.ElapsedMilliseconds.ToStringInvariant()}ms");
+                sb.AppendLine(StringUtil.Invariant($"exit code : {gitOutput?.ExitCode}"));
+                sb.AppendLine(StringUtil.Invariant($"  elapsed : {sw.ElapsedMilliseconds}ms"));
                 sb.AppendLine($"   output : {gitOutput?.Output ?? "<NULL>"}");
                 if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)
                 {

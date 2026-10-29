@@ -9,6 +9,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -250,7 +251,7 @@ internal class CreatedumpCommand : Command
     {
         try
         {
-            DebugPrint($"Resolving managed callstack for thread {threadId}");
+            DebugPrint($"Resolving managed callstack for thread {threadId.ToString(CultureInfo.InvariantCulture)}");
 
             *numberOfFrames = 0;
 
@@ -685,7 +686,7 @@ internal class CreatedumpCommand : Command
 
                 if (Errors.Count > 3)
                 {
-                    AnsiConsole.WriteLine($"... and {Errors.Count - 3} more");
+                    AnsiConsole.WriteLine(StringUtil.Invariant($"... and {Errors.Count - 3} more"));
                 }
             }
 
@@ -713,7 +714,7 @@ internal class CreatedumpCommand : Command
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, uint? nativeExceptionCode)
     {
-        DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, signal code: {signalCode}, crashing thread id: {crashThread}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})");
+        DebugPrint($"Generating crash report for pid {pid.ToString(CultureInfo.InvariantCulture)} (signal: {signal?.ToString(CultureInfo.InvariantCulture)}, signal code: {signalCode?.ToString(CultureInfo.InvariantCulture)}, crashing thread id: {crashThread?.ToString(CultureInfo.InvariantCulture)}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})");
 
         var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
         var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
@@ -748,7 +749,7 @@ internal class CreatedumpCommand : Command
             _oldUnhandledExceptionFilter = SetUnhandledExceptionFilter((IntPtr)unhandledExceptionFilter);
         }
 
-        DebugPrint($"Attaching to process {pid}");
+        DebugPrint($"Attaching to process {pid.ToString(CultureInfo.InvariantCulture)}");
 
         using var target = DataTarget.AttachToProcess(pid, suspend: true);
         _dataTarget = target;
@@ -770,7 +771,7 @@ internal class CreatedumpCommand : Command
 
         if (result != 0)
         {
-            AddError($"Failed to query interface: {result}");
+            AddError(StringUtil.Invariant($"Failed to query interface: {result}"));
             return;
         }
 
@@ -811,7 +812,7 @@ internal class CreatedumpCommand : Command
             if (firstThreadWithException != null)
             {
                 crashThread = (int)firstThreadWithException.OSThreadId;
-                DebugPrint($"Crashing thread is not set, using the first thread with an exception: {crashThread}");
+                DebugPrint($"Crashing thread is not set, using the first thread with an exception: {crashThread?.ToString(CultureInfo.InvariantCulture)}");
             }
         }
 
@@ -997,7 +998,7 @@ internal class CreatedumpCommand : Command
             return Marshal.PtrToStringAnsi(message, length);
         }
 
-        return $"unspecified error: {exception.NativeErrorCode}";
+        return StringUtil.Invariant($"unspecified error: {exception.NativeErrorCode}");
     }
 
     private bool SetSignal(ICrashReport crashReport, int signal, int? signalCode)

@@ -330,7 +330,7 @@ namespace Datadog.Trace.Agent
                 if (healthStats != null)
                 {
                     // don't bother creating the tags array if trace metrics are disabled
-                    string[] tags = { $"status:{response.StatusCode}" };
+                    string[] tags = { StringUtil.Invariant($"status:{response.StatusCode}") };
 
                     // count every response, grouped by status code
                     healthStats.Increment(TracerMetricNames.Api.Responses, tags: tags);

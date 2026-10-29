@@ -444,7 +444,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                 Log.Error<int, string>("TestOptimizationClient: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, stringContent);
             }
 
-            throw new WebException($"Status: {response.StatusCode}, Content: {stringContent}");
+            throw new WebException(StringUtil.Invariant($"Status: {response.StatusCode}, Content: {stringContent}"));
         }
     }
 
@@ -621,7 +621,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         }
 
         public RateLimitException(int delayTimeInSeconds)
-            : base($"Server rate limiting response received. Waiting for {delayTimeInSeconds} seconds")
+            : base(StringUtil.Invariant($"Server rate limiting response received. Waiting for {delayTimeInSeconds} seconds"))
         {
             DelayTimeInSeconds = delayTimeInSeconds;
         }
