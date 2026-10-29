@@ -140,7 +140,6 @@ dotnet_diagnostic.MA0089.severity = none # Optimize string method usage - some s
 dotnet_diagnostic.MA0096.severity = none # A class that implements IComparable<T> should also implement IEquatable<T>
 dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.MA0098.severity = none # Use indexer instead of LINQ methods
-dotnet_diagnostic.MA0100.severity = none # Await task before disposing of resources
 dotnet_diagnostic.MA0101.severity = none # String contains an implicit end of line character
 dotnet_diagnostic.MA0102.severity = none # Make member readonly
 dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from the BCL
