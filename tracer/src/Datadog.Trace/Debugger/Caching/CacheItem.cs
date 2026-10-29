@@ -25,11 +25,11 @@ internal sealed class CacheItem<TValue>
 
         Value = value;
         _created = DateTime.UtcNow;
-        LastAccessed = _created;
+        LastAccessed = (DateTimeOffset)_created;
         SlidingExpiration = slidingExpiration;
     }
 
-    public DateTimeOffset Created => _created;
+    public DateTimeOffset Created => (DateTimeOffset)_created;
 
     public TimeSpan? SlidingExpiration { get; set; }
 
@@ -37,7 +37,7 @@ internal sealed class CacheItem<TValue>
 
     internal DateTimeOffset LastAccessed
     {
-        get => DateTime.FromBinary(Interlocked.Read(ref _lastAccessed));
+        get => (DateTimeOffset)DateTime.FromBinary(Interlocked.Read(ref _lastAccessed));
         set => Interlocked.Exchange(ref _lastAccessed, value.UtcDateTime.ToBinary());
     }
 
@@ -45,7 +45,7 @@ internal sealed class CacheItem<TValue>
 
     internal void UpdateAccess(DateTime now)
     {
-        LastAccessed = now;
+        LastAccessed = (DateTimeOffset)now;
         Interlocked.Increment(ref _accessCount);
     }
 }
