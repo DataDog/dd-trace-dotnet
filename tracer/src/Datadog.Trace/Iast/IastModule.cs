@@ -440,7 +440,7 @@ internal static partial class IastModule
             VulnerabilityTypeUtils.SessionTimeout,
             (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes.ToString(CultureInfo.InvariantCulture)).GetStaticHashCode(),
             GetLocation(),
-            new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
+            new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes.ToString(CultureInfo.InvariantCulture)} minutes"),
             IntegrationId.SessionTimeout);
 
         AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability);

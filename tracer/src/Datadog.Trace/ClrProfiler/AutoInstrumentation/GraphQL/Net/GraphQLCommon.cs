@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -326,7 +327,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                         {
                             if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                             {
-                                joinedLocations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                                joinedLocations.Add($"{locationProxy.Line.ToString(CultureInfo.InvariantCulture)}:{locationProxy.Column.ToString(CultureInfo.InvariantCulture)}");
                             }
                         }
 

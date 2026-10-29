@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -149,7 +150,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 AnsiConsole.WriteLine("Done");
             }
 
-            AnsiConsole.WriteLine($"{processed} files processed.");
+            AnsiConsole.WriteLine($"{processed.ToString(CultureInfo.InvariantCulture)} files processed.");
         }
 
         private static bool TryProcessAssembly(string inputPath, string outputPath)

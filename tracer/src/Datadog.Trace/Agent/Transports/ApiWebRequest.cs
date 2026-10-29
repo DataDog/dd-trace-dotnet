@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -295,7 +296,7 @@ namespace Datadog.Trace.Agent.Transports
 
             [DoesNotReturn]
             static void ThrowCancelledException(HttpWebRequest request, CancellationToken token, Exception? innerException)
-                => throw new OperationCanceledException($"The request to {request.RequestUri} timed out after {request.Timeout}ms.", innerException, token);
+                => throw new OperationCanceledException($"The request to {request.RequestUri} timed out after {request.Timeout.ToString(CultureInfo.InvariantCulture)}ms.", innerException, token);
 
             static void ObserveOrphanedResponse(Task<WebResponse> task)
             {

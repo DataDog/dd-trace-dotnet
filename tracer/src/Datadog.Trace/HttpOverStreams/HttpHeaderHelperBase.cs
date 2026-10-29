@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace Datadog.Trace.HttpOverStreams
         public Task WriteLeadingHeaders(HttpRequest request, TextWriter writer)
         {
             var contentLengthHeader = request.Content?.Length is { } contentLength
-                                    ? $"Content-Length: {contentLength}{DatadogHttpValues.CrLf}"
+                                    ? $"Content-Length: {contentLength.ToString(CultureInfo.InvariantCulture)}{DatadogHttpValues.CrLf}"
                                     : string.Empty;
 
             var leadingHeaders = $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}{contentLengthHeader}{HttpSerializedDefaultHeaders}";

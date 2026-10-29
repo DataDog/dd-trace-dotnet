@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -86,7 +87,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string DetectedAgentUrlFormat(string url) => $"Detected agent url: {url}. Note: this url may be incorrect if you configured the application through a configuration file.";
 
-        public static string WrongStatusCodeFormat(int statusCode) => $"Agent replied with wrong status code: {statusCode}";
+        public static string WrongStatusCodeFormat(int statusCode) => $"Agent replied with wrong status code: {statusCode.ToString(CultureInfo.InvariantCulture)}";
 
         public static string DetectedAgentVersionFormat(string version) => $"Detected agent version {version}";
 
@@ -110,11 +111,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string FetchingApplication(string site, string application) => $"Fetching IIS application \"{site}{application}\".";
 
-        public static string InspectingWorkerProcess(int pid) => $"Inspecting worker process {pid}";
+        public static string InspectingWorkerProcess(int pid) => $"Inspecting worker process {pid.ToString(CultureInfo.InvariantCulture)}";
 
         public static string ErrorExtractingConfiguration(string error) => $"Could not extract configuration from site: {error}";
 
-        public static string AspNetCoreProcessFound(int pid) => $"Found ASP.NET Core applicative process: {pid}";
+        public static string AspNetCoreProcessFound(int pid) => $"Found ASP.NET Core applicative process: {pid.ToString(CultureInfo.InvariantCulture)}";
 
         public static string WrongProfilerRegistry(string registryKey, string actualProfiler) => $"The registry key {registryKey} was set to '{actualProfiler}' but it should point to 'Datadog.Trace.ClrProfiler.Native.dll'. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
 
@@ -186,15 +187,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
 
-        public static string EnvVarCheck(string envVar) => $"{_checkNumber++}. Checking {envVar} and related configuration value:";
+        public static string EnvVarCheck(string envVar) => $"{(_checkNumber++).ToString(CultureInfo.InvariantCulture)}. Checking {envVar} and related configuration value:";
 
-        public static string ModuleCheck() => $"{_checkNumber++}. Checking Modules Needed so the Tracer Loads:";
+        public static string ModuleCheck() => $"{(_checkNumber++).ToString(CultureInfo.InvariantCulture)}. Checking Modules Needed so the Tracer Loads:";
 
-        public static string TracerCheck() => $"{_checkNumber++}. Checking if process tracing configuration matches Installer or Bundler:";
+        public static string TracerCheck() => $"{(_checkNumber++).ToString(CultureInfo.InvariantCulture)}. Checking if process tracing configuration matches Installer or Bundler:";
 
-        public static string TraceEnabledCheck() => $"{_checkNumber++}. Checking if tracing is disabled using DD_TRACE_ENABLED.";
+        public static string TraceEnabledCheck() => $"{(_checkNumber++).ToString(CultureInfo.InvariantCulture)}. Checking if tracing is disabled using DD_TRACE_ENABLED.";
 
-        public static string ContinuousProfilerCheck() => $"{_checkNumber++}. Checking if profiling is enabled using DD_PROFILING_ENABLED.";
+        public static string ContinuousProfilerCheck() => $"{(_checkNumber++).ToString(CultureInfo.InvariantCulture)}. Checking if profiling is enabled using DD_PROFILING_ENABLED.";
 
         public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
 

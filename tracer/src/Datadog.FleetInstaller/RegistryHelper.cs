@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using Microsoft.Win32;
 
 namespace Datadog.FleetInstaller;
@@ -84,7 +85,7 @@ internal static class RegistryHelper
 
             version = new(major: major, minor: minor);
 
-            log.WriteInfo($"Found IIS version: '{major}.{minor}'");
+            log.WriteInfo($"Found IIS version: '{major.ToString(CultureInfo.InvariantCulture)}.{minor.ToString(CultureInfo.InvariantCulture)}'");
             return true;
         }
         catch (Exception ex)

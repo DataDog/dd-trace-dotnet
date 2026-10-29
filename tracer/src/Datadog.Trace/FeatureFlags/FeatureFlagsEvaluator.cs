@@ -678,7 +678,7 @@ namespace Datadog.Trace.FeatureFlags
                             {
                                 for (var i = 0; i < list.Count; i++)
                                 {
-                                    stack.Push(new FlattenEntry($"{entry.Key}[{i}]", list[i], entry.Level + 1));
+                                    stack.Push(new FlattenEntry($"{entry.Key}[{i.ToString(CultureInfo.InvariantCulture)}]", list[i], entry.Level + 1));
                                 }
                             }
                             else if (value is IDictionary dict)

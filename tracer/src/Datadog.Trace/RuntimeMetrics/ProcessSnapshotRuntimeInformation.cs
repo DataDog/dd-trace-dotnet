@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
 
@@ -93,7 +94,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
             if (result != 0)
             {
-                throw new Win32Exception(result, $"PssCaptureSnapshot failed with code {result}");
+                throw new Win32Exception(result, $"PssCaptureSnapshot failed with code {result.ToString(CultureInfo.InvariantCulture)}");
             }
 
             threadCount = GetThreadCount(snapshotHandle);
@@ -110,7 +111,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
                 if (result != 0)
                 {
-                    throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (64 bits) failed with code {result}");
+                    throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (64 bits) failed with code {result.ToString(CultureInfo.InvariantCulture)}");
                 }
 
                 userTime = (long)processInformation.UserTime;
@@ -125,7 +126,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
                 if (result != 0)
                 {
-                    throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (32 bits) failed with code {result}");
+                    throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_PROCESS_INFORMATION (32 bits) failed with code {result.ToString(CultureInfo.InvariantCulture)}");
                 }
 
                 userTime = (long)processInformation.UserTime;
@@ -160,14 +161,14 @@ internal static class ProcessSnapshotRuntimeInformation
 
         if (result != 0)
         {
-            throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_THREAD_INFORMATION failed with code {result}");
+            throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_THREAD_INFORMATION failed with code {result.ToString(CultureInfo.InvariantCulture)}");
         }
 
         result = PssWalkMarkerCreate(IntPtr.Zero, out var walkMarkerHandle);
 
         if (result != 0)
         {
-            throw new Win32Exception(result, $"PssWalkMarkerCreate failed with code {result}");
+            throw new Win32Exception(result, $"PssWalkMarkerCreate failed with code {result.ToString(CultureInfo.InvariantCulture)}");
         }
 
         try
@@ -182,7 +183,7 @@ internal static class ProcessSnapshotRuntimeInformation
 
                 if (result != 0)
                 {
-                    throw new Win32Exception(result, $"PssWalkSnapshot failed with code {result}");
+                    throw new Win32Exception(result, $"PssWalkSnapshot failed with code {result.ToString(CultureInfo.InvariantCulture)}");
                 }
 
                 if (entry.Flags == PSS_THREAD_FLAGS.PSS_THREAD_FLAGS_TERMINATED)

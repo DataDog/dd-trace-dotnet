@@ -5,6 +5,7 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -167,7 +168,7 @@ internal abstract class LambdaCommon
     {
         if (!debug || string.Equals(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Agent.LogLevel), "debug", StringComparison.OrdinalIgnoreCase))
         {
-            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
+            Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss:fff", CultureInfo.InvariantCulture)} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
         }
     }
 }

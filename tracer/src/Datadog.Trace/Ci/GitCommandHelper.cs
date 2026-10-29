@@ -123,7 +123,7 @@ internal static class GitCommandHelper
                 sb.AppendLine(" -> ");
                 sb.AppendLine($"  command : git {arguments}");
                 sb.AppendLine($"       wd : {workingDirectory}");
-                sb.AppendLine($"exit code : {gitOutput?.ExitCode}");
+                sb.AppendLine($"exit code : {gitOutput?.ExitCode.ToString(CultureInfo.InvariantCulture)}");
                 sb.AppendLine($"  elapsed : {sw.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture)}ms");
                 sb.AppendLine($"   output : {gitOutput?.Output ?? "<NULL>"}");
                 if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)

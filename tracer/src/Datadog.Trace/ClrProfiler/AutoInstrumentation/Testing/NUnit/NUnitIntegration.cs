@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -42,7 +43,7 @@ internal static class NUnitIntegration
 
     internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0, string? skipReasonOverride = null)
     {
-        var key = $"{currentTest.Id}|{repeatCount}";
+        var key = $"{currentTest.Id}|{repeatCount.ToString(CultureInfo.InvariantCulture)}";
         lock (Tests)
         {
             if (Tests.TryGetValue(key, out var testReference) && testReference.TryGetTarget(out var test))

@@ -182,7 +182,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
 
         if (candidates.Count == 0)
         {
-            AnsiConsole.WriteLine($"No directory was found matching pattern {pattern}, make sure {pid} is right");
+            AnsiConsole.WriteLine($"No directory was found matching pattern {pattern}, make sure {pid?.ToString(CultureInfo.InvariantCulture)} is right");
             return null;
         }
 

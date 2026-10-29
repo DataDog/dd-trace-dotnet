@@ -6,6 +6,7 @@
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Globalization;
 using System.Runtime.Versioning;
 using Datadog.Trace.Tools.Runner.Gac;
 using Spectre.Console;
@@ -49,7 +50,7 @@ internal class GacGetCommand : CommandWithExamples
             AnsiConsole.WriteLine($"Assembly Found!");
             AnsiConsole.WriteLine($"  Flag={asmFlags}");
             AnsiConsole.WriteLine($"  Path={asmInfo.CurrentAssemblyPath}");
-            AnsiConsole.WriteLine($"  SizeInKb={asmInfo.AssemblySizeInKb}");
+            AnsiConsole.WriteLine($"  SizeInKb={asmInfo.AssemblySizeInKb.ToString(CultureInfo.InvariantCulture)}");
 
             foreach (var asmName in gacMethods.GetAssemblyNames(assemblyName!))
             {

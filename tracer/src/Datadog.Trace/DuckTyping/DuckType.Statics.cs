@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -217,7 +218,8 @@ namespace Datadog.Trace.DuckTyping
 
             static ModuleBuilder CreateModuleBuilder(string name, Assembly targetAssembly)
             {
-                var assemblyName = new AssemblyName(name + $"_{++_assemblyCount}");
+                var assemblyCount = ++_assemblyCount;
+                var assemblyName = new AssemblyName(name + "_" + assemblyCount.ToString(CultureInfo.InvariantCulture));
                 assemblyName.Version = targetAssembly.GetName().Version;
 
 #if NET6_0_OR_GREATER

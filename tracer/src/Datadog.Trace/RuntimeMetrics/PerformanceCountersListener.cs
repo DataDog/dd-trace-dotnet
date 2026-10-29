@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -196,7 +197,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             // The instance can contain the pid, which will avoid looking through multiple processes that would have the same name
             // See https://docs.microsoft.com/en-us/dotnet/framework/debug-trace-profile/performance-counters-and-in-process-side-by-side-applications#performance-counters-for-in-process-side-by-side-applications
-            var fullName = instanceNames.FirstOrDefault(n => n.StartsWith($"{_processName}_p{_processId}_r", StringComparison.Ordinal));
+            var fullName = instanceNames.FirstOrDefault(n => n.StartsWith($"{_processName}_p{_processId.ToString(CultureInfo.InvariantCulture)}_r", StringComparison.Ordinal));
 
             if (fullName != null)
             {

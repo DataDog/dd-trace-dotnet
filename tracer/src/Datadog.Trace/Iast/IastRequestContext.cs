@@ -125,7 +125,7 @@ internal sealed class IastRequestContext
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
                     var currentVulns = (_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) + 1;
-                    debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}  Budget: {currentVulns} out of {Iast.Instance.Settings.VulnerabilitiesPerRequest}";
+                    debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}  Budget: {currentVulns.ToString(CultureInfo.InvariantCulture)} out of {Iast.Instance.Settings.VulnerabilitiesPerRequest.ToString(CultureInfo.InvariantCulture)}";
                 }
 
                 _routeVulnerabilityStatsDirty = true;

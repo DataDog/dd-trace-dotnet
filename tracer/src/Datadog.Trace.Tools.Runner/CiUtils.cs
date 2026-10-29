@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -476,7 +477,7 @@ internal static class CiUtils
                     var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
                     foreach (var folder in outputFolders)
                     {
-                        var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{testOptimization.RunId}");
+                        var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now.ToString("yyyy-MM-dd_HH_mm_ss", CultureInfo.InvariantCulture)}-{testOptimization.RunId}");
                         if (!Directory.Exists(outputPath))
                         {
                             try

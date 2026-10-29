@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Globalization;
 using Datadog.Trace.Util;
 
 #if NETCOREAPP
@@ -46,12 +47,12 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public string GetGenericMethodParameter(int genericContext, int index)
         {
-            return $"!!{index}";
+            return $"!!{index.ToString(CultureInfo.InvariantCulture)}";
         }
 
         public string GetGenericTypeParameter(int genericContext, int index)
         {
-            return $"!{index}";
+            return $"!{index.ToString(CultureInfo.InvariantCulture)}";
         }
 
         public string GetTypeFromSpecification(MetadataReader reader, int genericContext, TypeSpecificationHandle handle, byte rawTypeKind)

@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Globalization;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage.Metadata;
@@ -15,7 +16,7 @@ internal static class CoverageMetadataValidator
     {
         if (metadata.CoverageMode is not 0 and not 1)
         {
-            ThrowHelper.ThrowInvalidOperationException($"Unsupported coverage mode '{metadata.CoverageMode}'.");
+            ThrowHelper.ThrowInvalidOperationException($"Unsupported coverage mode '{metadata.CoverageMode.ToString(CultureInfo.InvariantCulture)}'.");
         }
 
         if (metadata.TotalLines < 0)

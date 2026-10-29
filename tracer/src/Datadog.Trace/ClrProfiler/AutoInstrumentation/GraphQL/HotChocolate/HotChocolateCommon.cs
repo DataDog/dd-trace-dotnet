@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -215,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         {
                             if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                             {
-                                joinedLocations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                                joinedLocations.Add($"{locationProxy.Line.ToString(CultureInfo.InvariantCulture)}:{locationProxy.Column.ToString(CultureInfo.InvariantCulture)}");
                             }
                         }
 

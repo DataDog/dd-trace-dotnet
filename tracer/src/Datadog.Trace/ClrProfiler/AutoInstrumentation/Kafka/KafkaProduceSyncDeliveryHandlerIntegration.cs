@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -150,8 +151,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                             var cacheKey = new ProduceBacklogTagCacheKey(tags.ClusterId ?? string.Empty, report.Partition.Value, report.Topic ?? string.Empty);
                             var backlogTags = dataStreams.GetOrCreateBacklogTags(cacheKey, static k =>
                                 k.ClusterId.Length == 0
-                                    ? $"partition:{k.Partition},topic:{k.Topic},type:kafka_produce"
-                                    : $"kafka_cluster_id:{k.ClusterId},partition:{k.Partition},topic:{k.Topic},type:kafka_produce");
+                                    ? $"partition:{k.Partition.ToString(CultureInfo.InvariantCulture)},topic:{k.Topic},type:kafka_produce"
+                                    : $"kafka_cluster_id:{k.ClusterId},partition:{k.Partition.ToString(CultureInfo.InvariantCulture)},topic:{k.Topic},type:kafka_produce");
                             dataStreams.TrackBacklog(backlogTags, report.Offset.Value);
                         }
                     }

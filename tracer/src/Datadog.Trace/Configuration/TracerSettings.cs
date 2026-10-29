@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
@@ -261,7 +262,7 @@ namespace Datadog.Trace.Configuration
                                       },
                                       validator: null);
 
-            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpGeneralProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
+            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpGeneralProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317).ToString(CultureInfo.InvariantCulture)}/";
 
             OtlpEndpoint = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)

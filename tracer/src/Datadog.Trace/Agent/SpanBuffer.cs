@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.Threading;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.SourceGenerators;
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Agent
 
             if (maxBufferSize < minimumSize)
             {
-                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {minimumSize}", nameof(maxBufferSize));
+                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {minimumSize.ToString(CultureInfo.InvariantCulture)}", nameof(maxBufferSize));
             }
 
             _maxBufferSize = maxBufferSize;

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -76,7 +77,7 @@ internal static class PosixDirectoryAccess
         // Another invocation may have created the directory. The caller validates its owner and mode before use.
         if (result != 0 && !Directory.Exists(path))
         {
-            throw new IOException($"Unable to create directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
+            throw new IOException($"Unable to create directory '{path}'. errno: {Marshal.GetLastWin32Error().ToString(CultureInfo.InvariantCulture)}");
         }
 #endif
     }
@@ -178,7 +179,7 @@ internal static class PosixDirectoryAccess
             var result = getFileMetadataForPath(path, followSymlinks ? 1 : 0, out var mode, out var userId);
             if (result != 0)
             {
-                throw new IOException($"Unable to inspect directory '{path}'. Native metadata helper returned {result}.");
+                throw new IOException($"Unable to inspect directory '{path}'. Native metadata helper returned {result.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             return new PosixDirectoryInfo(mode, userId);

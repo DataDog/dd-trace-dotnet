@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -64,7 +65,7 @@ internal sealed class MetricSeries : List<MetricDataPoint>
                 var pointArrayValues = token as JArray;
                 if (pointArrayValues is null or not { Count: 2 })
                 {
-                    throw new InvalidOperationException($"Point array should contain two values, actually contained {pointArrayValues?.Count}");
+                    throw new InvalidOperationException($"Point array should contain two values, actually contained {pointArrayValues?.Count.ToString(CultureInfo.InvariantCulture)}");
                 }
 
                 var timestamp = pointArrayValues[0].Value<long>();

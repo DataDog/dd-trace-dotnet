@@ -495,12 +495,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
                 for (var i = 0; i < maxFrames; i++)
                 {
-                    Index[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.index";
-                    Method[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.method";
-                    TypeName[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.type";
-                    File[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.file";
-                    Line[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.line";
-                    Column[i] = $"{CodeOriginTag}.{FramesPrefix}.{i}.column";
+                    Index[i] = $"{CodeOriginTag}.{FramesPrefix}.{i.ToString(CultureInfo.InvariantCulture)}.index";
+                    Method[i] = $"{CodeOriginTag}.{FramesPrefix}.{i.ToString(CultureInfo.InvariantCulture)}.method";
+                    TypeName[i] = $"{CodeOriginTag}.{FramesPrefix}.{i.ToString(CultureInfo.InvariantCulture)}.type";
+                    File[i] = $"{CodeOriginTag}.{FramesPrefix}.{i.ToString(CultureInfo.InvariantCulture)}.file";
+                    Line[i] = $"{CodeOriginTag}.{FramesPrefix}.{i.ToString(CultureInfo.InvariantCulture)}.line";
+                    Column[i] = $"{CodeOriginTag}.{FramesPrefix}.{i.ToString(CultureInfo.InvariantCulture)}.column";
                 }
             }
         }

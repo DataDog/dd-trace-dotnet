@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -293,7 +294,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         Log.Debug("CIVisibilityProtocolWriter: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            Log.Debug("CIVisibilityProtocolWriter: TestCycle stats: {Stats}", $"[Tests: {buffers.CiTestCycleBuffer.TestEventsCount}, TestSuites: {buffers.CiTestCycleBuffer.TestSuiteEventsCount}, TestModules: {buffers.CiTestCycleBuffer.TestModuleEventsCount}, TestSessions: {buffers.CiTestCycleBuffer.TestSessionEventsCount}, Spans: {buffers.CiTestCycleBuffer.SpanEventsCount}]");
+            Log.Debug("CIVisibilityProtocolWriter: TestCycle stats: {Stats}", $"[Tests: {buffers.CiTestCycleBuffer.TestEventsCount.ToString(CultureInfo.InvariantCulture)}, TestSuites: {buffers.CiTestCycleBuffer.TestSuiteEventsCount.ToString(CultureInfo.InvariantCulture)}, TestModules: {buffers.CiTestCycleBuffer.TestModuleEventsCount.ToString(CultureInfo.InvariantCulture)}, TestSessions: {buffers.CiTestCycleBuffer.TestSessionEventsCount.ToString(CultureInfo.InvariantCulture)}, Spans: {buffers.CiTestCycleBuffer.SpanEventsCount.ToString(CultureInfo.InvariantCulture)}]");
             Log.Debug<int>("CIVisibilityProtocolWriter: CodeCoverage stats: [Coverage: {Coverage}]", buffers.CiCodeCoverageBuffer.TestCoverageEventsCount);
         }
     }

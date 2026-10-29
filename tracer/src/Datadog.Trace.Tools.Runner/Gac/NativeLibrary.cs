@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
@@ -31,7 +32,7 @@ internal sealed class NativeLibrary
 
         var errorCode = Marshal.GetLastWin32Error();
         var hr = Marshal.GetHRForLastWin32Error();
-        throw new Exception($"Failed to load library (ErrorCode: {errorCode}, HR: {hr})");
+        throw new Exception($"Failed to load library (ErrorCode: {errorCode.ToString(CultureInfo.InvariantCulture)}, HR: {hr.ToString(CultureInfo.InvariantCulture)})");
     }
 
     public static IntPtr GetExport(IntPtr handle, string name)
@@ -44,7 +45,7 @@ internal sealed class NativeLibrary
 
         var errorCode = Marshal.GetLastWin32Error();
         var hr = Marshal.GetHRForLastWin32Error();
-        throw new Exception($"Failed to get the Export (ErrorCode: {errorCode}, HR: {hr})");
+        throw new Exception($"Failed to get the Export (ErrorCode: {errorCode.ToString(CultureInfo.InvariantCulture)}, HR: {hr.ToString(CultureInfo.InvariantCulture)})");
     }
 
     public static void Free(IntPtr handle)

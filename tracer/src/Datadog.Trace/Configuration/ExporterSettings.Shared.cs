@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.Telemetry;
@@ -74,7 +75,7 @@ namespace Datadog.Trace.Configuration
                 RecordTraceTransport(nameof(TracesTransportType.WindowsNamedPipe), origin);
 
                 // The Uri isn't needed anymore in that case, just populating it for retro compatibility.
-                if (!Uri.TryCreate($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}", UriKind.Absolute, out var uri))
+                if (!Uri.TryCreate($"http://{agentHost ?? DefaultAgentHost}:{(agentPort ?? DefaultAgentPort).ToString(CultureInfo.InvariantCulture)}", UriKind.Absolute, out var uri))
                 {
                     // fallback so AgentUri is always non-null
                     uri = CreateDefaultUri();
@@ -192,7 +193,7 @@ namespace Datadog.Trace.Configuration
 
         private bool TryGetAgentUriAndTransport(string host, int port, out TraceTransportSettings settings)
         {
-            return TryGetAgentUriAndTransport($"http://{host}:{port}", ConfigurationOrigins.Default, out settings); // default because only called from constructor
+            return TryGetAgentUriAndTransport($"http://{host}:{port.ToString(CultureInfo.InvariantCulture)}", ConfigurationOrigins.Default, out settings); // default because only called from constructor
         }
 
         private bool TryGetAgentUriAndTransport(string url, ConfigurationOrigins origin, out TraceTransportSettings settings)

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -70,7 +71,7 @@ internal sealed class FixedSizeArrayPool<T>
 
         if (value.Length != _arrayItems)
         {
-            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(value), $"Attempted to return an array of length {value.Length} to a pool of size {_arrayItems}.");
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(value), $"Attempted to return an array of length {value.Length} to a pool of size {_arrayItems.ToString(CultureInfo.InvariantCulture)}.");
         }
 
 #if NETCOREAPP3_0_OR_GREATER

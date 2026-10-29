@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -47,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             if (errorCount > 0)
             {
                 span.Error = true;
-                span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
+                span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount.ToString(CultureInfo.InvariantCulture)} error(s)");
                 span.SetTag(Trace.Tags.ErrorType, errorType);
                 span.SetTag(Trace.Tags.ErrorStack, errors);
 

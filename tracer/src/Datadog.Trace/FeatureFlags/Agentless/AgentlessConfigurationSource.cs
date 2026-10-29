@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -555,8 +556,8 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         // line, so only its type is named here.
         var failure = result.StatusCode switch
         {
-            401 or 403 => $"HTTP {result.StatusCode}; verify endpoint authentication",
-            not null => $"HTTP {result.StatusCode}",
+            401 or 403 => $"HTTP {result.StatusCode.Value.ToString(CultureInfo.InvariantCulture)}; verify endpoint authentication",
+            not null => $"HTTP {result.StatusCode.Value.ToString(CultureInfo.InvariantCulture)}",
             _ => result.Error?.GetType().Name ?? "request was not sent",
         };
 

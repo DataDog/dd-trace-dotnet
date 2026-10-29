@@ -287,7 +287,7 @@ namespace Datadog.Trace.MSBuild
 
                         if (lineNumber.HasValue && lineNumber != 0)
                         {
-                            var stack = $" at Source code in {filePath}:line {e.LineNumber}";
+                            var stack = $" at Source code in {filePath}:line {e.LineNumber.ToString(CultureInfo.InvariantCulture)}";
                             projectSpan.SetTag(BuildTags.ErrorStack, stack);
                         }
                     }

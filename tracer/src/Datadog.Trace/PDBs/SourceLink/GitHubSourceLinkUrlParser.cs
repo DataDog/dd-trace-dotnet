@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink;
@@ -171,8 +172,8 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
     private static string BuildBaseUrl(Uri uri, ReadOnlySpan<char> host)
 #if NET6_0_OR_GREATER
-        => uri.IsDefaultPort ? $"{uri.Scheme}://{host}" : $"{uri.Scheme}://{host}:{uri.Port}";
+        => uri.IsDefaultPort ? $"{uri.Scheme}://{host}" : $"{uri.Scheme}://{host}:{uri.Port.ToString(CultureInfo.InvariantCulture)}";
 #else
-        => uri.IsDefaultPort ? $"{uri.Scheme}://{host.ToString()}" : $"{uri.Scheme}://{host.ToString()}:{uri.Port}";
+        => uri.IsDefaultPort ? $"{uri.Scheme}://{host.ToString()}" : $"{uri.Scheme}://{host.ToString()}:{uri.Port.ToString(CultureInfo.InvariantCulture)}";
 #endif
 }

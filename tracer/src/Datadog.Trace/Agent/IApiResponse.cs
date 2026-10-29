@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -72,7 +73,7 @@ namespace Datadog.Trace.Agent
             }
             catch (JsonException ex) when (bufferedStream?.GetBufferedContent() is { } buffered)
             {
-                throw new JsonException($"{ex.Message} Original content length {apiResponse.ContentLength} and content: '{buffered}'", ex);
+                throw new JsonException($"{ex.Message} Original content length {apiResponse.ContentLength.ToString(CultureInfo.InvariantCulture)} and content: '{buffered}'", ex);
             }
             finally
             {
