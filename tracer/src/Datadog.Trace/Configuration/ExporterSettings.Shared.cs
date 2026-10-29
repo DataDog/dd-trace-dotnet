@@ -59,7 +59,8 @@ namespace Datadog.Trace.Configuration
             {
                 OtlpProtocol.Grpc => "grpc",
                 OtlpProtocol.HttpProtobuf => "http/protobuf",
-                _ => "http/json",
+                OtlpProtocol.HttpJson => "http/json",
+                _ => protocol.ToString(),
             };
 
         private static OtlpProtocol? ParseOtlpProtocol(string? protocol)
@@ -76,6 +77,15 @@ namespace Datadog.Trace.Configuration
             var defaultHost = string.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
             var defaultPort = protocol == OtlpProtocol.Grpc ? DefaultOtlpGrpcPort : DefaultOtlpHttpPort;
             return $"http://{defaultHost}:{defaultPort}";
+        }
+
+        private static string AppendOtlpSignalPath(string endpoint, string signal)
+        {
+            var baseEndpoint = endpoint.TrimEnd('/');
+            var signalPath = $"/v1/{signal}";
+
+            // Like the OpenTelemetry .NET SDK, don't append the signal path if the endpoint already ends with it
+            return baseEndpoint.EndsWith(signalPath, StringComparison.OrdinalIgnoreCase) ? baseEndpoint : baseEndpoint + signalPath;
         }
 
         private TraceTransportSettings GetTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
@@ -172,7 +182,7 @@ namespace Datadog.Trace.Configuration
         private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string protocolKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost, bool supportsHttpJson = true)
         {
             // TODO: Treat empty OTEL settings as unset at the config source level instead of per setting
-            // An unset signal protocol is read from its OTEL_EXPORTER_OTLP_PROTOCOL alias, so a value equal to the general protocol is treated as inherited
+            // An unset signal protocol is read from its OTEL_EXPORTER_OTLP_PROTOCOL alias, so the inherited value is only recorded under the general key
             var isSignalProtocolSet = !string.IsNullOrEmpty(signalProtocol);
             var configuredProtocol = isSignalProtocolSet ? signalProtocol : generalProtocol;
             var parsedProtocol = ParseOtlpProtocol(configuredProtocol);
@@ -206,27 +216,18 @@ namespace Datadog.Trace.Configuration
 
             if (!string.IsNullOrEmpty(generalEndpoint))
             {
-                // For both grpc and unix:// endpoints, do not modify the URI path
-                // For UDS, the path will be added to requests as needed (e.g. /v1/{signal}) for non-grpc OTLP protocols.
-                var isUdsEndpoint = generalEndpoint!.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase);
-                if ((protocol == OtlpProtocol.Grpc || isUdsEndpoint) && TryGetOtlpUri(signal, endpointKey, generalEndpoint!, ConfigurationOrigins.Calculated, protocol, agentHost, out var asIsSettings))
+                // gRPC and unix:// endpoints are used as-is (for UDS, the signal path is added per request).
+                // For HTTP, v1/{signal} is appended to the base endpoint, keeping any base path.
+                var useAsIs = protocol == OtlpProtocol.Grpc || generalEndpoint!.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase);
+                var url = useAsIs ? generalEndpoint! : AppendOtlpSignalPath(generalEndpoint!, signal);
+
+                if (TryGetOtlpUri(signal, endpointKey, url, ConfigurationOrigins.Calculated, protocol, agentHost, out var generalSettings))
                 {
-                    return asIsSettings;
-                }
-                else if (protocol != OtlpProtocol.Grpc && !isUdsEndpoint)
-                {
-                    if (generalEndpoint!.EndsWith("/") && TryGetOtlpUri(signal, endpointKey, $"{generalEndpoint!}v1/{signal}", ConfigurationOrigins.Calculated, protocol, agentHost, out var httpSettings))
-                    {
-                        return httpSettings;
-                    }
-                    else if (!generalEndpoint!.EndsWith("/") && TryGetOtlpUri(signal, endpointKey, $"{generalEndpoint!}/v1/{signal}", ConfigurationOrigins.Calculated, protocol, agentHost, out var httpAdditionalSlashSettings))
-                    {
-                        return httpAdditionalSlashSettings;
-                    }
+                    return generalSettings;
                 }
             }
 
-            ValidationWarnings.Add("No transport configuration found, using default values");
+            ValidationWarnings.Add($"No OTLP transport configuration found for {signal}, using default values");
 
             // we know this URL is valid so don't use TrySet, otherwise can't guarantee _agentUri is non null
             return GetOtlpUri(signal, endpointKey, CreateDefaultOtlpUri(protocol, signal, agentHost), ConfigurationOrigins.Default, protocol, agentHost);

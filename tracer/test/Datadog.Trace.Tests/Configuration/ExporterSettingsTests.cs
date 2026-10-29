@@ -369,6 +369,11 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/traces")]
         [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, null, null, "http://localhost:4318/v1/metrics")]
         [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/metrics")]
+        [InlineData("http/protobuf", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://base:4318/v1/logs", null, "http://base:4318/v1/logs")]
+        [InlineData("http/protobuf", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://base:4318/v1/logs/", null, "http://base:4318/v1/logs")]
+        [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4318/v1/traces", null, "http://base:4318/v1/traces")]
+        [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, "http://base:4318/v1/logs", null, "http://base:4318/v1/logs/v1/traces")]
+        [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, "http://base:4318/v1/metrics", null, "http://base:4318/v1/metrics")]
         public void OtlpSignalEndpoint(string protocol, string signalEndpointKey, string generalEndpoint, string signalEndpoint, string expectedEndpoint)
         {
             var source = new NameValueConfigurationSource(new()
@@ -486,6 +491,7 @@ namespace Datadog.Trace.Tests.Configuration
             var entry = LastEntry(telemetry, ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol);
             entry.StringValue.Should().Be(generalProtocol);
             entry.Origin.Should().Be(ConfigurationOrigins.Code);
+            telemetry.GetQueueForTesting().Should().NotContain(e => e.Key == signalProtocolKey);
         }
 
         [Theory]
