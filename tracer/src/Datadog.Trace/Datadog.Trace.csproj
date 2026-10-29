@@ -84,6 +84,12 @@
     <PackageReference Include="InlineIL.Fody" Version="1.10.2" PrivateAssets="All" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Generates the ProjectInfo class. Analyzer-only. -->
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta3" PrivateAssets="all" />
+    <ProjectInfoUtf8 Include="AssemblyVersionBytes" Value="$(DD_AssemblyVersion)" />
+  </ItemGroup>
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
     <!--DuckTyping-->

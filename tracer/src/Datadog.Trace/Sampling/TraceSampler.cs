@@ -39,7 +39,7 @@ namespace Datadog.Trace.Sampling
 
         public bool HasResourceBasedSamplingRule { get; }
 
-        public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
+        public void SetDefaultSampleRates(IReadOnlyDictionary<string, double> sampleRates)
         {
             _agentSamplingRule?.SetDefaultSampleRates(sampleRates);
         }
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Sampling
             return _rules;
         }
 
-        private SamplingDecision MakeSamplingDecision(Span span, float rate, string mechanism)
+        private SamplingDecision MakeSamplingDecision(Span span, double rate, string mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
             var sample = SamplingHelpers.SampleByRate(span.TraceId128, rate);

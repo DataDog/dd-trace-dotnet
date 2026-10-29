@@ -17,7 +17,7 @@ namespace Datadog.Trace.Sampling
 
         public bool IsMatch(Span span) => true;
 
-        public float GetSamplingRate(Span span) => 1;
+        public double GetSamplingRate(Span span) => 1;
 
         public override string ToString() => "Default";
     }
