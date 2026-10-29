@@ -56,3 +56,8 @@ M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializer.Serialize(System.IO.TextW
 # Ban System.Random constructors - use ThreadSafeRandom instead
 M:System.Random.#ctor;Use Datadog.Trace.Util.ThreadSafeRandom.Shared instead - Random instances are not thread-safe, and before .NET 6 instances created in quick succession are seeded from the tick count and produce identical sequences
 M:System.Random.#ctor(System.Int32);Use Datadog.Trace.Util.ThreadSafeRandom.Shared instead - Random instances are not thread-safe. If you genuinely need a deterministic seeded sequence, suppress RS0030 with a comment explaining why
+
+# Ban the culture-sensitive single-argument string comparison overloads - use the ordinal StringUtil helpers instead
+M:System.String.StartsWith(System.String);Use StartsWithOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
+M:System.String.EndsWith(System.String);Use EndsWithOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
+M:System.String.IndexOf(System.String);Use IndexOfOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison

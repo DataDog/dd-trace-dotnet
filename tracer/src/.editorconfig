@@ -136,7 +136,6 @@ dotnet_diagnostic.MA0062.severity = none # Non-flags enums should not be marked 
 dotnet_diagnostic.MA0065.severity = none # Default ValueType.Equals or HashCode is used for struct equality
 dotnet_diagnostic.MA0066.severity = none # Hash table unfriendly type is used in a hash table
 dotnet_diagnostic.MA0070.severity = none # Obsolete attributes should include explanations
-dotnet_diagnostic.MA0074.severity = none # Avoid implicit culture-sensitive methods
 dotnet_diagnostic.MA0076.severity = none # Do not use implicit culture-sensitive ToString in interpolated strings
 dotnet_diagnostic.MA0077.severity = none # A class that provides Equals(T) should implement IEquatable<T>
 dotnet_diagnostic.MA0084.severity = none # Local variables should not hide other symbols

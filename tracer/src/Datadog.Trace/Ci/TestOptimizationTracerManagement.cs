@@ -214,12 +214,12 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
 
     public string GetServiceNameFromRepository(string? repository)
     {
-        if (string.IsNullOrEmpty(repository))
+        if (StringUtil.IsNullOrEmpty(repository))
         {
             return string.Empty;
         }
 
-        if (repository!.EndsWith("/") || repository.EndsWith("\\"))
+        if (repository.EndsWith('/') || repository.EndsWith('\\'))
         {
             repository = repository.Substring(0, repository.Length - 1);
         }
@@ -230,7 +230,7 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
         if (match is { Success: true, Groups.Count: > 1 })
         {
             var repoName = match.Groups[1].Value;
-            return repoName.EndsWith(gitSuffix) ? repoName.Substring(0, repoName.Length - gitSuffix.Length) : repoName;
+            return repoName.EndsWithOrdinal(gitSuffix) ? repoName.Substring(0, repoName.Length - gitSuffix.Length) : repoName;
         }
 
         return string.Empty;

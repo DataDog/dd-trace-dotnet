@@ -82,6 +82,31 @@ public class StringUtilTests
         StringUtil.ToLowerInvariant(null).Should().BeNull();
     }
 
+    // These use the StringUtil polyfills on .NET Framework, and the built-in char overloads on .NET Core
+    [Theory]
+    [InlineData("", '/')]
+    [InlineData("/", '/')]
+    [InlineData("/path", '/')]
+    [InlineData("path/", '/')]
+    [InlineData("path", '/')]
+    [InlineData("Path", 'p')]
+    public void StartsWithChar_BehavesAsStartsWithString(string value, char c)
+    {
+        value.StartsWith(c).Should().Be(value.StartsWith(c.ToString(), StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("", '/')]
+    [InlineData("/", '/')]
+    [InlineData("/path", '/')]
+    [InlineData("path/", '/')]
+    [InlineData("path", '/')]
+    [InlineData("patH", 'h')]
+    public void EndsWithChar_BehavesAsEndsWithString(string value, char c)
+    {
+        value.EndsWith(c).Should().Be(value.EndsWith(c.ToString(), StringComparison.Ordinal));
+    }
+
 #if NETFRAMEWORK
     [Theory]
     [MemberData(nameof(Data.SemanticEquivalenceInputs), MemberType = typeof(Data))]
