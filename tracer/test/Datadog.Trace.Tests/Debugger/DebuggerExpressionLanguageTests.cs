@@ -3136,6 +3136,79 @@ namespace Datadog.Trace.Tests.Debugger
             result.HasConditionError.Should().BeFalse();
         }
 
+        [Theory]
+        [InlineData(@"{""ref"":""password""}")]
+        [InlineData(@"{""getmember"":[{""ref"":""PiiLocal""},""password""]}")]
+        [InlineData(@"{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]}")]
+        [InlineData(@"{""len"":{""ref"":""password""}}")]
+        public void ProbeExpressionEvaluator_MetricRedaction_ReportsErrorWithoutValue(string json)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("PiiLocal", typeof(object), new object(), ScopeMemberKind.Local));
+            scopeMembers.AddMember(
+                new ScopeMember(
+                    "SafeDictionaryLocal",
+                    typeof(Dictionary<string, string>),
+                    new Dictionary<string, string> { { "password", "TOP_SECRET_VALUE" } },
+                    ScopeMemberKind.Local));
+
+            var evaluator = CreateEvaluator(
+                templates: null,
+                condition: null,
+                metric: new DebuggerExpression(string.Empty, json, null),
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Metric.Should().BeNull();
+            evaluator.CompiledMetric.Should().NotBeNull();
+            evaluator.CompiledMetric.Value.BudgetedDelegate.Should().BeNull();
+            var error = result.Errors.Should().ContainSingle().Subject;
+            error.Message.Should().Be("The property or field is redacted.");
+            error.IsRedaction.Should().BeTrue();
+            result.HasConditionError.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_MetricRedactionThatFailsToCompile_ReportsErrorsWithoutValue()
+        {
+            // The filter result is a list, so assigning it to the metric result throws while compiling. The
+            // default delegate would then report 0.
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = CreateEvaluator(
+                templates: null,
+                condition: null,
+                metric: new DebuggerExpression(string.Empty, @"{""filter"":[{""ref"":""CollectionLocal""},{""eq"":[""@it"",{""ref"":""password""}]}]}", null),
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Metric.Should().BeNull();
+            evaluator.CompiledMetric.Value.BudgetedDelegate.Should().BeNull();
+            result.Errors.Should().Contain(error => error.IsRedaction);
+            result.Errors.Should().Contain(error => !error.IsRedaction);
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_Metric_ReturnsValue()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = CreateEvaluator(
+                templates: null,
+                condition: null,
+                metric: new DebuggerExpression(string.Empty, @"{""ref"":""DoubleLocal""}", null),
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Metric.Should().Be(TestObject.DoubleNumber);
+            evaluator.CompiledMetric.Value.BudgetedDelegate.Should().NotBeNull();
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
         [Fact]
         public void ProbeExpressionEvaluator_ConditionTimeout_SetsConditionError()
         {

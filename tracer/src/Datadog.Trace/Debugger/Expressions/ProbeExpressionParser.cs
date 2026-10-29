@@ -749,6 +749,7 @@ internal partial class ProbeExpressionParser<T>
         parser._parserContext = parserContext;
         parser._captureLimitInfo = captureLimitInfo;
 
+        CompiledExpression<T> compiledExpression;
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {
@@ -762,17 +763,27 @@ internal partial class ProbeExpressionParser<T>
                 parsedExpression.ArgsAndLocalsParameterExpression,
                 parsedExpression.EvaluationBudgetParameterExpression);
             var compiled = expression.Compile();
-            return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
+            compiledExpression = new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }
         catch (Exception e)
         {
             Log.Error(e, "Expression was: {Expression}", expressionJson);
             parser.AddError(parsedExpression.ExpressionBody?.ToString() ?? expressionJson, e.Message);
-            return new CompiledExpression<T>(
+            compiledExpression = new CompiledExpression<T>(
                 DefaultDelegate,
                 parsedExpression.ExpressionBody ?? Expression.Constant("N/A"),
                 expressionJson,
                 parser._errors.ToArray());
         }
+
+        if (parser._hasRedaction && typeof(T).IsNumeric())
+        {
+            // A number computed from a redacted value would be made up, such as len(password), and converting the
+            // {redacted} placeholder throws on every evaluation. If compiling failed, the default delegate would
+            // report a made-up 0. Either way, a metric reports its errors and no value.
+            return CompiledExpression<T>.WithoutDelegate(expressionJson, compiledExpression.Errors);
+        }
+
+        return compiledExpression;
     }
 }
