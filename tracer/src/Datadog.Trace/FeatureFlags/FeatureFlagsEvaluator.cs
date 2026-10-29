@@ -70,24 +70,26 @@ namespace Datadog.Trace.FeatureFlags
         {
             // Capture before evaluating: even an exception after a configuration update keeps this consent.
             var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
+            var now = DateTime.UtcNow;
             try
             {
                 var config = _config;
                 if (config == null)
                 {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "PROVIDER_NOT_READY",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "PROVIDER_NOT_READY",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                        });
+                    return WithEvaluationTimestamp(
+                        new Evaluation(
+                            flagKey,
+                            defaultValue,
+                            EvaluationReason.Error,
+                            error: "PROVIDER_NOT_READY",
+                            metadata: new Dictionary<string, string>
+                            {
+                                ["errorCode"] = "PROVIDER_NOT_READY",
+                                [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                            }),
+                        now);
                 }
 
-                var now = DateTime.UtcNow;
                 var session = new DependencyEvaluationSession(this, config, flagKey, context, now, consent);
                 var evaluation = EvaluateFlag(flagKey, resultType, defaultValue, context, session, now, consent);
                 if (evaluation.Reason != EvaluationReason.Error)
@@ -95,23 +97,23 @@ namespace Datadog.Trace.FeatureFlags
                     session.CommitExposures();
                 }
 
-                return evaluation;
+                return WithEvaluationTimestamp(evaluation, now);
             }
             catch (DependencyGraphException ex)
             {
-                return Error(flagKey, defaultValue, ex.ErrorCode, ex.Message, consent);
+                return WithEvaluationTimestamp(Error(flagKey, defaultValue, ex.ErrorCode, ex.Message, consent), now);
             }
             catch (FormatException ex)
             {
-                return Error(flagKey, defaultValue, "PARSE_ERROR", ex.Message, consent);
+                return WithEvaluationTimestamp(Error(flagKey, defaultValue, "PARSE_ERROR", ex.Message, consent), now);
             }
             catch (MissingTargetingKeyException)
             {
-                return Error(flagKey, defaultValue, "TARGETING_KEY_MISSING", null, consent);
+                return WithEvaluationTimestamp(Error(flagKey, defaultValue, "TARGETING_KEY_MISSING", null, consent), now);
             }
             catch (Exception ex)
             {
-                return Error(flagKey, defaultValue, "GENERAL", ex.Message, consent, ex.Message);
+                return WithEvaluationTimestamp(Error(flagKey, defaultValue, "GENERAL", ex.Message, consent, ex.Message), now);
             }
         }
 
@@ -452,6 +454,13 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return new Evaluation(flagKey, defaultValue, EvaluationReason.Error, error: error ?? code, metadata: metadata);
+        }
+
+        private static Evaluation WithEvaluationTimestamp(Evaluation evaluation, DateTime evaluationTime)
+        {
+            evaluation.FlagMetadata![FeatureFlagMetadataKeys.EvaluationTimestampMs] =
+                new DateTimeOffset(evaluationTime).ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+            return evaluation;
         }
 
         private static Dictionary<string, string> ConsentMetadata(string consent)

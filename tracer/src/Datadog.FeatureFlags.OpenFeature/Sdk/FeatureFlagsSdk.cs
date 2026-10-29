@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -199,7 +200,14 @@ internal static class FeatureFlagsSdk
         }
 
         var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
-        if (evalTimeMs is { } time)
+        var effectiveEvalTimeMs = evalTimeMs;
+        if (metadata?.TryGetValue(FeatureFlagMetadataKeys.EvaluationTimestampMs, out var evaluatorTimestamp) == true
+         && long.TryParse(evaluatorTimestamp, NumberStyles.None, CultureInfo.InvariantCulture, out var parsedTimestamp))
+        {
+            effectiveEvalTimeMs = parsedTimestamp;
+        }
+
+        if (effectiveEvalTimeMs is { } time)
         {
             dic[FeatureFlagMetadataKeys.ObserveFullEvaluationData] =
                 metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.ObserveFullEvaluationData, out var consent) && consent == "true";

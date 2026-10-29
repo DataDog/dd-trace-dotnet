@@ -5,7 +5,9 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -30,13 +32,24 @@ public class FeatureFlagsDependentFlagTests
                 Allocation("selected", [Dependency("prerequisite", "on")], "selected")));
         var exposures = new List<ExposureEvent>();
         var dependencies = new List<Evaluation>();
-        var evaluator = Evaluator(config, exposures, dependencies);
+        var dependencyEvaluationTime = default(DateTime);
+        var evaluator = new FeatureFlagsEvaluator(
+            (in ExposureEvent exposure) => exposures.Add(exposure),
+            config,
+            onDependencyEvaluation: (evaluation, evaluationTime, _) =>
+            {
+                dependencies.Add(evaluation);
+                dependencyEvaluationTime = evaluationTime;
+            });
 
         var result = evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject", new Dictionary<string, object?> { ["plan"] = "free" }));
 
+        var expectedTimestamp = new DateTimeOffset(dependencyEvaluationTime).ToUnixTimeMilliseconds();
         result.Value.Should().Be("selected");
+        result.FlagMetadata![FeatureFlagMetadataKeys.EvaluationTimestampMs].Should().Be(expectedTimestamp.ToString(CultureInfo.InvariantCulture));
         dependencies.Select(e => e.FlagKey).Should().Equal("prerequisite");
         exposures.Select(e => e.Flag.Key).Should().Equal("prerequisite", "root");
+        exposures.Select(e => e.Timestamp).Should().OnlyContain(timestamp => timestamp == expectedTimestamp);
     }
 
     [Fact]

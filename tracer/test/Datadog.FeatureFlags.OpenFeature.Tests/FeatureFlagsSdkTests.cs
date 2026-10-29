@@ -57,6 +57,19 @@ public class FeatureFlagsSdkTests
     }
 
     [Fact]
+    public void EvaluatorTimestampOverridesRootHookCapture()
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            [FeatureFlagMetadataKeys.EvaluationTimestampMs] = "1234",
+        };
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), 5678);
+
+        result.FlagMetadata!.GetDouble(FeatureFlagMetadataKeys.EvaluationTimestampMs).Should().Be(1234);
+    }
+
+    [Fact]
     public void OldTracerWithoutMetadataDefaultsToProtected()
     {
         var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null), 1234);
