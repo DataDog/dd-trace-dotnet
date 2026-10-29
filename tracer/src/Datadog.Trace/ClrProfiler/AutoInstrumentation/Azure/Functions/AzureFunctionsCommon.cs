@@ -19,6 +19,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Serverless;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -49,9 +50,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
-        {
-            var tracer = Tracer.Instance;
+            => OnFunctionExecutionBegin(instance, instanceParam, AzureInfo.Instance, Tracer.Instance);
 
+        [TestingAndPrivateOnly]
+        internal static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam, AzureInfo azureInfo, Tracer tracer)
+            where TFunction : IFunctionInstance
+        {
             if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
@@ -65,14 +69,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 return CallTargetState.GetDefault();
             }
 
-            var scope = CreateScope(tracer, instanceParam);
+            var scope = CreateScope(tracer, instanceParam, azureInfo);
             return new CallTargetState(scope);
         }
 
-        private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
+        private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam, AzureInfo azureInfo)
             where TFunction : IFunctionInstance
         {
-            var isContainerApps = AzureInfo.Instance.IsAzureContainerApp;
+            var isContainerApps = azureInfo.IsAzureContainerApp;
             Scope? scope = null;
 
             try
@@ -218,6 +222,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             where T : IFunctionContext
             => OnIsolatedFunctionBegin(functionContext, triggerType, startTime, AzureInfo.Instance, Tracer.Instance);
 
+        [TestingAndPrivateOnly]
         internal static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext, string? triggerType, DateTimeOffset? startTime, AzureInfo azureInfo, Tracer tracer)
             where T : IFunctionContext
         {
