@@ -186,12 +186,7 @@ namespace Datadog.Trace
                 return null;
             }
 
-            if (Volatile.Read(ref _featureFlagEnrichment) is null)
-            {
-                Interlocked.CompareExchange(ref _featureFlagEnrichment, new(), null);
-            }
-
-            return _featureFlagEnrichment;
+            return LazyInitializer.EnsureInitialized(ref _featureFlagEnrichment, static () => new SpanEnrichmentState());
         }
 
         /// <summary> Gets the Live Debugger sampling coordinator for this trace, creating it on first use. </summary>
@@ -208,10 +203,7 @@ namespace Datadog.Trace
 
         internal void EnableIastInRequest()
         {
-            if (Volatile.Read(ref _iastRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _iastRequestContext, new(), null);
-            }
+            LazyInitializer.EnsureInitialized(ref _iastRequestContext, static () => new IastRequestContext());
         }
 
         public void AddSpan(Span span)
