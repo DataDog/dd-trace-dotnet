@@ -22,13 +22,16 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Moq;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -39,6 +42,7 @@ namespace Datadog.Trace.Tests.Debugger
     public class DebuggerExpressionLanguageTests
     {
         private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
+        private const string TestProbeId = "test-probe";
 
         private const string DefaultDslTemplate = @"{""dsl"": ""Ignore""}";
 
@@ -3785,16 +3789,51 @@ namespace Datadog.Trace.Tests.Debugger
 
         private static (T Value, bool IsRedacted) EvaluateCompiledWithRedaction<T>(CompiledExpression<T> compiled, MethodScopeMembers scopeMembers)
         {
+            var value = EvaluateCompiledWithBudget(compiled, scopeMembers, out var budget);
+            return (value, budget.TakeRuntimeRedaction());
+        }
+
+        private static T EvaluateCompiledWithBudget<T>(CompiledExpression<T> compiled, MethodScopeMembers scopeMembers, out EvaluationBudget budget)
+        {
             compiled.BudgetedDelegate.Should().NotBeNull();
-            var budget = EvaluationBudget.Create(TestMaxEvaluationTimeInMilliseconds);
-            var value = compiled.BudgetedDelegate(
+            budget = EvaluationBudget.Create(TestMaxEvaluationTimeInMilliseconds);
+            return compiled.BudgetedDelegate(
                 scopeMembers.InvocationTarget,
                 scopeMembers.Return,
                 scopeMembers.Duration,
                 scopeMembers.Exception,
                 scopeMembers.Members,
                 ref budget);
-            return (value, budget.TakeRuntimeRedaction());
+        }
+
+        // A logger that writes every level and records the skipped-item line.
+        private static Mock<IDatadogLogger> CreateSkippedItemLog()
+        {
+            var log = new Mock<IDatadogLogger>();
+            log.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+            return log;
+        }
+
+        private static void VerifySkippedItemLog(Mock<IDatadogLogger> log, Times times)
+        {
+            // ReSharper disable ExplicitCallerInfoArgument
+            log.Verify(
+                l => l.Information(
+                    It.Is<string>(message => message.Contains("skipped an item")),
+                    TestProbeId,
+                    It.IsAny<int>(),
+                    It.IsAny<string>()),
+                times);
+            // ReSharper restore ExplicitCallerInfoArgument
+        }
+
+        // The skipped-item line names the probe only, never the item's value, key or type.
+        private static void AssertLogOmits(Mock<IDatadogLogger> log, params string[] values)
+        {
+            log.Invocations.SelectMany(invocation => invocation.Arguments)
+               .OfType<string>()
+               .Should()
+               .NotContain(argument => values.Any(argument.Contains));
         }
 
         private static void AssertRedactionError(ExpressionEvaluationResult result, bool isRedacted)
@@ -3952,13 +3991,14 @@ namespace Datadog.Trace.Tests.Debugger
             DebuggerExpression? metric,
             KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] spanDecorations,
             CaptureExpressionDefinition[] captureExpressions,
-            int maxEvaluationTimeInMilliseconds = TestMaxEvaluationTimeInMilliseconds)
+            int maxEvaluationTimeInMilliseconds = TestMaxEvaluationTimeInMilliseconds,
+            IDatadogLogger log = null)
         {
-            return new ProbeExpressionEvaluator(templates, condition, metric, spanDecorations, captureExpressions, maxEvaluationTimeInMilliseconds);
+            return new ProbeExpressionEvaluator(TestProbeId, templates, condition, metric, spanDecorations, captureExpressions, maxEvaluationTimeInMilliseconds, log);
         }
 
         // A probe template: a "value=" literal, then the template expression when there is one.
-        private ProbeExpressionEvaluator CreateTemplateEvaluator(string template, string condition)
+        private ProbeExpressionEvaluator CreateTemplateEvaluator(string template, string condition, IDatadogLogger log = null)
         {
             DebuggerExpression?[] templates = template is null
                                                   ? [new DebuggerExpression(null, null, "value=")]
@@ -3968,7 +4008,8 @@ namespace Datadog.Trace.Tests.Debugger
                 condition: condition is null ? null : new DebuggerExpression(string.Empty, condition, null),
                 metric: null,
                 spanDecorations: null,
-                captureExpressions: null);
+                captureExpressions: null,
+                log: log);
         }
 
         private T EvaluateCompiled<T>(CompiledExpression<T> compiled, MethodScopeMembers scopeMembers)
@@ -4974,6 +5015,117 @@ namespace Datadog.Trace.Tests.Debugger
                 AssertCaptureFilterPredicateIsConstant(CompileCapture(@"{""filter"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}"));
             }
 
+            // Only a check of a predicate's block marks the skip that the evaluator logs. A redaction in the root block is
+            // reported instead, and a value redacted at compile time runs no check. BaseListLocal's first item is redacted.
+            [Theory]
+            [InlineData(@"{""any"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}", false, true)]
+            [InlineData(@"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}", false, true)]
+            [InlineData(@"{""len"":{""filter"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}}", false, true)]
+            [InlineData(@"{""any"":[{""ref"":""BaseDictionaryLocal""},{""eq"":[{""getmember"":[""@value"",""TestValue""]},""x""]}]}", false, true)]
+            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}", true, false)]
+            [InlineData(@"{""any"":[{""ref"":""PublicListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}", true, false)]
+            [InlineData(@"{""any"":[{""ref"":""PiiListLocal""},{""eq"":[{""getmember"":[""@it"",""CustomKey""]},""x""]}]}", false, false)]
+            [InlineData(@"{""any"":[{""ref"":""PublicListLocal""},{""isDefined"":""@it""}]}", false, false)]
+            public void ProbeExpressionParser_OnlyACheckOfAPredicateItem_MarksASkippedItem(string json, bool isRuntimeRedaction, bool hasSkippedItem)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    ConfigureRedactedTypes();
+                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue });
+
+                    EvaluateCompiledWithBudget(ProbeExpressionParser<string>.ParseExpression(json, scopeMembers), scopeMembers, out var budget);
+
+                    budget.TakeRuntimeRedaction().Should().Be(isRuntimeRedaction);
+                    budget.TakeSkippedItem().Should().Be(hasSkippedItem);
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_ItemSkippedInAPredicate_IsLoggedOncePerProbe()
+            {
+                var log = CreateSkippedItemLog();
+                var evaluator = _tests.CreateTemplateEvaluator(
+                    template: @"{""any"":[{""ref"":""BaseListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},""TOP_SECRET_VALUE""]}]}",
+                    condition: @"{""all"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}",
+                    log.Object);
+
+                for (var i = 0; i < 3; i++)
+                {
+                    var result = EvaluateWithRedactedTypes(evaluator);
+
+                    result.Template.Should().Be("value=False");
+                    result.Condition.Should().BeFalse();
+                    result.Errors.Should().BeNullOrEmpty();
+                }
+
+                VerifySkippedItemLog(log, Times.Once());
+                AssertLogOmits(log, Secret, nameof(RedactedTarget));
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_ItemSkippedByACaptureFilter_IsLogged()
+            {
+                // A capture filter's predicate runs as its own delegate, which marks the budget it is passed.
+                var log = CreateSkippedItemLog();
+                var evaluator = _tests.CreateEvaluator(
+                    templates: null,
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions:
+                    [
+                        new CaptureExpressionDefinition(
+                            "captured",
+                            ExpressionSegment(@"{""filter"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}"),
+                            new CaptureLimitInfo(MaxReferenceDepth: 3, MaxCollectionSize: 10, MaxLength: 255, MaxFieldCount: 20))
+                    ],
+                    log: log.Object);
+
+                var result = EvaluateWithRedactedTypes(evaluator);
+
+                result.CaptureExpressionCount.Should().Be(1);
+                ((IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value).Count.Should().Be(1);
+                result.Errors.Should().BeNullOrEmpty();
+                VerifySkippedItemLog(log, Times.Once());
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_RedactionOutsideTheItems_IsReportedAndNotLogged()
+            {
+                // HolderLocal.AsBase is read from outside the items, so its redaction is an error instead of a skip.
+                var log = CreateSkippedItemLog();
+                var evaluator = _tests.CreateTemplateEvaluator(
+                    template: null,
+                    condition: @"{""any"":[{""ref"":""PublicListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}",
+                    log.Object);
+
+                var result = EvaluateWithRedactedTypes(evaluator);
+
+                result.HasConditionError.Should().BeTrue();
+                AssertRedactionError(result, isRedacted: true);
+                VerifySkippedItemLog(log, Times.Never());
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_SkippedItemWhileInformationIsDisabled_IsLoggedOnceItIsEnabled()
+            {
+                var log = new Mock<IDatadogLogger>();
+                var evaluator = _tests.CreateTemplateEvaluator(@"{""any"":[{""ref"":""BaseListLocal""},{""isDefined"":""@it""}]}", condition: null, log.Object);
+
+                EvaluateWithRedactedTypes(evaluator);
+                VerifySkippedItemLog(log, Times.Never());
+
+                log.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+                EvaluateWithRedactedTypes(evaluator);
+                EvaluateWithRedactedTypes(evaluator);
+                VerifySkippedItemLog(log, Times.Once());
+            }
+
             private static KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]> Decoration(string when, params DebuggerExpression?[] value)
             {
                 return Decoration(when, new KeyValuePair<string, DebuggerExpression?[]>("tag", value));
@@ -5064,29 +5216,13 @@ namespace Datadog.Trace.Tests.Debugger
                 DebuggerExpression?[] templates = null,
                 object asObject = null)
             {
-                Redaction.Instance.ResetInstance();
-                try
-                {
-                    ConfigureRedactedTypes();
-                    var evaluator = _tests.CreateEvaluator(
-                        templates: templates,
-                        condition: condition,
-                        metric: metric,
-                        spanDecorations: decorations,
-                        captureExpressions: captures);
-                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, asObject: asObject);
-                    var result = evaluator.Evaluate(scopeMembers);
-                    if (captures is not null)
-                    {
-                        evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
-                    }
-
-                    return result;
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                var evaluator = _tests.CreateEvaluator(
+                    templates: templates,
+                    condition: condition,
+                    metric: metric,
+                    spanDecorations: decorations,
+                    captureExpressions: captures);
+                return EvaluateWithRedactedTypes(evaluator, asObject);
             }
 
             private ExpressionEvaluationResult Evaluate(
@@ -5110,6 +5246,24 @@ namespace Datadog.Trace.Tests.Debugger
 
                     return _tests.CreateTemplateEvaluator(template, condition)
                                  .Evaluate(CreateScopeMembers(target, exception, asObject, returnType, returnValue, countedItems));
+                }
+                finally
+                {
+                    Redaction.Instance.ResetInstance();
+                }
+            }
+
+            // Evaluates the expressions, then the capture expressions, as the probe processor does.
+            private ExpressionEvaluationResult EvaluateWithRedactedTypes(ProbeExpressionEvaluator evaluator, object asObject = null)
+            {
+                Redaction.Instance.ResetInstance();
+                try
+                {
+                    ConfigureRedactedTypes();
+                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, asObject: asObject);
+                    var result = evaluator.Evaluate(scopeMembers);
+                    evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+                    return result;
                 }
                 finally
                 {
@@ -5727,6 +5881,37 @@ namespace Datadog.Trace.Tests.Debugger
                 EvaluateCompiledWithRedaction(sensitiveCompiled, scopeMembers).Should().Be((false, false));
                 publicCompiled.Errors.Should().BeNullOrEmpty();
                 sensitiveCompiled.Errors.Should().BeNullOrEmpty();
+            }
+
+            // Only the check of an item's own key marks the skip that the evaluator logs. A sensitive key read from outside
+            // the items is reported instead, and a constant one is redacted at compile time.
+            [Theory]
+            [InlineData(@"{""any"":[{""filter"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@key"",""password""]}]},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}", false, true)]
+            [InlineData(@"{""any"":[{""filter"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@key"",""public""]}]},{""eq"":[""@value"",""hello""]}]}", false, false)]
+            [InlineData(@"{""eq"":[{""index"":[{""ref"":""SafeDictionaryLocal""},{""ref"":""KeyLocal""}]},""TOP_SECRET_VALUE""]}", true, false)]
+            [InlineData(@"{""eq"":[{""index"":[{""ref"":""SafeDictionaryLocal""},""password""]},""TOP_SECRET_VALUE""]}", false, false)]
+            public void ProbeExpressionParser_OnlyASensitiveKeyOfAPredicateItem_MarksASkippedItem(string json, bool isRuntimeRedaction, bool hasSkippedItem)
+            {
+                var scopeMembers = CreateScopeMembers(key: "password");
+
+                EvaluateCompiledWithBudget(ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers), scopeMembers, out var budget);
+
+                budget.TakeRuntimeRedaction().Should().Be(isRuntimeRedaction);
+                budget.TakeSkippedItem().Should().Be(hasSkippedItem);
+            }
+
+            [Fact]
+            public void ProbeExpressionEvaluator_ItemSkippedForItsSensitiveKey_IsLoggedWithoutTheKey()
+            {
+                var log = CreateSkippedItemLog();
+                var evaluator = _tests.CreateTemplateEvaluator(template: null, condition: @"{""any"":[{""ref"":""SafeDictionaryLocal""},{""eq"":[""@value"",""TOP_SECRET_VALUE""]}]}", log.Object);
+
+                var result = evaluator.Evaluate(CreateScopeMembers());
+
+                result.Condition.Should().BeFalse();
+                result.Errors.Should().BeNullOrEmpty();
+                VerifySkippedItemLog(log, Times.Once());
+                AssertLogOmits(log, "password", Secret);
             }
 
             // @value is guarded by its key, checked as an index key of the declared key type, an object key also by its
