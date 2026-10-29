@@ -88,8 +88,9 @@ private:
     static bool CatchHandlerContains(const EHClause& clause, const ILInstr* instr, const ILInstr* sentinel);
     static bool CatchHandlerProperlyContains(const EHClause& outer, const EHClause& inner, const ILInstr* sentinel);
     static EHClause* FindInnermostCatchContaining(ILRewriter* rewriter, ILInstr* instr);
-    static HRESULT TryGetSetExceptionCatchClause(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
-                                                 FunctionInfo* caller, EHClause** setExceptionCatch);
+    static HRESULT TryGetSetExceptionCatchInfo(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
+                                               FunctionInfo* caller, EHClause** setExceptionCatch,
+                                               ILInstr** setExceptionInsertionPoint);
     HRESULT EndAsyncMethodProbe(ILRewriterWrapper& rewriterWrapper,
                                        ModuleMetadata& module_metadata, DebuggerTokens* debuggerTokens,
                                        FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,

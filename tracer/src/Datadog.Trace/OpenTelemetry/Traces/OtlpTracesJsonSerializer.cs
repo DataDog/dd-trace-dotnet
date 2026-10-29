@@ -314,15 +314,19 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(boolValue);
                 break;
 
+            case int intValue:
+                writer.WritePropertyName("intValue");
+                writer.WriteValue(IntStringCache.ToInvariantString(intValue));
+                break;
+
             case byte:
             case sbyte:
             case short:
             case ushort:
-            case int:
             case uint:
             case long:
                 writer.WritePropertyName("intValue");
-                writer.WriteValue(value.ToString());
+                writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
                 break;
 
             case double doubleValue:
@@ -438,6 +442,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
     internal void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma)
     {
+        var otelTraceStateHeader = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState?.ToHeaderString() : null;
+        var otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
+
         for (var i = 0; i < traceChunk.SpanCount; i++)
         {
             // If we are emitting a starting comma, then our JSON writer is re-entrant and the state is not
@@ -452,11 +459,11 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             // or if its parent can also be found in the same chunk, so we use SpanModel
             // to pass that information to the serializer
             var spanModel = traceChunk.GetSpanModel(i);
-            WriteSpan(writer, spanModel);
+            WriteSpan(writer, spanModel, otlpTraceState);
         }
     }
 
-    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel)
+    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel, string? otlpTraceState)
     {
         static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
             => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
@@ -472,11 +479,11 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteValue(spanModel.Span.Context.RawSpanId);
 
         // traceState (optional)
-        // if (!string.IsNullOrEmpty(spanModel.Span.TraceState))
-        // {
-        //     writer.WritePropertyName("traceState");
-        //     writer.WriteValue(spanModel.Span.TraceState);
-        // }
+        if (otlpTraceState is not null)
+        {
+            writer.WritePropertyName("traceState");
+            writer.WriteValue(otlpTraceState);
+        }
 
         // parentSpanId (optional) - encoded as hex string in JSON
         if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
@@ -486,7 +493,8 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
 
         // flags (optional)
-        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
+        // Local spans carry the sampling decision on the trace chunk, not on their own context.
+        if ((spanModel.TraceChunk.SamplingPriority ?? spanModel.Span.Context.SamplingPriority) is int samplingPriority)
         {
             writer.WritePropertyName("flags");
             writer.WriteValue(SamplingPriorityValues.IsKeep(samplingPriority) ? 1 : 0);

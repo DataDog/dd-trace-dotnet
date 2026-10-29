@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 #if NETCOREAPP
                 return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.Contains("datacollector", StringComparison.OrdinalIgnoreCase)).Value;
 #else
-                return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.ToLowerInvariant().Contains("datacollector")).Value;
+                return (_isDataCollectorDomainCache = StringUtil.ToLowerInvariant(DomainMetadata.Instance.AppDomainName).Contains("datacollector")).Value;
 #endif
             }
         }
@@ -166,11 +166,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             // Let's detect if we already have a session for this test process
-            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-                EnvironmentHelpers.GetEnvironmentVariables(),
-                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-
-            if (context.SpanContext is not null)
+            if (TryGetParentSessionSpanId(out _))
             {
                 // Session found in the environment variables
                 // let's capture current Coverlet XML attachments for stale-attachment filtering and bail out.
@@ -237,6 +233,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             => commandLine?.IndexOf(VSTestArtifactsPostprocessArgument, StringComparison.OrdinalIgnoreCase) >= 0;
 
         /// <summary>
+        /// Gets the test session that was propagated to this process through environment variables, by a parent process or by this one.
+        /// </summary>
+        /// <param name="sessionSpanId">Span id of the propagated test session.</param>
+        /// <returns>True when a test session context was found in the environment variables.</returns>
+        internal static bool TryGetParentSessionSpanId(out ulong sessionSpanId)
+        {
+            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+                EnvironmentHelpers.GetEnvironmentVariables(),
+                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (context.SpanContext is { } sessionContext)
+            {
+                sessionSpanId = sessionContext.SpanId;
+                return true;
+            }
+
+            sessionSpanId = 0;
+            return false;
+        }
+
+        /// <summary>
         /// Captures Coverlet collector XML attachments that already exist before the test command writes current results.
         /// </summary>
         /// <param name="commandLine">Test command line used to resolve VSTest result directories.</param>
@@ -279,6 +296,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             if (exception is not null)
             {
                 session.SetErrorInfo(exception);
+
+                // The exit code is 0 when the runner throws, so the session can't be reported as empty.
+                session.RecordExecutedTests(null);
             }
 
             var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
@@ -678,11 +698,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         private static CoverletCollectorXmlProcessingResult TryProcessInjectedSessionCoverletCollectorXmlReports(bool recordIpcFailureOnFailure)
         {
-            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-                EnvironmentHelpers.GetEnvironmentVariables(),
-                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-
-            if (context.SpanContext is not { } sessionContext)
+            if (!TryGetParentSessionSpanId(out var sessionSpanId))
             {
                 return CoverletCollectorXmlProcessingResult.NotApplicable;
             }
@@ -700,11 +716,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     commandLine,
                     workingDirectory,
                     GetCurrentProcessStartTime(),
-                    (CoverletCollectorXmlReport coverageReport, ExternalCoverageXmlBackfill.CoverageBackfillValidationState validationState, out ExternalCoverageXmlResult result) => TryProcessCoverletCollectorXmlForCurrentProcess(sessionContext.SpanId, coverageReport, validationState, out result),
-                    (coverageReports, coverageResult, backfillValidated) => SendInjectedSessionCoverageResult(sessionContext.SpanId, coverageReports, coverageResult, backfillValidated));
+                    (CoverletCollectorXmlReport coverageReport, ExternalCoverageXmlBackfill.CoverageBackfillValidationState validationState, out ExternalCoverageXmlResult result) => TryProcessCoverletCollectorXmlForCurrentProcess(sessionSpanId, coverageReport, validationState, out result),
+                    (coverageReports, coverageResult, backfillValidated) => SendInjectedSessionCoverageResult(sessionSpanId, coverageReports, coverageResult, backfillValidated));
                 if (result != CoverletCollectorXmlProcessingResult.Processed && recordIpcFailureOnFailure)
                 {
-                    RecordCoverletXmlFallbackIpcFailure(sessionContext.SpanId);
+                    RecordCoverletXmlFallbackIpcFailure(sessionSpanId);
                 }
 
                 return result;
@@ -714,7 +730,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 Log.Warning(ex, "RunCiCommand: Error while processing injected-session Coverlet collector XML fallback.");
                 if (recordIpcFailureOnFailure)
                 {
-                    RecordCoverletXmlFallbackIpcFailure(sessionContext.SpanId);
+                    RecordCoverletXmlFallbackIpcFailure(sessionSpanId);
                 }
 
                 return CoverletCollectorXmlProcessingResult.FailedClosed;

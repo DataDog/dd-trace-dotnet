@@ -365,7 +365,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: GetTestRunnerArguments(packageVersion, false), packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                         settings.UseTextForParameters("packageVersion=all");
@@ -377,6 +377,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Equal(ExpectedTestSuiteCount, testSuites.Count);
                         Assert.Single(testModules);
                         var testModule = testModules[0];
+
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
 
                         // Check suites
                         Assert.True(tests.All(t => testSuites.Find(s => s.TestSuiteId == t.TestSuiteId) != null));
@@ -752,6 +754,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         useDotnetExec: false))
                .ConfigureAwait(false);
         }
+
+        protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
+            => NUnitTests.GetSharedSampleArguments(packageVersion) ?? base.GetTestRunnerArguments(packageVersion, useDotnetExec);
 
         protected override void CheckSimpleTestSpan(MockCIVisibilityTest targetTest)
         {

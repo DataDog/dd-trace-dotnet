@@ -1,4 +1,8 @@
 services:
+  # This gets pre-pulled into CI VM images
+  testcontainers-ryuk:
+    image: testcontainers/ryuk:0.14.0@sha256:7c1a8a9a47c780ed0f983770a662f80deb115d95cce3e2daa3d12115b8cd28f0
+
   # ARM64 dependencies
   localstack_arm64:
     image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
@@ -250,7 +254,7 @@ services:
       - ./docker/servicebus-emulator-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro
 
   azurite:
-    image: mcr.microsoft.com/azure-storage/azurite:latest@sha256:647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37
+    image: mcr.microsoft.com/azure-storage/azurite:3.37.0@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5
     profiles: ["group2"]
     hostname: azurite
     container_name: azurite
@@ -258,7 +262,6 @@ services:
       - "10000:10000"
       - "10001:10001"
       - "10002:10002"
-
   azure-eventhubs-emulator:
     image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest@sha256:2c8e0d4dd93a5fc078df2721eeb3e211442d555d61293ac3972df931c6d9333a
     profiles: ["group2"]
@@ -272,6 +275,22 @@ services:
       - METADATA_SERVER=azurite
     volumes:
       - ./docker/eventhubs-emulator-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json:ro
+
+  azure-eventgrid-emulator:
+    image: workleap/eventgridemulator:0.6.37@sha256:a366e9bf0c73979311654d98f4cb91f85e35cddd8333821f5a5029692b6002bb
+    profiles: ["group2"]
+    ports:
+      - "127.0.0.1:6500:6500"
+    volumes:
+      - ./docker/eventgrid-emulator-config.json:/app/appsettings.json:ro
+    environment:
+      # Override the topic's subscriber webhook (ASP.NET array config). The Azure Functions host that
+      # receives the pushed event is reachable at a different host depending on where it runs: inside the
+      # IntegrationTests container in CI (EVENTGRID_WEBHOOK_HOST=integrationtests) vs on the Docker host
+      # locally (host.docker.internal). The emulator adds the aeg-event-type header and forwards the CloudEvent.
+      - Topics__samples-azure-functions-eventgrid-topic__0=http://${EVENTGRID_WEBHOOK_HOST:-host.docker.internal}:7071/runtime/webhooks/eventgrid?functionName=EventGridTrigger
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   cosmosdb-emulator:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview@sha256:54d7bc334494c50cea867c270880671a7db080626a9732832b34c0d69342f9b0
@@ -361,14 +380,15 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -412,8 +432,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -421,6 +441,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -456,10 +477,13 @@ services:
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+      - EVENTGRID_TOPIC_ENDPOINT=http://azure-eventgrid-emulator:6500/samples-eventgrid-topic/api/events
+      - EVENTGRID_AZURE_FUNCTIONS_TOPIC_ENDPOINT=http://azure-eventgrid-emulator:6500/samples-azure-functions-eventgrid-topic/api/events
       - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - TESTCONTAINERS_RYUK_DISABLED
+      - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -494,14 +518,15 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -547,14 +572,15 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-net6.0}
@@ -605,14 +631,15 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -683,25 +710,28 @@ services:
       - azureservicebus-emulator
       - azurite
       - azure-eventhubs-emulator
+      - azure-eventgrid-emulator
       - cosmosdb-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 azure-eventgrid-emulator:6500 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -715,6 +745,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED
+      - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
@@ -799,14 +830,15 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-11.0.100-rc.2.26504.105}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -860,7 +892,7 @@ services:
     - SNAPSHOT_CI=1
     # network.client.ip and http.client_ip differs between docker compose v1 and v2 - once we're migrated to v2 completely we can remove it from here
     # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.sdk.otlp_export,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network
 
   StartDependencies.OSXARM64:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e

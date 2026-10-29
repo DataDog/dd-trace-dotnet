@@ -43,12 +43,15 @@ struct CodeRange {
     UINT_PTR startAddress;
     UINT_PTR endAddress;  // Inclusive
     FunctionID functionId;
-    
+    // true when the range was registered from DynamicMethodJITCompilationFinished
+    // (IL stubs, DynamicMethod/LCG)
+    bool isDynamic = false;
+
     // For binary search
     bool operator<(const CodeRange& other) const {
         return startAddress < other.startAddress;
     }
-    
+
     // Check if IP is within this range
     bool contains(UINT_PTR ip) const {
         return ip >= startAddress && ip <= endAddress;
@@ -94,6 +97,11 @@ class ManagedCodeCache {
 public:
     static constexpr FunctionID InvalidFunctionId = -1;
 
+    struct FunctionInfo {
+        FunctionID FunctionId;
+        bool IsDynamic;
+    };
+
     ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry);
     ~ManagedCodeCache();
 
@@ -101,9 +109,10 @@ public:
     [[nodiscard]] std::optional<bool> IsManaged(std::uintptr_t ip) const noexcept;
 
     // Not signal-safe
-    [[nodiscard]] std::optional<FunctionID> GetFunctionId(std::uintptr_t ip) noexcept;
+    [[nodiscard]] std::optional<FunctionInfo> GetFunctionInfo(std::uintptr_t ip) noexcept;
 
-    void AddFunction(FunctionID functionId);
+    // isDynamic is true only when called from DynamicMethodJITCompilationFinished
+    void AddFunction(FunctionID functionId, bool isDynamic);
     void AddModule(ModuleID moduleId);
     void RemoveModule(ModuleID moduleId);
 
@@ -143,7 +152,7 @@ private:
     
     // Query the runtime for code ranges for a specific version
     // This is called when a new tier is compiled
-    std::vector<CodeRange> GetCodeRanges(FunctionID functionId);
+    std::vector<CodeRange> GetCodeRanges(FunctionID functionId, bool isDynamic);
     
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
@@ -191,10 +200,10 @@ private:
     // (signal-handler read path backing off instead of blocking).
     std::shared_ptr<CounterMetric> _lockFailureMetric;
 
-    std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
+    std::optional<FunctionInfo> GetFunctionInfoImpl(std::uintptr_t ip) const noexcept;
     std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
     std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;
-    void AddFunctionImpl(FunctionID functionId);
+    void AddFunctionImpl(FunctionID functionId, bool isDynamic);
 };
 
 // Compile-time checks for signal-safety

@@ -571,7 +571,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -596,7 +596,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -618,7 +618,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -642,7 +642,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -664,7 +664,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -688,7 +688,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -710,7 +710,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -734,7 +734,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -758,7 +758,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -780,7 +780,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -804,7 +804,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1021,7 +1021,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1043,7 +1043,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1089,7 +1089,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1142,7 +1142,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1167,7 +1167,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1194,7 +1194,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1221,7 +1221,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1248,7 +1248,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1275,7 +1275,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1299,7 +1299,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1323,7 +1323,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1345,7 +1345,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1367,7 +1367,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1389,7 +1389,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1439,7 +1439,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1463,7 +1463,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1487,7 +1487,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1512,7 +1512,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1536,7 +1536,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -1560,7 +1560,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -3612,6 +3612,308 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEvents",
+    "TargetReturnType": "Azure.Response",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEvents",
+    "TargetReturnType": "Azure.Response",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.String",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 11,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsToChannelIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEvents",
+    "TargetReturnType": "Azure.Response",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[System.BinaryData]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCustomEventsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEvents",
+    "TargetReturnType": "Azure.Response",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventGrid.EventGridEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEventsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEventsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.String",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 11,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsToChannelAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEventsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[System.BinaryData]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCustomEventsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid",
+    "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    "TargetMethodName": "SendEventsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventGrid.EventGridEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "Send",
+    "TargetReturnType": "Azure.Response",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "Send",
+    "TargetReturnType": "Azure.Response",
+    "TargetParameterTypes": [
+      "Azure.Messaging.CloudEvent",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response]",
+    "TargetParameterTypes": [
+      "Azure.Messaging.CloudEvent",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Response]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AzureEventHubs",
     "AssemblyName": "Azure.Messaging.EventHubs",
     "TargetTypeName": "Azure.Core.Shared.MessagingClientDiagnostics",
@@ -3758,6 +4060,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionExecutionMiddlewareInvokeIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureFunctions",
+    "AssemblyName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
+    "TargetTypeName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.FunctionsOrchestrator",
+    "TargetMethodName": "RunAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "Microsoft.DurableTask.TaskOrchestrationContext",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionsOrchestratorRunAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -6813,80 +7140,6 @@
   {
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
-    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
-    "TargetMethodName": "Evaluate",
-    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
-    "TargetParameterTypes": [
-      "System.String",
-      "Datadog.Trace.FeatureFlags.ValueType",
-      "System.Object",
-      "System.String",
-      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
-    ],
-    "MinimumVersion": {
-      "Item1": 3,
-      "Item2": 31,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 3,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkEvaluateIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "DatadogTraceManual",
-    "AssemblyName": "Datadog.Trace.Manual",
-    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
-    "TargetMethodName": "IsAvailable",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 3,
-      "Item2": 31,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 3,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkIsAvailableIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "DatadogTraceManual",
-    "AssemblyName": "Datadog.Trace.Manual",
-    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
-    "TargetMethodName": "RegisterOnNewConfigEventHandler",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [
-      "System.Action"
-    ],
-    "MinimumVersion": {
-      "Item1": 3,
-      "Item2": 31,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 3,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "DatadogTraceManual",
-    "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.SpanContextExtractor",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
@@ -7630,6 +7883,31 @@
   },
   {
     "IntegrationName": "DotnetTest",
+    "AssemblyName": "vstest.console",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.RunTestsArgumentExecutor+TestRunRequestEventsRegistrar",
+    "TargetMethodName": "TestRunRequest_OnRunCompletion",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Object",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.TestRunCompleteEventArgs"
+    ],
+    "MinimumVersion": {
+      "Item1": 15,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 15,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestRunRequestOnRunCompletionIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DotnetTest",
     "AssemblyName": "vstest.console.arm64",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.CommandLine.Executor",
     "TargetMethodName": "Execute",
@@ -7673,6 +7951,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.ExecutorGetArgumentProcessorsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DotnetTest",
+    "AssemblyName": "vstest.console.arm64",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.RunTestsArgumentExecutor+TestRunRequestEventsRegistrar",
+    "TargetMethodName": "TestRunRequest_OnRunCompletion",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Object",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.TestRunCompleteEventArgs"
+    ],
+    "MinimumVersion": {
+      "Item1": 15,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 15,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestRunRequestOnRunCompletionIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -8556,7 +8859,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8580,7 +8883,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8604,7 +8907,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8629,7 +8932,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9046,7 +9349,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9071,7 +9374,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9096,7 +9399,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9121,7 +9424,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9146,7 +9449,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9171,7 +9474,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9325,7 +9628,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9350,7 +9653,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9375,7 +9678,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9409,7 +9712,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9474,7 +9777,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9499,7 +9802,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -10930,6 +11233,28 @@
     "IntegrationName": "MsTestV2",
     "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    "TargetMethodName": "RunClassCleanup",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassCleanupIntegrationV2",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
     "TargetMethodName": "RunClassInitialize",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
@@ -10982,6 +11307,33 @@
     "TargetMethodName": "Execute",
     "TargetReturnType": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
     "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.String"
+    ],
     "MinimumVersion": {
       "Item1": 14,
       "Item2": 0,
@@ -11951,6 +12303,55 @@
   {
     "IntegrationName": "MsTestV2",
     "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo",
+    "TargetMethodName": "GetRetryAttribute",
+    "TargetReturnType": "Microsoft.VisualStudio.TestTools.UnitTesting.RetryBaseAttribute",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 4,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodInfoGetRetryAttributeIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 4,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteAsyncIntegrationV4_4",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
     "TargetMethodName": "ExecuteTestAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
@@ -12253,7 +12654,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegrationV4_3_3",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegrationV4_4",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -12277,10 +12678,59 @@
     },
     "MaximumVersion": {
       "Item1": 4,
-      "Item2": 65535,
+      "Item2": 3,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesIntegrationV4",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.UnitTestDiscoverer",
+    "TargetMethodName": "SendTestCasesAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement]",
+      "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.IUnitTestElementSink",
+      "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestElementFilterProvider",
+      "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.IAdapterMessageLogger"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 4,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesAsyncIntegrationV4_4",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.TestSourceHost",
+    "TargetMethodName": "SetupHost",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 3,
+      "Item3": 3
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestSourceHostSetupHostIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -13967,6 +14417,33 @@
   {
     "IntegrationName": "NUnit",
     "AssemblyName": "nunit.framework",
+    "TargetTypeName": "NUnit.Framework.Internal.Execution.CompositeWorkItem",
+    "TargetMethodName": "SetChildWorkItemSkippedResult",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "NUnit.Framework.Internal.TestResult",
+      "NUnit.Framework.Interfaces.ResultState",
+      "System.String",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSetSkippedResultIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "NUnit",
+    "AssemblyName": "nunit.framework",
     "TargetTypeName": "NUnit.Framework.Internal.Execution.SimpleWorkItem",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
@@ -13981,7 +14458,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14028,7 +14505,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14050,7 +14527,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14072,7 +14549,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14098,7 +14575,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 4,
+      "Item1": 5,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -14140,6 +14617,59 @@
     "IntegrationName": "OpenFeature",
     "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
     "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "CanEnqueueEVP",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanEnqueueEVPIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "EnqueueEVP",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.Int64",
+      "System.String",
+      "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Object]",
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEnqueueEVPIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     "TargetMethodName": "Evaluate",
     "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
     "TargetParameterTypes": [
@@ -14160,6 +14690,52 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "HasConfiguration",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkHasConfigurationIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "InitializeAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkInitializeAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -14190,6 +14766,28 @@
     "IntegrationName": "OpenFeature",
     "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
     "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "IsEvaluationEventsEnabled",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsEvaluationEventsEnabledIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     "TargetMethodName": "IsSpanEnrichmentEnabled",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -14204,6 +14802,28 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsSpanEnrichmentEnabledIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "RecordEVPHookError",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRecordEVPHookErrorIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -15666,7 +16286,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15688,7 +16308,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18136,7 +18756,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18161,7 +18781,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18183,7 +18803,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18205,7 +18825,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18229,7 +18849,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18254,7 +18874,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18276,7 +18896,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18298,7 +18918,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18322,7 +18942,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18346,7 +18966,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18368,7 +18988,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18392,7 +19012,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19456,7 +20076,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19503,7 +20123,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19916,7 +20536,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19940,7 +20560,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -19984,7 +20604,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20006,7 +20626,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20028,7 +20648,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -20052,7 +20672,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 11,
       "Item2": 65535,
       "Item3": 65535
     },

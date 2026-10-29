@@ -56,6 +56,10 @@ const auto GetTypeFromHandleMethodName = WStr("GetTypeFromHandle");
 const auto RuntimeTypeHandleTypeName = WStr("System.RuntimeTypeHandle");
 const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
 const shared::WSTRING IAsyncStateMachineName = WStr("System.Runtime.CompilerServices.IAsyncStateMachine");
+const shared::WSTRING SystemThreadingTasksTask = WStr("System.Threading.Tasks.Task");
+const shared::WSTRING SystemThreadingTasksTaskGeneric = WStr("System.Threading.Tasks.Task`1");
+const shared::WSTRING SystemThreadingTasksValueTask = WStr("System.Threading.Tasks.ValueTask");
+const shared::WSTRING SystemThreadingTasksValueTaskGeneric = WStr("System.Threading.Tasks.ValueTask`1");
 
 
 template <typename T>
@@ -573,13 +577,22 @@ struct FunctionInfo
     const mdToken method_def_id;
     FunctionMethodSignature method_signature;
 
+    // The method's CorMethodImpl flags, as reported by IMetaDataImport::GetMemberProps.
+    // Only populated for MethodDefs (and MethodSpecs, from their MethodDef); MemberRefs leave it 0,
+    // since we never rewrite the body of a cross-module reference. This must stay *per-method* state;
+    // never hoist it onto IntegrationDefinition or CallTargetDefinition, which are matched against many methods.
+    //
+    // The initializer is here for the default constructor only: the other two take the flags as a
+    // required argument, deliberately, so that a new call site cannot drop them by omission.
+    DWORD method_impl_flags = 0;
+
     FunctionInfo() : id(0), name(shared::EmptyWStr), type({}), is_generic(false), method_def_id(0), method_signature({})
     {
     }
 
     FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
                  const MethodSignature& function_spec_signature, mdToken method_def_id,
-                 const FunctionMethodSignature& method_signature) :
+                 const FunctionMethodSignature& method_signature, DWORD method_impl_flags) :
         id(id),
         name(name),
         type(type),
@@ -587,22 +600,24 @@ struct FunctionInfo
         signature(signature),
         function_spec_signature(function_spec_signature),
         method_def_id(method_def_id),
-        method_signature(method_signature)
+        method_signature(method_signature),
+        method_impl_flags(method_impl_flags)
     {
     }
 
     FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
-                 const FunctionMethodSignature& method_signature) :
+                 const FunctionMethodSignature& method_signature, DWORD method_impl_flags) :
         id(id),
         name(name),
         type(type),
         is_generic(false),
         signature(signature),
         method_def_id(0),
-        method_signature(method_signature)
+        method_signature(method_signature),
+        method_impl_flags(method_impl_flags)
     {
     }
-    
+
     bool IsValid() const
     {
         return id != 0;
@@ -664,6 +679,14 @@ HRESULT ResolveType(ICorProfilerInfo4* info, const ComPtr<IMetaDataImport2>& met
                     mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
                     ComPtr<IMetaDataImport2>& resolvedMetadataImport);
 shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature);
+
+// Signature blob readers. Each advances pbCur on success and returns false if pbEnd is reached.
+bool ParseByte(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned char* pbOut);
+bool ParseNumber(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned* pOut);
+
+// Advances pbCur past a single Type in a signature blob, per ECMA-335 II.23.2.12.
+// Returns false for the type forms we don't support (see the comment on the definition).
+bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd);
 
 void LogManagedProfilerAssemblyDetails();
 

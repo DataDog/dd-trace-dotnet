@@ -32,6 +32,17 @@ public class XUnitRetriesTestsV3 : TestingFrameworkRetriesTests
 
     protected override bool UseDotnetExec => true;
 
+    public static IEnumerable<object[]> GetQuarantineRetryData() => GetQuarantineRetryData(PackageVersions.XUnitRetriesV3);
+
+    [SkippableTheory]
+    [MemberData(nameof(GetQuarantineRetryData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task QuarantineWithAutomaticRetries(string packageVersion, bool quarantined, bool retriesEnabled, bool quarantineAlwaysFails)
+        => base.QuarantineWithAutomaticRetries(packageVersion, quarantined, retriesEnabled, quarantineAlwaysFails);
+
     [SkippableTheory]
     [MemberData(nameof(PackageVersions.XUnitRetriesV3), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
@@ -40,6 +51,16 @@ public class XUnitRetriesTestsV3 : TestingFrameworkRetriesTests
     public override Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
     {
         return base.FlakyRetries(packageVersion);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.XUnitRetriesV3), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+    {
+        return base.DynamicFlakyRetries(packageVersion);
     }
 
     [SkippableTheory(Skip = "Exception Replay coverage for xunit.v3 requires further investigation.")]

@@ -10,6 +10,8 @@
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="AWSSDK.StepFunctions" />
+   <assembly fullname="Azure.Messaging.EventGrid" />
+   <assembly fullname="Azure.Messaging.EventGrid.Namespaces" />
    <assembly fullname="Azure.Messaging.EventHubs" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
@@ -92,6 +94,7 @@
    <assembly fullname="Microsoft.AspNetCore.StaticFiles" />
    <assembly fullname="Microsoft.Azure.Cosmos.Client" />
    <assembly fullname="Microsoft.Azure.Functions.Worker.Core" />
+   <assembly fullname="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" />
    <assembly fullname="Microsoft.Azure.WebJobs.Host" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.Grpc" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.WebHost" />
@@ -929,6 +932,7 @@
       <type fullname="System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs" />
       <type fullname="System.Runtime.ExceptionServices.HandleProcessCorruptedStateExceptionsAttribute" />
       <type fullname="System.Runtime.InteropServices.ComVisibleAttribute" />
+      <type fullname="System.Runtime.InteropServices.ExternalException" />
       <type fullname="System.Runtime.InteropServices.GCHandle" />
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
@@ -962,6 +966,7 @@
       <type fullname="System.SerializableAttribute" />
       <type fullname="System.Single" />
       <type fullname="System.Span`1" />
+      <type fullname="System.StackOverflowException" />
       <type fullname="System.String" />
       <type fullname="System.StringComparer" />
       <type fullname="System.StringComparison" />
@@ -1181,10 +1186,13 @@
    </assembly>
    <assembly fullname="System.Threading">
       <type fullname="System.Threading.AbandonedMutexException" />
+      <type fullname="System.Threading.AsyncFlowControl" />
       <type fullname="System.Threading.AsyncLocal`1" />
       <type fullname="System.Threading.AsyncLocalValueChangedArgs`1" />
       <type fullname="System.Threading.AutoResetEvent" />
+      <type fullname="System.Threading.ContextCallback" />
       <type fullname="System.Threading.EventWaitHandle" />
+      <type fullname="System.Threading.ExecutionContext" />
       <type fullname="System.Threading.Interlocked" />
       <type fullname="System.Threading.LazyInitializer" />
       <type fullname="System.Threading.ManualResetEvent" />

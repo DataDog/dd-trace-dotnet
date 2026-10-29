@@ -158,6 +158,9 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("sha")]
         public readonly string Sha;
 
+        [JsonProperty("test_level")]
+        public readonly string TestLevel;
+
         [JsonProperty("configurations")]
         public readonly TestsConfigurations Configurations;
 
@@ -169,6 +172,7 @@ internal sealed partial class TestOptimizationClient
             Branch = branch;
             Sha = sha;
             Configurations = configurations;
+            TestLevel = SkippableTestsRequestScope.TestLevel;
         }
     }
 

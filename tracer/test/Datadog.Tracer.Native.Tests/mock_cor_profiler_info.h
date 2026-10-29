@@ -19,14 +19,15 @@ inline void CopyWideString(WCHAR* dest, ULONG destCapacity, const wchar_t* src)
 }
 } // namespace
 
-// Minimal ICorProfilerInfo3 test double. Every method fails by default; the handful of
+// Minimal ICorProfilerInfo7 test double. Every method fails by default; the handful of
 // methods Dataflow::ResolveModuleInfo/GetAppDomain actually call are overridden below to return
 // canned data and to record how many times they were invoked, so tests can assert on when a module
 // is resolved, and that it is never resolved from outside a profiler callback.
-class MockCorProfilerInfo : public ICorProfilerInfo3
+class MockCorProfilerInfo : public ICorProfilerInfo7
 {
 public:
     int getModuleInfo2CallCount = 0;
+    int requestRejitCallCount = 0;
     ModuleID moduleIdToServe = 0;
     AssemblyID assemblyIdToServe = 1;
     AppDomainID appDomainIdToServe = 1;
@@ -58,7 +59,9 @@ public:
             return E_NOINTERFACE;
         }
         if (riid == __uuidof(ICorProfilerInfo) || riid == __uuidof(ICorProfilerInfo2) ||
-            riid == __uuidof(ICorProfilerInfo3))
+            riid == __uuidof(ICorProfilerInfo3) || riid == __uuidof(ICorProfilerInfo4) ||
+            riid == __uuidof(ICorProfilerInfo5) || riid == __uuidof(ICorProfilerInfo6) ||
+            riid == __uuidof(ICorProfilerInfo7))
         {
             *ppvObject = this;
             return S_OK;
@@ -219,4 +222,25 @@ public:
         }
         return S_OK;
     }
+
+    HRESULT STDMETHODCALLTYPE EnumThreads(ICorProfilerThreadEnum** ppEnum) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE InitializeCurrentThread() override { return S_OK; }
+    HRESULT STDMETHODCALLTYPE RequestReJIT(ULONG cFunctions, ModuleID moduleIds[], mdMethodDef methodIds[]) override
+    {
+        requestRejitCallCount++;
+        return E_FAIL;
+    }
+    HRESULT STDMETHODCALLTYPE RequestRevert(ULONG cFunctions, ModuleID moduleIds[], mdMethodDef methodIds[], HRESULT status[]) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetCodeInfo3(FunctionID functionID, ReJITID reJitId, ULONG32 cCodeInfos, ULONG32* pcCodeInfos, COR_PRF_CODE_INFO codeInfos[]) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetFunctionFromIP2(LPCBYTE ip, FunctionID* pFunctionId, ReJITID* pReJitId) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetReJITIDs(FunctionID functionId, ULONG cReJitIds, ULONG* pcReJitIds, ReJITID reJitIds[]) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetILToNativeMapping2(FunctionID functionId, ReJITID reJitId, ULONG32 cMap, ULONG32* pcMap, COR_DEBUG_IL_TO_NATIVE_MAP map[]) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE EnumJITedFunctions2(ICorProfilerFunctionEnum** ppEnum) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetObjectSize2(ObjectID objectId, SIZE_T* pcSize) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetEventMask2(DWORD* pdwEventsLow, DWORD* pdwEventsHigh) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE SetEventMask2(DWORD dwEventsLow, DWORD dwEventsHigh) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData, ICorProfilerMethodEnum** ppEnum) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE ApplyMetaData(ModuleID moduleId) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetInMemorySymbolsLength(ModuleID moduleId, DWORD* pCountSymbolBytes) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE ReadInMemorySymbols(ModuleID moduleId, DWORD symbolsReadOffset, BYTE* pSymbolBytes, DWORD countSymbolBytes, DWORD* pCountSymbolBytesRead) override { return E_FAIL; }
 };

@@ -132,7 +132,7 @@ namespace Samples.GraphQL4.StarWarsExtensions
                     { "uint", (uint)4294967295 },
                     { "long", (long)-9223372036854775808 },
                     { "ulong", (ulong)18446744073709551615 },
-                    { "decimal", (decimal)3.1415926535897932384626433833 },
+                    { "decimal", 3.14159265358979m },
                     { "double", 3.1415926535897932384626433833 },
                     { "char", 'A' },
                     { "not_captured", "This should not be captured" }

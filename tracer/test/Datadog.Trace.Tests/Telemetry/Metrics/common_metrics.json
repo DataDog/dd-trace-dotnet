@@ -1,5 +1,5 @@
 ﻿{
-  "live_debugger": {
+  "debugger": {
     "memory_pressure.transitions": {
       "tags": [
         "state",
@@ -114,6 +114,54 @@
     }
   },
   "tracers": {
+    "flagevaluation.rows.dropped": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations dropped locally, by fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.rows.degraded": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations degraded to omit identity and context, by fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.payload.splits": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "payloads",
+      "description": "Additional payloads created to respect the uncompressed size limit.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.context.truncated": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations with context omissions, once per fixed reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.targeting_key.omitted": {
+      "tags": ["reason"],
+      "metric_type": "count",
+      "data_type": "evaluations",
+      "description": "Evaluations with an invalid targeting key omitted.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.hook.errors": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "errors",
+      "description": "Unexpected hook errors isolated from customer evaluations.",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "integration_errors": {
       "tags": [
         "integration_name",
@@ -887,6 +935,7 @@
       "tags": [
         "waf_version",
         "event_rules_version",
+        "action",
         "config_key",
         "scope"
       ],
@@ -1689,6 +1738,16 @@
       "metric_type": "count",
       "data_type": "tests",
       "description": "The number of tests detected as modified",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "dynamic_atr_retries.enabled": {
+      "tags": [
+        "has_custom_buckets"
+      ],
+      "metric_type": "count",
+      "data_type": "sessions",
+      "description": "The number of sessions that pick the automatic test retries count from the duration of each test. Tagged with has_custom_buckets:true when DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS sets the counts",
       "send_to_user": false,
       "user_tags": []
     }

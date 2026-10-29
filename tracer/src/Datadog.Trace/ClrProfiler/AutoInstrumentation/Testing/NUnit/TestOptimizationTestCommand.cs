@@ -65,30 +65,16 @@ internal sealed class TestOptimizationTestCommand
         result = ExecuteTest(context, 0, ref retryState, out var testTags, out var duration);
         var resultStatus = result.ResultState.Status;
 
-        // If test is quarantined we mark it as skipped after the first run so we hide the actual test status to the testing framework
-        if (testManagementProperties is { Quarantined: true, AttemptToFix: false })
-        {
-            Common.Log.Debug("TestOptimizationTestCommand: Test is quarantined by Datadog.");
-            SetSkippedResult(result, "Flaky test is quarantined by Datadog.");
-        }
-
         // Determine if retries will happen (used for final_status decision)
         var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-        var efdWillRetry = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
+        var efdWillRetry = !isSkippedOrInconclusive && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
         var atrRemainingBudget = testOptimization.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
         // -1 = uninitialized → assume retries possible; 0 = exhausted → no retries
         var atrHasBudget = atrRemainingBudget != 0;
         var atrWillRetry = resultStatus == TestStatus.Failed &&
                            testOptimization.FlakyRetryFeature?.Enabled == true &&
                            atrHasBudget;
-        var atfWillRetry = testManagementProperties is { AttemptToFix: true };
-
-        // Early bailout for skip/inconclusive
-        if (isSkippedOrInconclusive)
-        {
-            context.CurrentResult = result;
-            return result.Instance;
-        }
+        var atfWillRetry = !isSkippedOrInconclusive && testManagementProperties is { AttemptToFix: true };
 
         // Apply retries
         if (efdWillRetry)
@@ -106,12 +92,25 @@ internal sealed class TestOptimizationTestCommand
                 Common.Log.Debug("TestOptimizationTestCommand: Exception instrumentation was set or timed out.");
             }
 
-            result = DoRetries(new FlakyRetryBehavior(testOptimization), context, result);
+            result = DoRetries(new FlakyRetryBehavior(testOptimization, duration), context, result);
         }
         else if (atfWillRetry)
         {
             // testManagementProperties is validated non-null by the atfWillRetry pattern match above
             result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties!), context, result);
+        }
+
+        // Keep the actual outcomes for retry decisions and aggregation, then hide the final result from NUnit.
+        if (testManagementProperties is { Quarantined: true, AttemptToFix: false })
+        {
+            if (NUnitIntegration.TryHideResult(result, "Flaky test is quarantined by Datadog."))
+            {
+                Common.Log.Debug("TestOptimizationTestCommand: Test is quarantined by Datadog.");
+            }
+            else
+            {
+                Common.Log.Debug("TestOptimizationTestCommand: Quarantined test did not fail and is a prerequisite, keeping its result for the dependent tests.");
+            }
         }
 
         context.CurrentResult = result;

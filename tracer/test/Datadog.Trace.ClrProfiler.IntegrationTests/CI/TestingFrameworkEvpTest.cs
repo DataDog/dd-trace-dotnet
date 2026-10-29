@@ -345,6 +345,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
     protected void SetCIEnvironmentValues()
     {
+        ClearCIEnvironmentVariables();
         var current = GitInfo.GetCurrent();
         var ciDictionaryValues = new Dictionary<string, string>
         {
@@ -406,6 +407,45 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         metadata[SpanTypes.TestSession].Should().Contain(selector);
     }
 
+    protected void ValidateTestSessionFingerprintInputs(
+        MockCIVisibilityTestModule testModule,
+        IReadOnlyCollection<MockCIVisibilityTestSuite> testSuites,
+        IReadOnlyCollection<MockCIVisibilityTest> tests,
+        string sessionWorkingDirectory,
+        string gitRepositoryUrl)
+    {
+        // test_session.name is carried in the event metadata and checked by ValidateMetadata.
+        // git.repository.id_v2 is derived by the backend from git.repository_url.
+        var expectedValues = new Dictionary<string, string>
+        {
+            [CommonTags.GitRepository] = gitRepositoryUrl,
+            [TestTags.CommandWorkingDirectory] = sessionWorkingDirectory,
+        };
+
+        string[] runtimeAndOperatingSystemTags =
+        [
+            CommonTags.OSPlatform,
+            CommonTags.OSVersion,
+            CommonTags.OSArchitecture,
+            CommonTags.RuntimeName,
+            CommonTags.RuntimeVersion,
+            CommonTags.RuntimeArchitecture,
+        ];
+
+        foreach (var tag in runtimeAndOperatingSystemTags)
+        {
+            testModule.Meta.Should().ContainKey(tag);
+            expectedValues[tag] = testModule.Meta[tag];
+        }
+
+        foreach (var expectedValue in expectedValues)
+        {
+            testModule.Meta.Should().Contain(expectedValue);
+            testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().Contain(expectedValue));
+            tests.Should().AllSatisfy(test => test.Meta.Should().Contain(expectedValue));
+        }
+    }
+
     protected void InjectSession(
         out ulong sessionId,
         out string sessionCommand,
@@ -418,11 +458,13 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         // Inject session
         sessionId = RandomIdGenerator.Shared.NextSpanId();
         sessionCommand = "test command";
-        sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+        var ciValues = (CIEnvironmentValues)CIValues!;
+        var propagatedSessionWorkingDirectory = ciValues.SourceRoot!;
+        sessionWorkingDirectory = ".";
         SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, sessionWorkingDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, propagatedSessionWorkingDirectory);
 
         gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
         gitBranch = "main";
@@ -437,6 +479,28 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         runId = Guid.NewGuid().ToString("n");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, Path.Combine(Environment.CurrentDirectory, ".dd", runId));
+    }
+
+    protected void SkipIfVSTestCannotShareNamedMutexes()
+    {
+        if (EnvironmentTools.IsWindows() || EnvironmentHelper.GetTargetFramework() is not ("net8.0" or "net9.0" or "net10.0"))
+        {
+            return;
+        }
+
+        // VSTest in .NET 11 RC1/RC2 cannot share named mutexes with .NET 8-10 on Linux and macOS,
+        // so IPC between VSTest and the test's .NET 8-10 processes can fail.
+        // Runtime bug: https://github.com/dotnet/runtime/issues/134491.
+        // Fixed for .NET 11 GA in https://github.com/dotnet/runtime/pull/134595.
+        // Remove this method after upgrading to GA and verifying its callers on Debian and Alpine, x64 and ARM64.
+        // Check the selected SDK: the integration test's own runtime is not the VSTest runner's runtime.
+        var sdk = ProcessHelpers.RunCommand(new ProcessHelpers.Command(EnvironmentHelper.GetDotnetExe(), "--version", timeout: TimeSpan.FromSeconds(10)));
+        sdk.Should().NotBeNull();
+        sdk!.ExitCode.Should().Be(0, sdk.Error);
+        var sdkVersion = sdk.Output.Trim();
+        Skip.If(
+            sdkVersion == "11.0.100-rc.1.26425.128" || sdkVersion == "11.0.100-rc.2.26504.105",
+            "Named mutex IPC is incompatible between .NET 11 RC1/RC2 and .NET 8-10 on Linux and macOS (dotnet/runtime#134491). Re-enable with .NET 11 GA.");
     }
 
     protected virtual async Task ExecuteTestAsync(string packageVersion, string evpVersionToRemove, bool expectedGzip, TestScenario testScenario)
@@ -551,7 +615,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
             using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                           agent,
-                                          arguments: GetTestRunnerArguments(packageVersion, testScenario.UseDotnetExec),
+                                          arguments: testScenario.Arguments ?? GetTestRunnerArguments(packageVersion, testScenario.UseDotnetExec),
                                           packageVersion: packageVersion,
                                           expectedExitCode: testScenario.ExpectedExitCode,
                                           useDotnetExec: testScenario.UseDotnetExec);
@@ -677,7 +741,12 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly bool UseDotnetExec;
         public readonly ExecutionData.ValidateDelegate ValidateAction;
 
-        public TestScenario(string? typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction, bool useDotnetExec = true)
+        /// <summary>
+        /// Optional test runner arguments for this scenario. When null, GetTestRunnerArguments provides them.
+        /// </summary>
+        public readonly string? Arguments;
+
+        public TestScenario(string? typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction, bool useDotnetExec = true, string? arguments = null)
         {
             TypeName = typeName;
             FriendlyName = friendlyName;
@@ -687,6 +756,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             UseSnapshot = useSnapshot;
             UseDotnetExec = useDotnetExec;
             ValidateAction = validateAction;
+            Arguments = arguments;
         }
     }
 

@@ -62,6 +62,7 @@ partial class Build
     AbsolutePath ReleaseArtifactsDirectory => BuildArtifactsDirectory / "release-artifacts";
     AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "native-symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "output");
+    AbsolutePath OpenTelemetryStartupHookDirectory => ArtifactsDirectory / "otel-operator-startup-hook";
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
@@ -93,6 +94,7 @@ partial class Build
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
+    AbsolutePath ToolsDirectory => TracerDirectory / "tools";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
@@ -124,6 +126,7 @@ partial class Build
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
     [LazyPathExecutable(name: "patchelf")] readonly Lazy<Tool> PatchElf;
     [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
+    [LazyPathExecutable(name: "readelf")] readonly Lazy<Tool> ReadElf;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
@@ -207,15 +210,15 @@ partial class Build
     TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
         // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
         // Everything else e.g. MaxOS, linux-x64 etc
         // Same as Windows just without the .NET FX
-        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -365,7 +368,43 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+
+            VerifyOtelThreadContextSymbolIsExported();
         });
+
+    /// <summary>
+    /// OTEP 4947 requires `otel_thread_ctx_v1` to be an exported ELF TLS symbol in the dynamic symbol
+    /// table: it is how out-of-process readers locate the thread context. Nothing at runtime would tell
+    /// us if it went missing - readers would simply never find any context - so a change to the compiler,
+    /// the linker or the project's visibility settings could silently break the feature. Assert it here,
+    /// right where the symbol is produced. See docs/OTelContextPropagation.md.
+    /// </summary>
+    private void VerifyOtelThreadContextSymbolIsExported()
+    {
+        const string symbol = "otel_thread_ctx_v1";
+
+        var (_, extension) = GetUnixArchitectureAndExtension();
+        var nativeTracer = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.{extension}";
+
+        var symbols = ReadElf.Value(arguments: $"--dyn-syms --wide \"{nativeTracer}\"", logOutput: false);
+        var expectedSymbol = new Regex(
+            $@"^\s*\d+:\s+[0-9a-fA-F]+\s+8\s+TLS\s+GLOBAL\s+DEFAULT\s+\d+\s+{Regex.Escape(symbol)}\s*$",
+            RegexOptions.CultureInvariant);
+
+        if (!symbols.Any(line => expectedSymbol.IsMatch(line.Text)))
+        {
+            throw new Exception(
+                $"{symbol} is not exported from {nativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol. " +
+                "The OpenTelemetry thread context cannot be discovered by external readers without it. " +
+                "Check that otel_thread_ctx.cpp is part of the " +
+                $"{NativeTracerProject.Name} shared target and that the symbol still has default visibility.");
+        }
+
+        Logger.Information(
+            "{Symbol} is exported from {NativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol",
+            symbol,
+            nativeTracer);
+    }
 
     Target CompileTracerNativeTestsLinux => _ => _
         .Unlisted()
@@ -484,6 +523,16 @@ partial class Build
             DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
         });
 
+    Target CompileOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .Description("Compiles the OpenTelemetry auto-instrumentation startup hook (stub)")
+        .After(CreateRequiredDirectories)
+        .After(Restore)
+        .Executes(() =>
+        {
+            DotnetBuild(new[] { Solution.GetProject(Projects.OpenTelemetryAutoInstrumentationStartupHook).Path }, noRestore: false, noDependencies: false);
+        });
+
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
@@ -508,7 +557,7 @@ partial class Build
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
+                "src/OpenTelemetry.AutoInstrumentation.StartupHook/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
             );
 
@@ -759,8 +808,7 @@ partial class Build
             {
                 Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
-                var testDir = project!.Directory;
-                var frameworks = project.GetTargetFrameworks();
+                var frameworks = project.TryGetTargetFrameworks();
 
                 if (Framework is not null)
                 {
@@ -800,7 +848,7 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var frameworks = project.GetTargetFrameworks();
+                    var frameworks = project.TryGetTargetFrameworks();
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -913,6 +961,20 @@ partial class Build
             );
         });
 
+    Target PublishOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .DependsOn(CompileOpenTelemetryStartupHook)
+        .Executes(() =>
+        {
+            const string startupHookFileName = "OpenTelemetry.AutoInstrumentation.StartupHook.dll";
+            var source = GetProjectBinDirectory(Projects.OpenTelemetryAutoInstrumentationStartupHook, TargetFramework.NETCOREAPP3_1)
+                       / startupHookFileName;
+            var destination = OpenTelemetryStartupHookDirectory / startupHookFileName;
+
+            EnsureCleanDirectory(OpenTelemetryStartupHookDirectory);
+            CopyFile(source, destination);
+        });
+
     Target PublishNativeSymbolsWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
@@ -1001,7 +1063,7 @@ partial class Build
         {
             // Build the fleet installer project
             var project = SourceDirectory / "Datadog.FleetInstaller" / "Datadog.FleetInstaller.csproj";
-            var tfms = Solution.GetProject(project).GetTargetFrameworks();
+            var tfms = Solution.GetProject(project).TryGetTargetFrameworks();
             // we should only have a single tfm for fleet installer
             if (tfms.Count != 1)
             {
@@ -1587,7 +1649,7 @@ partial class Build
             var projects = TracerDirectory
                     .GlobFiles("test/*.IntegrationTests/*.csproj")
                     .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
+                    .Where(project => Solution.GetProject(project).TryGetTargetFrameworks()?.Contains(Framework) == true);
 
             if (!IsWin)
             {
@@ -1668,6 +1730,7 @@ partial class Build
                                 .SetMSBuildPath()
                                 .SetTargets("Restore", "Build")
                                 .SetConfiguration(BuildConfiguration)
+                                .SetTargetPlatformAnyCPU()
                                 .SetProperty("ApiVersion", ApiVersion)
                                 .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
                                 .SetProperty("BuildInParallel", "true")
@@ -1677,6 +1740,12 @@ partial class Build
               {
                   // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
                   DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .When(string.IsNullOrWhiteSpace(SampleName), x => x.SetProperty("Platform", "Any CPU"))
+                                              .When(!string.IsNullOrWhiteSpace(SampleName), x => x.SetTargetPlatformAnyCPU())
+                                              // Project references outside the generated samples solution can otherwise
+                                              // retain the build host's PlatformTarget and produce architecture-specific
+                                              // managed assemblies in the shared artifacts.
+                                              .SetProperty("PlatformTarget", "AnyCPU")
                                               .SetProperty("BuildInParallel", "true")
                                               .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                                               .When(Framework is not null, x => x.SetFramework(Framework))
@@ -1792,6 +1861,7 @@ partial class Build
 
             DotNetPublish(config => config
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
                 .SetRuntime(rid)
                 .SetFramework(Framework)
                 .CombineWith(projectsToPublish,
@@ -1909,12 +1979,14 @@ partial class Build
         .After(CompileTrimmingSamples)
         .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
+        .DependsOn(PublishOpenTelemetryStartupHook)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = AddAreaFilter(GetFilter());
+            var filter = AddAreaFilter(AddDockerFilter(GetFilter()));
+            var parallelFilter = AddAreaFilter(AddDockerFilter(Filter));
 
             try
             {
@@ -1938,10 +2010,11 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
-                    // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
+                    // Apply Docker and area restrictions without requiring the auto-instrumentation platform traits.
+                    .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(parallelJobs, (s, project) => s
@@ -1961,6 +2034,7 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
@@ -1978,19 +2052,12 @@ partial class Build
 
             string GetFilter()
             {
-                var dockerFilter = IncludeTestsRequiringDocker switch
-                {
-                    true => "&(RequiresDockerDependency=true)",
-                    false => "&(RequiresDockerDependency!=true)",
-                    null => string.Empty,
-                };
-
                 var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
                 var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
                 {
-                    (false, _) => $"({Filter})&(SkipInCI!=True){dockerFilter}{armFilter}",
-                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
+                    (false, _) => $"({Filter})&(SkipInCI!=True){armFilter}",
+                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                     (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
@@ -1999,6 +2066,23 @@ partial class Build
                 return filter;
             }
         });
+
+    private string AddDockerFilter(string filter)
+    {
+        var dockerFilter = IncludeTestsRequiringDocker switch
+        {
+            true => "(RequiresDockerDependency=true)",
+            false => "(RequiresDockerDependency!=true)",
+            null => null,
+        };
+
+        if (dockerFilter is null)
+        {
+            return filter;
+        }
+
+        return string.IsNullOrWhiteSpace(filter) ? dockerFilter : $"({filter})&{dockerFilter}";
+    }
 
     private string AddAreaFilter(string filter)
     {
@@ -2020,7 +2104,7 @@ partial class Build
             return areaFilter;
         }
 
-        return filter + $"&{areaFilter}";
+        return $"({filter})&{areaFilter}";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
@@ -2638,6 +2722,10 @@ partial class Build
                new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
                new(@".*TestOptimization: .*", RegexOptions.Compiled),
                new(@".*TestOptimizationClient: .*", RegexOptions.Compiled),
+               // With the .NET 11 RC SDK, a .NET 11 process and a .NET 8-10 process sharing the CircularChannel named mutex
+               // corrupt its ownership record (dotnet/runtime#134491), so ReleaseMutex can fail after a successful wait.
+               // Remove this once we build with .NET 11 GA.
+               new(@".*CircularChannel\.Reader: Error while polling for messages.*Object synchronization method was called from an unsynchronized block of code.*", RegexOptions.Compiled | RegexOptions.Singleline),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
@@ -2711,6 +2799,12 @@ partial class Build
            if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
            {
                knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
+           }
+
+           // Make sure we _only_ add this while .NET 11 is in preview (to make sure we don't forget in the final release)
+           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 11.0.0-"))
+           {
+               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 11 or higher.*", RegexOptions.Compiled));
            }
 
            // CI Visibility known errors

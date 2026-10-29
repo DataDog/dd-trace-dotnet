@@ -132,11 +132,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> Yarp => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Yarp : PackageVersionsLatestSpecific.Yarp;
 
+        public static IEnumerable<object[]> AzureFunctionsDurable => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureFunctionsDurable : PackageVersionsLatestSpecific.AzureFunctionsDurable;
+
         public static IEnumerable<object[]> AzureServiceBus => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBus : PackageVersionsLatestSpecific.AzureServiceBus;
 
         public static IEnumerable<object[]> AzureServiceBusAPM => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBusAPM : PackageVersionsLatestSpecific.AzureServiceBusAPM;
 
         public static IEnumerable<object[]> AzureEventHubs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventHubs : PackageVersionsLatestSpecific.AzureEventHubs;
+
+        public static IEnumerable<object[]> AzureEventGrid => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventGrid : PackageVersionsLatestSpecific.AzureEventGrid;
+
+        public static IEnumerable<object[]> AzureEventGridNamespaces => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventGridNamespaces : PackageVersionsLatestSpecific.AzureEventGridNamespaces;
 
         public static IEnumerable<object[]> Selenium => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Selenium : PackageVersionsLatestSpecific.Selenium;
 

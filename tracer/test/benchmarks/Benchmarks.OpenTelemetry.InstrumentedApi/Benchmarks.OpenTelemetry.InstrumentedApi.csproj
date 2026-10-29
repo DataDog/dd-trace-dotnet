@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>net11.0;net10.0;net9.0;net8.0;net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <DefineConstants>INSTRUMENTEDAPI</DefineConstants>
 
@@ -24,8 +24,8 @@
   <ItemGroup>
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\*.cs" />
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\Trace\**\*.cs" Link="Trace\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Benchmarks.Trace\DummyAgentWriter.cs" />
-    <Compile Include="..\Benchmarks.Trace\TracerHelper.cs" />
+    <Compile Include="..\Benchmarks.Trace\TestInfrastructure\DummyAgentWriter.cs" />
+    <Compile Include="..\Benchmarks.Trace\TestInfrastructure\TracerHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>

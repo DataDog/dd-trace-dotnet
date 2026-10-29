@@ -9,6 +9,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+#if NETSTANDARD2_0 || NETCOREAPP3_1
+using System.Security.Cryptography;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -17,7 +20,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -78,6 +80,11 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Debug("Set Stable Configuration in Continuous Profiler native library is disabled.");
                 return;
+            }
+
+            if (profilerSettings.WasDisabledByArm64Gate)
+            {
+                Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);
             }
 
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
@@ -209,9 +216,15 @@ namespace Datadog.Trace.ClrProfiler
                     // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
                     // while the app is shutting down, which results in flaky tests due to the short-
                     // lived nature of our apps. This appears to be a bug in the runtime (although
-                    // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
-                    // hash which calls into the native library, triggering the load.
-                    _ = string.Empty.ToUUID();
+                    // we haven't yet confirmed that). Creating a SHA-256 instance forces the native
+                    // OpenSSL library to load and initialize during startup. SHA-256 is used instead of MD5
+                    // because MD5 is not FIPS-approved: on FIPS-enabled OpenSSL it can throw or crash the process.
+                    // Only Linux hashes through OpenSSL (Windows uses CNG and macOS uses Apple CommonCrypto),
+                    // so the warm-up is skipped on other platforms.
+                    if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux)
+                    {
+                        SHA256.Create().Dispose();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -403,7 +416,7 @@ namespace Datadog.Trace.ClrProfiler
 #if NET6_0_OR_GREATER
             try
             {
-                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
+                if (Tracer.Instance.Settings.OtlpMetricsExportEnabled)
                 {
                     Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
                     OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);

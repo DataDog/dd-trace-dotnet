@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-git clone -n --depth=1 https://git.alpinelinux.org/aports &&
+git clone -n --depth=1 --branch 3.23-stable https://git.alpinelinux.org/aports &&
     pushd aports &&
     git sparse-checkout set --no-cone main/llvm16 main/clang16 &&
     git checkout &&

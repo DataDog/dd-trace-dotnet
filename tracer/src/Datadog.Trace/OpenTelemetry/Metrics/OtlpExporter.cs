@@ -62,7 +62,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 _ => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf
             };
 
-            _serializer = new OtlpMetricsSerializer(settings, settings.OtlpMetricsTemporalityPreference);
+            _serializer = new OtlpMetricsSerializer(settings);
             _httpClient = CreateHttpClient(_endpoint);
 
             if (_protocol == Configuration.OtlpProtocol.Grpc)

@@ -49,7 +49,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
         {
             if (envvar?.Key is string key && key.StartsWith(PlatformKeys.Ci.Buildkite.AgentMetadata, StringComparison.OrdinalIgnoreCase))
             {
-                var name = key.Substring(PlatformKeys.Ci.Buildkite.AgentMetadata.Length).ToLowerInvariant();
+                var name = StringUtil.ToLowerInvariant(key.Substring(PlatformKeys.Ci.Buildkite.AgentMetadata.Length));
                 var value = envvar?.Value?.ToString();
                 lstNodeLabels.Add($"{name}:{value}");
             }

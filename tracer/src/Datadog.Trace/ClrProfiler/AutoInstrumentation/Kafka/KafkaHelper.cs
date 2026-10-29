@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string BootstrapServersKey = "bootstrap.servers";
         internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
-        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
+        private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:kafka"]);
         private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
         private static bool _headersInjectionEnabled = true;
 
@@ -298,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         groupId ?? string.Empty,
                         topic ?? string.Empty,
                         consumerClusterId ?? string.Empty);
-                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId));
+                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => new EdgeTags(BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId)));
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
@@ -433,7 +433,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
 
-                    string[] edgeTags;
+                    EdgeTags edgeTags;
                     if (StringUtil.IsNullOrEmpty(topic) && StringUtil.IsNullOrEmpty(producerClusterId))
                     {
                         edgeTags = DefaultProduceEdgeTags;
@@ -441,7 +441,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     else
                     {
                         var cacheKey = new ProduceEdgeTagCacheKey(producerClusterId ?? string.Empty, topic ?? string.Empty);
-                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildProduceEdgeTags(k.ClusterId, k.Topic));
+                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => new EdgeTags(BuildProduceEdgeTags(k.ClusterId, k.Topic)));
                     }
 
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
@@ -477,22 +477,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return null;
             }
 
-            if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
-            {
-                return cached;
-            }
-
             try
             {
                 var kafkaAssembly = clientInstance.GetType().Assembly;
-
-                // DescribeClusterAsync and DescribeClusterOptions were added in Confluent.Kafka 2.3.0
-                var describeClusterOptionsType = kafkaAssembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions");
+                var describeClusterOptionsType = KafkaClusterIdSupport.GetDescribeClusterOptionsType(kafkaAssembly);
                 if (describeClusterOptionsType is null)
                 {
-                    Log.Debug("Confluent.Kafka.Admin.DescribeClusterOptions not found; cluster_id tag requires Confluent.Kafka >= 2.3.0");
-                    ClusterIdCache.TryAdd(bootstrapServers, string.Empty);
-                    return string.Empty;
+                    // Capability failures belong to the assembly, not the bootstrap servers. Another
+                    // loaded Confluent.Kafka assembly may support discovery for these same servers.
+                    return null;
+                }
+
+                if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
+                {
+                    return cached;
                 }
 
                 var builderType = kafkaAssembly.GetType("Confluent.Kafka.DependentAdminClientBuilder");

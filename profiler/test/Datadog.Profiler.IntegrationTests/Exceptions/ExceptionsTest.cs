@@ -88,6 +88,26 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
+            else if (framework == "net11.0")
+            {
+                // .NET 11 changed the signature of Thread.StartCallback, and reintroduced the
+                // EH.RhThrowEx frame that .NET 10 elided (with a different signature to .NET 9)
+                if (IntPtr.Size == 4)
+                {
+                    // 32-bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:(System.Threading.Thread* pThread)"));
+                }
+                else
+                {
+                    // 64 bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object* pExceptionObj, ExInfo* pExInfo)"),
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                }
+            }
             else
             {
                 expectedStack = new StackTrace(
@@ -202,6 +222,26 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     // 64 bit
                     expectedStack = new StackTrace(
                         new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+                }
+            }
+            else if (framework == "net11.0")
+            {
+                // .NET 11 changed the signature of Thread.StartCallback, and reintroduced the
+                // EH.RhThrowEx frame that .NET 10 elided (with a different signature to .NET 9)
+                if (IntPtr.Size == 4)
+                {
+                    // 32-bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:(System.Threading.Thread* pThread)"));
+                }
+                else
+                {
+                    // 64 bit
+                    expectedStack = new StackTrace(
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)"),
+                        new StackFrame("|lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:RhThrowEx |fg: |sg:(object* pExceptionObj, ExInfo* pExInfo)"),
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }

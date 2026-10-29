@@ -592,6 +592,29 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void AzureEventGridV1Tags_PeerServiceSource_NotSetWithoutDestination()
+        {
+            var tags = new AzureEventGridV1Tags(SpanKinds.Producer);
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(SpanKinds.Consumer, null, null)]
+        [InlineData(SpanKinds.Producer, "destination", Trace.Tags.MessagingDestinationName)]
+        public void AzureEventGridV1Tags_PeerService_DependsOnSpanKind(string spanKind, string expectedPeerService, string expectedPeerServiceSource)
+        {
+            var tags = new AzureEventGridV1Tags(spanKind)
+            {
+                MessagingDestinationName = "destination",
+            };
+
+            tags.PeerService.Should().Be(expectedPeerService);
+            tags.PeerServiceSource.Should().Be(expectedPeerServiceSource);
+        }
+
+        [Fact]
         public void RedisV1Tags_PeerService_PopulatesFromOutHost()
         {
             var host = "localhost";

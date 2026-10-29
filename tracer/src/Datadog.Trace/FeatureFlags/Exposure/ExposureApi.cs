@@ -7,15 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -25,10 +21,10 @@ namespace Datadog.Trace.FeatureFlags.Exposure;
 
 internal sealed class ExposureApi : IDisposable
 {
-    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
-
     private const int DefaultCapacity = 1 << 16; // 65536 elements
-    public const string ExposurePath = "evp_proxy/v2/api/v2/exposures";
+    private static readonly TimeSpan DefaultSendInterval = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(10);
+
     [TestingAndPrivateOnly]
     internal static readonly JsonSerializerSettings SerializerSettings = new()
     {
@@ -39,49 +35,45 @@ internal sealed class ExposureApi : IDisposable
         }
     };
 
-    private readonly TaskCompletionSource<bool> _processExit = new();
-    private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
+    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly object _lifecycleLock = new();
+    private readonly TimeSpan _sendInterval;
+    private readonly TimeSpan _shutdownTimeout;
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
-
     private readonly ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
-    private IApiRequestFactory _apiRequestFactory;
-    private Dictionary<string, string> _context;
-    private int _started;
+    private readonly FeatureFlagsEvpTransport _transport;
+    private readonly IDisposable _settingsSubscription;
+    private readonly IDatadogLogger _log;
 
-    internal ExposureApi(TracerSettings tracerSettings)
+    private Dictionary<string, string> _context;
+    private Task? _sendLoopTask;
+    private bool _disposed;
+
+    internal ExposureApi(
+        TracerSettings tracerSettings,
+        FeatureFlagsEvpTransport transport,
+        TimeSpan? sendInterval = null,
+        TimeSpan? shutdownTimeout = null,
+        IDatadogLogger? logger = null)
     {
-        UpdateApi(tracerSettings.Manager.InitialExporterSettings);
+        _log = logger ?? DatadogLogging.GetLoggerFor(typeof(ExposureApi));
+        _transport = transport;
+        _sendInterval = sendInterval ?? DefaultSendInterval;
+        _shutdownTimeout = shutdownTimeout ?? DefaultShutdownTimeout;
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
-        tracerSettings.Manager.SubscribeToChanges(changes =>
+        _settingsSubscription = tracerSettings.Manager.SubscribeToChanges(changes =>
         {
-            if (changes.UpdatedExporter is { } exporter)
-            {
-                UpdateApi(exporter);
-            }
-
             if (changes.UpdatedMutable is { } mutable)
             {
                 UpdateContext(mutable);
             }
         });
 
-        [MemberNotNull(nameof(_apiRequestFactory))]
-        void UpdateApi(ExporterSettings exporterSettings)
-        {
-            Log.Debug("ExposureApi::UpdateApi-> Applying settings");
-            var apiRequestFactory = AgentTransportStrategy.Get(
-                exporterSettings,
-                productName: "FeatureFlags exposure",
-                tcpTimeout: TimeSpan.FromSeconds(5),
-                httpHeaderHelper: EventPlatformHeaderHelper.Instance);
-            Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
-        }
-
         [MemberNotNull(nameof(_context))]
         void UpdateContext(MutableSettings settings)
         {
-            Log.Debug("ExposureApi::UpdateContext -> Applying settings");
+            _log.Debug("ExposureApi::UpdateContext -> Applying settings");
             var context = new Dictionary<string, string>
             {
                 { "service", settings.DefaultServiceName },
@@ -94,39 +86,38 @@ internal sealed class ExposureApi : IDisposable
 
     public void Dispose()
     {
-        _processExit.TrySetResult(true);
-    }
-
-    public void TryToStartSendLoopIfNotStarted()
-    {
-        if (Interlocked.CompareExchange(ref _started, 1, 0) != 0)
+        Task? sendLoopTask;
+        lock (_lifecycleLock)
         {
-            return;
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _processExit.TrySetResult(true);
+            sendLoopTask = _sendLoopTask;
         }
 
-        _ = Task.Run(SendLoopAsync).ContinueWith(t => { Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"); }, TaskContinuationOptions.OnlyOnFaulted);
+        if (sendLoopTask is not null)
+        {
+            // A timed wait still expires when ThreadPool timers cannot run. WhenAny prevents a
+            // faulted or canceled send loop from propagating an exception out of Dispose.
+            if (!Task.WhenAny(sendLoopTask).Wait(_shutdownTimeout))
+            {
+                _log.Warning<double>("Could not finish flushing Feature Flags exposures within {TimeoutMs}ms before process end; exposures not yet delivered may be lost", _shutdownTimeout.TotalMilliseconds);
+            }
+        }
+
+        _settingsSubscription.Dispose();
     }
 
     private async Task SendLoopAsync()
     {
-        Log.Debug("ExposureApi::SendLoopAsync -> Enter");
+        _log.Debug("ExposureApi::SendLoopAsync -> Enter");
         while (!_processExit.Task.IsCompleted)
         {
-            try
-            {
-                var apiRequestFactory = _apiRequestFactory;
-                var uri = apiRequestFactory.GetEndpoint(ExposurePath);
-                var payload = TryGetPayload();
-                if (payload is not null)
-                {
-                    var request = apiRequestFactory.Create(uri);
-                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, SerializerSettings).ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while sending Feature Flags exposures to the agent");
-            }
+            await FlushAsync().ConfigureAwait(false);
 
             try
             {
@@ -136,9 +127,37 @@ internal sealed class ExposureApi : IDisposable
             {
                 // We are shutting down, so don't do anything about it
             }
-
-            Log.Debug("ExposureApi::SendLoopAsync -> Exit");
         }
+
+        // Dispose signals the loop and then waits for this bounded final flush. This prevents the
+        // common short-lived-process loss mode without allowing shutdown to hang indefinitely.
+        var flushed = await FlushAsync().ConfigureAwait(false);
+        _log.Debug<int>("Feature Flags: final exposure flush handed {ExposureCount} exposure(s) to the transport; see transport outcome", flushed);
+        _log.Debug("ExposureApi::SendLoopAsync -> Exit");
+    }
+
+    /// <summary>
+    /// Sends what is queued, and returns how many exposures it handed to the transport. Handing them
+    /// over is not delivery: the transport reports the outcome of the request.
+    /// </summary>
+    private async Task<int> FlushAsync()
+    {
+        try
+        {
+            var payload = TryGetPayload();
+            if (payload is not null)
+            {
+                _log.Debug<int>("Feature Flags: sending a batch of {ExposureCount} exposure(s)", payload.Exposures.Count);
+                await _transport.SendAsync(payload, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings).ConfigureAwait(false);
+                return payload.Exposures.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "Error while sending Feature Flags exposures");
+        }
+
+        return 0;
     }
 
     private ExposuresRequest? TryGetPayload()
@@ -161,15 +180,57 @@ internal sealed class ExposureApi : IDisposable
 
     public void SendExposure(in ExposureEvent exposure)
     {
-        if (_exposureCache.Add(exposure))
+        bool stopped;
+        var queued = false;
+
+        lock (_lifecycleLock)
         {
-            lock (_exposures)
+            stopped = _disposed;
+            if (!stopped)
             {
-                _exposures.Enqueue(exposure);
+                queued = _exposureCache.Add(exposure);
+                if (queued)
+                {
+                    lock (_exposures)
+                    {
+                        _exposures.Enqueue(exposure);
+                    }
+                }
+
+                if (_sendLoopTask is null)
+                {
+                    _sendLoopTask = Task.Run(SendLoopAsync);
+                    _sendLoopTask.ContinueWith(
+                        t => _log.Error(t.Exception, "FeatureFlags Exposure send loop failed"),
+                        CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted,
+                        TaskScheduler.Default);
+                }
             }
         }
 
-        TryToStartSendLoopIfNotStarted();
+        // Logged after the lock is released, so writing the line never holds up another evaluation.
+        // Queued is not delivered: the flush that sends it reports the outcome.
+        if (stopped)
+        {
+            _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
+        }
+        else if (queued)
+        {
+            _log.Debug<string, string, string, string>(
+                "Feature Flags: exposure for {FlagKey} queued for the next flush (allocation={AllocationKey}, variant={VariantKey}, subject={TargetingKey})",
+                exposure.Flag.Key,
+                exposure.Allocation.Key,
+                exposure.Variant.Key,
+                exposure.Subject.Id);
+        }
+        else
+        {
+            _log.Debug<string, string>(
+                "Feature Flags: exposure for {FlagKey} not queued: subject {TargetingKey} already has an identical exposure recorded",
+                exposure.Flag.Key,
+                exposure.Subject.Id);
+        }
     }
 
     private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)

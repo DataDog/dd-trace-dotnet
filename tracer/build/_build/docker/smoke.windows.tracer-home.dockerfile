@@ -2,7 +2,7 @@
 ARG RUNTIME_IMAGE
 
 # Build the ASP.NET Core app using the latest SDK
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-windowsservercore-ltsc2022 as builder
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-windowsservercore-ltsc2025 as builder
 
 # Build the smoke test app
 WORKDIR /src
@@ -19,7 +19,8 @@ WORKDIR /app
 ARG CHANNEL_32_BIT
 RUN if($env:CHANNEL_32_BIT){ \
     echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
-    curl 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -o dotnet-install.ps1; \
+    curl.exe -fsSL --retry 5 --retry-delay 2 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -o dotnet-install.ps1; \
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to download dotnet-install.ps1' }; \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
     [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
     rm ./dotnet-install.ps1; }

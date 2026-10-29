@@ -69,7 +69,7 @@ internal static class GitCommandHelper
                 lock (Hasher)
                 {
                     var hash = Hasher.ComputeHash(Encoding.UTF8.GetBytes(arguments));
-                    cacheKey = Path.Combine(cacheFolder, BitConverter.ToString(hash).ToLowerInvariant() + ".json");
+                    cacheKey = Path.Combine(cacheFolder, StringUtil.ToLowerInvariant(BitConverter.ToString(hash)) + ".json");
                 }
 
                 if (File.Exists(cacheKey))

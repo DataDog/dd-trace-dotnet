@@ -38,7 +38,7 @@ public sealed class TestSuite
 
         var tags = new TestSuiteSpanTags(module.Tags, name);
         var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
+            string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{StringUtil.ToLowerInvariant(module.Framework)}.test_suite",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
@@ -108,6 +108,12 @@ public sealed class TestSuite
     }
 
     internal TestSuiteSpanTags Tags => (TestSuiteSpanTags)_span.Tags;
+
+    /// <summary>
+    /// Gets a value indicating whether closing has started. Framework callbacks can report the same cleanup
+    /// failure again after closing the suite; those callbacks must leave its final tags alone.
+    /// </summary>
+    internal bool IsClosed => Volatile.Read(ref _finished) != 0;
 
     /// <summary>
     /// Sets a string tag into the test

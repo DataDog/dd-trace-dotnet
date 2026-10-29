@@ -52,6 +52,7 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <vector>
 
@@ -233,8 +234,13 @@ public:
     //IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
-    SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
+    SamplesCollector* GetSamplesCollector() { return _pSamplesCollector.get(); }
     void TraceContextHasBeenSet() { _pSsiManager->OnSpanCreated(); }
+
+    // when the delayed start fails, the services (including the SamplesCollector) are stopped and will never
+    // be restarted: nothing must be accumulated anymore because nothing will be exported/cleared.
+    // Not interchangeable with !IsProfilerStarted() - see ISsiManager::IsProfilingPermanentlyDisabled().
+    bool IsProfilingPermanentlyDisabled() const { return _pSsiManager->IsProfilingPermanentlyDisabled(); }
 
 private :
     static CorProfilerCallback* _this;
@@ -248,6 +254,7 @@ private :
 
     std::unique_ptr<EventPipeEventsManager> _pEventPipeEventsManager = nullptr;
     EVENTPIPE_SESSION _session{0};
+    std::mutex _eventPipeLifetimeMutex; // serializes EventPipe session stop (delayed start failure vs. shutdown)
     inline static bool _isNet46OrGreater = false;
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
@@ -269,7 +276,7 @@ private :
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     AllocationsProvider* _pAllocationsProvider = nullptr;
     ContentionProvider* _pContentionProvider = nullptr;
-    SamplesCollector* _pSamplesCollector = nullptr;
+    std::unique_ptr<SamplesCollector> _pSamplesCollector = nullptr;
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
@@ -313,12 +320,14 @@ private :
     MetricsRegistry _metricsRegistry;
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
+    std::shared_ptr<ProxyMetric> _pendingSamplesMetric;
 
     // Note: can't use an interface because this class is implementing... 2 needed interfaces
     std::unique_ptr<GCThreadsCpuProvider> _gcThreadsCpuProvider = nullptr;
     std::unique_ptr<IMetadataProvider> _pMetadataProvider = nullptr;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager = nullptr;
-    bool _isETWStarted = false;
+    std::atomic<bool> _isETWStarted{false};
+    std::mutex _etwLifetimeMutex; // serializes ETW start/stop (ThreadCreated vs. delayed start vs. shutdown)
     MemoryResourceManager _memoryResourceManager;
 
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
@@ -344,7 +353,13 @@ private:
     bool DisposeServices();
     bool StartServices();
     bool StopServices();
-    void StartEtwCommunication();
+    void StartEtwSession();
+    void StopEtwSession();
+    void StopEventPipeSession();
+
+    // stops the CLR event sources (EventPipe session + ETW communication) feeding the providers;
+    // the providers and the SamplesCollector are services and are stopped by StopServices()
+    void StopEventSources();
 
     template <class T, typename... ArgTypes>
     T* RegisterService(ArgTypes&&... args)

@@ -56,6 +56,18 @@
             "value": {
               "stringValue": "Guid_1"
             }
+          },
+          {
+            "key": "_dd.sdk.otlp_export",
+            "value": {
+              "stringValue": "true"
+            }
+          },
+          {
+            "key": "datadog.sdk.semantics",
+            "value": {
+              "stringValue": "otel"
+            }
           }
         ]
       },
@@ -65,20 +77,37 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "WebRequestRequestAsync",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
                 {
                   "key": "http.request.method",
                   "value": {
@@ -115,11 +144,13 @@
                     "stringValue": "http://localhost:00000/Guid_2/ok"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -162,11 +193,13 @@
                     "stringValue": "http://localhost:00000/Guid_2/ok?<redacted>"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "HTTP",
               "kind": 3,
@@ -215,11 +248,13 @@
                     "stringValue": "http://localhost:00000/Guid_2/ok"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -262,11 +297,13 @@
                     "stringValue": "http://localhost:00000/Guid_2/redirect"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -344,11 +381,13 @@
               ],
               "status": {
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -426,11 +465,13 @@
               ],
               "status": {
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET",
               "kind": 3,
@@ -473,7 +514,8 @@
                     "stringValue": "http://REDACTED:REDACTED@localhost:00000/Guid_2/ok"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }

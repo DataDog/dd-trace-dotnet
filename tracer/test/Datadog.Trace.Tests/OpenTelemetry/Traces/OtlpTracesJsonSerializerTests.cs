@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.IO;
+using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
@@ -91,6 +94,49 @@ public class OtlpTracesJsonSerializerTests
         var values = json["arrayValue"]!["values"]!;
         values.Should().HaveCount(1);
         values[0]!["stringValue"]!.Value<string>().Should().Be(nestedBytes.ToString());
+    }
+
+    [Theory]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666")]
+    [InlineData("rv:ef284ace7a91e1")]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666;future:value")]
+    public void WriteSpan_WithOtelTraceState_EmitsTraceState(string otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"]!.Value<string>().Should().Be($"ot={otelTraceState}");
+    }
+
+    [Fact]
+    public void WriteSpan_WithDerivedOtelTraceState_EmitsTraceState()
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = new OtelTraceState(headerString: null)
+        {
+            IsModified = true,
+            RandomValue = 0xef284ace7a91e1UL,
+            Threshold = 0xe6666666666666UL,
+        };
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"]!.Value<string>().Should().Be("ot=rv:ef284ace7a91e1;th:e6666666666666");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void WriteSpan_WithoutOtelTraceState_OmitsTraceState(string? otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = OtelTraceState.Parse(otelTraceState);
+
+        var json = WriteSpan(ddSpan);
+
+        json["traceState"].Should().BeNull();
     }
 
     [Theory]
@@ -177,6 +223,54 @@ public class OtlpTracesJsonSerializerTests
         actualMessage.Should().Be(expectedMessage);
     }
 
+    [Theory]
+    [InlineData(2, 1)]   // user-keep
+    [InlineData(1, 1)]   // auto-keep
+    [InlineData(0, 0)]   // auto-reject
+    [InlineData(-1, 0)]  // user-reject
+    public void WriteSpan_LocalSpanSamplingPriority_EmitsFlagsFromTraceChunk(int samplingPriority, int expectedFlags)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.TraceContext.SetSamplingPriority(samplingPriority, SamplingMechanism.Manual);
+
+        var json = WriteSpan(ddSpan);
+
+        json["flags"]!.Value<int>().Should().Be(expectedFlags);
+    }
+
+    [Fact]
+    public void WriteSpan_NegativeSamplingPriority_UsesInvariantCulture()
+    {
+        var originalCulture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            culture.NumberFormat.NegativeSign = "NEG";
+            Thread.CurrentThread.CurrentCulture = culture;
+
+            // If a culture-sensitive formatting was used, it would produce "NEG1"
+
+            var ddSpan = CreateSpan();
+            ddSpan.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+
+            var json = WriteSpan(ddSpan);
+
+            json["attributes"]!.Should().Contain(a => a["key"]!.Value<string>() == "_sampling_priority_v1" && a["value"]!["intValue"]!.Value<string>() == "-1");
+        }
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
+    }
+
+    [Fact]
+    public void WriteSpan_WithoutSamplingPriority_OmitsFlags()
+    {
+        var json = WriteSpan(CreateSpan());
+
+        json["flags"].Should().BeNull();
+    }
+
     private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)
     {
         var context = new SpanContext(parent: null, new TraceContext(new StubDatadogTracer()), serviceName: "service_name");
@@ -197,10 +291,13 @@ public class OtlpTracesJsonSerializerTests
         using var stringWriter = new StringWriter();
         using (var writer = new VendorJsonTextWriter(stringWriter))
         {
-            serializer.WriteSpan(writer, traceChunk.GetSpanModel(0));
+            writer.WriteStartArray();
+            serializer.WriteSpans(writer, traceChunk, emitStartingComma: false);
+            writer.WriteEndArray();
         }
 
-        return JObject.Parse(stringWriter.ToString());
+        var spans = JArray.Parse(stringWriter.ToString());
+        return (JObject)spans[0]!;
     }
 
     private static JObject WriteAnyValue(object? value)

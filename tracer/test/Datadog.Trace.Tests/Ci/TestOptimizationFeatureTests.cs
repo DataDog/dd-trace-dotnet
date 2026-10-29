@@ -7,9 +7,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
@@ -22,19 +25,24 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Moq;
 using Xunit;
 using MsTestIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.MsTestIntegration;
 using MsTestMethod = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.ITestMethod;
+using NUnitAttemptToFixRetryBehavior = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.AttemptToFixRetryBehavior;
 using NUnitIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitIntegration;
 using NUnitMethodInfo = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IMethodInfo;
 using NUnitPropertyBag = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IPropertyBag;
+using NUnitResultState = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IResultState;
 using NUnitRunState = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.RunState;
 using NUnitTest = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITest;
 using NUnitTestResult = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestResult;
+using NUnitTestStatus = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.TestStatus;
 using NUnitTypeInfo = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITypeInfo;
 using NUnitWorkItem = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IWorkItem;
 using NUnitWorkItemPerformWorkIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration;
@@ -392,6 +400,72 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             {
                 Directory.Delete(workspacePath, recursive: true);
             }
+        }
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("{}", true)]
+    [InlineData(null, false)]
+    public async Task CoverageBackfillSkipGateAllowsConfigurationsRemovedByBackend(string responseConfigurations, bool selectsTargetFramework)
+    {
+        ClearCoverageBackfillEnvironment();
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        try
+        {
+            var frameworkOption = selectsTargetFramework ? " --framework net10.0" : string.Empty;
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, $"dotnet test{frameworkOption} --collect \"Code Coverage;Format=Xml\"");
+            var settings = CreateSettings();
+            var testOptimization = CreateTestOptimization(settings, workspacePath, runId: "injected-run");
+            var configurationAttribute = responseConfigurations is null ? string.Empty : $", \"configurations\": {responseConfigurations}";
+            var responseJson = $$$"""
+                                 {
+                                   "data": [{"id": "test-id", "type": "test", "attributes": {
+                                     "name": "SimplePassTest", "suite": "Samples.XUnitTests.TestSuite"{{{configurationAttribute}}}
+                                   }}],
+                                   "meta": {"correlation_id": "correlation-id", "coverage": {"src/Calculator.cs": "wA=="}}
+                                 }
+                                 """;
+            var apiResponse = new Mock<IApiResponse>();
+            apiResponse.Setup(x => x.StatusCode).Returns(200);
+            apiResponse.Setup(x => x.GetStreamAsync()).ReturnsAsync(() => new MemoryStream(Encoding.UTF8.GetBytes(responseJson)));
+            var requestJson = string.Empty;
+            var apiRequest = new Mock<IApiRequest>();
+            apiRequest.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>()))
+                      .Callback<ArraySegment<byte>, string>((body, _) => requestJson = Encoding.UTF8.GetString(body.Array, body.Offset, body.Count))
+                      .ReturnsAsync(apiResponse.Object);
+            var requestFactory = new Mock<IApiRequestFactory>();
+            requestFactory.Setup(x => x.GetEndpoint(It.IsAny<string>())).Returns<string>(path => new Uri("http://localhost/" + path));
+            requestFactory.Setup(x => x.Create(It.IsAny<Uri>())).Returns(apiRequest.Object);
+            var tracerManagement = new Mock<ITestOptimizationTracerManagement>();
+            tracerManagement.Setup(x => x.EventPlatformProxySupport).Returns(EventPlatformProxySupport.V4);
+            tracerManagement.Setup(x => x.GetRequestFactory(It.IsAny<TracerSettings>(), It.IsAny<TimeSpan>())).Returns(requestFactory.Object);
+            testOptimization.Setup(x => x.TracerManagement).Returns(tracerManagement.Object);
+
+            var scope = SkippableTestsRequestScope.Create(testOptimization.Object, "Samples.XUnitTests");
+            var response = await TestOptimizationClient.Create(workspacePath, testOptimization.Object).GetSkippableTestsAsync(scope);
+            var requestConfigurations = JObject.Parse(requestJson)["data"]["attributes"]["configurations"].ToObject<TestsConfigurations>();
+            var client = new TestOptimizationClientStub(skippableTestsResponse: response);
+            var skippableFeature = TestOptimizationSkippableFeature.Create(settings, CreateRemoteSettingsResponse(testsSkippingEnabled: true), client, testOptimization.Object);
+            var candidate = skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests").Should().ContainSingle().Which;
+
+            skippableFeature.CanSkipWithCoverageBackfill(candidate, "Samples.XUnitTests", out var reason).Should().BeTrue();
+            reason.Should().BeEmpty();
+            if (selectsTargetFramework)
+            {
+                candidate.Configurations.Should().BeEquivalentTo(requestConfigurations);
+            }
+
+            requestConfigurations.TestBundle.Should().Be("Samples.XUnitTests");
+            skippableFeature.RecordTestSkipCoverageBackfill(candidate, "Samples.XUnitTests");
+            skippableFeature.IsCoverageBackfillSafe().Should().BeTrue();
+            CoverageBackfillDataStore.HasActualItrSkip(testOptimization.Object).Should().BeTrue();
+        }
+        finally
+        {
+            ClearCoverageBackfillEnvironment();
+            Directory.Delete(workspacePath, recursive: true);
         }
     }
 
@@ -1763,6 +1837,226 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
+    public void NUnitDependencyChainIsExcludedFromItrSkip()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var fixture = new NUnitTestStub(method, "fixture", [], testType: "TestFixture");
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], parent: fixture);
+        var dependent = new NUnitTestStub(method, "dependent", [], parent: fixture) { DependantTest = prerequisite };
+        var independent = new NUnitTestStub(method, "independent", [], parent: fixture);
+        fixture.Tests = new[] { prerequisite, dependent, independent };
+
+        NUnitIntegration.HasDependencies(prerequisite).Should().BeTrue();
+        NUnitIntegration.HasDependencies(dependent).Should().BeTrue();
+        NUnitIntegration.HasDependencies(independent).Should().BeFalse();
+    }
+
+    [Fact]
+    public void NUnitPerformWorkKeepsPrerequisiteRunningWhenItrSuggestsSkippingIt()
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        testOptimization.Setup(x => x.IsRunning).Returns(true);
+        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
+
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
+        const string ModuleName = "Samples.NUnitTests";
+        var candidate = new SkippableTest(nameof(SampleXUnitItrTest), testSuite, parameters: null, configurations: null);
+        var assemblyTest = new NUnitTestStub(method, ModuleName, [], testType: "Assembly");
+        var prerequisite = new NUnitTestStub(method, nameof(SampleXUnitItrTest), [], parent: assemblyTest);
+        var dependent = new NUnitTestStub(method, "dependent", [], parent: assemblyTest) { DependantTest = prerequisite };
+        assemblyTest.Tests = new[] { prerequisite, dependent };
+        var reason = string.Empty;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), ModuleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
+        skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, ModuleName, out reason)).Returns(true);
+        TestOptimization.Instance = testOptimization.Object;
+
+        try
+        {
+            module = TestModule.Create(ModuleName, CommonTags.TestingFrameworkNameNUnit, "5.0.0");
+            NUnitIntegration.SetTestModuleTo(assemblyTest, module);
+            TestModule.Current = null;
+
+            NUnitWorkItemPerformWorkIntegration.OnMethodBegin(new NUnitWorkItemStub(prerequisite));
+
+            prerequisite.RunState.Should().Be(NUnitRunState.Runnable);
+            prerequisite.Properties.Get(NUnitIntegration.SkipReasonKey).Should().BeNull();
+            skippableFeature.Verify(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), ModuleName), Times.Once);
+            skippableFeature.Verify(x => x.RecordTestSkipCoverageBackfill(It.IsAny<SkippableTest>(), It.IsAny<string>()), Times.Never);
+            skippableFeature.Verify(x => x.RecordTestSkipCoverageBackfill(It.IsAny<string>()), Times.Never);
+        }
+        finally
+        {
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Theory]
+    [InlineData((int)NUnitTestStatus.Passed, TestTags.StatusPass)]
+    [InlineData((int)NUnitTestStatus.Warning, TestTags.StatusPass)]
+    [InlineData((int)NUnitTestStatus.Skipped, TestTags.StatusSkip)]
+    [InlineData((int)NUnitTestStatus.Inconclusive, TestTags.StatusSkip)]
+    public void NUnitFinalResultClearsErrorsFromFailedNativeRetryIterations(int status, string expectedStatus)
+    {
+        var previousTestOptimization = TestOptimization.Instance;
+        TestOptimization.Instance = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory()).Object;
+        TestModule module = null;
+        TestSuite suite = null;
+        var resultState = new Mock<NUnitResultState>();
+        resultState.Setup(x => x.Status).Returns((NUnitTestStatus)status);
+        var result = new Mock<NUnitTestResult>();
+        result.Setup(x => x.ResultState).Returns(resultState.Object);
+
+        try
+        {
+            module = TestModule.Create("NUnitRepeat", "NUnit", "5.0.0");
+            suite = module.GetOrCreateSuite("RepeatFixture");
+            var test = suite.CreateTest("RepeatWithThreshold");
+            test.SetErrorInfo(new InvalidOperationException("An intermediate iteration failed"));
+
+            NUnitIntegration.FinishTest(test, result.Object);
+
+            test.GetTags().Status.Should().Be(expectedStatus);
+            test.GetInternalSpan().Error.Should().BeFalse();
+            test.GetInternalSpan().GetTag(Tags.ErrorType).Should().BeNull();
+            test.GetInternalSpan().GetTag(Tags.ErrorMsg).Should().BeNull();
+            test.GetInternalSpan().GetTag(Tags.ErrorStack).Should().BeNull();
+        }
+        finally
+        {
+            suite?.Close();
+            module?.Close();
+            TestOptimization.Instance = previousTestOptimization;
+        }
+    }
+
+    [Fact]
+    public void NUnitFixtureDependencyProtectsTestsInBothFixtures()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var assembly = new NUnitTestStub(method, "assembly", [], testType: "Assembly");
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], testType: "TestFixture", parent: assembly);
+        var dependent = new NUnitTestStub(method, "dependent", [], testType: "TestFixture", parent: assembly) { DependantTest = prerequisite };
+        assembly.Tests = new[] { prerequisite, dependent };
+        var prerequisiteTest = new NUnitTestStub(method, "first", [], parent: prerequisite);
+        var dependentTest = new NUnitTestStub(method, "second", [], parent: dependent);
+        prerequisite.Tests = new[] { prerequisiteTest };
+        dependent.Tests = new[] { dependentTest };
+
+        NUnitIntegration.HasDependencies(prerequisiteTest).Should().BeTrue();
+        NUnitIntegration.HasDependencies(dependentTest).Should().BeTrue();
+    }
+
+    [Fact]
+    public void NUnitParameterizedDependencyProtectsEveryCase()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var fixture = new NUnitTestStub(method, "fixture", [], testType: "TestFixture");
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], testType: "ParameterizedMethod", parent: fixture);
+        var dependent = new NUnitTestStub(method, "dependent", [], parent: fixture) { DependantTest = prerequisite };
+        fixture.Tests = new[] { prerequisite, dependent };
+        var firstCase = new NUnitTestStub(method, "first case", [], parent: prerequisite);
+        var secondCase = new NUnitTestStub(method, "second case", [], parent: prerequisite);
+        prerequisite.Tests = new[] { firstCase, secondCase };
+
+        NUnitIntegration.HasDependencies(firstCase).Should().BeTrue();
+        NUnitIntegration.HasDependencies(secondCase).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData((int)NUnitTestStatus.Passed, false)]
+    [InlineData((int)NUnitTestStatus.Warning, false)]
+    [InlineData((int)NUnitTestStatus.Skipped, false)]
+    [InlineData((int)NUnitTestStatus.Inconclusive, false)]
+    [InlineData((int)NUnitTestStatus.Failed, true)]
+    public void NUnitDependencyChainsOnlyHideFailuresFromNUnit(int status, bool expected)
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var assembly = new NUnitTestStub(method, "assembly", [], testType: "Assembly");
+        var prerequisiteFixture = new NUnitTestStub(method, "prerequisite fixture", [], testType: "TestFixture", parent: assembly);
+        var dependentFixture = new NUnitTestStub(method, "dependent fixture", [], testType: "TestFixture", parent: assembly) { DependantTest = prerequisiteFixture };
+        assembly.Tests = new[] { prerequisiteFixture, dependentFixture };
+        var fixtureTest = new NUnitTestStub(method, "fixture test", [], parent: prerequisiteFixture);
+        prerequisiteFixture.Tests = new[] { fixtureTest };
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], parent: dependentFixture);
+        var dependent = new NUnitTestStub(method, "dependent", [], parent: dependentFixture) { DependantTest = prerequisite };
+        dependentFixture.Tests = new[] { prerequisite, dependent };
+
+        var fixtureTestResult = CreateNUnitResult(fixtureTest, (NUnitTestStatus)status);
+        var prerequisiteResult = CreateNUnitResult(prerequisite, (NUnitTestStatus)status);
+        var dependentResult = CreateNUnitResult(dependent, (NUnitTestStatus)status);
+
+        NUnitIntegration.TryHideResult(fixtureTestResult.Object, "hidden").Should().Be(expected);
+        NUnitIntegration.TryHideResult(prerequisiteResult.Object, "hidden").Should().Be(expected);
+        NUnitIntegration.TryHideResult(dependentResult.Object, "hidden").Should().BeTrue();
+
+        var hiddenTimes = expected ? Times.Once() : Times.Never();
+        fixtureTestResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), "hidden", string.Empty), hiddenTimes);
+        prerequisiteResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), "hidden", string.Empty), hiddenTimes);
+        dependentResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), "hidden", string.Empty), Times.Once);
+    }
+
+    [Theory]
+    [InlineData((int)NUnitTestStatus.Passed, true)]
+    [InlineData((int)NUnitTestStatus.Warning, true)]
+    [InlineData((int)NUnitTestStatus.Failed, false)]
+    [InlineData((int)NUnitTestStatus.Skipped, false)]
+    public void NUnitHiddenFailureStillBlocksDependentsOfPrerequisiteSuite(int suiteStatus, bool expectedBlocked)
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var assembly = new NUnitTestStub(method, "assembly", [], testType: "Assembly");
+        var prerequisiteFixture = new NUnitTestStub(method, "prerequisite fixture", [], testType: "TestFixture", parent: assembly);
+        var dependentFixture = new NUnitTestStub(method, "dependent fixture", [], testType: "TestFixture", parent: assembly) { DependantTest = prerequisiteFixture };
+        assembly.Tests = new[] { prerequisiteFixture, dependentFixture };
+        var hiddenFailure = new NUnitTestStub(method, "hidden failure", [], parent: prerequisiteFixture);
+        prerequisiteFixture.Tests = new[] { hiddenFailure };
+        var dependentFailure = new NUnitTestStub(method, "dependent failure", [], parent: dependentFixture);
+        dependentFixture.Tests = new[] { dependentFailure };
+        var prerequisiteSuiteResult = CreateNUnitResult(prerequisiteFixture, (NUnitTestStatus)suiteStatus);
+        var dependentSuiteResult = CreateNUnitResult(dependentFixture, (NUnitTestStatus)suiteStatus);
+        var ignoredState = prerequisiteSuiteResult.Object.ResultState.StaticIgnored;
+
+        NUnitIntegration.TryHideResult(CreateNUnitResult(hiddenFailure, NUnitTestStatus.Failed).Object, "hidden").Should().BeTrue();
+        NUnitIntegration.TryHideResult(CreateNUnitResult(dependentFailure, NUnitTestStatus.Failed).Object, "hidden").Should().BeTrue();
+        NUnitIntegration.BlockDependentsOfHiddenFailures(prerequisiteFixture, prerequisiteSuiteResult.Object);
+        NUnitIntegration.BlockDependentsOfHiddenFailures(dependentFixture, dependentSuiteResult.Object);
+
+        prerequisiteSuiteResult.Verify(x => x.SetResult(ignoredState, It.IsAny<string>(), string.Empty), expectedBlocked ? Times.Once() : Times.Never());
+        dependentSuiteResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void NUnitAttemptToFixDoesNotHidePassingPrerequisiteResult(bool quarantined, bool disabled)
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleXUnitItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var fixture = new NUnitTestStub(method, "fixture", [], testType: "TestFixture");
+        var prerequisite = new NUnitTestStub(method, "prerequisite", [], parent: fixture);
+        var dependent = new NUnitTestStub(method, "dependent", [], parent: fixture) { DependantTest = prerequisite };
+        fixture.Tests = new[] { prerequisite, dependent };
+        var properties = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(quarantined, disabled, attemptToFix: true);
+        var behavior = new NUnitAttemptToFixRetryBehavior(CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory()).Object, properties);
+        var prerequisiteResult = CreateNUnitResult(prerequisite, NUnitTestStatus.Passed);
+        var dependentResult = CreateNUnitResult(dependent, NUnitTestStatus.Passed);
+        var ignoredState = dependentResult.Object.ResultState.StaticIgnored;
+
+        behavior.ResultChanges(prerequisiteResult.Object);
+        behavior.ResultChanges(dependentResult.Object);
+
+        prerequisiteResult.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        dependentResult.Verify(x => x.SetResult(ignoredState, It.IsAny<string>(), string.Empty), Times.Once);
+    }
+
+    [Fact]
     public void DisabledTestManagementTestWithoutAttemptToFixCannotBeConvertedToItrSkip()
     {
         var properties = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(quarantined: false, disabled: true, attemptToFix: false);
@@ -2261,6 +2555,78 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         knownTestsFeature.Enabled.Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData("true", null, "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
+    [InlineData("false", "true", "3,2,1,1,1", new[] { 7, 7, 7, 7, 7 }, null)]
+    [InlineData("true", "true", null, new[] { 4, 5, 2, 1, 1 }, false)]
+    [InlineData("true", "1", "3,2,1,1,20", new[] { 3, 2, 1, 1, 20 }, true)]
+    [InlineData("true", "true", "3,2,21,1,1", new[] { 4, 5, 2, 1, 1 }, false)]
+    public async Task FlakyRetryCountDependsOnFirstExecutionDurationWhenDynamicRetriesAreEnabled(string flakyRetryEnabled, string dynamicFlakyRetryEnabled, string dynamicFlakyRetryBuckets, int[] expectedRetryCounts, bool? expectedCustomBuckets)
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, flakyRetryEnabled),
+            (ConfigurationKeys.CIVisibility.FlakyRetryCount, "7"),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled, dynamicFlakyRetryEnabled),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets, dynamicFlakyRetryBuckets));
+        var remoteSettings = new TestOptimizationClient.SettingsResponse(
+            codeCoverage: false,
+            testsSkipping: false,
+            requireGit: false,
+            impactedTestsEnabled: false,
+            flakyTestRetries: true,
+            earlyFlakeDetection: new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(
+                enabled: false,
+                slowTestRetries: new TestOptimizationClient.SlowTestRetriesSettingsResponse(fiveSeconds: 4, tenSeconds: null, thirtySeconds: 2, fiveMinutes: 0),
+                faultySessionThreshold: 0),
+            knownTestsEnabled: false,
+            testManagement: default,
+            dynamicInstrumentationEnabled: false);
+
+        var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previousMetrics = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var flakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
+
+            // The slowest first execution of each bucket: up to 5s, 10s, 30s, 5m, and slower. The upper limits are inclusive.
+            TimeSpan[] firstExecutionDurations = [TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5) + TimeSpan.FromTicks(1)];
+            firstExecutionDurations.Select(flakyRetryFeature.GetFlakyRetryCount).Should().Equal(expectedRetryCounts);
+
+            collector.AggregateMetrics();
+            var metrics = (collector.GetMetrics().Metrics ?? []).Where(metric => metric.Metric == "dynamic_atr_retries.enabled").ToList();
+            if (expectedCustomBuckets is { } customBuckets)
+            {
+                metrics.Should().ContainSingle().Which.Tags.Should().BeEquivalentTo(customBuckets ? ["has_custom_buckets:true"] : null);
+            }
+            else
+            {
+                metrics.Should().BeEmpty();
+            }
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previousMetrics);
+            await collector.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [InlineData(null, 10)]
+    [InlineData("4,1,1,1,1", 4)]
+    public void DynamicFlakyRetriesUseDefaultCountsWhenSettingsHaveNoSlowTestRetries(string dynamicFlakyRetryBuckets, int expectedRetryCount)
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryCount, "7"),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets, dynamicFlakyRetryBuckets));
+
+        // The same local response that child processes of `dd-trace ci run` use when they skip the settings request.
+        var localSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement: null);
+
+        TestOptimizationFlakyRetryFeature.Create(settings, localSettings).GetFlakyRetryCount(TimeSpan.FromSeconds(1)).Should().Be(expectedRetryCount);
+    }
+
     private static TestOptimizationSettings CreateSettings(params (string Key, string Value)[] values)
     {
         CoverageBackfillCapability.ResetCommandLineCacheForTests();
@@ -2314,6 +2680,19 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         testOptimization.Setup(x => x.HostInfo).Returns(hostInfo.Object);
         testOptimization.Setup(x => x.Log).Returns(DatadogLogging.GetLoggerFor(typeof(TestOptimizationFeatureTests)));
         return testOptimization;
+    }
+
+    private static Mock<NUnitTestResult> CreateNUnitResult(NUnitTest test, NUnitTestStatus status)
+    {
+        var ignoredState = new Mock<NUnitResultState>();
+        ignoredState.Setup(x => x.Status).Returns(NUnitTestStatus.Skipped);
+        var resultState = new Mock<NUnitResultState>();
+        resultState.Setup(x => x.Status).Returns(status);
+        resultState.Setup(x => x.StaticIgnored).Returns(ignoredState.Object);
+        var result = new Mock<NUnitTestResult>();
+        result.Setup(x => x.Test).Returns(test);
+        result.Setup(x => x.ResultState).Returns(resultState.Object);
+        return result;
     }
 
     private static void SampleXUnitItrTest()
@@ -2445,11 +2824,13 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public NUnitPropertyBag Properties { get; } = new NUnitPropertyBagStub();
 
-        public bool IsSuite => false;
+        public bool IsSuite => _testType != "TestMethod";
 
         public bool HasChildren => false;
 
-        public IList Tests => null;
+        public IList Tests { get; set; }
+
+        public NUnitTest DependantTest { get; set; }
 
         public object Fixture => null;
 

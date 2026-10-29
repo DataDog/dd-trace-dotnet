@@ -280,6 +280,11 @@ namespace Datadog.Trace
         internal const string NetworkPeerAddress = "network.peer.address";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention peer port of the network connection.
+        /// </summary>
+        internal const string NetworkPeerPort = "network.peer.port";
+
+        /// <summary>
         /// The ASP.NET routing template.
         /// </summary>
         internal const string AspNetRoute = "aspnet.route";
@@ -882,6 +887,21 @@ namespace Datadog.Trace
         /// was set by an integration, or null when the default service name is used.
         /// </summary>
         internal const string ServiceNameSource = "_dd.svc_src";
+
+        /// <summary>
+        /// Declares the export mode the tracer used for the payload: "true" when the payload is
+        /// exported with OTLP encoding, "false" when it is exported with the native Datadog
+        /// encoding. Written by the serializer for the encoding in use, so it cannot disagree with
+        /// how the spans actually left the process. Payload-scoped: written once per payload, not
+        /// on every span.
+        /// </summary>
+        internal const string SdkOtlpExport = "_dd.sdk.otlp_export";
+
+        /// <summary>
+        /// OTLP resource attribute declaring which semantic conventions the SDK applied:
+        /// "otel" when OTel semantics are enabled, "datadog" otherwise.
+        /// </summary>
+        internal const string SdkSemantics = "datadog.sdk.semantics";
 
         /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id

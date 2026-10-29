@@ -142,39 +142,44 @@ std::optional<bool> ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip, bool 
 
 // must not be called in a signal handler (GetFunctionFromIP is not signal-safe)
 // nor by a managed thread (is that really a valid constraint?)
-std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noexcept
+std::optional<ManagedCodeCache::FunctionInfo> ManagedCodeCache::GetFunctionInfo(std::uintptr_t ip) noexcept
 {
-    auto info = GetFunctionIdImpl(ip);
+    auto info = GetFunctionInfoImpl(ip);
     if (info.has_value())
     {
         return info;
     }
 
     // Level 2: Check if the IP is within a module code range
-    
+
     auto isR2r = IsCodeInR2RModule(ip, false);
-    // GetFunctionId is NOT signal-safe: we pass signalSafe=false, so
+    // GetFunctionInfo is NOT signal-safe: we pass signalSafe=false, so
     // IsCodeInR2RModule takes the shared lock unconditionally and always
     // returns an engaged optional. The !has_value() guard below is defence
     // in depth in case IsCodeInR2RModule ever grows a new failure path.
     if (!isR2r.has_value() || !isR2r.value())
     {
         // if it has value `false`, just return InvalidFunctionId
-        return std::optional<FunctionID>(InvalidFunctionId);
+        return FunctionInfo{InvalidFunctionId, false};
     }
 
     auto functionId = GetFunctionFromIP_Original(ip);
     if (functionId.has_value() && functionId.value() != InvalidFunctionId) {
         // We found a function id and we can add it synchronously to our cache.
-        AddFunctionImpl(functionId.value());
-        return std::optional<FunctionID>(functionId.value());
+        // Precompiled (R2R/NGEN) code is never dynamic: a dynamic method only exists at runtime.
+        AddFunctionImpl(functionId.value(), /*isDynamic*/ false);
+        return FunctionInfo{functionId.value(), false};
     }
     // If we arrive here, it means that the call to GetFunctionFromIP_Original possibly crashed.
     // Possible reason: race against the CLR unloading the module containing the function.
     // On Windows, we catch the exception and return nullopt.
     // On Linux, we cannot do anything, we'll never get there.
 
-    return functionId;
+    if (!functionId.has_value())
+    {
+        return std::nullopt;
+    }
+    return FunctionInfo{functionId.value(), false};
 }
 
 std::optional<FunctionID> ManagedCodeCache::GetFunctionFromIP_Original(std::uintptr_t ip) noexcept
@@ -213,10 +218,10 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionFromIP_Original(std::uint
     return std::optional<FunctionID>(InvalidFunctionId);
 }
 
-std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip) const noexcept
+std::optional<ManagedCodeCache::FunctionInfo> ManagedCodeCache::GetFunctionInfoImpl(std::uintptr_t ip) const noexcept
 {
     uint64_t page = GetPageNumber(static_cast<UINT_PTR>(ip));
-    
+
     // Level 1: Find the page (shared lock on map structure)
     std::shared_lock<CodeCacheMutex> mapLock(_pagesMutex);
     auto pageIt = _pagesMap.find(page);
@@ -224,15 +229,16 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip)
     {
         return std::nullopt;  // No code on this page
     }
-    
+
     // Level 2: Binary search within the page's ranges (shared lock on page)
     std::shared_lock<CodeCacheMutex> pageLock(pageIt->second.lock);
     auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
+
     if (range.has_value())
     {
-        return range->functionId;
+        return FunctionInfo{range->functionId, range->isDynamic};
     }
-    
+
     return std::nullopt;
 }
 
@@ -284,15 +290,15 @@ std::optional<bool> ManagedCodeCache::IsManagedImpl(std::uintptr_t ip) const noe
     return IsCodeInR2RModule(ip, true);
 }
 
-void ManagedCodeCache::AddFunction(FunctionID functionId)
+void ManagedCodeCache::AddFunction(FunctionID functionId, bool isDynamic)
 {
-    AddFunctionImpl(functionId);
+    AddFunctionImpl(functionId, isDynamic);
 }
 
 // Maybe rename this into OnJitCompilation
-void ManagedCodeCache::AddFunctionImpl(FunctionID functionId)
+void ManagedCodeCache::AddFunctionImpl(FunctionID functionId, bool isDynamic)
 {
-    auto ranges = GetCodeRanges(functionId);
+    auto ranges = GetCodeRanges(functionId, isDynamic);
 
     if (ranges.empty())
     {
@@ -359,18 +365,18 @@ void ManagedCodeCache::RemoveModule(ModuleID moduleId)
     }
 }
 
-std::vector<CodeRange> ManagedCodeCache::GetCodeRanges(FunctionID functionId)
+std::vector<CodeRange> ManagedCodeCache::GetCodeRanges(FunctionID functionId, bool isDynamic)
 {
     std::vector<CodeRange> result;
     constexpr size_t MAX_CODE_INFOS = 8;
     COR_PRF_CODE_INFO codeInfos[MAX_CODE_INFOS];
     ULONG32 nbCodeInfos;
-    
+
     // For each code version of the function, there are at most 2 code ranges:
     // hot and cold.
     // For safety, we pass MAX_CODE_INFOS(8), even though we know it's 2.
     HRESULT hr = _profilerInfo->GetCodeInfo2(functionId, MAX_CODE_INFOS, &nbCodeInfos, codeInfos);
-    
+
     if (FAILED(hr) || nbCodeInfos == 0)
     {
         return result;  // No code ranges
@@ -386,9 +392,10 @@ std::vector<CodeRange> ManagedCodeCache::GetCodeRanges(FunctionID functionId)
         result.emplace_back(
             codeInfos[i].startAddress,
             codeInfos[i].startAddress + codeInfos[i].size - 1,
-            functionId);
+            functionId,
+            isDynamic);
     }
-    
+
     return result;
 }
 

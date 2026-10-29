@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -325,7 +326,7 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("value");
             writer.WriteStartObject();
             writer.WritePropertyName("intValue");
-            writer.WriteValue(value.ToString());
+            writer.WriteValue(value.ToString(CultureInfo.InvariantCulture));
             writer.WriteEndObject();
             writer.WriteEndObject();
         }
@@ -647,7 +648,7 @@ namespace Datadog.Trace.Agent
                 name = name.Substring(11);
             }
 
-            name = name.ToUpperInvariant();
+            name = StringUtil.ToUpperInvariant(name);
 
             // Accept common single-L alias and compact form
             if (name == "CANCELED")

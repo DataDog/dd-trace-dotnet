@@ -466,7 +466,7 @@ namespace Datadog.Trace.Tests.Agent
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, version },
                 });
-            return new StatsBuffer(new ClientStatsPayload(settings), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
+            return new StatsBuffer.OtlpStatsBuffer(new ClientStatsPayload(settings), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance), initialTimestampNs: 1);
         }
 
         private static StatsAggregationKey CreateKey(

@@ -99,15 +99,7 @@ namespace Datadog.Trace.TestHelpers
         public static string GetMonitoringHomePath()
         {
             var monitoringHomeDirectoryEnvVar = "MonitoringHomeDirectory";
-            var monitoringHome = Environment.GetEnvironmentVariable(monitoringHomeDirectoryEnvVar);
-            if (string.IsNullOrEmpty(monitoringHome))
-            {
-                // default
-                monitoringHome = Path.Combine(
-                    EnvironmentTools.GetSolutionDirectory(),
-                    "artifacts",
-                    "monitoring-home");
-            }
+            var monitoringHome = GetTestArtifactPath(monitoringHomeDirectoryEnvVar, "monitoring-home");
 
             if (!Directory.Exists(monitoringHome))
             {
@@ -123,6 +115,24 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return monitoringHome;
+        }
+
+        public static string GetOpenTelemetryStartupHookPath()
+        {
+            const string startupHookPathEnvVar = "OpenTelemetryStartupHookPath";
+            var startupHookPath = GetTestArtifactPath(
+                startupHookPathEnvVar,
+                Path.Combine(
+                    "output",
+                    "otel-operator-startup-hook",
+                    "OpenTelemetry.AutoInstrumentation.StartupHook.dll"));
+
+            if (!File.Exists(startupHookPath))
+            {
+                throw new InvalidOperationException($"{startupHookPathEnvVar} was set to '{startupHookPath}', but file does not exist");
+            }
+
+            return startupHookPath;
         }
 
         public static string GetNativeLoaderPath()
@@ -167,6 +177,8 @@ namespace Datadog.Trace.TestHelpers
                 "COR_ENABLE_PROFILING",
                 "COR_PROFILER",
                 "COR_PROFILER_PATH",
+                "COR_PROFILER_PATH_32",
+                "COR_PROFILER_PATH_64",
 
                 // Datadog
                 "DD_PROFILER_PROCESSES",
@@ -430,6 +442,8 @@ namespace Datadog.Trace.TestHelpers
                 string filePattern64 = @"C:\Program Files\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
                 List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
                 {
+                    // Windows CI installs Visual Studio 2026 Build Tools under "18".
+                    Tuple.Create("18", "BuildTools"),
                     Tuple.Create("2022", "Enterprise"),
                     Tuple.Create("2022", "Professional"),
                     Tuple.Create("2022", "Community"),
@@ -635,6 +649,14 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return Path.Combine(GetMonitoringHomePath(), archFolder, "Datadog.Linux.ApiWrapper.x64.so");
+        }
+
+        private static string GetTestArtifactPath(string environmentVariable, string relativeDefaultPath)
+        {
+            var path = Environment.GetEnvironmentVariable(environmentVariable);
+            return string.IsNullOrEmpty(path)
+                       ? Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", relativeDefaultPath)
+                       : path;
         }
 
         private bool IsEnvironmentVariableSet(string ev)

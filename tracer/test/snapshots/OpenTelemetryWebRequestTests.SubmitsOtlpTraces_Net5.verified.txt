@@ -56,6 +56,18 @@
             "value": {
               "stringValue": "Guid_1"
             }
+          },
+          {
+            "key": "_dd.sdk.otlp_export",
+            "value": {
+              "stringValue": "true"
+            }
+          },
+          {
+            "key": "datadog.sdk.semantics",
+            "value": {
+              "stringValue": "datadog"
+            }
           }
         ]
       },
@@ -65,11 +77,18 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "WebRequestRequestAsync",
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
                 {
                   "key": "operation.name",
                   "value": {
@@ -98,17 +117,25 @@
                   "key": "span.type",
                   "value": {}
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/ok",
               "kind": 3,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
                 {
                   "key": "component",
                   "value": {
@@ -175,11 +202,13 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/ok",
               "kind": 3,
@@ -252,11 +281,13 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "FOO localhost:00000/?/ok",
               "kind": 3,
@@ -329,11 +360,13 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/redirect",
               "kind": 3,
@@ -406,11 +439,13 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/client-error",
               "kind": 3,
@@ -505,11 +540,13 @@
               "status": {
                 "message": "The remote server returned an error: (400) Bad Request.",
                 "code": 2
-              }
+              },
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/server-error",
               "kind": 3,
@@ -600,11 +637,13 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/ok",
               "kind": 3,
@@ -677,7 +716,8 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }

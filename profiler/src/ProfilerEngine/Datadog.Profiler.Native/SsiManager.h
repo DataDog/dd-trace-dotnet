@@ -8,6 +8,7 @@
 #include "ISsiManager.h"
 #include "SkipProfileHeuristicType.h"
 
+#include <atomic>
 #include <future>
 #include <memory>
 #include <thread>
@@ -31,6 +32,8 @@ public:
     bool IsLongLived() const override;
     bool IsProfilerEnabled() override;
     bool IsProfilerStarted() override;
+    void OnDelayedStartFailed() override;
+    bool IsProfilingPermanentlyDisabled() const override;
 
     // send metrics
     void ProcessStart() override;
@@ -57,4 +60,5 @@ private:
     std::promise<void> _stopTimerPromise;
     DeploymentMode _deploymentMode; // TODO: this should depend on pConfiguration->GetDeploymentMode()
     std::chrono::milliseconds _longLivedThreshold;
+    std::atomic<bool> _hasDelayedStartFailed;
 };

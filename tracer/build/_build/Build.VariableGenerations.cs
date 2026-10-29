@@ -49,6 +49,7 @@ partial class Build : NukeBuild
                   .Executes(() =>
                    {
                        GenerateConditionVariables();
+                       GenerateSmokeTestInputsChanged();
                        GenerateUnitTestFrameworkMatrices();
 
                        GenerateIntegrationTestsWindowsMatrices();
@@ -79,16 +80,17 @@ partial class Build : NukeBuild
 
                 // Directories that are not explicitelly owned by ASM but are common to both teams
                 string[] commonDirectories = new[]
-{
+                {
                     "tracer/test/Datadog.Trace.TestHelpers/",
+                    "tracer/test/Datadog.Trace.TestHelpers.AutoInstrumentation/",
+                    "tracer/test/Datadog.Trace.TestHelpers.SharedSource/",
                 };
 
                 foreach (var file in changedFiles)
                 {
-                    if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
-                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
-                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-                        ))
+                    if (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
+                        ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
+                         !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))))
                     {
                         Logger.Information($"File {file} was detected as common.");
                         return true;
@@ -144,9 +146,11 @@ partial class Build : NukeBuild
                         {
                             foreach (var changedFile in changedFiles)
                             {
-                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
+                                if ((changedTeamValue.TeamName == TracingDotnet &&
+                                     changedFile.StartsWith("tracer/test/", StringComparison.OrdinalIgnoreCase)) ||
+                                    codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
                                 {
-                                    Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
+                                    Logger.Information($"File {changedFile} affects {changedTeamValue.VariableName}");
                                     isChanged = true;
                                     break;
                                 }
@@ -160,6 +164,31 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable(changedTeamValue.VariableName, variableValue);
                     changedTeamValue.IsChanged = isChanged;
                 }
+            }
+
+            void GenerateSmokeTestInputsChanged()
+            {
+                const string variableName = "SmokeTestInputsChanged";
+                var isChanged = false;
+
+                if (Environment.GetEnvironmentVariable("BUILD_REASON") == "PullRequest")
+                {
+                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                    var changedFiles = GetGitChangedFiles(baseBranch);
+                    // Run smoke tests on a PR if any of the files change that most definitely indicate that they _should_ run
+                    var matcher = new Matcher(StringComparison.Ordinal)
+                        .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_snapshots.json")
+                        .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_snapshots_2_1.json")
+                        .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_azurefunctions_snapshots.json")
+                        .AddInclude("tracer/build/_build/SmokeTests/SmokeTestScenario.cs")
+                        .AddInclude("tracer/build/_build/SmokeTests/SmokeTestScenarios.cs")
+                        .AddInclude("tracer/test/test-applications/regression/AspNetCoreSmokeTest/**"); // <- this captures more than we need but in reality doesn't change often
+
+                    isChanged = changedFiles.Any(file => matcher.Match(file).HasMatches);
+                }
+
+                Logger.Information("{Variable} - {IsChanged}", variableName, isChanged);
+                AzurePipelines.Instance.SetOutputVariable(variableName, isChanged.ToString());
             }
 
             void GenerateUnitTestFrameworkMatrices()
@@ -290,6 +319,8 @@ partial class Build : NukeBuild
                     new {framework = TargetFramework.NET8_0 },
                     new {framework = TargetFramework.NET9_0 },
                     new {framework = TargetFramework.NET10_0 },
+                    // Azure Functions does not yet support .NET 11
+                    // new {framework = TargetFramework.NET11_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -416,13 +447,13 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        if (ShouldBeIncluded(AsmArea))
+                        var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
+                        foreach (var area in areas)
                         {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
-                        }
-                        else
-                        {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            }
                         }
                     }
                 }
@@ -661,11 +692,11 @@ partial class Build : NukeBuild
                         // x64 entries — run on Microsoft-hosted Ubuntu
                         ["debian_x64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-noble", expectedInstaller = "datadog-dotnet-apm*_amd64.deb", expectedPath = "linux-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
                         ["fedora_x64"] = new { runtimeImage = "andrewlock/dotnet-fedora:40-9.0", expectedInstaller = "datadog-dotnet-apm*-1.x86_64.rpm", expectedPath = "linux-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
-                        ["alpine_musl_x64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.20", expectedInstaller = "datadog-dotnet-apm*-musl.tar.gz", expectedPath = "linux-musl-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
+                        ["alpine_musl_x64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.24", expectedInstaller = "datadog-dotnet-apm*-musl.tar.gz", expectedPath = "linux-musl-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
                         // arm64 entries — run on self-hosted arm64 pool
                         ["debian_arm64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-noble", expectedInstaller = "datadog-dotnet-apm_*_arm64.deb", expectedPath = "linux-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
                         ["fedora_arm64"] = new { runtimeImage = "andrewlock/dotnet-fedora-arm64:40-9.0", expectedInstaller = "datadog-dotnet-apm*-1.aarch64.rpm", expectedPath = "linux-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
-                        ["alpine_musl_arm64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.20", expectedInstaller = "datadog-dotnet-apm*.arm64.tar.gz", expectedPath = "linux-musl-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
+                        ["alpine_musl_arm64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.24", expectedInstaller = "datadog-dotnet-apm*.arm64.tar.gz", expectedPath = "linux-musl-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
                     };
 
                     Logger.Information("dd_dotnet failure tests matrix");
@@ -687,12 +718,15 @@ partial class Build : NukeBuild
                         (TargetFramework.NET8_0, "macos-14"),
                         (TargetFramework.NET9_0, "macos-14"),
                         (TargetFramework.NET10_0, "macos-14"),
+                        (TargetFramework.NET11_0, "macos-14"),
                         (TargetFramework.NET6_0, "macos-15"),
                         (TargetFramework.NET8_0, "macos-15"),
                         (TargetFramework.NET9_0, "macos-15"),
                         (TargetFramework.NET10_0, "macos-15"),
+                        (TargetFramework.NET11_0, "macos-15"),
                         (TargetFramework.NET6_0, "macOS-15-arm64"),
                         (TargetFramework.NET10_0, "macOS-15-arm64"),
+                        (TargetFramework.NET11_0, "macOS-15-arm64"),
                     };
 
                     var matrix = images.ToDictionary(

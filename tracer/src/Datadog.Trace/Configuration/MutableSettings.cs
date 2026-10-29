@@ -121,6 +121,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
     public double? GlobalSamplingRate { get; }
 
+    internal double? EffectiveGlobalSamplingRate => GlobalSamplingRate is < 0 or > 1 ? null : GlobalSamplingRate;
+
     /// <summary>
     /// Gets a value indicating whether correlation identifiers are
     /// automatically injected into the logging context.
@@ -1107,8 +1109,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         if (original.ConfigurationResult is { IsValid: true, Result: { } values })
         {
             // Update well-known service information resources
-            if (values.TryGetValue("deployment.environment", out var envValue))
+            // an empty "deployment.environment.name" falls back to the legacy "deployment.environment"
+            if ((values.TryGetValue("deployment.environment.name", out var envValue) && !string.IsNullOrEmpty(envValue)) ||
+                values.TryGetValue("deployment.environment", out envValue))
             {
+                values.Remove("deployment.environment.name");
                 values.Remove("deployment.environment");
                 values[Tags.Env] = envValue;
             }
@@ -1155,7 +1160,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
         var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
         var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
-        var otlpTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsStringResult();
 
         double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
 
@@ -1220,13 +1224,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             }
 
             log.LogInvalidConfiguration(otelSampleRate.Key);
-        }
-
-        if (!ddSampleRate.ConfigurationResult.IsPresent &&
-                otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
-                 && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
-        {
-            return 1.0;
         }
 
         return ddResult;

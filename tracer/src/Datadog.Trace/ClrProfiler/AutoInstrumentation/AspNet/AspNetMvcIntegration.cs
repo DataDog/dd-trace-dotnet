@@ -14,9 +14,11 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -41,6 +43,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetMvcIntegration));
 
         /// <summary>
+        /// Returns whether a System.Web.Mvc.ControllerContext belongs to a child action
+        /// (rendered with Html.Action / Html.RenderAction), which must not describe the request.
+        /// </summary>
+        /// <param name="controllerContext">The System.Web.Mvc.ControllerContext instance, or a duck type proxy over it.</param>
+        /// <returns><c>true</c> if the controller context belongs to a child action.</returns>
+        internal static bool IsChildAction(object controllerContext)
+        {
+            if (controllerContext is IDuckType { Instance: { } instance })
+            {
+                controllerContext = instance;
+            }
+
+            return controllerContext.TryDuckCast<ControllerContextStruct>(out var context) && context.IsChildAction;
+        }
+
+        /// <summary>
         /// Creates a scope used to instrument an MVC action and populates some common details.
         /// </summary>
         /// <param name="controllerContext">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
@@ -62,23 +80,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var tracer = Tracer.Instance;
                 if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
+                    var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
                     var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
-                    string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                    string httpMethod = httpContext.Request.HttpMethod;
+                    string datadogHttpMethod = StringUtil.ToUpperInvariant(httpMethod);
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;
                     Route route = routeData?.Route as Route;
                     RouteValueDictionary routeValues = routeData?.Values;
                     bool wasAttributeRouted = false;
-                    bool isChildAction = controllerContext.ParentActionViewContext.RouteData?.Values["controller"] is not null;
+                    // A child action (Html.Action / Html.RenderAction) doesn't describe the request: MVC fills its
+                    // RouteData.Route by *outbound* URL generation (the first route able to generate a URL for the
+                    // child's controller/action), so that route never matched the request URL. The parent page is not
+                    // necessarily an MVC action either (WebForms page, CMS handler, synchronous controller invoker), so
+                    // the child can be the first MVC span of the request and must not name the request.
+                    bool isChildAction = controllerContext.IsChildAction;
 
                     if (isChildAction && newResourceNamesEnabled)
                     {
                         // For child actions, we want to stick to what was requested in the http request.
-                        // And the child action being a child, then we have already computed the resourcename.
+                        // If the parent was an MVC action, it has already computed the resource name.
                         resourceName = httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string;
                     }
 
@@ -100,10 +124,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string areaName;
                     string controllerName;
                     string actionName;
-                    if ((wasAttributeRouted || newResourceNamesEnabled) && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
+                    if (!isChildAction && (wasAttributeRouted || newResourceNamesEnabled) && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
                     {
                         resourceName = AspNetResourceNameHelper.CalculateResourceName(
-                            httpMethod: httpMethod,
+                            httpMethod: datadogHttpMethod,
                             routeTemplate: routeUrl,
                             routeValues,
                             defaults: wasAttributeRouted ? null : route.Defaults,
@@ -115,21 +139,59 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     else
                     {
                         // just grab area/controller/action directly
-                        areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
-                        controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                        actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                        areaName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("area") as string);
+                        controllerName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("controller") as string);
+                        actionName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("action") as string);
                     }
 
-                    if (string.IsNullOrEmpty(resourceName) && RequestDataHelper.GetUrl(httpContext.Request) is { } requestUrl)
+                    if (otelSemanticsEnabled)
                     {
-                        var cleanUri = UriHelpers.GetCleanUriPath(requestUrl, httpContext.Request.ApplicationPath);
-                        resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
+                        // The OpenTelemetry span name must be "{method} {http.route}", so use the route
+                        // template verbatim rather than the Datadog simplified route, and fall back to
+                        // just the method rather than to the URI path. Child actions keep the name that
+                        // was already computed for the request itself, and never use their own route.
+                        if (!isChildAction || string.IsNullOrEmpty(resourceName))
+                        {
+                            resourceName = HttpSemanticConventions.GetServerResourceName(httpMethod, isChildAction ? null : routeUrl);
+                        }
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(resourceName) && RequestDataHelper.GetUrl(httpContext.Request) is { } requestUrl)
+                        {
+                            var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url, httpContext.Request.ApplicationPath);
+                            resourceName = $"{datadogHttpMethod} {StringUtil.ToLowerInvariant(cleanUri)}";
+                        }
+
+                        if (string.IsNullOrEmpty(resourceName))
+                        {
+                            // Keep the legacy resource name, just to have something
+                            resourceName = $"{datadogHttpMethod} {controllerName}.{actionName}";
+                        }
                     }
 
-                    if (string.IsNullOrEmpty(resourceName))
+                    // A request must produce a single HTTP server span, so when the ASP.NET integration
+                    // has already created one we enrich it instead of nesting an aspnet-mvc.request span
+                    // inside it. The tags it would have needed are therefore not collected.
+                    if (otelSemanticsEnabled && HttpSemanticConventions.GetActiveHttpServerSpan(tracer) is { } existingServerSpan)
                     {
-                        // Keep the legacy resource name, just to have something
-                        resourceName = $"{httpMethod} {controllerName}.{actionName}";
+                        // The OpenTelemetry HTTP semantic conventions describe a single server span per
+                        // request, so hand the route information to the ASP.NET span and don't create a
+                        // nested one. The aspnet.controller / aspnet.action / aspnet.route tags this span
+                        // would have carried have no OpenTelemetry equivalent and are not reported.
+                        //
+                        // The name and the route are applied together, and only by the first non-child
+                        // action to run: the span name must stay "{method} {http.route}", and a child
+                        // action's route was generated outbound, so it must never name the request.
+                        if (!isChildAction && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                        {
+                            // set the resource name in the HttpContext so TracingHttpModule can update root span
+                            httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                            existingServerSpan.ResourceName = resourceName;
+                            HttpSemanticConventions.SetHttpRoute(existingServerSpan, routeUrl);
+                        }
+
+                        return null;
                     }
 
                     PropagationContext extractedContext = default;
@@ -171,13 +233,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     span = scope.Span;
 
-                    span.DecorateWebServerSpan(
-                        resourceName: resourceName,
-                        method: httpMethod,
-                        host: host,
-                        httpUrl: url,
-                        userAgent: userAgent,
-                        tags);
+                    if (otelSemanticsEnabled)
+                    {
+                        // Only reached when the ASP.NET integration did not create a server span, so this
+                        // is the only HTTP server span for the request and carries the request attributes.
+                        HttpSemanticConventions.SetHttpServerRequestValues(
+                            span,
+                            tags,
+                            resourceName: resourceName,
+                            originalMethod: httpMethod,
+                            userAgent: userAgent,
+                            protocol: RequestDataHelper.GetServerProtocol(httpContext.Request),
+                            hostHeader: host,
+                            requestUri: httpContext.Request.Url,
+                            queryStringManager: tracer.TracerManager.QueryStringManager);
+                    }
+                    else
+                    {
+                        var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                        span.DecorateWebServerSpan(
+                            resourceName: resourceName,
+                            method: datadogHttpMethod,
+                            host: host,
+                            httpUrl: url,
+                            userAgent: userAgent,
+                            tags);
+                    }
 
                     if (headers is not null)
                     {
@@ -196,27 +277,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
                     tags.AspNetAction = actionName;
-                    var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
-
-                    // in case of a transfered request, the child request shouldnt set a new http route.
-                    if (rootspanTags is AspNetTags rootAspNetTags)
-                    {
-                        if (string.IsNullOrEmpty(rootAspNetTags.HttpRoute))
-                        {
-                            rootAspNetTags.HttpRoute = routeUrl;
-                        }
-                    }
-                    else if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
-                    {
-                        span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
-                    }
-
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
 
-                    if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                    // A child action's route was generated outbound and doesn't describe the request,
+                    // so it must not become the request's http.route or resource name.
+                    if (!isChildAction)
                     {
-                        // set the resource name in the HttpContext so TracingHttpModule can update root span
-                        httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                        var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
+
+                        // in case of a transfered request, the child request shouldnt set a new http route.
+                        if (rootspanTags is AspNetTags rootAspNetTags)
+                        {
+                            if (string.IsNullOrEmpty(rootAspNetTags.HttpRoute))
+                            {
+                                rootAspNetTags.HttpRoute = routeUrl;
+                            }
+                        }
+                        else if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
+                        {
+                            span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                        }
+
+                        if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                        {
+                            // set the resource name in the HttpContext so TracingHttpModule can update root span
+                            httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                        }
                     }
 
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);

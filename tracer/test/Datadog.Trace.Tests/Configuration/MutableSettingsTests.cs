@@ -498,16 +498,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, null, 1.0d)]
+        // OTLP trace export doesn't change the default: GlobalSamplingRate stays null unless configured
+        [InlineData(null, null, null, null)]
         [InlineData("0", null, null, 0.0d)]
         [InlineData("0.5", null, null, 0.5d)]
         [InlineData("1", null, null, 1.0d)]
         [InlineData(null, "parentbased_traceidratio", "0.5", 0.5d)]
         [InlineData(null, "parentbased_traceidratio", "1", 1.0d)]
-        [InlineData(null, "parentbased_traceidratio", null, 1.0d)]
+        [InlineData(null, "parentbased_traceidratio", null, null)]
         [InlineData(null, "traceidratio", "0.5", 0.5d)]
         [InlineData(null, "traceidratio", "1", 1.0d)]
-        [InlineData(null, "traceidratio", null, 1.0d)]
+        [InlineData(null, "traceidratio", null, null)]
         [InlineData(null, "parentbased_always_on", null, 1.0d)]
         [InlineData(null, "always_on", null, 1.0d)]
         [InlineData(null, "parentbased_always_off", null, 0.0d)]
@@ -652,20 +653,75 @@ namespace Datadog.Trace.Tests.Configuration
             mutable.GitCommitSha.Should().Be("42");
         }
 
-        [Fact]
-        public void OTELTagsSetsServiceInformation()
+        [Theory]
+        [InlineData("deployment.environment.name=stable_env", "stable_env")]
+        [InlineData("deployment.environment=legacy_env", "legacy_env")]
+        [InlineData("deployment.environment.name=stable_env,deployment.environment=legacy_env", "stable_env")]
+        [InlineData("deployment.environment=legacy_env,deployment.environment.name=stable_env", "stable_env")]
+        public void OTELTagsSetServiceInformation(string environmentAttributes, string expectedEnvironment)
         {
             var source = new NameValueConfigurationSource(new()
             {
-                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, $"{environmentAttributes},service.name=datadog_service,service.version=datadog_version,custom.attribute=custom_value" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().Be(expectedEnvironment);
+            mutable.ServiceVersion.Should().Be("datadog_version");
+            mutable.ServiceName.Should().Be("datadog_service");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
+            mutable.GlobalTags.Should().Contain("custom.attribute", "custom_value");
+        }
+
+        [Fact]
+        public void EmptyStableEnvironmentNameFallsBackToLegacyEnvironment()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment.name=,deployment.environment=legacy_env" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().Be("legacy_env");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
+        }
+
+        [Fact]
+        public void EmptyStableEnvironmentNameWithNoLegacyEnvironmentIsUnset()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment.name=" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().BeNullOrEmpty();
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+        }
+
+        [Fact]
+        public void DDEnvTakesPrecedenceOverOTELTags()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Environment, "datadog_env" },
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment=legacy_env,deployment.environment.name=stable_env" },
             });
 
             var tracerSettings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, tracerSettings);
 
             mutable.Environment.Should().Be("datadog_env");
-            mutable.ServiceVersion.Should().Be("datadog_version");
-            mutable.ServiceName.Should().Be("datadog_service");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
         }
 
         [Fact]

@@ -10,6 +10,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -48,32 +51,66 @@ internal static class StackWalker
 
     private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();
 
-    public static StackTrace GetStackTrace()
+    /// <summary>
+    /// Captures the stack a vulnerability should be reported from, or <c>null</c> when there is not
+    /// enough stack left to walk it safely.
+    /// </summary>
+    // The runtime walks the stack on this very thread, so walking one that is already nearly
+    // exhausted is what pushes a deeply recursive request over the guard page.
+    // Not inlined because DefaultSkipFrames counts this method and its caller.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static StackTrace? GetStackTrace()
     {
-        return new StackTrace(DefaultSkipFrames, true);
+        return ExecutionStackGuard.HasSufficientStack() ? new StackTrace(DefaultSkipFrames, true) : null;
     }
 
-    public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame)
+    /// <summary>
+    /// Picks the frame a vulnerability is reported at: the topmost non-excluded frame that has debug
+    /// information (file and line), or the topmost non-excluded frame when none of them has it.
+    /// <paramref name="identityFrame"/> is always the topmost non-excluded frame, so the vulnerability
+    /// hash does not depend on which frames have debug information.
+    /// </summary>
+    public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame, out StackFrame? identityFrame)
     {
         targetFrame = null;
+        identityFrame = null;
         var frames = stackTrace.GetFrames() ?? [];
         foreach (var frame in frames)
         {
+            var hasDebugInfo = frame?.GetFileLineNumber() > 0 && !StringUtil.IsNullOrEmpty(frame.GetFileName());
+
+            // once there is a fallback, only a frame with debug info can replace it, so don't pay
+            // for resolving the assembly of the others
+            if (targetFrame is not null && !hasDebugInfo)
+            {
+                continue;
+            }
+
             var declaringType = frame?.GetMethod()?.DeclaringType;
 
-            foreach (var excludeType in ExcludeSpanGenerationTypes)
+            // only the frames above the first candidate decide whether the vulnerability is reported
+            if (targetFrame is null)
             {
-                if (excludeType == declaringType?.FullName)
+                foreach (var excludeType in ExcludeSpanGenerationTypes)
                 {
-                    return false;
+                    if (excludeType == declaringType?.FullName)
+                    {
+                        return false;
+                    }
                 }
             }
 
             var assembly = declaringType?.Assembly.GetName().Name;
             if (assembly != null && !MustSkipAssembly(assembly))
             {
-                targetFrame = frame;
-                break;
+                identityFrame ??= frame;
+                if (hasDebugInfo)
+                {
+                    targetFrame = frame;
+                    break;
+                }
+
+                targetFrame ??= frame;
             }
         }
 

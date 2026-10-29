@@ -38,23 +38,24 @@
 
 AZDO_API="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build"
 AZDO_BUILD_DEFINITION=54
-ARTIFACT_TIMEOUT=2400 # 40 minutes
+ARTIFACT_TIMEOUT=7200 # 2 hours per artifact poll, subject to GitLab's overall job timeout
 ARTIFACT_POLL_INTERVAL=100
 AZDO_BUILD_STATE_POLL_INTERVAL=300 # only re-check build status every 3rd artifact-poll tick
 AZDO_ARTIFACT_UNAVAILABLE=2 # download_azure_artifact: build finished, artifact never published
 AZDO_MAX_BUILD_ATTEMPTS=3
 AZDO_DOWNLOAD_ATTEMPTS=3 # retries for the final curl+unzip step, unrelated to the polling timeout above
 AZDO_TRIED_BUILDS="" # space-separated build ids resolve_azure_build_id should no longer offer
+AZDO_CURL_RETRY_FLAGS="--retry 5 --retry-delay 2 --retry-connrefused" # transient errors only (5xx, 429, timeouts); a 404 is not retried. Use unquoted.
 
 # Curls $1 (an Azure DevOps builds-list URL) and echoes the response, or a `{"value":[]}`
-# placeholder (with a warning to stderr) if the request itself failed - so a transient network
-# error is treated as "no builds found" for this tier and falls through to the next one, instead
-# of aborting the whole script via `set -o pipefail`.
+# placeholder (with a warning to stderr) if the request still fails after retries - so a
+# persistent error is treated as "no builds found" for this tier and falls through to the next
+# one, instead of aborting the whole script via `set -o pipefail`.
 _azure_curl_builds_or_empty() {
   local url="$1"
   local response
-  if ! response=$(curl -sS "$url"); then
-    echo "  WARNING: failed to query Azure DevOps builds (network error) - treating as no results for this tier" >&2
+  if ! response=$(curl -fsS $AZDO_CURL_RETRY_FLAGS "$url"); then
+    echo "  WARNING: failed to query Azure DevOps builds - treating as no results for this tier" >&2
     echo '{"value":[]}'
     return
   fi
@@ -111,8 +112,8 @@ resolve_azure_build_id() {
   # 3. Last resort: any build carrying this commit, regardless of branch (prefer non-scheduled).
   # Unlike tiers 1-2 (which intentionally wait on an in-progress build for this exact branch),
   # tier 3's commit is already built elsewhere, so we prefer a completed-successful build to avoid
-  # locking onto a queued/canceled/failed newer build and polling it for 40 minutes; we still fall
-  # back to an in-progress build if no successful one is found.
+  # locking onto a queued/canceled/failed newer build and polling it until the artifact timeout; we
+  # still fall back to an in-progress build if no successful one is found.
   if [ -z "${AZDO_BUILD_ID}" ]; then
     echo "No build found on branch '$branchName' for commit '$CI_COMMIT_SHA'. Falling back to any build carrying this commit..."
     local allBuildsUrl="${AZDO_API}/builds?api-version=7.1&definitions=${AZDO_BUILD_DEFINITION}&\$top=200&queryOrder=queueTimeDescending"
@@ -141,7 +142,7 @@ resolve_azure_build_id() {
 azure_build_state() {
   local buildId="$1"
   local response
-  if ! response=$(curl -fsS "${AZDO_API}/builds/${buildId}?api-version=7.1"); then
+  if ! response=$(curl -fsS $AZDO_CURL_RETRY_FLAGS "${AZDO_API}/builds/${buildId}?api-version=7.1"); then
     echo "  WARNING: failed to query status for build $buildId" >&2
     AZDO_BUILD_STATUS="unknown"
     AZDO_BUILD_RESULT="unknown"
@@ -151,15 +152,14 @@ azure_build_state() {
   AZDO_BUILD_RESULT=$(jq -r '.result // "none"' <<<"$response" 2>/dev/null || echo "none")
 }
 
-# Fetches the artifacts-list response for $1, or echoes an empty string (with a warning to stderr)
-# on a hard curl failure. HTTP error status codes are NOT curl failures here (no `-f`): Azure
-# returns a normal JSON body with no `resource` when the named artifact doesn't exist yet, and the
-# ordinary "not published yet" polling case relies on that body being readable.
+# Fetches the artifacts-list response for $1, or echoes an empty string on failure. Azure returns
+# a 404 while the named artifact isn't published yet: that's the ordinary polling case, so it's
+# treated like any other failure (empty response => no downloadUrl => keep polling), and curl's
+# own stderr message says which one it was.
 _azure_fetch_artifacts_response() {
   local url="$1"
   local response
-  if ! response=$(curl -sS "$url"); then
-    echo "  WARNING: failed to query artifacts at $url (network error)" >&2
+  if ! response=$(curl -fsS $AZDO_CURL_RETRY_FLAGS "$url"); then
     echo ""
     return
   fi
@@ -191,6 +191,7 @@ download_azure_artifact() {
   local artifactsUrl="${AZDO_API}/builds/${buildId}/artifacts?api-version=7.1&artifactName=${artifactName}"
   local downloadUrl="" response="" elapsed=0
   AZDO_BUILD_STATUS="unknown"
+  AZDO_BUILD_RESULT="unknown"
 
   while true; do
     echo "Checking for artifacts at: ${artifactsUrl}"
@@ -220,7 +221,10 @@ download_azure_artifact() {
     fi
 
     if (( elapsed >= ARTIFACT_TIMEOUT )); then
-      echo "ERROR: No downloadUrl found after ${ARTIFACT_TIMEOUT}s for artifact '$artifactName' (commit '$CI_COMMIT_SHA' on branch 'refs/heads/$CI_COMMIT_BRANCH')"
+      echo "ERROR: No downloadUrl found after ${ARTIFACT_TIMEOUT}s for artifact '$artifactName' (commit '$CI_COMMIT_SHA' on branch 'refs/heads/$CI_COMMIT_BRANCH'). Last known build status: '$AZDO_BUILD_STATUS'; result: '$AZDO_BUILD_RESULT'."
+      if [ "$AZDO_BUILD_STATUS" = "inProgress" ]; then
+        echo "ERROR: Build $buildId was still running when artifact polling timed out."
+      fi
       echo "Last API response:"
       echo "$response" | jq '.'
       echo ""
@@ -241,7 +245,7 @@ download_azure_artifact() {
   # a "genuine timeout" and doesn't warrant discarding the build and starting over.
   local downloadAttempt
   for (( downloadAttempt = 1; downloadAttempt <= AZDO_DOWNLOAD_ATTEMPTS; downloadAttempt++ )); do
-    if curl -fsS -o "$targetDir/artifact.zip" "$downloadUrl" && unzip -o "$targetDir/artifact.zip" -d "$targetDir"; then
+    if curl -fsS $AZDO_CURL_RETRY_FLAGS -o "$targetDir/artifact.zip" "$downloadUrl" && unzip -o "$targetDir/artifact.zip" -d "$targetDir"; then
       rm -f "$targetDir/artifact.zip"
       return 0
     fi
@@ -262,6 +266,9 @@ download_azure_artifact() {
 #
 # resolve_azure_build_id exits 1 as soon as it has no untried build left to offer, so "there's no
 # better build available" fails fast instead of waiting out a doomed poll.
+# A polling timeout exits immediately without trying another build. Only a completed build
+# missing an artifact triggers build reselection. Each artifact poll starts a fresh local timer,
+# but GitLab's overall job timeout still caps the total time across all artifacts and attempts.
 download_azure_artifacts_from_one_build() {
   local targetDir="$1"
   shift

@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
                 }
             }
 #else
-            var uriString = requestUri.ToString().ToUpperInvariant();
+            var uriString = StringUtil.ToUpperInvariant(requestUri.ToString());
 
             for (var index = 0; index < substrings.Length; index++)
             {

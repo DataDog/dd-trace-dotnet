@@ -8,7 +8,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
@@ -20,9 +19,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
@@ -38,6 +34,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         //   https://github.com/Azure/azure-functions-dotnet-worker/blob/596a94ef97f458d68381678fec6d92585e80d83d/extensions/Worker.Extensions.Http.AspNetCore/src/FunctionsMiddleware/FunctionsHttpProxyingMiddleware.cs#L124
         private const string HttpRequestContextKey = "HttpRequestContext";
         private const string SpanType = SpanTypes.Serverless;
+
+        internal const string DurableOrchestrationTrigger = "DurableOrchestration";
+        internal const string DurableActivityTrigger = "DurableActivity";
+        internal const string DurableEntityTrigger = "DurableEntity";
 
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
         public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
@@ -208,6 +208,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         public static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext)
             where T : IFunctionContext
+            => OnIsolatedFunctionBegin(functionContext, triggerType: null, startTime: null);
+
+        internal static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext, string? triggerType, DateTimeOffset? startTime)
+            where T : IFunctionContext
         {
             var tracer = Tracer.Instance;
 
@@ -221,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // (in OnAsyncMethodEnd of the calling integration).
             var aspNetCoreScope = GetAspNetCoreScope(functionContext);
 
-            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope);
+            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope, triggerType, startTime);
 
             if (scope == null && aspNetCoreScope == null)
             {
@@ -231,7 +235,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return new CallTargetState(scope, state: aspNetCoreScope);
         }
 
-        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -239,13 +243,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             try
             {
                 // Try to work out which trigger type it is
-                var triggerType = "Unknown";
+                var detectTriggerType = triggerType is null;
+                triggerType ??= "Unknown";
                 PropagationContext extractedContext = default;
 
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
+                    if (!detectTriggerType)
+                    {
+                        break;
+                    }
+
                     var binding = entry.Value.DuckCast<BindingMetadata>();
                     if (binding.Direction != BindingDirection.In || binding.BindingType is null)
                     {
@@ -253,6 +263,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
 
                     var type = binding.BindingType;
+                    if (type.Equals("orchestrationTrigger", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // FunctionsOrchestrator.RunAsync owns orchestration spans because only it exposes IsReplaying.
+                        return null;
+                    }
+
                     triggerType = type switch
                     {
                         _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http",             // Microsoft.Azure.Functions.Worker.Extensions.Http
@@ -263,6 +279,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub",        // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos",          // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+                        _ when type.Equals("activityTrigger", StringComparison.OrdinalIgnoreCase) => DurableActivityTrigger,
+                        _ when type.Equals("entityTrigger", StringComparison.OrdinalIgnoreCase) => DurableEntityTrigger,
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
@@ -314,9 +332,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
+
+                        case "EventGrid" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid):
+                        {
+                            extractedContext = EventGridFunctionsCommon.CreateReceiveSpanContext(tracer, functionContext, entry.Key as string, Baggage.Current);
+                            break;
+                        }
                     }
 
                     break;
+                }
+
+                if (triggerType is DurableOrchestrationTrigger or DurableActivityTrigger or DurableEntityTrigger)
+                {
+                    extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext);
                 }
 
                 var tags = new AzureFunctionsTags
@@ -355,11 +384,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // 1. Extracted from propagation headers (gRPC message from the host process).
                     // 2. ASP.NET Core scope (if available but not active - shouldn't happen).
                     // 3. Existing local span (fallback).
-                    var parentSpanContext = extractedContext.SpanContext ??
-                                            aspNetCoreScope?.Span.Context ??
-                                            activeScope?.Span.Context;
+                    ISpanContext? parentSpanContext = extractedContext.SpanContext;
+                    if (parentSpanContext is null && extractedContext.Links is not null)
+                    {
+                        parentSpanContext = SpanContext.None;
+                    }
 
-                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
+                    parentSpanContext ??= aspNetCoreScope?.Span.Context ?? activeScope?.Span.Context;
+
+                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, startTime: startTime, tags: tags, links: extractedContext.Links);
                     var span = scope.Span;
                     var rootSpan = scope.Root.Span;
 
@@ -483,23 +516,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                object? feature = null;
-                foreach (var keyValuePair in functionContext.Features)
-                {
-                    if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        feature = keyValuePair.Value;
-                        break;
-                    }
-                }
-
-                if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
+                var bindingsFeature = FunctionBindingsCommon.GetBindingsFeature(functionContext);
+                if (bindingsFeature is null)
                 {
                     return default;
                 }
 
-                if (bindingFeature.InputData is null
-                 || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
+                if (bindingsFeature.Value.InputData is null
+                 || !bindingsFeature.Value.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
                 {
                     return default;
@@ -524,7 +548,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
+                var bindingsFeature = FunctionBindingsCommon.GetBindingsFeature(context);
                 if (bindingsFeature == null)
                 {
                     return default;
@@ -535,7 +559,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Extract from single message properties
                 if (triggerMetadata?.TryGetValue(singlePropertyKey, out var singlePropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
+                    FunctionBindingsCommon.TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps))
                 {
                     var singleContext = Shared.AzureMessagingCommon.ExtractContext(singleProps);
                     if (singleContext.SpanContext != null)
@@ -546,7 +570,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Extract from batch properties array
                 if (triggerMetadata?.TryGetValue(batchPropertyKey, out var arrayPropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray) && propsArray != null)
+                    FunctionBindingsCommon.TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray))
                 {
                     foreach (var props in propsArray)
                     {
@@ -580,27 +604,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)
-            where T : class
-        {
-            result = null;
-            if (jsonObj is not string jsonString)
-            {
-                return false;
-            }
-
-            try
-            {
-                result = JsonHelper.DeserializeObject<T>(jsonString);
-                return result != null;
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Failed to parse JSON: {Json}", jsonString);
-                return false;
-            }
-        }
-
         // Checks if all SpanContexts are identical (ignores baggage)
         private static bool AreAllSpanContextsIdentical(List<PropagationContext> contexts)
         {
@@ -614,26 +617,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
-        }
-
-        private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
-            where T : IFunctionContext
-            where TFeature : struct
-        {
-            if (context.Features == null)
-            {
-                return null;
-            }
-
-            foreach (var kvp in context.Features)
-            {
-                if (kvp.Key.FullName == featureTypeName)
-                {
-                    return kvp.Value?.TryDuckCast<TFeature>(out var feature) == true ? feature : null;
-                }
-            }
-
-            return null;
         }
     }
 }
