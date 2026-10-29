@@ -150,7 +150,6 @@ dotnet_diagnostic.MA0134.severity = none # Observe result of async calls
 dotnet_diagnostic.MA0136.severity = none # Raw String contains an implicit end of line character
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
-dotnet_diagnostic.MA0147.severity = none # Avoid async void method for delegate
 dotnet_diagnostic.MA0150.severity = none # Do not call ToString() when the type falls back to object.ToString()
 dotnet_diagnostic.MA0159.severity = none # Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0160.severity = none # Use ContainsKey instead of TryGetValue

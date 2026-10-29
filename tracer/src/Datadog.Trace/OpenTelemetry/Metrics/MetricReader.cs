@@ -57,17 +57,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             var interval = TimeSpan.FromMilliseconds(_exportIntervalMs);
             _timer = new Timer(
-                callback: async void (_) =>
-                {
-                    try
-                    {
-                        await ForceCollectAndExportAsync().ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error(e, "Failed to export metrics");
-                    }
-                },
+                callback: _ => _ = CollectAndExportOnTimerAsync(),
                 state: null,
                 dueTime: interval,
                 period: interval);
@@ -136,6 +126,18 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in metrics export process");
+            }
+        }
+
+        private async Task CollectAndExportOnTimerAsync()
+        {
+            try
+            {
+                await ForceCollectAndExportAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to export metrics");
             }
         }
     }
