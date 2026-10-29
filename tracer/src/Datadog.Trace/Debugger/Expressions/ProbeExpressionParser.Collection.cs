@@ -136,7 +136,7 @@ internal partial class ProbeExpressionParser<T>
 
             var itParameterType = GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            predicateExpression = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: false);
+            predicateExpression = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: false, isDropped: false);
 
             Expression loop = operation switch
             {
@@ -187,7 +187,7 @@ internal partial class ProbeExpressionParser<T>
                                       ? sourceFilterExpression.IteratorType
                                       : GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            var predicate = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: true);
+            var predicate = ParsePredicate(reader, parameters, itParameter, outsideFilterCapture: true, isDropped: false);
 
             var lambda = Expression.Lambda(predicate, itParameter);
             var isDictionary = source is FilterExpression filterSource
@@ -226,7 +226,7 @@ internal partial class ProbeExpressionParser<T>
         var errorCount = _errors?.Count ?? 0;
         try
         {
-            ParsePredicate(reader, parameters, itParameter: null, outsideFilterCapture: true);
+            ParsePredicate(reader, parameters, itParameter: null, outsideFilterCapture: true, isDropped: true);
         }
         finally
         {
@@ -234,11 +234,12 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    // A predicate declares the variables of its own runtime-type guards, so a filter predicate compiled on its own
-    // doesn't close over the outer block.
-    private Expression ParsePredicate(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, bool outsideFilterCapture)
+    // A predicate declares the variables of the guards of values read from its item, so a capture filter predicate that
+    // reads only its item is compiled on its own. Those of values read from outside every item go to the root block,
+    // unless the predicate is dropped.
+    private Expression ParsePredicate(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, bool outsideFilterCapture, bool isDropped)
     {
-        var outerScope = EnterPredicateRedactionGuardScope();
+        var outerScope = EnterPredicateRedactionGuardScope(itParameter, isDropped);
         try
         {
             return ScopePredicateRedactionGuards(
@@ -490,7 +491,7 @@ internal partial class ProbeExpressionParser<T>
 
             var item = CallGetItem(source, assignableFrom, lookupKey);
             DeriveRedactionGuard(item, source, indexOrKey, keyCheck);
-            return RedactByType(item, source, indexOrKey, CurrentRedactionGuardScope);
+            return RedactByType(item, source, indexOrKey);
         }
         catch (Exception e)
         {
@@ -681,7 +682,7 @@ internal partial class ProbeExpressionParser<T>
             return false;
         }
 
-        member = MemoizeGuardedMember(itParameter, propertyName, RedactByType(member, null, readerValue, CurrentRedactionGuardScope));
+        member = MemoizeGuardedMember(itParameter, propertyName, RedactByType(member, null, readerValue));
         return true;
     }
 
