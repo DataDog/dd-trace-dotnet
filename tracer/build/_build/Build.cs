@@ -148,6 +148,7 @@ partial class Build : NukeBuild
                             Logger.Information($"Version: {Version}");
                             Logger.Information($"Area: {Area}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
+                            Logger.Information($"RuntimeAsyncRun: {IsRuntimeAsyncRun()}");
                             Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });
 
