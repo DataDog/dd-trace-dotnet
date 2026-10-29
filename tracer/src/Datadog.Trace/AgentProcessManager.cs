@@ -207,7 +207,8 @@ namespace Datadog.Trace
                                         {
                                             await Task.Delay((int)delay).ConfigureAwait(false);
 
-                                            if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
+                                            // A slow answer is not a shutdown: keep watching while the pipe exists
+                                            if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false) || metadata.PipeIsPresent)
                                             {
                                                 // Should result in a max delay of ~3.28 seconds before giving up
                                                 delay = delay * 1.75d;
@@ -224,6 +225,13 @@ namespace Datadog.Trace
                                         {
                                             Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", path);
                                         }
+                                    }
+                                    else if (metadata.PipeIsPresent)
+                                    {
+                                        // Count this as the first failed check, so the regular checks wait before starting a copy
+                                        metadata.FailedHealthChecks = 1;
+                                        metadata.ProcessState = ProcessState.Unhealthy;
+                                        LogFailedAgentNotStartedByUs(metadata);
                                     }
                                     else
                                     {
@@ -242,7 +250,8 @@ namespace Datadog.Trace
                                     var ownProcessIsRunning = metadata.OwnProcessIsRunning();
                                     var ownProcessExited = !ownProcessIsRunning && RecordOwnProcessExit(metadata);
                                     metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
-                                    var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, metadata.FailedHealthChecks);
+                                    var otherAgentHasPipe = metadata.PipeIsPresent && !ownProcessExited;
+                                    var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, otherAgentHasPipe, metadata.FailedHealthChecks);
                                     if (isHealthy)
                                     {
                                         // Reset the backoff only after StableHealthyPeriod, so an agent that keeps flapping still backs off
@@ -255,7 +264,14 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.Healthy;
                                         if (previousState == ProcessState.Unhealthy)
                                         {
-                                            Log.Information("{AgentPath} with pid {ChildPid} is now healthy.", path, GetProcessId(metadata.Process));
+                                            if (metadata.Process == null)
+                                            {
+                                                Log.Information("{AgentPath} is now healthy.", path);
+                                            }
+                                            else
+                                            {
+                                                Log.Information("{AgentPath} with pid {ChildPid} is now healthy.", path, GetProcessId(metadata.Process));
+                                            }
                                         }
                                     }
                                     else if (action == KeepAliveAction.Start)
@@ -278,7 +294,7 @@ namespace Datadog.Trace
                                             await Task.Delay(startDelay).ConfigureAwait(false);
                                             metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
                                         }
-                                        else if (previousState == ProcessState.Healthy)
+                                        else if (previousState is ProcessState.Healthy or ProcessState.Unhealthy)
                                         {
                                             Log.Information("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
                                         }
@@ -317,6 +333,16 @@ namespace Datadog.Trace
                                             }
 
                                             metadata.ProcessState = ProcessState.Unhealthy;
+                                        }
+                                    }
+                                    else if (!ownProcessIsRunning)
+                                    {
+                                        // An agent we did not start still has its pipe: GetKeepAliveAction waits before starting a copy
+                                        metadata.HealthyStopwatch = null;
+                                        metadata.ProcessState = ProcessState.Unhealthy;
+                                        if (previousState != ProcessState.Unhealthy)
+                                        {
+                                            LogFailedAgentNotStartedByUs(metadata);
                                         }
                                     }
                                     else
@@ -471,12 +497,13 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Decides what the keep-alive does after a health check. A new process is started only when
-        /// the agent is unhealthy and the process this keep-alive started is no longer running. The process
-        /// this keep-alive started is restarted after <see cref="MaxFailedHealthChecks"/> failed checks in a row.
+        /// Decides what the keep-alive does after a health check. The process this keep-alive started is restarted after
+        /// <see cref="MaxFailedHealthChecks"/> failed checks in a row. When that process is not running, a new one is started
+        /// after the first failed check, unless an agent we did not start still has the pipe: a new copy cannot take the pipe
+        /// over, so starting one waits for <see cref="MaxFailedHealthChecks"/> failed checks in a row.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal static KeepAliveAction GetKeepAliveAction(bool isHealthy, bool ownProcessIsRunning, int failedHealthChecks)
+        internal static KeepAliveAction GetKeepAliveAction(bool isHealthy, bool ownProcessIsRunning, bool otherAgentHasPipe, int failedHealthChecks)
         {
             if (isHealthy)
             {
@@ -485,10 +512,19 @@ namespace Datadog.Trace
 
             if (!ownProcessIsRunning)
             {
-                return KeepAliveAction.Start;
+                return otherAgentHasPipe && failedHealthChecks < MaxFailedHealthChecks ? KeepAliveAction.None : KeepAliveAction.Start;
             }
 
             return failedHealthChecks >= MaxFailedHealthChecks ? KeepAliveAction.Restart : KeepAliveAction.None;
+        }
+
+        private static void LogFailedAgentNotStartedByUs(ProcessMetadata metadata)
+        {
+            Log.Warning<string, string, int>(
+                "{AgentPath} was not started by the .NET Tracer in this process and failed its health check ({Reason}). Starting a new one if it fails {Count} checks in a row.",
+                metadata.ProcessPath,
+                metadata.LastHealthCheckFailure,
+                MaxFailedHealthChecks);
         }
 
         /// <summary>
@@ -558,6 +594,9 @@ namespace Datadog.Trace
             }
 
             Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", metadata.ProcessPath);
+
+            // Failed checks of the agent we replaced must not count against this one
+            metadata.FailedHealthChecks = 0;
             return ProcessState.Healthy;
         }
 
@@ -732,6 +771,11 @@ namespace Datadog.Trace
             /// </summary>
             public string LastHealthCheckFailure { get; set; }
 
+            /// <summary>
+            /// Gets or sets a value indicating whether the agent's named pipe existed at the last health check.
+            /// </summary>
+            public bool PipeIsPresent { get; set; }
+
             public bool OwnProcessIsRunning()
             {
                 try
@@ -747,12 +791,13 @@ namespace Datadog.Trace
 
             /// <summary>
             /// Checks whether the agent is healthy, whoever started it: its named pipe must exist, and the trace
-            /// agent must also answer GET /info. Sets <see cref="LastHealthCheckFailure"/> when it is not healthy.
+            /// agent must also answer GET /info. Sets <see cref="PipeIsPresent"/>, and <see cref="LastHealthCheckFailure"/> when it is not healthy.
             /// Whether the process this keep-alive started is still running is checked by <see cref="OwnProcessIsRunning"/>.
             /// </summary>
             public async Task<bool> ProcessIsHealthyAsync()
             {
-                if (!NamedPipeIsBound())
+                PipeIsPresent = NamedPipeIsBound();
+                if (!PipeIsPresent)
                 {
                     LastHealthCheckFailure = $"named pipe {PipeName} is not present";
                     return false;

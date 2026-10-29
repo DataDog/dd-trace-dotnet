@@ -26,7 +26,7 @@ public class AgentProcessManagerTests
     public void GetKeepAliveAction_DoesNotStartWhileOwnProcessIsRunning(int failedHealthChecks)
     {
         // For example, the startup wait timed out while the process we started is still running
-        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true, failedHealthChecks)
+        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true, otherAgentHasPipe: false, failedHealthChecks)
                            .Should().Be(KeepAliveAction.None);
     }
 
@@ -34,11 +34,23 @@ public class AgentProcessManagerTests
     [InlineData(1)]
     [InlineData(3)]
     [InlineData(10)]
-    public void GetKeepAliveAction_StartsWhenUnhealthyAndOwnProcessIsNotRunning(int failedHealthChecks)
+    public void GetKeepAliveAction_StartsAfterOneFailedCheckWhenNoOtherAgentHasThePipe(int failedHealthChecks)
     {
         // Never Restart, even after many failed checks, because we never stop an agent we did not start
-        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: false, failedHealthChecks)
+        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: false, otherAgentHasPipe: false, failedHealthChecks)
                            .Should().Be(KeepAliveAction.Start);
+    }
+
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(2, false)]
+    [InlineData(3, true)]
+    [InlineData(10, true)]
+    public void GetKeepAliveAction_WaitsForRepeatedFailuresWhileAnAgentWeDidNotStartHasThePipe(int failedHealthChecks, bool expectStart)
+    {
+        // For example, one slow GET /info from another worker's agent must not start a copy that cannot take the pipe
+        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: false, otherAgentHasPipe: true, failedHealthChecks)
+                           .Should().Be(expectStart ? KeepAliveAction.Start : KeepAliveAction.None);
     }
 
     [Theory]
@@ -46,15 +58,15 @@ public class AgentProcessManagerTests
     [InlineData(4)]
     public void GetKeepAliveAction_RestartsOwnProcessAfterRepeatedFailedHealthChecks(int failedHealthChecks)
     {
-        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true, failedHealthChecks)
+        AgentProcessManager.GetKeepAliveAction(isHealthy: false, ownProcessIsRunning: true, otherAgentHasPipe: false, failedHealthChecks)
                            .Should().Be(KeepAliveAction.Restart);
     }
 
     [Theory]
     [CombinatorialData]
-    public void GetKeepAliveAction_DoesNothingWhenHealthy(bool ownProcessIsRunning)
+    public void GetKeepAliveAction_DoesNothingWhenHealthy(bool ownProcessIsRunning, bool otherAgentHasPipe)
     {
-        AgentProcessManager.GetKeepAliveAction(isHealthy: true, ownProcessIsRunning, failedHealthChecks: 0)
+        AgentProcessManager.GetKeepAliveAction(isHealthy: true, ownProcessIsRunning, otherAgentHasPipe, failedHealthChecks: 0)
                            .Should().Be(KeepAliveAction.None);
     }
 
