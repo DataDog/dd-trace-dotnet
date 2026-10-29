@@ -47,4 +47,11 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers.CodeFixes\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <MeziantouAnalysisMode>all-errors</MeziantouAnalysisMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Meziantou.Analyzer" Version="3.0.317" PrivateAssets="all" />
+  </ItemGroup>
+
 </Project>
