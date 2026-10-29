@@ -453,7 +453,7 @@ namespace Datadog.Trace.FeatureFlags
             bool isFirst;
             try
             {
-                var evaluator = new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled);
+                var evaluator = new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled, ReportDependencyEvaluation);
                 lock (_handlerLock)
                 {
                     // Keep first-configuration detection with installation so concurrent updates
@@ -878,6 +878,29 @@ namespace Datadog.Trace.FeatureFlags
             {
                 _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
             }
+        }
+
+        private void ReportDependencyEvaluation(Evaluation evaluation, DateTime evaluationTime, EvaluationContext? context)
+        {
+            var writer = Volatile.Read(ref _availableEvaluationWriter);
+            if (writer is null)
+            {
+                return;
+            }
+
+            var consent = evaluation.FlagMetadata?.TryGetValue(FeatureFlagMetadataKeys.ObserveFullEvaluationData, out var value) == true
+                       && value == "true";
+            IReadOnlyDictionary<string, object?>? attributes = consent && context is not null ? new Dictionary<string, object?>(context.Attributes) : null;
+            writer.TryEnqueue(
+                new FlagEvalEvent(
+                    evaluation.FlagKey,
+                    evaluation.Variant,
+                    FeatureFlagsEvaluator.AllocationKey(evaluation),
+                    context?.TargetingKey,
+                    new DateTimeOffset(evaluationTime).ToUnixTimeMilliseconds(),
+                    attributes,
+                    FeatureFlagsEvaluator.ErrorCode(evaluation),
+                    consent));
         }
 
         // Created on first use because most applications never evaluate a flag, and under the lock

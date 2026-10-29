@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -44,6 +45,103 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             module.EvaluationWriter.Should().BeNull("events remain lazy until provider adoption");
             module.Activate();
             module.EvaluationWriter.Should().NotBeNull("Agentless delivery can use direct intake without discovering an Agent");
+        }
+        finally
+        {
+            await module.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ReachedDependencyIsImmediatelyEnqueuedThroughModuleWriter()
+    {
+        using var agent = MockTracerAgent.Create(_output);
+        var received = new ConcurrentQueue<MockTracerAgent.EvpProxyPayload>();
+        agent.EventPlatformProxyPayloadReceived += (_, args) => received.Enqueue(args.Value);
+        var settings = Settings(agent.Port, "remote_config");
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), discoveryService: FlagEvaluationTestDiscovery.Available(settings))!;
+        try
+        {
+            module.Activate();
+            var dependency = new Flag
+            {
+                Key = "dependency",
+                Enabled = true,
+                VariationType = FeatureFlagsValueType.String,
+                Variations = new Dictionary<string, Variant> { ["on"] = new("on", "value") },
+                Allocations = [new Allocation { Key = "dependency-allocation", DoLog = false, Splits = [new Split { VariationKey = "on", Shards = [] }] }],
+            };
+            var root = new Flag
+            {
+                Key = "root",
+                Enabled = true,
+                VariationType = FeatureFlagsValueType.String,
+                Variations = new Dictionary<string, Variant> { ["selected"] = new("selected", "value") },
+                Allocations =
+                [
+                    new Allocation
+                    {
+                        Key = "root-allocation",
+                        DoLog = false,
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new[] { "on" } }])],
+                        Splits = [new Split { VariationKey = "selected", Shards = [] }],
+                    },
+                ],
+            };
+            var flags = new FlagCollection { ["dependency"] = dependency, ["root"] = root };
+            module.ApplyConfiguration(new ServerConfiguration { Flags = flags }).Should().BeTrue();
+
+            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", null).Variant.Should().Be("selected");
+            await module.FlushAsync();
+
+            received.Should().ContainSingle();
+            var observations = JObject.Parse(received.Single().BodyInJson)["flagEvaluations"]!;
+            observations.Should().ContainSingle();
+            observations[0]!["flag"]!["key"]!.Value<string>().Should().Be("dependency");
+        }
+        finally
+        {
+            await module.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task OptedOutDependencyErrorTelemetryDoesNotCopyContextAttributes()
+    {
+        using var agent = MockTracerAgent.Create(_output);
+        var received = new ConcurrentQueue<MockTracerAgent.EvpProxyPayload>();
+        agent.EventPlatformProxyPayloadReceived += (_, args) => received.Enqueue(args.Value);
+        var settings = Settings(agent.Port, "remote_config");
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), discoveryService: FlagEvaluationTestDiscovery.Available(settings))!;
+        try
+        {
+            module.Activate();
+            var root = new Flag
+            {
+                Key = "root",
+                Enabled = true,
+                VariationType = FeatureFlagsValueType.String,
+                Variations = new Dictionary<string, Variant> { ["selected"] = new("selected", "value") },
+                Allocations =
+                [
+                    new Allocation
+                    {
+                        Key = "root-allocation",
+                        DoLog = false,
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "missing" }, Operator = ConditionOperator.ONE_OF, Value = new[] { "on" } }])],
+                        Splits = [new Split { VariationKey = "selected", Shards = [] }],
+                    },
+                ],
+            };
+            module.ApplyConfiguration(new ServerConfiguration { ObserveFullEvaluationData = false, Flags = new FlagCollection { ["root"] = root } }).Should().BeTrue();
+
+            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", new ThrowOnEnumerationDictionary()).Reason.Should().Be(EvaluationReason.Error);
+            await module.FlushAsync();
+
+            var observation = JObject.Parse(received.Should().ContainSingle().Subject.BodyInJson)["flagEvaluations"]!.Should().ContainSingle().Subject;
+            observation["flag"]!["key"]!.Value<string>().Should().Be("missing");
+            observation["error"]!["message"]!.Value<string>().Should().Be("FLAG_NOT_FOUND");
+            observation["context"].Should().BeNull();
         }
         finally
         {
@@ -501,6 +599,59 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
     }));
 
     private static FlagEvalEvent Observation() => new("flag", "variant", null, "private-subject", 1790000000000, null);
+
+    private sealed class ThrowOnEnumerationDictionary : IDictionary<string, object?>
+    {
+        public ICollection<string> Keys => [];
+
+        public ICollection<object?> Values => [];
+
+        public int Count => 0;
+
+        public bool IsReadOnly => false;
+
+        public object? this[string key]
+        {
+            get => null;
+            set
+            {
+            }
+        }
+
+        public void Add(string key, object? value)
+        {
+        }
+
+        public void Add(KeyValuePair<string, object?> item)
+        {
+        }
+
+        public void Clear()
+        {
+        }
+
+        public bool Contains(KeyValuePair<string, object?> item) => false;
+
+        public bool ContainsKey(string key) => false;
+
+        public void CopyTo(KeyValuePair<string, object?>[] array, int arrayIndex)
+        {
+        }
+
+        public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() => throw new InvalidOperationException("attributes must not be copied without consent");
+
+        public bool Remove(string key) => false;
+
+        public bool Remove(KeyValuePair<string, object?> item) => false;
+
+        public bool TryGetValue(string key, out object? value)
+        {
+            value = null;
+            return false;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
 
     private sealed class FakeDeliverySource : IFeatureFlagsDeliverySource
     {

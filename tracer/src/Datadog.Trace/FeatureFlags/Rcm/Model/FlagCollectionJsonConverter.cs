@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -108,7 +109,7 @@ internal sealed class FlagCollectionJsonConverter : JsonConverter<FlagCollection
 
                     foreach (var condition in rule.Conditions)
                     {
-                        if (condition is null || !HasValidOperand(condition))
+                        if (condition is null || !HasValidCondition(condition))
                         {
                             return false;
                         }
@@ -144,11 +145,29 @@ internal sealed class FlagCollectionJsonConverter : JsonConverter<FlagCollection
         return true;
     }
 
-    private static bool HasValidOperand(ConditionConfiguration condition)
+    private static bool HasValidCondition(ConditionConfiguration condition)
     {
+        if (condition.AttributePresent == condition.FlagEvaluationPresent)
+        {
+            return false;
+        }
+
+        if (condition.FlagEvaluationPresent)
+        {
+            var descriptor = condition.FlagEvaluation;
+            if (descriptor is null
+             || !descriptor.KeyPresent
+             || descriptor.Key is not string { Length: > 0 }
+             || descriptor.AdditionalProperties is { Count: > 0 }
+             || condition.Operator is not ConditionOperator.ONE_OF and not ConditionOperator.NOT_ONE_OF)
+            {
+                return false;
+            }
+        }
+
         if (condition.Operator is ConditionOperator.ONE_OF or ConditionOperator.NOT_ONE_OF)
         {
-            return condition.Value is JArray;
+            return condition.Value is JArray values && values.All(value => value.Type == JTokenType.String);
         }
 
         if (condition.Operator is ConditionOperator.SEMVER_EQ

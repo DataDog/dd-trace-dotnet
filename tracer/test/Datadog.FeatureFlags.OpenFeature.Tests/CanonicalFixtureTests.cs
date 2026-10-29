@@ -129,7 +129,7 @@ public class CanonicalFixtureTests
         actualValue = NormalizeNumbers(actualValue);
         Assert.True(JsonLinq.JToken.DeepEquals(expectedValue, actualValue), $"Expected {expectedValue}, got {actualValue}");
         Assert.Equal(testCase["flag"]!.Value<string>(), actual.FlagKey);
-        Assert.Equal(expected["reason"]!.Value<string>()!.ToLowerInvariant(), actual.Reason);
+        Assert.Equal(expected["reason"]!.Value<string>(), actual.Reason);
 
         var errorCode = expected["errorCode"]?.Value<string>();
         if (errorCode is null && expected["reason"]!.Value<string>() == "ERROR")

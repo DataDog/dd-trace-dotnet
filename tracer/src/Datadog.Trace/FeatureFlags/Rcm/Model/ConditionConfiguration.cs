@@ -15,10 +15,34 @@ namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 internal sealed class ConditionConfiguration
 {
     private Regex? _regex;
+    private string? _attribute;
+    private FlagEvaluationConfiguration? _flagEvaluation;
 
     public ConditionOperator? Operator { get; set; }
 
-    public string? Attribute { get; set; }
+    public string? Attribute
+    {
+        get => _attribute;
+        set
+        {
+            AttributePresent = true;
+            _attribute = value;
+        }
+    }
+
+    public FlagEvaluationConfiguration? FlagEvaluation
+    {
+        get => _flagEvaluation;
+        set
+        {
+            FlagEvaluationPresent = true;
+            _flagEvaluation = value;
+        }
+    }
+
+    internal bool AttributePresent { get; private set; }
+
+    internal bool FlagEvaluationPresent { get; private set; }
 
     public object? Value { get; set; }
 

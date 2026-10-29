@@ -39,6 +39,21 @@ public class AgentlessConfigurationSourceTests
     private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
 
     [Fact]
+    public void RequestHeadersAdvertiseDependentFlagSupport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            [ConfigurationKeys.ApiKey] = "test-api-key",
+        }));
+        var headers = AgentlessConfigurationSource.GetRequestHeaders(CreateEndpoint(), settings.FeatureFlags)
+                                                  .ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        headers.Should().Contain(
+            AgentlessConfigurationSource.FeatureFlagsCapabilitiesHeader,
+            AgentlessConfigurationSource.DependentFlagCapability);
+    }
+
+    [Fact]
     public async Task AppliesConfigurationFromA200()
     {
         var applied = new List<ServerConfiguration>();

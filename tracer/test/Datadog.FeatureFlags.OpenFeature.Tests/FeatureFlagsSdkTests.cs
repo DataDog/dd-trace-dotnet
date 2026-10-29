@@ -17,6 +17,22 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 public class FeatureFlagsSdkTests
 {
     [Theory]
+    [InlineData((int)EvaluationReason.Static, Reason.Static)]
+    [InlineData((int)EvaluationReason.Default, Reason.Default)]
+    [InlineData((int)EvaluationReason.TargetingMatch, Reason.TargetingMatch)]
+    [InlineData((int)EvaluationReason.Split, Reason.Split)]
+    [InlineData((int)EvaluationReason.Disabled, Reason.Disabled)]
+    [InlineData((int)EvaluationReason.Cached, Reason.Cached)]
+    [InlineData((int)EvaluationReason.Unknown, Reason.Unknown)]
+    [InlineData((int)EvaluationReason.Error, Reason.Error)]
+    public void ResolutionUsesCanonicalOpenFeatureReason(int evaluationReason, string expected)
+    {
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null, reason: (EvaluationReason)evaluationReason), null);
+
+        result.Reason.Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData(null, false)]
     [InlineData("false", false)]
     [InlineData("true", true)]
@@ -117,13 +133,13 @@ public class FeatureFlagsSdkTests
         result.FlagMetadata.Should().BeNull();
     }
 
-    private sealed class TestEvaluation(IDictionary<string, string>? metadata, string? error = null) : IEvaluation
+    private sealed class TestEvaluation(IDictionary<string, string>? metadata, string? error = null, EvaluationReason? reason = null) : IEvaluation
     {
         public string FlagKey => "flag";
 
         public object Value => true;
 
-        public EvaluationReason Reason => error is null ? EvaluationReason.Static : EvaluationReason.Error;
+        public EvaluationReason Reason => reason ?? (error is null ? EvaluationReason.Static : EvaluationReason.Error);
 
         public string? Variant => "on";
 

@@ -32,13 +32,21 @@ namespace Datadog.Trace.FeatureFlags
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
+        private const int DefaultMaxDependencyDepth = 10;
+
         private readonly ReportExposureDelegate? _onExposureEvent;
+        private readonly ReportDependencyEvaluationDelegate? _onDependencyEvaluation;
         private readonly ServerConfiguration? _config;
         private readonly bool _spanEnrichmentEnabled;
 
-        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false)
+        public FeatureFlagsEvaluator(
+            ReportExposureDelegate? onExposureEvent,
+            ServerConfiguration? config,
+            bool spanEnrichmentEnabled = false,
+            ReportDependencyEvaluationDelegate? onDependencyEvaluation = null)
         {
             _onExposureEvent = onExposureEvent;
+            _onDependencyEvaluation = onDependencyEvaluation;
             _config = config;
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
             if (_config is null)
@@ -79,191 +87,140 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                Flag? flag = null;
-                var lookupResult = config.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
-                if (lookupResult == FlagLookupResult.NotFound)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "FLAG_NOT_FOUND",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "FLAG_NOT_FOUND",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                        });
-                }
-
-                if (lookupResult == FlagLookupResult.Invalid || flag is null)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "PARSE_ERROR",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "PARSE_ERROR",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                        });
-                }
-
-                if (flag.Enabled != true)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Disabled,
-                        metadata: new Dictionary<string, string>
-                        {
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                        });
-                }
-
-                if (flag.VariationType != resultType)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "TYPE_MISMATCH",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "TYPE_MISMATCH",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                        });
-                }
-
-                if (flag.Allocations is null or { Count: 0 })
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Default,
-                        metadata: new Dictionary<string, string>
-                        {
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                        });
-                }
-
                 var now = DateTime.UtcNow;
-                var targetingKey = context?.TargetingKey;
-
-                foreach (var allocation in flag.Allocations)
+                var session = new DependencyEvaluationSession(this, config, flagKey, context, now, consent);
+                var evaluation = EvaluateFlag(flagKey, resultType, defaultValue, context, session, now, consent);
+                if (evaluation.Reason != EvaluationReason.Error)
                 {
-                    if (!IsAllocationActive(allocation, now))
-                    {
-                        continue;
-                    }
-
-                    // Track whether this allocation has targeting rules
-                    var hadRules = allocation.Rules is { Count: > 0 };
-                    if (hadRules)
-                    {
-                        if (!EvaluateRules(allocation.Rules!, context))
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (allocation.Splits is { Count: > 0 })
-                    {
-                        foreach (var split in allocation.Splits)
-                        {
-                            if (StringUtil.IsNullOrEmpty(split.VariationKey))
-                            {
-                                throw new FormatException($"Empty variation key in allocation {allocation.Key}");
-                            }
-
-                            var allShardsMatch = true;
-                            var hadShards = split.Shards is { Count: > 0 };
-                            if (hadShards)
-                            {
-                                foreach (var shard in split.Shards!)
-                                {
-                                    if (!MatchesShard(shard, targetingKey))
-                                    {
-                                        allShardsMatch = false;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (allShardsMatch)
-                            {
-                                // Determine reason based on how the flag was resolved.
-                                // - TargetingMatch: Allocation had targeting rules that matched
-                                // - Default: A temporal allocation with one unsharded split matched
-                                // - Split: Resolved via percentage split without targeting rules
-                                // - Static: No rules, no shards - simple static value
-                                var isTemporalDefault = !hadRules &&
-                                                        !hadShards &&
-                                                        allocation.Splits.Count == 1 &&
-                                                        (!StringUtil.IsNullOrEmpty(allocation.StartAt) ||
-                                                         !StringUtil.IsNullOrEmpty(allocation.EndAt));
-                                var reason = hadRules ? EvaluationReason.TargetingMatch
-                                           : isTemporalDefault ? EvaluationReason.Default
-                                           : hadShards ? EvaluationReason.Split
-                                           : EvaluationReason.Static;
-
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent);
-                            }
-                        }
-                    }
+                    session.CommitExposures();
                 }
 
-                // No allocation / split matched – use default
+                return evaluation;
+            }
+            catch (DependencyGraphException ex)
+            {
+                return Error(flagKey, defaultValue, ex.ErrorCode, ex.Message, consent);
+            }
+            catch (FormatException ex)
+            {
+                return Error(flagKey, defaultValue, "PARSE_ERROR", ex.Message, consent);
+            }
+            catch (MissingTargetingKeyException)
+            {
+                return Error(flagKey, defaultValue, "TARGETING_KEY_MISSING", null, consent);
+            }
+            catch (Exception ex)
+            {
+                return Error(flagKey, defaultValue, "GENERAL", ex.Message, consent, ex.Message);
+            }
+        }
+
+#pragma warning disable SA1204 // Static helpers follow this recursive instance method for evaluator readability
+        private Evaluation EvaluateFlag(
+            string flagKey,
+            ValueType resultType,
+            object? defaultValue,
+            EvaluationContext? context,
+            DependencyEvaluationSession session,
+            DateTime now,
+            string consent)
+        {
+            Flag? flag = null;
+            var lookupResult = _config?.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
+            if (lookupResult == FlagLookupResult.NotFound)
+            {
+                return Error(flagKey, defaultValue, "FLAG_NOT_FOUND", null, consent);
+            }
+
+            if (lookupResult == FlagLookupResult.Invalid || flag is null)
+            {
+                return Error(flagKey, defaultValue, "PARSE_ERROR", null, consent);
+            }
+
+            if (flag.Enabled != true)
+            {
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Disabled,
+                    metadata: ConsentMetadata(consent));
+            }
+
+            if (flag.VariationType != resultType)
+            {
+                return Error(flagKey, defaultValue, "TYPE_MISMATCH", null, consent);
+            }
+
+            if (flag.Allocations is null or { Count: 0 })
+            {
                 return new Evaluation(
                     flagKey,
                     defaultValue,
                     EvaluationReason.Default,
-                    metadata: new Dictionary<string, string>
-                    {
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                    });
+                    metadata: ConsentMetadata(consent));
             }
-            catch (FormatException ex)
+
+            var targetingKey = context?.TargetingKey;
+
+            foreach (var allocation in flag.Allocations)
             {
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: "PARSE_ERROR",
-                    metadata: new Dictionary<string, string>
+                if (!IsAllocationActive(allocation, now))
+                {
+                    continue;
+                }
+
+                var checkpoint = session.Checkpoint();
+                var hadRules = allocation.Rules is { Count: > 0 };
+                if (hadRules && !EvaluateRules(allocation.Rules!, context, session))
+                {
+                    session.Rollback(checkpoint);
+                    continue;
+                }
+
+                if (allocation.Splits is { Count: > 0 })
+                {
+                    foreach (var split in allocation.Splits)
                     {
-                        ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = ex.Message,
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                    });
+                        if (StringUtil.IsNullOrEmpty(split.VariationKey))
+                        {
+                            throw new FormatException($"Empty variation key in allocation {allocation.Key}");
+                        }
+
+                        var allShardsMatch = true;
+                        var hadShards = split.Shards is { Count: > 0 };
+                        if (hadShards)
+                        {
+                            foreach (var shard in split.Shards!)
+                            {
+                                if (!MatchesShard(shard, targetingKey))
+                                {
+                                    allShardsMatch = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (allShardsMatch)
+                        {
+                            var isTemporalDefault = !hadRules &&
+                                                    !hadShards &&
+                                                    allocation.Splits.Count == 1 &&
+                                                    (!StringUtil.IsNullOrEmpty(allocation.StartAt) ||
+                                                     !StringUtil.IsNullOrEmpty(allocation.EndAt));
+                            var reason = hadRules ? EvaluationReason.TargetingMatch
+                                       : isTemporalDefault ? EvaluationReason.Default
+                                       : hadShards ? EvaluationReason.Split
+                                       : EvaluationReason.Static;
+
+                            return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent, session);
+                        }
+                    }
+                }
+
+                session.Rollback(checkpoint);
             }
-            catch (MissingTargetingKeyException)
-            {
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: "TARGETING_KEY_MISSING",
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "TARGETING_KEY_MISSING",
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                    });
-            }
-            catch (Exception ex)
-            {
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: ex.Message,
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "GENERAL",
-                        ["message"] = ex.Message,
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
-                    });
-            }
+
+            return new Evaluation(flagKey, defaultValue, EvaluationReason.Default, metadata: ConsentMetadata(consent));
         }
 
         private static bool IsAllocationActive(Allocation allocation, DateTime now)
@@ -283,7 +240,7 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        private static bool EvaluateRules(List<Rule> rules, EvaluationContext? context)
+        private static bool EvaluateRules(List<Rule> rules, EvaluationContext? context, DependencyEvaluationSession session)
         {
             foreach (var rule in rules)
             {
@@ -292,10 +249,11 @@ namespace Datadog.Trace.FeatureFlags
                     continue;
                 }
 
+                var checkpoint = session.Checkpoint();
                 var allConditionsMatch = true;
                 foreach (var condition in rule.Conditions)
                 {
-                    if (!EvaluateCondition(condition, context))
+                    if (!EvaluateCondition(condition, context, session))
                     {
                         allConditionsMatch = false;
                         break;
@@ -306,16 +264,47 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     return true;
                 }
+
+                session.Rollback(checkpoint);
             }
 
             return false;
         }
 
-        private static bool EvaluateCondition(ConditionConfiguration condition, EvaluationContext? context)
+        private static bool EvaluateCondition(ConditionConfiguration condition, EvaluationContext? context, DependencyEvaluationSession session)
         {
             if (condition.Operator is null)
             {
                 throw new FormatException("Condition operator can not be null");
+            }
+
+            var hasAttribute = condition.AttributePresent;
+            var hasFlagEvaluation = condition.FlagEvaluationPresent;
+            if (hasAttribute == hasFlagEvaluation)
+            {
+                throw new FormatException("Condition must contain exactly one of attribute or flagEvaluation");
+            }
+
+            if (hasFlagEvaluation)
+            {
+                if (condition.Operator is not ConditionOperator.ONE_OF and not ConditionOperator.NOT_ONE_OF)
+                {
+                    throw new FormatException("Flag evaluation conditions only support ONE_OF and NOT_ONE_OF");
+                }
+
+                var descriptor = condition.FlagEvaluation;
+                if (descriptor is null
+                 || !descriptor.KeyPresent
+                 || descriptor.Key is not string { Length: > 0 } key
+                 || descriptor.AdditionalProperties is { Count: > 0 })
+                {
+                    throw new FormatException("Flag evaluation must contain only a non-empty string key");
+                }
+
+                var variant = session.Resolve(key);
+                return condition.Operator == ConditionOperator.ONE_OF
+                           ? IsDependencyVariantOneOf(variant, condition.Value)
+                           : !IsDependencyVariantOneOf(variant, condition.Value);
             }
 
             if (condition.Operator == ConditionOperator.IS_NULL)
@@ -369,7 +358,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private static bool IsOneOf(object attributeValue, object? conditionValue)
         {
-            if (conditionValue is not IEnumerable enumerable)
+            if (conditionValue is string || conditionValue is not IEnumerable enumerable)
             {
                 throw new FormatException($"Condition value is not an array {Convert.ToString(conditionValue ?? "<NULL>")}");
             }
@@ -384,6 +373,89 @@ namespace Datadog.Trace.FeatureFlags
 
             return false;
         }
+
+        private static bool IsDependencyVariantOneOf(string variant, object? conditionValue)
+        {
+            if (conditionValue is string || conditionValue is not IEnumerable enumerable)
+            {
+                throw new FormatException($"Condition value is not an array {Convert.ToString(conditionValue ?? "<NULL>")}");
+            }
+
+            var matches = false;
+            foreach (var value in enumerable)
+            {
+                var member = value switch
+                {
+                    string text => text,
+                    JValue { Type: JTokenType.String, Value: string text } => text,
+                    _ => throw new FormatException("Flag evaluation condition values must be strings"),
+                };
+
+                matches |= string.Equals(variant, member, StringComparison.Ordinal);
+            }
+
+            return matches;
+        }
+
+        private static int GetMaxDependencyDepth(ServerConfiguration config)
+        {
+            if (!config.EvaluatorParamsPresent)
+            {
+                return DefaultMaxDependencyDepth;
+            }
+
+            var evaluatorParams = config.EvaluatorParams;
+            if (evaluatorParams is null || !evaluatorParams.MaxDependencyDepthPresent)
+            {
+                if (evaluatorParams is not null)
+                {
+                    return DefaultMaxDependencyDepth;
+                }
+
+                throw new FormatException("evaluatorParams must be an object");
+            }
+
+            var configured = evaluatorParams.MaxDependencyDepth;
+
+            if (configured is null or bool or string || configured is not IConvertible)
+            {
+                throw new FormatException("maxDependencyDepth must be an integer from 0 through 255");
+            }
+
+            try
+            {
+                var value = Convert.ToDouble(configured, CultureInfo.InvariantCulture);
+                if (double.IsNaN(value) || double.IsInfinity(value) || value < 0 || value > 255 || Math.Truncate(value) != value)
+                {
+                    throw new FormatException("maxDependencyDepth must be an integer from 0 through 255");
+                }
+
+                return (int)value;
+            }
+            catch (FormatException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new FormatException("maxDependencyDepth must be an integer from 0 through 255", ex);
+            }
+        }
+
+        private static Evaluation Error(string flagKey, object? defaultValue, string code, string? message, string consent, string? error = null)
+        {
+            var metadata = ConsentMetadata(consent);
+            metadata[MetadataErrorCode] = code;
+            if (message is not null)
+            {
+                metadata["message"] = message;
+            }
+
+            return new Evaluation(flagKey, defaultValue, EvaluationReason.Error, error: error ?? code, metadata: metadata);
+        }
+
+        private static Dictionary<string, string> ConsentMetadata(string consent)
+            => new() { [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent };
 
         private static bool CompareString(object a, object? b)
         {
@@ -704,6 +776,7 @@ namespace Datadog.Trace.FeatureFlags
             return result;
         }
 
+#pragma warning restore SA1204
         private Evaluation ResolveVariant(
             string flagKey,
             ValueType resultType,
@@ -714,7 +787,8 @@ namespace Datadog.Trace.FeatureFlags
             EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context,
-            string consent)
+            string consent,
+            DependencyEvaluationSession session)
         {
             var variationKey = split.VariationKey!;
 
@@ -763,7 +837,11 @@ namespace Datadog.Trace.FeatureFlags
 
             if (doLog)
             {
-                DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
+                var exposure = CreateExposure(flagKey, evaluation, evalTime, context, split.SerialId);
+                if (exposure.HasValue)
+                {
+                    session.RecordExposure(flagKey, exposure.Value);
+                }
             }
             else
             {
@@ -788,7 +866,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private void DispatchExposure(
+        private Exposure.Model.ExposureEvent? CreateExposure(
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
@@ -801,30 +879,309 @@ namespace Datadog.Trace.FeatureFlags
             if (allocationKey == null || variantKey == null)
             {
                 Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
-                return;
+                return null;
             }
 
-            var evt = new Exposure.Model.ExposureEvent(
+            return new Exposure.Model.ExposureEvent(
                 new DateTimeOffset(evalTime).ToUnixTimeMilliseconds(),
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
                 new Exposure.Model.Variant(variantKey),
                 new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)),
                 serialId);
-
-            _onExposureEvent?.Invoke(in evt);
         }
 
-        private record struct FlattenEntry(string Key, object? Value, int Level)
+        private readonly struct ExposureCheckpoint(int exposureCount, int? frameExposureCount)
         {
+            public int ExposureCount { get; } = exposureCount;
+
+            public int? FrameExposureCount { get; } = frameExposureCount;
+        }
+
+        private readonly struct ExposureCandidate(string flagKey, Exposure.Model.ExposureEvent exposure)
+        {
+            public string FlagKey { get; } = flagKey;
+
+            public Exposure.Model.ExposureEvent Exposure { get; } = exposure;
+        }
+
+        private readonly struct FlattenEntry(string key, object? value, int level)
+        {
+            public string Key { get; } = key;
+
+            public object? Value { get; } = value;
+
+            public int Level { get; } = level;
+        }
+
+        private sealed class DependencyEvaluationSession
+        {
+            private readonly FeatureFlagsEvaluator _owner;
+            private readonly ServerConfiguration _config;
+            private readonly EvaluationContext? _context;
+            private readonly DateTime _evaluationTime;
+            private readonly string _consent;
+            private readonly Dictionary<string, MemoizedDependency> _memo = new();
+            private readonly HashSet<string> _active;
+            private readonly List<DependencyFrame> _frames = [];
+            private readonly List<ExposureCandidate> _exposures = [];
+            private int? _maxDepth;
+
+            public DependencyEvaluationSession(
+                FeatureFlagsEvaluator owner,
+                ServerConfiguration config,
+                string rootFlagKey,
+                EvaluationContext? context,
+                DateTime evaluationTime,
+                string consent)
+            {
+                _owner = owner;
+                _config = config;
+                _context = context;
+                _evaluationTime = evaluationTime;
+                _consent = consent;
+                _active = new HashSet<string> { rootFlagKey };
+            }
+
+            public ExposureCheckpoint Checkpoint()
+            {
+                var frame = _frames.Count == 0 ? null : _frames[_frames.Count - 1];
+                return new ExposureCheckpoint(_exposures.Count, frame?.ExposureTrace.Count);
+            }
+
+            public void Rollback(ExposureCheckpoint checkpoint)
+            {
+                _exposures.RemoveRange(checkpoint.ExposureCount, _exposures.Count - checkpoint.ExposureCount);
+                if (checkpoint.FrameExposureCount is { } count && _frames.Count > 0)
+                {
+                    var trace = _frames[_frames.Count - 1].ExposureTrace;
+                    trace.RemoveRange(count, trace.Count - count);
+                }
+            }
+
+            public string Resolve(string flagKey)
+            {
+                var depth = _frames.Count + 1;
+                var maxDepth = _maxDepth ??= GetMaxDependencyDepth(_config);
+                if (depth > maxDepth)
+                {
+                    if (!_memo.ContainsKey(flagKey) && !_active.Contains(flagKey))
+                    {
+                        EmitDepthError(flagKey);
+                    }
+
+                    throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded");
+                }
+
+                if (_active.Contains(flagKey))
+                {
+                    throw new DependencyGraphException("GENERAL", "flag dependency cycle detected");
+                }
+
+                if (_memo.TryGetValue(flagKey, out var memoized))
+                {
+                    if (depth + memoized.DescendantDepth > maxDepth)
+                    {
+                        throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded");
+                    }
+
+                    RecordReachedDepth(depth + memoized.DescendantDepth);
+                    RecordExposureTrace(memoized.ExposureTrace);
+                    return memoized.Evaluation.Variant!;
+                }
+
+                Flag? flag = null;
+                var lookup = _owner._config?.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
+                if (lookup == FlagLookupResult.NotFound)
+                {
+                    var missing = Error(flagKey, DefaultValue(ValueType.String), "FLAG_NOT_FOUND", "prerequisite flag is missing", _consent);
+                    EmitEvaluation(missing);
+                    throw new DependencyGraphException("FLAG_NOT_FOUND", "prerequisite flag is missing");
+                }
+
+                if (lookup == FlagLookupResult.Invalid || flag?.VariationType is null)
+                {
+                    var invalid = Error(flagKey, null, "PARSE_ERROR", "prerequisite flag is invalid", _consent);
+                    EmitEvaluation(invalid);
+                    throw new DependencyGraphException("PARSE_ERROR", "prerequisite flag is invalid");
+                }
+
+                var type = flag.VariationType.Value;
+                var defaultValue = DefaultValue(type);
+                _active.Add(flagKey);
+                var frame = new DependencyFrame(depth);
+                _frames.Add(frame);
+                MemoizedDependency? resolved = null;
+                try
+                {
+                    var evaluation = _owner.EvaluateFlag(flagKey, type, defaultValue, _context, this, _evaluationTime, _consent);
+                    if (evaluation.Reason == EvaluationReason.Error)
+                    {
+                        throw new DependencyGraphException(ErrorCode(evaluation) ?? "GENERAL", evaluation.Error ?? "prerequisite flag evaluation failed");
+                    }
+
+                    if (evaluation.Variant is null)
+                    {
+                        throw new DependencyGraphException("GENERAL", "prerequisite flag evaluation returned no variant");
+                    }
+
+                    var trace = new List<ExposureCandidate>(frame.ExposureTrace);
+                    var result = new MemoizedDependency(evaluation, frame.MaxReachedDepth - depth, trace);
+                    _memo.Add(flagKey, result);
+                    resolved = result;
+                    EmitEvaluation(evaluation);
+                    return evaluation.Variant;
+                }
+                catch (DependencyGraphException ex)
+                {
+                    var failed = Error(flagKey, defaultValue, ex.ErrorCode, ex.Message, _consent);
+                    EmitEvaluation(failed);
+                    throw;
+                }
+                catch (MissingTargetingKeyException)
+                {
+                    const string message = "prerequisite flag evaluation requires a targeting key";
+                    EmitEvaluation(Error(flagKey, defaultValue, "TARGETING_KEY_MISSING", message, _consent));
+                    throw new DependencyGraphException("TARGETING_KEY_MISSING", message);
+                }
+                catch (FormatException ex)
+                {
+                    EmitEvaluation(Error(flagKey, defaultValue, "PARSE_ERROR", ex.Message, _consent));
+                    throw new DependencyGraphException("PARSE_ERROR", ex.Message);
+                }
+                catch (Exception)
+                {
+                    const string message = "prerequisite flag evaluation failed";
+                    EmitEvaluation(Error(flagKey, defaultValue, "GENERAL", message, _consent));
+                    throw new DependencyGraphException("GENERAL", message);
+                }
+                finally
+                {
+                    _frames.RemoveAt(_frames.Count - 1);
+                    _active.Remove(flagKey);
+                    if (resolved is not null)
+                    {
+                        RecordReachedDepth(depth + resolved.DescendantDepth);
+                        RecordExposureTrace(resolved.ExposureTrace);
+                    }
+                }
+            }
+
+            public void RecordExposure(string flagKey, Exposure.Model.ExposureEvent exposure)
+            {
+                var candidate = new ExposureCandidate(flagKey, exposure);
+                AppendUnique(_exposures, candidate);
+                if (_frames.Count > 0)
+                {
+                    AppendUnique(_frames[_frames.Count - 1].ExposureTrace, candidate);
+                }
+            }
+
+            public void CommitExposures()
+            {
+                foreach (var candidate in _exposures)
+                {
+                    var exposure = candidate.Exposure;
+                    try
+                    {
+                        _owner._onExposureEvent?.Invoke(in exposure);
+                    }
+                    catch
+                    {
+                        // Exposure delivery is best effort and must not affect flag evaluation.
+                    }
+                }
+            }
+
+            private static object DefaultValue(ValueType type) => type switch
+            {
+                ValueType.Boolean => false,
+                ValueType.Integer => 0,
+                ValueType.Numeric => 0d,
+                ValueType.String => string.Empty,
+                ValueType.Json => new Dictionary<string, object?>(),
+                _ => string.Empty,
+            };
+
+            private static void AppendUnique(List<ExposureCandidate> target, ExposureCandidate candidate)
+            {
+                if (!target.Any(existing => existing.FlagKey == candidate.FlagKey))
+                {
+                    target.Add(candidate);
+                }
+            }
+
+            private void RecordExposureTrace(List<ExposureCandidate> trace)
+            {
+                foreach (var candidate in trace)
+                {
+                    AppendUnique(_exposures, candidate);
+                    if (_frames.Count > 0)
+                    {
+                        AppendUnique(_frames[_frames.Count - 1].ExposureTrace, candidate);
+                    }
+                }
+            }
+
+            private void RecordReachedDepth(int depth)
+            {
+                if (_frames.Count > 0)
+                {
+                    var frame = _frames[_frames.Count - 1];
+                    frame.MaxReachedDepth = Math.Max(frame.MaxReachedDepth, depth);
+                }
+            }
+
+            private void EmitEvaluation(Evaluation evaluation)
+            {
+                try
+                {
+                    _owner._onDependencyEvaluation?.Invoke(evaluation, _evaluationTime, _context);
+                }
+                catch
+                {
+                    // Evaluation telemetry is best effort and must not affect flag evaluation.
+                }
+            }
+
+            private void EmitDepthError(string flagKey)
+            {
+                Flag? flag = null;
+                var lookup = _config.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
+                var defaultValue = lookup == FlagLookupResult.Found && flag?.VariationType is { } type ? DefaultValue(type) : null;
+                EmitEvaluation(Error(flagKey, defaultValue, "GENERAL", "maximum flag dependency depth exceeded", _consent));
+            }
+
+            private sealed class DependencyFrame(int maxReachedDepth)
+            {
+                public int MaxReachedDepth { get; set; } = maxReachedDepth;
+
+                public List<ExposureCandidate> ExposureTrace { get; } = [];
+            }
+
+            private sealed class MemoizedDependency(Evaluation evaluation, int descendantDepth, List<ExposureCandidate> exposureTrace)
+            {
+                public Evaluation Evaluation { get; } = evaluation;
+
+                public int DescendantDepth { get; } = descendantDepth;
+
+                public List<ExposureCandidate> ExposureTrace { get; } = exposureTrace;
+            }
         }
 
         private sealed class MissingTargetingKeyException : Exception
         {
         }
 
+        private sealed class DependencyGraphException(string errorCode, string message) : Exception(message)
+        {
+            public string ErrorCode { get; } = errorCode;
+        }
+
 #pragma warning disable SA1201 // Elements should appear in the correct order
         internal delegate void ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
+
+        internal delegate void ReportDependencyEvaluationDelegate(Evaluation evaluation, DateTime evaluationTime, EvaluationContext? context);
 #pragma warning restore SA1201 // Elements should appear in the correct order
     }
 }
