@@ -332,9 +332,10 @@ internal partial class ProbeExpressionParser<T>
             value);
         var dumpEntries = Expression.Call(
             Expression.Constant(this),
-            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(Type)]),
+            GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(DumpCollection), [typeof(object), typeof(bool), typeof(string)]),
             value,
-            Expression.Constant(typeof(IDictionary)));
+            Expression.Constant(true),
+            Expression.Constant(null, typeof(string)));
         var dumpFields = DumpFieldsExpression(value, scopeMembers);
         var dump = Expression.Condition(isSupportedDictionary, dumpEntries, dumpFields);
 
@@ -532,7 +533,7 @@ internal partial class ProbeExpressionParser<T>
                 return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
             }
 
-            return DumpCollection(value, assignableFrom ?? typeof(IDictionary));
+            return DumpCollection(value, isDictionary: assignableFrom is null || assignableFrom == typeof(IDictionary), name);
         }
 
         if (hasName)
@@ -561,78 +562,65 @@ internal partial class ProbeExpressionParser<T>
                    $"{name}{type?.FullName}";
     }
 
-    private string DumpCollection(object value, Type assignableFrom)
+    private string DumpCollection(object value, bool isDictionary, string name)
     {
         var sb = StringBuilderCache.Acquire();
         try
         {
+            if (!StringUtil.IsNullOrEmpty(name))
+            {
+                sb.Append(name).Append('=');
+            }
+
             if (value == null)
             {
                 sb.Append("null");
                 return sb.ToString();
             }
 
-            int count = 0;
-            if (assignableFrom == typeof(IList))
+            var enumerator = isDictionary ? ((IDictionary)value).GetEnumerator() : ((IEnumerable)value).GetEnumerator();
+            try
             {
-                sb.Append('[');
-                foreach (var item in (value as IList))
+                sb.Append(isDictionary ? '{' : '[');
+
+                // The fourth MoveNext only tells whether there are more than three items, so Current isn't read for it.
+                for (var count = 0; enumerator.MoveNext(); count++)
                 {
-                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
-                    if (++count == 3)
+                    if (count == 3)
                     {
                         sb.Append(", ...");
                         break;
                     }
 
-                    sb.Append(", ");
-                }
-
-                sb.Append(']');
-                return sb.ToString();
-            }
-            else if (assignableFrom == typeof(IReadOnlyList<>))
-            {
-                sb.Append('[');
-                foreach (var item in (value as IEnumerable))
-                {
-                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
-                    if (++count == 3)
+                    if (count > 0)
                     {
-                        sb.Append(", ...");
-                        break;
+                        sb.Append(", ");
                     }
 
-                    sb.Append(", ");
-                }
-
-                sb.Append(']');
-                return sb.ToString();
-            }
-            else if (assignableFrom == typeof(IDictionary))
-            {
-                sb.Append('{');
-                foreach (DictionaryEntry entry in (value as IDictionary))
-                {
-                    sb.Append('[');
-                    sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
-                    sb.Append(", ");
-                    sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedValueDump : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
-                    sb.Append(']');
-                    if (++count == 3)
+                    if (isDictionary)
                     {
-                        sb.Append(", ...");
-                        break;
+                        // Entry doesn't box the entry the way IEnumerator.Current does.
+                        var entry = ((IDictionaryEnumerator)enumerator).Entry;
+                        sb.Append('[');
+                        sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
+                        sb.Append(", ");
+                        sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedValueDump : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
+                        sb.Append(']');
                     }
-
-                    sb.Append(", ");
+                    else
+                    {
+                        var item = enumerator.Current;
+                        sb.Append(DumpObject(item, item?.GetType(), null, 1));
+                    }
                 }
 
-                sb.Append('}');
+                sb.Append(isDictionary ? '}' : ']');
                 return sb.ToString();
             }
-
-            return sb.ToString();
+            finally
+            {
+                (enumerator as IDisposable)?.Dispose();
+            }
         }
         finally
         {
