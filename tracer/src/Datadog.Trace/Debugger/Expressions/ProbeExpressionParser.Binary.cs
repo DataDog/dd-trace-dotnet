@@ -93,13 +93,13 @@ internal sealed partial class ProbeExpressionParser<T>
             left = ParseTree(reader, parameters, itParameter);
             if (left.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
-                return RedactDictionaryUndefinedOperation(left);
+                return RedactUndefinedOperation(left);
             }
 
             right = ParseTree(reader, parameters, itParameter);
             if (right.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
-                return RedactDictionaryUndefinedOperation(right);
+                return RedactUndefinedOperation(right);
             }
 
             if (IsRedactedValue(left) || IsRedactedValue(right))
@@ -109,7 +109,7 @@ internal sealed partial class ProbeExpressionParser<T>
 
             if (left.Type == typeof(string) && right.Type == typeof(string))
             {
-                return RedactDictionaryBinaryOperation(
+                return RedactOperation(
                     left,
                     right,
                     Expression.Block(
@@ -130,7 +130,7 @@ internal sealed partial class ProbeExpressionParser<T>
                 "==" or "!=" => EqualExpression(),
                 _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
             };
-            return RedactDictionaryBinaryOperation(left, right, comparison);
+            return RedactOperation(left, right, comparison);
         }
         catch (Exception e)
         {

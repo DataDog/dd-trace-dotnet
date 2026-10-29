@@ -19,6 +19,6 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Constant(false);
         }
 
-        return RedactDictionaryOperation(ex, Expression.Not(ex));
+        return RedactOperation(ex, Expression.Not(ex));
     }
 }

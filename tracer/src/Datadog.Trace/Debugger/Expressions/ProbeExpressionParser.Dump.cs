@@ -20,7 +20,6 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal partial class ProbeExpressionParser<T>
 {
     private const string UndefinedValueDump = nameof(Expressions.UndefinedValue);
-    private const string RedactedValueDump = "{redacted}";
 
     private static FieldInfo[] GetSafeFieldsForDump(FieldInfo[] fields)
     {
@@ -250,7 +249,7 @@ internal partial class ProbeExpressionParser<T>
         var hasName = !StringUtil.IsNullOrEmpty(name);
         if (ShouldRedactValue(name, type))
         {
-            return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
+            return hasName ? $"{name}={RedactedPlaceholder}" : RedactedPlaceholder;
         }
 
         if (type == null)
@@ -342,7 +341,7 @@ internal partial class ProbeExpressionParser<T>
                     sb.Append('[');
                     sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
                     sb.Append(", ");
-                    sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedValueDump : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
+                    sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedPlaceholder : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
                     sb.Append(']');
                     if (++count == 3)
                     {

@@ -449,13 +449,13 @@ internal partial class ProbeExpressionParser<T>
             Expression.Constant(typeName),
             _evaluationBudgetParameterExpression);
 
-        return RedactDictionaryOperation(value, isInstanceOfExpression);
+        return RedactOperation(value, isInstanceOfExpression);
     }
 
     private Expression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var source = ParseTree(reader, parameters, itParameter);
-        return RedactDictionaryOperation(source, Expression.Property(
+        return RedactOperation(source, Expression.Property(
             Expression.Call(
                 source,
                 ProbeExpressionParserHelper.GetMethodByReflection(typeof(object), "GetType", Type.EmptyTypes)),
@@ -465,13 +465,13 @@ internal partial class ProbeExpressionParser<T>
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
-        return RedactDictionaryOperation(value, Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType));
+        return RedactOperation(value, Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType));
     }
 
     private Expression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
-        return RedactDictionaryOperation(value, Expression.Not(Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType)));
+        return RedactOperation(value, Expression.Not(Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType)));
     }
 
     private Expression GetMember(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -534,6 +534,18 @@ internal partial class ProbeExpressionParser<T>
             return expression;
         }
 
+        if (expression is not ParameterExpression parameter)
+        {
+            return ResolveMemberPath(expression, propertyOrFieldValue);
+        }
+
+        return TryGetGuardedMember(parameter, propertyOrFieldValue, out var member)
+                   ? member
+                   : MemoizeGuardedMember(parameter, propertyOrFieldValue, ResolveMemberPath(expression, propertyOrFieldValue));
+    }
+
+    private Expression ResolveMemberPath(Expression expression, string propertyOrFieldValue)
+    {
         try
         {
             if (ShouldRedactValue(propertyOrFieldValue, expression.Type))
@@ -544,12 +556,17 @@ internal partial class ProbeExpressionParser<T>
 
             if (TryGetDictionaryEntryMember(expression, propertyOrFieldValue, out var dictionaryEntryMember))
             {
-                return RedactIfRedactedType(dictionaryEntryMember, expression, propertyOrFieldValue);
+                if (TryGetRedactionGuard(expression, out var entryGuard))
+                {
+                    DeriveRedactionCheck(dictionaryEntryMember, entryGuard.SourceCheck);
+                }
+
+                return RedactByType(dictionaryEntryMember, expression, propertyOrFieldValue, CurrentRedactionGuardScope);
             }
 
-            if (TryGetRedactedDictionaryValue(expression, out var redactedDictionaryValue))
+            if (TryGetRedactionGuard(expression, out var guard))
             {
-                return RedactedDictionaryValueMember(redactedDictionaryValue, propertyOrFieldValue);
+                return GuardedValueMember(guard, propertyOrFieldValue);
             }
 
             if (!TryResolveSafeMemberExpression(expression, propertyOrFieldValue, out var memberExpression, out var reason))
@@ -558,7 +575,7 @@ internal partial class ProbeExpressionParser<T>
                 return UndefinedValue();
             }
 
-            return RedactIfRedactedType(memberExpression, expression, propertyOrFieldValue);
+            return RedactByType(memberExpression, expression, propertyOrFieldValue, CurrentRedactionGuardScope);
         }
         catch (Exception e)
         {
@@ -574,35 +591,12 @@ internal partial class ProbeExpressionParser<T>
 
     private ConstantExpression RedactedValue()
     {
-        return _redactedValue ??= Expression.Constant(RedactedValueDump);
+        return _redactedValue ??= Expression.Constant(ProbeExpressionParserHelper.RedactedPlaceholder);
     }
 
     private bool IsRedactedValue(Expression expression)
     {
         return _redactedValue is not null && ReferenceEquals(expression, _redactedValue);
-    }
-
-    // Compile-time check: exact for root scope members (compiled per runtime type), declared type for anything read from them.
-    private Expression RedactIfRedactedType(Expression value, Expression source, string name)
-    {
-        if (!Redaction.Instance.IsRedactedType(value.Type))
-        {
-            return value;
-        }
-
-        AddRedactionError(source is null ? name : $"{source}.{name}");
-        return RedactedValue();
-    }
-
-    private Expression RedactIfRedactedType(Expression value, Expression source, Expression indexOrKey)
-    {
-        if (!Redaction.Instance.IsRedactedType(value.Type))
-        {
-            return value;
-        }
-
-        AddRedactionError($"{source}[{indexOrKey}]");
-        return RedactedValue();
     }
 
     private GotoExpression ReturnDefaultValueExpression()
