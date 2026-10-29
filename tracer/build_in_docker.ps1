@@ -16,13 +16,17 @@ $IMAGE_NAME="dd-trace-dotnet/alpine-base"
    --file "$BUILD_DIR/docker/alpine.dockerfile" `
    "$BUILD_DIR"
 
-&docker run -it --rm `
+# Allocate a TTY only for interactive invocations.
+$ttyFlags = if ([Console]::IsInputRedirected) { @('-i') } else { @('-i','-t') }
+$hostPort = if ($env:BUILD_DOCKER_PORT) { $env:BUILD_DOCKER_PORT } else { '5003' }
+
+&docker run @ttyFlags --rm `
     --mount "type=bind,source=$ROOT_DIR,target=/project" `
     --env NugetPackageDirectory=/project/packages `
     --env artifacts=/project/tracer/bin/artifacts `
     --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 `
     --env NUKE_TELEMETRY_OPTOUT=1 `
-    -p 5003:5003 `
+    -p "${hostPort}:5003" `
     -v /ddlogs:/var/log/datadog/dotnet `
     $IMAGE_NAME `
     dotnet /build/bin/Debug/_build.dll $BuildArguments

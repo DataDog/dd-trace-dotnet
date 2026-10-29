@@ -83,7 +83,22 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 **Quick start:**
 - Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
-- Integration tests: `BuildAndRunIntegrationTests`
+- Integration tests: `./tracer/build.sh BuildAndRunIntegrationTests`
+
+### Linux profiler iteration
+
+Use the Nuke workflow in **[`profiler/README.md`](profiler/README.md#build-and-run-a-scenario)**. Choose a workload from the [scenario IDs and descriptions](profiler/src/Demos/Samples.Computer01/Program.cs). For ASAN, see the [command and build-interference warning](profiler/README.md#run-sanitizer-checks); do not use the Alpine wrapper below.
+
+From the repository root:
+
+```bash
+# Cold build, including the loader and sample:
+./tracer/build_in_docker.sh BuildTracerHome BuildNativeWrapper BuildProfilerHome BuildProfilerSamples --sample-name Samples.Computer01 --framework net11.0
+# Rebuild the profiler and run FibonacciComputation:
+./tracer/build_in_docker.sh BuildProfilerHome RunProfilerScenario --scenario "5 --timeout 30"
+```
+
+`RunProfilerScenario` alone does not rebuild. Each run replaces its logs/profiles under `artifacts/build_data/logs/profiler_scenario/Samples.Computer01/` and fails if no profile is produced. The Docker wrapper supports macOS/Linux hosts and non-interactive shells. Native execution requires Linux; Windows profiler development is documented in `profiler/README.md`.
 
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
