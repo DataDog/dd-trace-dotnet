@@ -4071,10 +4071,10 @@ supportedConfigurations:
       Configuration key for a list of key-value pairs to be set as
       resource attributes. We currently map these to span tags.
   OTEL_SDK_DISABLED:
-  - implementation: B
+  - implementation: D
     scope: managed
     type: boolean
-    default: null
+    default: 'false'
     product: OpenTelemetry
     const_name: SdkDisabled
     documentation: |-
