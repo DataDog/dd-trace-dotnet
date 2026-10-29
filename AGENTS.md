@@ -74,7 +74,8 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
   - `Datadog.AzureFunctions` — Azure Functions support.
   - `Datadog.FleetInstaller` — Fleet/installer utilities.
   - `Datadog.InstrumentedAssembly*` — Pre-instrumented assembly tooling/verification.
-  - `Datadog.AutoInstrumentation.Generator` — Instrumentation metadata generators.
+- Tracer tools under `tracer/tools`
+  - `Datadog.AutoInstrumentation` — Instrumentation generator (GUI, CLI, and shared core); standalone `Datadog.AutoInstrumentation.slnx`, not in `Datadog.Trace.sln`.
 - `Datadog.Tracer.Native` — Native interop glue and packaging metadata.
 
 ## Build & Development

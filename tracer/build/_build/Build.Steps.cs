@@ -94,6 +94,7 @@ partial class Build
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
+    AbsolutePath ToolsDirectory => TracerDirectory / "tools";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
@@ -556,7 +557,6 @@ partial class Build
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
                 "src/OpenTelemetry.AutoInstrumentation.StartupHook/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
             );
