@@ -69,6 +69,16 @@ schedules:
         - master
     always: true
 
+  # The name of this schedule is checked from within Nuke, and is used
+  # to do a run in which the net11.0+ samples are compiled with runtime-async.
+  # Queue a manual build with ForceRuntimeAsyncRun=true to do the same.
+  - cron: "0 5 * * *"
+    displayName: Daily Runtime Async Run
+    branches:
+      include:
+        - master
+    always: true
+
 # Global variables
 variables:
   buildConfiguration: Release
