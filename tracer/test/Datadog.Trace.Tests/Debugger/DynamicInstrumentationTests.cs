@@ -21,6 +21,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
@@ -1185,6 +1186,179 @@ public class DynamicInstrumentationTests
             var field = typeof(ConfigurationUpdater).GetField("_currentConfiguration", BindingFlags.Instance | BindingFlags.NonPublic);
             field.Should().NotBeNull();
             return (ProbeConfiguration)field!.GetValue(updater)!;
+        }
+    }
+
+    // ShutdownTasks disposes the global debugger rate limiter, so run with the other DebuggerManager tests
+    [Collection(nameof(RedactionTests))]
+    public class ProbeRemovalOnDisableTests
+    {
+        [Theory]
+        [InlineData(null, false)] // enabled remotely, then disabled remotely: applied immediately
+        [InlineData(null, null)] // enabled remotely, then the remote config is removed: applied immediately
+        [InlineData("true", false)] // enabled by the environment variable, then disabled remotely: debounced
+        public async Task RemoteDisable_RevertsInstrumentedProbes(string? envEnabled, bool? remoteEnabled)
+        {
+            var debuggerSettings = CreateDebuggerSettings(envEnabled);
+            var nativeRequests = new NativeInstrumentationRecorder();
+            var debugger = CreateDebuggerWithInstalledProbes(debuggerSettings, nativeRequests, out var installedProbeIds, out _);
+            var manager = CreateDebuggerManagerWithRunningDynamicInstrumentation(debugger);
+            var tracerSettings = TracerSettings.Create(new() { { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" } });
+
+            try
+            {
+                await manager.UpdateConfiguration(
+                    tracerSettings,
+                    debuggerSettings with { DynamicSettings = new ImmutableDynamicDebuggerSettings { DynamicInstrumentationEnabled = remoteEnabled } });
+
+                manager.DynamicInstrumentation.Should().BeNull();
+                debugger.IsDisposed.Should().BeTrue();
+                nativeRequests.RevertedProbeIds.Should().BeEquivalentTo(installedProbeIds);
+                foreach (var probeId in installedProbeIds)
+                {
+                    ProbeExpressionsProcessor.Instance.Get(probeId).Should().BeNull();
+                }
+            }
+            finally
+            {
+                DebuggerManagerTests.InvokeShutdownTasks(manager);
+            }
+        }
+
+        [Fact]
+        public void RemoveProbesAndDispose_RevertsInstrumentedProbesAndIgnoresLaterUpdates()
+        {
+            var nativeRequests = new NativeInstrumentationRecorder();
+            var debugger = CreateDebuggerWithInstalledProbes(CreateDebuggerSettings("true"), nativeRequests, out var installedProbeIds, out var updater);
+
+            debugger.RemoveProbesAndDispose();
+
+            debugger.IsDisposed.Should().BeTrue();
+            nativeRequests.RevertedProbeIds.Should().BeEquivalentTo(installedProbeIds);
+
+            // A probe update that arrives after the removal must not instrument anything
+            updater.AcceptAdded(new ProbeConfiguration { LogProbes = [new LogProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Other" } }] });
+            nativeRequests.InstrumentedProbeIds.Should().BeEquivalentTo(installedProbeIds);
+        }
+
+        [Fact]
+        public void Shutdown_DoesNotRevertProbes()
+        {
+            var nativeRequests = new NativeInstrumentationRecorder();
+            var debugger = CreateDebuggerWithInstalledProbes(CreateDebuggerSettings("true"), nativeRequests, out _, out _);
+            var manager = CreateDebuggerManagerWithRunningDynamicInstrumentation(debugger);
+
+            DebuggerManagerTests.InvokeShutdownTasks(manager);
+
+            debugger.IsDisposed.Should().BeTrue();
+            nativeRequests.RevertedProbeIds.Should().BeEmpty("reverting while the process exits would only add ReJIT work");
+        }
+
+        [Fact]
+        public void DisableDuringShutdown_DoesNotRevertProbes()
+        {
+            var nativeRequests = new NativeInstrumentationRecorder();
+            var debugger = CreateDebuggerWithInstalledProbes(CreateDebuggerSettings("true"), nativeRequests, out _, out _);
+            var manager = CreateDebuggerManagerWithRunningDynamicInstrumentation(debugger);
+
+            // A remote disable that runs after process exit has started
+            GetField<TaskCompletionSource<bool>>(manager, "_processExit").TrySetResult(true);
+            var disable = typeof(DebuggerManager).GetMethod("DisableDynamicInstrumentation", BindingFlags.Instance | BindingFlags.NonPublic);
+            disable.Should().NotBeNull();
+            disable!.Invoke(manager, [true]);
+
+            debugger.IsDisposed.Should().BeTrue();
+            manager.DynamicInstrumentation.Should().BeNull();
+            nativeRequests.RevertedProbeIds.Should().BeEmpty();
+        }
+
+        private static DebuggerSettings CreateDebuggerSettings(string? envEnabled)
+        {
+            var source = new NameValueCollection
+            {
+                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+            };
+
+            if (envEnabled is not null)
+            {
+                source.Add(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, envEnabled);
+            }
+
+            return DebuggerSettings.FromSource(new NameValueConfigurationSource(source), NullConfigurationTelemetry.Instance);
+        }
+
+        private static DynamicInstrumentation CreateDebuggerWithInstalledProbes(DebuggerSettings settings, NativeInstrumentationRecorder nativeRequests, out string[] installedProbeIds, out ConfigurationUpdater updater)
+        {
+            var globalRateLimiter = new GlobalRateLimiterMock();
+            updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+            var debugger = new DynamicInstrumentation(
+                settings,
+                new DiscoveryServiceMock(),
+                new RcmSubscriptionManagerMock(),
+                new LineProbeResolverMock(new LineProbeResolveResult(LiveProbeResolveStatus.Bound)),
+                new SnapshotUploaderMock(),
+                new LogUploaderMock(),
+                new UploaderMock(),
+                ProbeStatusPoller.Create(DiagnosticsSink.Create(() => "service", settings), settings),
+                updater,
+                NoOpStatsd.Instance,
+                globalRateLimiter,
+                instrumentProbes: nativeRequests.Record);
+
+            var methodProbe = new LogProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" }, CaptureSnapshot = true };
+            var lineProbe = new LogProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { SourceFile = "Target.cs", Lines = ["25"] }, CaptureSnapshot = true };
+            var spanProbe = new SpanProbe { Id = Guid.NewGuid().ToString(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" } };
+
+            updater.AcceptAdded(new ProbeConfiguration { LogProbes = [methodProbe, lineProbe], SpanProbes = [spanProbe] });
+
+            installedProbeIds = [methodProbe.Id, lineProbe.Id, spanProbe.Id];
+            nativeRequests.InstrumentedProbeIds.Should().BeEquivalentTo(installedProbeIds);
+            nativeRequests.RevertedProbeIds.Should().BeEmpty();
+            ProbeExpressionsProcessor.Instance.Get(methodProbe.Id).Should().NotBeNull();
+            ProbeExpressionsProcessor.Instance.Get(lineProbe.Id).Should().NotBeNull();
+            return debugger;
+        }
+
+        private static DebuggerManager CreateDebuggerManagerWithRunningDynamicInstrumentation(DynamicInstrumentation debugger)
+        {
+            var manager = DebuggerManagerTests.CreateDebuggerManager();
+
+            // Publish the instance the way DebuggerManager does once Dynamic Instrumentation has started.
+            SetField(debugger, "_initializationState", 2);
+            SetField(manager, "_dynamicInstrumentation", debugger);
+            SetField(manager, "_diState", 2);
+            manager.DynamicInstrumentation.Should().BeSameAs(debugger);
+            return manager;
+        }
+
+        private static void SetField(object target, string fieldName, object value)
+        {
+            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            field!.SetValue(target, value);
+        }
+
+        private static T GetField<T>(object target, string fieldName)
+        {
+            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return (T)field!.GetValue(target)!;
+        }
+    }
+
+    private sealed class NativeInstrumentationRecorder
+    {
+        internal List<string> InstrumentedProbeIds { get; } = [];
+
+        internal List<string> RevertedProbeIds { get; } = [];
+
+        internal void Record(NativeMethodProbeDefinition[] methodProbes, NativeLineProbeDefinition[] lineProbes, NativeSpanProbeDefinition[] spanProbes, NativeRemoveProbeRequest[] revertProbes)
+        {
+            InstrumentedProbeIds.AddRange(methodProbes.Select(p => p.ProbeId));
+            InstrumentedProbeIds.AddRange(lineProbes.Select(p => p.ProbeId));
+            InstrumentedProbeIds.AddRange(spanProbes.Select(p => p.ProbeId));
+            RevertedProbeIds.AddRange(revertProbes.Select(p => p.ProbeId));
         }
     }
 

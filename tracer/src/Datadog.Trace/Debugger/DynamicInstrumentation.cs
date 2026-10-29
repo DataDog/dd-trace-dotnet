@@ -989,6 +989,32 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        /// <summary>
+        /// Removes the instrumentation of every probe this instance installed, then disposes it.
+        /// Used when Dynamic Instrumentation is turned off at runtime, otherwise the instrumented methods keep running
+        /// probe code (for example, span probes keep creating spans) while it is off.
+        /// Process shutdown only calls <see cref="Dispose"/>, as reverting there would only add ReJIT work.
+        /// </summary>
+        internal void RemoveProbesAndDispose()
+        {
+            // Holding the lock until the instance is disposed keeps a concurrent probe update from instrumenting a method after the removal.
+            lock (_instanceLock)
+            {
+                try
+                {
+                    UpdateRemovedProbeInstrumentations(_probeStatusPoller.GetBoundedProbes());
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing probes while disabling Dynamic Instrumentation");
+                }
+                finally
+                {
+                    SafeDisposal.TryDispose(this);
+                }
+            }
+        }
+
         public void Dispose()
         {
             if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
