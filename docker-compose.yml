@@ -1,4 +1,8 @@
 services:
+  # This gets pre-pulled into CI VM images
+  testcontainers-ryuk:
+    image: testcontainers/ryuk:0.14.0@sha256:7c1a8a9a47c780ed0f983770a662f80deb115d95cce3e2daa3d12115b8cd28f0
+
   # ARM64 dependencies
   localstack_arm64:
     image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
@@ -479,6 +483,7 @@ services:
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - TESTCONTAINERS_RYUK_DISABLED
+      - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -722,6 +727,7 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -739,6 +745,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED
+      - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64

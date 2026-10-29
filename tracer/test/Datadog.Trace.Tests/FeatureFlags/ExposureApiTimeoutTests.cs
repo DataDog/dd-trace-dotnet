@@ -45,7 +45,7 @@ public class ExposureApiTimeoutTests
         var uri = new Uri(unixSocket ? "http://localhost" : "http://127.0.0.1:" + ((IPEndPoint)listener.LocalEndPoint!).Port);
         IApiRequestFactory factory = unixSocket
                                          ? new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(path), new DatadogHttpClient(EventPlatformHeaderHelper.Instance), uri, requestTimeout: TimeSpan.FromSeconds(5))
-                                         : new ApiWebRequestFactory(uri, EventPlatformHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5), enforceAsyncTimeout: true);
+                                         : new ApiWebRequestFactory(uri, EventPlatformHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5));
         try
         {
             var send = factory.Create(factory.GetEndpoint(FeatureFlagsEvpTransport.EventPlatformProxyV2 + "/" + FeatureFlagsEvpTransport.ExposureIntakePath)).PostAsJsonAsync(Observation("first"), MultipartCompression.GZip, ExposureApi.SerializerSettings);
