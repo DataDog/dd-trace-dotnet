@@ -19,8 +19,8 @@ namespace Datadog.Trace.Sampling
         private const string DefaultKey = "service:,env:";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentSamplingRule>();
 
-        private Dictionary<SampleRateKey, float> _sampleRates = new();
-        private float? _defaultSamplingRate;
+        private Dictionary<SampleRateKey, double> _sampleRates = new();
+        private double? _defaultSamplingRate;
 
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Sampling
 
         public bool IsMatch(Span span) => true;
 
-        public float GetSamplingRate(Span span)
+        public double GetSamplingRate(Span span)
         {
             if (_sampleRates.Count > 0)
             {
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Sampling
             return 1;
         }
 
-        public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
+        public void SetDefaultSampleRates(IReadOnlyDictionary<string, double> sampleRates)
         {
             if (sampleRates is not { Count: > 0 })
             {
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Sampling
 
             // to avoid locking if writers and readers can access the dictionary at the same time,
             // build the new dictionary first, then replace the old one
-            var rates = new Dictionary<SampleRateKey, float>(sampleRates.Count);
+            var rates = new Dictionary<SampleRateKey, double>(sampleRates.Count);
             var defaultSamplingRate = _defaultSamplingRate;
 
             foreach (var pair in sampleRates)

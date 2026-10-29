@@ -74,7 +74,8 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
   - `Datadog.AzureFunctions` — Azure Functions support.
   - `Datadog.FleetInstaller` — Fleet/installer utilities.
   - `Datadog.InstrumentedAssembly*` — Pre-instrumented assembly tooling/verification.
-  - `Datadog.AutoInstrumentation.Generator` — Instrumentation metadata generators.
+- Tracer tools under `tracer/tools`
+  - `Datadog.AutoInstrumentation` — Instrumentation generator (GUI, CLI, and shared core); standalone `Datadog.AutoInstrumentation.slnx`, not in `Datadog.Trace.sln`.
 - `Datadog.Tracer.Native` — Native interop glue and packaging metadata.
 
 ## Build & Development
@@ -96,6 +97,8 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with samples in `tracer/test/test-applications/integrations`
 - Generate boilerplate (GUI): `./tracer/build.ps1 RunInstrumentationGenerator`
 - Generate boilerplate (CLI): `./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>`
+- Generators only scaffold code: copy GUI output or use CLI `--output-path <file>`, then implement handlers and add samples/tests.
+- When confirming instrumentation, neither `CallTarget_RewriterCallback() Finished` nor absence of `ReJITError` proves CLR acceptance or execution. Read [Confirming runtime instrumentation](docs/development/TracerDebugging.md#confirming-runtime-instrumentation) for the evidence required at each stage.
 
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
 - **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
@@ -118,7 +121,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 **C# style:**
 - See `.editorconfig` (auto-enforced)
-- Add missing `using` directives instead of fully-qualified type names
+- Add missing `using` directives instead of fully-qualified type names.
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
 - Prefer modern collection expressions (`[]`)

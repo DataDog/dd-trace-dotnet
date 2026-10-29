@@ -359,7 +359,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task SetsDefaultSamplingRates()
         {
-            var ratesByService = new Dictionary<string, float> { { "test", 0.5f } };
+            var ratesByService = new Dictionary<string, double> { { "test", 0.5d } };
             var responseContent = new { rates_by_service = ratesByService };
             var serializedResponse = JsonConvert.SerializeObject(responseContent);
 
@@ -378,7 +378,7 @@ namespace Datadog.Trace.Tests.Agent
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
             var ratesWereSet = false;
-            Action<Dictionary<string, float>> updateSampleRates = _ => ratesWereSet = true;
+            Action<Dictionary<string, double>> updateSampleRates = _ => ratesWereSet = true;
             var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null, externalEnv: null), updateSampleRates, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0, false);

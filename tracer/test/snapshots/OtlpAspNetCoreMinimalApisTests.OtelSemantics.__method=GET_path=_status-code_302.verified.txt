@@ -126,6 +126,18 @@
                   }
                 },
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "aspnet_core.endpoint",
                   "value": {
                     "stringValue": "Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTest (Samples.AspNetCoreMinimalApis)"
@@ -185,7 +197,8 @@
                     "stringValue": "testhelper"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }

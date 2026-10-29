@@ -459,6 +459,26 @@ supportedConfigurations:
     product: CIVisibility
     const_name: DynamicInstrumentationEnabled
     documentation: Configuration key for a kill-switch that allows to explicitly disable dynamic instrumentation even if the remote setting is enabled.
+  DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS:
+  - implementation: A
+    scope: managed
+    type: array
+    default: null
+    product: CIVisibility
+    const_name: DynamicFlakyRetryBuckets
+    documentation: |-
+      Configuration key for the dynamic automatic test retries counts: five comma-separated integers from 1 to 20, for first
+      executions of up to 5s, 10s, 30s, 5m, and longer. Defaults to the Early Flake Detection slow test retries.
+  DD_CIVISIBILITY_DYNAMIC_ATR_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: CIVisibility
+    const_name: DynamicFlakyRetryEnabled
+    documentation: |-
+      Configuration key for picking the automatic test retries count of each test from the duration of its first execution,
+      instead of <see cref="ConfigurationKeys.CIVisibility.FlakyRetryCount"/>.
   DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED:
   - implementation: C
     scope: managed
@@ -1867,6 +1887,14 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Maximum number of threads sampled per wall-time collection interval.
+  DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '2000'
+    product: Profiler
+    documentation: |-
+      Change StackSamplerLoop thread startup timeout (in ms). Used only in testing to force a failure.
   DD_INTERNAL_SKIP_METHOD_BODY_ENABLED:
   - implementation: A
     scope: native
