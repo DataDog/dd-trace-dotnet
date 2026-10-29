@@ -453,7 +453,7 @@ partial class Build
             {
                 var project = ProfilerSolution.GetProject(projectName);
                 var cppCheckResultFile = ProfilerBuildDataDirectory / $"{project.Name}-cppcheck-{platform}";
-                CppCheck.Value($"--inline-suppr  --enable=all  --project={project.Path} --xml --output-file={cppCheckResultFile}.xml  --suppressions-list={ProfilerDirectory}/cppcheck-suppressions.txt ");
+                CppCheck.Value($"--inline-suppr  --enable=all  --project={project.Path} {CppCheckVersionDefines} --xml --output-file={cppCheckResultFile}.xml  --suppressions-list={ProfilerDirectory}/cppcheck-suppressions.txt ");
             }
 
             foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })

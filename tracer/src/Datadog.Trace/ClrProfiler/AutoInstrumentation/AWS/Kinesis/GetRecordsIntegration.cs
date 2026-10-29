@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = streamName;
             }
 
-            return new CallTargetState(scope);
+            return new CallTargetState(scope, streamName);
         }
 
         /// <summary>

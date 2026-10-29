@@ -21,7 +21,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ManagedTraceSampler>();
     private readonly object _lock = new();
-    private IReadOnlyDictionary<string, float>? _defaultSampleRates;
+    private IReadOnlyDictionary<string, double>? _defaultSampleRates;
     private TraceSampler _current;
 
     public ManagedTraceSampler(TracerSettings settings)
@@ -71,7 +71,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
 
     public bool HasResourceBasedSamplingRule => Volatile.Read(ref _current).HasResourceBasedSamplingRule;
 
-    public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
+    public void SetDefaultSampleRates(IReadOnlyDictionary<string, double> sampleRates)
     {
         // lock to avoid missed sample rate updates when updating inner sample
         lock (_lock)
@@ -150,7 +150,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
             }
             else
             {
-                sampler.RegisterRule(new GlobalSamplingRateRule((float)globalSamplingRate));
+                sampler.RegisterRule(new GlobalSamplingRateRule(globalSamplingRate));
             }
         }
 

@@ -13,7 +13,7 @@ namespace Datadog.Trace.Sampling
 {
     internal abstract class CustomSamplingRule : ISamplingRule
     {
-        private readonly float _samplingRate;
+        private readonly double _samplingRate;
         private readonly bool _alwaysMatch;
 
         // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Sampling
         private bool _regexTimedOut;
 
         protected CustomSamplingRule(
-            float rate,
+            double rate,
             string patternFormat,
             string? serviceNamePattern,
             string? operationNamePattern,
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Sampling
                 out _regexTimedOut);
         }
 
-        public float GetSamplingRate(Span span)
+        public double GetSamplingRate(Span span)
         {
             return _samplingRate;
         }
