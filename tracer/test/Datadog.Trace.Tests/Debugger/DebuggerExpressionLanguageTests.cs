@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tests.Debugger
     public class DebuggerExpressionLanguageTests
     {
         private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
-        private const string SkippedItemProbeId = "skipped-item-probe";
+        private const string TestProbeId = "test-probe";
 
         private const string DefaultDslTemplate = @"{""dsl"": ""Ignore""}";
 
@@ -3820,11 +3820,20 @@ namespace Datadog.Trace.Tests.Debugger
             log.Verify(
                 l => l.Information(
                     It.Is<string>(message => message.Contains("skipped an item")),
-                    SkippedItemProbeId,
+                    TestProbeId,
                     It.IsAny<int>(),
                     It.IsAny<string>()),
                 times);
             // ReSharper restore ExplicitCallerInfoArgument
+        }
+
+        // The skipped-item line names the probe only, never the item's value, key or type.
+        private static void AssertLogOmits(Mock<IDatadogLogger> log, params string[] values)
+        {
+            log.Invocations.SelectMany(invocation => invocation.Arguments)
+               .OfType<string>()
+               .Should()
+               .NotContain(argument => values.Any(argument.Contains));
         }
 
         private static void AssertRedactionError(ExpressionEvaluationResult result, bool isRedacted)
@@ -3985,7 +3994,7 @@ namespace Datadog.Trace.Tests.Debugger
             int maxEvaluationTimeInMilliseconds = TestMaxEvaluationTimeInMilliseconds,
             IDatadogLogger log = null)
         {
-            return new ProbeExpressionEvaluator(templates, condition, metric, spanDecorations, captureExpressions, maxEvaluationTimeInMilliseconds, SkippedItemProbeId, log);
+            return new ProbeExpressionEvaluator(TestProbeId, templates, condition, metric, spanDecorations, captureExpressions, maxEvaluationTimeInMilliseconds, log);
         }
 
         // A probe template: a "value=" literal, then the template expression when there is one.
@@ -5055,12 +5064,7 @@ namespace Datadog.Trace.Tests.Debugger
                 }
 
                 VerifySkippedItemLog(log, Times.Once());
-
-                // The line names the probe only, never the item's value or type.
-                log.Invocations.SelectMany(invocation => invocation.Arguments)
-                   .OfType<string>()
-                   .Should()
-                   .NotContain(argument => argument.Contains(Secret) || argument.Contains(nameof(RedactedTarget)));
+                AssertLogOmits(log, Secret, nameof(RedactedTarget));
             }
 
             [Fact]
@@ -5090,17 +5094,20 @@ namespace Datadog.Trace.Tests.Debugger
                 VerifySkippedItemLog(log, Times.Once());
             }
 
-            [Theory]
-            [InlineData(@"{""any"":[{""ref"":""PublicListLocal""},{""isDefined"":""@it""}]}")]
-            [InlineData(@"{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}")]
-            [InlineData(@"{""any"":[{""ref"":""PublicListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}")]
-            [InlineData(@"{""any"":[{""ref"":""PiiListLocal""},{""eq"":[{""getmember"":[""@it"",""CustomKey""]},""x""]}]}")]
-            public void ProbeExpressionEvaluator_WithoutASkippedItem_LogsNothing(string json)
+            [Fact]
+            public void ProbeExpressionEvaluator_RedactionOutsideTheItems_IsReportedAndNotLogged()
             {
+                // HolderLocal.AsBase is read from outside the items, so its redaction is an error instead of a skip.
                 var log = CreateSkippedItemLog();
+                var evaluator = _tests.CreateTemplateEvaluator(
+                    template: null,
+                    condition: @"{""any"":[{""ref"":""PublicListLocal""},{""eq"":[{""getmember"":[""@it"",""TestValue""]},{""getmember"":[{""getmember"":[{""ref"":""HolderLocal""},""AsBase""]},""TestValue""]}]}]}",
+                    log.Object);
 
-                EvaluateWithRedactedTypes(_tests.CreateTemplateEvaluator(json, condition: null, log.Object));
+                var result = EvaluateWithRedactedTypes(evaluator);
 
+                result.HasConditionError.Should().BeTrue();
+                AssertRedactionError(result, isRedacted: true);
                 VerifySkippedItemLog(log, Times.Never());
             }
 
@@ -5209,29 +5216,13 @@ namespace Datadog.Trace.Tests.Debugger
                 DebuggerExpression?[] templates = null,
                 object asObject = null)
             {
-                Redaction.Instance.ResetInstance();
-                try
-                {
-                    ConfigureRedactedTypes();
-                    var evaluator = _tests.CreateEvaluator(
-                        templates: templates,
-                        condition: condition,
-                        metric: metric,
-                        spanDecorations: decorations,
-                        captureExpressions: captures);
-                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, asObject: asObject);
-                    var result = evaluator.Evaluate(scopeMembers);
-                    if (captures is not null)
-                    {
-                        evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
-                    }
-
-                    return result;
-                }
-                finally
-                {
-                    Redaction.Instance.ResetInstance();
-                }
+                var evaluator = _tests.CreateEvaluator(
+                    templates: templates,
+                    condition: condition,
+                    metric: metric,
+                    spanDecorations: decorations,
+                    captureExpressions: captures);
+                return EvaluateWithRedactedTypes(evaluator, asObject);
             }
 
             private ExpressionEvaluationResult Evaluate(
@@ -5263,13 +5254,13 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             // Evaluates the expressions, then the capture expressions, as the probe processor does.
-            private ExpressionEvaluationResult EvaluateWithRedactedTypes(ProbeExpressionEvaluator evaluator)
+            private ExpressionEvaluationResult EvaluateWithRedactedTypes(ProbeExpressionEvaluator evaluator, object asObject = null)
             {
                 Redaction.Instance.ResetInstance();
                 try
                 {
                     ConfigureRedactedTypes();
-                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue });
+                    var scopeMembers = CreateScopeMembers(new PublicTarget { TestValue = PublicValue, CustomKey = PublicValue }, asObject: asObject);
                     var result = evaluator.Evaluate(scopeMembers);
                     evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
                     return result;
@@ -5920,10 +5911,7 @@ namespace Datadog.Trace.Tests.Debugger
                 result.Condition.Should().BeFalse();
                 result.Errors.Should().BeNullOrEmpty();
                 VerifySkippedItemLog(log, Times.Once());
-                log.Invocations.SelectMany(invocation => invocation.Arguments)
-                   .OfType<string>()
-                   .Should()
-                   .NotContain(argument => argument.Contains("password") || argument.Contains(Secret));
+                AssertLogOmits(log, "password", Secret);
             }
 
             // @value is guarded by its key, checked as an index key of the declared key type, an object key also by its

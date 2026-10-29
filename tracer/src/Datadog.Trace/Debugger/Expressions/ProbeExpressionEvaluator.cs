@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal sealed class ProbeExpressionEvaluator
 {
     private const string RuntimeRedactionMessage = "A value used by the expression is redacted.";
-    private const string SkippedItemMessage = "Dynamic Instrumentation probe {ProbeId}: a predicate (any, all or filter) skipped an item of a collection because the item's dictionary key or runtime type is redacted, so the item counts as not matching. This is logged once per probe.";
+    private const string SkippedItemMessage = "Dynamic Instrumentation probe {ProbeId}: a predicate (any, all or filter) skipped an item of a collection because the item's dictionary key or runtime type is redacted. Every part of the predicate that reads the item counts as false. This is logged once per probe.";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionEvaluator));
     private static readonly CompiledExpressionDelegate<bool> FalseDelegate = ReturnFalse;
@@ -33,18 +33,18 @@ internal sealed class ProbeExpressionEvaluator
     // - Per-bucket entries handle polymorphic member runtime types
     private readonly ConcurrentDictionary<ProbeExpressionsBucketKey, ProbeExpressionsBucket> _cache = new();
 
-    private readonly string? _probeId;
+    private readonly string _probeId;
     private readonly IDatadogLogger _log;
     private bool _hasLoggedSkippedItem;
 
     internal ProbeExpressionEvaluator(
+        string probeId,
         DebuggerExpression?[]? templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
         KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations,
         CaptureExpressionDefinition[]? captureExpressions,
         int maxEvaluationTimeInMilliseconds = Debugger.DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds,
-        string? probeId = null,
         IDatadogLogger? log = null)
     {
         Templates = templates;
@@ -254,12 +254,12 @@ internal sealed class ProbeExpressionEvaluator
             result.HasConditionError = true;
         }
 
-        LogSkippedItem(ref result.EvaluationBudget);
         if (CaptureExpressions is not null)
         {
             result.EvaluationBudget.Pause();
         }
 
+        LogSkippedItem(ref result.EvaluationBudget);
         return result;
     }
 
@@ -892,9 +892,11 @@ internal sealed class ProbeExpressionEvaluator
     }
 
     // A predicate skips a redacted item without reporting it, so a condition over the collection can quietly never match.
-    // The flag is read once per evaluation, which also covers an expression that threw after the skip. The line names
-    // only the probe, never the item's value, key or type. It is marked as logged only once it is written, so it still
-    // shows up after the log level is raised, as a tracer flare does. Two evaluations that race can both log it.
+    // The flag is read after the expressions and again after the capture expressions, not after each one, which also
+    // covers an expression that threw after the skip. The line names only the probe, never the item's value, key or type.
+    // It is marked as logged only while Information is enabled, so it still shows up after the log level is raised, as a
+    // tracer flare does. A log rate limit (DD_TRACE_LOGGING_RATE, off by default) applies to this call site for every
+    // probe, so it can drop one probe's line for good. Two evaluations that race can both log it.
     private void LogSkippedItem(ref EvaluationBudget budget)
     {
         if (!budget.TakeSkippedItem() || _hasLoggedSkippedItem || !_log.IsEnabled(LogEventLevel.Information))
