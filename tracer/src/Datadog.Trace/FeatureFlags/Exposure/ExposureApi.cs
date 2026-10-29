@@ -200,7 +200,7 @@ internal sealed class ExposureApi : IDisposable
                 if (_sendLoopTask is null)
                 {
                     _sendLoopTask = Task.Run(SendLoopAsync);
-                    _sendLoopTask.ContinueWith(
+                    _ = _sendLoopTask.ContinueWith(
                         t => _log.Error(t.Exception, "FeatureFlags Exposure send loop failed"),
                         CancellationToken.None,
                         TaskContinuationOptions.OnlyOnFaulted,

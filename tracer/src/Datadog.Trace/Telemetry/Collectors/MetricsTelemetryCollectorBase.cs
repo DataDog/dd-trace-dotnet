@@ -32,7 +32,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
         _aggregationInterval = aggregationInterval;
         _aggregationNotification = aggregationNotification;
         _aggregateTask = Task.Run(AggregateMetricsLoopAsync);
-        _aggregateTask
+        _ = _aggregateTask
            .ContinueWith(
                 t =>
                 {

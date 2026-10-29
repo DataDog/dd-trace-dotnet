@@ -24,7 +24,7 @@ internal sealed class ActivatorHelper
     {
         _type = type;
         _activator = DefaultActivator;
-        Task.Run(CreateCustomActivator);
+        _ = Task.Run(CreateCustomActivator);
     }
 
     public object CreateInstance() => _activator();

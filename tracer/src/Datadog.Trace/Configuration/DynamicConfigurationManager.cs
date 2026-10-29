@@ -111,7 +111,7 @@ namespace Datadog.Trace.Configuration
 
             var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
 
-            manager.UpdateConfiguration(tracerSettings, newDebuggerSettings)
+            _ = manager.UpdateConfiguration(tracerSettings, newDebuggerSettings)
                    .ContinueWith(
                         static t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"),
                         CancellationToken.None,
