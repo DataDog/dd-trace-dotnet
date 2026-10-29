@@ -168,7 +168,10 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                if (e.TargetNames.StartsWith("_"))
+                // Not the char overload: the runner loads the netstandard2.0 build of this assembly on .NET Core too,
+                // where StartsWith(char) would bind to Datadog.Trace's StringUtil polyfill, which doesn't exist in the
+                // .NET Core builds of Datadog.Trace
+                if (e.TargetNames.StartsWithOrdinal("_"))
                 {
                     // Ignoring internal targetNames
                     return;

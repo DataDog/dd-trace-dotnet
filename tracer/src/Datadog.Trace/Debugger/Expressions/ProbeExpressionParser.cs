@@ -342,7 +342,7 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.String:
                         {
-                            if (readerValue?.StartsWith("#") == true)
+                            if (readerValue?.StartsWith('#') == true)
                             {
                                 // skip comment
                                 return ParseTree(reader, parameters, itParameter);

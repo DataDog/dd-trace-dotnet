@@ -430,7 +430,7 @@ internal static class GitCommandHelper
                             if (!string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))
                             {
                                 string nameToCheck = b;
-                                if (b.StartsWith($"{remoteName}/"))
+                                if (b.StartsWithOrdinal($"{remoteName}/"))
                                 {
                                     nameToCheck = b.Substring(remoteName.Length + 1);
                                 }
@@ -633,14 +633,14 @@ internal static class GitCommandHelper
             }
 
             var commit = gitLogDataArray[0];
-            if (commit.StartsWith("'"))
+            if (commit.StartsWith('\''))
             {
                 commit = commit.Substring(1);
             }
 
             // The commit message may contain the `|,|` string , so we join the remaining parts.
             var commitMessage = gitLogDataArray.Length > 8 ? string.Join("|,|", gitLogDataArray.Skip(7)).Trim() : gitLogDataArray[7].Trim();
-            if (commitMessage.EndsWith("'"))
+            if (commitMessage.EndsWith('\''))
             {
                 commitMessage = commitMessage.Substring(0, commitMessage.Length - 1).Trim();
             }
