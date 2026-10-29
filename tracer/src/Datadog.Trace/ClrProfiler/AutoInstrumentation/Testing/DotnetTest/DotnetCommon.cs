@@ -2632,7 +2632,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 {
                     for (var i = 0; i < args.Length; i++)
                     {
-                        sb.AppendLine($"\t{i}:{args[i]}");
+                        sb.Append('\t').Append(i.ToStringInvariant()).Append(':').AppendLine(args[i]);
                     }
                 }
 

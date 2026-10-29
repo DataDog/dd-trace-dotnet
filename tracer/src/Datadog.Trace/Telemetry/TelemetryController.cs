@@ -107,7 +107,7 @@ internal sealed class TelemetryController : ITelemetryController
     {
         _application.RecordTracerSettings(settings);
         _integrations.RecordTracerSettings(settings.Manager.InitialMutableSettings);
-        _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
+        _namingVersion = ((int)settings.MetadataSchemaVersion).ToStringInvariant();
         _logTagBuilder.Update(settings);
     }
 

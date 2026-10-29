@@ -94,7 +94,7 @@ internal static class InferredProxySpanHelper
             return false;
         }
 
-        if (!long.TryParse(startTime, out var startTimeMs))
+        if (!long.TryParseInvariant(startTime, out var startTimeMs))
         {
             if (logParseFailures)
             {

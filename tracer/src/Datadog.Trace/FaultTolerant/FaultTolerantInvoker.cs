@@ -36,7 +36,7 @@ namespace Datadog.Trace.FaultTolerant
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Failed to determine if we should-self-heal. ex = {ExceptionToString}, InstrumentedMethodName = {InstrumentationVersion}, Products = {Products}", new object[] { ex.ToString(), instrumentationId, products.ToString() });
+                Log.Warning(e, "Failed to determine if we should-self-heal. ex = {ExceptionToString}, InstrumentedMethodName = {InstrumentationVersion}, Products = {Products}", new object[] { ex.ToString(), instrumentationId, products });
                 return false;
             }
         }

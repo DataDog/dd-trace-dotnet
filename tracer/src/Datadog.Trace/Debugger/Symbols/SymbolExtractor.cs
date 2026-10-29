@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
@@ -433,7 +434,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var accessModifiers = (fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask)] } : null;
+                var accessModifiers = (fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask, CultureInfo.InvariantCulture)] } : null;
                 var fieldAttributes = ((int)fieldDef.Attributes & 0x0070) > 0 ? new[] { FieldAttributes[Convert.ToUInt16((int)fieldDef.Attributes & 0x0070)] } : null;
                 var ls = new LanguageSpecifics() { AccessModifiers = accessModifiers, Annotations = fieldAttributes };
 
@@ -605,9 +606,9 @@ namespace Datadog.Trace.Debugger.Symbols
             var methodLanguageSpecifics = new LanguageSpecifics
             {
                 ReturnType = method.DecodeSignature(new TypeProvider(false), 0).ReturnType,
-                AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask)] } : null,
-                Annotations = methodAttributes > 0 && isAsyncMethod ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)], "async" } :
-                              methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)] } :
+                AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask, CultureInfo.InvariantCulture)] } : null,
+                Annotations = methodAttributes > 0 && isAsyncMethod ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes, CultureInfo.InvariantCulture)], "async" } :
+                              methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes, CultureInfo.InvariantCulture)] } :
                               isAsyncMethod ? new[] { "async" } : null
             };
 

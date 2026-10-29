@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -419,12 +420,12 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Integer:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Int32));
+                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Int32, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.Float:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Double));
+                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Double, CultureInfo.InvariantCulture));
                         }
 
                     case JsonToken.StartArray:
@@ -446,7 +447,7 @@ internal partial class ProbeExpressionParser<T>
 
                     case JsonToken.Boolean:
                         {
-                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Boolean));
+                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Boolean, CultureInfo.InvariantCulture));
                         }
                 }
             }

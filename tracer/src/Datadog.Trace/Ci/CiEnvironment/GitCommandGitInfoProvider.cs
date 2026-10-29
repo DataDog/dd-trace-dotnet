@@ -81,13 +81,13 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             }
 
             // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
+            if (!long.TryParseInvariant(gitLogDataArray[1], out var authorUnixDate))
             {
                 localGitInfo.Errors.Add("Error parsing author date from git log output");
                 return false;
             }
 
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
+            if (!long.TryParseInvariant(gitLogDataArray[4], out var committerUnixDate))
             {
                 localGitInfo.Errors.Add("Error parsing committer date from git log output");
                 return false;

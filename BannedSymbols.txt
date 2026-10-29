@@ -61,3 +61,10 @@ M:System.Random.#ctor(System.Int32);Use Datadog.Trace.Util.ThreadSafeRandom.Shar
 M:System.String.StartsWith(System.String);Use StartsWithOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
 M:System.String.EndsWith(System.String);Use EndsWithOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
 M:System.String.IndexOf(System.String);Use IndexOfOrdinal() instead (or pass an explicit StringComparison) - this overload uses a culture-sensitive comparison
+
+# Ban the culture-sensitive number parsing overloads - use the invariant StringUtil helpers instead
+M:System.Int32.TryParse(System.String,System.Int32@);Use int.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Int32.Parse(System.String);Use int.ParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Int64.TryParse(System.String,System.Int64@);Use long.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Double.TryParse(System.String,System.Double@);Use double.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture
+M:System.Int32.TryParse(System.ReadOnlySpan{System.Char},System.Int32@);Use int.TryParseInvariant() instead (or pass an explicit IFormatProvider) - this overload uses the current culture

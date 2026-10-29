@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -34,6 +35,7 @@ internal sealed class BitbucketEnvironmentValues<TValueProvider>(TValueProvider 
         PipelineNumber = ValueProvider.GetValue(PlatformKeys.Ci.Bitbucket.BuildNumber);
         PipelineName = ValueProvider.GetValue(PlatformKeys.Ci.Bitbucket.RepoFullName);
         PipelineUrl = string.Format(
+            CultureInfo.InvariantCulture,
             "https://bitbucket.org/{0}/addon/pipelines/home#!/results/{1}",
             ValueProvider.GetValue(PlatformKeys.Ci.Bitbucket.RepoFullName),
             ValueProvider.GetValue(PlatformKeys.Ci.Bitbucket.BuildNumber));

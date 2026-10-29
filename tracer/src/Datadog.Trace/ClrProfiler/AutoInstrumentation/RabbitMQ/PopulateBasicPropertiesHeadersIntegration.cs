@@ -99,7 +99,7 @@ public sealed class PopulateBasicPropertiesHeadersIntegration
             span,
             tags,
             duckType.Headers,
-            int.TryParse(tags.MessageSize, out var bodyLength) ? bodyLength : 0);
+            int.TryParseInvariant(tags.MessageSize, out var bodyLength) ? bodyLength : 0);
 
         return new CallTargetReturn<TReturn?>(basicProperties);
     }

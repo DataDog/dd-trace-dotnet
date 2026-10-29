@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -26,6 +27,7 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
         PipelineName = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildDefinitionName);
         PipelineNumber = ValueProvider.GetValue(PlatformKeys.Ci.Azure.BuildBuildId);
         PipelineUrl = string.Format(
+            CultureInfo.InvariantCulture,
             "{0}{1}/_build/results?buildId={2}",
             ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamFoundationServerUri),
             ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamProjectId),
@@ -36,6 +38,7 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
         JobId = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemJobId);
         JobName = ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemJobDisplayName);
         JobUrl = string.Format(
+            CultureInfo.InvariantCulture,
             "{0}{1}/_build/results?buildId={2}&view=logs&j={3}&t={4}",
             ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamFoundationServerUri),
             ValueProvider.GetValue(PlatformKeys.Ci.Azure.SystemTeamProjectId),

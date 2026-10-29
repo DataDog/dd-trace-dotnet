@@ -585,7 +585,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             snapshot = snapshot
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionCaptureId, exceptionId)
                       .Replace(ExceptionReplaySnapshotCreator.ExceptionHash, exceptionHash)
-                      .Replace(ExceptionReplaySnapshotCreator.FrameIndex, frameIndex.ToString());
+                      .Replace(ExceptionReplaySnapshotCreator.FrameIndex, frameIndex.ToStringInvariant());
             DebuggerManager.Instance.ExceptionReplay?.AddSnapshot(probeId, snapshot);
         }
 
@@ -823,7 +823,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             span.Tags.SetTag("_dd.di._er", exceptionPhase);
-            span.Tags.SetTag("_dd.di._eh", exceptionHash.ToString());
+            span.Tags.SetTag("_dd.di._eh", exceptionHash.ToStringInvariant());
         }
     }
 }
