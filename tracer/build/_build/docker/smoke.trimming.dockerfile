@@ -27,6 +27,7 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 ENV PublishTrimmed=true
 ARG TOOL_VERSION
 ARG PACKAGE_NAME
+ARG IsRuntimeAsyncRun
 ARG PUBLISH_FRAMEWORK
 ARG RUNTIME_IDENTIFIER
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \

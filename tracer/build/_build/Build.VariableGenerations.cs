@@ -588,6 +588,7 @@ partial class Build : NukeBuild
 
             void GenerateSmokeTestsMatrices()
             {
+                var isRuntimeAsyncRun = IsRuntimeAsyncRun();
                 GenerateNukeSmokeTestsMatrices();
                 GenerateDdDotnetFailureTestsMatrix();
                 GenerateMacosSmokeTestsMatrix();
@@ -598,6 +599,8 @@ partial class Build : NukeBuild
                     var allScenarios = scenarioDict
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
                         .Where(x => !IsPrerelease || !x.details.ExcludeWhenPrerelease)
+                        // runtime-async only applies to net11.0+, so only test those TFMs in the runtime-async run
+                        .Where(x => !isRuntimeAsyncRun || ((TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(x.details.PublishFramework)).IsGreaterThanOrEqualTo(TargetFramework.NET11_0))
                         .Select(x => (x.category, x.scenario, entry: (object)new
                         {
                             category = x.category.ToString(),
@@ -729,15 +732,18 @@ partial class Build : NukeBuild
                         (TargetFramework.NET11_0, "macOS-15-arm64"),
                     };
 
-                    var matrix = images.ToDictionary(
-                        x => $"{x.VmImage}_{x.PublishFramework}",
-                        x => (object)new
-                        {
-                            publishFramework = x.PublishFramework,
-                            vmImage = x.VmImage,
-                            smokeTestOs = "macos",
-                            smokeTestOsVersion = x.VmImage.Replace("macos-", "").Replace("macOS-", "").Replace("-arm64", ""),
-                        });
+                    var matrix = images
+                        .Where(x => !isRuntimeAsyncRun || x.PublishFramework.IsGreaterThanOrEqualTo(TargetFramework.NET11_0))
+                        .ToDictionary(
+                            x => $"{x.VmImage}_{x.PublishFramework}",
+                            x => (object)new
+                            {
+                                publishFramework = x.PublishFramework,
+                                vmImage = x.VmImage,
+                                smokeTestOs = "macos",
+                                smokeTestOsVersion = x.VmImage.Replace("macos-", "").Replace("macOS-", "").Replace("-arm64", ""),
+                                isRuntimeAsyncRun = isRuntimeAsyncRun,
+                            });
 
                     Logger.Information("macOS smoke tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));

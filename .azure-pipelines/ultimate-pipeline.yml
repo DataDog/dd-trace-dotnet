@@ -5730,7 +5730,7 @@ stages:
 
         - script: |
             cd $(smokeTestAppDir)
-            dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $(publishFramework) /p:PathMap=$(smokeTestAppDir)=/src -o $(smokeTestAppDir)/publish
+            dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $(publishFramework) /p:PathMap=$(smokeTestAppDir)=/src /p:IsRuntimeAsyncRun=$(isRuntimeAsyncRun) -o $(smokeTestAppDir)/publish
           displayName: Build app
           failOnStderr: true
 
