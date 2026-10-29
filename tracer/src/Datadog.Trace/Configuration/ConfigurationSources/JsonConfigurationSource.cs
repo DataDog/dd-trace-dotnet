@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -396,7 +397,7 @@ namespace Datadog.Trace.Configuration
         private JToken? GetToken(string key)
         {
             var token = SelectToken(key);
-            return token is { Type: JTokenType.String } && StringConfigurationSource.IsBlankOtelValue(key, token.Value<string>())
+            return token is { Type: JTokenType.String } && OpenTelemetryConfigurationHelpers.IsUnset(key, token.Value<string>())
                        ? null
                        : token;
         }

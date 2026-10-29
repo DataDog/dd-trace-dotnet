@@ -9,11 +9,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -103,20 +103,11 @@ namespace Datadog.Trace.Configuration
 
         protected abstract string? GetString(string key);
 
-        /// <summary>
-        /// Returns true when <paramref name="key"/> is an OTEL_* setting and <paramref name="value"/> is empty or whitespace-only.
-        /// The OpenTelemetry spec requires an empty value to be treated as unset
-        /// https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#parsing-empty-value
-        /// and the upstream OpenTelemetry .NET SDK also treats whitespace-only values as unset.
-        /// </summary>
-        internal static bool IsBlankOtelValue(string key, string? value)
-            => value is not null && StringUtil.IsNullOrWhiteSpace(value) && key.StartsWith("OTEL_", StringComparison.Ordinal);
-
         // Applied per source, so that a blank value in a higher-priority source doesn't hide a lower-priority one
         private string? GetValue(string key)
         {
             var value = GetString(key);
-            return IsBlankOtelValue(key, value) ? null : value;
+            return OpenTelemetryConfigurationHelpers.IsUnset(key, value) ? null : value;
         }
 
         /// <inheritdoc />
