@@ -45,7 +45,7 @@ internal class DatadogExporter : IExporter
 
     private DatadogExporter()
     {
-        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTime.UtcNow, false);
+        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTimeOffset.UtcNow, false);
     }
 
     /// <inheritdoc />
@@ -259,6 +259,6 @@ internal class DatadogExporter : IExporter
 
         var testSession = TestSession;
         testSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
-        await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTime.UtcNow - testSession.StartTime).ConfigureAwait(false);
+        await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTimeOffset.UtcNow - testSession.StartTime).ConfigureAwait(false);
     }
 }
