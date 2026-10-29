@@ -186,7 +186,7 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 if (!NativeMethods.TryGetInodeForPath(path, out result))
                 {
-                    LogError(null, "Error obtaining inode using PInvoke, returned " + result);
+                    LogError(null, "Error obtaining inode using PInvoke, returned " + result.ToStringInvariant());
                     return false;
                 }
 

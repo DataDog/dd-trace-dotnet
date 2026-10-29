@@ -50,7 +50,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         var process = $"'{processName ?? "na"}'";
         if (pid != null)
         {
-            process += ", pid: " + pid;
+            process += ", pid: " + pid.Value.ToStringInvariant();
         }
 
         if (!string.IsNullOrEmpty(logDirectory))
