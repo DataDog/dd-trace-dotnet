@@ -4080,9 +4080,9 @@ supportedConfigurations:
     documentation: |-
       Configuration key for disabling OpenTelemetry mode for every signal.
       When set to <c>true</c> (case-insensitive), the OpenTelemetry tracing and metrics APIs
-      and OTLP export of traces, metrics and logs are disabled, even when their own settings enable them.
-      It also sets <see cref="ConfigurationKeys.TraceEnabled"/> to false, unless that key is set explicitly.
-      Other values have no effect.
+      and OTLP export of metrics and logs are disabled, even when their own settings enable them.
+      It also sets <see cref="ConfigurationKeys.TraceEnabled"/> to false, which stops all trace export,
+      unless that key is set to a valid value. Other values have no effect.
   OTEL_SERVICE_NAME:
   - implementation: B
     scope: managed

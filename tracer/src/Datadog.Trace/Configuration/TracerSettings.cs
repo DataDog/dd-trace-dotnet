@@ -1448,8 +1448,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry mode is disabled for every signal.
-        /// When <c>true</c>, the OpenTelemetry tracing and metrics APIs, OTLP export, and tracing
-        /// (unless <see cref="ConfigurationKeys.TraceEnabled"/> is set explicitly) are all disabled.
+        /// When <c>true</c>, the OpenTelemetry tracing and metrics APIs, OTLP metrics and logs export, and tracing
+        /// (unless <see cref="ConfigurationKeys.TraceEnabled"/> is set to a valid value) are all disabled.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/>
         internal bool OtelSdkDisabled { get; }

@@ -105,14 +105,12 @@ namespace Datadog.Trace.Configuration
             OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
             var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+                                                 .ToArray() ?? [];
             OtlpTracesTimeoutMs = rawSettings.OtlpTracesTimeoutMs;
 
-            if (rawSettings.OtelTracesExporter == "otlp" && rawSettings.OtelSdkDisabled)
-            {
-                ValidationWarnings.Add("Found OTEL_TRACES_EXPORTER=otlp, but OTEL_SDK_DISABLED=true disables OTLP trace export. Falling back to Datadog v0.4 encoding.");
-            }
-            else if (rawSettings.OtelTracesExporter == "otlp")
+            if (rawSettings.OtelTracesExporter == "otlp")
             {
                 TracesEncoding = otlpTraceSettings.OtlpProtocol switch
                 {
@@ -148,7 +146,9 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
             var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+                                                 .ToArray() ?? [];
             OtlpMetricsTimeoutMs = rawSettings.OtlpMetricsTimeoutMs;
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
@@ -589,7 +589,6 @@ namespace Datadog.Trace.Configuration
                                      .Value;
 
                 OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()?.Trim();
-                OtelSdkDisabled = TracerSettings.IsOtelSdkDisabled(config);
 
                 OtlpProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
                 OtlpEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
@@ -689,13 +688,6 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
             public string? OtelTracesExporter { get; }
-
-            /// <summary>
-            /// Gets a value indicating whether OTEL_SDK_DISABLED=true, which disables OTLP trace export
-            /// even when <see cref="OtelTracesExporter"/> is "otlp".
-            /// </summary>
-            /// <seealso cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/>
-            public bool OtelSdkDisabled { get; }
 
             /// <summary>
             /// Gets the protocol for exporting OTLP signals.

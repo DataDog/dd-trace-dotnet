@@ -673,7 +673,8 @@ namespace Datadog.Trace.Tests.Configuration
             settings.OpenTelemetryMetricsEnabled.Should().Be(expectedEnabled);
             settings.OpenTelemetryLogsEnabled.Should().Be(expectedEnabled);
             settings.OtelTracesSpanMetricsEnabled.Should().Be(expectedEnabled);
-            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().Be(expectedEnabled);
+            // The exporter doesn't depend on OTEL_SDK_DISABLED: no OTLP traces are sent because tracing is disabled
+            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeTrue();
             settings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(expectedEnabled);
 #if NET6_0_OR_GREATER
             settings.OtlpMetricsExportEnabled.Should().Be(expectedEnabled);
@@ -709,9 +710,7 @@ namespace Datadog.Trace.Tests.Configuration
             [
                 CreateConfigurationSource(
                     (ConfigurationKeys.OpenTelemetry.SdkDisabled, "invalid"),
-                    (ConfigurationKeys.TraceEnabled, "invalid"),
-                    (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
-                    (ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf")),
+                    (ConfigurationKeys.TraceEnabled, "invalid")),
                 CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.SdkDisabled, "true")),
             ]);
 
@@ -719,7 +718,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             using var scope = new AssertionScope();
             settings.OtelSdkDisabled.Should().BeTrue();
-            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeFalse();
+            settings.IsActivityListenerEnabled.Should().BeFalse();
             settings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
         }
 
