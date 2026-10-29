@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -22,9 +23,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Collection(AzureMessagingEmulatorTestsCollection.Name)]
     public class AzureEventHubsTests : TracingIntegrationTest
     {
-        public AzureEventHubsTests(ITestOutputHelper output)
+        private readonly AzureEventHubsFixture _eventHubsFixture;
+
+        public AzureEventHubsTests(ITestOutputHelper output, AzureEventHubsFixture eventHubsFixture)
             : base("AzureEventHubs", output)
         {
+            _eventHubsFixture = eventHubsFixture;
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
@@ -42,6 +46,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_eventHubsFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "true");
@@ -87,6 +93,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [MetadataSchemaVersionData] string metadataSchemaVersion,
             [CombinatorialValues(1, 3)] int messageCount)
         {
+            await ConfigureContainers(_eventHubsFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "true");
@@ -126,6 +134,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_eventHubsFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "false");
@@ -165,6 +175,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [MetadataSchemaVersionData] string metadataSchemaVersion,
             [CombinatorialValues(1, 3)] int messageCount)
         {
+            await ConfigureContainers(_eventHubsFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "false");
@@ -207,6 +219,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_eventHubsFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "true");
@@ -251,6 +265,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_eventHubsFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED", "false");
@@ -292,6 +308,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_eventHubsFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "false");
 

@@ -3,12 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 
 [CollectionDefinition(Name, DisableParallelization = true)]
-public class AzureMessagingEmulatorTestsCollection
+public class AzureMessagingEmulatorTestsCollection : ICollectionFixture<AzureEventHubsFixture>, ICollectionFixture<AzureServiceBusFixture>
 {
     public const string Name = nameof(AzureMessagingEmulatorTestsCollection);
 }
