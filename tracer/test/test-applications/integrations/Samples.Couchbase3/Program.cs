@@ -23,9 +23,9 @@ namespace Samples.Couchbase3
         private static async Task<int> Main()
         {
             var options = new ClusterOptions() 
-                      .WithConnectionString("couchbase://" + ConnectionString())
-                      .WithCredentials(username: Username(), password: Password())
-                      .WithBuckets(BucketName());
+                      .WithConnectionString("couchbase://" + Host())
+                      .WithCredentials(username: "default", password: "password")
+                      .WithBuckets("default");
 
 
             ICluster cluster = null;
@@ -43,7 +43,7 @@ namespace Samples.Couchbase3
             }
 
             // get a bucket reference
-            var bucket = await cluster.BucketAsync(BucketName());
+            var bucket = await cluster.BucketAsync("default");
 
             // get a collection reference
 #if COUCHBASE_3_0
@@ -83,12 +83,6 @@ namespace Samples.Couchbase3
             return 0;
         }
 
-        private static string ConnectionString() => Environment.GetEnvironmentVariable("COUCHBASE_CONNECTION_STRING") ?? "localhost";
-
-        private static string Username() => Environment.GetEnvironmentVariable("COUCHBASE_USERNAME") ?? "default";
-
-        private static string Password() => Environment.GetEnvironmentVariable("COUCHBASE_PASSWORD") ?? "password";
-
-        private static string BucketName() => Environment.GetEnvironmentVariable("COUCHBASE_BUCKET") ?? "default";
+        private static string Host() => Environment.GetEnvironmentVariable("COUCHBASE_HOST") ?? "localhost";
     }
 }
