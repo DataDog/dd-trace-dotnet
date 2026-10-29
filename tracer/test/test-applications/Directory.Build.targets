@@ -1,0 +1,12 @@
+<Project>
+  <!-- Compile net11.0+ samples using runtime-async. Only the samples are compiled this way, never the tracer.
+       IsRuntimeAsyncRun is set by Nuke for the "Daily Runtime Async Run" scheduled build (or when ForceRuntimeAsyncRun=true) -->
+  <PropertyGroup Condition="'$(IsRuntimeAsyncRun)' == 'true' AND '$(TargetFramework)' != '' AND $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+
+  <!-- Features isn't part of the incremental compile hash, so add it to ensure toggling runtime-async triggers a recompile -->
+  <ItemGroup>
+    <CoreCompileCache Include="$(Features)" />
+  </ItemGroup>
+</Project>
