@@ -692,11 +692,11 @@ partial class Build : NukeBuild
                         // x64 entries — run on Microsoft-hosted Ubuntu
                         ["debian_x64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-noble", expectedInstaller = "datadog-dotnet-apm*_amd64.deb", expectedPath = "linux-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
                         ["fedora_x64"] = new { runtimeImage = "andrewlock/dotnet-fedora:40-9.0", expectedInstaller = "datadog-dotnet-apm*-1.x86_64.rpm", expectedPath = "linux-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
-                        ["alpine_musl_x64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.20", expectedInstaller = "datadog-dotnet-apm*-musl.tar.gz", expectedPath = "linux-musl-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
+                        ["alpine_musl_x64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.24", expectedInstaller = "datadog-dotnet-apm*-musl.tar.gz", expectedPath = "linux-musl-x64", poolName = "Azure Pipelines", poolVmImage = "ubuntu-latest" },
                         // arm64 entries — run on self-hosted arm64 pool
                         ["debian_arm64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-noble", expectedInstaller = "datadog-dotnet-apm_*_arm64.deb", expectedPath = "linux-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
                         ["fedora_arm64"] = new { runtimeImage = "andrewlock/dotnet-fedora-arm64:40-9.0", expectedInstaller = "datadog-dotnet-apm*-1.aarch64.rpm", expectedPath = "linux-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
-                        ["alpine_musl_arm64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.20", expectedInstaller = "datadog-dotnet-apm*.arm64.tar.gz", expectedPath = "linux-musl-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
+                        ["alpine_musl_arm64"] = new { runtimeImage = "mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.24", expectedInstaller = "datadog-dotnet-apm*.arm64.tar.gz", expectedPath = "linux-musl-arm64", poolName = "$(linuxArm64Pool)", poolVmImage = "" },
                     };
 
                     Logger.Information("dd_dotnet failure tests matrix");

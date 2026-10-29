@@ -109,7 +109,7 @@ partial class Build
        .Executes(() =>
        {
            var autoInstGenProj =
-               SourceDirectory / "Datadog.AutoInstrumentation.Generator" / "Datadog.AutoInstrumentation.Generator.csproj";
+               ToolsDirectory / "Datadog.AutoInstrumentation" / "Datadog.AutoInstrumentation.Generator" / "Datadog.AutoInstrumentation.Generator.csproj";
 
            // We make sure the autoinstrumentation generator builds so we can fail the task if not.
            DotNetRestore(s => s
@@ -164,7 +164,7 @@ partial class Build
        .Executes(() =>
        {
            var autoInstGenCliProj =
-               SourceDirectory / "Datadog.AutoInstrumentation.Generator.Cli" / "Datadog.AutoInstrumentation.Generator.Cli.csproj";
+               ToolsDirectory / "Datadog.AutoInstrumentation" / "Datadog.AutoInstrumentation.Generator.Cli" / "Datadog.AutoInstrumentation.Generator.Cli.csproj";
 
            DotNetRestore(s => s
                              .SetDotnetPath(TargetPlatform)

@@ -52,6 +52,7 @@ public sealed class Test
     {
         Suite = suite;
         var module = suite.Module;
+        module.CountTest();
         _priorTest = CurrentTest.Value;
         _testOptimization = TestOptimization.Instance;
 

@@ -94,6 +94,7 @@ partial class Build
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
+    AbsolutePath ToolsDirectory => TracerDirectory / "tools";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
@@ -556,7 +557,6 @@ partial class Build
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
                 "src/OpenTelemetry.AutoInstrumentation.StartupHook/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
             );
@@ -2722,15 +2722,10 @@ partial class Build
                new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
                new(@".*TestOptimization: .*", RegexOptions.Compiled),
                new(@".*TestOptimizationClient: .*", RegexOptions.Compiled),
-               // TODO: for the CI Visibility team to fix. Under the .NET 11 SDK a sample process exits while
-               // holding the CircularChannel mutex. CircularChannel.Reader.InternalPollForMessage catches the
-               // resulting AbandonedMutexException and returns _without_ releasing - but an abandoned wait still
-               // acquires - so the channel is poisoned and every subsequent poll logs an error. The same
-               // WaitOne-outside-try shape in CircularChannel.Writer.TryWrite and the CircularChannel ctor lets
-               // the exception escape entirely, which produces the third pattern. The tests themselves pass.
-               new(@".*CircularChannel\.(Reader|Writer): Mutex was abandoned.*", RegexOptions.Compiled),
+               // With the .NET 11 RC SDK, a .NET 11 process and a .NET 8-10 process sharing the CircularChannel named mutex
+               // corrupt its ownership record (dotnet/runtime#134491), so ReleaseMutex can fail after a successful wait.
+               // Remove this once we build with .NET 11 GA.
                new(@".*CircularChannel\.Reader: Error while polling for messages.*Object synchronization method was called from an unsynchronized block of code.*", RegexOptions.Compiled | RegexOptions.Singleline),
-               new(@".*Error enabling IPC client and sending coverage data.*AbandonedMutexException.*", RegexOptions.Compiled | RegexOptions.Singleline),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
