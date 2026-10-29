@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec.ApiSec;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -19,6 +20,11 @@ using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace.DiagnosticListeners;
 
+/// <summary>
+/// Computes the resource name of a route, and the API Security normalized route in the same walk.
+/// The normalized route reports as static constants the area, controller and action values that the
+/// resource name expands, and as "{name}" every other parameter that the request contains.
+/// </summary>
 internal static class AspNetCoreResourceNameHelper
 {
 #if NET6_0_OR_GREATER
@@ -27,6 +33,16 @@ internal static class AspNetCoreResourceNameHelper
         RouteValueDictionary routeValueDictionary,
         bool expandRouteParameters)
     {
+        var normalizedRoute = default(NormalizedRouteBuilder);
+        return SimplifyRoutePattern(routePattern, routeValueDictionary, expandRouteParameters, ref normalizedRoute);
+    }
+
+    internal static string SimplifyRoutePattern(
+        RoutePattern routePattern,
+        RouteValueDictionary routeValueDictionary,
+        bool expandRouteParameters,
+        ref NormalizedRouteBuilder normalizedRoute)
+    {
         var sb = routePattern.RawText?.Length < 512
                      ? new ValueStringBuilder(stackalloc char[512])
                      : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
@@ -34,6 +50,7 @@ internal static class AspNetCoreResourceNameHelper
         foreach (var pathSegment in routePattern.PathSegments)
         {
             var addedPart = false;
+            normalizedRoute.StartSegment();
             foreach (var part in pathSegment.DuckCast<AspNetCoreDiagnosticObserver.RoutePatternPathSegmentStruct>().Parts)
             {
                 if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
@@ -45,11 +62,28 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     sb.AppendAsLowerInvariant(contentPart.Content);
+
+                    // A separator belongs to the optional parameter that follows it
+                    if (!contentPart.IsSeparator)
+                    {
+                        normalizedRoute.AddStaticText(contentPart.Content);
+                    }
                 }
                 else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
                 {
                     var parameterName = parameter.Name;
                     var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+
+                    if (normalizedRoute.IsEnabled)
+                    {
+                        AddNormalizedParameter(
+                            ref normalizedRoute,
+                            parameterName,
+                            value,
+                            routeValue: IsMvcRouteValue(parameterName) && IsExpandableValue(value) ? value as string : null,
+                            isOptional: parameter.IsOptional || parameter.IsCatchAll);
+                    }
+
                     if (!parameter.IsOptional || haveParameter)
                     {
                         if (!addedPart)
@@ -58,17 +92,9 @@ internal static class AspNetCoreResourceNameHelper
                             addedPart = true;
                         }
 
-                        // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
-                        // so never expand them. This avoids an allocating ToString() call, but means that
-                        // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
                         if (haveParameter
-                         && (expandRouteParameters
-                          || parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
-                          || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
-                          || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                         && (value is null ||
-                             (value is string valueAsString
-                           && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
+                         && (expandRouteParameters || IsMvcRouteValue(parameterName))
+                         && IsExpandableValue(value))
                         {
                             // write the expanded parameter value
                             sb.AppendAsLowerInvariant(value as string);
@@ -100,6 +126,8 @@ internal static class AspNetCoreResourceNameHelper
                     }
                 }
             }
+
+            normalizedRoute.EndSegment();
         }
 
         // We never added anything, or we just added the first `/`, no need for explicit ToString()
@@ -121,6 +149,19 @@ internal static class AspNetCoreResourceNameHelper
         string? actionName,
         bool expandRouteParameters)
     {
+        var normalizedRoute = default(NormalizedRouteBuilder);
+        return SimplifyRoutePattern(routePattern, routeValueDictionary, areaName, controllerName, actionName, expandRouteParameters, ref normalizedRoute);
+    }
+
+    internal static string SimplifyRoutePattern(
+        RoutePattern routePattern,
+        IReadOnlyDictionary<string, object?> routeValueDictionary,
+        string? areaName,
+        string? controllerName,
+        string? actionName,
+        bool expandRouteParameters,
+        ref NormalizedRouteBuilder normalizedRoute)
+    {
         var maxSize = (routePattern.RawText?.Length ?? 0)
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName!.Length - 4, 0)) // "area".Length
                     + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName!.Length - 10, 0)) // "controller".Length
@@ -134,6 +175,7 @@ internal static class AspNetCoreResourceNameHelper
         foreach (var pathSegment in routePattern.PathSegments)
         {
             var addedPart = false;
+            normalizedRoute.StartSegment();
             foreach (var part in pathSegment.DuckCast<AspNetCoreDiagnosticObserver.RoutePatternPathSegmentStruct>().Parts)
             {
                 if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
@@ -145,6 +187,12 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     sb.AppendAsLowerInvariant(contentPart.Content);
+
+                    // A separator belongs to the optional parameter that follows it
+                    if (!contentPart.IsSeparator)
+                    {
+                        normalizedRoute.AddStaticText(contentPart.Content);
+                    }
                 }
                 else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
                 {
@@ -172,6 +220,16 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     var haveParameter = value is not null;
+
+                    if (normalizedRoute.IsEnabled)
+                    {
+                        AddNormalizedParameter(
+                            ref normalizedRoute,
+                            parameterName,
+                            value,
+                            routeValue: mustExpand ? GetRouteValue(routeValueDictionary, parameterName, value) : null,
+                            isOptional: parameter.IsOptional || parameter.IsCatchAll);
+                    }
 
                     if (parameter.IsOptional && !haveParameter)
                     {
@@ -219,6 +277,8 @@ internal static class AspNetCoreResourceNameHelper
                     }
                 }
             }
+
+            normalizedRoute.EndSegment();
         }
 
         if (sb.Length <= 1)
@@ -237,6 +297,19 @@ internal static class AspNetCoreResourceNameHelper
         string? controllerName,
         string? actionName,
         bool expandRouteParameters)
+    {
+        var normalizedRoute = default(NormalizedRouteBuilder);
+        return SimplifyRouteTemplate(routePattern, routeValueDictionary, areaName, controllerName, actionName, expandRouteParameters, ref normalizedRoute);
+    }
+
+    internal static string SimplifyRouteTemplate(
+        RouteTemplate routePattern,
+        RouteValueDictionary routeValueDictionary,
+        string? areaName,
+        string? controllerName,
+        string? actionName,
+        bool expandRouteParameters,
+        ref NormalizedRouteBuilder normalizedRoute)
     {
         // note that this is not accurate if expandRouteParameters=true, but we don't have a good fallback for that
         var maxSize = (routePattern.TemplateText?.Length ?? 0)
@@ -264,6 +337,7 @@ internal static class AspNetCoreResourceNameHelper
         foreach (var pathSegment in (List<TemplateSegment>)routePattern.Segments)
         {
             var addedPart = false;
+            normalizedRoute.StartSegment();
             foreach (var part in pathSegment.Parts)
             {
                 if (!part.IsParameter)
@@ -275,6 +349,12 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     sb.AppendAsLowerInvariant(part.Text);
+
+                    // A separator belongs to the optional parameter that follows it
+                    if (!part.IsOptionalSeperator)
+                    {
+                        normalizedRoute.AddStaticText(part.Text);
+                    }
                 }
                 else
                 {
@@ -303,6 +383,16 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     var haveParameter = value is not null;
+
+                    if (normalizedRoute.IsEnabled)
+                    {
+                        AddNormalizedParameter(
+                            ref normalizedRoute,
+                            parameterName,
+                            value,
+                            routeValue: mustExpand ? GetRouteValue(routeValueDictionary, parameterName, value) : null,
+                            isOptional: part.IsOptional || part.IsCatchAll);
+                    }
 
                     if (part.IsOptional && !haveParameter)
                     {
@@ -343,6 +433,8 @@ internal static class AspNetCoreResourceNameHelper
                     }
                 }
             }
+
+            normalizedRoute.EndSegment();
         }
 
         // We never added anything, or we just added the first `/`, no need for explicit ToString()
@@ -380,6 +472,54 @@ internal static class AspNetCoreResourceNameHelper
         }
 
         return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
+    }
+
+#if NET6_0_OR_GREATER
+    private static bool IsMvcRouteValue(string parameterName)
+        => parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
+        || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
+        || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase);
+
+    // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
+    // so never expand them. This avoids an allocating ToString() call, but means that
+    // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
+    private static bool IsExpandableValue(object? value)
+        => value is null
+        || (value is string valueAsString && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length));
+#endif
+
+    // The MVC names may be lower-cased for the resource name, so read the route value as matched
+    private static string? GetRouteValue(IReadOnlyDictionary<string, object?> routeValueDictionary, string parameterName, object? value)
+        => routeValueDictionary.TryGetValue(parameterName, out var matchedValue) && matchedValue is string { Length: > 0 } matchedString
+               ? matchedString
+               : value as string;
+
+    /// <summary>
+    /// Adds a parameter to the normalized route.
+    /// </summary>
+    /// <param name="normalizedRoute">The normalized route builder</param>
+    /// <param name="parameterName">The parameter name</param>
+    /// <param name="value">The value matched for the request</param>
+    /// <param name="routeValue">The area, controller or action value that the resource name expands, reported as a static constant</param>
+    /// <param name="isOptional">Whether the request may not contain the parameter</param>
+    private static void AddNormalizedParameter(ref NormalizedRouteBuilder normalizedRoute, string parameterName, object? value, string? routeValue, bool isOptional)
+    {
+        if (value is null or string { Length: 0 })
+        {
+            // Optional elements are resolved against the values matched for this request
+            if (!isOptional)
+            {
+                normalizedRoute.AddParameter(parameterName);
+            }
+        }
+        else if (routeValue is { Length: > 0 })
+        {
+            normalizedRoute.AddStaticText(routeValue);
+        }
+        else
+        {
+            normalizedRoute.AddParameter(parameterName);
+        }
     }
 }
 #endif
