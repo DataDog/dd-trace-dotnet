@@ -229,7 +229,7 @@ namespace Datadog.Trace.Configuration
 
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
-                            .AsInt32(defaultValue: 10_000);
+                            .AsInt32(defaultValue: 10_000, validator: x => x > 0).Value;
 
             OtelMetricExportTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs)

@@ -884,7 +884,6 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
-      <type fullname="System.Runtime.CompilerServices.AsyncVoidMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
@@ -982,6 +981,7 @@
       <type fullname="System.Threading.CancellationTokenRegistration" />
       <type fullname="System.Threading.CancellationTokenSource" />
       <type fullname="System.Threading.LazyThreadSafetyMode" />
+      <type fullname="System.Threading.PeriodicTimer" />
       <type fullname="System.Threading.Tasks.Task" />
       <type fullname="System.Threading.Tasks.Task`1" />
       <type fullname="System.Threading.Tasks.TaskAsyncEnumerableExtensions" />
