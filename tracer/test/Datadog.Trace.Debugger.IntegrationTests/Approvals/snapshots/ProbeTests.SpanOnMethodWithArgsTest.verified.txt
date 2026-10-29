@@ -259,6 +259,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "probes"
+    "service": "probes",
+    "timestamp": "ScrubbedValue"
   }
 ]

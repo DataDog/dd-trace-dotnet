@@ -8,7 +8,7 @@ This is a single-PR flow. You do not need a local Windows machine with Docker De
 
 ### 1. Edit the image
 
-Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoint.bat`, `requirements.txt`, `constraints.txt`, etc. Every file in this directory contributes to the image hash, so any change produces a new tag.
+Edit `gitlab.windows.dockerfile`, any of the `install_*.ps1` scripts, `entrypoint.bat`, etc. Every file in this directory contributes to the image hash, so any change produces a new tag.
 
 ### 2. Open a PR
 

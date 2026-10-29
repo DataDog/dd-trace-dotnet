@@ -547,16 +547,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, null, 1.0d)]
+        // OTLP trace export doesn't change the default: GlobalSamplingRate stays null unless configured
+        [InlineData(null, null, null, null)]
         [InlineData("0", null, null, 0.0d)]
         [InlineData("0.5", null, null, 0.5d)]
         [InlineData("1", null, null, 1.0d)]
         [InlineData(null, "parentbased_traceidratio", "0.5", 0.5d)]
         [InlineData(null, "parentbased_traceidratio", "1", 1.0d)]
-        [InlineData(null, "parentbased_traceidratio", null, 1.0d)]
+        [InlineData(null, "parentbased_traceidratio", null, null)]
         [InlineData(null, "traceidratio", "0.5", 0.5d)]
         [InlineData(null, "traceidratio", "1", 1.0d)]
-        [InlineData(null, "traceidratio", null, 1.0d)]
+        [InlineData(null, "traceidratio", null, null)]
         [InlineData(null, "parentbased_always_on", null, 1.0d)]
         [InlineData(null, "always_on", null, 1.0d)]
         [InlineData(null, "parentbased_always_off", null, 0.0d)]
