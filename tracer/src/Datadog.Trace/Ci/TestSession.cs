@@ -257,6 +257,30 @@ public sealed class TestSession
     }
 
     /// <summary>
+    /// Sends the number of tests a runner executed to the test session behind <paramref name="ipcClient"/>.
+    /// </summary>
+    /// <param name="ipcClient">IPC client connected to the test session.</param>
+    /// <param name="executedTests">Number of executed tests, or null when the runner could not count them.</param>
+    /// <returns>False when the session's channel stayed full and the count was lost.</returns>
+    internal static bool TrySendExecutedTests(IpcClient ipcClient, long? executedTests)
+    {
+        // A lost count could let another runner's zero count report the session as empty. The session drains the
+        // channel every 100 ms, so a full channel is retried for a short while.
+        var message = new SessionExecutedTestsMessage(executedTests);
+        for (var attempt = 1; !ipcClient.TrySendMessage(message); attempt++)
+        {
+            if (attempt == 10)
+            {
+                return false;
+            }
+
+            Thread.Sleep(100);
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Gets whether a session-level code coverage result has been recorded for the supplied source.
     /// </summary>
     /// <param name="source">Coverage source to check.</param>

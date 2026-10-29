@@ -35,6 +35,7 @@ public class EmptyTestSessionTests : IDisposable
         testOptimization.Setup(x => x.RunId).Returns(Guid.NewGuid().ToString("N"));
         testOptimization.Setup(x => x.Settings).Returns(TestOptimizationSettings.FromDefaultSources());
         testOptimization.Setup(x => x.CIValues).Returns(CIEnvironmentValues.Instance);
+        testOptimization.Setup(x => x.HostInfo).Returns(Mock.Of<ITestOptimizationHostInfo>());
         testOptimization.Setup(x => x.Reset()).Callback(() => TestOptimization.Instance = new TestOptimization());
         TestOptimization.Instance = testOptimization.Object;
     }
@@ -77,6 +78,22 @@ public class EmptyTestSessionTests : IDisposable
             session.RecordExecutedTests(count);
         }
 
+        session.Close(TestStatus.Pass);
+
+        AssertStatus(session, expectedStatus);
+    }
+
+    [Theory]
+    [InlineData(0, TestTags.StatusSkip)]
+    [InlineData(1, TestTags.StatusPass)]
+    public void TestModulesInOtherProcessesReportTheirTests(int tests, string expectedStatus)
+    {
+        var session = CreateSession();
+
+        // A VSTest project that ran no tests, and a module from a runner that doesn't report its own count,
+        // such as Microsoft.Testing.Platform under dotnet test on SDK 9 and earlier.
+        CompleteVSTestRun(0, aborted: false, canceled: false, error: false);
+        RunTestModule(tests);
         session.Close(TestStatus.Pass);
 
         AssertStatus(session, expectedStatus);
@@ -127,6 +144,21 @@ public class EmptyTestSessionTests : IDisposable
         }.DuckCast<TestRunRequestOnRunCompletionIntegration.ITestRunCompleteEventArgs>();
 
         TestRunRequestOnRunCompletionIntegration.OnMethodBegin(new object(), null, args);
+    }
+
+    private static void RunTestModule(int tests)
+    {
+        // Like the test framework integrations, the module connects to the session it finds in the environment.
+        var module = TestModule.Create("module", "xUnit", "2.9.3");
+        module.EnableIpcClient().Should().BeTrue();
+        var suite = module.GetOrCreateSuite("suite");
+        for (var i = 0; i < tests; i++)
+        {
+            suite.CreateTest("test" + i).Close(TestStatus.Pass);
+        }
+
+        suite.Close();
+        module.Close();
     }
 
     private static void AssertStatus(TestSession session, string expectedStatus)

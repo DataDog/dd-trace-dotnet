@@ -6,9 +6,8 @@
 
 using System;
 using System.ComponentModel;
-using System.Threading;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Ipc;
-using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -72,19 +71,9 @@ public sealed class TestRunRequestOnRunCompletionIntegration
         try
         {
             using var ipcClient = new IpcClient($"session_{sessionSpanId}");
-            var message = new SessionExecutedTestsMessage(executedTests);
-
-            // A lost count could let another run's zero count report the session as empty. The session drains the
-            // channel every 100 ms, so a full channel is retried for a short while.
-            for (var attempt = 1; !ipcClient.TrySendMessage(message); attempt++)
+            if (!TestSession.TrySendExecutedTests(ipcClient, executedTests))
             {
-                if (attempt == 10)
-                {
-                    DotnetCommon.Log.Warning("TestRunRequestOnRunCompletionIntegration: Could not send the executed tests to the test session.");
-                    return;
-                }
-
-                Thread.Sleep(100);
+                DotnetCommon.Log.Warning("TestRunRequestOnRunCompletionIntegration: Could not send the executed tests to the test session.");
             }
         }
         catch (Exception ex)

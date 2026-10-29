@@ -84,6 +84,9 @@ public class VSTestEmptySessionTests : TestingFrameworkEvpTest
         // As with dotnet test, the session belongs to a parent process and vstest.console reports to it over IPC.
         SkipIfVSTestCannotShareNamedMutexes();
         InjectSession(out var sessionId, out _, out _, out _, out _, out _, out _);
+
+        // Test modules report their tests too, so without the xUnit integration only vstest.console sends a count.
+        SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(IntegrationId.XUnit));
         using var received = new ManualResetEventSlim();
         long? executedTests = null;
         using var ipcServer = new IpcServer($"session_{sessionId}");
