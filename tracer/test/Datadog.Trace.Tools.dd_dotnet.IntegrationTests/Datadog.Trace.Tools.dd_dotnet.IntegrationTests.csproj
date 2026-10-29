@@ -1,27 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>SA1300;NU1901;NU1902;NU1903;NU1904</NoWarn>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="applicationHost.config" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="applicationHost.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.Tools.dd_dotnet\Datadog.Trace.Tools.dd_dotnet.csproj" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
+    <!-- Generates the ProjectInfo class for assertions -->
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta3" PrivateAssets="all" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
@@ -29,14 +26,8 @@
     <!-- Somebody should look into that... -->
     <PackageReference Remove="coverlet.collector" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\..\src\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
-
 </Project>
