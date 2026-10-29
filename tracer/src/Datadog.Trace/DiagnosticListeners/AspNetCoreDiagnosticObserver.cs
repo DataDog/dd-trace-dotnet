@@ -344,6 +344,7 @@ namespace Datadog.Trace.DiagnosticListeners
             string aspNetRoute = trackingFeature.Route;
             string resourceName = trackingFeature.ResourceName;
             RouteTemplate routeTemplate = null;
+            var apiSecurityRoute = default(NormalizedRouteBuilder);
 
             if (aspNetRoute is null || resourceName is null)
             {
@@ -370,12 +371,30 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (routeTemplate is not null)
                 {
+                    // The API Security normalized route is computed in the same walk of the route as the resource name
+                    if (!isUsingEndpointRouting && isFirstExecution)
+                    {
+                        apiSecurityRoute = NormalizedRouteBuilder.Create(security, request.PathBase.Value);
+                    }
+
                     if (otelSemanticsEnabled)
                     {
                         // The OTel span name must be "{method} {http.route}", so use the route verbatim
                         // (as stored by ASP.NET Core), instead of lower-casing it like the Datadog semantics do.
                         aspNetRoute = HttpSemanticConventions.GetHttpRoute(routeTemplate.TemplateText);
                         resourceName = $"{HttpSemanticConventions.GetResourceName(rootSpanTags.HttpMethod)} {aspNetRoute}";
+
+                        if (apiSecurityRoute.IsEnabled)
+                        {
+                            _ = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
+                                routeTemplate,
+                                typedArg.RouteData.Values,
+                                areaName: areaName,
+                                controllerName: controllerName,
+                                actionName: actionName,
+                                expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled,
+                                ref apiSecurityRoute);
+                        }
                     }
                     else
                     {
@@ -388,7 +407,8 @@ namespace Datadog.Trace.DiagnosticListeners
                             areaName: areaName,
                             controllerName: controllerName,
                             actionName: actionName,
-                            expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
+                            expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled,
+                            ref apiSecurityRoute);
 
                         resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
                     }
@@ -408,11 +428,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 rootSpan.ResourceName = effectiveResourceName;
-
-                if (aspNetRoute is not null && routeTemplate is not null && NormalizedRoute.IsEnabled(security))
-                {
-                    NormalizedRoute.SetTag(rootSpan, routeTemplate, typedArg.RouteData.Values, request.PathBase.Value);
-                }
+                apiSecurityRoute.SetTag(rootSpan, routeTemplate?.TemplateText);
             }
 
             if (otelSemanticsEnabled)
@@ -589,6 +605,11 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
+                // The API Security normalized route is computed in the same walk of the route as the resource name
+                var apiSecurityRoute = isFirstExecution && normalizedRoute is not null
+                                           ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value)
+                                           : default;
+
                 string resourceName;
                 if (_tracer.Settings.OtelSemanticsEnabled)
                 {
@@ -598,6 +619,18 @@ namespace Datadog.Trace.DiagnosticListeners
                     resourceName = normalizedRoute is not null
                                        ? $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}"
                                        : HttpSemanticConventions.GetResourceName(tags.HttpMethod);
+
+                    if (apiSecurityRoute.IsEnabled)
+                    {
+                        _ = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                            routePattern,
+                            routeValues,
+                            areaName: areaName,
+                            controllerName: controllerName,
+                            actionName: actionName,
+                            _tracer.Settings.ExpandRouteTemplatesEnabled,
+                            ref apiSecurityRoute);
+                    }
                 }
                 else
                 {
@@ -607,7 +640,8 @@ namespace Datadog.Trace.DiagnosticListeners
                         areaName: areaName,
                         controllerName: controllerName,
                         actionName: actionName,
-                        _tracer.Settings.ExpandRouteTemplatesEnabled);
+                        _tracer.Settings.ExpandRouteTemplatesEnabled,
+                        ref apiSecurityRoute);
 
                     resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
                 }
@@ -622,11 +656,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-
-                    if (normalizedRoute is not null && NormalizedRoute.IsEnabled(_security))
-                    {
-                        NormalizedRoute.SetTag(rootSpan, routePattern, routeValues, request.PathBase.Value);
-                    }
+                    apiSecurityRoute.SetTag(rootSpan, routePattern.RawText);
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
@@ -882,6 +912,12 @@ namespace Datadog.Trace.DiagnosticListeners
         internal struct RoutePatternContentPartStruct
         {
             public string Content;
+
+            /// <summary>
+            /// Whether this is a separator that the framework removes with the optional parameter that follows it,
+            /// e.g. the "." in "{filename}.{ext?}". Defined in the RoutePatternPart base class.
+            /// </summary>
+            public bool IsSeparator;
         }
 
         /// <summary>

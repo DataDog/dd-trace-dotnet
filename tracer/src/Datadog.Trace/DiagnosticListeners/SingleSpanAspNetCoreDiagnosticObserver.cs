@@ -257,6 +257,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
+                    // The API Security normalized route is computed in the same walk of the route as the resource name
+                    var apiSecurityRoute = routePattern.RawText is not null
+                                               ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value)
+                                               : default;
+
                     string? normalizedRoute;
                     if (_tracer.Settings.OtelSemanticsEnabled)
                     {
@@ -268,6 +273,15 @@ namespace Datadog.Trace.DiagnosticListeners
                         rootSpan.ResourceName = normalizedRoute is not null
                                                      ? $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}"
                                                      : HttpSemanticConventions.GetResourceName(tags.HttpMethod);
+
+                        if (apiSecurityRoute.IsEnabled)
+                        {
+                            _ = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                                routePattern,
+                                routeValues,
+                                _tracer.Settings.ExpandRouteTemplatesEnabled,
+                                ref apiSecurityRoute);
+                        }
                     }
                     else
                     {
@@ -278,7 +292,8 @@ namespace Datadog.Trace.DiagnosticListeners
                         var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
                             routePattern,
                             routeValues,
-                            _tracer.Settings.ExpandRouteTemplatesEnabled);
+                            _tracer.Settings.ExpandRouteTemplatesEnabled,
+                            ref apiSecurityRoute);
 
                         // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
                         // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
@@ -289,11 +304,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
 
                     tags.AspNetCoreRoute = normalizedRoute;
-
-                    if (normalizedRoute is not null && NormalizedRoute.IsEnabled(_security))
-                    {
-                        NormalizedRoute.SetTag(rootSpan, routePattern, routeValues, request.PathBase.Value);
-                    }
+                    apiSecurityRoute.SetTag(rootSpan, routePattern.RawText);
                 }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed
