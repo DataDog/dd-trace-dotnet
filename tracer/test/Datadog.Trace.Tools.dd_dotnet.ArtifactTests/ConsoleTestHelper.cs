@@ -77,7 +77,16 @@ public abstract class ConsoleTestHelper : ToolTestHelper
             // We should still apply the custom environment variables
             foreach (string key in environmentHelper.CustomEnvironmentVariables.Keys)
             {
-                processStart.Environment[key] = environmentHelper.CustomEnvironmentVariables[key];
+                var value = environmentHelper.CustomEnvironmentVariables[key];
+
+                if (value is null)
+                {
+                    processStart.Environment.Remove(key);
+                }
+                else
+                {
+                    processStart.Environment[key] = value;
+                }
             }
         }
 

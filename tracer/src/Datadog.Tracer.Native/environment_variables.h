@@ -19,6 +19,10 @@ namespace environment
     // "C:\Program Files\Datadog .NET Tracer\" or "/opt/datadog/"
     const shared::WSTRING profiler_home_path = WStr("DD_DOTNET_TRACER_HOME");
 
+    // Sets the path to the profiler's home directory, using the OpenTelemetry .NET auto-instrumentation configuration.
+    // The managed loader reads this as a fallback for DD_DOTNET_TRACER_HOME, so that an OpenTelemetry Operator install works as-is.
+    const shared::WSTRING otel_dotnet_auto_home_path = WStr("OTEL_DOTNET_AUTO_HOME");
+
     // Sets the filename of executables the profiler can attach to.
     // If not defined (default), the profiler will attach to any process.
     // Supports multiple values separated with semi-colons, for example:
