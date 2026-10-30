@@ -95,8 +95,11 @@ Bugs, races, unhandled edge cases, and tests that pass when they shouldn't.
 - ❌ `await agent.WaitForSpansAsync(expectedCount);`
 - ✅ `var spans = await agent.WaitForSpansAsync(expectedCount, operationName: ExpectedOperationName); spans.Should().HaveCount(expectedCount);`
 
-### COR-6.4: Don't use timeouts in tests, use deterministic mutexes 
-- Flag: a test using a timeout to wait for a condition to be reached. Instead use a mutex of similar construct to wait for the condition to be true, and a large (30s+) timeout on the test to avoid test hanging in failure.
+### COR-6.4: Wait on events in tests, not on time
+- Flag: a test that waits for a condition with `Thread.Sleep`, `Task.Delay` or a short timed wait, or a timeout raised to fix a flaky test. Wait on a `TaskCompletionSource`, a `std::promise` or a marker queued behind the work on a single-consumer queue instead (with parallel workers, wait on a countdown or a per-item completion signal), and give the test a large (30s+) timeout so a failure can't hang it.
+- Not when: the time bound detects a failure that no event can report, such as missing output from another process (`MockTracerAgent.WaitForSpansAsync`), a deadlock probe or a check that something stays blocked, and a comment says why.
+- ❌ `Thread.Sleep(500); processed.Should().BeTrue();`
+- ✅ `await processedTcs.Task; // set by the handler`
 
 ## Don't flag
 - A call made outside a lock when the caller holds a lifetime lease that the remover must acquire first.
