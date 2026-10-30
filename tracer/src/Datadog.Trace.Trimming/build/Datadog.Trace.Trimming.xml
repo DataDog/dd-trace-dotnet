@@ -588,6 +588,9 @@
       <type fullname="System.Reflection.Metadata.SequencePoint" />
       <type fullname="System.Reflection.Metadata.SequencePointCollection" />
       <type fullname="System.Reflection.Metadata.SequencePointCollection/Enumerator" />
+      <type fullname="System.Reflection.Metadata.SignatureHeader" />
+      <type fullname="System.Reflection.Metadata.SignatureKind" />
+      <type fullname="System.Reflection.Metadata.SignatureTypeCode" />
       <type fullname="System.Reflection.Metadata.StandaloneSignature" />
       <type fullname="System.Reflection.Metadata.StandaloneSignatureHandle" />
       <type fullname="System.Reflection.Metadata.StringHandle" />
