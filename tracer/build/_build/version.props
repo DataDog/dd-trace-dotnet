@@ -9,8 +9,8 @@
     images compile Nuke using only this directory as the Docker build context, and Nuke needs it.
 
     Keep exactly one DD_VersionPrefix and one DD_VersionSuffix element in this file, and never write
-    their opening and closing tags anywhere else - not even in a comment. The UpdateVersion target
-    (and, for DD_VersionPrefix, build/cmake/DdVersion.cmake) locates them by matching those tags
+    their opening and closing tags anywhere else - not even in a comment.
+    build/cmake/DdVersion.cmake and the UpdateVersion target both locate them by matching those tags
     textually, and UpdateVersion rewrites every match, so a second one would be silently rewritten too.
     Derived properties below are fine: they reference the properties, which does not match the tag pattern.
   -->
@@ -19,15 +19,19 @@
     <DD_VersionPrefix>3.57.0</DD_VersionPrefix>
 
     <!-- The semver prerelease suffix, including its leading '-' (e.g. -prerelease), or empty for a
-         release. Almost always empty. Any suffix makes this version a prerelease. -->
+         release. Almost always empty. Any suffix makes this version a prerelease. Native code
+         receives it as the DD_VERSION_SUFFIX definition. -->
     <DD_VersionSuffix></DD_VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
+    <!-- The version the SDK reports everywhere: telemetry, headers, metrics, logs, crash reports and
+         profiles. The native tracer and Datadog.Trace also compare it to detect mismatched versions. -->
     <DD_SemanticVersion>$(DD_VersionPrefix)$(DD_VersionSuffix)</DD_SemanticVersion>
 
-    <!-- The native tracer and the managed loader both resolve Datadog.Trace by this exact strong
-         name, so the revision stays at zero. -->
+    <!-- The four-part assembly version, and so the version of Datadog.Trace's strong name. It is the
+         same for a prerelease and the release with the same X.Y.Z, so never report it or compare it:
+         use DD_SemanticVersion instead. -->
     <DD_AssemblyVersion>$(DD_VersionPrefix).0</DD_AssemblyVersion>
   </PropertyGroup>
 
