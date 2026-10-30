@@ -16,3 +16,6 @@ call run-garbagecollections.cmd > run-garbagecollections.txt 2>&1
 del run-liveheap.txt
 call run-liveheap.cmd > run-liveheap.txt 2>&1
 
+del run-referencechain.txt
+call run-referencechain.cmd > run-referencechain.txt 2>&1
+
