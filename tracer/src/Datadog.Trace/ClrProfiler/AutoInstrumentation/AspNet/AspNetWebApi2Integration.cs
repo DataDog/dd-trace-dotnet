@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.ApiSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -177,6 +178,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     HttpSemanticConventions.SetHttpRoute(serverSpan, route);
                     serverSpan.ResourceName = resourceName;
+
+                    AspNetRouteTemplate.SetTag(Security.Instance, serverSpan, route, controllerContext.RouteData?.Values, controllerContext.RequestContext.VirtualPathRoot);
                 }
 
                 if (httpContext is not null)
@@ -303,6 +306,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     else
                     {
                         span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    }
+
+                    if (span.Context.TraceContext.RootSpan is { } rootSpan)
+                    {
+                        AspNetRouteTemplate.SetTag(Security.Instance, rootSpan, route, routeValues, controllerContext.RequestContext.VirtualPathRoot);
                     }
                 }
 
