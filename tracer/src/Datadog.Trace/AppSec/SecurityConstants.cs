@@ -13,6 +13,7 @@ namespace Datadog.Trace.AppSec
         internal const string SecurityResponseIdPlaceholder = "[security_response_id]";
 
         internal const string BlockedJsonTemplate = """{"errors":[{"title":"You've been blocked","detail":"Sorry, you cannot access this page. Please contact the customer service team. Security provided by Datadog."}],"security_response_id":"[security_response_id]"}""";
+#pragma warning disable MA0101 // String contains an implicit end of line character - line endings are irrelevant in the HTML response
         internal const string BlockedHtmlTemplate = @"<!-- Sorry, you've been blocked -->
 <!DOCTYPE html>
 <html lang='en'>
@@ -119,5 +120,6 @@ namespace Datadog.Trace.AppSec
 </body>
 
 </html>";
+#pragma warning restore MA0101
     }
 }
