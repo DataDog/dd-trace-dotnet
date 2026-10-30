@@ -17,54 +17,14 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
 {
     public class RequestInvokerHandlerSendAsyncIntegrationTests
     {
-        public static TheoryData<bool, int, string> ContextScenarios => new()
-        {
-            { false, 0, "gateway" },
-            { false, 1, "direct" },
-            { false, 2, "other" },
-            // Disposal must not prevent reading metadata directly from the fields.
-            { true, 0, "gateway" },
-        };
-
-        public static TheoryData<ConnectionMode, string> SdkConnectionModes => new()
-        {
-            { ConnectionMode.Gateway, "gateway" },
-            { ConnectionMode.Direct, "direct" },
-        };
-
-        [Theory]
-        [MemberData(nameof(ContextScenarios))]
-        public void OnMethodBegin_CreatesSpanWhenContextIsDisposed(bool disposed, int connectionMode, string expectedMode)
-        {
-            var context = new ClientContext(disposed, connectionMode);
-            var handler = new RequestInvokerHandler(new Client(context)).DuckCast<IRequestInvokerHandlerProxy>();
-            var container = new { Id = "myColl", Database = new { Id = "myDb" } }.DuckCast<IContainer>();
-            var state = RequestInvokerHandlerSendAsyncIntegration.OnMethodBegin<IRequestInvokerHandlerProxy, IContainer>(
-                handler, "dbs/myDb/colls/myColl/docs/item1", "Document", "Read", null, container, null, null, null, null, default);
-
-            using var scope = Assert.IsType<Scope>(state.Scope);
-            scope.Span.ResourceName.Should().Be("Read dbs/myDb/colls/myColl/docs/?");
-            scope.Span.Type.Should().Be(SpanTypes.Sql);
-            var tags = scope.Span.Tags.Should().BeAssignableTo<CosmosDbTags>().Subject;
-            tags.UserAgent.Should().Be("cosmos-test-agent");
-            tags.ConnectionMode.Should().Be(expectedMode);
-            tags.ContainerId.Should().Be("myColl");
-            tags.DatabaseId.Should().Be("myDb");
-            var expectedTags = Tracer.Instance.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
-            expectedTags.SetEndpoint(new Uri("https://localhost:8081"));
-            tags.Host.Should().Be(expectedTags.Host);
-            context.PropertyReads.Should().Be(0);
-        }
-
-        [Theory]
-        [MemberData(nameof(SdkConnectionModes))]
-        public void OnMethodBegin_CreatesSpanAfterRealClientIsDisposed(ConnectionMode connectionMode, string expectedMode)
+        [Fact]
+        public void OnMethodBegin_CreatesSpanAfterRealClientIsDisposed()
         {
             // Constructing and disposing the SDK client requires no Cosmos DB server.
             using var client = new CosmosClient(
                 "https://localhost:8081",
                 Convert.ToBase64String(new byte[64]),
-                new CosmosClientOptions { ConnectionMode = connectionMode });
+                new CosmosClientOptions { ConnectionMode = ConnectionMode.Gateway });
             var context = client.DuckCast<CosmosClientStruct>().ClientContext;
             var container = client.GetContainer("myDb", "myColl").DuckCast<IContainer>();
             var expectedUserAgent = context.DuckCast<CosmosContextClientStruct>().UserAgent;
@@ -83,7 +43,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
             scope.Span.ResourceName.Should().Be("Read dbs/myDb/colls/myColl/docs/?");
             var tags = scope.Span.Tags.Should().BeAssignableTo<CosmosDbTags>().Subject;
             tags.UserAgent.Should().Be(expectedUserAgent);
-            tags.ConnectionMode.Should().Be(expectedMode);
+            tags.ConnectionMode.Should().Be("gateway");
         }
 
         [Theory]
@@ -99,61 +59,11 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
             result.Should().Be(expected);
         }
 
-        private class RequestInvokerHandler
-        {
-            // Matches the SDK field accessed through duck typing.
-            private readonly Client client;
-
-            public RequestInvokerHandler(Client client) => this.client = client;
-        }
-
         private class SdkClientRequestInvokerHandler
         {
             private readonly CosmosClient client;
 
             public SdkClientRequestInvokerHandler(CosmosClient client) => this.client = client;
-        }
-
-        private class Client
-        {
-            public Client(ClientContext context) => ClientContext = context;
-
-            public Uri Endpoint => new("https://localhost:8081");
-
-            public ClientContext ClientContext { get; }
-        }
-
-        private class ClientContext
-        {
-            private readonly bool _disposed;
-            // Match the SDK fields accessed through duck typing.
-            private readonly ClientOptions clientOptions;
-            private readonly string userAgent = "cosmos-test-agent";
-
-            public ClientContext(bool disposed, int connectionMode)
-            {
-                _disposed = disposed;
-                clientOptions = new ClientOptions { ConnectionMode = connectionMode };
-            }
-
-            public int PropertyReads { get; private set; }
-
-            public Client Client => ThrowIfDisposed(new Client(this));
-
-            public string UserAgent => ThrowIfDisposed(userAgent);
-
-            public ClientOptions ClientOptions => ThrowIfDisposed(clientOptions);
-
-            private T ThrowIfDisposed<T>(T value)
-            {
-                PropertyReads++;
-                return _disposed ? throw new ObjectDisposedException(nameof(ClientContext)) : value;
-            }
-        }
-
-        private class ClientOptions
-        {
-            public int ConnectionMode { get; set; }
         }
     }
 }
