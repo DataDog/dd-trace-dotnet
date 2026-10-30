@@ -526,11 +526,12 @@ partial class Build
                foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
                {
                    Logger.Warning(
-                       "  {Package} {IgnoredVersion} ignored, keeping {KeptVersion} (published {Date})",
+                       "  {Package} {IgnoredVersion} ignored, keeping {KeptVersion} (published {Date}){Superseded}",
                        entry.PackageName,
                        entry.IgnoredVersion,
                        entry.KeptVersion ?? "(none)",
-                       entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
+                       entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown",
+                       entry.IsSuperseded ? " (superseded, omitted from report)" : string.Empty);
                }
            }
 
