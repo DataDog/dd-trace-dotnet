@@ -5,6 +5,7 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Linq;
 using Datadog.Trace.AppSec.ApiSec;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
@@ -57,15 +58,16 @@ public class NormalizedRouteTests
         { "users/{id?}", string.Empty, "/users" },
         { "posts/{id}.{format?}", "id=1&format=json", "/posts/{id+format}" },
         { "posts/{id}.{format?}", "id=1", "/posts/{id}" },
-        { "{controller}.{format?}", "controller=Home", "/Home" },
-        { "{controller}.{format?}", "controller=Home&format=json", "/{format}" },
+        { "{controller}.{format?}", "controller=Home", "/{controller}" },
+        { "{controller}.{format?}", "controller=Home&format=json", "/{controller+format}" },
 
-        // The area, controller and action values that the resource name expands are static constants
-        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index", "/Home/Index" },
-        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index&id=5", "/Home/Index/{id}" },
-        { "{area:exists}/{controller}/{action}", "area=Admin&controller=Home&action=Index", "/Admin/Home/Index" },
-        { "prefix-{controller}-{id}", "controller=Home&id=1", "/{id}" },
-        { "{id}-{controller}", "controller=Home&id=1", "/{id}" },
+        // The area, controller and action route values are parameters like any other (rule 4)
+        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index", "/{controller}/{action}" },
+        { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index&id=5", "/{controller}/{action}/{id}" },
+        { "{area:exists}/{controller}/{action}", "area=Admin&controller=Home&action=Index", "/{area}/{controller}/{action}" },
+        { "prefix-{controller}-{id}", "controller=Home&id=1", "/{controller+id}" },
+        { "{id}-{controller}", "controller=Home&id=1", "/{id+controller}" },
+        { "slug/{controller:slugify}", "controller=TestHome", "/slug/{controller}" },
 
         // Static constants are case sensitive and percent-encoded outside [A-Za-z0-9.-~_]
         { "Api/Users", string.Empty, "/Api/Users" },
@@ -73,7 +75,6 @@ public class NormalizedRouteTests
         { "café", string.Empty, "/caf%C3%A9" },
         { "a~b_c.d-e", string.Empty, "/a~b_c.d-e" },
         { "100%", string.Empty, "/100%25" },
-        { "{controller}/{action}", "controller=My Home&action=Index", "/My%20Home/Index" },
     };
 
     /// <summary>
@@ -91,6 +92,7 @@ public class NormalizedRouteTests
         { "users/{id}", "/my app", "/my%20app/users/{id}" },
         { "users/{id}", "/tenant%2fblue", "/tenant%2Fblue/users/{id}" },
         { "users/{id}", "/100%", "/100%25/users/{id}" },
+        { "users/{id}", "/a//b", "/a/b/users/{id}" },
         { "users/{id}", string.Empty, "/users/{id}" },
         { string.Empty, "/api", "/api" },
     };
@@ -103,7 +105,6 @@ public class NormalizedRouteTests
         var values = ParseRouteValues(routeValues);
         var normalizedRoute = NormalizedRouteBuilder.Create(pathBase: null);
 
-        // The endpoint routing observer passes the MVC names as matched
         _ = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
             routePattern,
             values,
@@ -138,7 +139,6 @@ public class NormalizedRouteTests
         var values = ParseRouteValues(routeValues);
         var normalizedRoute = NormalizedRouteBuilder.Create(pathBase: null);
 
-        // The MVC observer passes lower-cased MVC names, but the normalized route keeps the matched value
         _ = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
             routeTemplate,
             values,
@@ -190,7 +190,21 @@ public class NormalizedRouteTests
         var withoutNormalizedRoute = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, values, null, "Home", "Index", expandRouteParameters: false);
 
         withNormalizedRoute.Should().Be(withoutNormalizedRoute);
-        normalizedRoute.Complete(routePattern.RawText).Should().Be("/Home/Index/{id}");
+        normalizedRoute.Complete(routePattern.RawText).Should().Be("/{controller}/{action}/{id}");
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(200)]
+    public void NormalizedRoute_EncodesNonAsciiRuns(int length)
+    {
+        var literal = new string('é', length);
+        var routePattern = RoutePatternFactory.Parse($"a{literal}b").DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var normalizedRoute = NormalizedRouteBuilder.Create(pathBase: null);
+
+        _ = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, new RouteValueDictionary(), null, null, null, expandRouteParameters: false, ref normalizedRoute);
+
+        normalizedRoute.Complete(routePattern.RawText).Should().Be($"/a{string.Concat(Enumerable.Repeat("%C3%A9", length))}b");
     }
 
     [Fact]
