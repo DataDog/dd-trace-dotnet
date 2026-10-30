@@ -49,9 +49,11 @@ END
 // Version
 //
 
+#include "../../../shared/src/native-src/dd_version.h"
+
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,57,0,0
- PRODUCTVERSION 3,57,0,0
+ FILEVERSION DD_VERSION_MAJOR,DD_VERSION_MINOR,DD_VERSION_PATCH,DD_VERSION_REVISION
+ PRODUCTVERSION DD_VERSION_MAJOR,DD_VERSION_MINOR,DD_VERSION_PATCH,DD_VERSION_REVISION
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -68,12 +70,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog, Inc."
             VALUE "FileDescription", "Datadog CLR Profiler"
-            VALUE "FileVersion", "3.57.0.0"
+            VALUE "FileVersion", DD_FOUR_PART_VERSION_STR
             VALUE "InternalName", "Datadog.Tracer.Native.DLL"
             VALUE "LegalCopyright", "Copyright 2017 Datadog, Inc."
             VALUE "OriginalFilename", "Datadog.Tracer.Native.DLL"
             VALUE "ProductName", "Datadog .NET Tracer"
-            VALUE "ProductVersion", "3.57.0"
+            VALUE "ProductVersion", DD_THREE_PART_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"

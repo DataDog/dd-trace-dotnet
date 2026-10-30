@@ -10,9 +10,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -31,8 +36,40 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
 #pragma warning restore SA1403
 
+    [Collection(nameof(TracerInstanceTestCollection))]
     public class AzureFunctionsCommonTests
     {
+        // Guards the wiring between AzureInfo.IsAzureContainerApp and the tag prefix actually
+        // emitted. The tag-level tests take the bool directly, so without this a refactor could
+        // disconnect detection from construction and both suites would still pass.
+        [Theory]
+        [InlineData(null, "aas.", "aca.")]
+        [InlineData("my-container-app", "aca.", "aas.")]
+        [EnvironmentRestorer(PlatformKeys.AzureAppService.ContainerAppName)]
+        public async Task OnIsolatedFunctionBegin_TagPrefixFollowsContainerAppsDetection(string? containerAppName, string prefix, string otherPrefix)
+        {
+            Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName, containerAppName);
+
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var functionContext = CreateMockFunctionContext("httpTrigger");
+
+            // A fresh AzureInfo reads the environment above, and the tracer is passed explicitly, so
+            // this never touches global state. The production overload supplies the singletons.
+            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(functionContext, triggerType: null, startTime: null, new AzureInfo(), tracer);
+
+            var scope = state.Scope.Should().BeOfType<Scope>().Subject;
+
+            var tags = scope.Span.Tags;
+            tags.GetTag(prefix + "function.name").Should().Be("TestFunction");
+            tags.GetTag(prefix + "function.method").Should().Be("Tests.TestFunction.Run");
+            tags.GetTag(prefix + "function.trigger").Should().Be("Http");
+
+            tags.GetTag(otherPrefix + "function.name").Should().BeNull();
+            tags.GetTag(otherPrefix + "function.method").Should().BeNull();
+            tags.GetTag(otherPrefix + "function.trigger").Should().BeNull();
+        }
+
         [Fact]
         public void ExtractPropagatedContextFromMessaging_MergesIntoEmptyBaggageCurrent()
         {
@@ -133,6 +170,43 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             AzureFunctionsDurablePropagation.EnsureTraceParentSampledFlag(traceParent).Should().Be(expected);
         }
 
+        // In-process functions go through OnFunctionExecutionBegin/CreateScope, a separate path from
+        // the isolated worker above, so the prefix selection needs its own coverage.
+        [Theory]
+        [InlineData(null, "aas.", "aca.")]
+        [InlineData("my-container-app", "aca.", "aas.")]
+        [EnvironmentRestorer(PlatformKeys.AzureAppService.ContainerAppName)]
+        public async Task OnFunctionExecutionBegin_TagPrefixFollowsContainerAppsDetection(string? containerAppName, string prefix, string otherPrefix)
+        {
+            Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName, containerAppName);
+
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var functionInstance = new MockFunctionInstance
+            {
+                Reason = AzureFunctionsExecutionReason.HostCall,
+                BindingSource = new object(),
+                FunctionDescriptor = new MockFunctionDescriptor
+                {
+                    ShortName = "TestFunction",
+                    FullName = "Tests.TestFunction.Run",
+                },
+            };
+
+            var state = AzureFunctionsCommon.OnFunctionExecutionBegin<object?, MockFunctionInstance>(null, functionInstance, new AzureInfo(), tracer);
+
+            var scope = state.Scope.Should().BeOfType<Scope>().Subject;
+
+            var tags = scope.Span.Tags;
+            tags.GetTag(prefix + "function.name").Should().Be("TestFunction");
+            tags.GetTag(prefix + "function.method").Should().Be("Tests.TestFunction.Run");
+            tags.GetTag(prefix + "function.trigger").Should().Be("Http");
+
+            tags.GetTag(otherPrefix + "function.name").Should().BeNull();
+            tags.GetTag(otherPrefix + "function.method").Should().BeNull();
+            tags.GetTag(otherPrefix + "function.trigger").Should().BeNull();
+        }
+
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
         {
             var triggerMetadata = new Dictionary<string, object?>();
@@ -213,6 +287,31 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             public string? TraceParent { get; set; }
 
             public string? TraceState { get; set; }
+        }
+
+        // Duck types with the in-process Microsoft.Azure.WebJobs.Host contracts.
+        private class MockFunctionInstance : IFunctionInstance
+        {
+            public Guid Id { get; set; }
+
+            public IDictionary<string, string> TriggerDetails { get; set; } = new Dictionary<string, string>();
+
+            public AzureFunctionsExecutionReason Reason { get; set; }
+
+            public object BindingSource { get; set; } = new object();
+
+            public IFunctionDescriptor FunctionDescriptor { get; set; } = new MockFunctionDescriptor();
+        }
+
+        private class MockFunctionDescriptor : IFunctionDescriptor
+        {
+            public string Id { get; set; } = string.Empty;
+
+            public string FullName { get; set; } = string.Empty;
+
+            public string ShortName { get; set; } = string.Empty;
+
+            public string LogName { get; set; } = string.Empty;
         }
     }
 }
