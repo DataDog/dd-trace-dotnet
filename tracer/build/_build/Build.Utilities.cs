@@ -978,7 +978,9 @@ partial class Build
 
     private bool IsRuntimeAsyncRun()
     {
-        var forceRuntimeAsyncRun = Environment.GetEnvironmentVariable("ForceRuntimeAsyncRun");
+        // Azure DevOps exposes queue-time variables in upper case, and env var lookups are case-sensitive on Linux/macOS
+        var forceRuntimeAsyncRun = Environment.GetEnvironmentVariable("ForceRuntimeAsyncRun")
+                                ?? Environment.GetEnvironmentVariable("FORCERUNTIMEASYNCRUN");
         if (!string.IsNullOrEmpty(forceRuntimeAsyncRun)
          && (forceRuntimeAsyncRun == "1" || (bool.TryParse(forceRuntimeAsyncRun, out var force) && force)))
         {
