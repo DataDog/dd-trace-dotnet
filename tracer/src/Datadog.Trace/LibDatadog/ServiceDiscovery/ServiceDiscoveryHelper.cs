@@ -34,7 +34,7 @@ internal static class ServiceDiscoveryHelper
                 var result = StoreTracerMetadata(
                     Tracer.RuntimeId,
                     TracerConstants.Language,
-                    TracerConstants.ThreePartVersion,
+                    TracerConstants.SemanticVersion,
                     Environment.MachineName,
                     mutableSettings.DefaultServiceName,
                     mutableSettings.Environment,

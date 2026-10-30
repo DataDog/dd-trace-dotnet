@@ -100,7 +100,7 @@ namespace Datadog.Trace
         /// </summary>
         internal const string HttpSerializedMinimalHeaders =
             $"{Language}: .NET" + DatadogHttpValues.CrLf +
-            $"{TracerVersion}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
+            $"{TracerVersion}: {TracerConstants.SemanticVersion}" + DatadogHttpValues.CrLf +
             $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf;
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace Datadog.Trace
         internal static KeyValuePair<string, string>[] DefaultHeaders { get; } =
         {
             new(Language, ".NET"),
-            new(TracerVersion, TracerConstants.AssemblyVersion),
+            new(TracerVersion, TracerConstants.SemanticVersion),
             new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
             new(LanguageInterpreter, FrameworkDescription.Instance.Name),
             new(LanguageVersion, FrameworkDescription.Instance.ProductVersion),
@@ -122,7 +122,7 @@ namespace Datadog.Trace
         internal static KeyValuePair<string, string>[] MinimalHeaders { get; } =
         {
             new(Language, ".NET"),
-            new(TracerVersion, TracerConstants.AssemblyVersion),
+            new(TracerVersion, TracerConstants.SemanticVersion),
             new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
         };
     }
