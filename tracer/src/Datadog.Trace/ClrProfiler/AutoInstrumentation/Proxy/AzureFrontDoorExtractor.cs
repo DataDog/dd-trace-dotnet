@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
 /// <summary>
-/// Extracts proxy metadata from Azure Frontdoor headers.
+/// Extracts proxy metadata from Azure Front Door headers.
 /// </summary>
 internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
 {
@@ -26,16 +26,17 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
 
         try
         {
+            // Front Door cannot inject a timestamp today, so the header is normally absent and we
+            // fall back to now; an explicitly supplied value is honoured when it parses. Because
+            // Front Door forwards client headers by default, an unusable value is ordinary input
+            // rather than a fault, so it must neither fail extraction nor log on every request.
+            DateTimeOffset startTime;
             var startTimeHeaderValue = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
-            if (StringUtil.IsNullOrEmpty(startTimeHeaderValue))
-            {
-                startTimeHeaderValue = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
-            }
 
-            // validate the start time is a parseable Unix timestamp in milliseconds
-            if (!InferredProxySpanHelper.GetStartTime(startTimeHeaderValue, out var startTime))
+            if (StringUtil.IsNullOrEmpty(startTimeHeaderValue) ||
+                !InferredProxySpanHelper.GetStartTime(startTimeHeaderValue, out startTime, logParseFailures: false))
             {
-                return false;
+                startTime = DateTimeOffset.UtcNow;
             }
 
             // the remaining headers aren't necessarily required
@@ -50,7 +51,7 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
             {
                 Log.Debug(
                     "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Region={Region}",
-                    [startTimeHeaderValue, domainName, httpMethod, path, region]);
+                    [startTime, domainName, httpMethod, path, region]);
             }
 
             return true;

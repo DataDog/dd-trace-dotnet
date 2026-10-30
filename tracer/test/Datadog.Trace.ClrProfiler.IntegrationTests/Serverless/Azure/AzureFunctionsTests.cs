@@ -533,6 +533,80 @@ public abstract class AzureFunctionsTests : TestHelper
             }
         }
     }
+
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4AzureFrontDoor : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4AzureFrontDoor(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
+            SetEnvironmentVariable("DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED", "true");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWithAzureFrontDoorHeaders()
+        {
+            // Enable Front Door testing - this makes TriggerAllTimer call CallFunctionHttpWithProxy.
+            // Unlike APIM, the sample deliberately sends no x-dd-proxy-request-time-ms, because
+            // Front Door's rule set has no server variable for the current time. This is the only
+            // coverage that the synthesized start time produces a usable span in the real pipeline.
+            SetEnvironmentVariable("DD_TEST_FRONTDOOR_ENABLED", "1");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                // 6 spans: Timer TriggerAllTimer, http.request, azure.frontdoor, host span (GET /api/simple),
+                // worker span (Http SimpleHttpTrigger), Manual inside Simple.
+                const int expectedSpanCount = 6;
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+
+                using var assertionScope = new AssertionScope();
+
+                filteredSpans.Count.Should().Be(expectedSpanCount);
+
+                var proxySpan = filteredSpans.Should().ContainSingle(s => s.Name == "azure.frontdoor").Subject;
+
+                // The inferred span stands in for Front Door itself, so it is named after the
+                // domain and carries the route taken from the (leading-slash-less) path header.
+                proxySpan.Service.Should().Be("my-frontdoor-instance.azurefd.net");
+                proxySpan.Resource.Should().Be("GET /api/simple");
+                proxySpan.Tags.Should().Contain(new KeyValuePair<string, string>("http.route", "/api/simple"));
+                proxySpan.Tags.Should().Contain(new KeyValuePair<string, string>("component", "azure-fd"));
+
+                // Front Door sent no timestamp, so the start time was synthesized rather than
+                // extracted - the span must still exist and have a real start time.
+                proxySpan.Start.Should().BeGreaterThan(0);
+
+                // Verify we have azure_functions.invoke spans: host (GET /api/simple), worker (Http SimpleHttpTrigger), Timer TriggerAllTimer
+                var functionSpans = filteredSpans.Where(s => s.Name == "azure_functions.invoke").ToList();
+                functionSpans.Should().HaveCount(3);
+                functionSpans.Should().Contain(s => s.Resource.Contains("TriggerAllTimer"));
+                functionSpans.Should().Contain(s => s.Resource.Contains("SimpleHttpTrigger"));
+                functionSpans.Should().Contain(s => s.Resource.Contains("GET /api/simple"));
+
+                // Verify the http.request span
+                var httpSpan = filteredSpans.Should().ContainSingle(s => s.Name == "http.request").Subject;
+                httpSpan.Tags.Should().ContainKey("http.url");
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
+                settings.AddRegexScrubber(
+                    new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
+                    @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
+                settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
+                await VerifyHelper.VerifySpans(filteredSpans, settings)
+                                    .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated.V4.AzureFrontDoor")
+                                    .DisableRequireUniquePrefix();
+            }
+        }
+    }
 #endif
 
     [CollectionDefinition(nameof(AzureFunctionsTestsCollection), DisableParallelization = true)]

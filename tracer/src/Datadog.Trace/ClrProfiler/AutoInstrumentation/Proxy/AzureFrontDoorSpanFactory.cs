@@ -14,7 +14,7 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
 /// <summary>
-/// Creates spans representing requests handled by Azure Frontdoor.
+/// Creates spans representing requests handled by Azure Front Door.
 /// </summary>
 internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
 {
@@ -25,12 +25,15 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
     {
         try
         {
-            // Azure Front Door currently sends the path relative, without a leading slash (e.g. "api/foo").
-            // Trim any leading slash defensively before prepending our own, so the route/url stay
-            // single-slashed ("/api/foo") even if Front Door starts sending an absolute path later.
+            // Front Door's {url_path} is "the part of the request URI without the arguments or
+            // leading slash", so "/api/foo" arrives as "api/foo" and a request to the site root
+            // arrives empty - which ParseUtility surfaces as null. Treat that as the root path
+            // rather than as "no path", so the route and resource name are "/" instead of empty.
+            // Any leading slash is trimmed defensively before we prepend our own, so the route and
+            // url stay single-slashed even if Front Door starts sending an absolute path later.
             // https://learn.microsoft.com/en-us/azure/frontdoor/rule-set-server-variables
-            var normalizedPath = data.Path?.TrimStart('/');
-            var resourceUrl = normalizedPath is null ? string.Empty : UriHelpers.GetCleanUriPath(StringUtil.ToLowerInvariant($"/{normalizedPath}"));
+            var normalizedPath = data.Path?.TrimStart('/') ?? string.Empty;
+            var resourceUrl = UriHelpers.GetCleanUriPath(StringUtil.ToLowerInvariant($"/{normalizedPath}"));
 
             var tags = new InferredProxyTags
             {
@@ -43,7 +46,7 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
                 Stage = data.Stage,
             };
 
-            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: "azure-frontdoor");
+            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: InferredProxySpanHelper.AzureFrontDoorHeaderValue);
             scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod} {resourceUrl}";
             scope.Span.Type = SpanTypes.Web;
 
@@ -51,7 +54,7 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating Azure Frontdoor span");
+            Log.Error(ex, "Error creating Azure Front Door span");
             return null;
         }
     }

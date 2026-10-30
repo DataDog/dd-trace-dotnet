@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Globalization;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Headers;
 using FluentAssertions;
@@ -43,9 +42,12 @@ public class AzureFrontDoorExtractorTests
     }
 
     [Fact]
-    public void TryExtract_WithMinimumValidHeaders_ReturnsTrue()
+    public void TryExtract_WithNoOptionalHeaders_ReturnsTrueWithNullFields()
     {
+        // Every header except the proxy name is optional; absence must not fail extraction, and the
+        // fields should stay null (not empty string) so the factory can tell "not provided" apart.
         var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
+        headers.Remove(InferredProxyHeaders.Domain);
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);
@@ -55,54 +57,41 @@ public class AzureFrontDoorExtractorTests
 
         success.Should().BeTrue();
         data.ProxyName.Should().Be("azure-fd");
-        data.DomainName.Should().Be("myapp.azurefd.net");
+        data.DomainName.Should().BeNull();
         data.HttpMethod.Should().BeNull();
         data.Path.Should().BeNull();
         data.Stage.Should().BeNull();
         data.Region.Should().BeNull();
     }
 
+    // Front Door injects no timestamp header, and it forwards client headers by default, so every
+    // one of these means "the proxy gave us no usable start time". Extraction must still succeed
+    // with the start time synthesized from now - if an unparseable value failed extraction instead,
+    // a caller could suppress the inferred span entirely by sending a garbage timestamp.
     [Theory]
-    [InlineData("invalid")]
-    [InlineData("not-a-number")]
-    [InlineData("1111111122222222333333334444444455555555666666667777777788888888")] // too large
-    public void TryExtract_WithInvalidStartTime_ReturnsFalseAndDefaultData(string startTime)
+    [InlineData(null)]                                                               // header absent
+    [InlineData("")]                                                                 // present but empty
+    [InlineData("invalid")]                                                          // not a number
+    [InlineData("1111111122222222333333334444444455555555666666667777777788888888")] // overflows long
+    public void TryExtract_WithNoUsableStartTime_SynthesizesStartTimeAndReturnsTrue(string startTime)
     {
-        // A non-empty but unparseable start time is not synthesized away; extraction must fail
-        // and leave `data` untouched (default) so no partial/garbage span is created.
-        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
-        headers.Set(InferredProxyHeaders.StartTime, startTime);
-
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
-
-        success.Should().BeFalse();
-        data.Should().Be(default(InferredProxyData));
-    }
-
-    [Fact]
-    public void TryExtract_WithMissingStartTime_ReturnsTrue()
-    {
-        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
-        headers.Remove(InferredProxyHeaders.StartTime);
-
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
-
-        success.Should().BeTrue();
-    }
-
-    [Fact]
-    public void TryExtract_WithEmptyStartTime_SynthesizesStartTimeAndReturnsTrue()
-    {
-        // Unlike APIM, Front Door does not emit a start-time header, so a missing/empty value is
-        // expected and must be synthesized from "now" rather than causing extraction to fail.
         var before = DateTimeOffset.UtcNow.AddSeconds(-5);
         var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
-        headers.Set(InferredProxyHeaders.StartTime, string.Empty);
+
+        if (startTime is null)
+        {
+            headers.Remove(InferredProxyHeaders.StartTime);
+        }
+        else
+        {
+            headers.Set(InferredProxyHeaders.StartTime, startTime);
+        }
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
         var after = DateTimeOffset.UtcNow.AddSeconds(5);
 
         success.Should().BeTrue();
+        data.ProxyName.Should().Be("azure-fd");
         data.StartTime.Should().NotBe(default);
         data.StartTime.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
     }
@@ -119,19 +108,5 @@ public class AzureFrontDoorExtractorTests
 
         success.Should().BeTrue();
         data.HttpMethod.Should().Be("POST");
-    }
-
-    [Fact]
-    public void TryExtract_WithMissingDomain_ReturnsTrueWithNullDomain()
-    {
-        // Domain is optional; its absence must not fail extraction, and the field should stay null
-        // (not empty string) so the factory can distinguish "not provided".
-        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
-        headers.Remove(InferredProxyHeaders.Domain);
-
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
-
-        success.Should().BeTrue();
-        data.DomainName.Should().BeNull();
     }
 }
