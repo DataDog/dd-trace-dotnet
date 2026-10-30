@@ -28,4 +28,10 @@ internal sealed class DuckCopyAttribute : Attribute
     public string? TargetType { get; set; }
 
     public string? TargetAssembly { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the copy of the target type also serves the classes that derive from it, in a
+    /// NativeAOT build (see <see cref="DuckTypeAttribute.IncludeDerivedTypes"/>).
+    /// </summary>
+    public bool IncludeDerivedTypes { get; set; }
 }
