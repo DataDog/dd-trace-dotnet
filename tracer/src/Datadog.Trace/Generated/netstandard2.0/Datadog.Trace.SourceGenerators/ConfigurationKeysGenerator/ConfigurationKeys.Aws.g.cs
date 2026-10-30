@@ -26,5 +26,13 @@ internal static partial class ConfigurationKeys
         /// String constants for configuring the dotnet tracer with aws platform
         /// </summary>
         public const string LambdaExtensionPath = "_DD_EXTENSION_PATH";
+
+        /// <summary>
+        /// When true, removes the _datadog trace-context carrier injected by Datadog
+        /// into AWS Lambda event payloads (EventBridge detail, SQS body, SNS Message)
+        /// before the customer handler reads them.
+        /// Default value is false.
+        /// </summary>
+        public const string LambdaStripContextEnabled = "DD_TRACE_AWS_LAMBDA_STRIP_CONTEXT_ENABLED";
     }
 }

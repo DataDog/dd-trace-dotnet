@@ -186,6 +186,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void AwsLambdaStripContextEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Aws.LambdaStripContextEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.AwsLambdaStripContextEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(Int32TestCases), 10)]
         public void StatsComputationInterval(string value, int expected)
         {
