@@ -3842,10 +3842,10 @@ supportedConfigurations:
       Used when <see cref="ExporterOtlpMetricsHeaders"/> is not set.
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:
-  - implementation: B
+  - implementation: A
     scope: managed
     type: string
-    default: http://localhost:4317/
+    default: null
     product: OpenTelemetry
     const_name: ExporterOtlpLogsEndpoint
     documentation: |-
@@ -3878,10 +3878,10 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
       Default value is 10000ms.
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:
-  - implementation: C
+  - implementation: A
     scope: managed
     type: string
-    default: http://localhost:4317/
+    default: null
     product: OpenTelemetry
     const_name: ExporterOtlpMetricsEndpoint
     documentation: |-
@@ -3919,10 +3919,10 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_METRICS_PROTOCOL:
-  - implementation: C
+  - implementation: B
     scope: managed
     type: string
-    default: grpc
+    default: http/protobuf
     product: OpenTelemetry
     aliases:
     - OTEL_EXPORTER_OTLP_PROTOCOL

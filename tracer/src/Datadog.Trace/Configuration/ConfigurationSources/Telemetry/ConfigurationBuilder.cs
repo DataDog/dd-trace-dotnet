@@ -20,6 +20,9 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
+    // Skipping the aliases from supported-configurations.yaml lets the caller apply the fallback itself
+    public HasKeys WithKeys(string key, bool includeAliases) => new(_source, _telemetry, key, includeAliases ? null : []);
+
     public HasKeys WithIntegrationKey(string integrationName)
     {
         var integrationEnabledKeys = IntegrationNameToKeys.GetIntegrationEnabledKeys(integrationName);
