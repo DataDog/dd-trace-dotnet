@@ -37,8 +37,10 @@ created.
 | `x-dd-proxy-region`          | `region`                               | no       |
 | `x-dd-proxy-stage`           | `stage`                                | no       |
 
-Only `x-dd-proxy` is strictly required. Absent optional headers leave the corresponding field unset
-rather than empty.
+Only `x-dd-proxy` is required for every proxy. `x-dd-proxy-request-time-ms` is required for
+`aws-apigateway` and `azure-apim` — without a parseable value those extractors fail and no span is
+created at all; `azure-fd` synthesizes it instead (see below). Absent optional headers leave the
+corresponding field unset rather than empty.
 
 Not every proxy reads every header: `aws-apigateway` does not read `x-dd-proxy-region`, `azure-apim`
 does not read `x-dd-proxy-stage`, and `azure-fd` reads both. Other SDKs also read
@@ -46,6 +48,11 @@ does not read `x-dd-proxy-stage`, and `azure-fd` reads both. Other SDKs also rea
 and `-user`; none of those is read here yet, so .NET derives `http.route` from `x-dd-proxy-path`
 instead. Treat the table above as what this tracer implements, not as the cross-SDK contract — other
 SDKs additionally accept `aws-httpapi` and `azure-gw`.
+
+Two further divergences affect tag *values* rather than which headers are read. `azure-fd` emits
+`http.url` with an `https://` scheme, matching the other SDKs and the cross-SDK system-tests
+validator; the `aws-apigateway` and `azure-apim` factories still omit it. And .NET lower-cases and
+id-quantizes `http.route` and the resource name, where other SDKs emit the route template verbatim.
 
 ## Azure Front Door
 
@@ -66,7 +73,7 @@ code or a trace:
 
 - **No timestamp.** Front Door's rule set exposes no server variable for the current time, so
   `x-dd-proxy-request-time-ms` cannot be populated. `AzureFrontDoorExtractor` therefore synthesizes
-  the start time from `DateTimeOffset.UtcNow` at the moment the headers are read. The inferred span
+  the start time from the tracer's own clock (`TraceClock`) at the moment the headers are read. The inferred span
   consequently does **not** measure time spent inside Front Door — it begins when the request
   reaches the application. If a value *is* present and parses, it is used instead, so this needs no
   change should Front Door gain such a variable.

@@ -35,11 +35,21 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
             var normalizedPath = data.Path?.TrimStart('/') ?? string.Empty;
             var resourceUrl = UriHelpers.GetCleanUriPath(StringUtil.ToLowerInvariant($"/{normalizedPath}"));
 
+            // http.url is parsed as a URL downstream, so it needs a scheme. Front Door terminates
+            // TLS at the edge, and the other tracers all emit "https://{domain}{path}" - the
+            // cross-SDK system-tests validator asserts that form. Fall back to a path-only value
+            // when the domain header is absent, rather than emitting "https:///path".
+            // The APIM and AWS factories still omit the scheme; changing those alters spans for
+            // shipped integrations, so it is deliberately left to a separate change.
+            var httpUrl = StringUtil.IsNullOrEmpty(data.DomainName)
+                              ? $"/{normalizedPath}"
+                              : $"https://{data.DomainName}/{normalizedPath}";
+
             var tags = new InferredProxyTags
             {
                 HttpMethod = data.HttpMethod,
                 InstrumentationName = data.ProxyName,
-                HttpUrl = $"{data.DomainName}/{normalizedPath}",
+                HttpUrl = httpUrl,
                 HttpRoute = resourceUrl,
                 InferredSpan = 1,
                 Region = data.Region,

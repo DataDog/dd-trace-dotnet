@@ -38,7 +38,7 @@ public class AzureFrontDoorSpanFactoryTests
         tags.Should().NotBeNull();
         tags.GetTag(Tags.HttpMethod).Should().Be("GET");
         tags.GetTag(Tags.InstrumentationName).Should().Be("azure-fd");
-        tags.GetTag(Tags.HttpUrl).Should().Be("myapp.azurefd.net/api/v1/users");
+        tags.GetTag(Tags.HttpUrl).Should().Be("https://myapp.azurefd.net/api/v1/users");
         tags.GetTag(Tags.HttpRoute).Should().Be("/api/v1/users");
     }
 
@@ -58,8 +58,24 @@ public class AzureFrontDoorSpanFactoryTests
         scope.Should().NotBeNull();
         var tags = scope!.Span.Tags;
         tags.GetTag(Tags.HttpRoute).Should().Be("/");
-        tags.GetTag(Tags.HttpUrl).Should().Be("myapp.azurefd.net/");
+        tags.GetTag(Tags.HttpUrl).Should().Be("https://myapp.azurefd.net/");
         scope.Span.ResourceName.Should().Be("GET /");
+    }
+
+    [Fact]
+    public async Task CreateSpan_WithNoDomain_OmitsTheSchemeRatherThanEmittingAnEmptyHost()
+    {
+        // http.url carries a scheme so it parses as a URL, but "https:///api/test" would be worse
+        // than no scheme at all - with no domain header, fall back to a path-only value.
+        var factory = new AzureFrontDoorSpanFactory();
+        await using var tracer = ProxyTestHelpers.GetMockTracer();
+        var data = new InferredProxyData("azure-fd", DateTimeOffset.UtcNow, domainName: null, "GET", "api/test", null, null);
+
+        var scope = factory.CreateSpan(tracer, data);
+
+        scope.Should().NotBeNull();
+        scope!.Span.Tags.GetTag(Tags.HttpUrl).Should().Be("/api/test");
+        scope.Span.Tags.GetTag(Tags.HttpRoute).Should().Be("/api/test");
     }
 
     [Fact]
@@ -82,10 +98,10 @@ public class AzureFrontDoorSpanFactoryTests
     // the proxy sent it. Front Door's {url_path} has no leading slash, so we prepend one - without
     // double-slashing a path that already has it, should that ever change.
     [Theory]
-    [InlineData("api/v1/users", "/api/v1/users", "myapp.azurefd.net/api/v1/users")]
-    [InlineData("/api/test", "/api/test", "myapp.azurefd.net/api/test")]
-    [InlineData("Api/Test", "/api/test", "myapp.azurefd.net/Api/Test")]
-    [InlineData("api/users/12345", "/api/users/?", "myapp.azurefd.net/api/users/12345")]
+    [InlineData("api/v1/users", "/api/v1/users", "https://myapp.azurefd.net/api/v1/users")]
+    [InlineData("/api/test", "/api/test", "https://myapp.azurefd.net/api/test")]
+    [InlineData("Api/Test", "/api/test", "https://myapp.azurefd.net/Api/Test")]
+    [InlineData("api/users/12345", "/api/users/?", "https://myapp.azurefd.net/api/users/12345")]
     public async Task CreateSpan_NormalizesPathIntoRouteAndUrl(string path, string expectedRoute, string expectedUrl)
     {
         var factory = new AzureFrontDoorSpanFactory();

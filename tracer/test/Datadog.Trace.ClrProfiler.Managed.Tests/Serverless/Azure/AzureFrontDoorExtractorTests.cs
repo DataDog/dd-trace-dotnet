@@ -72,7 +72,7 @@ public class AzureFrontDoorExtractorTests
     [InlineData(null)]                                                               // header absent
     [InlineData("")]                                                                 // present but empty
     [InlineData("invalid")]                                                          // not a number
-    [InlineData("1111111122222222333333334444444455555555666666667777777788888888")] // overflows long
+    [InlineData("999999999999999")]                                                  // parses as long, out of DateTimeOffset range
     public void TryExtract_WithNoUsableStartTime_SynthesizesStartTimeAndReturnsTrue(string startTime)
     {
         var before = DateTimeOffset.UtcNow.AddSeconds(-5);

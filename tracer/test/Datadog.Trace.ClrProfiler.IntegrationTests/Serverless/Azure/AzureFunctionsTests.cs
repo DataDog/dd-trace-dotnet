@@ -595,15 +595,7 @@ public abstract class AzureFunctionsTests : TestHelper
                 var httpSpan = filteredSpans.Should().ContainSingle(s => s.Name == "http.request").Subject;
                 httpSpan.Tags.Should().ContainKey("http.url");
 
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
-                settings.AddRegexScrubber(
-                    new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
-                    @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
-                settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
-                await VerifyHelper.VerifySpans(filteredSpans, settings)
-                                    .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated.V4.AzureFrontDoor")
-                                    .DisableRequireUniquePrefix();
+                await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.AzureFrontDoor");
             }
         }
     }

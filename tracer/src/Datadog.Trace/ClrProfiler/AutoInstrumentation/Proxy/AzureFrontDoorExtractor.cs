@@ -29,14 +29,20 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
             // Front Door cannot inject a timestamp today, so the header is normally absent and we
             // fall back to now; an explicitly supplied value is honoured when it parses. Because
             // Front Door forwards client headers by default, an unusable value is ordinary input
-            // rather than a fault, so it must neither fail extraction nor log on every request.
+            // rather than a fault, so it must not fail extraction or log above Debug.
+            // The explicit emptiness check is not redundant with GetStartTime's: it skips that
+            // method's "Missing header" Debug line, which would otherwise fire on every request,
+            // since for Front Door an absent header is the normal case rather than a problem.
             DateTimeOffset startTime;
             var startTimeHeaderValue = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
 
             if (StringUtil.IsNullOrEmpty(startTimeHeaderValue) ||
                 !InferredProxySpanHelper.GetStartTime(startTimeHeaderValue, out startTime, logParseFailures: false))
             {
-                startTime = DateTimeOffset.UtcNow;
+                // Use the tracer's clock, not DateTimeOffset.UtcNow: spans are timed against
+                // TraceClock, so taking the wall clock here can place this span after the child
+                // span created moments later, yielding a duration that Span.Finish clamps to zero.
+                startTime = TraceClock.Instance.UtcNow;
             }
 
             // the remaining headers aren't necessarily required
