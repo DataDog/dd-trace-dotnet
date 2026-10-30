@@ -10,6 +10,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
+using Microsoft.Azure.Cosmos;
 using Xunit;
 
 namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
@@ -23,6 +24,12 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
             { false, 2, "other" },
             // Disposal must not prevent reading metadata directly from the fields.
             { true, 0, "gateway" },
+        };
+
+        public static TheoryData<ConnectionMode, string> SdkConnectionModes => new()
+        {
+            { ConnectionMode.Gateway, "gateway" },
+            { ConnectionMode.Direct, "direct" },
         };
 
         [Theory]
@@ -50,6 +57,36 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
         }
 
         [Theory]
+        [MemberData(nameof(SdkConnectionModes))]
+        public void OnMethodBegin_CreatesSpanAfterRealClientIsDisposed(ConnectionMode connectionMode, string expectedMode)
+        {
+            // Constructing and disposing the SDK client requires no Cosmos DB server.
+            using var client = new CosmosClient(
+                "https://localhost:8081",
+                Convert.ToBase64String(new byte[64]),
+                new CosmosClientOptions { ConnectionMode = connectionMode });
+            var context = client.DuckCast<CosmosClientStruct>().ClientContext;
+            var container = client.GetContainer("myDb", "myColl").DuckCast<IContainer>();
+            var expectedUserAgent = context.DuckCast<CosmosContextClientStruct>().UserAgent;
+            expectedUserAgent.Should().NotBeNullOrEmpty();
+
+            client.Dispose();
+
+            // Verify that the real SDK now rejects the property-based metadata access.
+            Assert.Throws<ObjectDisposedException>(() => context.DuckCast<CosmosContextClientStruct>());
+
+            var handler = new SdkClientRequestInvokerHandler(client).DuckCast<IRequestInvokerHandlerProxy>();
+            var state = RequestInvokerHandlerSendAsyncIntegration.OnMethodBegin<IRequestInvokerHandlerProxy, IContainer>(
+                handler, "dbs/myDb/colls/myColl/docs/item1", "Document", "Read", null, container, null, null, null, null, default);
+
+            using var scope = Assert.IsType<Scope>(state.Scope);
+            scope.Span.ResourceName.Should().Be("Read dbs/myDb/colls/myColl/docs/?");
+            var tags = scope.Span.Tags.Should().BeAssignableTo<CosmosDbTags>().Subject;
+            tags.UserAgent.Should().Be(expectedUserAgent);
+            tags.ConnectionMode.Should().Be(expectedMode);
+        }
+
+        [Theory]
         [InlineData("dbs/myDb", "dbs/myDb")]
         [InlineData("dbs/myDb/colls/myColl/docs", "dbs/myDb/colls/myColl/docs")]
         [InlineData("dbs/myDb/colls/myColl/docs/item1", "dbs/myDb/colls/myColl/docs/?")]
@@ -68,6 +105,13 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
             private readonly Client client;
 
             public RequestInvokerHandler(Client client) => this.client = client;
+        }
+
+        private class SdkClientRequestInvokerHandler
+        {
+            private readonly CosmosClient client;
+
+            public SdkClientRequestInvokerHandler(CosmosClient client) => this.client = client;
         }
 
         private class Client

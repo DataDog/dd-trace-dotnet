@@ -33,6 +33,8 @@
   <ItemGroup>
     <PackageReference Include="AgileObjects.ReadableExpressions" Version="3.3.0" />
     <PackageReference Include="log4net" Version="2.0.12" />
+    <!-- Exercises real client disposal without upgrading this project's DiagnosticSource dependency. -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.18.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="NLog" Version="4.5.11" />
