@@ -73,26 +73,25 @@ Helpers on capture and evaluation paths must not take a shared or process-wide l
 
 ## Review Checklist
 
-When reviewing debugger changes, check each of these before accepting the change:
+`/sdk-review` checks the redaction, runtime-type, locking and failure-path rules above before every push; see [Security-And-Safety.md](for-ai/Coding-Requirements/Security-And-Safety.md) and [Performance.md](for-ai/Coding-Requirements/Performance.md).
+
+When reviewing debugger changes, classify each reflection operation before accepting it:
 
 - Prefer metadata-only APIs for discovery and filtering.
 - Justify runtime `Type`, `MemberInfo`, signature, method-token, or attribute resolution when it can touch customer assemblies.
 - Guard static member reads so they do not run customer type initializers unless the behavior is explicitly allowed.
 - Cover intentional customer-code execution with policy text and regression tests.
 - Verify capture and expression-evaluation work is bounded and appropriate for synchronous execution on customer threads.
-- Check allocation and locking behavior for new hot-path code, especially reflection, string formatting, LINQ, collection materialization, expression compilation, and shared caches.
-- Verify every new output path (snapshot field, message segment, tag, metric, error, or log text) is redacted, and that results derived from a redacted value stay redacted.
-- Check that decisions to enumerate, format, or redact a value use its runtime type when the declared type isn't sealed or a value type.
+- Check allocation behavior for new hot-path code, especially reflection, string formatting, LINQ, collection materialization, and expression compilation.
 
 Look specifically for newly introduced calls or expression-tree access to:
 
-- `PropertyInfo.GetValue`, property access, or indexer access, including `Expression.Property` or `Expression.PropertyOrField` in generated expression trees. Probe expression member access on customer types should go through `TryResolveSafeMemberExpression`.
+- `PropertyInfo.GetValue`, property access, or indexer access.
 - `FieldInfo.GetValue` on static fields.
 - `Module.ResolveMethod`, `Module.ResolveMember`, `Type.GetType`, `Assembly.Load`, or APIs that can resolve missing dependencies.
 - `GetCustomAttributes()`, typed `GetCustomAttribute<T>()`, or other APIs that instantiate attributes.
 - `IEnumerable.GetEnumerator`, `MoveNext`, `Current`, `Count`, `Key`, or `Value`.
 - `Exception.Message`, `Exception.StackTrace`, `Exception.ToString`, or custom exception overrides.
 - arbitrary `ToString()`, `Equals()`, operators, delegates, callbacks, or expression-compiled accessors.
-- `Expression.Equal` or `Expression.NotEqual` used as a null check in generated expression trees, which binds to a user-defined `operator ==`. Use `Expression.ReferenceEqual`, or `HasValue` for `Nullable<T>`.
 
 If a change intentionally crosses one of these boundaries, document why the runtime behavior is required, state whether it is covered by the allowed execution policy, and add a regression test that would fail if the boundary were crossed accidentally.
