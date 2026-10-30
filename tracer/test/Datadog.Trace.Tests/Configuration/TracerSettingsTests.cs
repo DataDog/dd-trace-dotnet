@@ -11,6 +11,7 @@ using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -18,6 +19,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
@@ -650,6 +652,12 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, null, "tracecontext,b3,b3multi", new[] { "tracecontext", "b3 single header", "b3multi" })]
         [InlineData(null, null, null, null, new[] { "Datadog", "tracecontext", "baggage" })]
         [InlineData(null, null, null, ",", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "jaeger", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "tracecontext,baggage,jaeger,xray", new[] { "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "b3,ottrace", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "TRACEContext,B3MULTI", new[] { "TRACEContext", "B3MULTI" })]
+        [InlineData(null, null, null, "none", new[] { "none" })]
+        [InlineData(null, null, "tracecontext", "tracecontext,jaeger", new[] { "tracecontext" })]
         public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
@@ -669,14 +677,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 settings.PropagationStyleInject.Should().BeEquivalentTo(expected);
 
-                Count? metric = (value ?? legacyValue ?? fallbackValue, otelValue) switch
-                {
-                    (null, ",") => Count.OpenTelemetryConfigInvalid,
-                    (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
-                    _ => null,
-                };
-
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(GetExpectedOtelPropagationMetrics(value ?? legacyValue ?? fallbackValue, otelValue));
             }
         }
 
@@ -690,6 +691,12 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, null, "tracecontext,b3,b3multi", new[] { "tracecontext", "b3 single header", "b3multi" })]
         [InlineData(null, null, null, null, new[] { "Datadog", "tracecontext", "baggage" })]
         [InlineData(null, null, null, ",", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "jaeger", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "tracecontext,baggage,jaeger,xray", new[] { "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "b3,ottrace", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "TRACEContext,B3MULTI", new[] { "TRACEContext", "B3MULTI" })]
+        [InlineData(null, null, null, "none", new[] { "none" })]
+        [InlineData(null, null, "tracecontext", "tracecontext,jaeger", new[] { "tracecontext" })]
         public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
@@ -709,15 +716,41 @@ namespace Datadog.Trace.Tests.Configuration
 
                 settings.PropagationStyleExtract.Should().BeEquivalentTo(expected);
 
-                Count? metric = (value ?? legacyValue ?? fallbackValue, otelValue) switch
-                {
-                    (null, ",") => Count.OpenTelemetryConfigInvalid,
-                    (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
-                    _ => null,
-                };
-
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(GetExpectedOtelPropagationMetrics(value ?? legacyValue ?? fallbackValue, otelValue));
             }
+        }
+
+        [Theory]
+        // Values with no supported propagator are reported as invalid instead
+        [InlineData(null, "not-a-propagator", null)]
+        [InlineData(null, "jaeger,ottrace", null)]
+        [InlineData(null, "tracecontext,baggage,Jaeger,b3,XRay", "Jaeger,XRay")]
+        [InlineData(null, "tracecontext,none", null)]
+        [InlineData(null, "tracecontext,baggage", null)]
+        [InlineData("tracecontext", "tracecontext,jaeger", "jaeger")]
+        public void PropagationStyleUnsupportedOtelPropagatorsWarning(string fallbackValue, string otelValue, string expectedWarningValue)
+        {
+            var source = CreateConfigurationSource(
+                ("DD_TRACE_PROPAGATION_STYLE", fallbackValue),
+                (ConfigurationKeys.OpenTelemetry.Propagators, otelValue));
+
+            ShouldWarnAboutUnsupportedOtelPropagators(source, expectedWarningValue);
+        }
+
+        [Fact]
+        public void PropagationStyleUnsupportedOtelPropagatorsWarningUsesSelectedSource()
+        {
+            // The highest-priority source has no supported propagator, so the lower-priority one is used
+            var source = new CompositeConfigurationSource
+            {
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.Propagators, "jaeger" } }),
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.Propagators, "tracecontext,xray" } }),
+            };
+
+            var settings = ShouldWarnAboutUnsupportedOtelPropagators(source, "xray");
+
+            settings.PropagationStyleInject.Should().BeEquivalentTo("tracecontext");
+            settings.PropagationStyleExtract.Should().BeEquivalentTo("tracecontext");
         }
 
         [Theory]
@@ -1365,6 +1398,47 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.ExperimentalFeaturesEnabled.Should().BeEquivalentTo(expected);
+        }
+
+        private static IEnumerable<(Count? Metric, string OtelSetting, string DdSetting)> GetExpectedOtelPropagationMetrics(string ddValue, string otelValue)
+        {
+            var otelSetting = ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant();
+            var ddSetting = "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant();
+
+            if (ddValue is not null && otelValue is not null)
+            {
+                yield return (Count.OpenTelemetryConfigHiddenByDatadogConfig, otelSetting, ddSetting);
+            }
+            else if (otelValue is "," or "jaeger")
+            {
+                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
+            }
+
+            // Values mixing supported and unsupported propagators
+            if (otelValue is "tracecontext,baggage,jaeger,xray" or "b3,ottrace" or "tracecontext,jaeger")
+            {
+                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
+            }
+        }
+
+        private static TracerSettings ShouldWarnAboutUnsupportedOtelPropagators(IConfigurationSource source, string expectedWarningValue)
+        {
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+
+            var log = new Mock<IDatadogLogger>();
+            errorLog.ProcessAndClearActions(log.Object, new MetricsTelemetryCollector());
+
+            log.Verify(
+                l => l.Warning(
+                    It.Is<string>(s => s.Contains("unsupported values")),
+                    ConfigurationKeys.OpenTelemetry.Propagators,
+                    It.Is<string>(v => expectedWarningValue == null || v == expectedWarningValue),
+                    It.IsAny<int>(),
+                    It.IsAny<string>()),
+                expectedWarningValue is null ? Times.Never() : Times.Once());
+
+            return settings;
         }
     }
 }

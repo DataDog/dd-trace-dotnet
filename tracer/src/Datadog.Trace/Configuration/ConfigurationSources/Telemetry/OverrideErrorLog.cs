@@ -106,6 +106,20 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
             });
     }
 
+    public void LogUnsupportedValues(string otelKey, string[] unsupportedValues)
+    {
+        EnqueueAction(
+            (log, metrics) =>
+            {
+                log.Warning(
+                    "OpenTelemetry configuration {OpenTelemetryConfiguration} contains unsupported values '{UnsupportedValues}', which will be ignored.",
+                    otelKey,
+                    string.Join(",", unsupportedValues));
+                OpenTelemetryHelpers.GetConfigurationMetricTags(otelKey, out var openTelemetryConfig, out var datadogConfig);
+                metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
+            });
+    }
+
     bool IConfigurationOverrideHandler.TryHandleOverrides<T>(
         string datadogKey,
         ConfigurationResult<T> datadogConfigResult,
