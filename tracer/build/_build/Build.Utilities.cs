@@ -644,7 +644,8 @@ partial class Build
        .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            var source = new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease!.Value);
+            var newVersionSuffix = NewIsPrerelease!.Value ? "-prerelease" : string.Empty;
+            var source = new SetAllVersions.Source(TracerDirectory, NewVersion, newVersionSuffix);
 
             // The version number has to change: the samples are rewritten from the *pre-bump*
             // version (they should track the release on nuget.org, not the one under development).
@@ -652,12 +653,12 @@ partial class Build
             {
                 throw new Exception(
                     $"Cannot set versions: {NewVersion} is already the current version. Changing only " +
-                    "the prerelease flag is not supported - the version number has to change too.");
+                    "the prerelease suffix is not supported - the version number has to change too.");
             }
 
             // Samples reference the version that is published on nuget.org, which is the one we are
             // bumping *away* from, so they lag the source by one release.
-            new SetAllVersions.Samples(TracerDirectory, Version, IsPrerelease).Run();
+            new SetAllVersions.Samples(TracerDirectory, Version, VersionSuffix).Run();
 
             // version.props, which everything else derives from.
             source.Run();

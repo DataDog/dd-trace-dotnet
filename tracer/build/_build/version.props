@@ -8,23 +8,23 @@
     It lives next to _build.csproj, rather than at the repository root, because the Linux build
     images compile Nuke using only this directory as the Docker build context, and Nuke needs it.
 
-    Keep exactly one DD_VersionPrefix element in this file, and never write its opening and closing
-    tags anywhere else - not even in a comment. build/cmake/DdVersion.cmake and the UpdateVersion
-    target both locate the version by matching those tags textually, and UpdateVersion rewrites
-    every match, so a second one would be silently rewritten too. Derived properties below are fine:
-    they reference the property, which does not match the tag pattern.
+    Keep exactly one DD_VersionPrefix and one DD_VersionSuffix element in this file, and never write
+    their opening and closing tags anywhere else - not even in a comment. The UpdateVersion target
+    (and, for DD_VersionPrefix, build/cmake/DdVersion.cmake) locates them by matching those tags
+    textually, and UpdateVersion rewrites every match, so a second one would be silently rewritten too.
+    Derived properties below are fine: they reference the properties, which does not match the tag pattern.
   -->
   <PropertyGroup>
     <!-- The version currently under development on this branch. Three parts, numeric only. -->
     <DD_VersionPrefix>3.57.0</DD_VersionPrefix>
 
-    <!-- true if this version should publish as X.Y.Z-prerelease. Almost always false. -->
-    <DD_IsPrerelease>false</DD_IsPrerelease>
+    <!-- The semver prerelease suffix, including its leading '-' (e.g. -prerelease), or empty for a
+         release. Almost always empty. Any suffix makes this version a prerelease. -->
+    <DD_VersionSuffix></DD_VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
-    <DD_SemVer>$(DD_VersionPrefix)</DD_SemVer>
-    <DD_SemVer Condition="'$(DD_IsPrerelease)' == 'true'">$(DD_VersionPrefix)-prerelease</DD_SemVer>
+    <DD_SemVer>$(DD_VersionPrefix)$(DD_VersionSuffix)</DD_SemVer>
 
     <!-- The native tracer and the managed loader both resolve Datadog.Trace by this exact strong
          name, so the revision stays at zero. -->
