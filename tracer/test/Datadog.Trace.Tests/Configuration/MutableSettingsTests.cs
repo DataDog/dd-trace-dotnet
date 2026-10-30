@@ -187,6 +187,55 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false, and takes precedence over OTEL_TRACES_EXPORTER
+        [InlineData(null, null, false)]
+        [InlineData(null, "otlp", false)]
+        [InlineData(null, "none", false)]
+        // An empty or invalid DD_TRACE_ENABLED is treated as unset
+        [InlineData("", null, false)]
+        [InlineData("invalid", null, false)]
+        // Only a valid DD_TRACE_ENABLED overrides it
+        [InlineData("true", null, true)]
+        [InlineData("1", "otlp", true)]
+        [InlineData("false", null, false)]
+        [InlineData("0", "otlp", false)]
+        public async Task TraceEnabledWithOtelSdkDisabled(string value, string otelTracesExporter, bool areTracesEnabled)
+        {
+            var settings = new NameValueCollection
+            {
+                { ConfigurationKeys.OpenTelemetry.SdkDisabled, "true" },
+                { ConfigurationKeys.TraceEnabled, value },
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, otelTracesExporter },
+            };
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+
+            tracerSettings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(areTracesEnabled);
+
+            _writerMock.Invocations.Clear();
+
+            await using var tracer = TracerHelper.Create(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var span = tracer.StartSpan("TestTracerDisabled");
+            span.Dispose();
+
+            var assertion = areTracesEnabled ? Times.Once() : Times.Never();
+
+            _writerMock.Verify(w => w.WriteTrace(in It.Ref<SpanCollection>.IsAny), assertion);
+        }
+
+        [Fact]
+        public void TraceEnabledWithOtelSdkDisabled_IgnoredWithoutDefaultSources()
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"));
+            var tracerSettings = new TracerSettings(source);
+
+            tracerSettings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
+
+            // Manual configuration with useDefaultSources: false starts from the defaults, so OTEL_SDK_DISABLED doesn't apply
+            MutableSettings.CreateWithoutDefaultSources(tracerSettings, new ConfigurationTelemetry()).TraceEnabled.Should().BeTrue();
+        }
+
+        [Theory]
         [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void Environment(string value, string expected)
         {

@@ -343,6 +343,36 @@ namespace Datadog.Trace.Tests.Configuration
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter.ToLowerInvariant(), ConfigurationKeys.RuntimeMetricsEnabled.ToLowerInvariant());
         }
 
+        [Theory]
+        // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false, and an empty or invalid value is treated as unset
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("invalid", false)]
+        // Only a valid DD_RUNTIME_METRICS_ENABLED overrides it
+        [InlineData("true", true)]
+        [InlineData("1", true)]
+        [InlineData("false", false)]
+        public void RuntimeMetricsEnabledWithOtelSdkDisabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                (ConfigurationKeys.RuntimeMetricsEnabled, value),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            using var scope = new AssertionScope();
+            settings.RuntimeMetricsEnabled.Should().Be(expected);
+            // OpenTelemetry metrics stay disabled, so re-enabled runtime metrics are sent to DogStatsD rather than over OTLP
+            settings.OtlpRuntimeMetricsEnabled.Should().BeFalse();
+
+            var mappedToFalse = value is null or "" or "invalid";
+            telemetry.GetQueueForTesting()
+                     .Any(e => e is { Key: ConfigurationKeys.RuntimeMetricsEnabled, Origin: ConfigurationOrigins.Calculated, BoolValue: false })
+                     .Should()
+                     .Be(mappedToFalse);
+        }
+
 #if NET6_0_OR_GREATER
         [Fact]
         public void RuntimeMetrics_DefaultsToDiagnosticsOnNet6Plus_WhenNotExplicitlySet()
@@ -619,6 +649,11 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, "true", false)]
         [InlineData(null, null, "uses_default_value", false)]
         [InlineData("", "", null, false)]
+        // OTEL_SDK_DISABLED=true takes precedence over DD_TRACE_OTEL_ENABLED
+        [InlineData("1", "0", "true", false)]
+        [InlineData("true", null, "TRUE", false)]
+        [InlineData(null, "1", "True", false)]
+        [InlineData("1", null, "false", true)]
         public void IsActivityListenerEnabled(string value, string fallbackValue, string otelValue, bool expected)
         {
             const string fallbackKey = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
@@ -631,13 +666,92 @@ namespace Datadog.Trace.Tests.Configuration
             settings.IsActivityListenerEnabled.Should().Be(expected);
             Count? metric = (value ?? fallbackValue, otelValue?.ToLower()) switch
             {
-                (null, "true") => null,
+                (_, "true") => null,
                 (null, _) => Count.OpenTelemetryConfigInvalid,
                 (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,
             };
 
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.SdkDisabled.ToLowerInvariant(), ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled.ToLowerInvariant());
+        }
+
+        [Theory]
+        [InlineData("true", true)]
+        [InlineData("TRUE", true)]
+        [InlineData("True", true)]
+        [InlineData("false", false)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        [InlineData("1", false)]
+        public void OtelSdkDisabled_DisablesOpenTelemetryMode(string otelSdkDisabled, bool expectedDisabled)
+        {
+            // Every signal is opted in through its own setting, as an operator auto-install would do
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, otelSdkDisabled),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true"),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, "true"),
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf"));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
+
+            var expectedEnabled = !expectedDisabled;
+            using var scope = new AssertionScope();
+            settings.OtelSdkDisabled.Should().Be(expectedDisabled);
+            settings.IsActivityListenerEnabled.Should().Be(expectedEnabled);
+            settings.OpenTelemetryMetricsEnabled.Should().Be(expectedEnabled);
+            settings.OpenTelemetryLogsEnabled.Should().Be(expectedEnabled);
+            settings.OtelTracesSpanMetricsEnabled.Should().Be(expectedEnabled);
+            // The exporter doesn't depend on OTEL_SDK_DISABLED: no OTLP traces are sent because tracing is disabled
+            settings.Manager.InitialExporterSettings.IsOtlpTraceExport.Should().BeTrue();
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(expectedEnabled);
+#if NET6_0_OR_GREATER
+            settings.OtlpMetricsExportEnabled.Should().Be(expectedEnabled);
+            settings.RuntimeMetricsEnabled.Should().Be(expectedEnabled);
+#endif
+#if NETCOREAPP3_1_OR_GREATER
+            settings.OtlpLogsExportEnabled.Should().Be(expectedEnabled);
+#endif
+
+            // Telemetry reports the effective value of each setting turned off by OTEL_SDK_DISABLED
+            string[] disabledKeys =
+            [
+                ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled,
+                ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled,
+                ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
+                ConfigurationKeys.TraceEnabled,
+                ConfigurationKeys.RuntimeMetricsEnabled,
+            ];
+
+            var entries = telemetry.GetQueueForTesting().ToList();
+            foreach (var key in disabledKeys)
+            {
+                entries.Any(e => e.Key == key && e is { Origin: ConfigurationOrigins.Calculated, BoolValue: false })
+                       .Should()
+                       .Be(expectedDisabled, $"{key} should only be recorded as disabled when OTEL_SDK_DISABLED=true");
+            }
+        }
+
+        [Fact]
+        public void OtelSdkDisabled_ResolvesTheSameValueAcrossCompositeSources()
+        {
+            // The composite source skips the invalid value in the first source and falls back to "true" in the second
+            var source = new CompositeConfigurationSource(
+            [
+                CreateConfigurationSource(
+                    (ConfigurationKeys.OpenTelemetry.SdkDisabled, "invalid"),
+                    (ConfigurationKeys.TraceEnabled, "invalid")),
+                CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.SdkDisabled, "true")),
+            ]);
+
+            var settings = new TracerSettings(source);
+
+            using var scope = new AssertionScope();
+            settings.OtelSdkDisabled.Should().BeTrue();
+            settings.IsActivityListenerEnabled.Should().BeFalse();
+            settings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
         }
 
         [Theory]
