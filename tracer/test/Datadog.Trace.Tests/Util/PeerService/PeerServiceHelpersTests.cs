@@ -173,4 +173,18 @@ public class PeerServiceHelpersTests
         tags.PeerService.Should().Be("example-state-machine");
         tags.PeerServiceSource.Should().Be("statemachinename");
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void DerivePeerServiceStepFunctions_SkipsMissingStateMachineName(string stateMachineName)
+    {
+        var tags = new AwsStepFunctionsTags(SpanKinds.Client);
+        tags.Service = "StepFunctions";
+        tags.Region = "us-east-1";
+        tags.StateMachineName = stateMachineName;
+        PeerServiceHelpers.DerivePeerService(tags, false);
+        tags.PeerService.Should().BeNull();
+        tags.PeerServiceSource.Should().BeNull();
+    }
 }
