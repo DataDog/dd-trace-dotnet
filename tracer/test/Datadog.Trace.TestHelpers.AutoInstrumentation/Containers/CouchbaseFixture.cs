@@ -73,7 +73,12 @@ public class CouchbaseFixture : ContainerFixture
              "--services", "data,index,query", "--cluster-ramsize", "256", "--cluster-index-ramsize", "256"]).ConfigureAwait(false);
         await RunCliAsync(container, "bucket-create", "--bucket", "default", "--bucket-type", "couchbase", "--bucket-ramsize", "100", "--bucket-replica", "0", "--wait").ConfigureAwait(false);
         await RunCliAsync(container, "collection-manage", "--bucket", "default", "--create-scope", "tenant_agent_00").ConfigureAwait(false);
-        await RunCliAsync(container, "collection-manage", "--bucket", "default", "--create-collection", "tenant_agent_00.users").ConfigureAwait(false);
+        // Scope creation is asynchronous, so collection creation can race with scope propagation.
+        await RunCliAsync(
+            container,
+            "collection-manage",
+            ["--bucket", "default", "--create-collection", "tenant_agent_00.users"],
+            retryableError: "Scope with name \"tenant_agent_00\" is not found").ConfigureAwait(false);
 
         // SDK 3.0 needs the query port advertised before bootstrapping, even after /admin/ping succeeds.
         var readinessChecks = Wait.ForUnixContainer()
@@ -94,15 +99,38 @@ public class CouchbaseFixture : ContainerFixture
                                                    && !IPAddress.IsLoopback(address))?.ToString()
         ?? throw new InvalidOperationException("Unable to determine the Docker host from the container's default gateway.");
 
-    private static async Task RunCliAsync(IContainer container, string command, params string[] arguments)
+    private static Task RunCliAsync(IContainer container, string command, params string[] arguments)
+        => RunCliAsync(container, command, arguments, retryableError: null);
+
+    private static async Task RunCliAsync(IContainer container, string command, string[] arguments, string? retryableError)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
-        var result = await container.ExecAsync(
-                         ["/opt/couchbase/bin/couchbase-cli", command, "--cluster", "localhost:8091", "--username", "default", "--password", "password", .. arguments],
-                         timeout.Token).ConfigureAwait(false);
-        if (result.ExitCode != 0)
+        ExecResult result = default;
+        try
         {
-            throw new InvalidOperationException($"Couchbase {command} failed: {result.Stdout}{result.Stderr}");
+            while (true)
+            {
+                result = await container.ExecAsync(
+                             ["/opt/couchbase/bin/couchbase-cli", command, "--cluster", "localhost:8091", "--username", "default", "--password", "password", .. arguments],
+                             timeout.Token).ConfigureAwait(false);
+                if (result.ExitCode == 0)
+                {
+                    return;
+                }
+
+                if (retryableError is null
+                 || (result.Stdout.IndexOf(retryableError, StringComparison.Ordinal) < 0
+                  && result.Stderr.IndexOf(retryableError, StringComparison.Ordinal) < 0))
+                {
+                    throw new InvalidOperationException($"Couchbase {command} failed: {result.Stdout}{result.Stderr}");
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(1), timeout.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException exception) when (timeout.IsCancellationRequested && retryableError is not null)
+        {
+            throw new TimeoutException($"Couchbase {command} did not complete within two minutes: {result.Stdout}{result.Stderr}", exception);
         }
     }
 }
