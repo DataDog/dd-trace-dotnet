@@ -124,7 +124,7 @@ partial class Build : NukeBuild
         get
         {
             var version = new System.Version(Version);
-            return $"-DDD_VERSION_MAJOR={version.Major} -DDD_VERSION_MINOR={version.Minor} -DDD_VERSION_PATCH={version.Build}";
+            return $"-DDD_VERSION_MAJOR={version.Major} -DDD_VERSION_MINOR={version.Minor} -DDD_VERSION_PATCH={version.Build} -DDD_VERSION_SUFFIX={VersionSuffix}";
         }
     }
 

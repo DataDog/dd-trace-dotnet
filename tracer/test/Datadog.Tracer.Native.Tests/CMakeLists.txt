@@ -43,6 +43,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     pch.cpp
     integration_test.cpp
     version_struct_test.cpp
+    dd_version_test.cpp
     iast_util_test.cpp
     il_rewriter_eh_sort_test.cpp
     dataflow_test.cpp

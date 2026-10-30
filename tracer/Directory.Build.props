@@ -32,6 +32,7 @@
   <ItemGroup>
     <ProjectInfoString Include="AssemblyVersion" Value="$(DD_AssemblyVersion)" />
     <ProjectInfoString Include="ThreePartVersion" Value="$(DD_VersionPrefix)" />
+    <ProjectInfoString Include="SemanticVersion" Value="$(DD_SemanticVersion)" />
   </ItemGroup>
 
   <!-- StyleCop -->
