@@ -44,7 +44,7 @@ Debugger capture, probe expressions, Exception Replay, Code Origin and SymDB run
 ### SEC-3.1: Don't invoke customer getters, `ToString()`, enumerators, attribute constructors or type initializers from debugger code
 - Flag: new `PropertyInfo.GetValue` (instance or static), static `FieldInfo.GetValue`, `Expression.Property`/`Expression.PropertyOrField` on a customer type in a generated expression tree, `GetCustomAttributes()`, `Type.GetType`/`Assembly.Load`, `GetEnumerator()`, `Exception.Message`, or arbitrary `ToString()` in debugger capture, expression evaluation, Exception Replay, Code Origin or SymDB paths outside the allowed execution policy. Probe expression member access goes through `TryResolveSafeMemberExpression`, which reads fields and auto-property backing fields instead of calling getters.
 - ❌ `var text = capturedValue.ToString();`
-- ✅ `var text = Redaction.IsSafeToCallToString(capturedValue.GetType()) ? capturedValue.ToString() : null;`
+- ✅ `var text = Redaction.IsSafeToCallToString(capturedValue?.GetType()) ? capturedValue.ToString() : null;`
 
 ### SEC-3.2: Decide whether to enumerate, format or redact a value from its runtime type, not its declared type
 - Flag: `Redaction.IsSafeToCallToString`, `Redaction.IsSupportedCollection`, an `Exception.Message`/`StackTrace` read, or a redacted-type check decided from the declared type (`FieldInfo.FieldType`, `Expression.Type`) of a value read through a member, index, collection item or interface. A customer subclass or implementation, or a redacted type, can sit behind `object`, an interface or a base class.
