@@ -11,8 +11,10 @@ namespace Datadog.Trace.RuntimeMetrics
     /// Keywords used by the CLR events.
     /// Enum and comments taken from Perfview source code: https://github.com/microsoft/perfview/blob/master/src/TraceEvent/Parsers/ClrTraceEventParser.cs
     /// </summary>
+#pragma warning disable MA0062 // Non-flags enums should not be marked with "FlagsAttribute" - All is an aggregate of the CLR ETW keywords (excluding StartEnumeration)
     [Flags]
     internal enum Keywords : long
+#pragma warning restore MA0062
     {
         None = 0,
         All = ~StartEnumeration,        // All does not include start-enumeration.  It just is not that useful.
