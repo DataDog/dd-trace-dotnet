@@ -52,8 +52,8 @@ Debugger capture, probe expressions, Exception Replay, Code Origin and SymDB run
 - ❌ `if (Redaction.IsSupportedCollection(field.FieldType)) { /* enumerate */ }`
 - ✅ `if (Redaction.IsSupportedCollection(value)) { /* enumerate */ }`
 
-### SEC-3.3: Redact a value wherever debugger output reads it, not only where it is serialized whole
-- Flag: a debugger output path (expression operation, template segment, capture expression, span decoration tag, metric) that reads a member, index, collection item, `this`, `@return`, `@exception`, `@it`, `@key` or `@value` without checking it against `Redaction`; a dictionary key checked only when it is a literal, not when it is computed from constants or read at runtime; or a keyword matched against a compiler-generated name (`<password>k__BackingField`) instead of the source name.
+### SEC-3.3: Check dictionary keys for redaction however they are produced, and match keywords against source names
+- Flag: a redaction check on a dictionary key that runs only when the key is a literal, not when it is computed from constants or read at runtime; or a redaction keyword matched against a compiler-generated name (`<password>k__BackingField`, a primary-constructor capture, a hoisted local) instead of the source name.
 - ❌ `if (indexOrKey is ConstantExpression expr && Redaction.Instance.ShouldRedact(expr.Value?.ToString(), expr.Type, out _)) { return RedactedValue(); }`
 - ✅ also check keys computed at runtime: guard the read with a call to `ShouldRedactDictionaryKey(key)` in the generated expression.
 
