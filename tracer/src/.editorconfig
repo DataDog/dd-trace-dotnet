@@ -135,7 +135,6 @@ dotnet_diagnostic.MA0065.severity = none # Default ValueType.Equals or HashCode 
 dotnet_diagnostic.MA0066.severity = none # Hash table unfriendly type is used in a hash table
 dotnet_diagnostic.MA0070.severity = none # Obsolete attributes should include explanations
 dotnet_diagnostic.MA0077.severity = none # A class that provides Equals(T) should implement IEquatable<T>
-dotnet_diagnostic.MA0084.severity = none # Local variables should not hide other symbols
 dotnet_diagnostic.MA0089.severity = none # Optimize string method usage - some suggested overloads (e.g. char overloads) aren't available on net461/netstandard2.0, so may require polyfills
 dotnet_diagnostic.MA0096.severity = none # A class that implements IComparable<T> should also implement IEquatable<T>
 dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T> or IComparable should override comparison operators
