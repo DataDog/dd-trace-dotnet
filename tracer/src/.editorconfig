@@ -142,7 +142,6 @@ dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload wi
 dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
-dotnet_diagnostic.MA0150.severity = none # Do not call ToString() when the type falls back to object.ToString()
 dotnet_diagnostic.MA0159.severity = none # Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0160.severity = none # Use ContainsKey instead of TryGetValue
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - drop `in` for small/BCL/Nullable types, make our structs readonly where possible, and suppress where `in` is required (P/Invoke, IAST aspect signatures)

@@ -163,6 +163,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return obj is ExceptionReplayProbe other && Equals(other);
         }
 
+        public override string ToString()
+            => $"ExceptionReplayProbe(ProbeId={ProbeId}, Method={Method.Method.DeclaringType?.FullName}.{Method.Method.Name}, Status={ProbeStatus.ToString()})";
+
         public override int GetHashCode()
         {
             return _hashCode;
