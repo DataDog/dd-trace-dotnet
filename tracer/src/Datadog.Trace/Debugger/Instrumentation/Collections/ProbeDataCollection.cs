@@ -44,26 +44,29 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// <summary>
         /// Tries to create a new <see cref="ProbeData"/> at <paramref name="index"/> and return it.
         /// </summary>
+        /// <remarks>
+        /// Returns a copy, so <see cref="RemoveProbes"/> clearing the entry concurrently can't change it after the caller checked it.
+        /// </remarks>
         /// <param name="index">The index of the probe inside <see cref="EverGrowingCollection{TPayload}.Items"/></param>
         /// <param name="probeId">The id of the probe/></param>
-        /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
-        public ref ProbeData TryCreateProbeDataIfNotExists(int index, string probeId)
+        /// <returns>The probe data (either existed before or just created), or an empty one (<see cref="ProbeData.IsEmpty"/>) if it fails to create</returns>
+        public ProbeData TryCreateProbeDataIfNotExists(int index, string probeId)
         {
-            ref var probeData = ref TryGetProbeDataIndex(index, probeId);
+            var probeData = TryGetProbeData(index, probeId);
 
             if (!probeData.IsEmpty())
             {
-                return ref probeData;
+                return probeData;
             }
 
             // Create a new one at the given index
             lock (ItemsLocker)
             {
-                probeData = ref TryGetProbeDataIndex(index, probeId);
+                probeData = TryGetProbeData(index, probeId);
 
                 if (!probeData.IsEmpty())
                 {
-                    return ref probeData;
+                    return probeData;
                 }
 
                 EnlargeCapacity(index);
@@ -77,14 +80,55 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
 
                 if (processor == null)
                 {
-                    return ref ProbeData.Empty;
+                    return ProbeData.Empty;
                 }
 
                 var sampler = ProbeRateLimiter.Instance.GerOrAddSampler(probeId);
 
-                Items[index] = new ProbeData(probeId, sampler, processor);
+                probeData = new ProbeData(probeId, sampler, processor);
+                Items[index] = probeData;
 
-                return ref Items[index];
+                return probeData;
+            }
+        }
+
+        /// <summary>
+        /// Clears the entries of the removed probes, so a probe added again with the same id gets a new <see cref="ProbeData"/>
+        /// with the processor and sampler registered at that time. The native side reuses the indices of a removed probe first,
+        /// so without this, a probe added again would usually find its old entry, with a removed processor and a disposed sampler.
+        /// </summary>
+        /// <remarks>
+        /// The native index of a probe isn't known here, and a method probe gets one index per instrumented method (e.g. overloads),
+        /// so every entry is checked. Each AppDomain has its own collection, cleared by the Dynamic Instrumentation instance of that AppDomain.
+        /// </remarks>
+        /// <param name="probeIds">The ids of the removed probes</param>
+        public void RemoveProbes(string[] probeIds)
+        {
+            if (probeIds.Length == 0)
+            {
+                return;
+            }
+
+            var removedProbeIds = new HashSet<string>(probeIds, StringComparer.Ordinal);
+            var clearedCount = 0;
+
+            lock (ItemsLocker)
+            {
+                var items = Items;
+                for (var i = 0; i < items.Length; i++)
+                {
+                    var probeId = items[i].ProbeId;
+                    if (probeId is not null && removedProbeIds.Contains(probeId))
+                    {
+                        items[i] = default;
+                        clearedCount++;
+                    }
+                }
+            }
+
+            if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+            {
+                Log.Debug<int, int>(nameof(ProbeDataCollection) + "." + nameof(RemoveProbes) + " Cleared {ClearedCount} probe metadata entries of {ProbeCount} removed probes", clearedCount, probeIds.Length);
             }
         }
 
@@ -100,20 +144,23 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// we compare the ProbeId at that index with the one we were expecting.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ref ProbeData TryGetProbeDataIndex(int index, string probeId)
+        private ProbeData TryGetProbeData(int index, string probeId)
         {
-            if (!IndexExists(index))
+            var items = Items;
+            if (index >= items.Length)
             {
-                return ref ProbeData.Empty;
+                return ProbeData.Empty;
             }
 
-            ref var probeData = ref Items[index];
+            // Read the entry once. RemoveProbes can clear it at the same time, and a copy torn by that write
+            // either has another ProbeId or misses its processor or sampler, which ProbeData.IsEmpty catches.
+            var probeData = items[index];
             if (probeData.ProbeId == probeId)
             {
-                return ref probeData;
+                return probeData;
             }
 
-            return ref ProbeData.Empty;
+            return ProbeData.Empty;
         }
     }
 }
