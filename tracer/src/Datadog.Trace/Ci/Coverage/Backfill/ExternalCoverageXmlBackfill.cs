@@ -1181,7 +1181,7 @@ internal static class ExternalCoverageXmlBackfill
         if (TryGetDoubleAttribute(coverageNode, "line-rate", out var lineRate))
         {
             result = new ExternalCoverageXmlResult(
-                Math.Round(lineRate * 100, 2).ToValidPercentage(),
+                Math.Round(lineRate * 100, 2, MidpointRounding.ToEven).ToValidPercentage(),
                 executableLines: null,
                 coveredLines: null,
                 backfilled: false,
@@ -2607,7 +2607,7 @@ internal static class ExternalCoverageXmlBackfill
 
     private static double CalculatePercentage(double covered, double total)
     {
-        return total <= 0 ? 0 : Math.Round((covered / total) * 100, 2).ToValidPercentage();
+        return total <= 0 ? 0 : Math.Round((covered / total) * 100, 2, MidpointRounding.ToEven).ToValidPercentage();
     }
 
     private static void SetAttribute(XmlNode node, string attributeName, string value)
