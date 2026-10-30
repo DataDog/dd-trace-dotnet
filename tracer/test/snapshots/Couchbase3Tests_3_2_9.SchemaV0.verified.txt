@@ -4,21 +4,19 @@
     SpanId: Id_2,
     Name: couchbase.query,
     Resource: Delete,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.bucket: default,
       couchbase.operation.code: Delete,
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -32,23 +30,25 @@
     SpanId: Id_4,
     Name: couchbase.query,
     Resource: Delete,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Error: 1,
     Tags: {
       component: Couchbase,
-      couchbase.operation.bucket: default,
       couchbase.operation.code: Delete,
       couchbase.operation.key: does-not-exist,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
-      error.msg: KeyNotFound,
+      error.msg: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.,
+      error.stack:
+Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException: Exception of type 'Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException' was thrown.
+at Couchbase.Core.ClusterNode.ExecuteOp(...),
+      error.type: Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -62,21 +62,19 @@
     SpanId: Id_6,
     Name: couchbase.query,
     Resource: Get,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.bucket: default,
       couchbase.operation.code: Get,
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -90,7 +88,7 @@
     SpanId: Id_8,
     Name: couchbase.query,
     Resource: GetCidByName,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -99,11 +97,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -117,7 +114,7 @@
     SpanId: Id_10,
     Name: couchbase.query,
     Resource: GetErrorMap,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -126,11 +123,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -144,7 +140,7 @@
     SpanId: Id_12,
     Name: couchbase.query,
     Resource: GetErrorMap,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -153,11 +149,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -171,7 +166,7 @@
     SpanId: Id_14,
     Name: couchbase.query,
     Resource: Hello,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -180,11 +175,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -198,7 +192,7 @@
     SpanId: Id_16,
     Name: couchbase.query,
     Resource: Hello,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -207,11 +201,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -224,21 +217,20 @@
     TraceId: Id_17,
     SpanId: Id_18,
     Name: couchbase.query,
-    Resource: NoOp,
-    Service: Samples.Couchbase3,
+    Resource: Hello,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: NoOp,
-      couchbase.operation.key: ,
+      couchbase.operation.code: Hello,
+      couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -251,21 +243,20 @@
     TraceId: Id_19,
     SpanId: Id_20,
     Name: couchbase.query,
-    Resource: NoOp,
-    Service: Samples.Couchbase3,
+    Resource: Hello,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: NoOp,
-      couchbase.operation.key: ,
+      couchbase.operation.code: Hello,
+      couchbase.operation.key: obfuscated,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -278,21 +269,20 @@
     TraceId: Id_21,
     SpanId: Id_22,
     Name: couchbase.query,
-    Resource: SaslList,
-    Service: Samples.Couchbase3,
+    Resource: NoOp,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: SaslList,
+      couchbase.operation.code: NoOp,
       couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -305,21 +295,20 @@
     TraceId: Id_23,
     SpanId: Id_24,
     Name: couchbase.query,
-    Resource: SaslList,
-    Service: Samples.Couchbase3,
+    Resource: NoOp,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: SaslList,
+      couchbase.operation.code: NoOp,
       couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -333,7 +322,7 @@
     SpanId: Id_26,
     Name: couchbase.query,
     Resource: SelectBucket,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -342,11 +331,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -360,7 +348,7 @@
     SpanId: Id_28,
     Name: couchbase.query,
     Resource: SelectBucket,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -369,11 +357,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -387,7 +374,7 @@
     SpanId: Id_30,
     Name: couchbase.query,
     Resource: Set,
-    Service: Samples.Couchbase3,
+    Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
@@ -397,11 +384,10 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
-      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.couchbase.seed.nodes
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,

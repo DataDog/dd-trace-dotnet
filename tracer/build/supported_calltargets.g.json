@@ -4779,7 +4779,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4809,7 +4809,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegration",
     "IntegrationKind": 0,
@@ -4830,7 +4830,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4887,7 +4887,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegrationTer",
     "IntegrationKind": 0,
@@ -4907,7 +4907,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4937,7 +4937,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegration",
     "IntegrationKind": 0,
@@ -4963,7 +4963,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegrationTer",
     "IntegrationKind": 0,
