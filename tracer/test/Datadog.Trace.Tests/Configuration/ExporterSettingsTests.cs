@@ -359,6 +359,7 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, null, null, "http://localhost:4318/v1/logs")]
+        [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://collector:4317", null, "http://collector:4317/v1/logs")]
         [InlineData("grpc", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector")]
         [InlineData("http/protobuf", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, null, null, "http://localhost:4318/v1/logs")]
         [InlineData("http/protobuf", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/logs")]

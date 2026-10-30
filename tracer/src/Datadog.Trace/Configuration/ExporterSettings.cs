@@ -201,7 +201,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the OTLP protocol for emitting traces, if applicable.
-        /// Default is <c>null</c>
+        /// Default is <c>http/protobuf</c>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
@@ -284,7 +284,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the OTLP protocol for emitting metrics, if applicable.
-        /// Default is <c>null</c>
+        /// Default is <c>http/protobuf</c>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
