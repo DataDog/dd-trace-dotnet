@@ -71,7 +71,7 @@ partial class Build
     const string GitHubRepositoryOwner = "DataDog";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
 
-    string FullVersion => ProjectInfo.SemVer;
+    string FullVersion => ProjectInfo.SemanticVersion;
 
     Target AssignPullRequestToMilestone => _ => _
        .Unlisted()

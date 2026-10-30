@@ -7,7 +7,7 @@
     <MsiOutputPath Condition="'$(MsiOutputPath)' == ''">bin\$(Configuration)\$(Platform)\</MsiOutputPath>
     <OutputPath>$(MsiOutputPath)</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
-    <OutputName>datadog-dotnet-apm-$(DD_SemVer)-$(Platform)</OutputName>
+    <OutputName>datadog-dotnet-apm-$(DD_SemanticVersion)-$(Platform)</OutputName>
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
     <!--
       InstallerVersion becomes the Windows Installer ProductVersion, which has to be numeric
