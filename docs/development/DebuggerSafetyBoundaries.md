@@ -6,7 +6,7 @@ Use this document when changing debugger capture, expression evaluation, redacti
 
 Most capture and expression-evaluation code runs synchronously on customer application threads. Keep work bounded, avoid unnecessary allocation, and assume any added latency is paid directly by the instrumented request or background operation.
 
-The rules below are requirements for new and changed code. Some existing paths don't meet the newer ones yet, notably the redaction and runtime-type rules; don't widen those gaps.
+The rules below are requirements for new and changed code. Some existing paths don't meet the newer ones yet, including the redaction, runtime-type, failure-path, and per-hit lock rules; don't widen those gaps.
 
 ## Risk Model
 
@@ -24,7 +24,7 @@ Keep these risks separate when auditing or changing debugger code:
 | Code Origin endpoint discovery | Accidentally resolving runtime types or attributes while identifying endpoints. | Prefer `System.Reflection.Metadata` and token/name inspection. Avoid runtime member resolution unless the change explains why it is required. |
 | Line probe resolution | Loading or resolving customer code while matching probes to source locations. | Restrict discovery to already loaded assemblies and symbol/PDB metadata. Treat new runtime resolution as a behavior change that needs focused tests. |
 | SymDB symbol extraction/upload | Resolving metadata in a way that loads unavailable dependencies or executes customer code. | Prefer metadata/PDB readers. If dnlib or reflection is used, verify it does not intentionally load new customer assemblies or instantiate attributes. |
-| Static member capture and expressions | Static field/property reads can trigger type initializers. | Read literals with `StaticMemberSafety.GetRawConstantValue`. Read other static fields, including static auto-property backing fields, only when `StaticMemberSafety.CanReadStaticMember` allows it (the declaring type has no type initializer); otherwise skip capture. Static property getters run code: they need the same `CanReadStaticMember` guard before the getter runs, and the getter itself falls under the customer-code execution policy below. |
+| Static member capture and expressions | Static field/property reads can trigger type initializers. | Read literals with `StaticMemberSafety.GetRawConstantValue`. Read other static fields, including static auto-property backing fields, only when `StaticMemberSafety.CanReadStaticMember` allows it (the declaring type has no type initializer); otherwise skip capture. Static property getters run code, so don't call them outside the customer-code execution policy below; `CanReadStaticMember` only rules out the declaring type's initializer, not what the getter body runs. |
 | Exception Replay IL call scanning | `Module.ResolveMethod(token)` and similar APIs can resolve arbitrary call operands and load unavailable dependencies. | Prefer metadata inspection of call operands. If runtime resolution remains necessary, justify why metadata is insufficient, catch failures locally, and add tests for missing dependency and generic-signature cases. |
 | Async and iterator state-machine resolution | `GetCustomAttributes()` and typed `GetCustomAttribute<T>()` can instantiate customer attributes. | Prefer `CustomAttributeData` or metadata-only attribute inspection when matching state-machine attributes. Do not instantiate attributes just to identify compiler-generated methods. |
 | Snapshot capture and expression evaluation | Some paths intentionally execute bounded customer code, while default object capture should not. | Follow the customer-code execution policy below and add regression tests for any intentional boundary crossing. |
@@ -37,24 +37,24 @@ Some debugger features exist to evaluate live runtime values, so they may execut
 
 - User-authored probe expressions may invoke the supported probe expression operations the expression requests, such as `len`, `any`, `filter`, and `index`, which can call `Count`, enumerators, and `IList`/`IDictionary` indexers.
 - Probe expression member access (the `getmember` and `ref` operations) goes through `TryResolveSafeMemberExpression`, which reads fields and verified compiler-generated auto-property backing fields only. It does not call property getters, apart from `Key`/`Value` on BCL `KeyValuePair<,>` and `DictionaryEntry` entries. A property that can't be read this way evaluates to `UndefinedValue`. Static fields follow the static member capture row in the Area Guidance table.
-- Supported collection and dictionary capture may read `Count`, call `GetEnumerator()`, `MoveNext()`, `Current`, and dictionary entry `Key`/`Value` accessors, subject to configured depth, collection-size, and serializer timeout checks.
+- Supported collection and dictionary capture may read `Count`, call `GetEnumerator()`, `MoveNext()`, `Current`, and dictionary entry `Key`/`Value` accessors, subject to depth and collection-size limits and to the serializer timeout (snapshot capture) or the evaluation budget (expression dumps).
 - Special system-type selectors may read documented BCL properties, such as selected `System.Exception` and `System.Lazy<T>` properties.
 - Safe BCL `ToString()` calls may be used only for types allowed by `Redaction.IsSafeToCallToString()`.
 
-**Runtime type, not declared type.** Decide from the runtime type whether a value may be enumerated, formatted with `ToString()`, or have `Exception.Message` or `Exception.StackTrace` read. Values read through members, fields, indexes, or interfaces keep their declared type, which can hide a customer subclass or implementation. The declared type settles the question only when it is sealed or a value type.
+**Runtime type, not declared type.** Before enumerating a value, formatting it with `ToString()`, or reading `Exception.Message` or `Exception.StackTrace`, check its runtime type against the existing allowlists, such as `Redaction.IsSupportedCollection` and `Redaction.IsSafeToCallToString`. Values read through members, fields, indexes, or interfaces keep their declared type, which can hide a customer subclass or implementation. The declared type settles the question only when it is sealed or a value type.
 
 Capture paths must not silently broaden default capture to execute customer code. When a value is useful but would require disallowed customer-code execution, prefer omitting that value and reporting a `notCapturedReason` over executing the code.
 
 ## Redaction
 
-Everything the debugger sends out of the process must be redacted: snapshots, rendered log messages, span decoration tags, metric values, evaluation errors, and tracer log lines. `Redaction` decides by configured identifier keywords, redacted types, and sensitive dictionary keys. It classifies names and types; it can't scrub free text such as exception messages.
+Everything the debugger sends out of the process must be redacted: snapshots, rendered log messages, span decoration tags, metric values, evaluation errors, and tracer log lines. `Redaction` decides by configured identifier keywords, redacted types, and sensitive dictionary keys. It classifies names and types; it can't scrub free text such as exception messages. The `Redaction.IsSafeToCallToString` list and the exception selectors say which code may run, not that the resulting text is free of sensitive data.
 
 - Redact wherever a value is read, not only where it is serialized whole: member and index access, iteration items, `this`, `@return`, `@exception`, `@key`, and `@value`.
 - A result computed from a redacted value is redacted too. Operators and conditions must not return anything computed from the value or from the `{redacted}` placeholder, because a condition such as `eq(secret, "guess")` leaks the value one guess at a time. Render `{redacted}`, make the condition false with an error, and send no metric value.
 - Check dictionary keys however they are produced: literal, computed from constants, or read at runtime.
 - Redact by runtime type, under the runtime-type rule above: a redacted type can sit behind `object`, an interface, or a base class.
 - Match keywords against source names, so compiler-generated names such as `<password>k__BackingField` can't bypass them.
-- Exception text must not carry a value the expression redacted. When an operation's input was redacted, report a fixed message instead of the exception's message.
+- Exception text isn't redacted, so it must not carry a value the expression redacted. In evaluation errors, use a fixed message instead of the exception's message when an input was redacted or the exception may come from customer code or carry customer data; for example, a `KeyNotFoundException` message includes its key.
 - Logs and errors about a redaction may name the expression the user wrote, but must not include the redacted value or data read at runtime, such as a runtime dictionary key or runtime type name.
 
 ## Bounds And Overhead
