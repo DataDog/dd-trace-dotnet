@@ -65,6 +65,9 @@
     <ClCompile Include="ManagedCodeCacheTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="CodeRangeTrieTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="EnvironmentHelper.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
@@ -224,6 +227,12 @@
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\ManagedCodeCache.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\CodeRangeTrie.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\EpochReclaimer.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\AutoResetEvent.cpp">

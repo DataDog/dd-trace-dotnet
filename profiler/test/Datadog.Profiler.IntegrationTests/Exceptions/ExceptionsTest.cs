@@ -156,15 +156,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
 
-            if (EnvironmentHelper.GetPlatform() == "ARM64")
-            {
-                // On ARM64, we may skip some callstack (failed to identify frame type while skipping native frames)
-                total.Should().BeGreaterThan(expectedExceptionCount - 100);
-            }
-            else
-            {
-                total.Should().Be(expectedExceptionCount);
-            }
+            total.Should().Be(expectedExceptionCount);
         }
 
         [Flaky("Flaky on ARM64")]
@@ -294,15 +286,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
 
-            if (EnvironmentHelper.GetPlatform() == "ARM64")
-            {
-                // On ARM64, we may skip some callstack (failed to identify frame type while skipping native frames)
-                total.Should().BeGreaterThan(expectedExceptionCount - 100);
-            }
-            else
-            {
-                total.Should().Be(expectedExceptionCount);
-            }
+            total.Should().Be(expectedExceptionCount);
         }
 
         [Flaky("Flaky on ARM64")]
@@ -380,15 +364,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
 
-            if (EnvironmentHelper.GetPlatform() == "ARM64")
-            {
-                // On ARM64, we may skip some callstack (failed to identify frame type while skipping native frames)
-                total.Should().BeGreaterThan(expectedExceptionCount - 100);
-            }
-            else
-            {
-                total.Should().Be(expectedExceptionCount);
-            }
+            total.Should().Be(expectedExceptionCount);
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
@@ -757,11 +733,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
         private static (bool Matched, string Message) AssertExpectedStack(StackTrace actualStack, StackTrace expectedStack)
         {
-            if (EnvironmentHelper.GetPlatform() == "ARM64")
-            {
-                return AssertExpectedStack_Arm64(actualStack, expectedStack);
-            }
-
             return AssertExpectedStack_x86_64(actualStack, expectedStack);
         }
 
@@ -1024,20 +995,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 ("System.Exception", "E2", 1, stack1)
             };
 
-            if (EnvironmentHelper.GetPlatform() == "ARM64")
-            {
-                if (withTimestamps)
-                {
-                    // Rows follow profile time order and are not aggregated — exact multiset of 8 × count 1.
-                    AssertExceptionSamplesArm64TimestampedMultiset(exceptionSamples, unaggregatedProfile);
-                }
-                else
-                {
-                    // No per-sample timestamps: IOE/NSE may be one aggregated row or two unaggregated rows; stacks stay relaxed.
-                    AssertExceptionSamplesArm64ForNonTimestampedProfile(exceptionSamples, stack1, stack2);
-                }
-            }
-            else if (withTimestamps)
+            if (withTimestamps)
             {
                 // No aggregation; exact multiset and stack equality.
                 exceptionSamples.Should().BeEquivalentTo(unaggregatedProfile);
