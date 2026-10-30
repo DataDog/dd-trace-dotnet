@@ -50,6 +50,7 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         _routine = HandleControlEvent;
     }
 
+#pragma warning disable MA0055 // Do not use finalizer - unregisters the native console control handler
     ~ConsoleControlHandler()
     {
         // A critical finalizer, because a raw registration is a native function pointer into a managed
@@ -58,6 +59,7 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         // with it. This is the same reason the BCL made ControlCHooker a CriticalFinalizerObject.
         UnregisterCore();
     }
+#pragma warning restore MA0055
 
     /// <summary>
     /// Registers a console control handler that runs <paramref name="onControlEvent"/> when the process receives

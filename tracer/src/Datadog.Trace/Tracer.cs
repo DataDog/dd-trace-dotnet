@@ -83,11 +83,13 @@ namespace Datadog.Trace
         /// <summary>
         /// Finalizes an instance of the <see cref="Tracer"/> class.
         /// </summary>
+#pragma warning disable MA0055 // Do not use finalizer - keeps the live-tracer count reported by the heartbeat gauge accurate
         ~Tracer()
         {
             // update the count of Tracer instances
             Interlocked.Decrement(ref _liveTracerCount);
         }
+#pragma warning restore MA0055
 
         /// <summary>
         /// Gets the global <see cref="Tracer"/> instance.
