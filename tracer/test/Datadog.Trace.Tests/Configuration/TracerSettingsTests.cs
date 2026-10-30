@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -657,6 +658,11 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, null, "b3,ottrace", new[] { "b3 single header" })]
         [InlineData(null, null, null, "TRACEContext,B3MULTI", new[] { "TRACEContext", "B3MULTI" })]
         [InlineData(null, null, null, "none", new[] { "none" })]
+        [InlineData(null, null, null, "  b3 , , XRay , ", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "typo", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, " , ", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "NONE,typo", new[] { "NONE" })]
+        [InlineData(null, null, "tracecontext", "typo", new[] { "tracecontext" })]
         [InlineData(null, null, "tracecontext", "tracecontext,jaeger", new[] { "tracecontext" })]
         public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
@@ -696,6 +702,11 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, null, "b3,ottrace", new[] { "b3 single header" })]
         [InlineData(null, null, null, "TRACEContext,B3MULTI", new[] { "TRACEContext", "B3MULTI" })]
         [InlineData(null, null, null, "none", new[] { "none" })]
+        [InlineData(null, null, null, "  b3 , , XRay , ", new[] { "b3 single header" })]
+        [InlineData(null, null, null, "typo", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, " , ", new[] { "Datadog", "tracecontext", "baggage" })]
+        [InlineData(null, null, null, "NONE,typo", new[] { "NONE" })]
+        [InlineData(null, null, "tracecontext", "typo", new[] { "tracecontext" })]
         [InlineData(null, null, "tracecontext", "tracecontext,jaeger", new[] { "tracecontext" })]
         public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
@@ -751,6 +762,36 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.PropagationStyleInject.Should().BeEquivalentTo("tracecontext");
             settings.PropagationStyleExtract.Should().BeEquivalentTo("tracecontext");
+        }
+
+        [Theory]
+        [InlineData("jaeger")]
+        [InlineData("jaeger,xray")]
+        public void PropagationStyleInvalidOtelPropagatorsWarnOnceThroughCompositeSource(string otelValue)
+        {
+            var source = new CompositeConfigurationSource
+            {
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.OpenTelemetry.Propagators, otelValue } }),
+            };
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+
+            settings.PropagationStyleInject.Should().BeEquivalentTo("Datadog", "tracecontext", "baggage");
+            settings.PropagationStyleExtract.Should().BeEquivalentTo("Datadog", "tracecontext", "baggage");
+
+            var log = new Mock<IDatadogLogger>();
+            errorLog.Clone().ProcessAndClearActions(log.Object, new MetricsTelemetryCollector());
+            log.Verify(
+                l => l.Warning(
+                    "OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.",
+                    ConfigurationKeys.OpenTelemetry.Propagators,
+                    It.IsAny<int>(),
+                    It.IsAny<string>()),
+                Times.Once());
+            errorLog.ShouldHaveExpectedOtelMetric(
+                Count.OpenTelemetryConfigInvalid,
+                ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(),
+                "dd_trace_propagation_style");
         }
 
         [Theory]
@@ -1405,20 +1446,30 @@ namespace Datadog.Trace.Tests.Configuration
             var otelSetting = ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant();
             var ddSetting = "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant();
 
-            if (ddValue is not null && otelValue is not null)
+            if (otelValue is null)
+            {
+                yield break;
+            }
+
+            var propagators = otelValue.Split(',')
+                                       .Select(s => s.Trim())
+                                       .Where(s => s.Length > 0)
+                                       .ToArray();
+            var hasSupportedPropagator = propagators.Any(IsSupportedOtelPropagator);
+
+            if (ddValue is not null && hasSupportedPropagator)
             {
                 yield return (Count.OpenTelemetryConfigHiddenByDatadogConfig, otelSetting, ddSetting);
             }
-            else if (otelValue is "," or "jaeger")
+
+            if (!hasSupportedPropagator || propagators.Any(s => !IsSupportedOtelPropagator(s)))
             {
                 yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
             }
 
-            // Values mixing supported and unsupported propagators
-            if (otelValue is "tracecontext,baggage,jaeger,xray" or "b3,ottrace" or "tracecontext,jaeger")
-            {
-                yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
-            }
+            static bool IsSupportedOtelPropagator(string propagator)
+                => SpanContextPropagatorFactory.GetPropagator(propagator) is not null
+                || string.Equals(propagator, "none", StringComparison.OrdinalIgnoreCase);
         }
 
         private static TracerSettings ShouldWarnAboutUnsupportedOtelPropagators(IConfigurationSource source, string expectedWarningValue)
