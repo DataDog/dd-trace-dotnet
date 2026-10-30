@@ -32,7 +32,8 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
-        /// emitting only OpenTelemetry semantic-convention attributes.
+        /// emitting only OpenTelemetry semantic-convention attributes. Also makes 'otlp' the default value of
+        /// <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>.
         /// </summary>
         public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
 
@@ -226,6 +227,7 @@ internal static partial class ConfigurationKeys
         /// the experimental export of traces using OTLP. The value 'none' disables
         /// the export of traces entirely, which is the equivalent of setting
         /// <see cref="ConfigurationKeys.TraceEnabled"/> to false.
+        /// When unset, defaults to 'otlp' if <see cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/> is enabled.
         /// </summary>
         public const string TracesExporter = "OTEL_TRACES_EXPORTER";
 

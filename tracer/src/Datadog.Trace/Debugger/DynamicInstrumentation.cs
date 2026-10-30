@@ -989,6 +989,44 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        /// <summary>
+        /// Removes the instrumentation of every probe this instance installed, then disposes it.
+        /// Used when Dynamic Instrumentation is turned off at runtime, otherwise the instrumented methods keep running
+        /// probe code (for example, span probes keep creating spans) while it is off.
+        /// Process shutdown only calls <see cref="Dispose"/>, as reverting there would only add ReJIT work.
+        /// </summary>
+        internal void RemoveProbesAndDispose()
+        {
+            // Holding the lock until the instance is disposed keeps a concurrent probe update from instrumenting a method after the removal.
+            lock (_instanceLock)
+            {
+                try
+                {
+                    // Only the native instrumentation is reverted. Unlike a probe deleted in the UI (UpdateRemovedProbeInstrumentations),
+                    // the probe processors and samplers stay registered on purpose: ProbeDataCollection caches them by native probe index
+                    // and probe ID, and when DI is enabled again the native side usually gives the same probe the same index back.
+                    // Removing them would leave that cached entry with a removed processor and a disposed sampler, which never refills
+                    // its budget, so the probe would stop capturing. Kept, they are updated in place when the probes are added again.
+                    // TODO: revisit by clearing the ProbeDataCollection entries of removed probes, which would also fix a probe
+                    // removed by remote configuration and later added back with the same ID (see DataDog/dd-trace-dotnet#9560).
+                    var probeIds = _probeStatusPoller.GetBoundedProbes();
+                    if (!IsDisposed && probeIds.Length != 0)
+                    {
+                        Log.Information<int>("Dynamic Instrumentation is disabled, reverting the instrumentation of {Count} probes.", probeIds.Length);
+                        _instrumentProbes([], [], [], probeIds.Select(probeId => new NativeRemoveProbeRequest(probeId)).ToArray());
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing probes while disabling Dynamic Instrumentation");
+                }
+                finally
+                {
+                    SafeDisposal.TryDispose(this);
+                }
+            }
+        }
+
         public void Dispose()
         {
             if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)

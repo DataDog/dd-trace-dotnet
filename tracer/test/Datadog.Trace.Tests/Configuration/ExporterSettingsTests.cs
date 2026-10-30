@@ -357,6 +357,25 @@ namespace Datadog.Trace.Tests.Configuration
                    .ContainSingle(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.String && x.StringValue == endpoint);
         }
 
+        [Theory]
+        [InlineData(null, true, TracesEncoding.OtlpJson)] // semantics mode exports traces over OTLP by default
+        [InlineData(null, false, TracesEncoding.DatadogV0_4)]
+        [InlineData("otlp", true, TracesEncoding.OtlpJson)]
+        [InlineData("otlp", false, TracesEncoding.OtlpJson)]
+        [InlineData("none", true, TracesEncoding.DatadogV0_4)] // an explicit exporter takes precedence
+        public void TracesEncoding_DefaultsToOtlpWhenOtelSemanticsEnabled(string tracesExporter, bool otelSemanticsEnabled, object expected)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter },
+                { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false" },
+            });
+
+            var settings = Setup(source, NoFile());
+
+            settings.TracesEncoding.Should().Be((TracesEncoding)expected);
+        }
+
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)
         {
             return new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);

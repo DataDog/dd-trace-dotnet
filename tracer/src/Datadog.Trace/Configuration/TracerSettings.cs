@@ -829,7 +829,9 @@ namespace Datadog.Trace.Configuration
 
             // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
-            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString();
+            // OpenTelemetry semantics mode makes OTLP the default traces exporter.
+            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()
+                                  ?? (OtelSemanticsEnabled ? "otlp" : null);
             var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
             OtelTracesSpanMetricsEnabled = explicitSpanMetrics
                 ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
@@ -1354,7 +1356,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
         /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
-        /// suppressing Datadog-specific attributes.
+        /// suppressing Datadog-specific attributes. It also makes OTLP the default traces exporter
+        /// when <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/> is not set.
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
