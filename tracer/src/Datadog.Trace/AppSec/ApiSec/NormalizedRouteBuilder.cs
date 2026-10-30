@@ -11,10 +11,9 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.AppSec.ApiSec;
 
 /// <summary>
-/// Builds the "_dd.appsec.normalized_route" tag, as defined by RFC-1103 (API Security - Normalized HTTP Route),
-/// in the same walk of the route that computes the resource name. The normalized route is a sequence of
-/// slash-separated atomic elements, where each URL segment is either a static constant or a single dynamic
-/// parameter "{name}". Several parameters in the same segment are combined as "{a+b}".
+/// Builds the "_dd.appsec.normalized_route" tag, as defined by RFC-1103 (API Security - Normalized HTTP Route):
+/// a sequence of slash-separated atomic elements, where each URL segment is either a static constant or a single
+/// dynamic parameter "{name}". Several parameters in the same segment are combined as "{a+b}".
 /// The default value is disabled, and ignores every call.
 /// </summary>
 internal struct NormalizedRouteBuilder
@@ -46,10 +45,11 @@ internal struct NormalizedRouteBuilder
     /// <param name="pathBase">The mount prefix of the route, for example the ASP.NET Core PathBase</param>
     public static NormalizedRouteBuilder Create(string? pathBase)
     {
-        var builder = new NormalizedRouteBuilder(StringBuilderCache.Acquire());
+        var sb = StringBuilderCache.Acquire();
 
         // The normalized route is the path as served to the caller, so it includes the mount prefix.
         // The PathBase keeps the escapes of the request path, so don't encode them again.
+        // Empty elements are not permitted (rule 2), so "//" in the PathBase is reported as "/".
         if (pathBase is not null)
         {
             var start = 0;
@@ -59,8 +59,8 @@ internal struct NormalizedRouteBuilder
                 {
                     if (i > start)
                     {
-                        builder._sb!.Append('/');
-                        AppendStaticConstant(builder._sb, pathBase, start, i, preserveEscapes: true);
+                        sb.Append('/');
+                        AppendStaticConstant(sb, pathBase, start, i, preserveEscapes: true);
                     }
 
                     start = i + 1;
@@ -68,7 +68,7 @@ internal struct NormalizedRouteBuilder
             }
         }
 
-        return builder;
+        return new NormalizedRouteBuilder(sb);
     }
 
     public void StartSegment()
@@ -98,12 +98,15 @@ internal struct NormalizedRouteBuilder
     }
 
     /// <summary>
-    /// Adds a dynamic parameter to the current segment. Don't call it for an optional parameter that the request doesn't contain.
+    /// Adds a dynamic parameter to the current segment. An optional parameter is resolved against the value
+    /// the framework matched for the request, and is left out when the request doesn't contain it.
     /// </summary>
     /// <param name="name">The parameter name</param>
-    public void AddParameter(string name)
+    /// <param name="value">The value matched for the request</param>
+    /// <param name="isOptional">Whether the request may not contain the parameter, e.g. an optional or catch-all parameter</param>
+    public void AddParameter(string name, object? value, bool isOptional)
     {
-        if (_sb is null)
+        if (_sb is null || (isOptional && value is null or string { Length: 0 }))
         {
             return;
         }
@@ -216,20 +219,40 @@ internal struct NormalizedRouteBuilder
             }
             else
             {
-                // Rare: encode the run of non-ASCII characters as UTF-8
+                // Encode the run of non-ASCII characters as UTF-8
                 var runEnd = i + 1;
                 while (runEnd < end && value[runEnd] >= 0x80)
                 {
                     runEnd++;
                 }
 
-                foreach (var b in Encoding.UTF8.GetBytes(value.Substring(i, runEnd - i)))
-                {
-                    AppendPercentEncoded(sb, b);
-                }
-
+                AppendPercentEncodedUtf8(sb, value, i, runEnd - i);
                 i = runEnd - 1;
             }
+        }
+    }
+
+    private static void AppendPercentEncodedUtf8(StringBuilder sb, string value, int start, int length)
+    {
+#if NETCOREAPP3_1_OR_GREATER
+        var chars = value.AsSpan(start, length);
+        var maxByteCount = Encoding.UTF8.GetMaxByteCount(length);
+        if (maxByteCount <= 256)
+        {
+            Span<byte> bytes = stackalloc byte[maxByteCount];
+            var byteCount = Encoding.UTF8.GetBytes(chars, bytes);
+            foreach (var b in bytes.Slice(0, byteCount))
+            {
+                AppendPercentEncoded(sb, b);
+            }
+
+            return;
+        }
+#endif
+
+        foreach (var b in Encoding.UTF8.GetBytes(value.Substring(start, length)))
+        {
+            AppendPercentEncoded(sb, b);
         }
     }
 

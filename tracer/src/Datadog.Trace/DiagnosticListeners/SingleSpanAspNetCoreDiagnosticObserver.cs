@@ -257,10 +257,18 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
-                    // The API Security normalized route is computed in the same walk of the route as the resource name
                     var apiSecurityRoute = routePattern.RawText is not null
                                                ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value)
                                                : default;
+
+                    // The OTel semantics don't use the simplified route pattern, so only walk the route for API Security
+                    var resourcePathName = !_tracer.Settings.OtelSemanticsEnabled || apiSecurityRoute.IsEnabled
+                                               ? AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                                                   routePattern,
+                                                   routeValues,
+                                                   _tracer.Settings.ExpandRouteTemplatesEnabled,
+                                                   ref apiSecurityRoute)
+                                               : string.Empty;
 
                     string? normalizedRoute;
                     if (_tracer.Settings.OtelSemanticsEnabled)
@@ -273,27 +281,12 @@ namespace Datadog.Trace.DiagnosticListeners
                         rootSpan.ResourceName = normalizedRoute is not null
                                                      ? $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}"
                                                      : HttpSemanticConventions.GetResourceName(tags.HttpMethod);
-
-                        if (apiSecurityRoute.IsEnabled)
-                        {
-                            _ = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                                routePattern,
-                                routeValues,
-                                _tracer.Settings.ExpandRouteTemplatesEnabled,
-                                ref apiSecurityRoute);
-                        }
                     }
                     else
                     {
                         // No need to ToLowerInvariant() these strings, as we lower case
                         // the whole route later
                         normalizedRoute = routePattern.RawText?.ToLowerInvariant();
-
-                        var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                            routePattern,
-                            routeValues,
-                            _tracer.Settings.ExpandRouteTemplatesEnabled,
-                            ref apiSecurityRoute);
 
                         // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
                         // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,

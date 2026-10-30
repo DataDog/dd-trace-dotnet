@@ -21,13 +21,13 @@ using Microsoft.AspNetCore.Routing.Template;
 namespace Datadog.Trace.DiagnosticListeners;
 
 /// <summary>
-/// Computes the resource name of a route, and the API Security normalized route in the same walk.
-/// The normalized route reports as static constants the area, controller and action values that the
-/// resource name expands, and as "{name}" every other parameter that the request contains.
+/// Computes the resource name of a route. When a <see cref="NormalizedRouteBuilder"/> is enabled,
+/// it also builds the API Security normalized route in the same walk of the route.
 /// </summary>
 internal static class AspNetCoreResourceNameHelper
 {
 #if NET6_0_OR_GREATER
+    [TestingOnly]
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,
         RouteValueDictionary routeValueDictionary,
@@ -73,16 +73,7 @@ internal static class AspNetCoreResourceNameHelper
                 {
                     var parameterName = parameter.Name;
                     var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
-
-                    if (normalizedRoute.IsEnabled)
-                    {
-                        AddNormalizedParameter(
-                            ref normalizedRoute,
-                            parameterName,
-                            value,
-                            routeValue: IsMvcRouteValue(parameterName) && IsExpandableValue(value) ? value as string : null,
-                            isOptional: parameter.IsOptional || parameter.IsCatchAll);
-                    }
+                    normalizedRoute.AddParameter(parameterName, value, isOptional: parameter.IsOptional || parameter.IsCatchAll);
 
                     if (!parameter.IsOptional || haveParameter)
                     {
@@ -92,9 +83,17 @@ internal static class AspNetCoreResourceNameHelper
                             addedPart = true;
                         }
 
+                        // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
+                        // so never expand them. This avoids an allocating ToString() call, but means that
+                        // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
                         if (haveParameter
-                         && (expandRouteParameters || IsMvcRouteValue(parameterName))
-                         && IsExpandableValue(value))
+                         && (expandRouteParameters
+                          || parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
+                          || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
+                          || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                         && (value is null ||
+                             (value is string valueAsString
+                           && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
                         {
                             // write the expanded parameter value
                             sb.AppendAsLowerInvariant(value as string);
@@ -220,16 +219,7 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     var haveParameter = value is not null;
-
-                    if (normalizedRoute.IsEnabled)
-                    {
-                        AddNormalizedParameter(
-                            ref normalizedRoute,
-                            parameterName,
-                            value,
-                            routeValue: mustExpand ? GetRouteValue(routeValueDictionary, parameterName, value) : null,
-                            isOptional: parameter.IsOptional || parameter.IsCatchAll);
-                    }
+                    normalizedRoute.AddParameter(parameterName, value, isOptional: parameter.IsOptional || parameter.IsCatchAll);
 
                     if (parameter.IsOptional && !haveParameter)
                     {
@@ -290,6 +280,7 @@ internal static class AspNetCoreResourceNameHelper
         return sb.ToString();
     }
 
+    [TestingOnly]
     internal static string SimplifyRouteTemplate(
         RouteTemplate routePattern,
         RouteValueDictionary routeValueDictionary,
@@ -383,16 +374,7 @@ internal static class AspNetCoreResourceNameHelper
                     }
 
                     var haveParameter = value is not null;
-
-                    if (normalizedRoute.IsEnabled)
-                    {
-                        AddNormalizedParameter(
-                            ref normalizedRoute,
-                            parameterName,
-                            value,
-                            routeValue: mustExpand ? GetRouteValue(routeValueDictionary, parameterName, value) : null,
-                            isOptional: part.IsOptional || part.IsCatchAll);
-                    }
+                    normalizedRoute.AddParameter(parameterName, value, isOptional: part.IsOptional || part.IsCatchAll);
 
                     if (part.IsOptional && !haveParameter)
                     {
@@ -472,54 +454,6 @@ internal static class AspNetCoreResourceNameHelper
         }
 
         return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
-    }
-
-#if NET6_0_OR_GREATER
-    private static bool IsMvcRouteValue(string parameterName)
-        => parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
-        || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
-        || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase);
-
-    // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
-    // so never expand them. This avoids an allocating ToString() call, but means that
-    // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
-    private static bool IsExpandableValue(object? value)
-        => value is null
-        || (value is string valueAsString && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length));
-#endif
-
-    // The MVC names may be lower-cased for the resource name, so read the route value as matched
-    private static string? GetRouteValue(IReadOnlyDictionary<string, object?> routeValueDictionary, string parameterName, object? value)
-        => routeValueDictionary.TryGetValue(parameterName, out var matchedValue) && matchedValue is string { Length: > 0 } matchedString
-               ? matchedString
-               : value as string;
-
-    /// <summary>
-    /// Adds a parameter to the normalized route.
-    /// </summary>
-    /// <param name="normalizedRoute">The normalized route builder</param>
-    /// <param name="parameterName">The parameter name</param>
-    /// <param name="value">The value matched for the request</param>
-    /// <param name="routeValue">The area, controller or action value that the resource name expands, reported as a static constant</param>
-    /// <param name="isOptional">Whether the request may not contain the parameter</param>
-    private static void AddNormalizedParameter(ref NormalizedRouteBuilder normalizedRoute, string parameterName, object? value, string? routeValue, bool isOptional)
-    {
-        if (value is null or string { Length: 0 })
-        {
-            // Optional elements are resolved against the values matched for this request
-            if (!isOptional)
-            {
-                normalizedRoute.AddParameter(parameterName);
-            }
-        }
-        else if (routeValue is { Length: > 0 })
-        {
-            normalizedRoute.AddStaticText(routeValue);
-        }
-        else
-        {
-            normalizedRoute.AddParameter(parameterName);
-        }
     }
 }
 #endif
