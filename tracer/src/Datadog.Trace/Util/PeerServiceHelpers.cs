@@ -117,7 +117,7 @@ namespace Datadog.Trace.Util
 
                         break;
                     case "StepFunctions":
-                        if (tags is AwsStepFunctionsTags stepTags)
+                        if (tags is AwsStepFunctionsTags stepTags && !string.IsNullOrEmpty(stepTags.StateMachineName))
                         {
                             tags.PeerService = stepTags.StateMachineName;
                             tags.PeerServiceSource = Trace.Tags.StateMachineName;
