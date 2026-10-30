@@ -27,8 +27,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 #endif
 #pragma warning restore CA1805
 
+#pragma warning disable MA0062 // Non-flags enums should not be marked with "FlagsAttribute" - MAX_WIDTH_MASK mirrors the native FORMAT_MESSAGE_MAX_WIDTH_MASK
         [Flags]
         public enum FORMAT_MESSAGE : int
+#pragma warning restore MA0062
         {
             NONE = 0,
             ALLOCATE_BUFFER = 0x00000100,
