@@ -36,12 +36,16 @@ public class AllTriggers
 
         _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
-        // Check if we should test APIM proxy headers
-        var testApim = Environment.GetEnvironmentVariable("DD_TEST_APIM_ENABLED");
-        if (testApim == "1" || testApim?.ToLowerInvariant() == "true")
+        // Check if we should test inferred proxy headers for one of the supported proxies
+        if (IsEnabled("DD_TEST_APIM_ENABLED"))
         {
             _logger.LogInformation("APIM test enabled, calling simple endpoint with APIM headers");
-            await CallFunctionHttpWithProxy("simple");
+            await CallFunctionHttpWithProxy("simple", "azure-apim");
+        }
+        else if (IsEnabled("DD_TEST_FRONTDOOR_ENABLED"))
+        {
+            _logger.LogInformation("Front Door test enabled, calling simple endpoint with Front Door headers");
+            await CallFunctionHttpWithProxy("simple", "azure-fd");
         }
         else
         {
@@ -154,27 +158,45 @@ public class AllTriggers
         return simpleResponse;
     }
 
-    private async Task<string> CallFunctionHttpWithProxy(string path)
+    private static bool IsEnabled(string environmentVariable)
+    {
+        var value = Environment.GetEnvironmentVariable(environmentVariable);
+        return value == "1" || value?.ToLowerInvariant() == "true";
+    }
+
+    private async Task<string> CallFunctionHttpWithProxy(string path, string proxyName)
     {
         var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
         var uri = $"http://{httpFunctionUrl}/api/{path}";
-        _logger.LogInformation("Calling Uri with APIM headers: {Uri}", uri);
+        _logger.LogInformation("Calling Uri with {ProxyName} headers: {Uri}", proxyName, uri);
 
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
 
-        // Add Azure APIM proxy headers that will trigger the inferred span creation
-        var startTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        request.Headers.Add("x-dd-proxy", "azure-apim");
-        request.Headers.Add("x-dd-proxy-request-time-ms", startTimeMs.ToString());
-        request.Headers.Add("x-dd-proxy-domain-name", "my-apim-instance.azure-api.net");
+        // Add the inferred proxy headers that trigger the inferred span creation
+        request.Headers.Add("x-dd-proxy", proxyName);
         request.Headers.Add("x-dd-proxy-httpmethod", "GET");
-        request.Headers.Add("x-dd-proxy-path", $"/api/{path}");
-        request.Headers.Add("x-dd-proxy-region", "canada central");
+
+        if (proxyName == "azure-fd")
+        {
+            // Front Door's rule set exposes no server variable for the current time, so it cannot
+            // inject x-dd-proxy-request-time-ms and the tracer has to synthesize the start time.
+            // Its {url_path} variable is also the request path *without* the leading slash.
+            // https://learn.microsoft.com/en-us/azure/frontdoor/rule-set-server-variables
+            request.Headers.Add("x-dd-proxy-domain-name", "my-frontdoor-instance.azurefd.net");
+            request.Headers.Add("x-dd-proxy-path", $"api/{path}");
+        }
+        else
+        {
+            request.Headers.Add("x-dd-proxy-request-time-ms", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
+            request.Headers.Add("x-dd-proxy-domain-name", "my-apim-instance.azure-api.net");
+            request.Headers.Add("x-dd-proxy-path", $"/api/{path}");
+            request.Headers.Add("x-dd-proxy-region", "canada central");
+        }
 
         var response = await HttpClient.SendAsync(request);
         var content = await response.Content.ReadAsStringAsync();
 
-        _logger.LogInformation("APIM proxy call completed with status: {StatusCode}", response.StatusCode);
+        _logger.LogInformation("{ProxyName} proxy call completed with status: {StatusCode}", proxyName, response.StatusCode);
 
         return content;
     }

@@ -11,11 +11,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Serverless;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -37,6 +40,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 #pragma warning restore SA1403
 
     [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
     public class AzureFunctionsCommonTests
     {
         // Guards the wiring between AzureInfo.IsAzureContainerApp and the tag prefix actually
@@ -68,6 +72,112 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             tags.GetTag(otherPrefix + "function.name").Should().BeNull();
             tags.GetTag(otherPrefix + "function.method").Should().BeNull();
             tags.GetTag(otherPrefix + "function.trigger").Should().BeNull();
+        }
+
+        [Fact]
+        public async Task OnIsolatedFunctionBegin_DoesNotOverwriteInferredProxyRootSpan()
+        {
+            // Regression test for the guard in CreateIsolatedFunctionScope: when an inferred proxy
+            // span (e.g. azure.frontdoor) is the trace root and the function span is created as a
+            // *child* of it, the function tags/type/resource must NOT be copied onto the proxy root.
+            var settings = new TracerSettings();
+            await using var scopedTracer = TracerHelper.CreateWithFakeAgent(settings);
+            TracerRestorerAttribute.SetTracer(scopedTracer);
+
+            // Simulate the inferred proxy span as the active trace root.
+            using var proxyScope = scopedTracer.StartActiveInternal("azure.frontdoor", tags: new InferredProxyTags { InferredSpan = 1 });
+            proxyScope.Span.Type = SpanTypes.Web;
+            proxyScope.Span.ResourceName = "GET /api/test";
+
+            // A minimal isolated-function context: no ASP.NET Core bridge (Items is null) and no
+            // input bindings, so the function span is parented to the active (proxy) scope and the
+            // "not the local root" branch is exercised.
+            var context = new MockFunctionContext
+            {
+                FunctionDefinition = new FunctionDefinitionStruct
+                {
+                    Name = "MyFunction",
+                    EntryPoint = "MyNamespace.MyFunction",
+                    InputBindings = new Hashtable(),
+                },
+            };
+
+            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(context);
+
+            // A child function span was created, rooted at the proxy span.
+            state.Scope.Should().NotBeNull();
+            var functionSpan = state.Scope!.Span;
+            functionSpan.Should().NotBeSameAs(proxyScope.Span);
+            state.Scope.Root.Span.Should().BeSameAs(proxyScope.Span);
+
+            // The proxy root span must be untouched by the function instrumentation.
+            proxyScope.Span.OperationName.Should().Be("azure.frontdoor");
+            proxyScope.Span.Type.Should().Be(SpanTypes.Web);
+            proxyScope.Span.ResourceName.Should().Be("GET /api/test");
+        }
+
+        [Fact]
+        [EnvironmentRestorer(PlatformKeys.AzureAppService.ContainerAppName)]
+        public async Task OnIsolatedFunctionBegin_WithActiveAspNetCoreScope_MovesFunctionTagsOffInferredProxyRoot()
+        {
+            // When the ASP.NET Core scope is already active this branch creates no span, so the
+            // function metadata has to be written onto an existing span. Guarding it away entirely
+            // would silently drop the Azure Functions identity on every Front Door / APIM request:
+            // the proxy root must stay untouched AND the aspnet_core.request span must still become
+            // the "serverless" span.
+            Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName, null);
+
+            await using var scopedTracer = TracerHelper.CreateWithFakeAgent();
+
+            // The inferred proxy span is the trace root, with aspnet_core.request nested inside it -
+            // the same ordering StartAspNetCorePipelineScope produces.
+            using var proxyScope = scopedTracer.StartActiveInternal("azure.frontdoor", tags: new InferredProxyTags { InferredSpan = 1 });
+            proxyScope.Span.Type = SpanTypes.Web;
+            proxyScope.Span.ResourceName = "GET /api/test";
+
+            using var aspNetCoreScope = scopedTracer.StartActiveInternal("aspnet_core.request");
+            aspNetCoreScope.Root.Span.Should().BeSameAs(proxyScope.Span, "the proxy scope must be the root for this test to exercise the guard");
+
+            // Bridge the active ASP.NET Core scope through HttpContext.Items, the way
+            // FunctionsHttpProxyingMiddleware does, so GetAspNetCoreScope finds it.
+            var httpContext = new MockHttpContext();
+            httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextActiveScopeKey] = aspNetCoreScope;
+
+            var context = new MockFunctionContext
+            {
+                FunctionDefinition = new FunctionDefinitionStruct
+                {
+                    Name = "MyFunction",
+                    EntryPoint = "MyNamespace.MyFunction",
+                    InputBindings = new Hashtable
+                    {
+                        ["trigger"] = new MockBindingMetadata { Direction = BindingDirection.In, Type = "httpTrigger" },
+                    },
+                },
+                Items = new Dictionary<object, object?>
+                {
+                    ["HttpRequestContext"] = httpContext,
+                },
+            };
+
+            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(context, triggerType: null, startTime: null, new AzureInfo(), scopedTracer);
+
+            // No new span: the ASP.NET Core middleware owns that scope's lifetime.
+            state.Scope.Should().BeNull();
+
+            // The proxy root span must be untouched.
+            proxyScope.Span.OperationName.Should().Be("azure.frontdoor");
+            proxyScope.Span.Type.Should().Be(SpanTypes.Web);
+            proxyScope.Span.ResourceName.Should().Be("GET /api/test");
+            proxyScope.Span.Tags.GetTag("aas.function.name").Should().BeNull();
+
+            // ...and the function metadata must still land on the ASP.NET Core span.
+            var aspNetCoreSpan = aspNetCoreScope.Span;
+            aspNetCoreSpan.Type.Should().Be(SpanTypes.Serverless);
+            aspNetCoreSpan.ResourceName.Should().Be("Http MyFunction");
+            aspNetCoreSpan.Tags.GetTag("aas.function.name").Should().Be("MyFunction");
+            aspNetCoreSpan.Tags.GetTag("aas.function.method").Should().Be("MyNamespace.MyFunction");
+            aspNetCoreSpan.Tags.GetTag("aas.function.trigger").Should().Be("Http");
         }
 
         [Fact]
@@ -207,6 +317,66 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             tags.GetTag(otherPrefix + "function.trigger").Should().BeNull();
         }
 
+        // The in-process function span is created without tags, so the metadata is only ever copied
+        // onto an ancestor. Whichever inferred proxy is the trace root, the metadata must land on
+        // the same span - the proxy's nearest descendant, which here is the host span - so that a
+        // proxy root changes who the parent is, not whether the trace carries the function identity.
+        [Theory]
+        [InlineData(null)]                 // no proxy: the host span is the chain root
+        [InlineData("azure.frontdoor")]    // relocated off the proxy root onto the host span
+        [InlineData("azure.apim")]         // same relocation
+        [EnvironmentRestorer(PlatformKeys.AzureAppService.ContainerAppName)]
+        public async Task OnFunctionExecutionBegin_WritesFunctionMetadataBelowAnyProxyRoot(string? proxyOperationName)
+        {
+            Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName, null);
+
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            Scope? proxyScope = null;
+            if (proxyOperationName is not null)
+            {
+                proxyScope = tracer.StartActiveInternal(proxyOperationName, tags: new InferredProxyTags { InferredSpan = 1 });
+                proxyScope.Span.Type = SpanTypes.Web;
+                proxyScope.Span.ResourceName = "GET /api/test";
+            }
+
+            // Stands in for the aspnet_core.request span the host creates; with a proxy it is the
+            // proxy's child, without one it is the trace root.
+            using var hostScope = tracer.StartActiveInternal("aspnet_core.request");
+            hostScope.Root.Span.Should().BeSameAs(proxyScope is null ? hostScope.Span : proxyScope.Span);
+
+            var functionInstance = new MockFunctionInstance
+            {
+                Reason = AzureFunctionsExecutionReason.HostCall,
+                BindingSource = new object(),
+                FunctionDescriptor = new MockFunctionDescriptor
+                {
+                    ShortName = "TestFunction",
+                    FullName = "Tests.TestFunction.Run",
+                },
+            };
+
+            var state = AzureFunctionsCommon.OnFunctionExecutionBegin<object?, MockFunctionInstance>(null, functionInstance, new AzureInfo(), tracer);
+
+            using var functionScope = state.Scope.Should().BeOfType<Scope>().Subject;
+            functionScope.Span.Should().NotBeSameAs(hostScope.Span);
+
+            var hostSpan = hostScope.Span;
+            hostSpan.Type.Should().Be(SpanTypes.Serverless);
+            hostSpan.Tags.GetTag("aas.function.name").Should().Be("TestFunction");
+            hostSpan.Tags.GetTag("aas.function.method").Should().Be("Tests.TestFunction.Run");
+            hostSpan.Tags.GetTag("aas.function.trigger").Should().Be("Http");
+
+            // The proxy span itself is never touched, whichever proxy it is.
+            if (proxyScope is not null)
+            {
+                proxyScope.Span.OperationName.Should().Be(proxyOperationName);
+                proxyScope.Span.Type.Should().Be(SpanTypes.Web);
+                proxyScope.Span.ResourceName.Should().Be("GET /api/test");
+                proxyScope.Span.Tags.GetTag("aas.function.name").Should().BeNull();
+            }
+        }
+
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
         {
             var triggerMetadata = new Dictionary<string, object?>();
@@ -262,9 +432,16 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             public IEnumerable<KeyValuePair<Type, object?>>? Features { get; set; }
 
-            public IDictionary<object, object?>? Items { get; }
+            public IDictionary<object, object?>? Items { get; set; }
 
             public IWorkerTraceContext? TraceContext { get; set; }
+        }
+
+        // Duck types with Microsoft.AspNetCore.Http.HttpContext via IHttpContextItems, which is how
+        // GetAspNetCoreScope reaches the aspnet_core.request scope through the FunctionContext bridge.
+        internal class MockHttpContext
+        {
+            public IDictionary<object, object?> Items { get; set; } = new Dictionary<object, object?>();
         }
 
         // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs

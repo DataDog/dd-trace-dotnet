@@ -20,10 +20,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 internal static class InferredProxySpanHelper
 {
     public const string AzureProxyHeaderValue = "azure-apim";
+    public const string AzureFrontDoorHeaderValue = "azure-fd";
     public const string AwsProxyHeaderValue = "aws-apigateway";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InferredProxySpanHelper));
     private static InferredProxyCoordinator? _awsCoordinator;
-    private static InferredProxyCoordinator? _azureCoordinator;
+    private static InferredProxyCoordinator? _azureApimCoordinator;
+    private static InferredProxyCoordinator? _azureFrontDoorCoordinator;
 
     /// <summary>
     /// Creates an inferred proxy span from request headers.
@@ -54,8 +56,14 @@ internal static class InferredProxySpanHelper
 
         if (string.Equals(proxyName, AzureProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
         {
-            _azureCoordinator ??= new InferredProxyCoordinator(new AzureApiManagementExtractor(), new AzureApiManagementSpanFactory());
-            return _azureCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
+            _azureApimCoordinator ??= new InferredProxyCoordinator(new AzureApiManagementExtractor(), new AzureApiManagementSpanFactory());
+            return _azureApimCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
+        }
+
+        if (string.Equals(proxyName, AzureFrontDoorHeaderValue, StringComparison.OrdinalIgnoreCase))
+        {
+            _azureFrontDoorCoordinator ??= new InferredProxyCoordinator(new AzureFrontDoorExtractor(), new AzureFrontDoorSpanFactory());
+            return _azureFrontDoorCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
         }
 
         if (string.Equals(proxyName, AwsProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
@@ -68,7 +76,15 @@ internal static class InferredProxySpanHelper
         return null;
     }
 
-    public static bool GetStartTime(string? startTime, out DateTimeOffset start)
+    /// <param name="startTime">The raw header value.</param>
+    /// <param name="start">The parsed start time.</param>
+    /// <param name="logParseFailures">
+    /// Whether an unusable value is anomalous. Pass <c>false</c> for proxies that inject no
+    /// timestamp of their own: any value then came from the caller rather than the proxy, so an
+    /// unusable one is expected input and must not log at Warning/Error on every request.
+    /// </param>
+    /// <returns><c>true</c> if a start time was parsed; otherwise <c>false</c>.</returns>
+    public static bool GetStartTime(string? startTime, out DateTimeOffset start, bool logParseFailures = true)
     {
         start = default;
 
@@ -80,7 +96,15 @@ internal static class InferredProxySpanHelper
 
         if (!long.TryParse(startTime, out var startTimeMs))
         {
-            Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
+            if (logParseFailures)
+            {
+                Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
+            }
+            else
+            {
+                Log.Debug("Ignoring unparseable header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
+            }
+
             return false;
         }
 
@@ -91,7 +115,15 @@ internal static class InferredProxySpanHelper
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
+            if (logParseFailures)
+            {
+                Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", startTimeMs, InferredProxyHeaders.StartTime);
+            }
+            else
+            {
+                Log.Debug("Ignoring out-of-range header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTimeMs);
+            }
+
             return false;
         }
     }
