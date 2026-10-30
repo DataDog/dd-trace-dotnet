@@ -68,7 +68,14 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
             {
                 var xSp = x.SequencePoint;
                 var ySp = y.SequencePoint;
-                if (xSp.Equals(ySp))
+                // SymbolSequencePoint is vendored and doesn't implement IEquatable, so compare the fields
+                // explicitly (the same comparison the default ValueType.Equals does, without reflection)
+                if (xSp.Offset == ySp.Offset
+                 && Equals(xSp.Document, ySp.Document)
+                 && xSp.Line == ySp.Line
+                 && xSp.Column == ySp.Column
+                 && xSp.EndLine == ySp.EndLine
+                 && xSp.EndColumn == ySp.EndColumn)
                 {
                     return 0;
                 }
