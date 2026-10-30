@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Iast;
 
-internal readonly struct Range : IComparable<Range>
+internal readonly record struct Range : IComparable<Range>
 {
     private const SecureMarks NotMarked = SecureMarks.None;
 
