@@ -293,7 +293,7 @@ public class AgentProcessManagerTests
     {
         var agent = new ScriptedAgent(AgentCheck.Gone);
 
-        await AgentProcessManager.CheckForExistingAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckForExistingAgentAsync(agent.Host, agent.Metadata, Cap);
 
         agent.Metadata.ProcessState.Should().Be(ProcessState.ReadyToStart);
     }
@@ -304,7 +304,7 @@ public class AgentProcessManagerTests
         // A slow answer is not a shutdown while the pipe exists
         var agent = new ScriptedAgent(AgentCheck.Healthy, AgentCheck.NotAnswering, AgentCheck.Healthy) { RepeatLastCheck = true };
 
-        await AgentProcessManager.CheckForExistingAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckForExistingAgentAsync(agent.Host, agent.Metadata, Cap);
 
         agent.Metadata.ProcessState.Should().Be(ProcessState.Healthy);
         agent.Metadata.Process.Should().BeNull();
@@ -315,7 +315,7 @@ public class AgentProcessManagerTests
     {
         var agent = new ScriptedAgent(AgentCheck.Healthy, AgentCheck.Healthy, AgentCheck.Gone);
 
-        await AgentProcessManager.CheckForExistingAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckForExistingAgentAsync(agent.Host, agent.Metadata, Cap);
 
         agent.Metadata.ProcessState.Should().Be(ProcessState.ReadyToStart);
     }
@@ -326,13 +326,13 @@ public class AgentProcessManagerTests
         // Another worker's agent holds the pipe but answers slowly: a copy started now could not take the pipe
         var agent = new ScriptedAgent(AgentCheck.NotAnswering, AgentCheck.NotAnswering, AgentCheck.NotAnswering);
 
-        await AgentProcessManager.CheckForExistingAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckForExistingAgentAsync(agent.Host, agent.Metadata, Cap);
         agent.Metadata.ProcessState.Should().Be(ProcessState.Unhealthy);
 
-        await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
         agent.Metadata.ProcessState.Should().Be(ProcessState.Unhealthy);
 
-        await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
         agent.Metadata.ProcessState.Should().Be(ProcessState.ReadyToStart);
         agent.Delays.Should().BeEmpty();
     }
@@ -343,13 +343,13 @@ public class AgentProcessManagerTests
         var agent = new ScriptedAgent(AgentCheck.NotAnswering, AgentCheck.NotAnswering, AgentCheck.NotAnswering);
         agent.Metadata.ProcessState = ProcessState.Healthy;
 
-        await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
         agent.Metadata.ProcessState.Should().Be(ProcessState.Unhealthy);
 
-        await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
         agent.Metadata.ProcessState.Should().Be(ProcessState.Unhealthy);
 
-        await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
         agent.Metadata.ProcessState.Should().Be(ProcessState.ReadyToStart);
         agent.Delays.Should().BeEmpty();
         agent.RemainingChecks.Should().Be(0);
@@ -361,7 +361,7 @@ public class AgentProcessManagerTests
         var agent = new ScriptedAgent(AgentCheck.Gone);
         agent.Metadata.ProcessState = ProcessState.Healthy;
 
-        await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
 
         agent.Metadata.ProcessState.Should().Be(ProcessState.ReadyToStart);
         agent.Delays.Should().BeEmpty();
@@ -385,7 +385,7 @@ public class AgentProcessManagerTests
 
             for (var check = 0; check < 3; check++)
             {
-                await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+                await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
             }
 
             IsRunning(childPid).Should().BeFalse();
@@ -394,7 +394,7 @@ public class AgentProcessManagerTests
             agent.Metadata.SequentialFailures.Should().Be(1);
             agent.Delays.Should().Equal(2_000);
 
-            await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+            await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
 
             agent.Metadata.ProcessState.Should().Be(ProcessState.Unhealthy);
             agent.RemainingChecks.Should().Be(0);
@@ -416,7 +416,7 @@ public class AgentProcessManagerTests
             agent.Metadata.ProcessState = ProcessState.Healthy;
             agent.BeforeNextCheck = () => StopChild(child);
 
-            await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+            await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
 
             // Our agent's exit is the reason to start a new one, even while another agent holds the pipe
             agent.Metadata.SequentialFailures.Should().Be(1);
@@ -441,14 +441,14 @@ public class AgentProcessManagerTests
             agent.Metadata.Process = child;
             agent.Metadata.ProcessState = ProcessState.Healthy;
 
-            await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
-            await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+            await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
+            await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
             agent.Metadata.ProcessState.Should().Be(ProcessState.Unhealthy);
             agent.Metadata.Process.Should().BeSameAs(child);
             IsRunning(childPid).Should().BeTrue();
 
             // The third failed check restarts it after the retry wait, because no other agent answers by then
-            await AgentProcessManager.CheckAgentAsync(agent.Metadata, Cap);
+            await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
             IsRunning(childPid).Should().BeFalse();
             agent.Metadata.ProcessState.Should().Be(ProcessState.ReadyToStart);
             agent.Metadata.SequentialFailures.Should().Be(1);
@@ -461,13 +461,40 @@ public class AgentProcessManagerTests
     }
 
     [Fact]
+    public async Task CheckAgentAsync_ResetsTheBackoffOnlyAfterTheAgentStaysHealthyForTheStablePeriod()
+    {
+        // An agent that keeps failing now and then must keep its backoff
+        var agent = new ScriptedAgent(AgentCheck.Healthy, AgentCheck.NotAnswering, AgentCheck.Healthy, AgentCheck.Healthy, AgentCheck.Healthy);
+        agent.Metadata.ProcessState = ProcessState.Healthy;
+        agent.Metadata.SequentialFailures = 3;
+
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
+        agent.NowMs = 50_000;
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap); // the failed check restarts the stable period
+
+        agent.NowMs = 55_000;
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
+        agent.NowMs = 55_000 + AgentProcessManager.StableHealthyPeriod - 1;
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
+        agent.Metadata.SequentialFailures.Should().Be(3);
+
+        agent.NowMs = 55_000 + AgentProcessManager.StableHealthyPeriod;
+        await AgentProcessManager.CheckAgentAsync(agent.Host, agent.Metadata, Cap);
+        agent.Metadata.SequentialFailures.Should().Be(0);
+        agent.RemainingChecks.Should().Be(0);
+    }
+
+    [Fact]
     public async Task StartAgentAsync_ReportsAnAgentThatExitsDuringStartupAsFaulted()
     {
-        var agent = new ScriptedAgent(AgentCheck.Gone) { RepeatLastCheck = true, RealDelays = true };
+        var agent = new ScriptedAgent(AgentCheck.Gone) { RepeatLastCheck = true };
         SetShortLivedChildCommand(agent.Metadata);
         agent.Metadata.ProcessState = ProcessState.ReadyToStart;
 
-        await AgentProcessManager.StartAgentAsync(agent.Metadata, Cap);
+        // Waits are not real, so let the child exit before the first check rather than racing it
+        agent.BeforeNextCheck = () => agent.Metadata.Process?.WaitForExit(10_000);
+
+        await AgentProcessManager.StartAgentAsync(agent.Host, agent.Metadata, Cap);
 
         agent.Metadata.ProcessState.Should().Be(ProcessState.Faulted);
         agent.Metadata.Process.Should().BeNull();
@@ -476,17 +503,17 @@ public class AgentProcessManagerTests
     [Fact]
     public async Task StartAgentAsync_LeavesAnAgentThatIsStillStartingRunning()
     {
-        // Real waits, so the startup wait times out as it would in production
-        var agent = new ScriptedAgent(AgentCheck.Gone) { RepeatLastCheck = true, RealDelays = true };
+        var agent = new ScriptedAgent(AgentCheck.Gone) { RepeatLastCheck = true };
         SetLongRunningChildCommand(agent.Metadata);
         agent.Metadata.ProcessState = ProcessState.ReadyToStart;
         try
         {
-            await AgentProcessManager.StartAgentAsync(agent.Metadata, Cap);
+            await AgentProcessManager.StartAgentAsync(agent.Host, agent.Metadata, Cap);
 
             agent.Metadata.ProcessState.Should().Be(ProcessState.Unhealthy);
             agent.Metadata.Process.Should().NotBeNull();
             agent.Metadata.Process.HasExited.Should().BeFalse();
+            agent.NowMs.Should().BeGreaterOrEqualTo(2_000);
         }
         finally
         {
@@ -577,8 +604,18 @@ public class AgentProcessManagerTests
         metadata.ProcessArguments = startInfo.Arguments;
     }
 
+    private readonly struct ScriptedHost(ScriptedAgent agent) : AgentProcessManager.IAgentHost
+    {
+        public Task<bool> CheckHealthAsync(AgentProcessManager.ProcessMetadata metadata) => agent.CheckHealthAsync();
+
+        public Task DelayAsync(int milliseconds) => agent.DelayAsync(milliseconds);
+
+        public long GetTimestampMs() => agent.NowMs;
+    }
+
     /// <summary>
-    /// Stands in for the agent's named pipe: each health check returns the next scripted answer, and waits are recorded instead of slept.
+    /// Stands in for the agent's named pipe and the clock: each health check returns the next scripted answer, and waits
+    /// are recorded and move <see cref="NowMs"/> forward instead of sleeping.
     /// </summary>
     private sealed class ScriptedAgent
     {
@@ -589,23 +626,24 @@ public class AgentProcessManagerTests
         {
             _checks = new Queue<AgentCheck>(checks);
             Metadata = new AgentProcessManager.ProcessMetadata { Name = "test-agent", ProcessPath = "test-agent", PipeName = "test-pipe" };
-            Metadata.CheckHealthAsync = CheckHealthAsync;
-            Metadata.DelayAsync = DelayAsync;
+            Host = new ScriptedHost(this);
         }
 
         public AgentProcessManager.ProcessMetadata Metadata { get; }
 
+        public ScriptedHost Host { get; }
+
         public List<int> Delays { get; } = [];
+
+        public long NowMs { get; set; }
 
         public int RemainingChecks => _checks.Count;
 
         public bool RepeatLastCheck { get; set; }
 
-        public bool RealDelays { get; set; }
-
         public Action BeforeNextCheck { get; set; }
 
-        private Task<bool> CheckHealthAsync()
+        public Task<bool> CheckHealthAsync()
         {
             var before = BeforeNextCheck;
             BeforeNextCheck = null;
@@ -625,14 +663,10 @@ public class AgentProcessManagerTests
             return Task.FromResult(_lastCheck == AgentCheck.Healthy);
         }
 
-        private Task DelayAsync(int milliseconds)
+        public Task DelayAsync(int milliseconds)
         {
-            if (RealDelays)
-            {
-                return Task.Delay(milliseconds);
-            }
-
             Delays.Add(milliseconds);
+            NowMs += milliseconds;
             return Task.CompletedTask;
         }
     }

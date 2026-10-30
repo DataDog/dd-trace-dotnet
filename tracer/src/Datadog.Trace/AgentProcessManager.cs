@@ -79,6 +79,27 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// What the keep-alive uses from outside this class: the agent's health check, waits, and the time.
+        /// <see cref="AgentHost"/> is the real one, and tests pass a fake. The keep-alive takes it as a type
+        /// parameter constrained to a struct, so the JIT calls it directly, without delegates or allocations.
+        /// </summary>
+        internal interface IAgentHost
+        {
+            /// <summary>
+            /// Checks whether the agent is healthy, and sets <see cref="ProcessMetadata.PipeIsPresent"/> and
+            /// <see cref="ProcessMetadata.LastHealthCheckFailure"/> as <see cref="ProcessMetadata.ProcessIsHealthyAsync"/> does.
+            /// </summary>
+            Task<bool> CheckHealthAsync(ProcessMetadata metadata);
+
+            Task DelayAsync(int milliseconds);
+
+            /// <summary>
+            /// Gets a monotonic time in milliseconds, for measuring how long something took.
+            /// </summary>
+            long GetTimestampMs();
+        }
+
+        /// <summary>
         /// Invoked by the loader
         /// </summary>
         public static void Initialize()
@@ -171,7 +192,7 @@ namespace Datadog.Trace
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata, int maxRetryInterval)
         {
             Log.Debug("Starting keep alive for {AgentPath}.", metadata.ProcessPath);
-            return Task.Run(() => KeepAliveAsync(metadata, maxRetryInterval));
+            return Task.Run(() => KeepAliveAsync(default(AgentHost), metadata, maxRetryInterval));
         }
 
         /// <summary>
@@ -179,7 +200,8 @@ namespace Datadog.Trace
         /// if the check leaves it <see cref="ProcessState.ReadyToStart"/>, then waits: <see cref="KeepAliveInterval"/>
         /// normally, or the retry backoff after a failure.
         /// </summary>
-        private static async Task KeepAliveAsync(ProcessMetadata metadata, int maxRetryInterval)
+        private static async Task KeepAliveAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
             try
@@ -194,16 +216,16 @@ namespace Datadog.Trace
                     {
                         if (metadata.ProcessState == ProcessState.NeverChecked)
                         {
-                            await CheckForExistingAgentAsync(metadata, maxRetryInterval).ConfigureAwait(false);
+                            await CheckForExistingAgentAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
                         }
                         else
                         {
-                            await CheckAgentAsync(metadata, maxRetryInterval).ConfigureAwait(false);
+                            await CheckAgentAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
                         }
 
                         if (metadata.ProcessState == ProcessState.ReadyToStart)
                         {
-                            await StartAgentAsync(metadata, maxRetryInterval).ConfigureAwait(false);
+                            await StartAgentAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
                         }
                     }
                     catch (ThreadAbortException)
@@ -225,12 +247,12 @@ namespace Datadog.Trace
                         {
                             metadata.SequentialFailures++;
                             // Back off while failures repeat
-                            await metadata.DelayAsync(GetRetryDelay(metadata.SequentialFailures, maxRetryInterval)).ConfigureAwait(false);
+                            await host.DelayAsync(GetRetryDelay(metadata.SequentialFailures, maxRetryInterval)).ConfigureAwait(false);
                         }
                         else
                         {
                             // Delay for a reasonable amount of time before we check to see if the process is alive again.
-                            await metadata.DelayAsync(KeepAliveInterval).ConfigureAwait(false);
+                            await host.DelayAsync(KeepAliveInterval).ConfigureAwait(false);
                         }
                     }
                 }
@@ -251,12 +273,13 @@ namespace Datadog.Trace
         /// a previous instance that is shutting down, so it is watched briefly before it is used.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal static async Task CheckForExistingAgentAsync(ProcessMetadata metadata, int maxRetryInterval)
+        internal static async Task CheckForExistingAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
-            if (await metadata.CheckHealthAsync().ConfigureAwait(false))
+            if (await host.CheckHealthAsync(metadata).ConfigureAwait(false))
             {
-                if (await ExistingAgentStaysAsync(metadata).ConfigureAwait(false))
+                if (await ExistingAgentStaysAsync(host, metadata).ConfigureAwait(false))
                 {
                     metadata.ProcessState = ProcessState.Healthy;
                     Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", path);
@@ -286,13 +309,14 @@ namespace Datadog.Trace
         /// Returns false if its pipe goes away, which means it was shutting down. A slow answer is not a shutdown,
         /// so the agent counts as staying while its pipe exists.
         /// </summary>
-        private static async Task<bool> ExistingAgentStaysAsync(ProcessMetadata metadata)
+        private static async Task<bool> ExistingAgentStaysAsync<THost>(THost host, ProcessMetadata metadata)
+            where THost : struct, IAgentHost
         {
             var delay = 50d;
             for (var check = 0; check < 6; check++)
             {
-                await metadata.DelayAsync((int)delay).ConfigureAwait(false);
-                if (!await metadata.CheckHealthAsync().ConfigureAwait(false) && !metadata.PipeIsPresent)
+                await host.DelayAsync((int)delay).ConfigureAwait(false);
+                if (!await host.CheckHealthAsync(metadata).ConfigureAwait(false) && !metadata.PipeIsPresent)
                 {
                     return false;
                 }
@@ -308,10 +332,11 @@ namespace Datadog.Trace
         /// agent is healthy, whether to start a new one, restart ours, or wait for more failed checks.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal static async Task CheckAgentAsync(ProcessMetadata metadata, int maxRetryInterval)
+        internal static async Task CheckAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
         {
             var previousState = metadata.ProcessState;
-            var isHealthy = await metadata.CheckHealthAsync().ConfigureAwait(false);
+            var isHealthy = await host.CheckHealthAsync(metadata).ConfigureAwait(false);
 
             // Check whether our own process is running only after the health check, so an exit during the
             // check is logged and counted. Every decision below uses this one reading.
@@ -323,18 +348,18 @@ namespace Datadog.Trace
 
             if (isHealthy)
             {
-                MarkHealthy(metadata, previousState);
+                MarkHealthy(host, metadata, previousState);
                 return;
             }
 
-            metadata.HealthyStopwatch = null;
+            metadata.HealthySinceMs = null;
             switch (action)
             {
                 case KeepAliveAction.Start:
-                    await PrepareToStartAsync(metadata, previousState, ownProcessExited, maxRetryInterval).ConfigureAwait(false);
+                    await PrepareToStartAsync(host, metadata, previousState, ownProcessExited, maxRetryInterval).ConfigureAwait(false);
                     break;
                 case KeepAliveAction.Restart:
-                    await RestartOwnProcessAsync(metadata, maxRetryInterval).ConfigureAwait(false);
+                    await RestartOwnProcessAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
                     break;
                 default:
                     MarkUnhealthy(metadata, previousState, ownProcessIsRunning, maxRetryInterval);
@@ -342,11 +367,13 @@ namespace Datadog.Trace
             }
         }
 
-        private static void MarkHealthy(ProcessMetadata metadata, ProcessState previousState)
+        private static void MarkHealthy<THost>(THost host, ProcessMetadata metadata, ProcessState previousState)
+            where THost : struct, IAgentHost
         {
             // Reset the backoff only after StableHealthyPeriod, so an agent that keeps flapping still backs off
-            metadata.HealthyStopwatch ??= Stopwatch.StartNew();
-            if (metadata.HealthyStopwatch.ElapsedMilliseconds >= StableHealthyPeriod)
+            var now = host.GetTimestampMs();
+            metadata.HealthySinceMs ??= now;
+            if (now - metadata.HealthySinceMs.Value >= StableHealthyPeriod)
             {
                 metadata.SequentialFailures = 0;
             }
@@ -371,7 +398,8 @@ namespace Datadog.Trace
         /// Gets ready to start a new agent. After an exit of the process we started, first waits for the retry backoff,
         /// then uses an agent another worker started in the meantime if there is one.
         /// </summary>
-        private static async Task PrepareToStartAsync(ProcessMetadata metadata, ProcessState previousState, bool ownProcessExited, int maxRetryInterval)
+        private static async Task PrepareToStartAsync<THost>(THost host, ProcessMetadata metadata, ProcessState previousState, bool ownProcessExited, int maxRetryInterval)
+            where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
             var startDelay = GetStartDelay(ownProcessExited, metadata.SequentialFailures, maxRetryInterval);
@@ -387,8 +415,8 @@ namespace Datadog.Trace
                     Log.Debug("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
                 }
 
-                await metadata.DelayAsync(startDelay).ConfigureAwait(false);
-                metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
+                await host.DelayAsync(startDelay).ConfigureAwait(false);
+                metadata.ProcessState = await GetStateAfterRetryDelayAsync(host, metadata).ConfigureAwait(false);
             }
             else if (previousState == ProcessState.Healthy
                   || (previousState == ProcessState.Unhealthy && IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval)))
@@ -406,7 +434,8 @@ namespace Datadog.Trace
         /// retry backoff, then gets ready to start a new one. We never stop an agent we did not start. If our process
         /// cannot be stopped, it stays tracked and stopping is retried on later checks.
         /// </summary>
-        private static async Task RestartOwnProcessAsync(ProcessMetadata metadata, int maxRetryInterval)
+        private static async Task RestartOwnProcessAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
 
@@ -438,8 +467,8 @@ namespace Datadog.Trace
                 Log.Debug("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
             }
 
-            await metadata.DelayAsync(delay).ConfigureAwait(false);
-            metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
+            await host.DelayAsync(delay).ConfigureAwait(false);
+            metadata.ProcessState = await GetStateAfterRetryDelayAsync(host, metadata).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -470,7 +499,8 @@ namespace Datadog.Trace
         /// Starts a new agent process, then waits for it with <see cref="WaitForStartedAgentAsync"/>.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal static async Task StartAgentAsync(ProcessMetadata metadata, int maxRetryInterval)
+        internal static async Task StartAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
 
@@ -508,7 +538,7 @@ namespace Datadog.Trace
                 Log.Debug("Started {AgentPath} with pid {ChildPid}.", path, childPid);
             }
 
-            metadata.ProcessState = await WaitForStartedAgentAsync(metadata, childPid, logAboveDebug, maxRetryInterval).ConfigureAwait(false);
+            metadata.ProcessState = await WaitForStartedAgentAsync(host, metadata, childPid, logAboveDebug, maxRetryInterval).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -516,15 +546,16 @@ namespace Datadog.Trace
         /// it does (or another instance does), Faulted when our process exited first so the retry backoff applies, or
         /// Unhealthy when it is still running but not ready, so the regular checks take over.
         /// </summary>
-        private static async Task<ProcessState> WaitForStartedAgentAsync(ProcessMetadata metadata, int? childPid, bool logAboveDebug, int maxRetryInterval)
+        private static async Task<ProcessState> WaitForStartedAgentAsync<THost>(THost host, ProcessMetadata metadata, int? childPid, bool logAboveDebug, int maxRetryInterval)
+            where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
-            var startupStopwatch = Stopwatch.StartNew();
-            while (startupStopwatch.ElapsedMilliseconds < StartupTimeout)
+            var startedAt = host.GetTimestampMs();
+            while (host.GetTimestampMs() - startedAt < StartupTimeout)
             {
-                if (await metadata.CheckHealthAsync().ConfigureAwait(false))
+                if (await host.CheckHealthAsync(metadata).ConfigureAwait(false))
                 {
-                    metadata.HealthyStopwatch = Stopwatch.StartNew();
+                    metadata.HealthySinceMs = host.GetTimestampMs();
                     if (metadata.Process == null || metadata.Process.HasExited)
                     {
                         // The health check passed because of another instance, not the one we started
@@ -561,7 +592,7 @@ namespace Datadog.Trace
                     return ProcessState.Faulted;
                 }
 
-                await metadata.DelayAsync(100).ConfigureAwait(false);
+                await host.DelayAsync(100).ConfigureAwait(false);
             }
 
             if (logAboveDebug)
@@ -678,9 +709,10 @@ namespace Datadog.Trace
         /// <summary>
         /// After a retry wait, another worker may have started a healthy agent: use it instead of starting a duplicate.
         /// </summary>
-        private static async Task<ProcessState> GetStateAfterRetryDelayAsync(ProcessMetadata metadata)
+        private static async Task<ProcessState> GetStateAfterRetryDelayAsync<THost>(THost host, ProcessMetadata metadata)
+            where THost : struct, IAgentHost
         {
-            if (!await metadata.CheckHealthAsync().ConfigureAwait(false))
+            if (!await host.CheckHealthAsync(metadata).ConfigureAwait(false))
             {
                 return ProcessState.ReadyToStart;
             }
@@ -806,14 +838,21 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// The real <see cref="IAgentHost"/>: the health check over the agent's pipe, <see cref="Task.Delay(int)"/>, and <see cref="Stopwatch"/> time.
+        /// </summary>
+        internal readonly struct AgentHost : IAgentHost
+        {
+            public Task<bool> CheckHealthAsync(ProcessMetadata metadata) => metadata.ProcessIsHealthyAsync();
+
+            public Task DelayAsync(int milliseconds) => Task.Delay(milliseconds);
+
+            public long GetTimestampMs() => (long)StopwatchHelpers.GetElapsedMilliseconds(Stopwatch.GetTimestamp());
+        }
+
         internal sealed class ProcessMetadata
         {
             private string _processPath;
-
-            public ProcessMetadata()
-            {
-                CheckHealthAsync = ProcessIsHealthyAsync;
-            }
 
             public string PipeName { get; set; }
 
@@ -838,9 +877,10 @@ namespace Datadog.Trace
             public int FailedHealthChecks { get; set; }
 
             /// <summary>
-            /// Gets or sets how long the agent has been healthy without a failed check, or null while it is not healthy.
+            /// Gets or sets when the agent became healthy, from <see cref="IAgentHost.GetTimestampMs"/>, or null while it is not healthy.
+            /// A failed check clears it.
             /// </summary>
-            public Stopwatch HealthyStopwatch { get; set; }
+            public long? HealthySinceMs { get; set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
@@ -872,18 +912,6 @@ namespace Datadog.Trace
             /// Gets or sets a value indicating whether the agent's named pipe existed at the last health check.
             /// </summary>
             public bool PipeIsPresent { get; set; }
-
-            /// <summary>
-            /// Gets or sets the health check the keep-alive runs. It is <see cref="ProcessIsHealthyAsync"/>, and tests replace it
-            /// to script how the agent answers. A replacement sets <see cref="PipeIsPresent"/> and <see cref="LastHealthCheckFailure"/> too.
-            /// </summary>
-            public Func<Task<bool>> CheckHealthAsync { get; set; }
-
-            /// <summary>
-            /// Gets or sets how the keep-alive waits, in milliseconds. It is <see cref="Task.Delay(int)"/>, and tests replace it
-            /// to record the waits instead of sleeping.
-            /// </summary>
-            public Func<int, Task> DelayAsync { get; set; } = milliseconds => Task.Delay(milliseconds);
 
             public bool OwnProcessIsRunning()
             {
