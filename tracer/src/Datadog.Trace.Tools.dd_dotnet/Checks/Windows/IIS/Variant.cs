@@ -233,7 +233,7 @@ internal struct Variant
                 break;
 
             default:
-                throw new ArgumentException();
+                throw new InvalidOperationException($"Unsupported variant type: {vt}");
         }
     }
 

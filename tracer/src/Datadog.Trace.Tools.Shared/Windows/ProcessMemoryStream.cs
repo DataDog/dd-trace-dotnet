@@ -95,7 +95,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
         {
             if (offset + count > buffer.Length)
             {
-                throw new ArgumentException();
+                throw new ArgumentException("The sum of offset and count is larger than the buffer length.", nameof(count));
             }
 
             int totalCount = 0;

@@ -283,9 +283,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                 snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
                                 break;
                             default:
-                                throw new ArgumentOutOfRangeException(
-                                    nameof(captureBehaviour),
-                                    $"{captureBehaviour} is not valid value here");
+                                throw new InvalidOperationException($"{captureBehaviour} is not valid value here");
                         }
 
                         break;
@@ -326,9 +324,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                     }
 
                                 default:
-                                    throw new ArgumentOutOfRangeException(
-                                        nameof(captureBehaviour),
-                                        $"{captureBehaviour} is not valid value here");
+                                    throw new InvalidOperationException($"{captureBehaviour} is not valid value here");
                             }
 
                             break;
@@ -350,9 +346,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(
-                            $"{nameof(info.MethodState)}",
-                            $"{info.MethodState} is not valid value here");
+                        throw new InvalidOperationException($"{info.MethodState} is not valid value here");
                 }
 
                 return ProcessCapture(state, probeInfo, ref info, snapshotCreator, ref evaluationResult);
@@ -699,7 +693,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     ProcessLine(state, in probeInfo, ref info, ref snapshotCreator, ref evaluationResult);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException($"{nameof(ProbeInfo.ProbeLocation)}", $"{info.MethodState} is not valid value here");
+                    throw new InvalidOperationException($"{probeInfo.ProbeLocation} is not valid value here");
             }
 
             return true;
@@ -797,7 +791,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     snapshotCreator.CaptureLocal(info.Value, info.Name, info.Type);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(info.MethodState));
+                    throw new InvalidOperationException($"Unexpected method state: {info.MethodState}");
             }
         }
 
@@ -841,7 +835,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     snapshotCreator.CaptureLocal(info.Value, info.Name, info.Type);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(info.MethodState));
+                    throw new InvalidOperationException($"Unexpected method state: {info.MethodState}");
             }
         }
 
@@ -938,7 +932,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 {
                     ProbeLocation.Method => probe.EvaluateAt,
                     ProbeLocation.Line => EvaluateAt.Entry,
-                    _ => throw new ArgumentOutOfRangeException(nameof(location), location, "Unsupported probe location")
+                    _ => throw new InvalidOperationException($"Unsupported probe location: {location}")
                 };
 
                 var templates = default(DebuggerExpression?[]?);

@@ -83,7 +83,7 @@ internal sealed class Base64DecodingStream : Stream
 
         if (maxQuanta == 0)
         {
-            ThrowDestinationTooSmall();
+            ThrowDestinationTooSmall(nameof(destination));
         }
 
         var charsToProcess = maxQuanta * 4;
@@ -121,7 +121,7 @@ internal sealed class Base64DecodingStream : Stream
         // Added for consistency with .NET Core case
         if (count < 3)
         {
-            ThrowDestinationTooSmall();
+            ThrowDestinationTooSmall(nameof(count));
         }
 
         var totalRead = 0;
@@ -188,7 +188,7 @@ internal sealed class Base64DecodingStream : Stream
     private static void ThrowFormatException() => throw new FormatException("The input is not a valid base64 string.");
 
     [DoesNotReturn]
-    private static void ThrowDestinationTooSmall() => throw new ArgumentException("Destination buffer must be at least 3 bytes to hold a decoded base64 quantum.");
+    private static void ThrowDestinationTooSmall(string paramName) => throw new ArgumentException("Destination buffer must be at least 3 bytes to hold a decoded base64 quantum.", paramName);
 
 #if !NETCOREAPP
     private void DecodeNextChunk()
