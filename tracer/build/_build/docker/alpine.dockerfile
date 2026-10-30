@@ -64,7 +64,10 @@ RUN apk update \
     && apkArch="$(apk --print-arch)" \
     && wget https://github.com/goreleaser/nfpm/releases/download/v2.39.0/nfpm_2.39.0_${apkArch}.apk \
     && apk add --allow-untrusted nfpm_2.39.0_${apkArch}.apk \
-    && rm nfpm_2.39.0_${apkArch}.apk
+    && rm nfpm_2.39.0_${apkArch}.apk \
+    # System.DirectoryServices.Protocols 6.x/7.x only look for libldap-2.4.so.2 (OpenLDAP 2.4),
+    # but Alpine >= 3.17 ships OpenLDAP 2.6 as libldap.so.2 (API compatible)
+    && ln -s libldap.so.2 /usr/lib/libldap-2.4.so.2
 
 
 # Install the .NET SDK
