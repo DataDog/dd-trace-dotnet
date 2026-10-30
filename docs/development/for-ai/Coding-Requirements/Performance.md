@@ -1,6 +1,6 @@
 # Performance
 
-Allocations and CPU cost on hot paths (span creation and finish, tagging, propagation, instrumentation callbacks), at startup, and in tooling.
+Allocations and CPU cost on hot paths (span creation and finish, tagging, propagation, instrumentation callbacks, Dynamic Instrumentation probe hits), at startup, and in tooling.
 
 **When planning:** take the rules below into account when designing the change.
 
@@ -107,7 +107,26 @@ Allocations and CPU cost on hot paths (span creation and finish, tagging, propag
 - ❌ `options.AdditionalFiles.Where(...).Select(...).ToList()`
 - ✅ a plain `foreach` over `options.AdditionalFiles`.
 
+## 5. Dynamic Instrumentation
+
+Debugger capture and probe expression evaluation run synchronously on customer threads on every probe hit. See [DebuggerSafetyBoundaries.md](../../DebuggerSafetyBoundaries.md).
+
+### PERF-5.1: Keep shared locks and allocations off the per-hit path of capture, evaluation and redaction helpers
+- Flag: a `lock`, `ReaderWriterLockSlim` or other lock shared across threads taken on every probe hit, or a lock or allocation on a cache hit, in a debugger capture, expression-evaluation or redaction helper; or a cache where entries keyed by customer data (dictionary keys, runtime values) share capacity with other entries, so customer data can evict them.
+- ❌ `lock (_cacheLock) { if (_cache.TryGetValue(type, out var redacted)) { return redacted; } }`
+- ✅ `if (_cache.TryGetValue(type, out var redacted)) { return redacted; } // lock-free read of a ConcurrentDictionary`
+
+### PERF-5.2: Rate-limit probe failure output instead of producing an error snapshot or log line on every hit
+- Flag: a probe failure path (evaluation error, redacted value, unsupported value) that builds an error snapshot or writes a `Log.*` line on every hit with no rate limit or once-per-probe flag, or a failure already known when the expression compiles (for example, a redacted constant key) that is found again by evaluating the expression on every hit.
+- ❌ `Log.Warning("Probe {ProbeId}: the predicate skipped a redacted item", probeId); // on every hit`
+- ✅ `if (state.ShouldSampleEvaluationErrorSnapshot()) { /* build the error snapshot */ }`, and log once per probe.
+
+### PERF-5.3: Check the `EvaluationBudget` in new loops and open-ended work in probe expression evaluation
+- Flag: a new loop, recursion, or string, regex or collection operation in `ProbeExpressionParser` with no `BudgetCheck()` in the expression it builds, or a helper called from generated expressions that loops without `EvaluationBudget.ThrowIfExceeded`.
+- ❌ `Expression.Loop(Expression.Block(Expression.IfThen(Expression.Not(moveNext), Expression.Break(breakLabel)), body), breakLabel)`
+- ✅ `Expression.Loop(Expression.Block(BudgetCheck(), Expression.IfThen(Expression.Not(moveNext), Expression.Break(breakLabel)), body), breakLabel)`
+
 ## Don't flag
 - Duplicate `ReadOnlySpan<byte>` literal properties across generated tag classes (the compiler shares the blob).
-- Proposals to split a hot callback into per-feature-combination variants, or to replace an uncontended per-request `lock` with `Interlocked`, without a measurement.
+- Proposals to split a hot callback into per-feature-combination variants, or to replace an uncontended per-request `lock` with `Interlocked`, without a measurement. A lock shared by every thread that hits a probe is covered by PERF-5.1.
 - Interface dispatch vs type-pattern-matching trade-offs on tag classes without a benchmark.
