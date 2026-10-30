@@ -189,11 +189,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
                 Object = (IntPtr)obj;
             }
 
-            ~PathMapper()
-            {
-                Dispose();
-            }
-
             public IntPtr Object { get; private set; }
 
             public void Dispose()
