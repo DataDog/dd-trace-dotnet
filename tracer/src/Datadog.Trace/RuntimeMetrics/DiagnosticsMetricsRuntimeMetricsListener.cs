@@ -137,7 +137,7 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
 
         if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue)
         {
-            var totalPauseDeltaMs = (long)Math.Round(gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
+            var totalPauseDeltaMs = (long)Math.Round(gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value, MidpointRounding.ToEven);
 
             if (totalPauseDeltaMs > 0)
             {

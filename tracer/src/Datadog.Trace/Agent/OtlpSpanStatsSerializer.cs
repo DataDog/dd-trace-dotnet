@@ -561,7 +561,7 @@ namespace Datadog.Trace.Agent
             // Zeros are durations that fell below the sketch's minimum indexed value.
             if (sketch.ZeroCount > 0)
             {
-                counts[0] += (ulong)Math.Round(sketch.ZeroCount);
+                counts[0] += (ulong)Math.Round(sketch.ZeroCount, MidpointRounding.ToEven);
             }
 
             foreach (var bin in sketch.PositiveValueStore.EnumerateAscending())
@@ -573,7 +573,7 @@ namespace Datadog.Trace.Agent
 
                 var valueNs = sketch.IndexMapping.GetValue(bin.Index);
                 var bucket = FindBucketIndex(valueNs);
-                counts[bucket] += (ulong)Math.Round(bin.Count);
+                counts[bucket] += (ulong)Math.Round(bin.Count, MidpointRounding.ToEven);
             }
 
             if (sketch.NegativeValueStore.GetTotalCount() > 0)

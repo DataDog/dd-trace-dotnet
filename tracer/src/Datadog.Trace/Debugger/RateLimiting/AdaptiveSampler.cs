@@ -173,7 +173,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                               ? sampledCount
                               : _avgSamples + (_budgetAlpha * (sampledCount - _avgSamples));
 
-            double result = Math.Round(Math.Max(_samplesPerWindow - _avgSamples, 0.0) * _budgetLookback);
+            double result = Math.Round(Math.Max(_samplesPerWindow - _avgSamples, 0.0) * _budgetLookback, MidpointRounding.ToEven);
             return (long)result;
         }
 

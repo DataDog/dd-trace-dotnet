@@ -59,7 +59,7 @@ internal abstract class CoverageInfo
             }
         }
 
-        _data = [Math.Round((executed / total) * 100, 2).ToValidPercentage(), total, executed];
+        _data = [Math.Round((executed / total) * 100, 2, MidpointRounding.ToEven).ToValidPercentage(), total, executed];
     }
 
     /// <summary>
