@@ -218,7 +218,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private static long GetSampleInterval(double samplesPerSecond)
         {
             // Rates so small that the interval overflows a long are capped: the gate admits one sample, then no more.
-            var ticks = Math.Round(Stopwatch.Frequency / samplesPerSecond);
+            var ticks = Math.Round(Stopwatch.Frequency / samplesPerSecond, MidpointRounding.ToEven);
             return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
         }
 
@@ -257,7 +257,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                               ? sampledCount
                               : _avgSamples + (_budgetAlpha * (sampledCount - _avgSamples));
 
-            double result = Math.Round(Math.Max(_samplesPerWindow - _avgSamples, 0.0) * _budgetLookback);
+            double result = Math.Round(Math.Max(_samplesPerWindow - _avgSamples, 0.0) * _budgetLookback, MidpointRounding.ToEven);
             return (long)result;
         }
 

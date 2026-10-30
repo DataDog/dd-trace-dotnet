@@ -74,7 +74,7 @@ internal static class GcMemoryLoadCalculator
         {
             // Route A: MemoryLoadBytes and HighMemoryLoadThresholdBytes are both scaled by total_physical_mem, so
             // it cancels out of this division, making the result exact regardless of whether a GC hard limit is in play.
-            var memoryLoad = Math.Round(memoryLoadBytes * (double)percent / highMemoryLoadThresholdBytes);
+            var memoryLoad = Math.Round(memoryLoadBytes * (double)percent / highMemoryLoadThresholdBytes, MidpointRounding.ToEven);
             return Clamp(memoryLoad);
         }
 
