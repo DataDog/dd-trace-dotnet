@@ -207,7 +207,16 @@ partial class Build
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
-    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false)
+    {
+        var frameworks = GetAllTestingFrameworks(platform, isArm64);
+        // runtime-async only applies to net11.0+, so only test those TFMs in the runtime-async run
+        return IsRuntimeAsyncRun()
+                   ? frameworks.Where(x => x.IsGreaterThanOrEqualTo(TargetFramework.NET11_0)).ToArray()
+                   : frameworks;
+    }
+
+    TargetFramework[] GetAllTestingFrameworks(PlatformFamily platform, bool isArm64) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
         (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
@@ -1729,6 +1738,7 @@ partial class Build
                                       .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701").Add($"/bl:\"{(BuildDataDirectory / $"build_{DateTime.UtcNow.Ticks}.binlog")}\""))
                                       .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                                       .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                                      .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
                           );
                       }
                   }
@@ -1756,6 +1766,7 @@ partial class Build
                                 .SetProperty("ApiVersion", ApiVersion)
                                 .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
                                 .SetProperty("BuildInParallel", "true")
+                                .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
                                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")));
               }
               else
@@ -1769,6 +1780,7 @@ partial class Build
                                               // managed assemblies in the shared artifacts.
                                               .SetProperty("PlatformTarget", "AnyCPU")
                                               .SetProperty("BuildInParallel", "true")
+                                              .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
                                               .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                                               .When(Framework is not null, x => x.SetFramework(Framework))
                                               .SetProjectFile(samples));
@@ -1886,6 +1898,7 @@ partial class Build
                 .SetTargetPlatformAnyCPU()
                 .SetRuntime(rid)
                 .SetFramework(Framework)
+                .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
                 .CombineWith(projectsToPublish,
                     (s, project) => s
                         .SetProject(project.project)
@@ -1959,6 +1972,7 @@ partial class Build
                         .SetProperty("PackageVersionApiVersionPrefix", sample.apiVersionPrefix)
                         .When(IncludeMinorPackageVersions, x => x.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(!string.IsNullOrEmpty(NugetPackageDirectory), x => x.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                        .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
                         .SetProcessArgumentConfigurator(args => args.Add("/nowarn:NU1701")));
                 }
             }
@@ -3025,6 +3039,7 @@ partial class Build
             .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
             .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
             .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+            .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
             .SetNoWarnDotNetCore3()
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));

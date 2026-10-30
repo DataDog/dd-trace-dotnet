@@ -49,6 +49,7 @@ partial class Build : NukeBuild
                   .Executes(() =>
                    {
                        GenerateConditionVariables();
+                       GenerateRuntimeAsyncRunVariable();
                        GenerateSmokeTestInputsChanged();
                        GenerateUnitTestFrameworkMatrices();
 
@@ -191,6 +192,14 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetOutputVariable(variableName, isChanged.ToString());
             }
 
+            void GenerateRuntimeAsyncRunVariable()
+            {
+                // Used to skip the stages that can't test runtime-async (e.g. .NET Framework-only, or that don't use our samples)
+                var isRuntimeAsyncRun = IsRuntimeAsyncRun();
+                Logger.Information("isRuntimeAsyncRun - {IsRuntimeAsyncRun}", isRuntimeAsyncRun);
+                AzurePipelines.Instance.SetOutputVariable("isRuntimeAsyncRun", isRuntimeAsyncRun.ToString());
+            }
+
             void GenerateUnitTestFrameworkMatrices()
             {
                 GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows));
@@ -324,7 +333,9 @@ partial class Build : NukeBuild
                 };
 
                 var matrix = new Dictionary<string, object>();
-                foreach (var combo in combos)
+                // runtime-async only applies to net11.0+, so only test those TFMs in the runtime-async run.
+                // The job is skipped if this leaves the matrix empty
+                foreach (var combo in combos.Where(x => !IsRuntimeAsyncRun() || x.framework.IsGreaterThanOrEqualTo(TargetFramework.NET11_0)))
                 {
                     matrix.Add(combo.framework, combo);
                 }
@@ -588,6 +599,7 @@ partial class Build : NukeBuild
 
             void GenerateSmokeTestsMatrices()
             {
+                var isRuntimeAsyncRun = IsRuntimeAsyncRun();
                 GenerateNukeSmokeTestsMatrices();
                 GenerateDdDotnetFailureTestsMatrix();
                 GenerateMacosSmokeTestsMatrix();
@@ -598,6 +610,8 @@ partial class Build : NukeBuild
                     var allScenarios = scenarioDict
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
                         .Where(x => !IsPrerelease || !x.details.ExcludeWhenPrerelease)
+                        // runtime-async only applies to net11.0+, so only test those TFMs in the runtime-async run
+                        .Where(x => !isRuntimeAsyncRun || ((TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(x.details.PublishFramework)).IsGreaterThanOrEqualTo(TargetFramework.NET11_0))
                         .Select(x => (x.category, x.scenario, entry: (object)new
                         {
                             category = x.category.ToString(),
@@ -675,6 +689,14 @@ partial class Build : NukeBuild
                     void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, object entry)> scenarios)
                     {
                         var matrix = scenarios.ToDictionary(x => x.scenario, x => x.entry);
+
+                        // An empty matrix skips the smoke test stage, which is expected in the runtime-async run
+                        // (as some categories have no net11.0+ scenarios), but shouldn't happen otherwise
+                        if (matrix.Count == 0 && !isRuntimeAsyncRun)
+                        {
+                            throw new InvalidOperationException($"Smoke test matrix '{name}' is empty, so its stage would be skipped");
+                        }
+
                         Logger.Information($"Nuke smoke tests matrix: {name}");
                         Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                         AzurePipelines.Instance.SetOutputVariable(name, JsonConvert.SerializeObject(matrix, Formatting.None));
@@ -729,15 +751,18 @@ partial class Build : NukeBuild
                         (TargetFramework.NET11_0, "macOS-15-arm64"),
                     };
 
-                    var matrix = images.ToDictionary(
-                        x => $"{x.VmImage}_{x.PublishFramework}",
-                        x => (object)new
-                        {
-                            publishFramework = x.PublishFramework,
-                            vmImage = x.VmImage,
-                            smokeTestOs = "macos",
-                            smokeTestOsVersion = x.VmImage.Replace("macos-", "").Replace("macOS-", "").Replace("-arm64", ""),
-                        });
+                    var matrix = images
+                        .Where(x => !isRuntimeAsyncRun || x.PublishFramework.IsGreaterThanOrEqualTo(TargetFramework.NET11_0))
+                        .ToDictionary(
+                            x => $"{x.VmImage}_{x.PublishFramework}",
+                            x => (object)new
+                            {
+                                publishFramework = x.PublishFramework,
+                                vmImage = x.VmImage,
+                                smokeTestOs = "macos",
+                                smokeTestOsVersion = x.VmImage.Replace("macos-", "").Replace("macOS-", "").Replace("-arm64", ""),
+                                isRuntimeAsyncRun = isRuntimeAsyncRun,
+                            });
 
                     Logger.Information("macOS smoke tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));

@@ -976,6 +976,27 @@ partial class Build
         return scheduleName == "Daily Debug Run";
     }
 
+    private bool IsRuntimeAsyncRun()
+    {
+        // Azure DevOps exposes queue-time variables in upper case, and env var lookups are case-sensitive on Linux/macOS
+        var forceRuntimeAsyncRun = Environment.GetEnvironmentVariable("ForceRuntimeAsyncRun")
+                                ?? Environment.GetEnvironmentVariable("FORCERUNTIMEASYNCRUN");
+        if (!string.IsNullOrEmpty(forceRuntimeAsyncRun)
+         && (forceRuntimeAsyncRun == "1" || (bool.TryParse(forceRuntimeAsyncRun, out var force) && force)))
+        {
+            return true;
+        }
+
+        var scheduleName = Environment.GetEnvironmentVariable("BUILD_CRONSCHEDULE_DISPLAYNAME");
+        if (string.IsNullOrEmpty(scheduleName))
+        {
+            // not in CI
+            return false;
+        }
+
+        return scheduleName == "Daily Runtime Async Run";
+    }
+
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {
         if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)

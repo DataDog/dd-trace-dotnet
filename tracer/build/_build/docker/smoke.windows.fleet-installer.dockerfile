@@ -8,6 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-windowsservercore-ltsc2025 
 WORKDIR /src
 COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
+ARG IsRuntimeAsyncRun
 ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% /p:PathMap=C:\src=/src -o /src/publish
 

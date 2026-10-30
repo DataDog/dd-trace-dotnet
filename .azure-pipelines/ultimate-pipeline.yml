@@ -69,6 +69,16 @@ schedules:
         - master
     always: true
 
+  # The name of this schedule is checked from within Nuke, and is used
+  # to do a run in which the net11.0+ samples are compiled with runtime-async.
+  # Queue a manual build with ForceRuntimeAsyncRun=true to do the same.
+  - cron: "0 5 * * *"
+    displayName: Daily Runtime Async Run
+    branches:
+      include:
+        - master
+    always: true
+
 # Global variables
 variables:
   buildConfiguration: Release
@@ -1928,6 +1938,8 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_windows_iis
+  # .NET Framework only, so skip in the runtime-async run
+  condition: and(succeeded(), ne(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isRuntimeAsyncRun'], 'True'))
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2014,8 +2026,12 @@ stages:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [windows]
+      # The windows job is skipped when there are no TFMs to test
+      allowSkipped: true
 
   - job: windows
+    # Skip when there are no TFMs to test, e.g. in the runtime-async run, which only tests net11.0+
+    condition: and(succeeded(), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'], '{}'))
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
@@ -2208,6 +2224,8 @@ stages:
       continueOnError: true
 
 - stage: msi_integration_tests_windows
+  # .NET Framework only, so skip in the runtime-async run
+  condition: and(succeeded(), ne(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isRuntimeAsyncRun'], 'True'))
   dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -3746,6 +3764,7 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: exploration_tests_windows
+  # Exploration tests build third-party code rather than our samples, so they can't test runtime-async: skip them in the runtime-async run
   condition: >
     and(
       succeeded(),
@@ -3753,7 +3772,8 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
-      )
+      ),
+      ne(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isRuntimeAsyncRun'], 'True')
     )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
@@ -3820,6 +3840,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: exploration_tests_linux
+  # Exploration tests build third-party code rather than our samples, so they can't test runtime-async: skip them in the runtime-async run
   condition: >
     and(
       succeeded(),
@@ -3827,7 +3848,8 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
-      )
+      ),
+      ne(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isRuntimeAsyncRun'], 'True')
     )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
@@ -5720,7 +5742,7 @@ stages:
 
         - script: |
             cd $(smokeTestAppDir)
-            dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $(publishFramework) /p:PathMap=$(smokeTestAppDir)=/src -o $(smokeTestAppDir)/publish
+            dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $(publishFramework) /p:PathMap=$(smokeTestAppDir)=/src /p:IsRuntimeAsyncRun=$(isRuntimeAsyncRun) -o $(smokeTestAppDir)/publish
           displayName: Build app
           failOnStderr: true
 

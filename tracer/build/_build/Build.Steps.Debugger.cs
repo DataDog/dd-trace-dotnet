@@ -93,6 +93,7 @@ partial class Build
                     .SetFramework(Framework)
                     .SetConfiguration(BuildConfiguration)
                     .SetNoWarnDotNetCore3()
+                    .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
                     .SetProject(DebuggerSamples));
 
                 if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
@@ -101,6 +102,7 @@ partial class Build
                                       .SetFramework(Framework)
                                       .SetConfiguration(BuildConfiguration)
                                       .SetNoWarnDotNetCore3()
+                                      .SetIsRuntimeAsyncRun(IsRuntimeAsyncRun())
                                       .SetProject(ExceptionReplaySamples));
                 }
             }
