@@ -14,13 +14,12 @@ namespace Datadog.Trace
 
         public const string AssemblyVersion = ProjectInfo.AssemblyVersion;
 
-        // Instrumentation.cs compares this against the native tracer's PROFILER_VERSION for an exact
-        // string match, so it must stay a bare numeric three-part version.
         public const string ThreePartVersion = ProjectInfo.ThreePartVersion;
 
         /// <summary>
         /// The version to report everywhere: X.Y.Z for releases, X.Y.Z-prerelease for prereleases.
         /// Unlike <see cref="AssemblyVersion"/>, it distinguishes a prerelease from the release with the same X.Y.Z.
+        /// Instrumentation.cs compares it against the native tracer's PROFILER_VERSION to detect mismatches.
         /// </summary>
         public const string SemanticVersion = ProjectInfo.SemanticVersion;
 

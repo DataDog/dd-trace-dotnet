@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "../../src/Datadog.Tracer.Native/iast/iast_util.h"
+#include "../../../shared/src/native-src/dd_version.h"
 
 using namespace trace;
 
@@ -29,6 +30,19 @@ TEST(IastIntegrationTests, GetVersionInfo)
     EXPECT_EQ(2, versionInfo.minor);
     EXPECT_EQ(3, versionInfo.build);
     EXPECT_EQ(0, versionInfo.rev);
+}
+
+TEST(IastIntegrationTests, GetDatadogVersion_IsThreePartNumeric)
+{
+    // GetDatadogVersion() is parsed to build the Datadog.Trace assembly reference, so it must not carry the
+    // semver suffix that PROFILER_VERSION has for prereleases
+    EXPECT_EQ(std::string(DD_THREE_PART_VERSION_STR), iast::GetDatadogVersion());
+
+    auto versionInfo = iast::GetVersionInfo(iast::GetDatadogVersion());
+    EXPECT_EQ(DD_VERSION_MAJOR, versionInfo.major);
+    EXPECT_EQ(DD_VERSION_MINOR, versionInfo.minor);
+    EXPECT_EQ(DD_VERSION_PATCH, versionInfo.build);
+    EXPECT_EQ(DD_VERSION_REVISION, versionInfo.rev);
 }
 
 TEST(IastIntegrationTests, VersionInfo_ToString)
