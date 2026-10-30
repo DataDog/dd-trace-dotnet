@@ -275,7 +275,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
-- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading and customer-code execution safety guide
+- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading, customer-code execution, and redaction safety guide
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
