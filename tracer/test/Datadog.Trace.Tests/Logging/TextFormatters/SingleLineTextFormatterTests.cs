@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Logging.Internal.TextFormatters;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Parsing;
@@ -34,7 +35,7 @@ public class SingleLineTextFormatterTests
 
         // assert that SimpleTextFormatter uses UTC timestamps and emits a single line.
         lines.Should().ContainSingle()
-             .Which.Should().Be($"[2000-01-01 04:00:00.000 +00:00 | DD-TRACE-DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1")
+             .Which.Should().Be($"[2000-01-01 04:00:00.000 +00:00 | DD-TRACE-DOTNET {TracerConstants.SemanticVersion} | INF] This is log number 1")
              .And.NotContain(Environment.NewLine);
     }
 
@@ -68,10 +69,10 @@ public class SingleLineTextFormatterTests
         var lines = output.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
 
         lines.Should().ContainSingle()
-             // Expected format: [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z | LVL] Message | ExceptionType: ExceptionMessage\nStackTrace1\nStackTrace2\n...
-             .Which.Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] (.+) | (.+)(\\n.+)+$")
+             // Expected format: [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z[-suffix] | LVL] Message | ExceptionType: ExceptionMessage\nStackTrace1\nStackTrace2\n...
+             .Which.Should().MatchRegex($@"^\[\d{{4}}-\d{{2}}-\d{{2}} \d{{2}}:\d{{2}}:\d{{2}}\.\d{{3}} \+00:00 \| DD-TRACE-DOTNET {Regex.Escape(TracerConstants.SemanticVersion)} \| \w{{3}}\] (.+) \| (.+)(\\n.+)+$")
              // assert UTC timestamps
-             .And.StartWith($"[2000-01-01 04:00:00.000 +00:00 | DD-TRACE-DOTNET {TracerConstants.ThreePartVersion} | INF] This is log number 1 | System.Exception: Exception message.\\n")
+             .And.StartWith($"[2000-01-01 04:00:00.000 +00:00 | DD-TRACE-DOTNET {TracerConstants.SemanticVersion} | INF] This is log number 1 | System.Exception: Exception message.\\n")
              // and single line
              .And.NotContain(Environment.NewLine);
 

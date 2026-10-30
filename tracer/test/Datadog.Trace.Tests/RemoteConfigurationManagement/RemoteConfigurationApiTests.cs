@@ -241,7 +241,7 @@ public class RemoteConfigurationApiTests
         // but we'll keep it reasonable here for the sake of it
         var tracer = RcmClientTracer.Create(
             runtimeId: Guid.NewGuid().ToString(),
-            tracerVersion: TracerConstants.ThreePartVersion,
+            tracerVersion: TracerConstants.SemanticVersion,
             service: nameof(RemoteConfigurationApiTests),
             env: "RCM Test",
             appVersion: "1.0.0",

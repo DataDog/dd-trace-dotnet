@@ -53,7 +53,7 @@ public class ApplicationTelemetryCollectorTests
             data.Should().NotBeNull();
             data.ServiceName.Should().Be(ServiceName);
             data.Env.Should().Be(env);
-            data.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
+            data.TracerVersion.Should().Be(TracerConstants.SemanticVersion);
             data.LanguageName.Should().Be("dotnet");
             data.ServiceVersion.Should().Be(serviceVersion);
             data.LanguageVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
@@ -96,7 +96,7 @@ public class ApplicationTelemetryCollectorTests
             data.Should().NotBeNull();
             data.ServiceName.Should().Be(ServiceName);
             data.Env.Should().Be(env);
-            data.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
+            data.TracerVersion.Should().Be(TracerConstants.SemanticVersion);
             data.LanguageName.Should().Be("dotnet");
             data.ServiceVersion.Should().Be(serviceVersion);
             data.LanguageVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);

@@ -269,7 +269,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             // The endpoint serves gzip, and neither transport decompresses for us.
             new("Accept-Encoding", "gzip"),
             new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
-            new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.ThreePartVersion),
+            new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.SemanticVersion),
 
             // Without this the poll is itself instrumented, producing a span per poll and letting
             // auto-instrumentation recurse through the poller's own client.

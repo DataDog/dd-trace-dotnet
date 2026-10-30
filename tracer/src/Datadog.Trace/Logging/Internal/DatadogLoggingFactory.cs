@@ -140,7 +140,7 @@ internal static class DatadogLoggingFactory
 #if NETCOREAPP
             loggerConfiguration.Enrich.WithProperty("AssemblyLoadContext", System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(DatadogLogging).Assembly)?.ToString());
 #endif
-            loggerConfiguration.Enrich.WithProperty("TracerVersion", TracerConstants.AssemblyVersion);
+            loggerConfiguration.Enrich.WithProperty("TracerVersion", TracerConstants.SemanticVersion);
         }
         catch
         {

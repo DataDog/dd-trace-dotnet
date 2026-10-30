@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.Initialization;
@@ -296,17 +295,16 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
             var canParse = int.TryParse(versionWafSplit[1], out _);
             canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
-            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version;
-            if (tracerVersion is null || !canParse)
+            if (!canParse)
             {
-                Log.Warning("Waf version {WafVersion} or tracer version {TracerVersion} have a non expected format", versionWaf, tracerVersion);
+                Log.Warning("Waf version {WafVersion} has a non expected format", versionWaf);
                 return false;
             }
 
             // Waf version 2.0 or higher needed: 1.x has an incompatible ABI
             if (wafMajor < MinimumWafMajorVersion)
             {
-                Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
+                Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, TracerConstants.SemanticVersion);
                 return false;
             }
 

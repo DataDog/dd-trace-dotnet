@@ -115,7 +115,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
             payload.Headers["Content-Type"].Should().Be("application/json");
             payload.Headers["X-Datadog-EVP-Subdomain"].Should().Be("event-platform-intake");
             payload.Headers["DD-EVP-ORIGIN"].Should().Be("dd-trace-dotnet");
-            payload.Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.ThreePartVersion);
+            payload.Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.SemanticVersion);
             payload.Headers["DD-API-KEY"].Should().BeNull();
             payload.Headers["Authorization"].Should().BeNull();
             // BodyInJson is the decompressed UTF-8 request body, before parsing/reserializing JSON.

@@ -97,7 +97,7 @@ public class OtlpMapperTests
 
         attributes.Should().Contain(kv => kv.Key == "telemetry.sdk.name" && (string)kv.Value! == TracerConstants.TelemetrySdkName);
         attributes.Should().Contain(kv => kv.Key == "telemetry.sdk.language" && (string)kv.Value! == TracerConstants.Language);
-        attributes.Should().Contain(kv => kv.Key == "telemetry.sdk.version" && (string)kv.Value! == TracerConstants.AssemblyVersion);
+        attributes.Should().Contain(kv => kv.Key == "telemetry.sdk.version" && (string)kv.Value! == TracerConstants.SemanticVersion);
     }
 
     [Fact]

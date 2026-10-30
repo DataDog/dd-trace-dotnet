@@ -17,7 +17,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
 {
     public TestSessionSpanTags()
     {
-        LibraryVersion = TracerConstants.AssemblyVersion;
+        LibraryVersion = TracerConstants.SemanticVersion;
 
         // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/environment-processorcount-on-windows#change-description
         LogicalCpuCount = Environment.ProcessorCount;

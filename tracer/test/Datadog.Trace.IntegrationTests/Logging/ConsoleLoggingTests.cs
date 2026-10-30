@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.Logging.Internal.TextFormatters;
@@ -19,6 +20,9 @@ namespace Datadog.Trace.IntegrationTests.Logging;
 // the output to avoid interacting with the actual console output during tests.
 public class ConsoleLoggingTests
 {
+    // [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z[-suffix] | LVL], with the exact version
+    private static readonly string LinePrefixRegex = $@"^\[\d{{4}}-\d{{2}}-\d{{2}} \d{{2}}:\d{{2}}:\d{{2}}\.\d{{3}} \+00:00 \| DD-TRACE-DOTNET {Regex.Escape(TracerConstants.SemanticVersion)} \| \w{{3}}\] ";
+
     [Fact]
     public void Logger_Writes_Correctly_Formatted_Messages()
     {
@@ -44,10 +48,10 @@ public class ConsoleLoggingTests
 
         lines.Should().HaveCount(3);
 
-        // Expected format: [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z | LVL] Message
-        lines[0].Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] First message$");
-        lines[1].Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] Second message with 42$");
-        lines[2].Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] Third message$");
+        // Expected format: [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z[-suffix] | LVL] Message
+        lines[0].Should().MatchRegex(LinePrefixRegex + "First message$");
+        lines[1].Should().MatchRegex(LinePrefixRegex + "Second message with 42$");
+        lines[2].Should().MatchRegex(LinePrefixRegex + "Third message$");
     }
 
     [Fact]
@@ -98,10 +102,10 @@ public class ConsoleLoggingTests
 
         lines.Should().HaveCount(3);
 
-        // Expected format: [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z | LVL] Message | ExceptionType: ExceptionMessage\nStackTrace1\nStackTrace2\n...
-        lines[0].Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] Error one \| System\.InvalidOperationException: First error(\\n.+)+$");
-        lines[1].Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] Error two \| System\.ArgumentException: Second error(\\n.+)+$");
-        lines[2].Should().MatchRegex(@"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \+00:00 \| DD-TRACE-DOTNET \d+\.\d+\.\d+ \| \w{3}\] Error three \| System\.Exception: Third error(\\n.+)+$");
+        // Expected format: [yyyy-MM-dd HH:mm:ss.fff +00:00 | DD-TRACE-DOTNET X.Y.Z[-suffix] | LVL] Message | ExceptionType: ExceptionMessage\nStackTrace1\nStackTrace2\n...
+        lines[0].Should().MatchRegex(LinePrefixRegex + @"Error one \| System\.InvalidOperationException: First error(\\n.+)+$");
+        lines[1].Should().MatchRegex(LinePrefixRegex + @"Error two \| System\.ArgumentException: Second error(\\n.+)+$");
+        lines[2].Should().MatchRegex(LinePrefixRegex + @"Error three \| System\.Exception: Third error(\\n.+)+$");
     }
 
     private static void ThrowException(Exception ex)

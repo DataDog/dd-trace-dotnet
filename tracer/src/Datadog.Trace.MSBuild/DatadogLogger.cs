@@ -127,7 +127,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.SetTag(CommonTags.OSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
                 _buildSpan.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
                 _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
-                _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
                 CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
                 TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Msbuild);
 

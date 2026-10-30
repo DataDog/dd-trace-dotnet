@@ -1081,7 +1081,7 @@ internal class CreatedumpCommand : Command
             }
         }
 
-        var tags = new (string Key, string Value)[] { ("language", "dotnet"), ("runtime_version", $"{flavor} {version}"), ("library_version", ProjectInfo.AssemblyVersion) };
+        var tags = new (string Key, string Value)[] { ("language", "dotnet"), ("runtime_version", $"{flavor} {version}"), ("library_version", ProjectInfo.SemanticVersion) };
 
         if (exception != null)
         {
@@ -1100,7 +1100,7 @@ internal class CreatedumpCommand : Command
             var libraryName = Marshal.StringToHGlobalAnsi("dd-dotnet");
             bag.Add(libraryName);
 
-            var libraryVersion = Marshal.StringToHGlobalAnsi(ProjectInfo.AssemblyVersion);
+            var libraryVersion = Marshal.StringToHGlobalAnsi(ProjectInfo.SemanticVersion);
             bag.Add(libraryVersion);
 
             var family = Marshal.StringToHGlobalAnsi("dotnet");
