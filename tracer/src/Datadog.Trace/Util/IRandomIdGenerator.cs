@@ -18,7 +18,7 @@ internal interface IRandomIdGenerator
     /// and is used for backwards compatibility with tracers that parse ids as signed integers.
     /// Otherwise, it is less than or equal to UInt64.MaxValue (0xffffffffffffffff).
     /// </summary>
-    ulong NextSpanId(bool useAllBits);
+    ulong NextSpanId(bool useAllBits = false);
 
     /// <summary>
     /// Returns a random unsigned 64-bit number that is greater than zero.
