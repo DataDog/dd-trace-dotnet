@@ -153,7 +153,6 @@ dotnet_diagnostic.MA0150.severity = none # Do not call ToString() when the type 
 dotnet_diagnostic.MA0159.severity = none # Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0160.severity = none # Use ContainsKey instead of TryGetValue
 dotnet_diagnostic.MA0161.severity = none # UseShellExecute must be explicitly set
-dotnet_diagnostic.MA0162.severity = none # Use Process.Start overload with ProcessStartInfo
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - drop `in` for small/BCL/Nullable types, make our structs readonly where possible, and suppress where `in` is required (P/Invoke, IAST aspect signatures)
 dotnet_diagnostic.MA0176.severity = none # Optimize guid creation
 dotnet_diagnostic.MA0179.severity = none # Use Attribute.IsDefined instead of GetCustomAttribute(s)
