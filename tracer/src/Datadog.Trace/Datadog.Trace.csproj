@@ -86,7 +86,7 @@
 
   <ItemGroup>
     <!-- Generates the ProjectInfo class. Analyzer-only. -->
-    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta3" PrivateAssets="all" />
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta4" PrivateAssets="all" />
     <ProjectInfoUtf8 Include="AssemblyVersionBytes" Value="$(DD_AssemblyVersion)" />
   </ItemGroup>
 

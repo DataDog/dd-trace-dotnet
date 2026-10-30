@@ -12,7 +12,10 @@ namespace PrepareRelease
 {
     public abstract class SetAllVersions
     {
-        protected SetAllVersions(string tracerDirectory, string tracerVersion, bool isPrerelease)
+        // A semver prerelease suffix: '-' then dot-separated identifiers of [0-9A-Za-z-], or empty for a release
+        private static readonly Regex VersionSuffixRegex = new(@"^(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$");
+
+        protected SetAllVersions(string tracerDirectory, string tracerVersion, string versionSuffix)
         {
             TracerDirectory = tracerDirectory;
 
@@ -24,7 +27,12 @@ namespace PrepareRelease
                 throw new ArgumentException($"Version must be a three-part numeric version (e.g. 3.58.0), but was '{tracerVersion}'", nameof(tracerVersion));
             }
 
-            IsPrerelease = isPrerelease;
+            if (!VersionSuffixRegex.IsMatch(versionSuffix))
+            {
+                throw new ArgumentException($"Version suffix must be empty or a semver prerelease suffix such as -prerelease, but was '{versionSuffix}'", nameof(versionSuffix));
+            }
+
+            VersionSuffix = versionSuffix;
         }
 
         /// <summary>
@@ -39,15 +47,15 @@ namespace PrepareRelease
         public Version TracerVersion { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the current tracer version is a prerelease.
+        /// Gets the semver prerelease suffix to write, including its leading '-', or empty for a release.
         /// </summary>
-        public bool IsPrerelease { get; }
+        public string VersionSuffix { get; }
 
         public abstract void Run();
 
         private string DatadogTraceBundleNugetDependencyVersionReplace(string text)
         {
-            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
+            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withSuffix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withSuffix: true)}\" />", RegexOptions.Singleline);
         }
 
         private void SynchronizeVersion(string path, Func<string, string> transform)
@@ -75,23 +83,13 @@ namespace PrepareRelease
             File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
-        private string VersionString(string split = ".", bool withPrereleasePostfix = false)
+        private string VersionString(string split = ".", bool withSuffix = false)
         {
             var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}";
-
-            // this gets around a compiler warning about unreachable code below
-            var isPreRelease = IsPrerelease;
-
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (withPrereleasePostfix && isPreRelease)
-            {
-                newVersion = newVersion + "-prerelease";
-            }
-
-            return newVersion;
+            return withSuffix ? newVersion + VersionSuffix : newVersion;
         }
 
-        private string VersionPattern(string split = ".", bool withPrereleasePostfix = false)
+        private string VersionPattern(string split = ".", bool withSuffix = false)
         {
             if (split == ".")
             {
@@ -100,9 +98,9 @@ namespace PrepareRelease
 
             var pattern = $@"\d+{split}\d+{split}\d+";
 
-            if (withPrereleasePostfix)
+            if (withSuffix)
             {
-                pattern = pattern + "(\\-prerelease)?";
+                pattern = pattern + @"(-[0-9A-Za-z.-]+)?";
             }
 
             return pattern;
@@ -110,8 +108,8 @@ namespace PrepareRelease
 
         public class Samples : SetAllVersions
         {
-            public Samples(string tracerDirectory, string tracerVersion, bool isPrerelease)
-                : base(tracerDirectory, tracerVersion, isPrerelease)
+            public Samples(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
             }
 
@@ -167,8 +165,8 @@ namespace PrepareRelease
 
         public class Source : SetAllVersions
         {
-            public Source(string tracerDirectory, string tracerVersion, bool isPrerelease)
-                : base(tracerDirectory, tracerVersion, isPrerelease)
+            public Source(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
             }
 
@@ -185,7 +183,7 @@ namespace PrepareRelease
                     text =>
                     {
                         text = ReplaceElement(text, "DD_VersionPrefix", VersionString());
-                        return ReplaceElement(text, "DD_IsPrerelease", IsPrerelease ? "true" : "false");
+                        return ReplaceElement(text, "DD_VersionSuffix", VersionSuffix);
                     });
 
                 Console.WriteLine($"Completed synchronizing source versions to {VersionString()}");
