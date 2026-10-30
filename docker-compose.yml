@@ -155,11 +155,9 @@ services:
     command: mongod
 
   couchbase:
-    image: bentonam/couchbase-docker:community-5.0.1@sha256:847440848c80b95d82b12c8834856a14b1bfde854bd03b6acd0f9d0ac3484c63
-    profiles: ["group1"]
-    ports:
-      - "8091-8094:8091-8094"
-      - "11210:11210"
+    # Keep the pinned image for Testcontainers without starting it in normal Compose workflows.
+    image: couchbase:community-7.6.2@sha256:b189eeb7bebb141e5122064e6112e8178b459e2d639f37ffe97823d7a31ded81
+    profiles: ["testcontainers"]
 
   elasticsearch7:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1@sha256:2dcd2f31e246a8b13995ba24922da2edc3d88e65532ff301d0b92cb1be358af5
@@ -473,8 +471,6 @@ services:
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
       - ORACLE_HOST=oracle
-      - COUCHBASE_HOST=couchbase
-      - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - EVENTGRID_TOPIC_ENDPOINT=http://azure-eventgrid-emulator:6500/samples-eventgrid-topic/api/events
@@ -691,11 +687,10 @@ services:
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
-      - couchbase
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
