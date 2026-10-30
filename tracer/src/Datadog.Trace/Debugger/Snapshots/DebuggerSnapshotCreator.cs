@@ -736,7 +736,31 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
         {
             _errors = evaluationResult.Errors;
-            _message = _errors?.FirstOrDefault(error => !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
+
+            // A redaction doesn't replace the message, because the template already renders {redacted} in its
+            // place. Any other error does, and so does a redaction in the condition.
+            string? errorMessage = null;
+            string? redactionMessage = null;
+            if (_errors is not null)
+            {
+                foreach (var error in _errors)
+                {
+                    if (StringUtil.IsNullOrEmpty(error.Message))
+                    {
+                        continue;
+                    }
+
+                    if (!error.IsRedaction)
+                    {
+                        errorMessage = error.Message;
+                        break;
+                    }
+
+                    redactionMessage ??= error.Message;
+                }
+            }
+
+            _message = errorMessage ?? (evaluationResult.HasConditionError ? redactionMessage : null) ?? evaluationResult.Template;
             if (evaluationResult.HasConditionError)
             {
                 _omitCaptureData = true;
