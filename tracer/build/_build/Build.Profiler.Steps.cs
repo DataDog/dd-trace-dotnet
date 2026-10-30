@@ -320,11 +320,14 @@ partial class Build
        .Unlisted()
        .Executes(() =>
        {
-           var samplesToBuild = ProfilerSamplesSolution.GetProjects("*");
+           var samplesToBuild = string.IsNullOrEmpty(SampleName)
+               ? ProfilerSamplesSolution.GetProjects("*")
+               : new[] { ProfilerSamplesSolution.GetProject(SampleName) };
 
            DotNetBuild(x => x
                    .SetConfiguration(BuildConfiguration)
                    .SetTargetPlatform(TargetPlatform)
+                   .When(Framework != null && !string.IsNullOrEmpty(SampleName), o => o.SetFramework(Framework))
                    .SetNoWarnDotNetCore3()
                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                    .CombineWith(samplesToBuild, (c, project) => c
@@ -714,31 +717,7 @@ partial class Build
             foreach (var platform in platforms)
             {
                 var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
-                var pprofsOutputDir = baseOutputDir / "pprofs";
-                Logger.Information($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
-
-                var pprofFiles = pprofsOutputDir.GlobFiles(
-                    $"*.pprof"
-                );
-
-                if (pprofFiles.Count == 0)
-                {
-                    Logger.Error("::error::No pprof file(s) was/were generated. Maybe the profiler is not correctly attached.");
-                    throw new Exception("No pprof file(s) was/were generated.");
-                }
-
-                var logsOutputDir = baseOutputDir / "logs";
-                Logger.Information($"Look for profiler log file(s) in {logsOutputDir}");
-
-                var logFiles = logsOutputDir.GlobFiles(
-                    $"DD-DotNet-Profiler-Native-*.log"
-                );
-
-                if (logFiles.Count == 0)
-                {
-                    Logger.Error("::error::No profiler log files was/were found. Was the profiler attached to the app?");
-                    throw new Exception("No profiler log files was/were found.");
-                }
+                AssertProfilerOutputs(baseOutputDir / "logs", baseOutputDir / "pprofs");
             }
         });
 
@@ -964,26 +943,60 @@ partial class Build
             }
         }
 
-        AddContinuousProfilerEnvironmentVariables(envVars);
-
         var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
-
-        envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = baseOutputDir / "pprofs";
-        envVars["DD_TRACE_LOG_DIRECTORY"] = baseOutputDir / "logs";
-
         var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{Configuration.Release}-{platform}" / "profiler" / "src" / "Demos";
         var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
 
-        DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
+        RunSampleWithProfiler(platform, sampleAppDll, "--scenario 1 --timeout 120", baseOutputDir / "logs", baseOutputDir / "pprofs", envVars);
+    }
 
-        static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, IReadOnlyDictionary<string, string> environmentVariables)
+    void RunSampleWithProfiler(
+        MSBuildTargetPlatform platform,
+        AbsolutePath sampleDll,
+        string sampleArgs,
+        AbsolutePath logsDir,
+        AbsolutePath pprofDir,
+        Dictionary<string, string> envVars,
+        string[] extraEnvVars = null)
+    {
+        if (!File.Exists(sampleDll))
         {
-            var dotnetPath = DotNetSettingsExtensions.GetDotNetPath(platform);
-            using var process = ProcessTasks.StartProcess(toolPath: dotnetPath, arguments: arguments, environmentVariables: environmentVariables, customLogger: DotNetTasks.DotNetLogger);
-            process.AssertZeroExitCode();
-            return process.Output;
-
+            throw new Exception($"Sample not found: {sampleDll}. Run BuildProfilerSamples with the same --build-configuration and --framework first.");
         }
+
+        EnsureCleanDirectory(logsDir);
+        EnsureCleanDirectory(pprofDir);
+        AddContinuousProfilerEnvironmentVariables(envVars);
+        envVars.TryAdd("DD_TRACE_ENABLED", "0");
+        envVars.TryAdd("DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0");
+        envVars["DD_TRACE_LOG_DIRECTORY"] = logsDir;
+        envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = pprofDir;
+        AddExtraEnvVariables(envVars, extraEnvVars);
+
+        Logger.Information("Logs: {Logs}", logsDir);
+        Logger.Information("Profiles: {Profiles}", pprofDir);
+        using var process = ProcessTasks.StartProcess(
+            toolPath: DotNetSettingsExtensions.GetDotNetPath(platform),
+            arguments: $"{EscapeArgForCommandLine(sampleDll)} {sampleArgs}",
+            environmentVariables: envVars,
+            customLogger: DotNetTasks.DotNetLogger);
+        process.AssertZeroExitCode();
+    }
+
+    void AssertProfilerOutputs(AbsolutePath logsDir, AbsolutePath pprofDir)
+    {
+        var profiles = pprofDir.GlobFiles("**/*.pprof").Where(path => new FileInfo(path).Length > 0).ToList();
+        if (profiles.Count == 0)
+        {
+            throw new Exception($"The sample exited without producing a profile. Inspect the loader and profiler logs in {logsDir}.");
+        }
+
+        if (logsDir.GlobFiles("DD-DotNet-Profiler-Native-*.log").Count == 0)
+        {
+            throw new Exception($"No Continuous Profiler log found in {logsDir}.");
+        }
+
+        Logger.Information("Produced {Count} profile(s) in {Profiles}", profiles.Count, pprofDir);
     }
 
     void RunProfilerUnitTests(string testLibrary, Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None, string[] additionalEnvVars = null, string testsFilter = null)
