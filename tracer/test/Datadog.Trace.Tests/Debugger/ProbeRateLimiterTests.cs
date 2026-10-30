@@ -24,17 +24,17 @@ public class ProbeRateLimiterTests
         try
         {
             var initial = new AdaptiveSampler(Timeout.InfiniteTimeSpan, samplesPerWindow: 1, averageLookback: 180, budgetLookback: 16, rollWindowCallback: null);
-            Assert.True(limiter.TryAddSampler(probeId, initial));
+            limiter.TryAddSampler(probeId, initial).Should().BeTrue();
 
             // SetRate must mutate in place; replacing would wipe running EMAs.
             limiter.SetRate(probeId, snapshotsPerSecond: 100);
             var afterUpdate = limiter.GerOrAddSampler(probeId);
 
-            Assert.Same(initial, afterUpdate);
+            afterUpdate.Should().BeSameAs(initial);
 
             // Budget = samplesPerWindow + (budgetLookback * samplesPerWindow); budgetLookback = 16.
             var state = ((AdaptiveSampler)afterUpdate).GetInternalState();
-            Assert.Equal(expected: 100 + (16 * 100), state.Budget);
+            state.Budget.Should().Be(100 + (16 * 100));
         }
         finally
         {

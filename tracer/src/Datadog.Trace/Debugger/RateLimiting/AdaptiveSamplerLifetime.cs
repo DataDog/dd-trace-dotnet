@@ -19,8 +19,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public static IAdaptiveSampler Create(double snapshotsPerSecond)
         {
-            // The one-second window makes samples per window equal snapshots per second. SetRate then picks window
-            // sampling for rates of 1 or more and interval sampling for rates between 0 and 1.
+            // The one-second window makes samples per window equal snapshots per second, which SetRate relies on.
             var sampler = new AdaptiveSampler(WindowDuration, samplesPerWindow: 0, AverageLookback, BudgetLookback, rollWindowCallback: null);
             sampler.SetRate(snapshotsPerSecond);
             return sampler;

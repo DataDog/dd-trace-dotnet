@@ -36,15 +36,15 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     ///
-    /// The sampler has two modes, chosen by <see cref="SetRate"/>:
+    /// The sampler has two modes. <see cref="SetRate"/> picks one from a rate in samples per second, assuming the
+    /// one-second window <see cref="AdaptiveSamplerLifetime"/> uses, and documents how each switch behaves.
     ///
-    /// Window sampling, for rates of one or more samples per second: the adaptive sampling described above,
-    /// with a timer that rolls the window. A rate of 0 or less, or NaN, also uses this mode and drops every sample.
+    /// Window sampling, for rates of one or more: the adaptive sampling described above, with a timer that rolls
+    /// the window. A rate of 0 or less, or NaN, also uses this mode and drops every sample.
     ///
     /// Interval sampling, for rates between 0 and 1: a rate below one can't be a whole number of samples per
-    /// window, so an <see cref="IntervalGate"/> admits at most one sample every 1/rate seconds instead. The first
-    /// call is admitted. The timer keeps running, but <see cref="RollWindow"/> leaves the window state untouched,
-    /// so window sampling resumes from where it was.
+    /// window, so an <see cref="IntervalGate"/> admits at most one sample every 1/rate seconds instead. The timer
+    /// keeps running, but <see cref="RollWindow"/> leaves the window state untouched until window sampling resumes.
     ///
     /// The sampler switches modes in place, because callers such as ProbeData keep a reference to the instance.
     /// </summary>
@@ -222,8 +222,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
         }
 
-        // Converting NaN, infinite or out-of-range doubles to int gives different results across runtimes
-        // (wrapping on older x86/x64 runtimes, saturating on newer ones), so clamp before converting.
+        // Casting NaN, infinite or out-of-range doubles to int gives int.MinValue on x86/x64 before .NET 9 and
+        // saturates on ARM64 and from .NET 9, so clamp before converting to get the same result on every runtime.
         private static int GetSamplesPerWindow(double samplesPerSecond) => samplesPerSecond switch
         {
             >= int.MaxValue => int.MaxValue,
@@ -244,6 +244,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
+        // Caller holds _maintenanceLock.
         private void SetSamplesPerWindow(int samplesPerWindow)
         {
             _samplesPerWindow = samplesPerWindow;
@@ -331,6 +332,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
+        [TestingOnly]
         internal State GetInternalState()
         {
             var counts = _countsRef;
