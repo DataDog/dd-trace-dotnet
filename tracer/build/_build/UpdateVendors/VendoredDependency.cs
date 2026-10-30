@@ -547,6 +547,28 @@ namespace UpdateVendors
                 content = content.Replace(
                     "Task.Factory.StartNew(() => Dequeue(), TaskCreationOptions.LongRunning)",
                     "Task.Factory.StartNew(() => Dequeue(), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)");
+
+                // The worker sleeps up to MaxWaitDuration (100ms) between polls of an empty queue, and nothing woke it up:
+                // Flush() and DisposeAsync() (the tracer's shutdown) waited for the end of that sleep, up to ~200ms in total.
+                // Wake it up when they need it, with an event of its own (the IWaiter is shared with Flush()'s polling loop).
+                content = content.Replace(
+                    "private AutoResetEvent _flushEvent = new AutoResetEvent(false);",
+                    "private AutoResetEvent _flushEvent = new AutoResetEvent(false);\n        private readonly ManualResetEventSlim _wakeEvent = new ManualResetEventSlim(false);");
+                content = content.Replace(
+                    "var remainingWaitCount = maxWaitDurationInFlush.TotalMilliseconds / MinWaitDuration.TotalMilliseconds;",
+                    "var remainingWaitCount = maxWaitDurationInFlush.TotalMilliseconds / MinWaitDuration.TotalMilliseconds;\n            _wakeEvent.Set();");
+                content = content.Replace(
+                    "_requestFlush = true;",
+                    "_requestFlush = true;\n            _wakeEvent.Set();");
+                content = content.Replace(
+                    "_terminate = true;",
+                    "_terminate = true;\n                _wakeEvent.Set();");
+                content = content.Replace(
+                    "_flushEvent.Dispose();",
+                    "_flushEvent.Dispose();\n                    _wakeEvent.Dispose();");
+                content = content.Replace(
+                    "_waiter.Wait(waitDuration);",
+                    "if (_wakeEvent.Wait(waitDuration))\n                            {\n                                _wakeEvent.Reset();\n                            }");
             }
 
             if (normalizedPath.EndsWith("StatsdConfig.cs", StringComparison.OrdinalIgnoreCase))

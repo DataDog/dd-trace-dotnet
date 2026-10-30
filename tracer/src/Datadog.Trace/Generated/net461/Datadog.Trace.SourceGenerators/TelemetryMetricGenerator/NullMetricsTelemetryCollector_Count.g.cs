@@ -200,6 +200,10 @@ internal sealed partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountWafConfigErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.WafConfigAction tag, int increment = 1)
+    {
+    }
+
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
     {
     }

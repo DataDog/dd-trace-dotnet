@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string BootstrapServersKey = "bootstrap.servers";
         internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
-        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
+        private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:kafka"]);
         private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
         private static readonly AsyncLocal<ConsumerContext?> CurrentConsumerContext = new();
         private static bool _headersInjectionEnabled = true;
@@ -311,7 +311,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         groupId ?? string.Empty,
                         topic ?? string.Empty,
                         consumerClusterId ?? string.Empty);
-                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId));
+                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => new EdgeTags(BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId)));
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
@@ -454,7 +454,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
 
-                    string[] edgeTags;
+                    EdgeTags edgeTags;
                     if (StringUtil.IsNullOrEmpty(topic) && StringUtil.IsNullOrEmpty(producerClusterId))
                     {
                         edgeTags = DefaultProduceEdgeTags;
@@ -462,7 +462,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     else
                     {
                         var cacheKey = new ProduceEdgeTagCacheKey(producerClusterId ?? string.Empty, topic ?? string.Empty);
-                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildProduceEdgeTags(k.ClusterId, k.Topic));
+                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => new EdgeTags(BuildProduceEdgeTags(k.ClusterId, k.Topic)));
                     }
 
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);

@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 69;
+    public const int Length = 70;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -69,6 +69,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "capture.incomplete",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
+            Datadog.Trace.Telemetry.Metrics.Count.WafConfigErrors => "waf.config_errors",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "waf.input_truncated",
             Datadog.Trace.Telemetry.Metrics.Count.WafError => "waf.error",
@@ -139,6 +140,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "debugger",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.WafConfigErrors => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafError => "appsec",

@@ -12,9 +12,7 @@ using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
@@ -72,7 +70,7 @@ public sealed class CoverageGetCoverageResultIntegration
                 CoverletCoverageBackfill.CoverletCoverageBackfillRollback? rollback = null;
                 try
                 {
-                    if (!TryGetParentSessionSpanId(out var sessionSpanId))
+                    if (!DotnetCommon.TryGetParentSessionSpanId(out var sessionSpanId))
                     {
                         Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not find the parent test session context for Coverlet coverage IPC.");
                         TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
@@ -184,25 +182,9 @@ public sealed class CoverageGetCoverageResultIntegration
         return new CallTargetReturn<TReturn>(returnValue);
     }
 
-    private static bool TryGetParentSessionSpanId(out ulong sessionSpanId)
-    {
-        var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-            EnvironmentHelpers.GetEnvironmentVariables(),
-            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-
-        if (context.SpanContext is { } sessionContext)
-        {
-            sessionSpanId = sessionContext.SpanId;
-            return true;
-        }
-
-        sessionSpanId = 0;
-        return false;
-    }
-
     private static void RecordCoverletCoverageIpcFailure()
     {
-        if (TryGetParentSessionSpanId(out var sessionSpanId))
+        if (DotnetCommon.TryGetParentSessionSpanId(out var sessionSpanId))
         {
             CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.Coverlet));
         }

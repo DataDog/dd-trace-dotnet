@@ -45,6 +45,7 @@ public sealed class TestModule
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
     private IpcClient? _ipcClient;
+    private long _testCount;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
@@ -480,6 +481,7 @@ public sealed class TestModule
 
         if (_ipcClient is not null)
         {
+            SendExecutedTests(_ipcClient);
             _ipcClient.Dispose();
             _ipcClient = null;
         }
@@ -576,6 +578,11 @@ public sealed class TestModule
         }
     }
 
+    /// <summary>
+    /// Counts a test created in this module, so the module can report how many tests it ran to an out-of-process session.
+    /// </summary>
+    internal void CountTest() => Interlocked.Increment(ref _testCount);
+
     internal bool EnableIpcClient()
     {
         if (_fakeSession != null || Tags.SessionId == 0)
@@ -652,5 +659,23 @@ public sealed class TestModule
         }
 
         return false;
+    }
+
+    private void SendExecutedTests(IpcClient ipcClient)
+    {
+        // VSTest reports its own count, but other runners don't, for example Microsoft.Testing.Platform under
+        // dotnet test on SDK 9 and earlier. Without the module's count, a session that VSTest reported as empty
+        // would be skipped even though these tests ran.
+        try
+        {
+            if (!TestSession.TrySendExecutedTests(ipcClient, Interlocked.Read(ref _testCount)))
+            {
+                _testOptimization.Log.Warning("TestModule: Could not send the executed tests to the test session.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _testOptimization.Log.Error(ex, "Error sending SessionExecutedTestsMessage");
+        }
     }
 }
