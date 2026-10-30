@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         private static ProbeRateLimiter _instance;
 
-        private readonly Func<int, IAdaptiveSampler> _samplerFactory;
+        private readonly Func<double, IAdaptiveSampler> _samplerFactory;
         private readonly ConcurrentDictionary<string, IAdaptiveSampler> _samplers = new();
 
         internal ProbeRateLimiter()
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
         }
 
-        internal ProbeRateLimiter(Func<int, IAdaptiveSampler> samplerFactory)
+        internal ProbeRateLimiter(Func<double, IAdaptiveSampler> samplerFactory)
         {
             _samplerFactory = samplerFactory ?? throw new ArgumentNullException(nameof(samplerFactory));
         }
@@ -77,15 +77,15 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return false;
         }
 
-        public void SetRate(string probeId, int samplesPerSecond)
+        public void SetRate(string probeId, double snapshotsPerSecond)
         {
             if (_samplers.TryGetValue(probeId, out var existing))
             {
-                UpdateExistingRate(probeId, existing, samplesPerSecond);
+                UpdateExistingRate(probeId, existing, snapshotsPerSecond);
                 return;
             }
 
-            var candidate = _samplerFactory(samplesPerSecond);
+            var candidate = _samplerFactory(snapshotsPerSecond);
             if (_samplers.TryAdd(probeId, candidate))
             {
                 return;
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             // Lost the insert race - apply the new rate to the winner and dispose our candidate.
             if (_samplers.TryGetValue(probeId, out existing))
             {
-                UpdateExistingRate(probeId, existing, samplesPerSecond);
+                UpdateExistingRate(probeId, existing, snapshotsPerSecond);
             }
 
             AdaptiveSamplerLifetime.Dispose(candidate);
@@ -109,11 +109,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
-        private static void UpdateExistingRate(string probeId, IAdaptiveSampler existing, int samplesPerSecond)
+        private static void UpdateExistingRate(string probeId, IAdaptiveSampler existing, double snapshotsPerSecond)
         {
             if (existing is AdaptiveSampler adaptive)
             {
-                adaptive.SetRate(samplesPerSecond);
+                adaptive.SetRate(snapshotsPerSecond);
             }
             else
             {

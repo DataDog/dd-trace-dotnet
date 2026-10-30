@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -24,17 +25,29 @@ public class DebuggerGlobalRateLimiterTests
             factory.RequestedRates);
     }
 
-    [Fact]
-    public void SetRate_UsesConfiguredRateForSnapshotSampler()
+    [Theory]
+    [InlineData(42d, 42d)]
+    [InlineData(1.0 / 300, 1.0 / 300)]
+    [InlineData(-1d, 0d)]
+    public void SetRate_UsesConfiguredRateForSnapshotSampler(double samplesPerSecond, double expectedRate)
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
-        limiter.SetRate(42);
+        limiter.SetRate(samplesPerSecond);
 
-        Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42],
-            factory.RequestedRates);
+        factory.RequestedRates.Should().Equal(DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, expectedRate);
+    }
+
+    [Fact]
+    public void ShouldSampleSnapshot_RateBelowOnePerSecond_AdmitsOneSnapshotPerInterval()
+    {
+        using var limiter = new DebuggerGlobalRateLimiter(AdaptiveSamplerLifetime.Create, new NullLogRateLimiter());
+
+        limiter.SetRate(1.0 / 300);
+
+        limiter.ShouldSampleSnapshot("snapshot-1").Should().BeTrue();
+        limiter.ShouldSampleSnapshot("snapshot-2").Should().BeFalse();
     }
 
     [Fact]
@@ -131,13 +144,13 @@ public class DebuggerGlobalRateLimiterTests
 
     private sealed class RecordingSamplerFactory
     {
-        public List<int> RequestedRates { get; } = [];
+        public List<double> RequestedRates { get; } = [];
 
         public List<TestAdaptiveSampler> Samplers { get; } = [];
 
-        public IAdaptiveSampler Create(int samplesPerSecond)
+        public IAdaptiveSampler Create(double snapshotsPerSecond)
         {
-            RequestedRates.Add(samplesPerSecond);
+            RequestedRates.Add(snapshotsPerSecond);
             var sampler = new TestAdaptiveSampler();
             Samplers.Add(sampler);
             return sampler;

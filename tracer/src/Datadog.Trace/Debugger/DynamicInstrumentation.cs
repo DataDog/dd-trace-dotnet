@@ -401,7 +401,7 @@ namespace Datadog.Trace.Debugger
             switch (probe)
             {
                 case LogProbe { Sampling: { } sampling }:
-                    ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, sampling.SnapshotsPerSecond);
                     break;
                 case LogProbe logProbe:
                     ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot || logProbe.CaptureExpressions is { Length: > 0 } ? 1 : 5000);
