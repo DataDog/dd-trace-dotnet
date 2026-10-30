@@ -270,13 +270,29 @@ public class CompositeConfigurationSourceTests
 
         // no valid value
         var actual = source.GetInt32(key, telemetry, validator: null);
-        actual.Should().Be(ConfigurationResult<int>.NotFound());
+        actual.Should().Be(ConfigurationResult<int>.ParseFailure());
 
         // only telemetry value should be the error
         telemetry.Telemetry.Should()
                  .ContainSingle()
                  .Which.Should()
                  .BeEquivalentTo(new ConfigurationTelemetryTests.ConfigDto(key, "not_an_int", ConfigurationOrigins.DdConfig, true, TelemetryErrorCode.ParsingInt32Error));
+    }
+
+    [Fact]
+    public void ReturnsHighestPriorityInvalidResult_WhenNoSourceIsValid()
+    {
+        const string key = "string_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new()),
+            new NameValueConfigurationSource(new() { { key, "high" } }),
+            new NameValueConfigurationSource(new() { { key, "low" } }),
+        };
+
+        source.GetString(key, _telemetry, validator: _ => false, recordValue: true)
+              .Should()
+              .Be(ConfigurationResult<string>.Invalid("high"));
     }
 
     [Fact]

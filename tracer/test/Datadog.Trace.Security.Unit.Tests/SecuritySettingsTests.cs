@@ -67,6 +67,22 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
+        [InlineData(null, null, SecuritySettings.UserTrackingIdentMode)]
+        [InlineData("anon", null, SecuritySettings.UserTrackingAnonMode)]
+        [InlineData(null, "safe", SecuritySettings.UserTrackingAnonMode)]
+        [InlineData("invalid", null, SecuritySettings.UserTrackingDisabled)]
+        [InlineData(null, "invalid", SecuritySettings.UserTrackingDisabled)]
+        public void UserEventsAutoInstrumentationMode(string value, string deprecatedValue, string expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AppSec.UserEventsAutoInstrumentationMode, value),
+                (ConfigurationKeys.AppSec.UserEventsAutomatedTracking, deprecatedValue));
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.UserEventsAutoInstrumentationMode.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void Enabled(string value, bool expected)
         {
