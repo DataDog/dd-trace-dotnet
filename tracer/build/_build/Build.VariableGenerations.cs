@@ -678,6 +678,14 @@ partial class Build : NukeBuild
                     void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, object entry)> scenarios)
                     {
                         var matrix = scenarios.ToDictionary(x => x.scenario, x => x.entry);
+
+                        // An empty matrix skips the smoke test stage, which is expected in the runtime-async run
+                        // (as some categories have no net11.0+ scenarios), but shouldn't happen otherwise
+                        if (matrix.Count == 0 && !isRuntimeAsyncRun)
+                        {
+                            throw new InvalidOperationException($"Smoke test matrix '{name}' is empty, so its stage would be skipped");
+                        }
+
                         Logger.Information($"Nuke smoke tests matrix: {name}");
                         Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                         AzurePipelines.Instance.SetOutputVariable(name, JsonConvert.SerializeObject(matrix, Formatting.None));
