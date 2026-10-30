@@ -150,7 +150,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key to set the OTLP protocol for traces export.
         /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-        /// Valid values: http/json, http/protobuf. Default: http/json
+        /// Valid values: http/json, http/protobuf. Default: http/protobuf
         /// </summary>
         public const string ExporterOtlpTracesProtocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL";
 
