@@ -88,6 +88,7 @@ namespace Datadog.Profiler.SmokeTests
                 {
                     TransportType.Http => MockDatadogAgent.CreateHttpAgent(_output),
                     TransportType.NamedPipe => MockDatadogAgent.CreateNamedPipeAgent(_output),
+                    TransportType.UnixDomainSocket => MockDatadogAgent.CreateUnixDomainSocketAgent(_output),
                     _ => throw new Exception("Unknown transport type ")
                 };
                 _testApplicationRunner.Run(agent);

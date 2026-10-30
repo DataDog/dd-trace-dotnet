@@ -11,6 +11,7 @@
 extern "C"
 {
 #include "datadog/common.h"
+#include "datadog_poc/common.h"
 }
 
 namespace libdatadog {
@@ -34,6 +35,16 @@ ddog_CharSlice to_char_slice(std::string_view str)
     return {str.data(), str.size()};
 }
 
+ddog_charslice to_poc_char_slice(std::string const& str)
+{
+    return {str.data(), str.size()};
+}
+
+ddog_charslice to_poc_char_slice(std::string_view str)
+{
+    return {str.data(), str.size()};
+}
+
 bool IsCountUnit(std::string_view unit)
 {
     return unit == "count" || unit == "counts";
@@ -49,101 +60,103 @@ bool IsNanosecondsUnit(std::string_view unit)
     return unit == "nanosecond" || unit == "nanoseconds" || unit == "Nanosecond" || unit == "Nanoseconds";
 }
 
-bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_SampleType& sampleType)
+// Canonical (type, unit) pprof strings, one per recognized friendly name.
+// These are not our own invention - they're taken verbatim from real
+// libdatadog's SampleType -> ValueType mapping (libdd-profiling/src/api/sample_type.rs),
+// which is *not* just an identity mapping: e.g. both "wall-time" and the
+// legacy alias "RealTime" normalize to the same wire string ("wall-time",
+// "nanoseconds"), distinct from "wall" ("wall", "nanoseconds"). Preserving
+// this table (rather than passing whatever raw string the caller used)
+// keeps the wire format identical to what real libdatadog would have sent.
+static ddog_prof_value_type MakeValueType(const char* type, const char* unit)
+{
+    return {to_poc_char_slice(type), to_poc_char_slice(unit)};
+}
+
+bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_value_type& sampleType)
 {
     if (type == "alloc-samples" && IsCountUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SAMPLES;
+        sampleType = MakeValueType("alloc-samples", "count");
         return true;
     }
 
     if (type == "alloc-size" && IsBytesUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SIZE;
+        sampleType = MakeValueType("alloc-size", "bytes");
         return true;
     }
 
     if (type == "cpu" && IsNanosecondsUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_LEGACY;
+        sampleType = MakeValueType("cpu", "nanoseconds");
         return true;
     }
 
     if (type == "cpu-samples" && IsCountUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_SAMPLES;
+        sampleType = MakeValueType("cpu-samples", "count");
         return true;
     }
 
     if (type == "exception" && IsCountUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_EXCEPTION_LEGACY;
+        sampleType = MakeValueType("exception", "count");
         return true;
     }
 
     if (type == "inuse-objects" && IsCountUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_OBJECTS;
+        sampleType = MakeValueType("inuse-objects", "count");
         return true;
     }
 
     if (type == "inuse-space" && IsBytesUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_SPACE;
+        sampleType = MakeValueType("inuse-space", "bytes");
         return true;
     }
 
     if (type == "lock-count" && IsCountUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_COUNT;
+        sampleType = MakeValueType("lock-count", "count");
         return true;
     }
 
     if (type == "lock-time" && IsNanosecondsUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_TIME;
+        sampleType = MakeValueType("lock-time", "nanoseconds");
         return true;
     }
 
     if (type == "request-time" && IsNanosecondsUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_REQUEST_TIME;
+        sampleType = MakeValueType("request-time", "nanoseconds");
         return true;
     }
 
     if (type == "timeline" && IsNanosecondsUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_TIMELINE;
+        sampleType = MakeValueType("timeline", "nanoseconds");
         return true;
     }
 
     if (type == "wall" && IsNanosecondsUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_LEGACY;
+        sampleType = MakeValueType("wall", "nanoseconds");
         return true;
     }
 
     if ((type == "wall-time" || type == "RealTime") && IsNanosecondsUnit(unit))
     {
-        sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_TIME;
+        sampleType = MakeValueType("wall-time", "nanoseconds");
         return true;
     }
 
     return false;
 }
 
-std::string GetErrorMessage(ddog_Error& error)
-{
-    auto message = ddog_Error_message(&error);
-    return std::string(message.ptr, message.len);
-}
-
-std::string GetErrorMessage(ddog_MaybeError& error)
-{
-    return std::string((char*)error.some.message.ptr, error.some.message.len);
-}
-
-Success make_error(ddog_Error error)
+Success make_error(ddog_error_code error)
 {
     return Success(std::make_unique<SuccessImpl>(error));
 }
@@ -151,11 +164,6 @@ Success make_error(ddog_Error error)
 Success make_error(std::string error)
 {
     return Success(std::make_unique<SuccessImpl>(std::move(error)));
-}
-
-Success make_error(ddog_MaybeError error)
-{
-    return Success(std::make_unique<SuccessImpl>(error));
 }
 
 Success make_success()
