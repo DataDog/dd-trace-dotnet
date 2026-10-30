@@ -80,7 +80,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             tags.SetEndpoint(instance?.Client.Endpoint);
 
             var clientContextObject = instance?.Client.ClientContext;
-            if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
+            if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosClientContextMetadataStruct>(out var clientContext))
             {
                 tags.UserAgent = clientContext.UserAgent;
 
