@@ -591,11 +591,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
                     writer.WritePropertyName("OTEL_ENABLED");
-                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled
-                                  || instanceSettings.OtlpMetricsExportEnabled
-                                  || instanceSettings.OtlpLogsExportEnabled
-                                  || instanceSettings.OtelSemanticsEnabled
-                                  || (mutableSettings.TraceEnabled && exporterSettings.IsOtlpTraceExport));
+                    writer.WriteValue(instanceSettings.IsOpenTelemetryModeEnabled(mutableSettings, exporterSettings));
 
                     writer.WritePropertyName("DD_TRACE_OTEL_ENABLED");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
