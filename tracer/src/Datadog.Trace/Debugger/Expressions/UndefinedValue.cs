@@ -8,5 +8,7 @@ namespace Datadog.Trace.Debugger.Expressions
     internal sealed class UndefinedValue
     {
         internal static readonly UndefinedValue Instance = new();
+
+        public override string ToString() => nameof(UndefinedValue);
     }
 }

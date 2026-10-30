@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -38,6 +39,9 @@ namespace Datadog.Trace
         internal Scope? Parent { get; }
 
         internal Scope Root => Parent?.Root ?? this;
+
+        public override string ToString()
+            => $"Scope(TraceId={Span.TraceId128.ToString()}, SpanId={Span.SpanId.ToString(CultureInfo.InvariantCulture)})";
 
         /// <summary>
         /// Closes the current scope and makes its parent scope active
