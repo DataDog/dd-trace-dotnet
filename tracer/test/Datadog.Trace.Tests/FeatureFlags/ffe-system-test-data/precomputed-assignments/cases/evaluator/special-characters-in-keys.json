@@ -1,0 +1,107 @@
+{
+  "name": "special-characters-in-keys",
+  "description": "Flag keys contain dots, hyphens, and underscores. SDK must handle these without mangling the key during lookup or emission.",
+  "context": {
+    "targetingKey": "special-key-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "com.example.feature.enabled": {
+            "allocationKey": "alloc-dot",
+            "variationKey": "on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "my-team--feature-toggle": {
+            "allocationKey": "alloc-hyphen",
+            "variationKey": "active",
+            "variationType": "string",
+            "variationValue": "yes",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "legacy_flag_name_v2": {
+            "allocationKey": "alloc-underscore",
+            "variationKey": "v2-val",
+            "variationType": "integer",
+            "variationValue": 100,
+            "reason": "DEFAULT",
+            "doLog": true
+          },
+          "mix.ed-key_style.v1": {
+            "allocationKey": "alloc-mixed",
+            "variationKey": "mixed-val",
+            "variationType": "float",
+            "variationValue": 2.718,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "com.example.feature.enabled",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "on"
+      }
+    },
+    {
+      "flag": "my-team--feature-toggle",
+      "variationType": "string",
+      "defaultValue": "no",
+      "expectedResult": {
+        "value": "yes",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "active"
+      }
+    },
+    {
+      "flag": "legacy_flag_name_v2",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 100,
+        "reason": "DEFAULT",
+        "errorCode": null,
+        "variantKey": "v2-val"
+      }
+    },
+    {
+      "flag": "mix.ed-key_style.v1",
+      "variationType": "float",
+      "defaultValue": 0.0,
+      "expectedResult": {
+        "value": 2.718,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "mixed-val"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 4
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 4
+      }
+    ]
+  }
+}
