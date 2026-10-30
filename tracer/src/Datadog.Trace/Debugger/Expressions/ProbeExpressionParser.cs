@@ -377,7 +377,7 @@ internal partial class ProbeExpressionParser<T>
                                 if (itParameter == null)
                                 {
                                     AddError(readerValue, "current item in iterator is null");
-                                    return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
+                                    return Expression.Parameter(UndefinedValueType, UndefinedValueDump);
                                 }
 
                                 return itParameter;
