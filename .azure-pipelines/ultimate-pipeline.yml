@@ -1369,7 +1369,9 @@ stages:
     - job: managed
       timeoutInMinutes: 90
       strategy:
-        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_windows_matrix'] ]
+        matrix:
+          net48:
+            framework: net48
       steps:
       - template: steps/clone-repo.yml
         parameters:

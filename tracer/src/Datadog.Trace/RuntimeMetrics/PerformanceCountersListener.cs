@@ -66,6 +66,18 @@ namespace Datadog.Trace.RuntimeMetrics
             _initializationTask.ContinueWith(t => Log.ErrorSkipTelemetry(t.Exception, "Error in performance counter initialization task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
+        internal string[] LastObservedInstanceNames { get; private set; }
+
+        internal string CurrentInstanceName => _instanceName;
+
+        internal bool IsFullInstanceName => _fullInstanceName;
+
+        internal int ProcessId => _processId;
+
+        internal string ProcessName => _processName;
+
+        internal PerformanceCounterWrapper[] Counters => [_gen0Size, _gen1Size, _gen2Size, _lohSize, _contentionCount];
+
         public Task WaitForInitialization() => _initializationTask;
 
         public void Dispose()
@@ -213,7 +225,9 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private string GetSimpleInstanceName()
         {
-            var instanceNames = _memoryCategory.GetInstanceNames().Where(n => n.StartsWith(_processName)).ToArray();
+            var allInstanceNames = _memoryCategory.GetInstanceNames();
+            LastObservedInstanceNames = allInstanceNames;
+            var instanceNames = allInstanceNames.Where(n => n.StartsWith(_processName)).ToArray();
 
             if (instanceNames.Length == 1)
             {

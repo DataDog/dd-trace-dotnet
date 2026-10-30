@@ -28,6 +28,10 @@ namespace Datadog.Trace.RuntimeMetrics
             _counter = new PerformanceCounter(categoryName, counterName, instanceName, readOnly: true);
         }
 
+        internal Exception LastReadException { get; private set; }
+
+        internal string CounterName => _counterName;
+
         public void Dispose()
         {
             _counter?.Dispose();
@@ -36,6 +40,7 @@ namespace Datadog.Trace.RuntimeMetrics
         public double? GetValue(string instanceName)
         {
             var counter = _counter;
+            LastReadException = null;
 
             if (counter != null)
             {
@@ -44,8 +49,9 @@ namespace Datadog.Trace.RuntimeMetrics
                     counter.InstanceName = instanceName;
                     return counter.NextSample().RawValue;
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException ex)
                 {
+                    LastReadException = ex;
                     RefreshCounter(instanceName);
                 }
             }
