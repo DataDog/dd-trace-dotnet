@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.RateLimiting;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -156,18 +157,18 @@ public class AdaptiveSamplerTests
     [Theory]
     [InlineData(300)]
     [InlineData(3600)]
-    public void Create_RateBelowOnePerSecond_AdmitsOneSamplePerInterval(int secondsPerSnapshot)
+    public void Create_RateBelowOnePerSecond_AdmitsOneSamplePerInterval(int secondsPerSample)
     {
-        using var sampler = (AdaptiveSampler)AdaptiveSamplerLifetime.Create(1.0 / secondsPerSnapshot);
-        var interval = Stopwatch.Frequency * secondsPerSnapshot;
-        Assert.Equal(interval, sampler.GetInternalState().SampleInterval);
+        using var sampler = (AdaptiveSampler)AdaptiveSamplerLifetime.Create(1.0 / secondsPerSample);
+        var interval = Stopwatch.Frequency * secondsPerSample;
+        sampler.GetInternalState().SampleInterval.Should().Be(interval);
 
         var start = Stopwatch.GetTimestamp();
-        Assert.True(sampler.SampleOncePerInterval(start));
-        Assert.False(sampler.SampleOncePerInterval(start + 1));
-        Assert.False(sampler.SampleOncePerInterval(start + interval - 1));
-        Assert.True(sampler.SampleOncePerInterval(start + interval));
-        Assert.False(sampler.SampleOncePerInterval(start + interval + 1));
+        sampler.SampleAt(start).Should().BeTrue();
+        sampler.SampleAt(start + 1).Should().BeFalse();
+        sampler.SampleAt(start + interval - 1).Should().BeFalse();
+        sampler.SampleAt(start + interval).Should().BeTrue();
+        sampler.SampleAt(start + interval + 1).Should().BeFalse();
     }
 
     [Fact]
@@ -184,7 +185,7 @@ public class AdaptiveSamplerTests
             }
         });
 
-        Assert.Equal(1, admitted);
+        admitted.Should().Be(1);
     }
 
     [Theory]
@@ -193,16 +194,17 @@ public class AdaptiveSamplerTests
     [InlineData(100d, 100)]
     [InlineData(0d, 0)]
     [InlineData(-1d, -1)]
-    public void Create_RateNotBetweenZeroAndOne_KeepsWindowSampling(double snapshotsPerSecond, int samplesPerWindow)
+    public void SetRate_RateNotBetweenZeroAndOne_KeepsWindowSampling(double samplesPerSecond, int samplesPerWindow)
     {
-        using var sampler = (AdaptiveSampler)AdaptiveSamplerLifetime.Create(snapshotsPerSecond);
+        const int budgetLookback = 4;
+        using var sampler = new AdaptiveSampler(WindowDuration, samplesPerWindow: 0, averageLookback: 1, budgetLookback: budgetLookback, rollWindowCallback: null);
+
+        sampler.SetRate(samplesPerSecond);
+
         var state = sampler.GetInternalState();
-
-        Assert.Equal(0, state.SampleInterval);
-
-        // AdaptiveSamplerLifetime uses a budget lookback of 16.
-        Assert.Equal(samplesPerWindow + (16 * samplesPerWindow), state.Budget);
-        Assert.Equal(samplesPerWindow > 0, sampler.Sample());
+        state.SampleInterval.Should().Be(0);
+        state.Budget.Should().Be(samplesPerWindow + (budgetLookback * samplesPerWindow));
+        sampler.Sample().Should().Be(samplesPerWindow > 0);
     }
 
     [Fact]
@@ -213,21 +215,34 @@ public class AdaptiveSamplerTests
 
         sampler.SetRate(1.0 / 300);
         var fiveMinutes = Stopwatch.Frequency * 300;
-        Assert.Equal(fiveMinutes, sampler.GetInternalState().SampleInterval);
+        sampler.GetInternalState().SampleInterval.Should().Be(fiveMinutes);
 
         var start = Stopwatch.GetTimestamp();
-        Assert.True(sampler.SampleOncePerInterval(start));
+        sampler.SampleAt(start).Should().BeTrue();
 
         // A new interval counts from the last sample.
         sampler.SetRate(1.0 / 3600);
-        Assert.False(sampler.SampleOncePerInterval(start + fiveMinutes));
-        Assert.True(sampler.SampleOncePerInterval(start + (Stopwatch.Frequency * 3600)));
+        sampler.SampleAt(start + fiveMinutes).Should().BeFalse();
+        sampler.SampleAt(start + (Stopwatch.Frequency * 3600)).Should().BeTrue();
 
         sampler.SetRate(5);
         var state = sampler.GetInternalState();
-        Assert.Equal(0, state.SampleInterval);
-        Assert.Equal(5 + (budgetLookback * 5), state.Budget);
-        Assert.True(sampler.Sample());
-        Assert.True(sampler.Sample());
+        state.SampleInterval.Should().Be(0);
+        state.Budget.Should().Be(5 + (budgetLookback * 5));
+        sampler.Sample().Should().BeTrue();
+        sampler.Sample().Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetRate_BackToWindowSampling_RestartsWindowTimer()
+    {
+        using var windowRolled = new ManualResetEventSlim();
+        using var sampler = new AdaptiveSampler(TimeSpan.FromMilliseconds(10), samplesPerWindow: 1, averageLookback: 1, budgetLookback: 1, rollWindowCallback: windowRolled.Set);
+
+        sampler.SetRate(0.5);
+        windowRolled.Reset();
+        sampler.SetRate(1);
+
+        windowRolled.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
     }
 }

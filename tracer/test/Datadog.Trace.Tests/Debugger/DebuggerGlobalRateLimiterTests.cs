@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -24,31 +25,18 @@ public class DebuggerGlobalRateLimiterTests
             factory.RequestedRates);
     }
 
-    [Fact]
-    public void SetRate_UsesConfiguredRateForSnapshotSampler()
+    [Theory]
+    [InlineData(42d, 42d)]
+    [InlineData(1.0 / 300, 1.0 / 300)]
+    [InlineData(-1d, 0d)]
+    public void SetRate_UsesConfiguredRateForSnapshotSampler(double samplesPerSecond, double expectedRate)
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
-        limiter.SetRate(42);
+        limiter.SetRate(samplesPerSecond);
 
-        Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42],
-            factory.RequestedRates);
-    }
-
-    [Fact]
-    public void SetRate_KeepsRatesBelowOnePerSecond()
-    {
-        var factory = new RecordingSamplerFactory();
-        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
-
-        limiter.SetRate(1.0 / 300);
-        limiter.SetRate(-1);
-
-        Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 1.0 / 300, 0],
-            factory.RequestedRates);
+        factory.RequestedRates.Should().Equal(DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, expectedRate);
     }
 
     [Fact]

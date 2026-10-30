@@ -9,6 +9,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.RateLimiting
@@ -35,14 +36,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     ///
-    /// Rates below one sample per second are not a whole number of samples per one-second window. For those,
-    /// <see cref="SetRate"/> switches the sampler to admit at most one sample per 1/rate interval and stops the
+    /// Rates below one sample per second can't be a whole number of samples per window. For those,
+    /// <see cref="SetRate"/> switches the sampler to admit at most one sample per 1/rate seconds and stops the
     /// window timer.
     /// </summary>
     internal sealed class AdaptiveSampler : IAdaptiveSampler
     {
-        private const long NoIntervalSample = long.MinValue;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
 
         /// <summary>
@@ -60,11 +59,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private readonly TimeSpan _windowDuration;
         private int _samplesPerWindow;
 
-        // Set for rates below one per second: at most one sample per _sampleInterval Stopwatch ticks.
-        // A bool keeps the window-sampling hot path free of 64-bit volatile reads, which are interlocked on 32-bit.
-        private bool _intervalSampling;
-        private long _sampleInterval;
-        private long _lastIntervalSampleTimestamp = NoIntervalSample;
+        // Set for rates below one per second, null for window sampling.
+        private IntervalGate? _intervalGate;
 
         private Counts _countsRef;
 
@@ -124,9 +120,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public bool Sample()
         {
-            if (Volatile.Read(ref _intervalSampling))
+            var intervalGate = Volatile.Read(ref _intervalGate);
+            if (intervalGate is not null)
             {
-                return SampleOncePerInterval(Stopwatch.GetTimestamp(), Volatile.Read(ref _sampleInterval));
+                return intervalGate.TrySample(Stopwatch.GetTimestamp());
             }
 
             _countsRef.AddTest();
@@ -159,30 +156,33 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         /// <summary>
         /// Updates the rate in place. Rates between 0 and 1 admit at most one sample every
-        /// 1 / <paramref name="snapshotsPerSecond"/> seconds. Other rates set the samples per window, truncated to a whole number.
+        /// 1 / <paramref name="samplesPerSecond"/> seconds. Other rates set the samples per window, truncated to a
+        /// whole number, which is per second with the one-second window <see cref="AdaptiveSamplerLifetime"/> uses.
         /// </summary>
-        public void SetRate(double snapshotsPerSecond)
+        public void SetRate(double samplesPerSecond)
         {
             lock (_maintenanceLock)
             {
                 // Callers already inside Sample() may still finish on the previous mode.
-                var wasIntervalSampling = _intervalSampling;
-                if (snapshotsPerSecond is > 0 and < 1)
+                if (samplesPerSecond is > 0 and < 1)
                 {
-                    Volatile.Write(ref _sampleInterval, GetSampleInterval(snapshotsPerSecond));
-                    if (!wasIntervalSampling)
+                    var sampleInterval = GetSampleInterval(samplesPerSecond);
+                    if (_intervalGate is { } intervalGate)
                     {
-                        Volatile.Write(ref _intervalSampling, true);
-                        _timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+                        // Keeps the last sample time, so the new interval counts from it.
+                        intervalGate.SampleInterval = sampleInterval;
+                        return;
                     }
 
+                    Volatile.Write(ref _intervalGate, new IntervalGate(sampleInterval));
+                    _timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
                     return;
                 }
 
-                SetSamplesPerWindow((int)snapshotsPerSecond);
-                if (wasIntervalSampling)
+                SetSamplesPerWindow((int)samplesPerSecond);
+                if (_intervalGate is not null)
                 {
-                    Volatile.Write(ref _intervalSampling, false);
+                    Volatile.Write(ref _intervalGate, null);
                     _timer?.Change(_windowDuration, _windowDuration);
                 }
             }
@@ -207,24 +207,13 @@ namespace Datadog.Trace.Debugger.RateLimiting
             _rollWindowCallback = null;
         }
 
-        internal bool SampleOncePerInterval(long timestamp) => SampleOncePerInterval(timestamp, Volatile.Read(ref _sampleInterval));
+        [TestingOnly]
+        internal bool SampleAt(long timestamp) => Volatile.Read(ref _intervalGate)?.TrySample(timestamp) ?? Sample();
 
-        private static long GetSampleInterval(double snapshotsPerSecond)
+        private static long GetSampleInterval(double samplesPerSecond)
         {
-            var ticks = Math.Round(Stopwatch.Frequency / snapshotsPerSecond);
+            var ticks = Math.Round(Stopwatch.Frequency / samplesPerSecond);
             return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
-        }
-
-        private bool SampleOncePerInterval(long timestamp, long sampleInterval)
-        {
-            var lastSample = Volatile.Read(ref _lastIntervalSampleTimestamp);
-            if (lastSample != NoIntervalSample && timestamp - lastSample < sampleInterval)
-            {
-                return false;
-            }
-
-            // Only one of the callers racing past the interval wins the slot.
-            return Interlocked.CompareExchange(ref _lastIntervalSampleTimestamp, timestamp, lastSample) == lastSample;
         }
 
         private double ComputeIntervalAlpha(int lookback)
@@ -332,8 +321,42 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 Budget = Volatile.Read(ref _samplesBudget),
                 Probability = _probability,
                 TotalAverage = _totalCountRunningAverage,
-                SampleInterval = Volatile.Read(ref _intervalSampling) ? Volatile.Read(ref _sampleInterval) : 0
+                SampleInterval = Volatile.Read(ref _intervalGate)?.SampleInterval ?? 0
             };
+        }
+
+        /// <summary>
+        /// Admits at most one sample per interval, measured in <see cref="Stopwatch"/> ticks.
+        /// </summary>
+        private sealed class IntervalGate
+        {
+            private const long NoSample = long.MinValue;
+
+            private long _sampleInterval;
+            private long _lastSampleTimestamp = NoSample;
+
+            internal IntervalGate(long sampleInterval)
+            {
+                _sampleInterval = sampleInterval;
+            }
+
+            internal long SampleInterval
+            {
+                get => Volatile.Read(ref _sampleInterval);
+                set => Volatile.Write(ref _sampleInterval, value);
+            }
+
+            internal bool TrySample(long timestamp)
+            {
+                var lastSample = Volatile.Read(ref _lastSampleTimestamp);
+                if (lastSample != NoSample && timestamp - lastSample < SampleInterval)
+                {
+                    return false;
+                }
+
+                // Only one of the callers racing past the interval wins the slot.
+                return Interlocked.CompareExchange(ref _lastSampleTimestamp, timestamp, lastSample) == lastSample;
+            }
         }
 
         private sealed class Counts

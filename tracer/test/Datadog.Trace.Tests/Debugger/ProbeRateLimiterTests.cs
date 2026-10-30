@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Datadog.Trace.Debugger.RateLimiting;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -51,15 +52,15 @@ public class ProbeRateLimiterTests
         {
             limiter.SetRate(probeId, 1.0 / 3600);
             var sampler = (AdaptiveSampler)limiter.GerOrAddSampler(probeId);
-            Assert.Equal(Stopwatch.Frequency * 3600, sampler.GetInternalState().SampleInterval);
+            sampler.GetInternalState().SampleInterval.Should().Be(Stopwatch.Frequency * 3600);
 
             limiter.SetRate(probeId, 1.0 / 300);
 
             // ProbeData caches the sampler, so the new rate must apply to the same instance.
-            Assert.Same(sampler, limiter.GerOrAddSampler(probeId));
-            Assert.Equal(Stopwatch.Frequency * 300, sampler.GetInternalState().SampleInterval);
-            Assert.True(sampler.Sample());
-            Assert.False(sampler.Sample());
+            limiter.GerOrAddSampler(probeId).Should().BeSameAs(sampler);
+            sampler.GetInternalState().SampleInterval.Should().Be(Stopwatch.Frequency * 300);
+            sampler.Sample().Should().BeTrue();
+            sampler.Sample().Should().BeFalse();
         }
         finally
         {
