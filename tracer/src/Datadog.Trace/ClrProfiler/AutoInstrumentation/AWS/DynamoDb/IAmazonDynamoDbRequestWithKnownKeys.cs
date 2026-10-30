@@ -13,8 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 
 /// <summary>
 /// Interface for duck typing AmazonDynamoDbRequest implementations with the TableName and Key properties.
-/// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/UpdateItemRequest.cs
-/// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/DeleteItemRequest.cs
+/// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/UpdateItemRequest.g.cs
+/// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/DeleteItemRequest.g.cs
 /// </summary>
 internal interface IAmazonDynamoDbRequestWithKnownKeys
 {
@@ -22,7 +22,6 @@ internal interface IAmazonDynamoDbRequestWithKnownKeys
     /// Gets the name of the table.
     /// Should never be null, but there's no guards, so _could_ be
     /// </summary>
-    [DuckField(Name = "_tableName")]
     string? TableName { get; }
 
     /// <summary>
@@ -30,7 +29,7 @@ internal interface IAmazonDynamoDbRequestWithKnownKeys
     /// System.Collections.Generic.Dictionary`2[System.String,Amazon.DynamoDBv2.Model.AttributeValue].
     /// Should never be null, but there's no guards, so _could_ be
     /// </summary>
-    [DuckField(Name = "_key")]
+    [Duck(Name = "Key")]
     object? Keys { get; }
 }
 

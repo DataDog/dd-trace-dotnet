@@ -403,13 +403,13 @@ internal static class XUnitIntegration
         return TestRetryMode.None;
     }
 
-    internal static void InitializeTotalExecutions(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata, Func<int> getEarlyFlakeDetectionExecutions)
+    internal static void InitializeTotalExecutions(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata, TimeSpan firstExecutionDuration)
     {
         testCaseMetadata.TotalExecutions = testCaseMetadata.SelectedRetryMode switch
         {
-            TestRetryMode.AutomaticTestRetry => (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
+            TestRetryMode.AutomaticTestRetry => (testOptimization.FlakyRetryFeature?.GetFlakyRetryCount(firstExecutionDuration) ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
             TestRetryMode.AttemptToFix => testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault,
-            _ => getEarlyFlakeDetectionExecutions()
+            _ => Common.GetNumberOfExecutionsForDuration(firstExecutionDuration)
         };
 
         testCaseMetadata.CountDownExecutionNumber = testCaseMetadata.TotalExecutions - 1;

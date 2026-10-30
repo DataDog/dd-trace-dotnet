@@ -459,6 +459,26 @@ supportedConfigurations:
     product: CIVisibility
     const_name: DynamicInstrumentationEnabled
     documentation: Configuration key for a kill-switch that allows to explicitly disable dynamic instrumentation even if the remote setting is enabled.
+  DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS:
+  - implementation: A
+    scope: managed
+    type: array
+    default: null
+    product: CIVisibility
+    const_name: DynamicFlakyRetryBuckets
+    documentation: |-
+      Configuration key for the dynamic automatic test retries counts: five comma-separated integers from 1 to 20, for first
+      executions of up to 5s, 10s, 30s, 5m, and longer. Defaults to the Early Flake Detection slow test retries.
+  DD_CIVISIBILITY_DYNAMIC_ATR_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: CIVisibility
+    const_name: DynamicFlakyRetryEnabled
+    documentation: |-
+      Configuration key for picking the automatic test retries count of each test from the duration of its first execution,
+      instead of <see cref="ConfigurationKeys.CIVisibility.FlakyRetryCount"/>.
   DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED:
   - implementation: C
     scope: managed
@@ -1855,6 +1875,14 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Maximum number of threads sampled per wall-time collection interval.
+  DD_INTERNAL_PROFILING_WATCHER_START_TIMEOUT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '2000'
+    product: Profiler
+    documentation: |-
+      Change StackSamplerLoop thread startup timeout (in ms). Used only in testing to force a failure.
   DD_INTERNAL_SKIP_METHOD_BODY_ENABLED:
   - implementation: A
     scope: native
@@ -2796,6 +2824,16 @@ supportedConfigurations:
     documentation: |-
       Configuration key for toggling span pointers on AWS requests.
       Default value is true
+  DD_TRACE_AZURE_EVENTGRID_BATCH_LINKS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    const_name: AzureEventGridBatchLinksEnabled
+    documentation: |-
+      Configuration key for enabling or disabling span links creation for Azure Event Grid batch operations.
+      Default value is <c>true</c> (enabled).
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureEventGridBatchLinksEnabled"/>
   DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED:
   - implementation: A
     scope: managed
@@ -3256,6 +3294,16 @@ supportedConfigurations:
     documentation: |-
       Enables APM span enrichment with feature-flag evaluation metadata (Experimental).
       Default value is <c>false</c> (disabled).
+  DD_FLAGGING_EVALUATION_COUNTS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    product: FeatureFlags
+    documentation: |-
+      Enables Feature Flags flagevaluation track EVP events through the configured Datadog Agent.
+      Default value is <c>true</c> (enabled). Disabling this does not disable flag evaluation,
+      configuration fetching, experiment exposures, or span enrichment.
   DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED:
   - implementation: A
     scope: managed
@@ -3341,10 +3389,10 @@ supportedConfigurations:
       Configuration key for enabling or disabling internal metrics sent to DogStatsD.
       Default value is <c>false</c> (disabled).
   DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP:
-  - implementation: H
+  - implementation: K
     scope: managed
     type: string
-    default: (?:(?:\"|%22)?)(?:(?:old[-_]?|new[-_]?)?p(?:ass)?w(?:or)?d(?:1|2)?|pass(?:[-_]?phrase)?|secret|(?:api[-_]?|private[-_]?|public[-_]?|access[-_]?|secret[-_]?|app(?:lication)?[-_]?)key(?:[-_]?id)?|token|consumer[-_]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\\s|%20)*(?:=|%3D)[^&]+|(?:\"|%22)(?:\\s|%20)*(?::|%3A)(?:\\s|%20)*(?:\"|%22)(?:%2[^2]|%[^2]|[^\"%])+(?:\"|%22))|(?:bearer(?:\\s|%20)+[a-z0-9._\\-]+|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|(^|[^\\w%-]|%[0-9a-f]{2})ey[I-L][\\w-]+(?:=|%3D)*\\.ey[I-L][\\w-]+(?:=|%3D)*(?:\\.(?:[\\w.+/=-]|%3D|%2F|%2B)+)?|-{5}BEGIN(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY-{5}[^\\-]+-{5}END(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY(?:-{5})?(?:\\n|%0A)?|(?:ssh-(?:rsa|dss)|ecdsa-[a-z0-9]+-[a-z0-9]+)(?:\\s|%20|%09)+(?:[a-z0-9/.+]|%2F|%5C|%2B){100,}(?:=|%3D)*(?:(?:\\s|%20|%09)+[a-z0-9._-]+)?)
+    default: (?:(?:\"|%22)?)(?:(?:old[-_]?|new[-_]?)?p(?:ass)?w(?:or)?d(?:1|2)?|pass(?:[-_]?phrase)?|secret|(?:api[-_]?|private[-_]?|public[-_]?|access[-_]?|secret[-_]?|app(?:lication)?[-_]?)key(?:[-_]?id)?|token|consumer[-_]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\\s|%20)*(?:=|%3D)[^&]+|(?:\"|%22)(?:\\s|%20)*(?::|%3A)(?:\\s|%20)*(?:\"|%22)(?:%2[^2]|%[^2]|[^\"%])+(?:\"|%22))|(?:bearer(?:\\s|%20)+[a-z0-9._\\-]+|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|(?:(?<![\\w-])|(?<=%[0-9a-f]{2}))ey[I-L][\\w-]+(?:=|%3D)*\\.ey[I-L][\\w-]+(?:=|%3D)*(?:\\.(?:[\\w.+/=-]|%3D|%2F|%2B)+)?|-{5}BEGIN(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY-{5}[^\\-]+-{5}END(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY(?:-{5})?(?:\\n|%0A)?|(?:ssh-(?:rsa|dss)|ecdsa-[a-z0-9]+-[a-z0-9]+)(?:\\s|%20|%09)+(?:[a-z0-9/.+]|%2F|%5C|%2B){100,}(?:=|%3D)*(?:(?:\\s|%20|%09)+[a-z0-9._-]+)?)
     const_name: ObfuscationQueryStringRegex
     documentation: |-
       Configuration key for specifying a custom regex to obfuscate query strings.
@@ -3794,10 +3842,10 @@ supportedConfigurations:
       Used when <see cref="ExporterOtlpMetricsHeaders"/> is not set.
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:
-  - implementation: B
+  - implementation: A
     scope: managed
     type: string
-    default: http://localhost:4317/
+    default: null
     product: OpenTelemetry
     const_name: ExporterOtlpLogsEndpoint
     documentation: |-
@@ -3830,10 +3878,10 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
       Default value is 10000ms.
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:
-  - implementation: C
+  - implementation: A
     scope: managed
     type: string
-    default: http://localhost:4317/
+    default: null
     product: OpenTelemetry
     const_name: ExporterOtlpMetricsEndpoint
     documentation: |-
@@ -3871,10 +3919,10 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_METRICS_PROTOCOL:
-  - implementation: C
+  - implementation: B
     scope: managed
     type: string
-    default: grpc
+    default: http/protobuf
     product: OpenTelemetry
     aliases:
     - OTEL_EXPORTER_OTLP_PROTOCOL

@@ -52,7 +52,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return type == typeof(string)
-                   ? Expression.Constant("{REDACTED}")
+                   ? Expression.Constant(RedactedValueDump)
                    : Expression.Default(type);
     }
 

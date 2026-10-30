@@ -54,7 +54,6 @@ updates:
     # - Datadog.Trace.OpenTracing
     # - Datadog.Trace.BenchmarkDotNet
     exclude-paths:
-      - "Datadog.AutoInstrumentation.Generator/**"
       - "Datadog.AzureFunctions/**"
       - "Datadog.InstrumentedAssemblyGenerator/**"
       - "Datadog.InstrumentedAssemblyVerification/**"
@@ -86,6 +85,21 @@ updates:
       # Lock Microsoft.Build.Framework for widest compatibility when instrumenting builds
       - dependency-name: "Microsoft.Build.Framework"
 
+    cooldown:
+      default-days: 2
+
+  # Internal tooling (instrumentation generator, MockAgent, etc.)
+  - package-ecosystem: "nuget"
+    directory: "/tracer/tools"
+    registries: "*"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+    groups:
+      tools-packages:
+        patterns:
+          - "*"
     cooldown:
       default-days: 2
 

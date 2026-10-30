@@ -25,7 +25,7 @@ internal readonly struct SamplingDecision
 
     public readonly string? Mechanism;
 
-    public readonly float? Rate;
+    public readonly double? Rate;
 
     public readonly float? LimiterRate;
 
@@ -37,7 +37,7 @@ internal readonly struct SamplingDecision
     /// </summary>
     public readonly bool? KeptByProbabilitySampling;
 
-    public SamplingDecision(int priority, string? mechanism, float? rate, float? limiterRate, bool? sample = null)
+    public SamplingDecision(int priority, string? mechanism, double? rate, float? limiterRate, bool? sample = null)
     {
         Priority = priority;
         Mechanism = mechanism;
@@ -46,7 +46,7 @@ internal readonly struct SamplingDecision
         KeptByProbabilitySampling = sample;
     }
 
-    public void Deconstruct(out int priority, out string? mechanism, out float? rate, out float? limiterRate)
+    public void Deconstruct(out int priority, out string? mechanism, out double? rate, out float? limiterRate)
     {
         priority = Priority;
         mechanism = Mechanism;

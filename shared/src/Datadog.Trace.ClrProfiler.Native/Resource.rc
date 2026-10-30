@@ -50,6 +50,8 @@ END
 // Version
 //
 
+#include "../native-src/dd_version.h"
+
 VS_VERSION_INFO VERSIONINFO
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -57,8 +59,8 @@ VS_VERSION_INFO VERSIONINFO
 #else
  FILEFLAGS 0x0L
 #endif
- FILEVERSION             3,56,0,0
- PRODUCTVERSION          3,56,0,0
+ FILEVERSION             DD_VERSION_MAJOR,DD_VERSION_MINOR,DD_VERSION_PATCH,DD_VERSION_REVISION
+ PRODUCTVERSION          DD_VERSION_MAJOR,DD_VERSION_MINOR,DD_VERSION_PATCH,DD_VERSION_REVISION
  FILEOS                  VOS_NT
  FILETYPE                VFT_DLL
 BEGIN
@@ -68,12 +70,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog"
             VALUE "FileDescription", "Native loader for Datadog .NET APM"
-            VALUE "FileVersion", "3.56.0.0"
+            VALUE "FileVersion", DD_FOUR_PART_VERSION_STR
             VALUE "InternalName", "Native loader"
             VALUE "LegalCopyright", "(c) Datadog 2020-2022"
             VALUE "OriginalFilename", "Datadog.Trace.ClrProfiler.Native.dll"
             VALUE "ProductName", "Native loader for Datadog .NET APM"
-            VALUE "ProductVersion", "3.56.0.0"
+            VALUE "ProductVersion", DD_FOUR_PART_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"

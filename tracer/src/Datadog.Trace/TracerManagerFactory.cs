@@ -191,7 +191,7 @@ namespace Datadog.Trace
                 }
             }
 
-            featureFlags = FeatureFlagsModule.Create(settings, RcmSubscriptionManager.Instance);
+            featureFlags = FeatureFlagsModule.Create(settings, RcmSubscriptionManager.Instance, discoveryService: discoveryService);
 
             return CreateTracerManagerFrom(
                 settings,
@@ -285,7 +285,7 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, double>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             if (settings.Manager.InitialExporterSettings.IsOtlpTraceExport)
             {

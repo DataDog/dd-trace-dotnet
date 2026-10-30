@@ -45,6 +45,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string? _message;
         private List<EvaluationError>? _errors;
         private string? _snapshotId;
+        private long _timestampMs;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
         private bool _omitCaptureData;
         private uint _incompleteReasons;
@@ -478,7 +479,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WriteValue(SnapshotId);
 
             JsonWriter.WritePropertyName("timestamp");
-            JsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
+            JsonWriter.WriteValue(GetTimestampMs());
 
             JsonWriter.WritePropertyName("duration");
             JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
@@ -493,6 +494,17 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             return this;
+        }
+
+        // The snapshot and root timestamps must have the same value, so read the clock only once per snapshot.
+        private long GetTimestampMs()
+        {
+            if (_timestampMs == 0)
+            {
+                _timestampMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            }
+
+            return _timestampMs;
         }
 
         private void CloseLocalsOrArgsIfOpen()
@@ -1142,6 +1154,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             JsonWriter.WritePropertyName("debugger.product");
             JsonWriter.WriteValue(DebuggerProduct);
+
+            // The logs intake takes the event date from the root timestamp.
+            JsonWriter.WritePropertyName("timestamp");
+            JsonWriter.WriteValue(GetTimestampMs());
 
             return this;
         }

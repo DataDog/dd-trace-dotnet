@@ -8,20 +8,26 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
@@ -67,7 +73,7 @@ public class ExposureApiTests
 
             local.RequestsSent.Should().HaveCount(2, "the second exposure is sent by the shutdown flush");
             var finalRequest = local.RequestsSent[1].Should().BeOfType<BlockingApiRequest>().Subject;
-            finalRequest.Endpoint.AbsolutePath.Should().Be("/evp_proxy/v2/api/v2/exposures");
+            finalRequest.Endpoint.AbsolutePath.Should().Be("/evp_proxy/v4/api/v2/exposures");
             finalRequest.Compression.Should().Be(MultipartCompression.GZip);
             var payload = JObject.Parse(finalRequest.PayloadJson);
             payload["context"]!["service"]!.Value<string>().Should().NotBeNullOrEmpty();
@@ -94,7 +100,8 @@ public class ExposureApiTests
             new Uri("http://agent:8126/"),
             uri => new BlockingApiRequest(uri, sendStarted, releaseSend));
         using var transport = CreateLocalTransport(local);
-        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromMilliseconds(25));
+        var logger = CreateDebugLogger();
+        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromMilliseconds(25), logger.Object);
         Task? dispose = null;
 
         try
@@ -108,6 +115,7 @@ public class ExposureApiTests
                .Should().BeSameAs(dispose, "shutdown must finish even while the request remains blocked");
             await dispose;
             releaseSend.Task.IsCompleted.Should().BeFalse();
+            ArgumentsOf(logger, "may be lost").Should().Equal(25d);
         }
         finally
         {
@@ -152,8 +160,55 @@ public class ExposureApiTests
         local.RequestsSent.Should().BeEmpty();
     }
 
-    private static FeatureFlagsEvpTransport CreateLocalTransport(TestRequestFactory local)
-        => new(local);
+    [Fact]
+    public void ReportsWhatHappensToEachExposureThroughShutdown()
+    {
+        var logger = CreateDebugLogger();
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local, logger.Object);
+        var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(10), logger.Object);
+
+        api.SendExposure(CreateExposure("first"));
+        api.SendExposure(CreateExposure("first"));
+        api.Dispose();
+        api.SendExposure(CreateExposure("after-dispose"));
+
+        ArgumentsOf(logger, "queued for the next flush").Should().Equal("first", "allocation", "variant", "subject");
+        ArgumentsOf(logger, "not queued").Should().Equal("first", "subject");
+        ArgumentsOf(logger, "sending a batch of").Should().Equal(1);
+        ArgumentsOf(logger, "accepted by the Agent EVP proxy").Should().Equal(FeatureFlagsEvpTransport.ExposureIntakePath, FeatureFlagsEvpTransport.EventPlatformProxyV4, 200);
+        ArgumentsOf(logger, "final exposure flush").Should().ContainSingle();
+        ArgumentsOf(logger, "dropped: exposure reporting has stopped").Should().Equal("after-dispose");
+        logger.Verify(l => l.Debug("ExposureApi::UpdateContext -> Applying settings", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        logger.Verify(l => l.Debug("ExposureApi::SendLoopAsync -> Enter", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        logger.Verify(l => l.Debug("ExposureApi::SendLoopAsync -> Exit", It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+    }
+
+    private static Mock<IDatadogLogger> CreateDebugLogger()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(l => l.IsEnabled(It.IsAny<LogEventLevel>())).Returns(true);
+        return logger;
+    }
+
+    // The values handed to the single log call whose message contains the fragment.
+    private static List<object?> ArgumentsOf(Mock<IDatadogLogger> logger, string templateFragment)
+        => logger.Invocations
+                 .Select(i => i.Method.GetParameters().Zip(i.Arguments, (parameter, argument) => (parameter.Name, argument)).ToList())
+                 .Where(call => call.Any(p => p.Name == "messageTemplate" && ((string)p.argument!).Contains(templateFragment)))
+                 .Select(call => call.Where(p => p.Name is not ("sourceLine" or "sourceFile" or "messageTemplate"))
+                                     .Select(p => (object?)p.argument)
+                                     .ToList())
+                 .Should().ContainSingle().Subject;
+
+    private static FeatureFlagsEvpTransport CreateLocalTransport(TestRequestFactory local, IDatadogLogger? logger = null)
+        => new(
+            FeatureFlagsSource.Agentless,
+            local,
+            directRequestFactory: null,
+            discoveryService: new DiscoveryServiceMock(),
+            initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4,
+            logger: logger);
 
     private static ExposureEvent CreateExposure(string flag)
         => new(

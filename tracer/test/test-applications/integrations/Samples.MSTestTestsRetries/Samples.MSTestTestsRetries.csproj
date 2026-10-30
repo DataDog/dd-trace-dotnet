@@ -3,7 +3,13 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.0</ApiVersion>
+    <!-- Native retry scenarios share this sample; older .NET runtimes keep MSTest 3. -->
+    <ApiVersion Condition="'$(ApiVersion)' == '' And ($(TargetFramework.StartsWith('netcoreapp')) Or '$(TargetFramework)' == 'net5.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'net7.0')">3.11.1</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.4.0</ApiVersion>
+    <IncludeNativeRetries Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(ApiVersion)', '4.4.0'))">true</IncludeNativeRetries>
+    <!-- The same assembly runs under VSTest or directly with MTP. .NET Framework only uses VSTest. -->
+    <EnableMSTestRunner Condition="'$(IncludeNativeRetries)' == 'true' And !$(TargetFramework.StartsWith('net4'))">true</EnableMSTestRunner>
+    <OutputType Condition="'$(EnableMSTestRunner)' == 'true'">Exe</OutputType>
     <TestSdkVersion>16.7.1</TestSdkVersion>
     <TestSdkVersion Condition="$(ApiVersion.StartsWith('4.'))">18.0.0</TestSdkVersion>
 
@@ -21,6 +27,20 @@
     <DefineConstants>$(DefineConstants);MSTEST_ASYNC</DefineConstants>
     <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
   </PropertyGroup>
+
+  <!-- Keep 4.4-only APIs out of the legacy package matrix, without conditional code in each scenario. -->
+  <ItemGroup Condition="'$(IncludeNativeRetries)' != 'true'">
+    <Compile Remove="NativeRetries/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(EnableMSTestRunner)' != 'true'">
+    <Compile Remove="NativeRetries/RetryReporter.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(EnableMSTestRunner)' == 'true'">
+    <TestingPlatformBuilderHook Include="96FCC592-6643-4B80-A224-46D2F4050C2B">
+      <DisplayName>Retry history recorder</DisplayName>
+      <TypeFullName>Samples.MSTestTestsRetries.NativeRetries.RetryReporter</TypeFullName>
+    </TestingPlatformBuilderHook>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
