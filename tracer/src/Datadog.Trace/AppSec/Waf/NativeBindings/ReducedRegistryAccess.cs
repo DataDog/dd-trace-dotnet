@@ -19,8 +19,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// https://docs.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types
         /// https://docs.microsoft.com/en-us/windows/desktop/api/Winreg/nf-winreg-reggetvaluea
         /// </summary>
+#pragma warning disable MA0062 // Non-flags enums should not be marked with "FlagsAttribute" - Any mirrors the native RRF_RT_ANY mask
         [Flags]
         private enum RFlags
+#pragma warning restore MA0062
         {
             /// <summary>
             /// Any - No type restriction. (0x0000ffff)
