@@ -47,7 +47,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         // Longer names are still checked but never cached, so large customer strings are not retained.
         private const int MaxCachedNameLength = 512;
 
-        private const int MaxStackAlloc = 512;
+        // 256 chars is 512 bytes, the stackalloc limit. Longer normalized names use a pooled buffer.
+        private const int MaxStackAllocChars = 256;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Redaction));
 
@@ -490,16 +491,24 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return true;
             }
 
-            if (normalizedLength <= MaxStackAlloc)
+            if (normalizedLength <= MaxStackAllocChars)
             {
                 var buffer = stackalloc char[normalizedLength];
                 result = WriteNormalized(identifier, buffer);
             }
             else
             {
-                fixed (char* buffer = new char[normalizedLength])
+                var rented = ArrayPool<char>.Shared.Rent(normalizedLength);
+                try
                 {
-                    result = WriteNormalized(identifier, buffer);
+                    fixed (char* buffer = rented)
+                    {
+                        result = WriteNormalized(identifier, buffer);
+                    }
+                }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(rented);
                 }
             }
 
