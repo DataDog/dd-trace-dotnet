@@ -150,7 +150,7 @@ public readonly struct BenchmarkDiscreteStats
 
         double GetPercentile(double percentile)
         {
-            var index = (int)Math.Round((percentile / 100.0) * (values.Length - 1), 0);
+            var index = (int)Math.Round((percentile / 100.0) * (values.Length - 1), 0, MidpointRounding.ToEven);
             return values[index];
         }
     }

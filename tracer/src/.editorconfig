@@ -156,7 +156,6 @@ dotnet_diagnostic.MA0176.severity = none # Optimize guid creation
 dotnet_diagnostic.MA0179.severity = none # Use Attribute.IsDefined instead of GetCustomAttribute(s)
 dotnet_diagnostic.MA0184.severity = none # Do not use interpolated string without parameters
 dotnet_diagnostic.MA0186.severity = none # Equals method should use [NotNullWhen(true)] on the parameter
-dotnet_diagnostic.MA0193.severity = none # Use an overload with a MidpointRounding argument
 dotnet_diagnostic.MA0194.severity = none # Merge is expressions on the same value
 dotnet_diagnostic.MA0197.severity = none # Add dedicated documentation on types
 dotnet_diagnostic.MA0200.severity = none # Do not use empty property patterns with non-nullable value types
