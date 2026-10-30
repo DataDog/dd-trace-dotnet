@@ -2,7 +2,7 @@
 
 Debugger and Dynamic Instrumentation code runs inside customer processes while inspecting live customer objects. Treat every reflection call, metadata lookup, and value read as potentially observable by the customer application unless the API is known to be metadata-only or limited to instance fields.
 
-Use this document when changing debugger capture, expression evaluation, Exception Replay, Code Origin, symbol extraction, async or iterator resolution, or any helper used by those paths.
+Use this document when changing debugger capture, expression evaluation, redaction, Exception Replay, Code Origin, symbol extraction, async or iterator resolution, or any helper used by those paths.
 
 Most capture and expression-evaluation code runs synchronously on customer application threads. Keep work bounded, avoid unnecessary allocation, and assume any added latency is paid directly by the instrumented request or background operation.
 
@@ -13,6 +13,7 @@ Keep these risks separate when auditing or changing debugger code:
 - Early runtime resolution: resolving assemblies, types, members, generic signatures, or method tokens earlier than customer code would.
 - Static constructor execution: reading static members or otherwise using a type in a way that can run its type initializer.
 - Customer-code execution: invoking getters, enumerators, `ToString()`, exception overrides, attribute constructors, operators, or similar user-controlled code.
+- Data exposure: sending a sensitive value, or a result computed from one, out of the process.
 
 ## Area Guidance
 
@@ -42,13 +43,30 @@ Probe expression evaluation runs under a cooperative `EvaluationBudget`, configu
 
 Both the expression budget and the serializer timeout are best-effort around synchronous customer callbacks; they cannot preempt a blocking or long-running `Count`, enumerator, `MoveNext()`, `Current`, indexer, `Key`, or `Value` call.
 
+Decide from the runtime type, not the declared type, whether a value may be enumerated, formatted with `ToString()`, or have `Exception.Message` or `Exception.StackTrace` read. Values read through members, fields, indexes, or interfaces keep their declared type, which can hide a customer subclass or implementation. The declared type settles the question only when it is sealed or a value type.
+
 Capture paths must not silently broaden default capture to execute customer code. When a value is useful but would require disallowed customer-code execution, prefer omitting that value and reporting a `notCapturedReason` over executing the code.
+
+## Redaction
+
+Everything the debugger sends out of the process must go through `Redaction`: snapshots, rendered log messages, span decoration tags, metric values, evaluation errors, and tracer log lines. Redaction covers configured identifier keywords, redacted types, and sensitive dictionary keys.
+
+- Redact wherever a value is read, not only where it is serialized whole: member and index access, iteration items, `this`, `@return`, `@exception`, `@key`, and `@value`.
+- A result computed from a redacted value is redacted too. Operators and conditions must not return anything computed from the value or from the `{redacted}` placeholder, because a condition such as `eq(secret, "guess")` leaks the value one guess at a time. Render `{redacted}`, make the condition false with an error, and send no metric value.
+- Check dictionary keys however they are produced: literal, computed from constants, or read at runtime.
+- Redact by runtime type, under the same sealed-or-value-type rule as the customer-code execution policy: a redacted type can sit behind `object`, an interface, or a base class.
+- Match keywords against source names, so compiler-generated names such as `<password>k__BackingField` can't bypass them.
+- Logs and errors about a redaction must not include the redacted value, key, or type name.
 
 ## Bounds And Overhead
 
 Capture and expression-evaluation paths must have clear bounds for depth, collection size, field count, string length, and elapsed work where applicable. New traversal, filtering, formatting, or evaluation logic should either use existing capture limits or introduce an explicit limit with tests. New loops or other open-ended work in expression evaluation, including helpers called from generated expressions, should check the evaluation budget described above: `BudgetCheck()` in generated code, `EvaluationBudget.ThrowIfExceeded` in helpers.
 
 Avoid avoidable allocations on capture hot paths. Prefer existing caches, pooled helpers, metadata handles, and streaming writers over building intermediate object graphs or strings. Do not add reflection scans, expression compilation, LINQ-heavy traversal, or broad allocations to per-capture paths without a clear reason and focused performance consideration.
+
+Failure paths need the same limits as success paths. An expression or capture that fails on every hit must not throw, build an error snapshot, or write a log line on every hit; sample or rate-limit error snapshots and log once per probe.
+
+Helpers on capture and evaluation paths, such as redaction lookups, must not take locks on the common path, and their caches must be bounded. Keep caches keyed by customer data separate so that data can't evict other entries, drop cached safety decisions when the configuration they depend on changes, and don't let a cache keep collectible types or customer objects alive.
 
 ## Review Checklist
 
@@ -59,7 +77,9 @@ When reviewing debugger changes, classify each reflection operation before accep
 - Guard static member reads so they do not run customer type initializers unless the behavior is explicitly allowed.
 - Cover intentional customer-code execution with policy text and regression tests.
 - Verify capture and expression-evaluation work is bounded and appropriate for synchronous execution on customer threads.
-- Check allocation behavior for new hot-path code, especially reflection, string formatting, LINQ, collection materialization, and expression compilation.
+- Check allocation and locking behavior for new hot-path code, especially reflection, string formatting, LINQ, collection materialization, expression compilation, and shared caches.
+- Verify every new output path (snapshot field, message segment, tag, metric, error, or log text) is redacted, and that results derived from a redacted value stay redacted.
+- Check that decisions to enumerate, format, or redact a value use its runtime type when the declared type isn't sealed or a value type.
 
 Look specifically for newly introduced calls or expression-tree access to:
 
@@ -70,5 +90,6 @@ Look specifically for newly introduced calls or expression-tree access to:
 - `IEnumerable.GetEnumerator`, `MoveNext`, `Current`, `Count`, `Key`, or `Value`.
 - `Exception.Message`, `Exception.StackTrace`, `Exception.ToString`, or custom exception overrides.
 - arbitrary `ToString()`, `Equals()`, operators, delegates, callbacks, or expression-compiled accessors.
+- `Expression.Equal` or `Expression.NotEqual` used as a null check in generated expression trees, which binds to a user-defined `operator ==`. Use `Expression.ReferenceEqual`, or `HasValue` for `Nullable<T>`.
 
 If a change intentionally crosses one of these boundaries, document why the runtime behavior is required, state whether it is covered by the allowed execution policy, and add a regression test that would fail if the boundary were crossed accidentally.

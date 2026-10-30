@@ -235,9 +235,9 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 ## Debugger / Dynamic Instrumentation Safety
 
-Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, Exception Replay, Code Origin, or symbol-resolution paths, check:
+Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, redaction, Exception Replay, Code Origin, or symbol-resolution paths, check:
 
-- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`.
+- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`, and for redacting sensitive values before they leave the process.
 
 ## Testing
 
