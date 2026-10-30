@@ -21,7 +21,7 @@ Keep these risks separate when auditing or changing debugger code:
 | Code Origin endpoint discovery | Accidentally resolving runtime types or attributes while identifying endpoints. | Prefer `System.Reflection.Metadata` and token/name inspection. Avoid runtime member resolution unless the change explains why it is required. |
 | Line probe resolution | Loading or resolving customer code while matching probes to source locations. | Restrict discovery to already loaded assemblies and symbol/PDB metadata. Treat new runtime resolution as a behavior change that needs focused tests. |
 | SymDB symbol extraction/upload | Resolving metadata in a way that loads unavailable dependencies or executes customer code. | Prefer metadata/PDB readers. If dnlib or reflection is used, verify it does not intentionally load new customer assemblies or instantiate attributes. |
-| Static member capture and expressions | Static field/property reads can trigger type initializers. | Use `StaticMemberSafety`: read literals with `GetRawConstantValue`, and read other static fields or properties only when the declaring type has no type initializer. Otherwise skip capture. |
+| Static member capture and expressions | Static field/property reads can trigger type initializers. | Read literals with `StaticMemberSafety.GetRawConstantValue`. Read other static fields, including static auto-property backing fields, only when `StaticMemberSafety.CanReadStaticMember` allows it (the declaring type has no type initializer); otherwise skip capture. Static property getters run code, so they also fall under the customer-code execution policy below. |
 | Exception Replay IL call scanning | `Module.ResolveMethod(token)` and similar APIs can resolve arbitrary call operands and load unavailable dependencies. | Prefer metadata inspection of call operands. If runtime resolution remains necessary, justify why metadata is insufficient, catch failures locally, and add tests for missing dependency and generic-signature cases. |
 | Async and iterator state-machine resolution | `GetCustomAttributes()` and typed `GetCustomAttribute<T>()` can instantiate customer attributes. | Prefer `CustomAttributeData` or metadata-only attribute inspection when matching state-machine attributes. Do not instantiate attributes just to identify compiler-generated methods. |
 | Snapshot capture and expression evaluation | Some paths intentionally execute bounded customer code, while default object capture should not. | Follow the customer-code execution policy below and add regression tests for any intentional boundary crossing. |
@@ -32,21 +32,21 @@ Default object capture should avoid customer-code execution. It may read instanc
 
 Some debugger features exist to evaluate live runtime values, so they may execute customer code when that behavior is explicit and constrained:
 
-- User-authored probe expressions may invoke the supported collection operations the expression requests (`len`, `isEmpty`, `any`, `all`, `filter`, `index`), which can call `Count`, enumerators, and `IList`/`IDictionary` indexers.
-- Probe expression member access (`getmember`, `ref`) reads fields and verified compiler-generated auto-property backing fields only. It never calls a property getter: a property that can't be read this way evaluates to `UndefinedValue`. Static members follow the static member rule above.
+- User-authored probe expressions may invoke the supported collection operations the expression requests, such as `len`, `any`, `filter`, and `index`, which can call `Count`, enumerators, and `IList`/`IDictionary` indexers.
+- Probe expression member access (`getmember`, `ref`) goes through `TryResolveSafeMemberExpression`, which reads fields and verified compiler-generated auto-property backing fields only. It does not call property getters, apart from `Key`/`Value` on BCL `KeyValuePair<,>` and `DictionaryEntry` entries. A property that can't be read this way evaluates to `UndefinedValue`. Static fields follow the static member capture row in the Area Guidance table.
 - Supported collection and dictionary capture may read `Count`, call `GetEnumerator()`, `MoveNext()`, `Current`, and dictionary entry `Key`/`Value` accessors, subject to configured depth, collection-size, and cooperative timeout checks.
 - Special system-type selectors may read documented BCL properties, such as selected `System.Exception` and `System.Lazy<T>` properties.
 - Safe BCL `ToString()` calls may be used only for types allowed by `Redaction.IsSafeToCallToString()`.
 
-Probe expression evaluation runs under a cooperative time budget (`DD_DYNAMIC_INSTRUMENTATION_EVALUATION_TIMEOUT_MS`, default 50 ms), checked at checkpoints the parser inserts into loops and selected string, regex, and type-check operations. `matches` also passes the remaining budget to `Regex` as a hard timeout.
+Probe expression evaluation runs under a cooperative `EvaluationBudget`, configured by `DD_DYNAMIC_INSTRUMENTATION_EVALUATION_TIMEOUT_MS` (default and accepted range in `supported-configurations.yaml`). The parser inserts budget checkpoints into loops and selected string, regex, and type-check operations, and `matches` also passes the remaining budget to `Regex` as a hard timeout. This budget is separate from the cancellation timeout `DebuggerSnapshotSerializer` uses for snapshot capture, including the collection capture above.
 
-Timeouts and budgets are best-effort around synchronous customer callbacks; they cannot preempt a blocking or long-running `Count`, enumerator, `MoveNext()`, `Current`, indexer, `Key`, or `Value` call.
+Both the expression budget and the serializer timeout are best-effort around synchronous customer callbacks; they cannot preempt a blocking or long-running `Count`, enumerator, `MoveNext()`, `Current`, indexer, `Key`, or `Value` call.
 
 Capture paths must not silently broaden default capture to execute customer code. When a value is useful but would require disallowed customer-code execution, prefer omitting that value and reporting a `notCapturedReason` over executing the code.
 
 ## Bounds And Overhead
 
-Capture and expression-evaluation paths must have clear bounds for depth, collection size, field count, string length, and elapsed work where applicable. New traversal, filtering, formatting, or evaluation logic should either use existing capture limits or introduce an explicit limit with tests. New loops or other open-ended work in generated expression code should add an `EvaluationBudget` checkpoint.
+Capture and expression-evaluation paths must have clear bounds for depth, collection size, field count, string length, and elapsed work where applicable. New traversal, filtering, formatting, or evaluation logic should either use existing capture limits or introduce an explicit limit with tests. New loops or other open-ended work in expression evaluation, including helpers called from generated expressions, should check the evaluation budget described above: `BudgetCheck()` in generated code, `EvaluationBudget.ThrowIfExceeded` in helpers.
 
 Avoid avoidable allocations on capture hot paths. Prefer existing caches, pooled helpers, metadata handles, and streaming writers over building intermediate object graphs or strings. Do not add reflection scans, expression compilation, LINQ-heavy traversal, or broad allocations to per-capture paths without a clear reason and focused performance consideration.
 
@@ -63,7 +63,7 @@ When reviewing debugger changes, classify each reflection operation before accep
 
 Look specifically for newly introduced calls or expression-tree access to:
 
-- `PropertyInfo.GetValue`, property access, or indexer access, including `Expression.Property` or `Expression.PropertyOrField` in generated expression trees. Probe expression member access should go through `TryResolveSafeMemberExpression`.
+- `PropertyInfo.GetValue`, property access, or indexer access, including `Expression.Property` or `Expression.PropertyOrField` in generated expression trees. Probe expression member access on customer types should go through `TryResolveSafeMemberExpression`.
 - `FieldInfo.GetValue` on static fields.
 - `Module.ResolveMethod`, `Module.ResolveMember`, `Type.GetType`, `Assembly.Load`, or APIs that can resolve missing dependencies.
 - `GetCustomAttributes()`, typed `GetCustomAttribute<T>()`, or other APIs that instantiate attributes.
