@@ -18,6 +18,14 @@ namespace Datadog.Trace
         // string match, so it must stay a bare numeric three-part version.
         public const string ThreePartVersion = ProjectInfo.ThreePartVersion;
 
+        /// <summary>
+        /// The version to report everywhere: X.Y.Z for releases, X.Y.Z-prerelease for prereleases.
+        /// Unlike <see cref="AssemblyVersion"/>, it distinguishes a prerelease from the release with the same X.Y.Z.
+        /// </summary>
+        public const string SemanticVersion = ProjectInfo.SemanticVersion;
+
         public static ReadOnlySpan<byte> AssemblyVersionBytes => ProjectInfo.AssemblyVersionBytes;
+
+        public static ReadOnlySpan<byte> SemanticVersionBytes => ProjectInfo.SemanticVersionBytes;
     }
 }
