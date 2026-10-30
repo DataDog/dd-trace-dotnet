@@ -39,10 +39,8 @@ Secrets and sensitive configuration, CI and supply chain, PII, and Dynamic Instr
 
 ## 3. Dynamic Instrumentation
 
-Debugger capture, probe expressions, Exception Replay, Code Origin and SymDB run inside customer processes and read live customer objects. [DebuggerSafetyBoundaries.md](../../DebuggerSafetyBoundaries.md) has the allowed execution policy and the reasoning behind these rules.
-
 ### SEC-3.1: Don't invoke customer getters, `ToString()`, enumerators, attribute constructors or type initializers from debugger code
-- Flag: new `PropertyInfo.GetValue` (instance or static), static `FieldInfo.GetValue`, `Expression.Property`/`Expression.PropertyOrField` on a customer type in a generated expression tree, `GetCustomAttributes()`, `Type.GetType`/`Assembly.Load`, `GetEnumerator()`, `Exception.Message`, or arbitrary `ToString()` in debugger capture, expression evaluation, Exception Replay, Code Origin or SymDB paths outside the allowed execution policy. Probe expression member access goes through `TryResolveSafeMemberExpression`, which reads fields and auto-property backing fields instead of calling getters.
+- Flag: new `PropertyInfo.GetValue` (instance or static), static `FieldInfo.GetValue`, `Expression.Property`/`Expression.PropertyOrField` on a customer type in a generated expression tree, `GetCustomAttributes()`, `Type.GetType`/`Assembly.Load`, `GetEnumerator()`, `Exception.Message`, or arbitrary `ToString()` in debugger capture, expression evaluation, Exception Replay, Code Origin or SymDB paths outside the allowed execution policy. Probe expression member access goes through `TryResolveSafeMemberExpression`, which reads fields and auto-property backing fields instead of calling getters. See [DebuggerSafetyBoundaries.md](../../DebuggerSafetyBoundaries.md).
 - ❌ `var text = capturedValue.ToString();`
 - ✅ `var text = Redaction.IsSafeToCallToString(capturedValue?.GetType()) ? capturedValue.ToString() : null;`
 

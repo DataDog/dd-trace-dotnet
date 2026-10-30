@@ -109,8 +109,6 @@ Allocations and CPU cost on hot paths (span creation and finish, tagging, propag
 
 ## 5. Dynamic Instrumentation
 
-Debugger capture and probe expression evaluation run synchronously on customer threads on every probe hit. See [DebuggerSafetyBoundaries.md](../../DebuggerSafetyBoundaries.md).
-
 ### PERF-5.1: Keep shared locks and allocations off the per-hit path of capture, evaluation and redaction helpers
 - Flag: a `lock`, `ReaderWriterLockSlim` or other lock shared across threads taken on every probe hit, or a lock or allocation on a cache hit, in a debugger capture, expression-evaluation or redaction helper; or a cache where entries keyed by customer data (dictionary keys, runtime values) share capacity with other entries, so customer data can evict them.
 - ❌ `lock (_cacheLock) { if (_cache.TryGetValue(type, out var redacted)) { return redacted; } }`
