@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Security;
+using System.Text;
 using Datadog.Trace.Debugger.Snapshots;
 using FluentAssertions;
 using VerifyXunit;
@@ -161,6 +162,33 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Assert
             Assert.Equal(shouldRedact, isRedacted);
+        }
+
+        [Theory]
+        [InlineData(255)]
+        [InlineData(256)] // Largest stack buffer
+        [InlineData(257)] // Smallest pooled buffer
+        [InlineData(600)] // Longer than the cached name limit
+        public void IsRedactedKeyword_NormalizesAroundStackAllocLimit(int normalizedLength)
+        {
+            // Mixed case and separators force normalization, which must produce exactly the configured keyword.
+            var keyword = new StringBuilder(normalizedLength);
+            var name = new StringBuilder();
+            for (var i = 0; i < normalizedLength; i++)
+            {
+                var c = (char)('a' + (i % 26));
+                keyword.Append(c);
+                name.Append(i % 2 == 0 ? char.ToUpperInvariant(c) : c);
+                if (i % 10 == 0)
+                {
+                    name.Append('_');
+                }
+            }
+
+            Redaction.Instance.SetConfig([keyword.ToString()], [], []);
+
+            Redaction.Instance.IsRedactedKeyword(name.ToString()).Should().BeTrue();
+            Redaction.Instance.IsRedactedKeyword(name.ToString(1, name.Length - 1)).Should().BeFalse();
         }
 
         [Theory]
