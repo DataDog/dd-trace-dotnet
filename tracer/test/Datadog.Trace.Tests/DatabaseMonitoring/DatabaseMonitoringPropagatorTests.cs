@@ -151,6 +151,37 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
+        [InlineData(DbmPropagationLevel.Service, false, true)]
+        [InlineData(DbmPropagationLevel.Service, true, true)]
+        [InlineData(DbmPropagationLevel.Disabled, false, false)]
+        [InlineData(DbmPropagationLevel.Disabled, true, false)]
+        [InlineData(DbmPropagationLevel.Full, false, false)]
+        [InlineData(DbmPropagationLevel.Full, true, false)]
+        internal async Task OracleStoredProcedureCommentPreservesCommandShape(DbmPropagationLevel propagationLevel, bool injectStoredProcedure, bool expectedInjection)
+        {
+            await using var tracer = GetV0Tracer();
+            var span = tracer.StartSpan("oracle.query", serviceName: "Test.Service-oracle");
+            span.Context.TraceContext.Environment = "testing";
+            span.Context.TraceContext.ServiceVersion = "1.0.0";
+
+            const string procedureName = "\"MySchema\".\"MyPackage\".\"MyProcedure\"";
+            var command = CreateCommand(procedureName);
+            command.CommandType = CommandType.StoredProcedure;
+
+            DatabaseMonitoringPropagator.PropagateDataViaComment(propagationLevel, IntegrationId.Oracle, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure, baseHash: null)
+                                       .Should().BeFalse("service comments do not inject trace context");
+
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            // .NET Framework never comments Oracle stored procedures; see OracleStoredProcedureCommentsSupported.
+            command.CommandText.Should().Be(expectedInjection && DatabaseMonitoringPropagator.OracleStoredProcedureCommentsSupported
+                                               ? "/*dddbs='Test.Service-oracle',dde='testing',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost',ddpv='1.0.0'*/ " + procedureName
+                                               : procedureName);
+            // ODP.NET constructs the invocation; comment injection must not inspect/rewrite parameters or use the connection.
+            Mock.Get(command).VerifyGet(c => c.Parameters, Times.Never);
+            Mock.Get(command).VerifyGet(c => c.Connection, Times.Never);
+        }
+
+        [Theory]
         [InlineData(SchemaVersion.V0)]
         [InlineData(SchemaVersion.V1)]
         internal async Task PeerServiceInjected(SchemaVersion version)
