@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -161,6 +162,61 @@ public class SpanEnrichmentIntegrationTests : TestHelper
         var settings = VerifyHelper.GetSpanVerifierSettings();
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(nameof(SpanEnrichmentIntegrationTests));
+    }
+
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Trait("RunOnWindows", "True")]
+    public async Task OptOutParameterFromConfigFileReachesProvider(bool enabledInFile)
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.SetupRcm(
+            Output,
+            [
+                ((object)new ServerConfiguration { Flags = FeatureFlagsHelpers.CreateAllFlags() },
+                RcmProducts.FfeFlags,
+                nameof(SpanEnrichmentIntegrationTests))
+            ]);
+
+        var configFile = Path.Combine(Path.GetTempPath(), $"ffe-opt-out-{Guid.NewGuid():N}.json");
+        File.WriteAllText(configFile, JsonConvert.SerializeObject(new Dictionary<string, bool>
+        {
+            [ConfigurationKeys.FeatureFlags.EvaluationTelemetryPerSubjectOptOutEnabled] = enabledInFile,
+        }));
+        try
+        {
+            // The child must not inherit an activation value that could hide a broken CallTarget binding.
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.EvaluationTelemetryPerSubjectOptOutEnabled, null);
+            SetEnvironmentVariable(ConfigurationKeys.ConfigurationFileName, configFile);
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
+#pragma warning disable 618 // superseded, but still honoured for existing adopters
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "1");
+#pragma warning restore 618
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "1");
+
+            using var process = await RunSampleAndWaitForExit(agent, arguments: "enrich optout");
+            process.StandardOutput.ToString().Should().Contain("<INSTRUMENTED>").And.Contain("Exit. OK");
+
+            var spans = await agent.WaitForSpansAsync(2, returnAllOperations: true);
+            var root = spans.Single(s => s.Name == "ffe.root");
+            if (enabledInFile)
+            {
+                root.Tags.Should().NotContainKey(TagFlagsEnc);
+                root.Tags.Should().NotContainKey(TagSubjectsEnc);
+                root.Tags.Should().NotContainKey(TagRuntimeDefaults);
+            }
+            else
+            {
+                DecodeDeltaVarint(root.Tags[TagFlagsEnc]).Should().Contain(FeatureFlagsHelpers.SimpleStringSerialId);
+                DecodeDeltaVarint(root.Tags[TagFlagsEnc]).Should().Contain(FeatureFlagsHelpers.ExposureSerialId);
+                root.Tags.Should().ContainKey(TagSubjectsEnc);
+            }
+        }
+        finally
+        {
+            File.Delete(configFile);
+        }
     }
 
     // Decode side mirrors the cross-SDK codec (system-tests test_ffe/utils.py): base64 -> ULEB128

@@ -19,7 +19,7 @@ class Program
         int configUpdates = 0;
         Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
-        if (!await Evaluator.Init())
+        if (!await Evaluator.Init(optOut: args.Contains("optout")))
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
             return;

@@ -135,15 +135,16 @@ var enabled = await OpenFeature.Api.Instance.GetClient()
 Alternatively, set `DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED=true`
 and use `new DatadogProvider()` without an explicit option.
 An explicit `true` or `false` option overrides tracer configuration.
-An unset option uses the tracer's normal configuration sources, including environment variables,
-`datadog.json`, application configuration, and stable configuration.
-Without instrumentation, the provider reads the process environment only.
-Missing or invalid values disable the parameter.
+An unset option uses the tracer's normal configuration sources.
+This requires a tracer release that includes this setting. With an older tracer,
+the provider reads only the `DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED`
+environment variable. Set the provider option when opt-out must not depend on the tracer version.
 The provider copies the resolved setting at construction. Later configuration or option changes do not affect it.
 Activation alone does not suppress telemetry; each subject must supply the boolean context value.
 Only boolean `true` suppresses new Datadog evaluation metrics and automatic flag
 span annotations. Missing values, strings, numbers, null, and boolean `false`
 preserve telemetry. The provider does not currently produce evaluation EVP events.
+This setting does not control tracer debug logging.
 
 The attribute remains available to targeting rules and exposure reporting, with activation enabled or disabled.
 Changing it follows normal targeting and exposure deduplication rules.

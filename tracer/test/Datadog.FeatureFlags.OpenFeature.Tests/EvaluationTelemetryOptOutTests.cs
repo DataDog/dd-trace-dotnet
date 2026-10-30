@@ -254,6 +254,7 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
     [InlineData(true, true, 0)]
     public async Task PublicConstructorsRequireExplicitActivation(bool useOptions, bool enabled, int emissions)
     {
+        using var environment = new EnvironmentScope(null);
         using var harness = new Harness();
         using var provider = useOptions
             ? new DatadogProvider(new DatadogProviderOptions { EnableEvaluationTelemetryOptOutParameter = enabled })
@@ -409,25 +410,26 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
     }
 
     [Fact]
-    public async Task NestedEvaluationsHaveIndependentDecisions()
+    public async Task NestedErrorEvaluationDoesNotReplaceTheOuterDecision()
     {
         using var harness = new Harness();
         var client = await harness.CreateClient();
-        client.AddHooks([new RecordingHook(async context =>
-        {
-            if (context.TargetingKey == "outer")
-            {
-                Assert.True(await client.GetBooleanValueAsync(harness.FlagKey, false, Context(false, "inner")));
-            }
+        bool? inner = null;
 
-            return null;
+        // Error hooks run after the outer provider wrappers' Before and before their Finally,
+        // so the nested evaluation overlaps the outer evaluation's lifetime.
+        client.AddHooks([new RecordingHook(errorAsync: async () =>
+        {
+            inner ??= await client.GetBooleanValueAsync(harness.FlagKey, false, Context(false, "inner"));
         })]);
 
-        Assert.True(await client.GetBooleanValueAsync(harness.FlagKey, false, Context(true, "outer")));
+        var outer = await client.GetStringDetailsAsync(harness.FlagKey, "fallback", Context(true, "outer"));
+
+        Assert.Equal(ErrorType.TypeMismatch, outer.ErrorType);
+        Assert.True(inner);
         Assert.Single(harness.Metrics);
         Assert.Equal(new[] { "inner" }, harness.SpanCalls);
-        Assert.Equal(2, harness.Exposures.Count);
-        Assert.Equal(2, harness.DeduplicatedExposures.Count);
+        Assert.Single(harness.Exposures);
     }
 
     [Fact]
@@ -435,12 +437,26 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
     {
         using var harness = new Harness();
         var client = await harness.CreateClient();
-        client.AddHooks([new RecordingHook(afterAsync: async () => await Task.Yield())]);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.AddHooks([new RecordingHook(afterAsync: () => release.Task)]);
         var allowed = Context(false, "allowed");
         var optedOut = Context(true, "opted-out");
 
-        var results = await Task.WhenAll(Enumerable.Range(0, 40).Select(i =>
-            client.GetBooleanValueAsync(harness.FlagKey, false, i % 2 == 0 ? allowed : optedOut)));
+        // Every evaluation runs Before and resolution, then waits in After. All Before stages run before any Finally.
+        var pending = Enumerable.Range(0, 40)
+            .Select(i => client.GetBooleanValueAsync(harness.FlagKey, false, i % 2 == 0 ? allowed : optedOut))
+            .ToArray();
+        try
+        {
+            Assert.Equal(40, harness.Exposures.Count);
+            Assert.Empty(harness.Metrics);
+        }
+        finally
+        {
+            release.TrySetResult(true);
+        }
+
+        var results = await Task.WhenAll(pending);
 
         Assert.All(results, Assert.True);
         Assert.Equal(20, harness.Metrics.Count);
@@ -504,6 +520,23 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
         Assert.Equal(emissions, harness.Metrics.Count);
         Assert.Equal(emissions, harness.SpanCalls.Count);
         Assert.Single(harness.Exposures);
+    }
+
+    [Theory]
+    [InlineData(false, 1)]
+    [InlineData(true, 0)]
+    public void SynchronousErrorResultsGateErrorTelemetry(bool optedOut, int emissions)
+    {
+        using var harness = new Harness();
+#pragma warning disable DDFF001 // Verify the existing experimental synchronous API.
+        var result = harness.Provider.ResolveStringValue(harness.FlagKey, "fallback", Context(optedOut));
+#pragma warning restore DDFF001
+
+        Assert.Equal("fallback", result.Value);
+        Assert.Equal(ErrorType.TypeMismatch, result.ErrorType);
+        Assert.Equal(emissions, harness.Metrics.Count);
+        Assert.Equal(emissions, harness.SpanCalls.Count);
+        Assert.Empty(harness.Exposures);
     }
 
     [Fact]
@@ -701,7 +734,7 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
         }
     }
 
-    private sealed class RecordingHook(Func<EvaluationContext, Task<EvaluationContext?>>? before = null, string? failureStage = null, Action? after = null, Func<Task>? afterAsync = null, Action<EvaluationContext>? onFinally = null) : Hook
+    private sealed class RecordingHook(Func<EvaluationContext, Task<EvaluationContext?>>? before = null, string? failureStage = null, Action? after = null, Func<Task>? afterAsync = null, Action<EvaluationContext>? onFinally = null, Func<Task>? errorAsync = null) : Hook
     {
         public ConcurrentQueue<string> Stages { get; } = new();
 
@@ -721,10 +754,13 @@ public class EvaluationTelemetryOptOutTests(ITestOutputHelper output) : IAsyncLi
             }
         }
 
-        public override ValueTask ErrorAsync<T>(HookContext<T> context, Exception error, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
+        public override async ValueTask ErrorAsync<T>(HookContext<T> context, Exception error, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
         {
             Record("Error");
-            return default;
+            if (errorAsync is not null)
+            {
+                await errorAsync();
+            }
         }
 
         public override ValueTask FinallyAsync<T>(HookContext<T> context, FlagEvaluationDetails<T> details, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)

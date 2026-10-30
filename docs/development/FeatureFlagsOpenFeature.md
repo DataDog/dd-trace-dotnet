@@ -44,8 +44,9 @@ failure behavior, completion before return, and exactly-once evaluation metrics.
 `EvaluationTelemetryOptOutTests` uses the real OpenFeature client, Datadog provider,
 production evaluator, metrics hook, span hook, span accumulator, and exposure cache.
 The tests count metrics, span-admission calls, raw exposures, and deduplicated exposures.
-Internal callbacks replace only the evaluator and span-accumulator connections made
-by the native profiler. These tests do not prove native CallTarget loading.
+Internal callbacks replace the evaluator and span-accumulator connections made by the native
+profiler. A supplied span accumulator also creates the span hook, whatever
+`IsSpanEnrichmentEnabled` returns. These tests do not prove native CallTarget loading.
 
 When opt-out is enabled, `GetProviderHooks` creates wrappers for each evaluation.
 Each wrapper captures its provider Before context. OpenFeature versions before 2.5.0 supply the

@@ -12,8 +12,11 @@ class Evaluator
     static Datadog.FeatureFlags.OpenFeature.DatadogProvider provider = null!; // assigned by Init()
     static Action? _onNewConfig = null;
 
-    public static async Task<bool> Init()
+    static bool _optOut;
+
+    public static async Task<bool> Init(bool optOut = false)
     {
+        _optOut = optOut;
         Console.WriteLine("OpenFeature FeatureFlags SDK Sample");
         if (!Datadog.FeatureFlags.OpenFeature.DatadogProvider.IsAvailable)
         {
@@ -36,7 +39,7 @@ class Evaluator
 
     public static (string? Value, string? Error)? Evaluate(string key)
     {
-        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+        var context = CreateContext(key);
         var evaluation = client.GetStringDetailsAsync(key, "Not found", context).Result;
 
         if (evaluation is null || string.IsNullOrEmpty(evaluation.FlagKey))
@@ -59,7 +62,7 @@ class Evaluator
 
     public static void EvaluateSync(string key)
     {
-        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+        var context = CreateContext(key);
 #pragma warning disable DDFF001 // Exercises the experimental synchronous provider API.
         var evaluation = provider.ResolveStringValue(key, "Not found", context);
 #pragma warning restore DDFF001
@@ -71,10 +74,21 @@ class Evaluator
         Console.WriteLine($"EvalSync ({key}) : <OK: {evaluation.Value}>");
     }
 
+    private static EvaluationContext CreateContext(string key)
+    {
+        var builder = EvaluationContext.Builder().SetTargetingKey(key);
+        if (_optOut)
+        {
+            builder.Set("dd_evaluation_telemetry_opt_out", true);
+        }
+
+        return builder.Build();
+    }
+
     public static void ExtraChecks()
     {
         var key = "simple-json";
-        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+        var context = CreateContext(key);
 
         var defaultValue = new Value("Not found");
         var evaluation = client.GetObjectDetailsAsync(key, defaultValue, context).Result;
@@ -87,7 +101,7 @@ class Evaluator
         Assert(evaluation.Value.AsStructure!.GetValue("integer").AsInteger == 1, "Wrong Integer value");
 
         // Exercise synchronous resolution through native instrumentation and remote configuration.
-        var stringContext = EvaluationContext.Builder().SetTargetingKey("simple-string").Build();
+        var stringContext = CreateContext("simple-string");
         var asyncString = client.GetStringDetailsAsync("simple-string", "Not found", stringContext).Result;
 #pragma warning disable DDFF001 // Exercises the experimental synchronous provider API.
         var syncString = provider.ResolveStringValue("simple-string", "Not found", stringContext);

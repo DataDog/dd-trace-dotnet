@@ -7,7 +7,9 @@ using Xunit;
 
 namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
-// These tests change the OpenFeature API context and transaction propagator.
+// These tests change process-wide state: the OpenFeature API context and transaction propagator,
+// and DD_FEATURE_FLAGS_EVALUATION_TELEMETRY_PER_SUBJECT_OPT_OUT_ENABLED, which every
+// parameterless DatadogProvider reads at construction.
 [CollectionDefinition(nameof(EvaluationTelemetryOptOutCollection), DisableParallelization = true)]
 public class EvaluationTelemetryOptOutCollection
 {
