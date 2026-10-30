@@ -101,7 +101,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, instance, snapshotCreator);
+            var state = new MethodDebuggerState(probeId, scope: default, methodMetadataIndex, probeData, instance, snapshotCreator);
 
             var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, value: null, method: state.MethodMetadataInfo.Method, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.EntryStart, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
 

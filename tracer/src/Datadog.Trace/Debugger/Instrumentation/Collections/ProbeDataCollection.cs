@@ -59,6 +59,12 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                 return probeData;
             }
 
+            // A removed probe has no processor. This keeps a method still running its reverted instrumentation off the lock.
+            if (ProbeExpressionsProcessor.Instance.Get(probeId) == null)
+            {
+                return ProbeData.Empty;
+            }
+
             // Create a new one at the given index
             lock (ItemsLocker)
             {
@@ -69,18 +75,20 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                     return probeData;
                 }
 
-                EnlargeCapacity(index);
-
-                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
-                {
-                    Log.Debug<int, int>(nameof(ProbeDataCollection) + "." + nameof(TryCreateProbeDataIfNotExists) + " Creating a new probe metadata info for index = {Index}, Items.Length = {Length}", index, Items.Length);
-                }
-
+                // Read again under the lock, which RemoveProbes takes too:
+                // an entry built from a processor that is being removed is stored before RemoveProbes clears it.
                 var processor = ProbeExpressionsProcessor.Instance.Get(probeId);
 
                 if (processor == null)
                 {
                     return ProbeData.Empty;
+                }
+
+                EnlargeCapacity(index);
+
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug<int, int>(nameof(ProbeDataCollection) + "." + nameof(TryCreateProbeDataIfNotExists) + " Creating a new probe metadata info for index = {Index}, Items.Length = {Length}", index, Items.Length);
                 }
 
                 var sampler = ProbeRateLimiter.Instance.GerOrAddSampler(probeId);
@@ -98,8 +106,10 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// so without this, a probe added again would usually find its old entry, with a removed processor and a disposed sampler.
         /// </summary>
         /// <remarks>
-        /// The native index of a probe isn't known here, and a method probe gets one index per instrumented method (e.g. overloads),
-        /// so every entry is checked. Each AppDomain has its own collection, cleared by the Dynamic Instrumentation instance of that AppDomain.
+        /// Call it after the processors of these probes are removed and before their samplers are disposed, so no new entry can be
+        /// created for them afterwards. The native index of a probe isn't known here, and a method probe gets one index per
+        /// instrumented method (e.g. overloads), so every entry is checked. Each AppDomain has its own collection, cleared by the
+        /// Dynamic Instrumentation instance of that AppDomain.
         /// </remarks>
         /// <param name="probeIds">The ids of the removed probes</param>
         public void RemoveProbes(string[] probeIds)

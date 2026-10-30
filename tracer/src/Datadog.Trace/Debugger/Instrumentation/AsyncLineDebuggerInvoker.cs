@@ -173,7 +173,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     // so this stays at Debug to not log on every pass.
                     if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
-                        Log.Debug("[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                        Log.Debug("[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", property0: typeof(TTarget), property1: instance?.GetType().Name, property2: probeMetadataIndex, property3: probeId);
                     }
 
                     return CreateInvalidatedAsyncLineDebuggerState();

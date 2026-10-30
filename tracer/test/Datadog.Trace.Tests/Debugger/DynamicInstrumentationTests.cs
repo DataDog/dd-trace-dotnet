@@ -1238,7 +1238,7 @@ public class DynamicInstrumentationTests
         public void ReEnable_CachedProbeDataUsesTheRegisteredProcessorAndSampler()
         {
             // The instrumented code finds a probe's processor and sampler in ProbeDataCollection, by native index and probe ID.
-            // When DI is enabled again the native side usually gives the probe the same index, so the cached entry is used again.
+            // When DI is enabled again the native side usually gives the probe the same index, so disabling must clear the entry.
             const int probeMetadataIndex = 4096;
             var settings = CreateDebuggerSettings("true");
             var probe = new LogProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" }, CaptureSnapshot = true };
@@ -1250,6 +1250,7 @@ public class DynamicInstrumentationTests
                 ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probe.Id).IsEmpty().Should().BeFalse("the first hit caches the probe data");
 
                 firstInstance.RemoveProbesAndDispose();
+                ProbeDataCollection.Instance.Get(probeMetadataIndex).Should().Be(default(ProbeData));
 
                 using var secondInstance = CreateDebugger(settings, new NativeInstrumentationRecorder(), out var secondUpdater);
                 secondUpdater.AcceptAdded(new ProbeConfiguration { LogProbes = [probe] });
@@ -1267,8 +1268,7 @@ public class DynamicInstrumentationTests
         [Fact]
         public void RemoteRemoval_ProbeAddedAgainWithTheSameIdGetsTheRegisteredProcessorAndSampler()
         {
-            // The native side reuses the indices of a removed probe first, so a probe removed by remote configuration
-            // and added again with the same ID usually gets the same index, and finds whatever is cached there.
+            // Reusing the same index simulates the native side giving the freed index back to the probe added again
             const int methodIndex = 4100;
             const int overloadIndex = 4101; // a method probe gets one index per instrumented method
             const int otherProbeIndex = 4102;
@@ -1282,7 +1282,7 @@ public class DynamicInstrumentationTests
                 using var debugger = CreateDebugger(settings, nativeRequests, out var updater);
                 updater.AcceptAdded(new ProbeConfiguration { LogProbes = [probe, otherProbe] });
                 var removedProbeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(methodIndex, probe.Id);
-                removedProbeData.IsEmpty().Should().BeFalse("the first hit caches the probe data");
+                removedProbeData.IsEmpty().Should().BeFalse();
                 ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(overloadIndex, probe.Id).IsEmpty().Should().BeFalse();
                 ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(otherProbeIndex, otherProbe.Id).IsEmpty().Should().BeFalse();
 

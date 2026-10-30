@@ -320,8 +320,8 @@ namespace Datadog.Trace.Debugger
                                             lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                             _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
-                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             SetRateLimit(addedProbe);
+                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             break;
                                         case LiveProbeResolveStatus.Unbound:
                                             // Unbound line probes remain retryable on future assembly loads. Some retryable
@@ -359,8 +359,8 @@ namespace Datadog.Trace.Debugger
                                     {
                                         var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
                                         methodProbes.Add(nativeDefinition);
-                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                         SetRateLimit(addedProbe);
+                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                     }
 
                                     break;
@@ -397,6 +397,11 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        /// <summary>
+        /// Registers the probe's sampler. Call it before the processor is registered: a probe added again with the id of a removed one
+        /// can be hit as soon as its processor exists, by a method still running the removed probe's instrumentation, and that hit
+        /// would otherwise cache a default-rate sampler (see <see cref="ProbeDataCollection.TryCreateProbeDataIfNotExists"/>).
+        /// </summary>
         private static void SetRateLimit(ProbeDefinition probe)
         {
             switch (probe)
@@ -521,7 +526,7 @@ namespace Datadog.Trace.Debugger
                 }
                 finally
                 {
-                    RemoveProbeProcessorsAndSamplers(removedProbesIds);
+                    RemoveManagedProbeState(removedProbesIds);
                 }
 
                 // This log entry is being checked in integration test
@@ -530,18 +535,24 @@ namespace Datadog.Trace.Debugger
         }
 
         /// <summary>
-        /// Removes what the instrumented code uses for these probes. Methods that were already running when their
+        /// Removes the processors, cached probe data and samplers of these probes. Methods that were already running when their
         /// instrumentation was reverted keep calling it, so the order matters:
         /// 1. Remove the processors, so these calls can't cache a new entry for a removed probe.
-        /// 2. Clear the cached entries. The native side reuses freed indices first, so a probe added again with the same id
-        ///    would otherwise find its removed processor and disposed sampler there.
+        /// 2. Clear the cached entries (see <see cref="ProbeDataCollection.RemoveProbes"/>).
         /// 3. Dispose the samplers, once no new entry can pick them up.
         /// </summary>
-        private static void RemoveProbeProcessorsAndSamplers(string[] probeIds)
+        private static void RemoveManagedProbeState(string[] probeIds)
         {
             foreach (var id in probeIds)
             {
-                ProbeExpressionsProcessor.Instance.Remove(id);
+                try
+                {
+                    ProbeExpressionsProcessor.Instance.Remove(id);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error removing the processor of probe {ID}", id);
+                }
             }
 
             try
@@ -741,8 +752,8 @@ namespace Datadog.Trace.Debugger
                     // configured rate would never take effect for that probe.
                     foreach (var boundProbe in boundProbes)
                     {
-                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                         SetRateLimit(boundProbe);
+                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                     }
 
                     _instrumentProbes([], lineProbes.ToArray(), [], []);

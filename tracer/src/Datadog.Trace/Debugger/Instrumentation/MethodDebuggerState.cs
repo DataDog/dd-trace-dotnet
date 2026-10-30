@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="probeData">The <see cref="ProbeData"/> associated with the executing instrumentation</param>
         /// <param name="invocationTarget">The current invocation target ('this' object)</param>
         /// <param name="snapshotCreator">The snapshot creator associated with the executing probe configuration</param>
-        internal MethodDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, object invocationTarget, IDebuggerSnapshotCreator snapshotCreator)
+        internal MethodDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ProbeData probeData, object invocationTarget, IDebuggerSnapshotCreator snapshotCreator)
         {
             _probeId = probeId;
             _scope = scope;
