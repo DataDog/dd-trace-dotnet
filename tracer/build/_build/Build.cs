@@ -67,14 +67,16 @@ partial class Build : NukeBuild
     /// <summary>Gets the version being built, read from version.props. Three parts, numeric only.</summary>
     string Version => ProjectInfo.Version;
 
-    /// <summary>Gets a value indicating whether this version publishes as X.Y.Z-prerelease.</summary>
-    /// <remarks>Matched the way MSBuild matches it in version.props.</remarks>
-    bool IsPrerelease => string.Equals(ProjectInfo.IsPrerelease, "true", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Gets the semver prerelease suffix of the version being built, including its leading '-', or empty for a release.</summary>
+    string VersionSuffix => ProjectInfo.VersionSuffix;
+
+    /// <summary>Gets a value indicating whether this version is a prerelease, which per semver means it has any suffix.</summary>
+    bool IsPrerelease => VersionSuffix.Length > 0;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
 
-    [Parameter("Whether the new build version is a prerelease(for packaging purposes)")]
+    [Parameter("Whether the new build version is a prerelease (for packaging purposes). Sets the -prerelease suffix.")]
     readonly bool? NewIsPrerelease;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
