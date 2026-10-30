@@ -184,6 +184,20 @@ public class LineProbeResolverTest
     }
 
     [Theory]
+    [InlineData(@"/_/srcOld/MyFile.cs", @"/_/SRC/MyFile.cs", @"src/MyFile.cs")]
+    [InlineData(@"D:\agent\srcOld\MyFile.cs", @"D:\agent\SRC\MyFile.cs", @"src\MyFile.cs")]
+    public void FindPathThatEndsWithFallsBackToWholeSegmentMatchWhenTrieMatchIsPartial(string partialSegmentDocumentPath, string documentPath, string queryPath)
+    {
+        // The case-sensitive trie only finds "srcOld"; once that is rejected, the case-insensitive whole-segment check finds "SRC".
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(partialSegmentDocumentPath);
+        lookup.InsertPath(documentPath);
+
+        lookup.FindPathThatEndsWith(queryPath).Should().Be(documentPath);
+    }
+
+    [Theory]
     [InlineData(@"/_/src/MyFile.cs", @"/_/Src/MyFile.cs", @"/src/MyFile.cs")]
     [InlineData(@"D:\agent\src\MyFile.cs", @"D:\agent\Src\MyFile.cs", @"\src\MyFile.cs")]
     public void FindPathThatEndsWithMatchesQueryThatStartsWithSeparator(string documentPath, string caseVariantDocumentPath, string queryPath)

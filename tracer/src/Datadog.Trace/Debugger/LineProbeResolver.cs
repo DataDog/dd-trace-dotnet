@@ -499,11 +499,7 @@ namespace Datadog.Trace.Debugger
 
             private static bool EndsAtSegmentBoundary(string reversedPath, int prefixLength)
             {
-                if (prefixLength <= 0 || prefixLength > reversedPath.Length)
-                {
-                    return false;
-                }
-
+                // The trie only returns paths that start with the (non-empty) prefix, so both indexes are in range.
                 // The prefix ends with a separator (the query started with one), or is followed by one or by the end of the path.
                 return IsDirectorySeparator(reversedPath[prefixLength - 1])
                     || prefixLength == reversedPath.Length
