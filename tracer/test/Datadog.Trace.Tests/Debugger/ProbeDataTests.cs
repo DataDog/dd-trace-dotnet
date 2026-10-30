@@ -15,11 +15,8 @@ namespace Datadog.Trace.Tests.Debugger;
 public class ProbeDataTests
 {
     [Theory]
-    [InlineData(true, true, false)]
-    [InlineData(true, false, true)] // copied while ProbeDataCollection.RemoveProbes was clearing it
-    [InlineData(false, true, true)]
-    [InlineData(false, false, true)]
-    public void IsEmpty_WhenTheEntryHasNoProcessorOrNoSampler(bool hasSampler, bool hasProcessor, bool expectedIsEmpty)
+    [CombinatorialData]
+    public void IsEmpty_WhenTheEntryHasNoProcessorOrNoSampler(bool hasSampler, bool hasProcessor)
     {
         var probe = new LogProbe { Id = "probe-id", Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" } };
         var probeData = new ProbeData(
@@ -27,7 +24,7 @@ public class ProbeDataTests
             hasSampler ? new NopAdaptiveSampler() : null,
             hasProcessor ? new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds: 100) : null);
 
-        probeData.IsEmpty().Should().Be(expectedIsEmpty);
+        probeData.IsEmpty().Should().Be(!hasSampler || !hasProcessor);
     }
 
     [Fact]

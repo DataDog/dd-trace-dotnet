@@ -178,7 +178,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData, snapshotCreator)
+            var asyncState = new AsyncMethodDebuggerState(probeId, probeData, snapshotCreator)
             {
                 KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
                 StartTime = DateTimeOffset.UtcNow,
