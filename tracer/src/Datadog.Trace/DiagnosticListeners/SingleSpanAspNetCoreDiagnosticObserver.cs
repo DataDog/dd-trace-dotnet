@@ -9,6 +9,7 @@
 using System;
 using System.Reflection;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.ApiSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
@@ -256,6 +257,19 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
+                    var apiSecurityRoute = routePattern.RawText is not null
+                                               ? NormalizedRouteBuilder.Create(_security, request.PathBase.Value)
+                                               : default;
+
+                    // The OTel semantics don't use the simplified route pattern, so only walk the route for API Security
+                    var resourcePathName = !_tracer.Settings.OtelSemanticsEnabled || apiSecurityRoute.IsEnabled
+                                               ? AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                                                   routePattern,
+                                                   routeValues,
+                                                   _tracer.Settings.ExpandRouteTemplatesEnabled,
+                                                   ref apiSecurityRoute)
+                                               : string.Empty;
+
                     string? normalizedRoute;
                     if (_tracer.Settings.OtelSemanticsEnabled)
                     {
@@ -274,11 +288,6 @@ namespace Datadog.Trace.DiagnosticListeners
                         // the whole route later
                         normalizedRoute = routePattern.RawText?.ToLowerInvariant();
 
-                        var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                            routePattern,
-                            routeValues,
-                            _tracer.Settings.ExpandRouteTemplatesEnabled);
-
                         // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
                         // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
                         // but for now, we just fast-path the no-path base case
@@ -288,6 +297,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
 
                     tags.AspNetCoreRoute = normalizedRoute;
+                    apiSecurityRoute.SetTag(rootSpan, routePattern.RawText);
                 }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed
