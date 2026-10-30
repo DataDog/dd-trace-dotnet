@@ -1198,7 +1198,7 @@ public class DynamicInstrumentationTests
 
         public void Dispose()
         {
-            // Disabling DI keeps the probe processors and samplers registered, so clean the global registries here
+            // Tests that don't remove their probes leave the processors and samplers in the global registries, so clean them here
             foreach (var probeId in _probeIds)
             {
                 ProbeRateLimiter.Instance.ResetRate(probeId);
@@ -1261,6 +1261,50 @@ public class DynamicInstrumentationTests
             finally
             {
                 ProbeDataCollection.Instance.Remove(probeMetadataIndex);
+            }
+        }
+
+        [Fact]
+        public void RemoteRemoval_ProbeAddedAgainWithTheSameIdGetsTheRegisteredProcessorAndSampler()
+        {
+            // The native side reuses the indices of a removed probe first, so a probe removed by remote configuration
+            // and added again with the same ID usually gets the same index, and finds whatever is cached there.
+            const int methodIndex = 4100;
+            const int overloadIndex = 4101; // a method probe gets one index per instrumented method
+            const int otherProbeIndex = 4102;
+            var settings = CreateDebuggerSettings("true");
+            var probe = new LogProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Method" }, CaptureSnapshot = true };
+            var otherProbe = new LogProbe { Id = NewProbeId(), Language = "dotnet", Where = new Where { TypeName = "Samples.Target", MethodName = "Other" }, CaptureSnapshot = true };
+
+            try
+            {
+                var nativeRequests = new NativeInstrumentationRecorder();
+                using var debugger = CreateDebugger(settings, nativeRequests, out var updater);
+                updater.AcceptAdded(new ProbeConfiguration { LogProbes = [probe, otherProbe] });
+                var removedProbeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(methodIndex, probe.Id);
+                removedProbeData.IsEmpty().Should().BeFalse("the first hit caches the probe data");
+                ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(overloadIndex, probe.Id).IsEmpty().Should().BeFalse();
+                ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(otherProbeIndex, otherProbe.Id).IsEmpty().Should().BeFalse();
+
+                updater.AcceptRemoved([RemoteConfigurationPath.FromPath($"employee/{RcmProducts.LiveDebugging}/logProbe_{probe.Id}/config")]);
+
+                nativeRequests.RevertedProbeIds.Should().Equal(probe.Id);
+                ProbeDataCollection.Instance.Get(methodIndex).Should().Be(default(ProbeData));
+                ProbeDataCollection.Instance.Get(overloadIndex).Should().Be(default(ProbeData));
+                ProbeDataCollection.Instance.Get(otherProbeIndex).ProbeId.Should().Be(otherProbe.Id);
+                ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(methodIndex, probe.Id).IsEmpty().Should().BeTrue("a hit on a removed probe must not cache it again");
+
+                updater.AcceptAdded(new ProbeConfiguration { LogProbes = [probe] });
+
+                var probeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(methodIndex, probe.Id);
+                probeData.Processor.Should().BeSameAs(ProbeExpressionsProcessor.Instance.Get(probe.Id)).And.NotBeSameAs(removedProbeData.Processor);
+                probeData.Sampler.Should().BeSameAs(ProbeRateLimiter.Instance.GerOrAddSampler(probe.Id), "a disposed sampler never refills its budget").And.NotBeSameAs(removedProbeData.Sampler);
+            }
+            finally
+            {
+                ProbeDataCollection.Instance.Remove(methodIndex);
+                ProbeDataCollection.Instance.Remove(overloadIndex);
+                ProbeDataCollection.Instance.Remove(otherProbeIndex);
             }
         }
 

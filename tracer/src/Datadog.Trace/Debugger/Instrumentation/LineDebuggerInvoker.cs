@@ -191,10 +191,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
+                var probeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
                 if (probeData.IsEmpty())
                 {
-                    Log.Warning("BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                    // Expected after the probe is removed: a method that was already running (e.g. a loop) keeps hitting the reverted line,
+                    // so this stays at Debug to not log on every pass.
+                    if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                    {
+                        Log.Debug("BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                    }
+
                     return CreateInvalidatedLineDebuggerState();
                 }
 
@@ -203,7 +209,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, snapshotCreator);
+                var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, probeData, lineNumber, probeFilePath, instance, snapshotCreator);
                 var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
 
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
