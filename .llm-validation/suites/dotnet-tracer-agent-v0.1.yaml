@@ -80,6 +80,7 @@ cases:
       startup, and briefly say which terms to use or avoid.
     expected_criteria:
       - Gives a whole-product disable message using "Datadog SDK", such as "The Datadog SDK has been disabled". A plain message or a logging call is equally acceptable.
+      - Judges the proposed message and terminology, not access to a written guide. Guidance files can be absent from the evaluated checkout; reporting that absence or citing existing source logs instead is not a correctness defect. Optional glossary entries do not make an otherwise equally correct answer better.
       - Explains that bare "Profiler" is ambiguous and should not name the whole SDK in this message; mentioning it to explain why to avoid it is correct.
       - Distinguishes the whole product from individual components. "Instrumentation" names native auto-instrumentation, "Continuous Profiler" names the profiling product, and "Datadog.Trace.dll" names the managed assembly. Advising against these component names for this whole-product message is correct, not a terminology error; an exhaustive component glossary is not required.
       - If discussing the managed assembly, uses Datadog.Trace.dll as its preferred name. This aside is optional and does not alone justify a pairwise win. Listing "managed profiler" and "Datadog.Trace.dll" as terms to avoid for the whole-product message is acceptable; penalize only explicitly recommending "managed profiler" as the assembly name or rejecting Datadog.Trace.dll as that name.
@@ -378,12 +379,13 @@ cases:
       what must not be committed. Use local repo files only; do not build, contact Azure,
       request credentials, edit files, or deploy anything. Use placeholders for my app details.
     expected_criteria:
-      - Uses tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <local-feed-directory>; -BuildId can supply missing bundle files, and the script supports a generated prerelease version or an explicit -Version.
-      - Matches the CopyTo destination to the sample's nuget.config local feed and selects the local prerelease in the sample's Datadog.AzureFunctions package reference; a floating dev version or explicit generated version is valid.
+      - Uses tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <local-feed-directory>; -BuildId can supply missing bundle files. The script accepts -Version or generates a timestamped prerelease string, but this does not prove the package receives it. BuildAzureFunctionsNuget passes no Version property to DotNetPack; flagging this and checking the actual package version before restore is valid, not unsupported doubt.
+      - Matches the CopyTo destination to the sample's nuget.config local feed and selects the actual local package version. For a timestamped version such as 3.57.0-dev20261030120000, 3.57.0-dev* matches but 3.57.0-dev.* does not. An explicit matching version is valid. Correcting the skill's floating-version example is valid.
       - For the documented local-test workflow, temporarily replaces the Datadog.Trace.Manual and Datadog.Trace.Annotations project references in tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj with Datadog.Trace and Datadog.Trace.Annotations package references. These substitutions are local-only and must be reverted before committing.
       - Identifies tracer/tools/Deploy-AzureFunction.ps1 with AppName, ResourceGroup, and SampleAppPath placeholders for a later deployment; does not claim that building the package alone deploys or verifies instrumentation.
       - Respects the plan-only scope and explains that later verification needs actual function execution and trace/log evidence.
     bad_signals:
       - Recommends committing the temporary package-reference substitutions as a production change.
       - Claims the sample consumes the local package without configuring a matching feed and package version.
+      - Recommends a dotted prerelease pattern such as 3.57.0-dev.* for an undotted timestamped version such as 3.57.0-dev20261030120000 without correcting the mismatch.
       - Performs builds, external calls, deployment, or edits despite the explicit plan-only request.
