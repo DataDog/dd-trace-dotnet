@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
@@ -69,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         /// `arn:aws:states:region:account:stateMachine:name:version`,
         /// `arn:aws:states:region:account:stateMachine:name:alias`, or
         /// `arn:aws:states:region:account:stateMachine:name/mapStateLabel`.
+        /// Returns null when the ARN is null or no name can be found.
         /// </summary>
-        [return: NotNullIfNotNull(nameof(stateMachineArn))]
         public static string? GetStateMachineName(string? stateMachineArn)
         {
             if (stateMachineArn is null)
@@ -87,15 +86,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 var nameStartIndex = resourceIndex + StateMachineResourceDelimiter.Length;
                 var qualifierIndex = stateMachineArn.IndexOfAny(StateMachineNameTerminators, nameStartIndex);
 
-                return qualifierIndex < 0
-                           ? stateMachineArn.Substring(nameStartIndex)
-                           : stateMachineArn.Substring(nameStartIndex, qualifierIndex - nameStartIndex);
+                var name = qualifierIndex < 0
+                               ? stateMachineArn.Substring(nameStartIndex)
+                               : stateMachineArn.Substring(nameStartIndex, qualifierIndex - nameStartIndex);
+                return NullIfEmpty(name);
             }
 
             // Not a recognized state machine ARN, so fall back to the trailing segment.
             var lastSeparationIndex = stateMachineArn.LastIndexOf(':') + 1;
-            return stateMachineArn.Substring(lastSeparationIndex);
+            return NullIfEmpty(stateMachineArn.Substring(lastSeparationIndex));
         }
+
+        private static string? NullIfEmpty(string value) => value.Length == 0 ? null : value;
 
         internal static string GetOperationName(Tracer tracer, string spanKind)
         {

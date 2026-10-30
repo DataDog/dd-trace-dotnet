@@ -56,25 +56,29 @@ public class AwsStepFunctionsCommonTests
     [InlineData("arn:aws-cn:states:cn-north-1:123456789012:stateMachine:MyStateMachine:1", "MyStateMachine")]
     // Names are allowed to contain characters that are not ARN separators.
     [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:my-state_machine.v2:1", "my-state_machine.v2")]
-    // The resource segment may start the input, and an absent name yields an empty name.
+    // The resource segment may start the input.
     [InlineData(":stateMachine:MyStateMachine", "MyStateMachine")]
-    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:", "")]
-    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine::1", "")]
-    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:/mapStateLabel", "")]
     public void GetStateMachineName_ReturnsStateMachineName(string stateMachineArn, string expected)
     {
         AwsStepFunctionsCommon.GetStateMachineName(stateMachineArn).Should().Be(expected);
     }
 
-    [Fact]
-    public void GetStateMachineName_ReturnsNull_ForNullArn()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    // A state machine ARN without a name.
+    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:")]
+    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine::1")]
+    [InlineData("arn:aws:states:us-east-1:123456789012:stateMachine:/mapStateLabel")]
+    // An unrecognized ARN with an empty trailing segment.
+    [InlineData("not-an-arn:")]
+    public void GetStateMachineName_ReturnsNull_WhenNoNameIsFound(string stateMachineArn)
     {
-        AwsStepFunctionsCommon.GetStateMachineName(null).Should().BeNull();
+        AwsStepFunctionsCommon.GetStateMachineName(stateMachineArn).Should().BeNull();
     }
 
     [Theory]
     // Inputs without a `stateMachine` resource keep the previous trailing-segment fallback.
-    [InlineData("", "")]
     [InlineData("MyStateMachine", "MyStateMachine")]
     [InlineData("not-an-arn:MyStateMachine", "MyStateMachine")]
     [InlineData("arn:aws:states:us-east-1:123456789012:execution:MyStateMachine:abc", "abc")]
