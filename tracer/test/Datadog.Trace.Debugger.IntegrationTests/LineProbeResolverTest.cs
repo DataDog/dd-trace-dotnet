@@ -146,6 +146,58 @@ public class LineProbeResolverTest
         lookup.FindPathThatEndsWith(queryPath).Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(@"/_/src/app/MyFile.cs", @"ap/MyFile.cs")]
+    [InlineData(@"D:\agent\src\app\MyFile.cs", @"ap\MyFile.cs")]
+    [InlineData(@"/_/srcOld/MyFile.cs", @"src/MyFile.cs")]
+    [InlineData(@"D:\agent\srcOld\MyFile.cs", @"src\MyFile.cs")]
+    [InlineData(@"/_/src/MyProject.Api/Feature/MyFile.cs", @"MyProject/Feature/MyFile.cs")]
+    [InlineData(@"/_/src/MyFile.cs", @"MyFile.c")]
+    [InlineData(@"/_/src/MyFile.cs", @"MyFil")]
+    [InlineData(@"D:\agent\src\MyFile.cs", @"MyFile.c")]
+    [InlineData(@"/_/src/MyFile.csx", @"MyFile.cs")]
+    [InlineData(@"/_/Pages/Index.cshtml.cs", @"Index.cshtml")]
+    public void FindPathThatEndsWithRejectsPartialSegmentMatches(string documentPath, string queryPath)
+    {
+        // The trie compares characters, so the outermost query segment must not match
+        // only the start of a longer document segment ("ap" -> "app", "MyFile.c" -> "MyFile.cs").
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(documentPath);
+
+        lookup.FindPathThatEndsWith(queryPath).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(@"/_/src/MyFile.cs", @"MyFile.cs")]
+    [InlineData(@"D:\agent\src\MyFile.cs", @"MyFile.cs")]
+    [InlineData(@"/_/src/app/MyFile.cs", @"app/MyFile.cs")]
+    [InlineData(@"/_/src/MyFile.cs", @"/_/src/MyFile.cs")]
+    [InlineData(@"D:\agent\src\MyFile.cs", @"D:\agent\src\MyFile.cs")]
+    public void FindPathThatEndsWithMatchesWholeSegments(string documentPath, string queryPath)
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(documentPath);
+
+        lookup.FindPathThatEndsWith(queryPath).Should().Be(documentPath);
+    }
+
+    [Theory]
+    [InlineData(@"/_/src/MyFile.cs", @"/_/Src/MyFile.cs", @"/src/MyFile.cs")]
+    [InlineData(@"D:\agent\src\MyFile.cs", @"D:\agent\Src\MyFile.cs", @"\src\MyFile.cs")]
+    public void FindPathThatEndsWithMatchesQueryThatStartsWithSeparator(string documentPath, string caseVariantDocumentPath, string queryPath)
+    {
+        // The reversed query ends with a separator, so the match already ends on a segment boundary.
+        // The case variant makes the case-insensitive fallback ambiguous, so only the exact match resolves this.
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(documentPath);
+        lookup.InsertPath(caseVariantDocumentPath);
+
+        lookup.FindPathThatEndsWith(queryPath).Should().Be(documentPath);
+    }
+
     [Fact]
     public void FallbackMatchBindsWhenOnlyLeadingSegmentsDiffer()
     {
@@ -446,6 +498,48 @@ public class LineProbeResolverTest
     }
 
     [Fact]
+    public void FileNameOnlyResolvesLineProbe()
+    {
+        _probeDefinition.Where.SourceFile = GetTrailingSegments(_probeDefinition.Where.SourceFile, trailingSegmentCount: 1)[0];
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Bound);
+        result.Diagnostics.PathMatchType.Should().Be(LineProbePathMatchType.ExactSuffixMatch);
+        loc.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void PartialFolderNameReturnsRetryableUnboundWithReportedError()
+    {
+        // e.g. "SmokeTest\LambdaSingleLine.cs" must not bind ".../SmokeTests/LambdaSingleLine.cs"
+        _probeDefinition.Where.SourceFile = BuildProbePathWithTruncatedOutermostSegment(_probeDefinition.Where.SourceFile, trailingSegmentCount: 2);
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.ReportError.Should().BeTrue();
+        result.Reason.Should().Be(LineProbeResolveReason.LoadedAssemblySourceFileMismatch);
+        result.Diagnostics.FallbackFailureReason.Should().Be(LineProbeFallbackFailureReason.NoQualifiedSuffixMatch);
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void PartialFileNameReturnsUnboundWithoutReportedError()
+    {
+        // e.g. "LambdaSingleLine.c" must not bind ".../LambdaSingleLine.cs"
+        _probeDefinition.Where.SourceFile = BuildProbePathWithTruncatedOutermostSegment(_probeDefinition.Where.SourceFile, trailingSegmentCount: 1);
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.ReportError.Should().BeFalse();
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
+        result.Diagnostics.FallbackFailureReason.Should().Be(LineProbeFallbackFailureReason.NoSameFileNameCandidates);
+        loc.Should().BeNull();
+    }
+
+    [Fact]
     public void ResolveLineThatIncludesLambdaExpressions()
     {
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
@@ -501,13 +595,25 @@ public class LineProbeResolverTest
 
     private static string BuildProbePathWithUnknownPrefix(string sourceFile, int trailingSegmentCount)
     {
-        var segments = sourceFile.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+        return $@"UnknownPrefix\{string.Join(@"\", GetTrailingSegments(sourceFile, trailingSegmentCount))}";
+    }
+
+    private static string BuildProbePathWithTruncatedOutermostSegment(string sourceFile, int trailingSegmentCount)
+    {
+        var trailingSegments = GetTrailingSegments(sourceFile, trailingSegmentCount);
+        trailingSegments[0] = trailingSegments[0].Substring(0, trailingSegments[0].Length - 1);
+        return string.Join(@"\", trailingSegments);
+    }
+
+    private static string[] GetTrailingSegments(string sourceFile, int trailingSegmentCount)
+    {
+        var segments = sourceFile.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length < trailingSegmentCount)
         {
             throw new InvalidOperationException($"Expected at least {trailingSegmentCount} path segments.");
         }
 
-        return $@"UnknownPrefix\{string.Join(@"\", segments.Skip(segments.Length - trailingSegmentCount))}";
+        return segments.Skip(segments.Length - trailingSegmentCount).ToArray();
     }
 
     private static LineProbeResolver.ClosestPathBySuffixResult CreateClosestPathBySuffixResult(string path, int matchingTrailingSegments, bool isAmbiguous)
