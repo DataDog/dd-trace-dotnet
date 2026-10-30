@@ -113,7 +113,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             if (existing is AdaptiveSampler adaptive)
             {
-                adaptive.SetSnapshotsPerSecond(snapshotsPerSecond);
+                adaptive.SetRate(snapshotsPerSecond);
             }
             else
             {

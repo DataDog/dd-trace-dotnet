@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -33,9 +34,15 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// To smooth out these hiccups the sampler maintains an under-sampling budget which can be used
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
+    ///
+    /// Rates below one sample per second are not a whole number of samples per one-second window. For those,
+    /// <see cref="SetRate"/> switches the sampler to admit at most one sample per 1/rate interval and stops the
+    /// window timer.
     /// </summary>
     internal sealed class AdaptiveSampler : IAdaptiveSampler
     {
+        private const long NoIntervalSample = long.MinValue;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
 
         /// <summary>
@@ -50,8 +57,14 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// </summary>
         private readonly double _emaAlpha;
         private readonly object _maintenanceLock = new();
-        private TimeSpan _windowDuration;
+        private readonly TimeSpan _windowDuration;
         private int _samplesPerWindow;
+
+        // Set for rates below one per second: at most one sample per _sampleInterval Stopwatch ticks.
+        // A bool keeps the window-sampling hot path free of 64-bit volatile reads, which are interlocked on 32-bit.
+        private bool _intervalSampling;
+        private long _sampleInterval;
+        private long _lastIntervalSampleTimestamp = NoIntervalSample;
 
         private Counts _countsRef;
 
@@ -109,10 +122,13 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
-        internal TimeSpan WindowDuration => _windowDuration;
-
         public bool Sample()
         {
+            if (Volatile.Read(ref _intervalSampling))
+            {
+                return SampleOncePerInterval(Stopwatch.GetTimestamp(), Volatile.Read(ref _sampleInterval));
+            }
+
             _countsRef.AddTest();
 
             if (NextDouble() < _probability)
@@ -141,9 +157,35 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return ThreadSafeRandom.Shared.NextDouble();
         }
 
-        public void SetRate(int samplesPerWindow)
+        /// <summary>
+        /// Updates the rate in place. Rates between 0 and 1 admit at most one sample every
+        /// 1 / <paramref name="snapshotsPerSecond"/> seconds. Other rates set the samples per window, truncated to a whole number.
+        /// </summary>
+        public void SetRate(double snapshotsPerSecond)
         {
-            UpdateSamplesPerWindow(samplesPerWindow);
+            lock (_maintenanceLock)
+            {
+                // Callers already inside Sample() may still finish on the previous mode.
+                var wasIntervalSampling = _intervalSampling;
+                if (snapshotsPerSecond is > 0 and < 1)
+                {
+                    Volatile.Write(ref _sampleInterval, GetSampleInterval(snapshotsPerSecond));
+                    if (!wasIntervalSampling)
+                    {
+                        Volatile.Write(ref _intervalSampling, true);
+                        _timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+                    }
+
+                    return;
+                }
+
+                SetSamplesPerWindow((int)snapshotsPerSecond);
+                if (wasIntervalSampling)
+                {
+                    Volatile.Write(ref _intervalSampling, false);
+                    _timer?.Change(_windowDuration, _windowDuration);
+                }
+            }
         }
 
         public void Dispose()
@@ -153,92 +195,36 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 return;
             }
 
-            // Detach under the maintenance lock so SetSnapshotsPerSecond cannot Change a timer
-            // that Dispose is releasing. Dispose the timer outside the lock: its callback takes
-            // that lock, and Timer.Dispose waits for an in-flight callback.
+            // SetRate changes the timer under the lock, so detach it there to never change a disposed timer.
             Timer? timer;
             lock (_maintenanceLock)
             {
                 timer = _timer;
                 _timer = null;
-                _rollWindowCallback = null;
             }
 
             timer?.Dispose();
+            _rollWindowCallback = null;
         }
 
-        // The sampler admits a whole number of snapshots per window. Use the shortest window
-        // from 1 to 10 seconds that represents the rate as an integer count, so 0.5 is one
-        // snapshot per two seconds and 2.5 is five per two seconds. Integer rates stay on a
-        // one-second window. Rates that do not divide any of those windows use a 10-second
-        // window and round half away from zero; below 0.05 that rounds to 0 and blocks captures.
-        internal static int GetSamplesPerWindow(double snapshotsPerSecond, out TimeSpan windowDuration)
+        internal bool SampleOncePerInterval(long timestamp) => SampleOncePerInterval(timestamp, Volatile.Read(ref _sampleInterval));
+
+        private static long GetSampleInterval(double snapshotsPerSecond)
         {
-            windowDuration = TimeSpan.FromSeconds(1);
-
-            if (double.IsNaN(snapshotsPerSecond) || snapshotsPerSecond <= 0)
-            {
-                return 0;
-            }
-
-            if (snapshotsPerSecond >= int.MaxValue)
-            {
-                return int.MaxValue;
-            }
-
-            const int maxWindowSeconds = 10;
-            for (var seconds = 1; seconds <= maxWindowSeconds; seconds++)
-            {
-                var scaled = snapshotsPerSecond * seconds;
-                var rounded = Math.Round(scaled, MidpointRounding.AwayFromZero);
-                if (rounded > int.MaxValue)
-                {
-                    break;
-                }
-
-                if (Math.Abs(scaled - rounded) <= 0.000001d)
-                {
-                    windowDuration = TimeSpan.FromSeconds(seconds);
-                    return (int)rounded;
-                }
-            }
-
-            windowDuration = TimeSpan.FromSeconds(maxWindowSeconds);
-            var fallback = Math.Round(snapshotsPerSecond * maxWindowSeconds, MidpointRounding.AwayFromZero);
-            if (fallback >= int.MaxValue)
-            {
-                return int.MaxValue;
-            }
-
-            if (fallback <= 0)
-            {
-                return 0;
-            }
-
-            return (int)fallback;
+            var ticks = Math.Round(Stopwatch.Frequency / snapshotsPerSecond);
+            return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
         }
 
-        internal void SetSnapshotsPerSecond(double snapshotsPerSecond)
+        private bool SampleOncePerInterval(long timestamp, long sampleInterval)
         {
-            var samplesPerWindow = GetSamplesPerWindow(snapshotsPerSecond, out var windowDuration);
-            lock (_maintenanceLock)
+            var lastSample = Volatile.Read(ref _lastIntervalSampleTimestamp);
+            if (lastSample != NoIntervalSample && timestamp - lastSample < sampleInterval)
             {
-                var windowChanged = windowDuration != _windowDuration;
-                ApplySamplesPerWindow(samplesPerWindow);
-                if (!windowChanged)
-                {
-                    return;
-                }
-
-                // Counts and averages are per window. A new duration makes the old EMA incomparable.
-                _windowDuration = windowDuration;
-                _totalCountRunningAverage = 0;
-                _avgSamples = 0;
-                _probability = 1;
-                _countsSlots[0].Reset();
-                _countsSlots[1].Reset();
-                _timer?.Change(windowDuration, windowDuration);
+                return false;
             }
+
+            // Only one of the callers racing past the interval wins the slot.
+            return Interlocked.CompareExchange(ref _lastIntervalSampleTimestamp, timestamp, lastSample) == lastSample;
         }
 
         private double ComputeIntervalAlpha(int lookback)
@@ -250,11 +236,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             lock (_maintenanceLock)
             {
-                ApplySamplesPerWindow(samplesPerWindow);
+                SetSamplesPerWindow(samplesPerWindow);
             }
         }
 
-        private void ApplySamplesPerWindow(int samplesPerWindow)
+        private void SetSamplesPerWindow(int samplesPerWindow)
         {
             _samplesPerWindow = samplesPerWindow;
             Volatile.Write(ref _samplesBudget, samplesPerWindow + ((long)_budgetLookback * samplesPerWindow));
@@ -345,7 +331,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 SampleCount = counts.SampleCount(),
                 Budget = Volatile.Read(ref _samplesBudget),
                 Probability = _probability,
-                TotalAverage = _totalCountRunningAverage
+                TotalAverage = _totalCountRunningAverage,
+                SampleInterval = Volatile.Read(ref _intervalSampling) ? Volatile.Read(ref _sampleInterval) : 0
             };
         }
 
@@ -397,6 +384,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
             public double Probability { get; set; }
 
             public double TotalAverage { get; set; }
+
+            public long SampleInterval { get; set; }
         }
     }
 }

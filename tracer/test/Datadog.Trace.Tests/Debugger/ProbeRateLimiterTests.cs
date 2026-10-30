@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Datadog.Trace.Debugger.RateLimiting;
 using Xunit;
@@ -41,26 +42,24 @@ public class ProbeRateLimiterTests
     }
 
     [Fact]
-    public void SetRate_FractionalRate_ScalesWindowWithoutReplacingSampler()
+    public void SetRate_RateBelowOnePerSecond_UpdatesExistingSamplerInPlace()
     {
         var limiter = new ProbeRateLimiter(AdaptiveSamplerLifetime.Create);
-        const string probeId = "fractional-rate";
+        const string probeId = "below-one-per-second";
 
         try
         {
-            limiter.SetRate(probeId, 2.5);
+            limiter.SetRate(probeId, 1.0 / 3600);
             var sampler = (AdaptiveSampler)limiter.GerOrAddSampler(probeId);
+            Assert.Equal(Stopwatch.Frequency * 3600, sampler.GetInternalState().SampleInterval);
 
-            Assert.Equal(TimeSpan.FromSeconds(2), sampler.WindowDuration);
-            Assert.Equal(5 + (16 * 5), sampler.GetInternalState().Budget);
-            Assert.True(sampler.Sample());
+            limiter.SetRate(probeId, 1.0 / 300);
 
-            limiter.SetRate(probeId, 0.5);
-
+            // ProbeData caches the sampler, so the new rate must apply to the same instance.
             Assert.Same(sampler, limiter.GerOrAddSampler(probeId));
-            Assert.Equal(TimeSpan.FromSeconds(2), sampler.WindowDuration);
-            Assert.Equal(1 + (16 * 1), sampler.GetInternalState().Budget);
+            Assert.Equal(Stopwatch.Frequency * 300, sampler.GetInternalState().SampleInterval);
             Assert.True(sampler.Sample());
+            Assert.False(sampler.Sample());
         }
         finally
         {

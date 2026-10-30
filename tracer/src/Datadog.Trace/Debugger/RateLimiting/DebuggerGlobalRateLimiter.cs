@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     return;
                 }
 
-                ReplaceSampler(samplesPerSecond.Value);
+                ReplaceSampler(Math.Max(samplesPerSecond.Value, 0));
             }
         }
 

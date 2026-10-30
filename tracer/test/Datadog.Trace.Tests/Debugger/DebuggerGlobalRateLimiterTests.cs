@@ -20,7 +20,7 @@ public class DebuggerGlobalRateLimiterTests
         _ = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
         Assert.Equal(
-            [(double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
@@ -33,21 +33,21 @@ public class DebuggerGlobalRateLimiterTests
         limiter.SetRate(42);
 
         Assert.Equal(
-            [(double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42d],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42],
             factory.RequestedRates);
     }
 
     [Fact]
-    public void SetRate_PreservesFractionalSnapshotsPerSecond()
+    public void SetRate_KeepsRatesBelowOnePerSecond()
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
-        limiter.SetRate(0.5);
-        limiter.SetRate(2.5);
+        limiter.SetRate(1.0 / 300);
+        limiter.SetRate(-1);
 
         Assert.Equal(
-            [(double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 0.5d, 2.5d],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 1.0 / 300, 0],
             factory.RequestedRates);
     }
 
@@ -73,7 +73,7 @@ public class DebuggerGlobalRateLimiterTests
         limiter.ResetRate();
 
         Assert.Equal(
-            [(double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42d, (double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
@@ -100,7 +100,7 @@ public class DebuggerGlobalRateLimiterTests
         limiter.SetRate(42);
 
         Assert.Equal(
-            [(double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
@@ -114,7 +114,7 @@ public class DebuggerGlobalRateLimiterTests
         limiter.Initialize();
 
         Assert.Equal(
-            [(double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, (double)DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
