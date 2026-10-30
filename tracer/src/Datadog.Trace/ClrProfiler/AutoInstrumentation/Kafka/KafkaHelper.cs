@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:kafka"]);
         private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
+        private static readonly AsyncLocal<ConsumerContext?> CurrentConsumerContext = new();
         private static bool _headersInjectionEnabled = true;
 
         internal static Scope? CreateProducerScope(
@@ -208,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     try
                     {
-                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers);
                     }
                     catch (Exception ex)
                     {
@@ -232,6 +233,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
 
                 scope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+
+                // Consumer loops reuse the execution context, so scope the message's baggage instead
+                // of leaking it into the next message (restored in CloseConsumerScope). A message
+                // sees only the baggage it was produced with, not whatever the consumer was carrying.
+                //
+                // Replacing the ambient baggage rather than merging into it matches the Java, Node,
+                // Ruby and Rust tracers. The other long-lived .NET consumers (RabbitMQ, IbmMq, the
+                // Azure Functions messaging triggers) still merge and never restore, so they have
+                // the same leak this fixes for Kafka.
+                var baggageScope = BaggageScope.Capture(extractedContext.Baggage);
+                CurrentConsumerContext.Value = new ConsumerContext(scope, baggageScope, CurrentConsumerContext.Value);
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
@@ -340,32 +353,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
-        internal static void CloseConsumerScope(Tracer tracer)
+        /// <summary>
+        /// Closes the consumer scope tracked on this execution context, if there is one, and
+        /// restores the baggage its message replaced.
+        /// </summary>
+        /// <remarks>
+        /// Both consumer-scope modes come through here, so the baggage is always scoped to the same
+        /// lifetime as the span: the next call to <c>Consume()</c> when the span covers message
+        /// processing, or the end of <c>Consume()</c> itself when
+        /// <c>DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED=false</c> limits the span to the poll.
+        /// </remarks>
+        internal static void CloseConsumerScope()
         {
+            var context = CurrentConsumerContext.Value;
+            if (context is null)
+            {
+                // No consumer scope is being tracked on this execution context.
+                return;
+            }
+
             try
             {
-                var settings = tracer.CurrentTraceSettings.Settings;
-                if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-                 || !settings.KafkaCreateConsumerScopeEnabled)
-                {
-                    // integration disabled, skip this trace
-                    return;
-                }
-
-                var activeScope = tracer.InternalActiveScope;
-                var currentSpan = activeScope?.Span;
-                if (currentSpan?.OperationName != tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Kafka))
-                {
-                    // Not currently in a consumer operation
-                    return;
-                }
-
-                // TODO: record end-to-end time?
-                activeScope!.Dispose();
+                context.Scope.Dispose();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error closing Kafka consumer scope");
+            }
+            finally
+            {
+                CurrentConsumerContext.Value = context.PreviousContext;
+
+                // Restored once per execution context, not once overall: anything that captured the
+                // execution context mid-message has its own ambient baggage to put back.
+                context.BaggageScope.Dispose();
             }
         }
 
@@ -556,6 +577,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 Log.Error(exception, "Kafka Broker responded with UNKNOWN_SERVER_ERROR (-1). Please look at broker logs for more information. Tracer message header injection for Kafka is disabled.");
             }
+        }
+
+        // Immutable so captured execution contexts can restore their baggage independently.
+        private sealed class ConsumerContext(Scope scope, BaggageScope baggageScope, ConsumerContext? previousContext)
+        {
+            public Scope Scope { get; } = scope;
+
+            public BaggageScope BaggageScope { get; } = baggageScope;
+
+            public ConsumerContext? PreviousContext { get; } = previousContext;
         }
     }
 }

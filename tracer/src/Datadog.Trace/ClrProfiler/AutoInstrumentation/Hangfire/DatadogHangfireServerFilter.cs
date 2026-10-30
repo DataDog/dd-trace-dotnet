@@ -29,13 +29,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
-            // Hangfire workers reuse one ExecutionContext across sequential jobs, so save/restore
-            // baggage around each job instead of leaking it into the next one (see OnPerformed).
-            performingContext.Items[HangfireConstants.DatadogBaggageKey] = Baggage.Current;
-
             var spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
             var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
-            Baggage.Current = propagationContext.Baggage ?? new Baggage();
+
+            // Hangfire workers reuse one ExecutionContext across sequential jobs, so scope the job's
+            // baggage instead of leaking it into the next one (restored in OnPerformed). A job sees
+            // only the baggage it was enqueued with, not whatever the worker happened to be carrying.
+            performingContext.Items[HangfireConstants.DatadogBaggageKey] = BaggageScope.Capture(propagationContext.Baggage);
 
             var parentContext = propagationContext.SpanContext;
             Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(), performingContext, parentContext);
@@ -70,9 +70,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 }
                 finally
                 {
-                    if (performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var previousBaggage))
+                    if (performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var baggageScope)
+                     && baggageScope is BaggageScope typedBaggageScope)
                     {
-                        Baggage.Current = previousBaggage is Baggage baggage ? baggage : new Baggage();
+                        typedBaggageScope.Dispose();
                     }
                 }
             }
