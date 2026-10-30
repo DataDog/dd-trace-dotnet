@@ -126,7 +126,6 @@ dotnet_diagnostic.MA0047.severity = none # Declare types in namespaces
 dotnet_diagnostic.MA0049.severity = none # Type name should not match containing namespace
 dotnet_diagnostic.MA0052.severity = none # Replace constant Enum.ToString with nameof
 dotnet_diagnostic.MA0053.severity = none # Make class or record sealed
-dotnet_diagnostic.MA0055.severity = none # Do not use finalizer - existing native-resource finalizers should get justified suppressions (or move to SafeHandle). ~Tracer only maintains a live-instance count, so should be justified or removed
 dotnet_diagnostic.MA0057.severity = none # Class name should end with 'Attribute'
 dotnet_diagnostic.MA0058.severity = none # Class name should end with 'Exception'
 dotnet_diagnostic.MA0070.severity = none # Obsolete attributes should include explanations

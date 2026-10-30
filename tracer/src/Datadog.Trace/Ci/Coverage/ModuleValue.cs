@@ -60,10 +60,12 @@ internal sealed class ModuleValue : IDisposable
         }
     }
 
+#pragma warning disable MA0055 // Do not use finalizer - frees the native coverage memory if Dispose isn't called
     ~ModuleValue()
     {
         Dispose();
     }
+#pragma warning restore MA0055
 
     public enum BufferKind
     {

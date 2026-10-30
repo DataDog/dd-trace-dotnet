@@ -189,10 +189,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
                 Object = (IntPtr)obj;
             }
 
+#pragma warning disable MA0055 // Do not use finalizer - kept as defensive cleanup, but unreachable (and a removal candidate): the strong GCHandle allocated in the constructor roots this instance until Dispose frees it, and Dispose suppresses finalization
             ~PathMapper()
             {
                 Dispose();
             }
+#pragma warning restore MA0055
 
             public IntPtr Object { get; private set; }
 

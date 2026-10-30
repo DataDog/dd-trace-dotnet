@@ -49,7 +49,9 @@ internal sealed class Context : IContext
         _encodeResults = new(64);
     }
 
+#pragma warning disable MA0055 // Do not use finalizer - releases the native WAF context if Dispose isn't called
     ~Context() => Dispose(false);
+#pragma warning restore MA0055
 
     public static IContext? GetContext(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
     {
