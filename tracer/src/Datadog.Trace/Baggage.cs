@@ -324,11 +324,13 @@ internal sealed class Baggage : IDictionary<string, string?>
                 // check if items fit into the array
                 if (array.Length - arrayIndex < items.Count)
                 {
+#pragma warning disable MA0136 // Raw String contains an implicit end of line character - line endings are irrelevant in an exception message
                     ThrowHelper.ThrowArgumentException(
                         """
                         The number of elements in the source collection is greater than 
                         the available space from arrayIndex to the end of the destination array.
                         """);
+#pragma warning restore MA0136
                 }
 
                 for (int i = 0; i < items.Count; i++)

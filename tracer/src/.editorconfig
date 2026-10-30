@@ -144,7 +144,6 @@ dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from
 dotnet_diagnostic.MA0105.severity = none # Use the lambda parameters instead of using a closure
 dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter
 dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
-dotnet_diagnostic.MA0136.severity = none # Raw String contains an implicit end of line character
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0150.severity = none # Do not call ToString() when the type falls back to object.ToString()

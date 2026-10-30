@@ -42,6 +42,7 @@ internal sealed class AvailableCommandsCommand : CommandBase
 #pragma warning disable SA1005 // Comment must not begin with a space (required for lang injection)
     internal static ReturnCode Execute(TextWriter writer, Command rootCommand)
     {
+#pragma warning disable MA0136 // Raw String contains an implicit end of line character - line endings are irrelevant in the JSON output
         //language=JSON
         var json = $$"""
                      {
@@ -50,6 +51,7 @@ internal sealed class AvailableCommandsCommand : CommandBase
                        ]
                      }
                      """;
+#pragma warning restore MA0136
 
         writer.WriteLine(json);
         return ReturnCode.Success;
