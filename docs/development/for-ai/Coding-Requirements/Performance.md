@@ -121,10 +121,11 @@ Debugger capture and probe expression evaluation run synchronously on customer t
 - ❌ `Log.Warning("Probe {ProbeId}: the predicate skipped a redacted item", probeId); // on every hit`
 - ✅ `if (state.ShouldSampleEvaluationErrorSnapshot()) { /* build the error snapshot */ }`, and log once per probe.
 
-### PERF-5.3: Check the `EvaluationBudget` in new loops and open-ended work in probe expression evaluation
-- Flag: a new loop, recursion, or string, regex or collection operation in `ProbeExpressionParser` with no `BudgetCheck()` in the expression it builds, or a helper called from generated expressions that loops without `EvaluationBudget.ThrowIfExceeded`.
+### PERF-5.3: Bound new loops and single expensive operations in probe expression evaluation by the `EvaluationBudget`
+- Flag: a new loop or recursion in `ProbeExpressionParser` with no `BudgetCheck()` in the expression it builds, or a helper called from generated expressions that loops without `EvaluationBudget.ThrowIfExceeded`; or a single expensive call (a regex, or a string or collection operation over an unbounded customer value) with no `ThrowIfExceededImmediately` before it and no bound of its own, such as the remaining budget as the `Regex` timeout or a length limit. `ThrowIfExceeded` reads the clock only every 32 calls, and no check before a call can stop it once it runs.
 - ❌ `Expression.Loop(Expression.Block(Expression.IfThen(Expression.Not(moveNext), Expression.Break(breakLabel)), body), breakLabel)`
 - ✅ `Expression.Loop(Expression.Block(BudgetCheck(), Expression.IfThen(Expression.Not(moveNext), Expression.Break(breakLabel)), body), breakLabel)`
+- ✅ `Regex.IsMatch(source, pattern, RegexOptions.None, budget.GetRemainingTimeout())`
 
 ## Don't flag
 - Duplicate `ReadOnlySpan<byte>` literal properties across generated tag classes (the compiler shares the blob).
