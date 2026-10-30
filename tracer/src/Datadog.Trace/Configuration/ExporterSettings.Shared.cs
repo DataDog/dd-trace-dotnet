@@ -181,7 +181,6 @@ namespace Datadog.Trace.Configuration
 
         private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string protocolKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost, bool supportsHttpJson = true)
         {
-            // TODO: Treat empty OTEL settings as unset at the config source level instead of per setting
             var isSignalProtocolSet = !string.IsNullOrEmpty(signalProtocol);
             var configuredProtocol = isSignalProtocolSet ? signalProtocol : generalProtocol;
             var parsedProtocol = ParseOtlpProtocol(configuredProtocol);
