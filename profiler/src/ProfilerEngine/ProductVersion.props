@@ -15,7 +15,7 @@
   <PropertyGroup>
     <AssemblyVersion>$(ProductVersion)</AssemblyVersion>
     <FileVersion>$(ProductVersion)</FileVersion>
-    <InformationalVersion>$(ProductVersion)$(ProductSuffix)</InformationalVersion>
+    <InformationalVersion>$(DD_SemanticVersion)$(ProductSuffix)</InformationalVersion>
 
     <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->
   </PropertyGroup>
