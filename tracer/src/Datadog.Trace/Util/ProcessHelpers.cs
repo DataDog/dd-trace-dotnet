@@ -212,23 +212,18 @@ namespace Datadog.Trace.Util
 
         private static ProcessStartInfo GetProcessStartInfo(Command command)
         {
-            var processStartInfo = command.Arguments is null ?
-                                       new ProcessStartInfo(command.Cmd) :
-                                       new ProcessStartInfo(command.Cmd, command.Arguments);
+            // A verb (e.g. "runas") requires the shell; otherwise we redirect the output, which requires UseShellExecute = false
+            var useShellExecute = command.Verb is not null;
+            var processStartInfo = new ProcessStartInfo(command.Cmd, command.Arguments ?? string.Empty) { UseShellExecute = useShellExecute };
             processStartInfo.CreateNoWindow = true;
             processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             processStartInfo.Verb = command.Verb;
-            if (command.Verb is null)
+            if (!useShellExecute)
             {
-                processStartInfo.UseShellExecute = false;
                 processStartInfo.RedirectStandardOutput = true;
                 processStartInfo.RedirectStandardError = true;
                 processStartInfo.StandardOutputEncoding = command.OutputEncoding ?? processStartInfo.StandardOutputEncoding;
                 processStartInfo.StandardErrorEncoding = command.ErrorEncoding ?? processStartInfo.StandardErrorEncoding;
-            }
-            else
-            {
-                processStartInfo.UseShellExecute = true;
             }
 
             if (command.WorkingDirectory is not null)
