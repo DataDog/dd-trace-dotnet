@@ -19,6 +19,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
 {
@@ -37,6 +38,7 @@ namespace Datadog.Trace
         private const int ErrorPipeBusy = 231;
         private const int TraceAgentConnectTimeout = 500;
         private const int StopTimeout = 1_000;
+        private const int StartupTimeout = 2_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
@@ -61,6 +63,8 @@ namespace Datadog.Trace
 
         private static readonly byte[] TraceAgentInfoRequest = Encoding.ASCII.GetBytes("GET /info HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
 
+        private static readonly byte[] HttpStatusLineStart = Encoding.ASCII.GetBytes("HTTP/");
+
         internal enum ProcessState
         {
             NeverChecked,
@@ -75,6 +79,27 @@ namespace Datadog.Trace
             None,
             Start,
             Restart
+        }
+
+        /// <summary>
+        /// What the keep-alive uses from outside this class: the agent's health check, waits, and the time.
+        /// <see cref="AgentHost"/> is the real one, and tests pass a fake. The keep-alive takes it as a type
+        /// parameter constrained to a struct, so the JIT calls it directly, without delegates or allocations.
+        /// </summary>
+        internal interface IAgentHost
+        {
+            /// <summary>
+            /// Checks whether the agent is healthy, and sets <see cref="ProcessMetadata.PipeIsPresent"/> and
+            /// <see cref="ProcessMetadata.LastHealthCheckFailure"/> as <see cref="ProcessMetadata.ProcessIsHealthyAsync"/> does.
+            /// </summary>
+            Task<bool> CheckHealthAsync(ProcessMetadata metadata);
+
+            Task DelayAsync(int milliseconds);
+
+            /// <summary>
+            /// Gets a monotonic time in milliseconds, for measuring how long something took.
+            /// </summary>
+            long GetTimestampMs();
         }
 
         /// <summary>
@@ -169,339 +194,421 @@ namespace Datadog.Trace
 
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata, int maxRetryInterval)
         {
-            var path = metadata.ProcessPath;
-            Log.Debug("Starting keep alive for {AgentPath}.", path);
+            Log.Debug("Starting keep alive for {AgentPath}.", metadata.ProcessPath);
+            return Task.Run(() => KeepAliveAsync(default(AgentHost), metadata, maxRetryInterval));
+        }
 
-            return Task.Run(
-                async () =>
+        /// <summary>
+        /// Checks the agent in a loop and starts or restarts it when needed. Each pass runs one check, starts the agent
+        /// if the check leaves it <see cref="ProcessState.ReadyToStart"/>, then waits: <see cref="KeepAliveInterval"/>
+        /// normally, or the retry backoff after a failure.
+        /// </summary>
+        private static async Task KeepAliveAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
+        {
+            var path = metadata.ProcessPath;
+            try
+            {
+                // Indicate that there is a worker responsible for doing this
+                // This acts as a lock
+                metadata.IsBeingManaged = true;
+
+                while (true)
                 {
                     try
                     {
-                        // Indicate that there is a worker responsible for doing this
-                        // This acts as a lock
-                        metadata.IsBeingManaged = true;
-
-                        while (true)
+                        if (metadata.ProcessState == ProcessState.NeverChecked)
                         {
-                            try
-                            {
-                                if (metadata.ProcessState == ProcessState.NeverChecked)
-                                {
-                                    // This means we have never tried from this domain
-
-                                    if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
-                                    {
-                                        // This means one of two things:
-                                        // - Another domain has already started this process
-                                        // - The previous instance is in the process of shutting down
-                                        // It is possible that if a pipe is bound it may yet be cleaned up from a previous shutdown
-
-                                        // Assume healthy to start, but look for problems
-                                        metadata.ProcessState = ProcessState.Healthy;
-
-                                        // Check on a delay to be sure we keep the process available after a shutdown
-                                        var attempts = 7;
-                                        var delay = 50d;
-
-                                        while (--attempts > 0)
-                                        {
-                                            await Task.Delay((int)delay).ConfigureAwait(false);
-
-                                            // A slow answer is not a shutdown: keep watching while the pipe exists
-                                            if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false) || metadata.PipeIsPresent)
-                                            {
-                                                // Should result in a max delay of ~3.28 seconds before giving up
-                                                delay = delay * 1.75d;
-                                                continue;
-                                            }
-
-                                            // The previous instance is gone, time to start the process
-                                            Log.Information("Recovering from previous {AgentPath} shutdown. Ready for start.", path);
-                                            metadata.ProcessState = ProcessState.ReadyToStart;
-                                            break;
-                                        }
-
-                                        if (metadata.ProcessState == ProcessState.Healthy)
-                                        {
-                                            Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", path);
-                                        }
-                                    }
-                                    else if (metadata.PipeIsPresent)
-                                    {
-                                        // Count this as the first failed check, so the regular checks wait before starting a copy
-                                        metadata.FailedHealthChecks = 1;
-                                        metadata.ProcessState = ProcessState.Unhealthy;
-                                        LogFailedAgentNotStartedByUs(metadata, IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval));
-                                    }
-                                    else
-                                    {
-                                        // If no instance exists, just get ready to start
-                                        metadata.ProcessState = ProcessState.ReadyToStart;
-                                    }
-                                }
-                                else
-                                {
-                                    // This means we have tried to start from this domain before
-                                    var previousState = metadata.ProcessState;
-                                    var isHealthy = await metadata.ProcessIsHealthyAsync().ConfigureAwait(false);
-
-                                    // Check whether our own process is running only after the health check, so an exit during the
-                                    // check is logged and counted. Every decision below uses this one reading.
-                                    var ownProcessIsRunning = metadata.OwnProcessIsRunning();
-                                    var ownProcessExited = !ownProcessIsRunning && RecordOwnProcessExit(metadata);
-                                    metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
-                                    var otherAgentHasPipe = metadata.PipeIsPresent && !ownProcessExited;
-                                    var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, otherAgentHasPipe, metadata.FailedHealthChecks);
-                                    if (isHealthy)
-                                    {
-                                        // Reset the backoff only after StableHealthyPeriod, so an agent that keeps flapping still backs off
-                                        metadata.HealthyStopwatch ??= Stopwatch.StartNew();
-                                        if (metadata.HealthyStopwatch.ElapsedMilliseconds >= StableHealthyPeriod)
-                                        {
-                                            metadata.SequentialFailures = 0;
-                                        }
-
-                                        metadata.ProcessState = ProcessState.Healthy;
-                                        if (previousState == ProcessState.Unhealthy)
-                                        {
-                                            if (metadata.Process == null)
-                                            {
-                                                Log.Information("{AgentPath} is now healthy.", path);
-                                            }
-                                            else
-                                            {
-                                                Log.Information("{AgentPath} with pid {ChildPid} is now healthy.", path, GetProcessId(metadata.Process));
-                                            }
-                                        }
-                                    }
-                                    else if (action == KeepAliveAction.Start)
-                                    {
-                                        metadata.HealthyStopwatch = null;
-                                        metadata.ProcessState = ProcessState.ReadyToStart;
-                                        var startDelay = GetStartDelay(ownProcessExited, metadata.SequentialFailures, maxRetryInterval);
-                                        if (startDelay > 0)
-                                        {
-                                            // The process we started exited after the startup wait: back off like any other failure
-                                            if (IsRetryLoggedAboveDebug(metadata.SequentialFailures, maxRetryInterval))
-                                            {
-                                                Log.Warning("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
-                                            }
-                                            else
-                                            {
-                                                Log.Debug("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
-                                            }
-
-                                            await Task.Delay(startDelay).ConfigureAwait(false);
-                                            metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
-                                        }
-                                        else if (previousState == ProcessState.Healthy
-                                              || (previousState == ProcessState.Unhealthy && IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval)))
-                                        {
-                                            Log.Information("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
-                                        }
-                                        else if (previousState == ProcessState.Unhealthy)
-                                        {
-                                            Log.Debug("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
-                                        }
-                                    }
-                                    else if (action == KeepAliveAction.Restart)
-                                    {
-                                        // Only reached for the process we started: we never stop an agent we did not start.
-                                        // Stopping is retried on later checks if it fails, so only the first attempt logs above Debug.
-                                        metadata.HealthyStopwatch = null;
-                                        var firstAttempt = metadata.FailedHealthChecks == MaxFailedHealthChecks;
-                                        var childPid = GetProcessId(metadata.Process);
-                                        if (TryStopOwnProcess(metadata, firstAttempt))
-                                        {
-                                            // A restart counts as a failure, so an agent that never becomes healthy backs off too
-                                            metadata.SequentialFailures++;
-                                            var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
-                                            if (IsRetryLoggedAboveDebug(metadata.SequentialFailures, maxRetryInterval))
-                                            {
-                                                Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
-                                            }
-                                            else
-                                            {
-                                                Log.Debug("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
-                                            }
-
-                                            await Task.Delay(delay).ConfigureAwait(false);
-                                            metadata.ProcessState = await GetStateAfterRetryDelayAsync(metadata).ConfigureAwait(false);
-                                        }
-                                        else
-                                        {
-                                            if (firstAttempt)
-                                            {
-                                                Log.Warning(
-                                                    "{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}) and could not be stopped. Retrying.",
-                                                    new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure });
-                                            }
-
-                                            metadata.ProcessState = ProcessState.Unhealthy;
-                                        }
-                                    }
-                                    else if (!ownProcessIsRunning)
-                                    {
-                                        // An agent we did not start still has its pipe: GetKeepAliveAction waits before starting a copy
-                                        metadata.HealthyStopwatch = null;
-                                        metadata.ProcessState = ProcessState.Unhealthy;
-                                        if (previousState != ProcessState.Unhealthy)
-                                        {
-                                            LogFailedAgentNotStartedByUs(metadata, IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // The process we started is still running: never start a second copy
-                                        metadata.HealthyStopwatch = null;
-                                        metadata.ProcessState = ProcessState.Unhealthy;
-                                        if (previousState != ProcessState.Unhealthy)
-                                        {
-                                            Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process is running but failed its health check ({Reason}).", path, GetProcessId(metadata.Process), metadata.LastHealthCheckFailure);
-                                        }
-                                    }
-                                }
-
-                                if (metadata.ProcessState == ProcessState.ReadyToStart)
-                                {
-                                    // If this attempt fails, it is counted as failure SequentialFailures + 1
-                                    var logAboveDebug = IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval);
-                                    if (logAboveDebug)
-                                    {
-                                        Log.Information("Attempting to start {AgentPath}.", path);
-                                    }
-                                    else
-                                    {
-                                        Log.Debug("Attempting to start {AgentPath}.", path);
-                                    }
-
-                                    metadata.FailedHealthChecks = 0;
-
-                                    var startInfo = new ProcessStartInfo
-                                    {
-                                        FileName = path, UseShellExecute = false // Force consistency in behavior between Framework and Core
-                                    };
-
-                                    if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
-                                    {
-                                        startInfo.Arguments = metadata.ProcessArguments;
-                                    }
-
-                                    metadata.Process = Process.Start(startInfo);
-                                    var childPid = GetProcessId(metadata.Process);
-                                    if (logAboveDebug)
-                                    {
-                                        Log.Information("Started {AgentPath} with pid {ChildPid}.", path, childPid);
-                                    }
-                                    else
-                                    {
-                                        Log.Debug("Started {AgentPath} with pid {ChildPid}.", path, childPid);
-                                    }
-
-                                    const int startupTimeout = 2000;
-                                    var startupStopwatch = Stopwatch.StartNew();
-
-                                    while (startupStopwatch.ElapsedMilliseconds < startupTimeout)
-                                    {
-                                        // Loop and watch for evidence that the process is up and running
-                                        if (await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
-                                        {
-                                            metadata.HealthyStopwatch = Stopwatch.StartNew();
-                                            metadata.ProcessState = ProcessState.Healthy;
-                                            if (metadata.Process == null || metadata.Process.HasExited)
-                                            {
-                                                // The health check passed because of another instance, not the one we started
-                                                Log.Information(
-                                                    "{AgentPath} with pid {ChildPid} exited with code {ExitCode}, but another instance is already running. Using it.",
-                                                    path,
-                                                    childPid,
-                                                    GetExitCode(metadata.Process));
-                                                ForgetOwnProcess(metadata);
-                                            }
-                                            else
-                                            {
-                                                Log.Information("Successfully started {AgentPath} with pid {ChildPid}.", path, childPid);
-                                            }
-
-                                            break;
-                                        }
-
-                                        if (metadata.Process == null || metadata.Process.HasExited)
-                                        {
-                                            // Retried with backoff, so not an Error
-                                            var failures = metadata.SequentialFailures + 1;
-                                            var retryDelay = GetRetryDelay(failures, maxRetryInterval);
-                                            if (logAboveDebug)
-                                            {
-                                                Log.Warning("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, GetExitCode(metadata.Process), retryDelay, failures });
-                                            }
-                                            else
-                                            {
-                                                Log.Debug("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, GetExitCode(metadata.Process), retryDelay, failures });
-                                            }
-
-                                            ForgetOwnProcess(metadata);
-                                            metadata.ProcessState = ProcessState.Faulted;
-                                            break;
-                                        }
-
-                                        await Task.Delay(100).ConfigureAwait(false);
-                                    }
-
-                                    if (metadata.ProcessState == ProcessState.ReadyToStart)
-                                    {
-                                        if (logAboveDebug)
-                                        {
-                                            Log.Warning("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
-                                        }
-                                        else
-                                        {
-                                            Log.Debug("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, startupTimeout, metadata.LastHealthCheckFailure });
-                                        }
-
-                                        metadata.ProcessState = ProcessState.Unhealthy;
-                                    }
-                                }
-                            }
-                            catch (ThreadAbortException)
-                            {
-                                throw;
-                            }
-                            catch (Exception ex)
-                            {
-                                metadata.ProcessState = ProcessState.Faulted;
-
-                                // Expected failures (the agent exits, fails its health check, or does not start in time) are handled
-                                // above without exceptions, so anything that reaches here is unexpected and is logged as an Error.
-                                // The retry backoff limits how often a repeating error is logged.
-                                Log.Error(ex, "Unexpected error in keep-alive for {AgentPath}.", path);
-                            }
-                            finally
-                            {
-                                if (metadata.ProcessState == ProcessState.Faulted)
-                                {
-                                    metadata.SequentialFailures++;
-                                    // Back off while failures repeat
-                                    await Task.Delay(GetRetryDelay(metadata.SequentialFailures, maxRetryInterval)).ConfigureAwait(false);
-                                }
-                                else
-                                {
-                                    // Delay for a reasonable amount of time before we check to see if the process is alive again.
-                                    await Task.Delay(KeepAliveInterval).ConfigureAwait(false);
-                                }
-                            }
+                            await CheckForExistingAgentAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
                         }
+                        else
+                        {
+                            await CheckAgentAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
+                        }
+
+                        if (metadata.ProcessState == ProcessState.ReadyToStart)
+                        {
+                            await StartAgentAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
+                        }
+                    }
+                    catch (ThreadAbortException)
+                    {
+                        throw;
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error occurred in keep-alive for {AgentPath}.", path);
+                        metadata.ProcessState = ProcessState.Faulted;
+
+                        // Expected failures (the agent exits, fails its health check, or does not start in time) are handled
+                        // without exceptions, so anything that reaches here is unexpected and is logged as an Error.
+                        // The retry backoff limits how often a repeating error is logged.
+                        Log.Error(ex, "Unexpected error in keep-alive for {AgentPath}.", path);
                     }
                     finally
                     {
-                        Log.Warning("Keep alive is dropping for {AgentPath}.", path);
-                        metadata.IsBeingManaged = false;
+                        if (metadata.ProcessState == ProcessState.Faulted)
+                        {
+                            metadata.SequentialFailures++;
+                            // Back off while failures repeat
+                            await host.DelayAsync(GetRetryDelay(metadata.SequentialFailures, maxRetryInterval)).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            // Delay for a reasonable amount of time before we check to see if the process is alive again.
+                            await host.DelayAsync(KeepAliveInterval).ConfigureAwait(false);
+                        }
                     }
-                });
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred in keep-alive for {AgentPath}.", path);
+            }
+            finally
+            {
+                Log.Warning("Keep alive is dropping for {AgentPath}.", path);
+                metadata.IsBeingManaged = false;
+            }
+        }
+
+        /// <summary>
+        /// The first check from this keep-alive. An agent that answers was started by another worker or domain, or it is
+        /// a previous instance that is shutting down, so it is watched briefly before it is used.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal static async Task CheckForExistingAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
+        {
+            var path = metadata.ProcessPath;
+            if (await host.CheckHealthAsync(metadata).ConfigureAwait(false))
+            {
+                if (await ExistingAgentStaysAsync(host, metadata).ConfigureAwait(false))
+                {
+                    metadata.ProcessState = ProcessState.Healthy;
+                    Log.Information("{AgentPath} is already running and was not started by the .NET Tracer in this process. Using it.", path);
+                }
+                else
+                {
+                    Log.Information("Recovering from previous {AgentPath} shutdown. Ready for start.", path);
+                    metadata.ProcessState = ProcessState.ReadyToStart;
+                }
+            }
+            else if (metadata.PipeIsPresent)
+            {
+                // Count this as the first failed check, so the regular checks wait before starting a copy
+                metadata.FailedHealthChecks = 1;
+                metadata.ProcessState = ProcessState.Unhealthy;
+                LogFailedAgentNotStartedByUs(metadata, IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval));
+            }
+            else
+            {
+                // If no instance exists, just get ready to start
+                metadata.ProcessState = ProcessState.ReadyToStart;
+            }
+        }
+
+        /// <summary>
+        /// Watches an agent found by the first check for about 2 seconds, with growing gaps between checks.
+        /// Returns false if its pipe goes away, which means it was shutting down. A slow answer is not a shutdown,
+        /// so the agent counts as staying while its pipe exists.
+        /// </summary>
+        private static async Task<bool> ExistingAgentStaysAsync<THost>(THost host, ProcessMetadata metadata)
+            where THost : struct, IAgentHost
+        {
+            var delay = 50d;
+            for (var check = 0; check < 6; check++)
+            {
+                await host.DelayAsync((int)delay).ConfigureAwait(false);
+                if (!await host.CheckHealthAsync(metadata).ConfigureAwait(false) && !metadata.PipeIsPresent)
+                {
+                    return false;
+                }
+
+                delay *= 1.75d;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// A regular check after the first one. One health check and one reading of our own process decide whether the
+        /// agent is healthy, whether to start a new one, restart ours, or wait for more failed checks.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal static async Task CheckAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
+        {
+            var previousState = metadata.ProcessState;
+            var isHealthy = await host.CheckHealthAsync(metadata).ConfigureAwait(false);
+
+            // Check whether our own process is running only after the health check, so an exit during the
+            // check is logged and counted. Every decision below uses this one reading.
+            var ownProcessIsRunning = metadata.OwnProcessIsRunning();
+            var ownProcessExited = !ownProcessIsRunning && RecordOwnProcessExit(metadata);
+            var otherAgentHasPipe = metadata.PipeIsPresent && !ownProcessExited;
+            metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
+            var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, otherAgentHasPipe, metadata.FailedHealthChecks);
+
+            if (isHealthy)
+            {
+                MarkHealthy(host, metadata, previousState);
+                return;
+            }
+
+            metadata.HealthySinceMs = null;
+            switch (action)
+            {
+                case KeepAliveAction.Start:
+                    await PrepareToStartAsync(host, metadata, previousState, ownProcessExited, maxRetryInterval).ConfigureAwait(false);
+                    break;
+                case KeepAliveAction.Restart:
+                    await RestartOwnProcessAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
+                    break;
+                default:
+                    MarkUnhealthy(metadata, previousState, ownProcessIsRunning, maxRetryInterval);
+                    break;
+            }
+        }
+
+        private static void MarkHealthy<THost>(THost host, ProcessMetadata metadata, ProcessState previousState)
+            where THost : struct, IAgentHost
+        {
+            // Reset the backoff only after StableHealthyPeriod, so an agent that keeps flapping still backs off
+            var now = host.GetTimestampMs();
+            metadata.HealthySinceMs ??= now;
+            if (now - metadata.HealthySinceMs.Value >= StableHealthyPeriod)
+            {
+                metadata.SequentialFailures = 0;
+            }
+
+            metadata.ProcessState = ProcessState.Healthy;
+            if (previousState != ProcessState.Unhealthy)
+            {
+                return;
+            }
+
+            if (metadata.Process == null)
+            {
+                Log.Information("{AgentPath} is now healthy.", metadata.ProcessPath);
+            }
+            else
+            {
+                Log.Information("{AgentPath} with pid {ChildPid} is now healthy.", metadata.ProcessPath, GetProcessId(metadata.Process));
+            }
+        }
+
+        /// <summary>
+        /// Gets ready to start a new agent. After an exit of the process we started, first waits for the retry backoff,
+        /// then uses an agent another worker started in the meantime if there is one.
+        /// </summary>
+        private static async Task PrepareToStartAsync<THost>(THost host, ProcessMetadata metadata, ProcessState previousState, bool ownProcessExited, int maxRetryInterval)
+            where THost : struct, IAgentHost
+        {
+            var path = metadata.ProcessPath;
+            var startDelay = GetStartDelay(ownProcessExited, metadata.SequentialFailures, maxRetryInterval);
+            metadata.ProcessState = ProcessState.ReadyToStart;
+            if (startDelay > 0)
+            {
+                if (IsRetryLoggedAboveDebug(metadata.SequentialFailures, maxRetryInterval))
+                {
+                    Log.Warning("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
+                }
+                else
+                {
+                    Log.Debug<string, string, int, int>("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures);
+                }
+
+                await host.DelayAsync(startDelay).ConfigureAwait(false);
+                metadata.ProcessState = await GetStateAfterRetryDelayAsync(host, metadata).ConfigureAwait(false);
+            }
+            else if (previousState == ProcessState.Healthy
+                  || (previousState == ProcessState.Unhealthy && IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval)))
+            {
+                Log.Information("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
+            }
+            else if (previousState == ProcessState.Unhealthy)
+            {
+                Log.Debug("{AgentPath} is no longer available ({Reason}). Starting a new one.", path, metadata.LastHealthCheckFailure);
+            }
+        }
+
+        /// <summary>
+        /// Stops the process we started after <see cref="MaxFailedHealthChecks"/> failed checks in a row, waits for the
+        /// retry backoff, then gets ready to start a new one. We never stop an agent we did not start. If our process
+        /// cannot be stopped, it stays tracked and stopping is retried on later checks.
+        /// </summary>
+        private static async Task RestartOwnProcessAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
+        {
+            var path = metadata.ProcessPath;
+
+            // Only the first attempt logs above Debug
+            var firstAttempt = metadata.FailedHealthChecks == MaxFailedHealthChecks;
+            var childPid = GetProcessId(metadata.Process);
+            if (!TryStopOwnProcess(metadata, firstAttempt))
+            {
+                if (firstAttempt)
+                {
+                    Log.Warning(
+                        "{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}) and could not be stopped. Retrying.",
+                        new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure });
+                }
+
+                metadata.ProcessState = ProcessState.Unhealthy;
+                return;
+            }
+
+            // A restart counts as a failure, so an agent that never becomes healthy backs off too
+            metadata.SequentialFailures++;
+            var delay = GetRetryDelay(metadata.SequentialFailures, maxRetryInterval);
+            if (IsRetryLoggedAboveDebug(metadata.SequentialFailures, maxRetryInterval))
+            {
+                Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
+            }
+            else if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                // Six values have no generic overload, so check the level before allocating the array
+                Log.Debug("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
+            }
+
+            await host.DelayAsync(delay).ConfigureAwait(false);
+            metadata.ProcessState = await GetStateAfterRetryDelayAsync(host, metadata).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// The agent failed its health check, but it is not yet time to start or restart one. Logs only when the agent
+        /// becomes unhealthy, not on every failed check.
+        /// </summary>
+        private static void MarkUnhealthy(ProcessMetadata metadata, ProcessState previousState, bool ownProcessIsRunning, int maxRetryInterval)
+        {
+            metadata.ProcessState = ProcessState.Unhealthy;
+            if (previousState == ProcessState.Unhealthy)
+            {
+                return;
+            }
+
+            if (ownProcessIsRunning)
+            {
+                // The process we started is still running: never start a second copy
+                Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process is running but failed its health check ({Reason}).", metadata.ProcessPath, GetProcessId(metadata.Process), metadata.LastHealthCheckFailure);
+            }
+            else
+            {
+                // An agent we did not start still has its pipe: GetKeepAliveAction waits before starting a copy
+                LogFailedAgentNotStartedByUs(metadata, IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval));
+            }
+        }
+
+        /// <summary>
+        /// Starts a new agent process, then waits for it with <see cref="WaitForStartedAgentAsync"/>.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal static async Task StartAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+            where THost : struct, IAgentHost
+        {
+            var path = metadata.ProcessPath;
+
+            // If this attempt fails, it is counted as failure SequentialFailures + 1
+            var logAboveDebug = IsRetryLoggedAboveDebug(metadata.SequentialFailures + 1, maxRetryInterval);
+            if (logAboveDebug)
+            {
+                Log.Information("Attempting to start {AgentPath}.", path);
+            }
+            else
+            {
+                Log.Debug("Attempting to start {AgentPath}.", path);
+            }
+
+            metadata.FailedHealthChecks = 0;
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = path, UseShellExecute = false // Force consistency in behavior between Framework and Core
+            };
+
+            if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
+            {
+                startInfo.Arguments = metadata.ProcessArguments;
+            }
+
+            metadata.Process = Process.Start(startInfo);
+            var childPid = GetProcessId(metadata.Process);
+            if (logAboveDebug)
+            {
+                Log.Information("Started {AgentPath} with pid {ChildPid}.", path, childPid);
+            }
+            else
+            {
+                Log.Debug("Started {AgentPath} with pid {ChildPid}.", path, childPid);
+            }
+
+            metadata.ProcessState = await WaitForStartedAgentAsync(host, metadata, childPid, logAboveDebug, maxRetryInterval).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Waits up to <see cref="StartupTimeout"/> for a just-started agent to pass a health check. Returns Healthy when
+        /// it does (or another instance does), Faulted when our process exited first so the retry backoff applies, or
+        /// Unhealthy when it is still running but not ready, so the regular checks take over.
+        /// </summary>
+        private static async Task<ProcessState> WaitForStartedAgentAsync<THost>(THost host, ProcessMetadata metadata, int? childPid, bool logAboveDebug, int maxRetryInterval)
+            where THost : struct, IAgentHost
+        {
+            var path = metadata.ProcessPath;
+            var startedAt = host.GetTimestampMs();
+            while (host.GetTimestampMs() - startedAt < StartupTimeout)
+            {
+                if (await host.CheckHealthAsync(metadata).ConfigureAwait(false))
+                {
+                    metadata.HealthySinceMs = host.GetTimestampMs();
+                    if (metadata.Process == null || metadata.Process.HasExited)
+                    {
+                        // The health check passed because of another instance, not the one we started
+                        Log.Information(
+                            "{AgentPath} with pid {ChildPid} exited with code {ExitCode}, but another instance is already running. Using it.",
+                            path,
+                            childPid,
+                            GetExitCode(metadata.Process));
+                        ForgetOwnProcess(metadata);
+                    }
+                    else
+                    {
+                        Log.Information("Successfully started {AgentPath} with pid {ChildPid}.", path, childPid);
+                    }
+
+                    return ProcessState.Healthy;
+                }
+
+                if (metadata.Process == null || metadata.Process.HasExited)
+                {
+                    // Retried with backoff, so not an Error
+                    var failures = metadata.SequentialFailures + 1;
+                    var retryDelay = GetRetryDelay(failures, maxRetryInterval);
+                    if (logAboveDebug)
+                    {
+                        Log.Warning("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, GetExitCode(metadata.Process), retryDelay, failures });
+                    }
+                    else
+                    {
+                        Log.Debug<string, int?, int?, int, int>("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", path, childPid, GetExitCode(metadata.Process), retryDelay, failures);
+                    }
+
+                    ForgetOwnProcess(metadata);
+                    return ProcessState.Faulted;
+                }
+
+                await host.DelayAsync(100).ConfigureAwait(false);
+            }
+
+            if (logAboveDebug)
+            {
+                Log.Warning("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, StartupTimeout, metadata.LastHealthCheckFailure });
+            }
+            else
+            {
+                Log.Debug<string, int?, int, string>("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", path, childPid, StartupTimeout, metadata.LastHealthCheckFailure);
+            }
+
+            return ProcessState.Unhealthy;
         }
 
         /// <summary>
@@ -606,9 +713,10 @@ namespace Datadog.Trace
         /// <summary>
         /// After a retry wait, another worker may have started a healthy agent: use it instead of starting a duplicate.
         /// </summary>
-        private static async Task<ProcessState> GetStateAfterRetryDelayAsync(ProcessMetadata metadata)
+        private static async Task<ProcessState> GetStateAfterRetryDelayAsync<THost>(THost host, ProcessMetadata metadata)
+            where THost : struct, IAgentHost
         {
-            if (!await metadata.ProcessIsHealthyAsync().ConfigureAwait(false))
+            if (!await host.CheckHealthAsync(metadata).ConfigureAwait(false))
             {
                 return ProcessState.ReadyToStart;
             }
@@ -734,11 +842,33 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// The real <see cref="IAgentHost"/>: the health check over the agent's pipe, <see cref="Task.Delay(int)"/>, and <see cref="Stopwatch"/> time.
+        /// </summary>
+        internal readonly struct AgentHost : IAgentHost
+        {
+            public Task<bool> CheckHealthAsync(ProcessMetadata metadata) => metadata.ProcessIsHealthyAsync();
+
+            public Task DelayAsync(int milliseconds) => Task.Delay(milliseconds);
+
+            public long GetTimestampMs() => (long)StopwatchHelpers.GetElapsedMilliseconds(Stopwatch.GetTimestamp());
+        }
+
         internal sealed class ProcessMetadata
         {
             private string _processPath;
+            private string _pipeName;
+            private string _pipePath;
 
-            public string PipeName { get; set; }
+            public string PipeName
+            {
+                get => _pipeName;
+                set
+                {
+                    _pipeName = value;
+                    _pipePath = null;
+                }
+            }
 
             public string Name { get; set; }
 
@@ -761,9 +891,10 @@ namespace Datadog.Trace
             public int FailedHealthChecks { get; set; }
 
             /// <summary>
-            /// Gets or sets how long the agent has been healthy without a failed check, or null while it is not healthy.
+            /// Gets or sets when the agent became healthy, from <see cref="IAgentHost.GetTimestampMs"/>, or null while it is not healthy.
+            /// A failed check clears it.
             /// </summary>
-            public Stopwatch HealthyStopwatch { get; set; }
+            public long? HealthySinceMs { get; set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
@@ -830,7 +961,8 @@ namespace Datadog.Trace
 
             private bool NamedPipeIsBound()
             {
-                var namedPipe = $"\\\\.\\pipe\\{PipeName}";
+                // Built once: the health check runs every KeepAliveInterval for as long as the app runs
+                var namedPipe = _pipePath ??= $"\\\\.\\pipe\\{PipeName}";
                 var namedPipeIsBound = NamedPipeExists(namedPipe);
                 if (!namedPipeIsBound)
                 {
@@ -877,7 +1009,7 @@ namespace Datadog.Trace
                     await pipe.WriteAsync(TraceAgentInfoRequest, 0, TraceAgentInfoRequest.Length).ConfigureAwait(false);
 
                     // Any status line means the agent is serving requests
-                    var statusLineStart = new byte[5];
+                    var statusLineStart = new byte[HttpStatusLineStart.Length];
                     var read = 0;
                     while (read < statusLineStart.Length)
                     {
@@ -890,7 +1022,7 @@ namespace Datadog.Trace
                         read += count;
                     }
 
-                    return Encoding.ASCII.GetString(statusLineStart) == "HTTP/" ? null : $"unexpected response to GET /info on named pipe {PipeName}";
+                    return statusLineStart.AsSpan().SequenceEqual(HttpStatusLineStart) ? null : $"unexpected response to GET /info on named pipe {PipeName}";
                 }
                 catch (Exception ex)
                 {

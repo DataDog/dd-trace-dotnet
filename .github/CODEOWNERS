@@ -97,6 +97,7 @@ tracer/                                   @DataDog/tracing-dotnet
 /tracer/src/**/*AzureAppService*.cs                                             @DataDog/apm-serverless
 /tracer/src/**/*AzureFunctions*.cs                                              @DataDog/apm-serverless
 /tracer/src/Datadog.AzureFunctions/                                             @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/AgentProcessManager.cs                                @DataDog/serverless-azure-and-gcp
 /tracer/test/**/*AzureAppService*.cs                                            @DataDog/apm-serverless
 /tracer/test/**/*AzureFunctions*.cs                                             @DataDog/apm-serverless
 /tracer/test/test-applications/azure-functions/                                 @DataDog/apm-serverless
@@ -287,6 +288,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tests/Activity/                                  @DataDog/apm-sdk-capabilities
 /tracer/test/Datadog.Trace.Tests/Agent/                                     @DataDog/apm-sdk-capabilities
 /tracer/test/Datadog.Trace.Tests/Agent/MessagePack/AppSec/                  @DataDog/apm-sdk-capabilities @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Tests/AgentProcessManagerTests.cs                @DataDog/serverless-azure-and-gcp
 /tracer/test/Datadog.Trace.Tests/AppSec/                                    @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.Tests/AspNet/                                    @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/CallTarget/                                @DataDog/apm-lang-platform-dotnet
