@@ -26,9 +26,9 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             Capacity = capacity;
 
-            // Pre-sized to avoid repeated growth from the default size. It can still grow before it is full, because
-            // ConcurrentDictionary grows as soon as one lock stripe exceeds capacity / concurrencyLevel entries.
-            // Growing takes every lock, which blocks concurrent adds but not lookups.
+            // Pre-sized to avoid repeated growth from the default size. It can still grow before it is full
+            // when entries spread unevenly across lock stripes. Growing takes every lock, which blocks
+            // concurrent adds but not lookups.
             _entries = new ConcurrentDictionary<TKey, bool>(Environment.ProcessorCount, capacity);
         }
 

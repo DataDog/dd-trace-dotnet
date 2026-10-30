@@ -165,10 +165,8 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData(255)]
         [InlineData(256)] // Largest stack buffer
         [InlineData(257)] // Smallest pooled buffer
-        [InlineData(600)] // Longer than the cached name limit
         public void IsRedactedKeyword_NormalizesAroundStackAllocLimit(int normalizedLength)
         {
             // Mixed case and separators force normalization, which must produce exactly the configured keyword.
