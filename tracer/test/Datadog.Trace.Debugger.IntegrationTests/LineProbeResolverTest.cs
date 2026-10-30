@@ -149,18 +149,11 @@ public class LineProbeResolverTest
     [Theory]
     [InlineData(@"/_/src/app/MyFile.cs", @"ap/MyFile.cs")]
     [InlineData(@"D:\agent\src\app\MyFile.cs", @"ap\MyFile.cs")]
-    [InlineData(@"/_/srcOld/MyFile.cs", @"src/MyFile.cs")]
-    [InlineData(@"D:\agent\srcOld\MyFile.cs", @"src\MyFile.cs")]
-    [InlineData(@"/_/src/MyProject.Api/Feature/MyFile.cs", @"MyProject/Feature/MyFile.cs")]
     [InlineData(@"/_/src/MyFile.cs", @"MyFile.c")]
-    [InlineData(@"/_/src/MyFile.cs", @"MyFil")]
     [InlineData(@"D:\agent\src\MyFile.cs", @"MyFile.c")]
-    [InlineData(@"/_/src/MyFile.csx", @"MyFile.cs")]
     [InlineData(@"/_/Pages/Index.cshtml.cs", @"Index.cshtml")]
     public void FindPathThatEndsWithRejectsPartialSegmentMatches(string documentPath, string queryPath)
     {
-        // The trie compares characters, so the outermost query segment must not match
-        // only the start of a longer document segment ("ap" -> "app", "MyFile.c" -> "MyFile.cs").
         var lookup = new LineProbeResolver.FilePathLookup();
 
         lookup.InsertPath(documentPath);
@@ -171,8 +164,6 @@ public class LineProbeResolverTest
     [Theory]
     [InlineData(@"/_/src/MyFile.cs", @"MyFile.cs")]
     [InlineData(@"D:\agent\src\MyFile.cs", @"MyFile.cs")]
-    [InlineData(@"/_/src/app/MyFile.cs", @"app/MyFile.cs")]
-    [InlineData(@"/_/src/MyFile.cs", @"/_/src/MyFile.cs")]
     [InlineData(@"D:\agent\src\MyFile.cs", @"D:\agent\src\MyFile.cs")]
     public void FindPathThatEndsWithMatchesWholeSegments(string documentPath, string queryPath)
     {

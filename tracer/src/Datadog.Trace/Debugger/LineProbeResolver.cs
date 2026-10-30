@@ -497,13 +497,13 @@ namespace Datadog.Trace.Debugger
                 return Path.DirectorySeparatorChar;
             }
 
-            private static bool EndsAtSegmentBoundary(string reversedPath, int prefixLength)
+            private static bool EndsAtSegmentBoundary(string reversedMatch, int prefixLength)
             {
                 // The trie only returns paths that start with the (non-empty) prefix, so both indexes are in range.
                 // The prefix ends with a separator (the query started with one), or is followed by one or by the end of the path.
-                return IsDirectorySeparator(reversedPath[prefixLength - 1])
-                    || prefixLength == reversedPath.Length
-                    || IsDirectorySeparator(reversedPath[prefixLength]);
+                return IsDirectorySeparator(reversedMatch[prefixLength - 1])
+                    || prefixLength == reversedMatch.Length
+                    || IsDirectorySeparator(reversedMatch[prefixLength]);
             }
 
             private static int CountPathSegments(string path)
@@ -570,7 +570,6 @@ namespace Datadog.Trace.Debugger
                 var match = _trie.GetStringStartingWith(reversePath);
                 // The trie matches characters, not path segments, so the outermost query segment can match just the start of
                 // a longer segment (e.g. "ap/MyFile.cs" vs. "/app/MyFile.cs", or "MyFile.c" vs. "MyFile.cs").
-                // Accept the match only when it ends on a segment boundary; otherwise fall through to the whole-segment check below.
                 if (match is not null && EndsAtSegmentBoundary(match, reversePath.Length))
                 {
                     return GetReversePath(match, directoryPathSeparator, trimTrailingSeparators: false);
