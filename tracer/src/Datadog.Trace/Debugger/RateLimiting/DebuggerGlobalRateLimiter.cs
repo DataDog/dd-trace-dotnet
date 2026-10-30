@@ -88,6 +88,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     return;
                 }
 
+                // Unlike per-probe rates, a new service rate replaces the sampler, so it starts fresh: a new window budget,
+                // or for rates below 1 a new gate that admits the next snapshot.
                 ReplaceSampler(Math.Max(samplesPerSecond.Value, 0));
             }
         }

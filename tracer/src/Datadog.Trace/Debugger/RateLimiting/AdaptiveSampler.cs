@@ -36,9 +36,17 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     ///
-    /// Rates below one sample per second can't be a whole number of samples per window. For those,
-    /// <see cref="SetRate"/> switches the sampler to admit at most one sample per 1/rate seconds and stops the
-    /// window timer.
+    /// The sampler has two modes, chosen by <see cref="SetRate"/>:
+    ///
+    /// Window sampling, for rates of one or more samples per second: the adaptive sampling described above,
+    /// with a timer that rolls the window. A rate of 0 or less, or NaN, also uses this mode and drops every sample.
+    ///
+    /// Interval sampling, for rates between 0 and 1: a rate below one can't be a whole number of samples per
+    /// window, so an <see cref="IntervalGate"/> admits at most one sample every 1/rate seconds instead. The first
+    /// call is admitted. The timer keeps running, but <see cref="RollWindow"/> leaves the window state untouched,
+    /// so window sampling resumes from where it was.
+    ///
+    /// The sampler switches modes in place, because callers such as ProbeData keep a reference to the instance.
     /// </summary>
     internal sealed class AdaptiveSampler : IAdaptiveSampler
     {
@@ -56,10 +64,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// </summary>
         private readonly double _emaAlpha;
         private readonly object _maintenanceLock = new();
-        private readonly TimeSpan _windowDuration;
         private int _samplesPerWindow;
 
-        // Set for rates below one per second, null for window sampling.
+        // Non-null in interval sampling, null in window sampling. Sample() reads it once to pick the mode,
+        // so calls already inside Sample() can finish on the previous mode while SetRate switches it.
         private IntervalGate? _intervalGate;
 
         private Counts _countsRef;
@@ -88,7 +96,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
             int budgetLookback,
             Action? rollWindowCallback)
         {
-            _windowDuration = windowDuration;
             _timer = new Timer(state => RollWindow(), state: null, windowDuration, windowDuration);
             _totalCountRunningAverage = 0;
             _rollWindowCallback = rollWindowCallback;
@@ -155,36 +162,38 @@ namespace Datadog.Trace.Debugger.RateLimiting
         }
 
         /// <summary>
-        /// Updates the rate in place. Rates between 0 and 1 admit at most one sample every
-        /// 1 / <paramref name="samplesPerSecond"/> seconds. Other rates set the samples per window, truncated to a
-        /// whole number, which is per second with the one-second window <see cref="AdaptiveSamplerLifetime"/> uses.
+        /// Updates the rate in place, switching modes when the rate moves across 1.
+        /// A rate between 0 and 1 uses interval sampling: at most one sample every 1 / <paramref name="samplesPerSecond"/>
+        /// seconds. Changing from one such rate to another keeps the last sample time, so the new interval counts from it.
+        /// Coming from window sampling starts a new gate, which admits the next call.
+        /// Any other rate uses window sampling, with the rate truncated to whole samples per window. That is per second
+        /// with the one-second window <see cref="AdaptiveSamplerLifetime"/> uses. Coming from interval sampling resets the
+        /// budget and keeps the running averages, as any rate change in window sampling does.
         /// </summary>
         public void SetRate(double samplesPerSecond)
         {
+            // Same lock as RollWindow, so a rate change and a window roll never interleave. Sample() never takes it.
             lock (_maintenanceLock)
             {
-                // Callers already inside Sample() may still finish on the previous mode.
                 if (samplesPerSecond is > 0 and < 1)
                 {
                     var sampleInterval = GetSampleInterval(samplesPerSecond);
                     if (_intervalGate is { } intervalGate)
                     {
-                        // Keeps the last sample time, so the new interval counts from it.
                         intervalGate.SampleInterval = sampleInterval;
-                        return;
+                    }
+                    else
+                    {
+                        // The gate is fully built before Volatile.Write publishes it to Sample().
+                        Volatile.Write(ref _intervalGate, new IntervalGate(sampleInterval));
                     }
 
-                    Volatile.Write(ref _intervalGate, new IntervalGate(sampleInterval));
-                    _timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
                     return;
                 }
 
-                SetSamplesPerWindow((int)samplesPerSecond);
-                if (_intervalGate is not null)
-                {
-                    Volatile.Write(ref _intervalGate, null);
-                    _timer?.Change(_windowDuration, _windowDuration);
-                }
+                // Write the budget before leaving interval sampling, so calls that see no gate also see the new budget.
+                SetSamplesPerWindow(GetSamplesPerWindow(samplesPerSecond));
+                Volatile.Write(ref _intervalGate, null);
             }
         }
 
@@ -195,26 +204,32 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 return;
             }
 
-            // SetRate changes the timer under the lock, so detach it there to never change a disposed timer.
-            Timer? timer;
-            lock (_maintenanceLock)
-            {
-                timer = _timer;
-                _timer = null;
-            }
-
-            timer?.Dispose();
+            Interlocked.Exchange(ref _timer, null)?.Dispose();
             _rollWindowCallback = null;
         }
 
+        /// <summary>
+        /// <see cref="Sample"/> at a given <see cref="Stopwatch"/> timestamp in interval sampling, so tests don't wait
+        /// for real intervals. In window sampling it is <see cref="Sample"/>.
+        /// </summary>
         [TestingOnly]
         internal bool SampleAt(long timestamp) => Volatile.Read(ref _intervalGate)?.TrySample(timestamp) ?? Sample();
 
         private static long GetSampleInterval(double samplesPerSecond)
         {
+            // Rates so small that the interval overflows a long are capped: the gate admits one sample, then no more.
             var ticks = Math.Round(Stopwatch.Frequency / samplesPerSecond);
             return ticks >= long.MaxValue ? long.MaxValue : (long)ticks;
         }
+
+        // Converting NaN, infinite or out-of-range doubles to int gives different results across runtimes
+        // (wrapping on older x86/x64 runtimes, saturating on newer ones), so clamp before converting.
+        private static int GetSamplesPerWindow(double samplesPerSecond) => samplesPerSecond switch
+        {
+            >= int.MaxValue => int.MaxValue,
+            > 0 => (int)samplesPerSecond,
+            _ => 0,
+        };
 
         private double ComputeIntervalAlpha(int lookback)
         {
@@ -258,6 +273,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
                 lock (_maintenanceLock)
                 {
+                    // Interval sampling doesn't use the window, so its state is left as it was for when window sampling resumes.
+                    if (_intervalGate is not null)
+                    {
+                        return;
+                    }
+
                     var counts = _countsSlots[_countsSlotIndex];
 
                     // Semi-atomically replace the Counts instance such that sample requests during window maintenance will be
@@ -326,7 +347,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
         }
 
         /// <summary>
-        /// Admits at most one sample per interval, measured in <see cref="Stopwatch"/> ticks.
+        /// Admits at most one sample per interval, measured in <see cref="Stopwatch"/> ticks. The first call is admitted.
+        /// It is lock-free: a call is admitted only if it replaces the last sample timestamp it read, so when several
+        /// calls pass the interval at once exactly one is admitted, and admitted timestamps are at least an interval apart.
         /// </summary>
         private sealed class IntervalGate
         {
@@ -349,12 +372,13 @@ namespace Datadog.Trace.Debugger.RateLimiting
             internal bool TrySample(long timestamp)
             {
                 var lastSample = Volatile.Read(ref _lastSampleTimestamp);
+
+                // A timestamp taken before the last sample gives a negative difference and is dropped too.
                 if (lastSample != NoSample && timestamp - lastSample < SampleInterval)
                 {
                     return false;
                 }
 
-                // Only one of the callers racing past the interval wins the slot.
                 return Interlocked.CompareExchange(ref _lastSampleTimestamp, timestamp, lastSample) == lastSample;
             }
         }

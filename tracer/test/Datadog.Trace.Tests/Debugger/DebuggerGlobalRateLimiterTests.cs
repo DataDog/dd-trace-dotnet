@@ -40,6 +40,17 @@ public class DebuggerGlobalRateLimiterTests
     }
 
     [Fact]
+    public void ShouldSampleSnapshot_RateBelowOnePerSecond_AdmitsOneSnapshotPerInterval()
+    {
+        using var limiter = new DebuggerGlobalRateLimiter(AdaptiveSamplerLifetime.Create, new NullLogRateLimiter());
+
+        limiter.SetRate(1.0 / 300);
+
+        limiter.ShouldSampleSnapshot("snapshot-1").Should().BeTrue();
+        limiter.ShouldSampleSnapshot("snapshot-2").Should().BeFalse();
+    }
+
+    [Fact]
     public void SetRate_DisposesPreviousSamplers()
     {
         var factory = new RecordingSamplerFactory();
