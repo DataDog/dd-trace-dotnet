@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DD_SemVer>$(DD_VersionPrefix)$(DD_VersionSuffix)</DD_SemVer>
+    <DD_SemanticVersion>$(DD_VersionPrefix)$(DD_VersionSuffix)</DD_SemanticVersion>
 
     <!-- The native tracer and the managed loader both resolve Datadog.Trace by this exact strong
          name, so the revision stays at zero. -->

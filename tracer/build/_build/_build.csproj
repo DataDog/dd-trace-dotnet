@@ -73,7 +73,7 @@
          reads the version through the same MSBuild properties as the rest of the build. -->
     <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta4" PrivateAssets="all" />
     <ProjectInfoString Include="Version" Value="$(DD_VersionPrefix)" />
-    <ProjectInfoString Include="SemVer" Value="$(DD_SemVer)" />
+    <ProjectInfoString Include="SemanticVersion" Value="$(DD_SemanticVersion)" />
     <ProjectInfoString Include="VersionSuffix" Value="$(DD_VersionSuffix)" />
   </ItemGroup>
 
