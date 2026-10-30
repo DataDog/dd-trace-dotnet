@@ -24,15 +24,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        // An assembly-qualified type name is at most 1024 characters: longer proxy type names are truncated (see CreateTypeAndModuleBuilder).
+        private const int MaxProxyTypeNameLength = 1023;
+
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly object Locker;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeCache;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeReverseCache;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<ModuleBuilder, HashSet<string>> IgnoresAccessChecksToAssembliesSetDictionary;
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _getTypeFromHandleMethodInfo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -56,6 +60,14 @@ namespace Datadog.Trace.DuckTyping
         private static readonly Dictionary<Assembly, bool> AssembliesInDuckTypeLoadContext;
 #endif
 
+        /// <summary>
+        /// Clears the fast path entries of a <see cref="CreateCache{T}"/>, for each one that has used its fast path.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly List<Action> FastPathResets = new();
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static int _fastPathVersion;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -65,6 +77,7 @@ namespace Datadog.Trace.DuckTyping
         {
             Locker = new();
             DuckTypeCache = new();
+            DuckTypeReverseCache = new();
             ActiveBuilders = new();
             IgnoresAccessChecksToAssembliesSetDictionary = new();
 
@@ -372,6 +385,30 @@ namespace Datadog.Trace.DuckTyping
             {
                 _delegate = (TProxyDelegate)ILHelpersExtensions.GetDynamicMethodForIndex(index)
                     .CreateDelegate(typeof(TProxyDelegate));
+            }
+        }
+
+#if !NET6_0_OR_GREATER
+        /// <summary>
+        /// Resolved on first use: only exceptions created by hand-written AOT failure factories need to be cloned this way.
+        /// </summary>
+        private static class ExceptionCloner
+        {
+            public static MethodInfo MemberwiseCloneMethod { get; } = typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        }
+
+#endif
+        private sealed class FastPathEntry
+        {
+            // A field, not a property: every DuckType.Create<T> fast path hit reads Result.TargetType, and reading the
+            // struct through a property copies it on JITs without physical promotion (.NET Framework, .NET 7 and older).
+#pragma warning disable SA1401 // Fields should be private
+            public readonly CreateTypeResult Result;
+#pragma warning restore SA1401
+
+            public FastPathEntry(CreateTypeResult result)
+            {
+                Result = result;
             }
         }
     }
