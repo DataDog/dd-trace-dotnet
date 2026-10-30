@@ -21,7 +21,7 @@ public class BaggageScopeTests
         Baggage.Current = previous;
 
         var unitOfWork = new Baggage { { "unit", "value" } };
-        BaggageScope.Capture(unitOfWork);
+        using var scope = BaggageScope.Capture(unitOfWork);
 
         Baggage.Current.Should().BeSameAs(unitOfWork);
         Baggage.Current.GetValueOrDefault("previous").Should().BeNull();
@@ -33,7 +33,7 @@ public class BaggageScopeTests
         var previous = new Baggage { { "previous", "value" } };
         Baggage.Current = previous;
 
-        BaggageScope.Capture(null);
+        using var scope = BaggageScope.Capture(null);
 
         Baggage.Current.Should().NotBeSameAs(previous);
         Baggage.Current.Should().BeEmpty();
@@ -44,19 +44,19 @@ public class BaggageScopeTests
     }
 
     [Fact]
-    public void RestorePutsThePreviousBaggageBack()
+    public void DisposePutsThePreviousBaggageBack()
     {
         var previous = new Baggage { { "previous", "value" } };
         Baggage.Current = previous;
 
         var scope = BaggageScope.Capture(new Baggage { { "unit", "value" } });
-        scope.Restore();
+        scope.Dispose();
 
         Baggage.Current.Should().BeSameAs(previous);
     }
 
     [Fact]
-    public void RestorePutsTheInstanceBackAfterTheUnitOfWorkMutatedItsOwn()
+    public void DisposePutsTheInstanceBackAfterTheUnitOfWorkMutatedItsOwn()
     {
         var previous = new Baggage();
         Baggage.Current = previous;
@@ -66,14 +66,14 @@ public class BaggageScopeTests
         Baggage.Current["added"] = "value";
         Baggage.Current.Remove("unit");
 
-        scope.Restore();
+        scope.Dispose();
 
         Baggage.Current.Should().BeSameAs(previous);
         previous.Should().BeEmpty();
     }
 
     [Fact]
-    public void RestorePutsThePreviousBaggageBackEvenAfterTheInstanceWasReplaced()
+    public void DisposePutsThePreviousBaggageBackEvenAfterTheInstanceWasReplaced()
     {
         var previous = new Baggage { { "previous", "value" } };
         Baggage.Current = previous;
@@ -84,13 +84,27 @@ public class BaggageScopeTests
         // Leaving that in place is the leak this type exists to prevent.
         Baggage.Current = new Baggage { { "replacement", "value" } };
 
-        scope.Restore();
+        scope.Dispose();
 
         Baggage.Current.Should().BeSameAs(previous);
     }
 
     [Fact]
-    public void NestedScopesRestoredInnermostFirstUnwindToTheOriginalBaggage()
+    public void DisposingTwiceOnOneExecutionContextIsANoOp()
+    {
+        var previous = new Baggage { { "previous", "value" } };
+        Baggage.Current = previous;
+
+        var scope = BaggageScope.Capture(new Baggage { { "unit", "value" } });
+
+        scope.Dispose();
+        scope.Dispose();
+
+        Baggage.Current.Should().BeSameAs(previous);
+    }
+
+    [Fact]
+    public void NestedScopesDisposedInnermostFirstUnwindToTheOriginalBaggage()
     {
         var previous = new Baggage();
         Baggage.Current = previous;
@@ -99,15 +113,15 @@ public class BaggageScopeTests
         var outerBaggage = Baggage.Current;
         var inner = BaggageScope.Capture(new Baggage { { "inner", "value" } });
 
-        inner.Restore();
+        inner.Dispose();
         Baggage.Current.Should().BeSameAs(outerBaggage);
 
-        outer.Restore();
+        outer.Dispose();
         Baggage.Current.Should().BeSameAs(previous);
     }
 
     [Fact]
-    public async Task RestoreAppliesOncePerExecutionContext()
+    public async Task DisposeAppliesOncePerExecutionContext()
     {
         var previous = new Baggage();
         Baggage.Current = previous;
@@ -120,14 +134,15 @@ public class BaggageScopeTests
         {
             await captured.Task;
 
-            // This context captured its own copy of the AsyncLocal slot, so the caller's restore
-            // is not visible here and this context needs its own.
+            // This context captured its own copy of the AsyncLocal slot, so the caller's dispose
+            // is not visible here and this context needs its own. An "already disposed" flag on
+            // the shared instance would swallow this one and leak the unit of work's baggage.
             Baggage.Current.Should().BeSameAs(unitOfWork);
-            scope.Restore();
+            scope.Dispose();
             Baggage.Current.Should().BeSameAs(previous);
         });
 
-        scope.Restore();
+        scope.Dispose();
         Baggage.Current.Should().BeSameAs(previous);
 
         captured.SetResult(true);

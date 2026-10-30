@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Datadog.Trace;
 /// completes. Message consumers and job workers typically reuse a single execution context across
 /// sequential units of work, so baggage extracted for one unit would otherwise leak into the next.
 /// </summary>
-internal sealed class BaggageScope
+internal sealed class BaggageScope : IDisposable
 {
     private readonly Baggage _previous;
 
@@ -26,7 +28,7 @@ internal sealed class BaggageScope
     /// the unit of work sees only the baggage it was given.
     /// </summary>
     /// <param name="baggage">The baggage to make current, or <c>null</c> to start from empty.</param>
-    /// <returns>A scope that puts the captured baggage back when restored.</returns>
+    /// <returns>A scope that puts the captured baggage back when disposed.</returns>
     public static BaggageScope Capture(Baggage? baggage)
     {
         var previous = Baggage.Current;
@@ -38,7 +40,7 @@ internal sealed class BaggageScope
     /// <summary>
     /// Puts the captured baggage back in the calling execution context.
     /// </summary>
-    public void Restore()
+    public void Dispose()
     {
         Baggage.Current = _previous;
     }

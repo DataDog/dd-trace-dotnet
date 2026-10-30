@@ -388,7 +388,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 // Restored once per execution context, not once overall: anything that captured the
                 // execution context mid-message has its own ambient baggage to put back.
-                context.BaggageScope.Restore();
+                context.BaggageScope.Dispose();
             }
         }
 

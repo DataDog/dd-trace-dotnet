@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                     if (performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var baggageScope)
                      && baggageScope is BaggageScope typedBaggageScope)
                     {
-                        typedBaggageScope.Restore();
+                        typedBaggageScope.Dispose();
                     }
                 }
             }
