@@ -137,7 +137,7 @@ namespace GeneratePackageVersions
                 var orderedWithFramework = (
                     from version in orderedPackageVersions.OrderBy(x => x)
                     from framework in supportedTargetFrameworks
-                    where IsSupported(entry, version.ToString(), framework)
+                    where IsSupported(entry, version, framework)
                     select (version, framework))
                    .ToList();
 
@@ -269,7 +269,8 @@ namespace GeneratePackageVersions
         /// version we shipped against in a prior run for this entry's range, scoped to the same major
         /// as the candidate) are kept regardless, so the cooldown never downgrades an already-tested
         /// version -- and a late backport to an older major can't hide behind a higher max that came
-        /// from a newer major line.
+        /// from a newer major line. Each report row records the version kept in the ignored version's
+        /// major, and whether a newer ignored version supersedes it (so the PR table can omit it).
         /// Only called for CooldownMode.Normal entries; Freeze and BypassCooldown are handled by the caller.
         /// </summary>
         private List<VersionWithDate> ApplyCooldown(PackageVersionEntry entry, List<VersionWithDate> versions)
@@ -296,21 +297,47 @@ namespace GeneratePackageVersions
                 }
             }
 
-            var keptVersion = result.Count > 0
-                ? result.Select(v => new Version(v.Version)).Max().ToString()
-                : null;
+            var keptVersions = result.Select(v => new Version(v.Version)).ToList();
+            var ignoredVersions = ignored.Select(v => new Version(v.Version)).ToList();
 
             foreach (var v in ignored)
             {
+                var ignoredVersion = new Version(v.Version);
+
+                // Scope to the ignored version's major (like FindPreviousMaxForEntry), so a 3.x row in a
+                // 3.x-4.x entry reports the 3.x version we kept rather than the overall 4.x max.
+                var keptVersion = keptVersions
+                    .Where(k => k.Major == ignoredVersion.Major)
+                    .OrderByDescending(k => k)
+                    .FirstOrDefault();
+
+                var isSuperseded = ignoredVersions.Any(other => IsSupersededBy(entry, ignoredVersion, other));
+
                 BumpReport.AddCooldown(new PackageBumpReport.CooldownEntry(
                     entry.NugetPackageSearchName,
                     entry.IntegrationName,
-                    keptVersion,
+                    keptVersion?.ToString(),
                     v.Version,
-                    v.Published));
+                    v.Published,
+                    isSuperseded));
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="newer"/> would always be selected instead of <paramref name="older"/>:
+        /// same major.minor (LatestMajors/LatestMinors buckets), matched by the same SpecificVersions globs
+        /// (LatestSpecific buckets, including exact pins), and subject to the same VersionConditions (so both
+        /// are supported on the same frameworks). Lifting the cooldown this run would therefore never select it.
+        /// </summary>
+        private static bool IsSupersededBy(PackageVersionEntry entry, Version older, Version newer)
+        {
+            return newer > older
+                && newer.Major == older.Major
+                && newer.Minor == older.Minor
+                && entry.SpecificVersions.All(glob => MatchesGlob(glob, older) == MatchesGlob(glob, newer))
+                && entry.VersionConditions.All(condition => AppliesToPackageVersion(entry, older, condition) == AppliesToPackageVersion(entry, newer, condition));
         }
 
         /// <summary>
@@ -417,19 +444,39 @@ namespace GeneratePackageVersions
 
         private static Version GetBestVersion(string glob, IEnumerable<Version> packageVersions)
         {
-            // assume correct specification, ie. x.y.z/x.y.*/x.*.*/*.*.*
-            var wildcardCount = glob.Count(x => x == '*');
-
-            var effectiveMin = new Version(glob.Replace("*", "0"));
-            var effectiveMax = new Version(glob.Replace("*", "65535"));
-
             return packageVersions
-                .Where(x => x >= effectiveMin && x <= effectiveMax)
+                .Where(x => MatchesGlob(glob, x))
                 .OrderByDescending(x => x)
                 .FirstOrDefault();
         }
 
-        private bool IsSupported(PackageVersionEntry entry, string packageVersion, TargetFramework targetFramework)
+        private static bool MatchesGlob(string glob, Version version)
+        {
+            // assume correct specification, ie. x.y.z/x.y.*/x.*.*/*.*.*
+            var effectiveMin = new Version(glob.Replace("*", "0"));
+            var effectiveMax = new Version(glob.Replace("*", "65535"));
+
+            return version >= effectiveMin && version <= effectiveMax;
+        }
+
+        private static bool AppliesToPackageVersion(
+            PackageVersionEntry entry,
+            Version packageVersion,
+            PackageVersionEntry.PackageVersionConditionEntry condition)
+        {
+            if (!Version.TryParse(condition.MinVersion, out var minSemanticVersion))
+            {
+                minSemanticVersion = new Version(entry.MinVersion);
+            }
+
+            if (!Version.TryParse(condition.MaxVersionExclusive, out var maxSemanticVersion))
+            {
+                maxSemanticVersion = new Version(entry.MaxVersionExclusive);
+            }
+            return packageVersion >= minSemanticVersion && packageVersion < maxSemanticVersion;
+        }
+
+        private bool IsSupported(PackageVersionEntry entry, Version packageVersion, TargetFramework targetFramework)
         {
             return entry
                 .VersionConditions
@@ -458,24 +505,6 @@ namespace GeneratePackageVersions
                 }
 
                 return true;
-            }
-
-            static bool AppliesToPackageVersion(
-                PackageVersionEntry entry,
-                string packageVersionText,
-                PackageVersionEntry.PackageVersionConditionEntry condition)
-            {
-                var packageVersion = new Version(packageVersionText);
-                if (!Version.TryParse(condition.MinVersion, out var minSemanticVersion))
-                {
-                    minSemanticVersion = new Version(entry.MinVersion);
-                }
-
-                if (!Version.TryParse(condition.MaxVersionExclusive, out var maxSemanticVersion))
-                {
-                    maxSemanticVersion = new Version(entry.MaxVersionExclusive);
-                }
-                return packageVersion >= minSemanticVersion && packageVersion < maxSemanticVersion;
             }
         }
 
