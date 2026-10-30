@@ -111,7 +111,7 @@ partial class Build : NukeBuild
 
                 void GenerateConditionVariableBasedOnGitChange(ChangedTeamValue changedTeamValue, CodeOwnersParser codeOwners)
                 {
-                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                    var baseBranch = TestComparisonBranch;
                     bool isChanged = false;
                     var forceExplorationTestsWithVariableName = $"force_run_tests_with_{changedTeamValue.VariableName}";
 
@@ -173,7 +173,7 @@ partial class Build : NukeBuild
 
                 if (Environment.GetEnvironmentVariable("BUILD_REASON") == "PullRequest")
                 {
-                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                    var baseBranch = TestComparisonBranch;
                     var changedFiles = GetGitChangedFiles(baseBranch);
                     // Run smoke tests on a PR if any of the files change that most definitely indicate that they _should_ run
                     var matcher = new Matcher(StringComparison.Ordinal)
@@ -927,6 +927,15 @@ partial class Build : NukeBuild
             branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
         }
 
+        if (string.IsNullOrWhiteSpace(branch))
+        {
+            branch = Environment.GetEnvironmentVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
+            if (string.IsNullOrWhiteSpace(branch))
+            {
+                branch = Environment.GetEnvironmentVariable("CI_COMMIT_BRANCH");
+            }
+        }
+
         Console.WriteLine("Base Branch: {0}", baseBranch);
         Console.WriteLine("Current Branch: {0}", branch);
 
@@ -941,6 +950,13 @@ partial class Build : NukeBuild
         }
 
         Console.WriteLine("false");
+
+        // GitLab containers may not have access to the runner's Git alternates.
+        // A provider-reported branch is sufficient to determine this comparison.
+        if (IsGitlab && !string.IsNullOrWhiteSpace(branch))
+        {
+            return false;
+        }
 
         // *****
         // In case we cannot find the baseBranch we fallback to the git command
