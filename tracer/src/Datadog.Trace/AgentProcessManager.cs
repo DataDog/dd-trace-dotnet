@@ -19,6 +19,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
 {
@@ -61,6 +62,8 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AgentProcessManager));
 
         private static readonly byte[] TraceAgentInfoRequest = Encoding.ASCII.GetBytes("GET /info HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
+
+        private static readonly byte[] HttpStatusLineStart = Encoding.ASCII.GetBytes("HTTP/");
 
         internal enum ProcessState
         {
@@ -412,7 +415,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    Log.Debug("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", new object[] { path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures });
+                    Log.Debug<string, string, int, int>("{AgentPath} started by the .NET Tracer in this process is gone ({Reason}). Starting a new one in {Delay} ms ({Failures} failures in a row).", path, metadata.LastHealthCheckFailure, startDelay, metadata.SequentialFailures);
                 }
 
                 await host.DelayAsync(startDelay).ConfigureAwait(false);
@@ -462,8 +465,9 @@ namespace Datadog.Trace
             {
                 Log.Warning("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
             }
-            else
+            else if (Log.IsEnabled(LogEventLevel.Debug))
             {
+                // Six values have no generic overload, so check the level before allocating the array
                 Log.Debug("{AgentPath} with pid {ChildPid} started by the .NET Tracer in this process failed {Count} health checks in a row ({Reason}). Restarting it in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, metadata.FailedHealthChecks, metadata.LastHealthCheckFailure, delay, metadata.SequentialFailures });
             }
 
@@ -585,7 +589,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        Log.Debug("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", new object[] { path, childPid, GetExitCode(metadata.Process), retryDelay, failures });
+                        Log.Debug<string, int?, int?, int, int>("Failed to start {AgentPath}: pid {ChildPid} exited with code {ExitCode}. Retrying in {Delay} ms ({Failures} failures in a row).", path, childPid, GetExitCode(metadata.Process), retryDelay, failures);
                     }
 
                     ForgetOwnProcess(metadata);
@@ -601,7 +605,7 @@ namespace Datadog.Trace
             }
             else
             {
-                Log.Debug("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", new object[] { path, childPid, StartupTimeout, metadata.LastHealthCheckFailure });
+                Log.Debug<string, int?, int, string>("{AgentPath} with pid {ChildPid} is running but did not pass its health check within {Timeout} ms ({Reason}).", path, childPid, StartupTimeout, metadata.LastHealthCheckFailure);
             }
 
             return ProcessState.Unhealthy;
@@ -853,8 +857,18 @@ namespace Datadog.Trace
         internal sealed class ProcessMetadata
         {
             private string _processPath;
+            private string _pipeName;
+            private string _pipePath;
 
-            public string PipeName { get; set; }
+            public string PipeName
+            {
+                get => _pipeName;
+                set
+                {
+                    _pipeName = value;
+                    _pipePath = null;
+                }
+            }
 
             public string Name { get; set; }
 
@@ -947,7 +961,8 @@ namespace Datadog.Trace
 
             private bool NamedPipeIsBound()
             {
-                var namedPipe = $"\\\\.\\pipe\\{PipeName}";
+                // Built once: the health check runs every KeepAliveInterval for as long as the app runs
+                var namedPipe = _pipePath ??= $"\\\\.\\pipe\\{PipeName}";
                 var namedPipeIsBound = NamedPipeExists(namedPipe);
                 if (!namedPipeIsBound)
                 {
@@ -994,7 +1009,7 @@ namespace Datadog.Trace
                     await pipe.WriteAsync(TraceAgentInfoRequest, 0, TraceAgentInfoRequest.Length).ConfigureAwait(false);
 
                     // Any status line means the agent is serving requests
-                    var statusLineStart = new byte[5];
+                    var statusLineStart = new byte[HttpStatusLineStart.Length];
                     var read = 0;
                     while (read < statusLineStart.Length)
                     {
@@ -1007,7 +1022,7 @@ namespace Datadog.Trace
                         read += count;
                     }
 
-                    return Encoding.ASCII.GetString(statusLineStart) == "HTTP/" ? null : $"unexpected response to GET /info on named pipe {PipeName}";
+                    return statusLineStart.AsSpan().SequenceEqual(HttpStatusLineStart) ? null : $"unexpected response to GET /info on named pipe {PipeName}";
                 }
                 catch (Exception ex)
                 {
