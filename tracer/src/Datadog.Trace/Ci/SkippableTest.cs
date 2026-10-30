@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
 
-internal readonly struct SkippableTest
+internal readonly record struct SkippableTest
 {
     [JsonProperty("name")]
     public readonly string Name;

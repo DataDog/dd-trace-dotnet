@@ -10,7 +10,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
 
-internal readonly struct TestsConfigurations
+internal readonly record struct TestsConfigurations
 {
     [JsonProperty(CommonTags.OSPlatform)]
     public readonly string OSPlatform;
