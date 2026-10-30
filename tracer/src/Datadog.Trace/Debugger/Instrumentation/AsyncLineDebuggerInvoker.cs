@@ -166,10 +166,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     }
                 }
 
-                ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
+                var probeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
                 if (probeData.IsEmpty())
                 {
-                    Log.Warning("[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                    // Expected after the probe is removed: a method that was already running (e.g. a loop) keeps hitting the reverted line,
+                    // so this stays at Debug to not log on every pass.
+                    if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                    {
+                        Log.Debug("[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", property0: typeof(TTarget), property1: instance?.GetType().Name, property2: probeMetadataIndex, property3: probeId);
+                    }
+
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
@@ -179,7 +185,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
-                var state = new AsyncLineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, kickoffParentObject, snapshotCreator);
+                var state = new AsyncLineDebuggerState(probeId, scope: default, methodMetadataIndex, probeData, lineNumber, probeFilePath, instance, kickoffParentObject, snapshotCreator);
                 var asyncInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments);
                 var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
 

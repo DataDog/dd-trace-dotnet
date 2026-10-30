@@ -82,7 +82,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
+            var probeData = ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
             if (probeData.IsEmpty())
             {
                 // In .NET Framework, we have en issue with multiple AppDomains. We can't easily share probe metadata
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, instance, snapshotCreator);
+            var state = new MethodDebuggerState(probeId, scope: default, methodMetadataIndex, probeData, instance, snapshotCreator);
 
             var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, value: null, method: state.MethodMetadataInfo.Method, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.EntryStart, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
 
