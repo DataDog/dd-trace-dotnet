@@ -498,6 +498,9 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData(null, null, null, 1.0d)]
+        [InlineData("invalid", null, null, 1.0d)]
+        [InlineData("invalid", "always_off", null, 1.0d)]
+        [InlineData("invalid", "traceidratio", "0.5", 1.0d)]
         [InlineData("0", null, null, 0.0d)]
         [InlineData("0.5", null, null, 0.5d)]
         [InlineData("1", null, null, 1.0d)]
@@ -551,6 +554,29 @@ namespace Datadog.Trace.Tests.Configuration
             }
 
             errorLog.ShouldHaveExpectedOtelMetric(metrics.ToArray());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("invalid")]
+        [InlineData("1")]
+        public async Task OtlpDefaultSamplingRateAppliesRateLimit(string value)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                (ConfigurationKeys.GlobalSamplingRate, value),
+                (ConfigurationKeys.TraceRateLimit, "0"));
+            var settings = new TracerSettings(source);
+            var sampler = new ManagedTraceSampler(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            using var scope = (Scope)tracer.StartActive("test");
+
+            var decision = sampler.MakeSamplingDecision(scope.Span);
+
+            decision.Priority.Should().Be(SamplingPriorityValues.UserReject);
+            decision.Mechanism.Should().Be(SamplingMechanism.LocalTraceSamplingRule);
+            decision.Rate.Should().Be(1.0f);
+            decision.LimiterRate.Should().Be(0.0f);
         }
 
         [Theory]

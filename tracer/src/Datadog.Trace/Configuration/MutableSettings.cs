@@ -1227,7 +1227,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             log.LogInvalidConfiguration(otelSampleRate.Key);
         }
 
-        if (!ddSampleRate.ConfigurationResult.IsPresent &&
+        // An invalid DD value still hides the OTel sampler, but must not bypass the OTLP default and its rate limiter.
+        if (ddResult is null &&
                 otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
                  && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
         {
