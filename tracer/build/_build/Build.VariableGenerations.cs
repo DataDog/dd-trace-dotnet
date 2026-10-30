@@ -49,6 +49,7 @@ partial class Build : NukeBuild
                   .Executes(() =>
                    {
                        GenerateConditionVariables();
+                       GenerateRuntimeAsyncRunVariable();
                        GenerateSmokeTestInputsChanged();
                        GenerateUnitTestFrameworkMatrices();
 
@@ -191,6 +192,14 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetOutputVariable(variableName, isChanged.ToString());
             }
 
+            void GenerateRuntimeAsyncRunVariable()
+            {
+                // Used to skip the stages that can't test runtime-async (e.g. .NET Framework-only, or that don't use our samples)
+                var isRuntimeAsyncRun = IsRuntimeAsyncRun();
+                Logger.Information("isRuntimeAsyncRun - {IsRuntimeAsyncRun}", isRuntimeAsyncRun);
+                AzurePipelines.Instance.SetOutputVariable("isRuntimeAsyncRun", isRuntimeAsyncRun.ToString());
+            }
+
             void GenerateUnitTestFrameworkMatrices()
             {
                 GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows));
@@ -324,7 +333,9 @@ partial class Build : NukeBuild
                 };
 
                 var matrix = new Dictionary<string, object>();
-                foreach (var combo in combos)
+                // runtime-async only applies to net11.0+, so only test those TFMs in the runtime-async run.
+                // The job is skipped if this leaves the matrix empty
+                foreach (var combo in combos.Where(x => !IsRuntimeAsyncRun() || x.framework.IsGreaterThanOrEqualTo(TargetFramework.NET11_0)))
                 {
                     matrix.Add(combo.framework, combo);
                 }
