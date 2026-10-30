@@ -11,6 +11,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.ApiSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
@@ -189,6 +190,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
                             existingServerSpan.ResourceName = resourceName;
                             HttpSemanticConventions.SetHttpRoute(existingServerSpan, routeUrl);
+
+                            if (!string.IsNullOrEmpty(routeUrl))
+                            {
+                                AspNetRouteTemplate.SetTag(Security.Instance, existingServerSpan, routeUrl, routeValues, httpContext.Request.ApplicationPath);
+                            }
                         }
 
                         return null;
@@ -284,6 +290,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     if (!isChildAction)
                     {
                         var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
+                        var httpRouteSet = false;
 
                         // in case of a transfered request, the child request shouldnt set a new http route.
                         if (rootspanTags is AspNetTags rootAspNetTags)
@@ -291,11 +298,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             if (string.IsNullOrEmpty(rootAspNetTags.HttpRoute))
                             {
                                 rootAspNetTags.HttpRoute = routeUrl;
+                                httpRouteSet = true;
                             }
                         }
                         else if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
                         {
                             span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                            httpRouteSet = true;
+                        }
+
+                        if (httpRouteSet && !string.IsNullOrEmpty(routeUrl))
+                        {
+                            AspNetRouteTemplate.SetTag(Security.Instance, span.Context.TraceContext.RootSpan, routeUrl, routeValues, httpContext.Request.ApplicationPath);
                         }
 
                         if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
