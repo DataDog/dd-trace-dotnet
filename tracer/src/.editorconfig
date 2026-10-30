@@ -129,7 +129,6 @@ dotnet_diagnostic.MA0053.severity = none # Make class or record sealed
 dotnet_diagnostic.MA0055.severity = none # Do not use finalizer - existing native-resource finalizers should get justified suppressions (or move to SafeHandle). ~Tracer only maintains a live-instance count, so should be justified or removed
 dotnet_diagnostic.MA0057.severity = none # Class name should end with 'Attribute'
 dotnet_diagnostic.MA0058.severity = none # Class name should end with 'Exception'
-dotnet_diagnostic.MA0065.severity = none # Default ValueType.Equals or HashCode is used for struct equality
 dotnet_diagnostic.MA0066.severity = none # Hash table unfriendly type is used in a hash table
 dotnet_diagnostic.MA0070.severity = none # Obsolete attributes should include explanations
 dotnet_diagnostic.MA0077.severity = none # A class that provides Equals(T) should implement IEquatable<T>
