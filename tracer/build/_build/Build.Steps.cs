@@ -1153,7 +1153,7 @@ partial class Build
         }
 
         // Always LF: this is a shell script that ships to Linux.
-        File.WriteAllText(script, original.Replace(placeholder, Version).Replace("\r\n", "\n"));
+        File.WriteAllText(script, original.Replace(placeholder, FullVersion).Replace("\r\n", "\n"));
     }
 
     Target CreateBenchmarkIntegrationHome => _ => _
@@ -1324,10 +1324,10 @@ partial class Build
 
                     var tarOutputPath = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
                     {
-                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{Version}-musl.tar.gz",
-                        (true, var a) => workingDirectory / $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
-                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{Version}.tar.gz",
-                        (false, var a) => workingDirectory / $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}-musl.tar.gz",
+                        (true, var a) => workingDirectory / $"{packageName}-{FullVersion}-musl.{a.ToString().ToLower()}.tar.gz",
+                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{FullVersion}.tar.gz",
+                        (false, var a) => workingDirectory / $"{packageName}-{FullVersion}.{a.ToString().ToLower()}.tar.gz",
                     };
 
                     tar($"-czvf {tarOutputPath} .", workingDirectory: assetsDirectory);
@@ -1348,7 +1348,7 @@ partial class Build
                          name: "{packageName}"
                          arch: "{nFpmArch}"
                          platform: "linux"
-                         version: "{Version}"
+                         version: "{FullVersion}"
                          maintainer: "Datadog Packages <package@datadoghq.com>"
                          description: "Datadog APM client library for .NET"
                          vendor: "Datadog <package@datadoghq.com>"
@@ -1383,6 +1383,14 @@ partial class Build
                     // overwrites if it exists
                     File.WriteAllText(npfmConfig, yaml);
                     nfpm($"package -f {npfmConfig} -p {packageType}", workingDirectory: workingDirectory);
+
+                    // deb and rpm use `~` instead of `-` for a sem-ver prerelease, and nfpm puts it in the file name,
+                    // but we can't use that in the filename as it gets mangled by GitHub. The file itself has the
+                    // correct ~ embedded in the metadata though.
+                    foreach (var package in workingDirectory.GlobFiles($"*~*.{packageType}"))
+                    {
+                        MoveFile(package, workingDirectory / package.Name.Replace('~', '-'));
+                    }
                 }
             }
 
