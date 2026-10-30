@@ -32,13 +32,66 @@ public class FeatureFlagsSettingsTests
         };
         if (configured is not null)
         {
-            values[ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled] = configured;
+            values[ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled] = configured;
         }
 
         var settings = new FeatureFlagsSettings(new NameValueConfigurationSource(values), NullConfigurationTelemetry.Instance);
         settings.EvaluationEventsEnabled.Should().Be(expected);
         settings.Enabled.Should().BeTrue();
         settings.Source.Should().Be(FeatureFlagsSource.RemoteConfig);
+    }
+
+    [Theory]
+    [InlineData(null, null, true)]
+    [InlineData(null, "true", true)]
+    [InlineData(null, "false", false)]
+    [InlineData(null, "0", false)]
+    [InlineData(null, "1", true)]
+    [InlineData(null, "not-a-boolean", true)]
+    [InlineData("true", "false", true)]
+    [InlineData("false", "true", false)]
+    // Preserve the configuration builder's native alias fallback for unparseable values.
+    [InlineData("", "false", false)]
+    [InlineData(" ", "false", false)]
+    [InlineData("not-a-boolean", "false", false)]
+    [InlineData("not-a-boolean", null, true)]
+    public void EvaluationCountsHonorTheCanonicalNameAndLegacyAlias(string? canonical, string? legacy, bool expected)
+    {
+        var settings = CreateSettings(
+            null,
+            "remote_config",
+            null,
+            (ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled, canonical),
+            ("DD_FLAGGING_EVALUATION_COUNTS_ENABLED", legacy));
+
+        settings.EvaluationEventsEnabled.Should().Be(expected);
+        settings.Enabled.Should().BeTrue();
+        settings.Source.Should().Be(FeatureFlagsSource.RemoteConfig);
+    }
+
+    [Theory]
+    [InlineData("true", "false", "false", true)]
+    [InlineData("false", "true", "true", false)]
+    [InlineData(null, "false", "true", true)]
+    [InlineData(null, "true", "false", false)]
+    [InlineData(null, "false", null, false)]
+    public void EvaluationCountAliasesUseNativeConfigurationSourcePrecedence(
+        string? higherCanonical, string? higherLegacy, string? lowerCanonical, bool expected)
+    {
+        var higher = new NameValueConfigurationSource(new NameValueCollection
+        {
+            [ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled] = higherCanonical,
+            ["DD_FLAGGING_EVALUATION_COUNTS_ENABLED"] = higherLegacy,
+        });
+        var lower = new NameValueConfigurationSource(new NameValueCollection
+        {
+            [ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled] = lowerCanonical,
+        });
+        // The native builder searches all sources for the canonical key before consulting aliases.
+        var source = new CompositeConfigurationSource([higher, lower]);
+        var settings = new FeatureFlagsSettings(source, NullConfigurationTelemetry.Instance);
+
+        settings.EvaluationEventsEnabled.Should().Be(expected);
     }
 
     // The source-selection contract is shared across tracers, so these cases mirror the
@@ -202,7 +255,7 @@ public class FeatureFlagsSettingsTests
         string? enabled,
         string? source,
         string? legacyEnabled,
-        params (string Key, string Value)[] extra)
+        params (string Key, string? Value)[] extra)
     {
         var collection = new NameValueCollection();
 

@@ -57,7 +57,7 @@ internal static class EvaluationEventsSample
         Check(before.Value == "test-value", "disabled provider still evaluates");
         Check(before.FlagMetadata?.GetDouble("__dd_eval_timestamp_ms") is null, "disabled provider omits EVP timestamp");
 
-        Environment.SetEnvironmentVariable("DD_FLAGGING_EVALUATION_COUNTS_ENABLED", "true");
+        Environment.SetEnvironmentVariable("DD_FEATURE_FLAGS_EVALUATION_COUNTS_ENABLED", "true");
         // Reconfigure the automatic tracer explicitly: the shared helper targets the older public API.
         var settingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace", throwOnError: true)!;
         var settings = settingsType.GetMethod("FromDefaultSourcesInternal", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, null);
