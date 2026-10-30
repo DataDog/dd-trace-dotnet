@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests;
 
+[Collection(nameof(BaggageTestCollection))]
 [BaggageRestorer]
 public class BaggageScopeTests
 {

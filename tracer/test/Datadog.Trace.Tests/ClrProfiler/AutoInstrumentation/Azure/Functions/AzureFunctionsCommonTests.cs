@@ -32,6 +32,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
 #pragma warning restore SA1403
 
+    [Collection(nameof(BaggageTestCollection))]
     [BaggageRestorer]
     public class AzureFunctionsCommonTests
     {

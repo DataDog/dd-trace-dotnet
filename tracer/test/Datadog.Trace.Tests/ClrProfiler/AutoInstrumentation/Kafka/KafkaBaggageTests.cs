@@ -18,6 +18,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Kafka;
 
+[Collection(nameof(BaggageTestCollection))]
 [BaggageRestorer]
 public class KafkaBaggageTests
 {
