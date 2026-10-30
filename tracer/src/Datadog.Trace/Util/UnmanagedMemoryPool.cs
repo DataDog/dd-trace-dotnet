@@ -46,10 +46,12 @@ internal sealed unsafe class UnmanagedMemoryPool : IDisposable
         }
     }
 
+#pragma warning disable MA0055 // Do not use finalizer - frees the unmanaged memory if Dispose isn't called
     ~UnmanagedMemoryPool()
     {
         Dispose(disposing: false);
     }
+#pragma warning restore MA0055
 
     public bool IsDisposed => _isDisposed;
 
