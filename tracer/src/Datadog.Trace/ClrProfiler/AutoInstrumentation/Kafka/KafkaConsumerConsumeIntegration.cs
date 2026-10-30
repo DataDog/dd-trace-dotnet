@@ -74,16 +74,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     consumeResult.Offset,
                     consumeResult.Message);
 
-                if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled)
-                {
-                    // The span covers only the Consume() call, but the message's baggage stays
-                    // current so the application can read it while processing the message. The
-                    // next call to Consume() puts the consumer's own baggage back.
-                    scope.DisposeWithException(exception);
-                }
-                else if (exception is not null)
+                if (exception is not null)
                 {
                     scope?.Span?.SetException(exception);
+                }
+
+                if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled)
+                {
+                    // The span covers only the Consume() call, so close it here rather than on the
+                    // next poll. The message's baggage goes with it: both modes scope the baggage to
+                    // the same lifetime as the span.
+                    KafkaHelper.CloseConsumerScope();
                 }
             }
 

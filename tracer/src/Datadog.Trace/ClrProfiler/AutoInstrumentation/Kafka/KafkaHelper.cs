@@ -358,12 +358,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// restores the baggage its message replaced.
         /// </summary>
         /// <remarks>
-        /// This is also what restores the baggage when
-        /// <c>DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED=false</c> has already ended the span as
-        /// soon as <c>Consume()</c> returned: the application has not processed the message at that
-        /// point, so its baggage has to outlive its span. The trade-off in that mode is that the
-        /// message's baggage is also current for any unrelated work the application does on this
-        /// execution context before it polls again.
+        /// Both consumer-scope modes come through here, so the baggage is always scoped to the same
+        /// lifetime as the span: the next call to <c>Consume()</c> when the span covers message
+        /// processing, or the end of <c>Consume()</c> itself when
+        /// <c>DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED=false</c> limits the span to the poll.
         /// </remarks>
         internal static void CloseConsumerScope()
         {

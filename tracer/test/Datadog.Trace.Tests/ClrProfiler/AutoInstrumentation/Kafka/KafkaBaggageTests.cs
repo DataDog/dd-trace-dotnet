@@ -7,7 +7,6 @@ using System;
 using System.Collections.Specialized;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -234,7 +233,7 @@ public class KafkaBaggageTests
     }
 
     [Fact]
-    public async Task ImmediateCloseRecordsExceptionAndKeepsMessageBaggage()
+    public async Task ImmediateCloseRecordsExceptionAndEndsMessageBaggageWithTheSpan()
     {
         await using var tracer = CreateTracer(createConsumerScopeEnabled: false);
         var ambientBaggage = new Baggage();
@@ -242,18 +241,16 @@ public class KafkaBaggageTests
 
         var scope = CreateConsumerScope(tracer, "message=value");
         scope.Should().NotBeNull();
+        Baggage.Current.GetValueOrDefault("message").Should().Be("value");
 
-        scope.DisposeWithException(new InvalidOperationException("Consume failed"));
+        // Mirrors KafkaConsumerConsumeIntegration.OnMethodEnd when the span covers only the poll:
+        // the exception goes on the span, then the scope and its baggage close together.
+        scope.Span.SetException(new InvalidOperationException("Consume failed"));
+        KafkaHelper.CloseConsumerScope();
 
         scope.Span.Error.Should().BeTrue();
         tracer.InternalActiveScope.Should().BeNull();
 
-        // The application processes the message after Consume() returns, so the baggage it was
-        // produced with has to outlive the span.
-        Baggage.Current.GetValueOrDefault("message").Should().Be("value");
-
-        // The next poll still puts the consumer's own baggage back, so it does not leak onward.
-        KafkaHelper.CloseConsumerScope();
         Baggage.Current.Should().BeSameAs(ambientBaggage);
         ambientBaggage.Should().BeEmpty();
     }
@@ -265,16 +262,18 @@ public class KafkaBaggageTests
         var ambientBaggage = new Baggage();
         Baggage.Current = ambientBaggage;
 
-        CreateConsumerScope(tracer, "first=message").DisposeWithException(null);
+        CreateConsumerScope(tracer, "first=message");
         Baggage.Current.GetValueOrDefault("first").Should().Be("message");
 
         KafkaHelper.CloseConsumerScope();
-        CreateConsumerScope(tracer, "second=message").DisposeWithException(null);
+        Baggage.Current.Should().BeSameAs(ambientBaggage);
 
+        CreateConsumerScope(tracer, "second=message");
         Baggage.Current.GetValueOrDefault("second").Should().Be("message");
         Baggage.Current.GetValueOrDefault("first").Should().BeNull();
 
         KafkaHelper.CloseConsumerScope();
+        Baggage.Current.Should().BeSameAs(ambientBaggage);
     }
 
     [Fact]
