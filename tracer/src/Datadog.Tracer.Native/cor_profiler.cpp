@@ -2836,9 +2836,9 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
         return hr;
     }
 
-    // Define NativeTracerVersion as a string
+    // Define NativeTracerVersion as a string: the four-part version, to match TracerConstants.AssemblyVersion
     mdString nativeTracerVersionToken;
-    const auto nativeTracerVersion = ToWSTRING(PROFILER_VERSION);
+    const auto nativeTracerVersion = ToWSTRING(DD_FOUR_PART_VERSION_STR);
     hr = module_metadata.metadata_emit->DefineUserString(
         nativeTracerVersion.c_str(), static_cast<ULONG>(nativeTracerVersion.length()), &nativeTracerVersionToken);
 
@@ -2851,7 +2851,7 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
     ILRewriter methodRewriter(this->info_, nullptr, module_id, getNativeTracerVersionMethodDef);
     methodRewriter.InitializeTiny();
 
-    // Modify first instruction from ldstr "None" to ldstr PROFILER_VERSION
+    // Modify first instruction from ldstr "None" to ldstr DD_FOUR_PART_VERSION_STR
     ILRewriterWrapper wrapper(&methodRewriter);
     wrapper.SetILPosition(methodRewriter.GetILList()->m_pNext);
     wrapper.LoadStr(nativeTracerVersionToken);
@@ -2861,11 +2861,11 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
 
     if (FAILED(hr))
     {
-        Logger::Warn("Error rewriting Instrumentation.GetNativeTracerVersion() => PROFILER_VERSION");
+        Logger::Warn("Error rewriting Instrumentation.GetNativeTracerVersion() => DD_FOUR_PART_VERSION_STR");
         return hr;
     }
 
-    Logger::Info("Rewriting Instrumentation.GetNativeTracerVersion() => PROFILER_VERSION");
+    Logger::Info("Rewriting Instrumentation.GetNativeTracerVersion() => DD_FOUR_PART_VERSION_STR");
 
     if (IsDumpILRewriteEnabled())
     {

@@ -13,8 +13,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyVersion>$(ProductVersion)</AssemblyVersion>
-    <FileVersion>$(ProductVersion)</FileVersion>
+    <AssemblyVersion>$(DD_AssemblyVersion)</AssemblyVersion>
     <InformationalVersion>$(ProductVersion)$(ProductSuffix)</InformationalVersion>
 
     <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->

@@ -71,6 +71,9 @@ partial class Build : NukeBuild
     /// <remarks>Matched the way MSBuild matches it in version.props.</remarks>
     bool IsPrerelease => string.Equals(ProjectInfo.IsPrerelease, "true", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Gets the four-part assembly version, read from version.props.</summary>
+    string AssemblyVersion => ProjectInfo.AssemblyVersion;
+
     [Parameter("The new build version to set")]
     readonly string NewVersion;
 
@@ -121,8 +124,8 @@ partial class Build : NukeBuild
     {
         get
         {
-            var version = new System.Version(Version);
-            return $"-DDD_VERSION_MAJOR={version.Major} -DDD_VERSION_MINOR={version.Minor} -DDD_VERSION_PATCH={version.Build}";
+            var version = new System.Version(AssemblyVersion);
+            return $"-DDD_VERSION_MAJOR={version.Major} -DDD_VERSION_MINOR={version.Minor} -DDD_VERSION_PATCH={version.Build} -DDD_VERSION_REVISION={version.Revision}";
         }
     }
 

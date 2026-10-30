@@ -26,11 +26,11 @@ static class MsiSnapshot
         {"File", new() {"FileSize", "Sequence"}},
     };
 
-    public static void ValidateMsiSnapshot(AbsolutePath msiPath, AbsolutePath verifiedPath, string threePartVersion, string fullVersion)
+    public static void ValidateMsiSnapshot(AbsolutePath msiPath, AbsolutePath verifiedPath, string threePartVersion, string fourPartVersion, string fullVersion)
     {
         Logger.Information("Comparing snapshot of MSI for {MsiPath} using {Path}...", msiPath, verifiedPath);
 
-        var received = Generate(msiPath, threePartVersion, fullVersion);
+        var received = Generate(msiPath, threePartVersion, fourPartVersion, fullVersion);
         var verified = File.Exists(verifiedPath) ? File.ReadAllText(verifiedPath) : string.Empty;
 
         var dmp = new diff_match_patch();
@@ -64,10 +64,10 @@ static class MsiSnapshot
         throw new Exception("There were problems with the snapshot of the MSI. Please see previous messages for details");
     }
 
-    static string Generate(string msiPath, string threePartVersion, string fullVersion)
+    static string Generate(string msiPath, string threePartVersion, string fourPartVersion, string fullVersion)
     {
         var snapshot = new SortedDictionary<string, object>();
-        var sanitizer = new Sanitizer(threePartVersion, fullVersion);
+        var sanitizer = new Sanitizer(threePartVersion, fourPartVersion, fullVersion);
 
         using var db = new Database(msiPath, DatabaseOpenMode.ReadOnly);
         foreach (var table in Tables)
@@ -148,10 +148,10 @@ static class MsiSnapshot
         readonly string FullThreePartVersion;
         readonly string FullFourPartVersion;
 
-        public Sanitizer(string threePartVersion, string fullThreePartVersion)
+        public Sanitizer(string threePartVersion, string fourPartVersion, string fullThreePartVersion)
         {
             ThreePartVersion = threePartVersion;
-            FourPartVersion = $"{threePartVersion}.0";
+            FourPartVersion = fourPartVersion;
             FullThreePartVersion = fullThreePartVersion;
             FullFourPartVersion = fullThreePartVersion.Replace(ThreePartVersion, FourPartVersion);
         }

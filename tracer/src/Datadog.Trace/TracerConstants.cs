@@ -14,8 +14,6 @@ namespace Datadog.Trace
 
         public const string AssemblyVersion = ProjectInfo.AssemblyVersion;
 
-        // Instrumentation.cs compares this against the native tracer's PROFILER_VERSION for an exact
-        // string match, so it must stay a bare numeric three-part version.
         public const string ThreePartVersion = ProjectInfo.ThreePartVersion;
 
         public static ReadOnlySpan<byte> AssemblyVersionBytes => ProjectInfo.AssemblyVersionBytes;

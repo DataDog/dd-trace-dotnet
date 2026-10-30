@@ -20,6 +20,8 @@
 
     <PropertyGroup>
         <Version>0.0.1</Version>
+        <!-- Versioned independently of the SDK: clear the inherited AssemblyVersion so the .NET SDK derives it from Version -->
+        <AssemblyVersion></AssemblyVersion>
         <IsPackable>true</IsPackable>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>dd-instrumentation-generator</ToolCommandName>

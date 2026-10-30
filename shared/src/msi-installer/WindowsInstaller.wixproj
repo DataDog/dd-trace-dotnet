@@ -12,6 +12,10 @@
     <!--
       InstallerVersion becomes the Windows Installer ProductVersion, which has to be numeric
       major.minor.build with no suffix, and which needs to increase monotonically for upgrades to work.
+      It deliberately omits the assembly revision (1 for prereleases): Windows Installer ignores a
+      fourth field when comparing versions anyway. So a prerelease and a release with the same
+      major.minor.build look like the same version, and MajorUpgrade won't replace one with the other.
+      Today UpdateVersion ensures they never share a version number.
     -->
     <DefineConstants>InstallerVersion=$(DD_VersionPrefix);MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
   </PropertyGroup>

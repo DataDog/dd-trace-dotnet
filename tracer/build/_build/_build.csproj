@@ -75,6 +75,7 @@
     <ProjectInfoString Include="Version" Value="$(DD_VersionPrefix)" />
     <ProjectInfoString Include="SemVer" Value="$(DD_SemVer)" />
     <ProjectInfoString Include="IsPrerelease" Value="$(DD_IsPrerelease)" />
+    <ProjectInfoString Include="AssemblyVersion" Value="$(DD_AssemblyVersion)" />
   </ItemGroup>
 
   <ItemGroup>

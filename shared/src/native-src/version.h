@@ -2,9 +2,8 @@
 
 #include "dd_version.h"
 
-// This must stay a bare numeric version (no suffix):
-//   - Instrumentation.cs compares GetNativeTracerVersion() (which the native profiler IL-rewrites
-//     to this value) against TracerConstants.ThreePartVersion for an exact string match.
-//   - generated_calltargets.g.cpp builds the managed assembly's strong name by concatenating
-//     "Datadog.Trace, Version=" + PROFILER_VERSION + ".0, Culture=...".
+// The bare numeric three-part version (no suffix, no revision), for logs, telemetry, and IAST's filtering of
+// aspects by their (three-part) minimum version. Anything that builds the managed assembly's strong name, or
+// that is compared against the managed assembly's version (such as Instrumentation.GetNativeTracerVersion()),
+// must use DD_FOUR_PART_VERSION_STR instead.
 constexpr auto PROFILER_VERSION = DD_THREE_PART_VERSION_STR;

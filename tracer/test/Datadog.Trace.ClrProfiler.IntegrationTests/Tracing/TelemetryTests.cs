@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
-            await telemetry.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            await telemetry.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.AssemblyVersion);
             await telemetry.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
             await telemetry.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
 
@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             await agent.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
-            await agent.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            await agent.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.AssemblyVersion);
             await agent.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage");
             await agent.AssertConfigurationAsync(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage");
 
@@ -181,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             await agent.AssertIntegrationEnabledAsync(IntegrationId.HttpMessageHandler);
-            await agent.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            await agent.AssertConfigurationAsync(ConfigTelemetryData.NativeTracerVersion, TracerConstants.AssemblyVersion);
             await AssertServiceAsync(agent, "Samples.Telemetry", ServiceVersion);
             await AssertDependenciesAsync(agent, enableDependencies);
             await AssertNoRedactedErrorLogsAsync(agent);

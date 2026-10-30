@@ -19,6 +19,8 @@
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.100 (Open Feature patch)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.101 (Open Feature patch + dd patch)-->    
     <Version>2.3.2</Version>
+    <!-- Versioned independently of the SDK: clear the inherited AssemblyVersion so the .NET SDK derives it from Version -->
+    <AssemblyVersion></AssemblyVersion>
     <!-- These target frameworks should match the values exposed in the OpenFeature package referenced below-->
     <TargetFrameworks>net462;netstandard2.0;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
