@@ -1367,7 +1367,10 @@ stages:
         jobs: [managed]
 
     - job: managed
-      timeoutInMinutes: 90
+      timeoutInMinutes: 230
+      variables:
+        coldstart_runs: 500
+        coldstart_minutes: 105
       strategy:
         matrix:
           net48:
@@ -1390,6 +1393,127 @@ stages:
         displayName: Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+      - powershell: |
+          $ErrorActionPreference = 'Continue'
+          $root = "$(System.DefaultWorkingDirectory)"
+          $out = Join-Path $root 'artifacts\build_data\coldstart'
+          $trxDir = Join-Path $out 'trx'
+          $consoleDir = Join-Path $out 'console'
+          $logRoot = Join-Path $out 'logs'
+          New-Item -ItemType Directory -Force -Path $trxDir, $consoleDir, $logRoot | Out-Null
+          $dll = Join-Path $root 'artifacts\bin\Datadog.Trace.Tests\release_net48\Datadog.Trace.Tests.dll'
+          $filter = 'FullyQualifiedName=Datadog.Trace.Tests.RuntimeMetrics.PerformanceCountersListenerTests.PushEvents'
+          $maxRuns = [int]"$(coldstart_runs)"
+          $stepStart = [DateTime]::UtcNow
+          $deadline = $stepStart.AddMinutes([int]"$(coldstart_minutes)")
+          $runTimeoutMs = 240000
+          $ns = 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'
+          $tsv = Join-Path $out 'runs.tsv'
+          $summaryPath = Join-Path $out 'summary.txt'
+          Set-Content -Path $tsv -Value "run`tstartUtc`texitCode`toutcome`tduration`tdiag`terror"
+          $failureDetails = New-Object System.Collections.Generic.List[string]
+          $counts = @{ runs = 0; passed = 0; failed = 0; notExecuted = 0; timedOut = 0; noResult = 0 }
+          $writeSummary = {
+            param([string]$note)
+            $line = "COLDSTART summary: runs=$($counts.runs) passed=$($counts.passed) failed=$($counts.failed) notExecuted=$($counts.notExecuted) timedOut=$($counts.timedOut) noResult=$($counts.noResult) started=$($stepStart.ToString('O')) updated=$([DateTime]::UtcNow.ToString('O')) maxRuns=$maxRuns"
+            if ($note) { $line = "$line note=$note" }
+            Set-Content -Path $summaryPath -Value (@($line) + $failureDetails)
+            return $line
+          }
+          $clean = { param($v) ("$v" -replace "[`t`r`n]+", ' ') }
+          if (-not (Test-Path $dll)) {
+            $line = & $writeSummary "test assembly not found: $dll"
+            Write-Host $line
+            Write-Host "##vso[task.logissue type=warning]COLDSTART skipped: $dll not found"
+            exit 1
+          }
+          $dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
+          if ($dotnetCmd -eq $null) {
+            $line = & $writeSummary 'dotnet not found on PATH'
+            Write-Host $line
+            Write-Host '##vso[task.logissue type=warning]COLDSTART skipped: dotnet not found on PATH'
+            exit 1
+          }
+          $dotnet = $dotnetCmd.Source
+          $env:DD_SERVICE_NAME = 'dd-tracer-dotnet'
+          for ($i = 1; $i -le $maxRuns -and [DateTime]::UtcNow.AddMilliseconds($runTimeoutMs) -lt $deadline; $i++) {
+            $counts.runs++
+            $start = [DateTime]::UtcNow
+            $trxName = "run_$i.trx"
+            $trxPath = Join-Path $trxDir $trxName
+            $stdoutPath = Join-Path $consoleDir "run_$i.out.txt"
+            $stderrPath = Join-Path $consoleDir "run_$i.err.txt"
+            $runLogDir = Join-Path $logRoot "run_$i"
+            $env:DD_TRACE_LOG_DIRECTORY = $runLogDir
+            $arguments = "test `"$dll`" --filter $filter --logger `"trx;LogFileName=$trxName`" --results-directory `"$trxDir`" --nologo --blame-hang --blame-hang-dump-type none --blame-hang-timeout 3m"
+            $exitCode = ''
+            $timedOutRun = $false
+            try {
+              $p = Start-Process -FilePath $dotnet -ArgumentList $arguments -NoNewWindow -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+              $null = $p.Handle
+              if ($p.WaitForExit($runTimeoutMs)) {
+                $exitCode = $p.ExitCode
+              } else {
+                $timedOutRun = $true
+                & taskkill.exe /PID $p.Id /T /F *> $null
+                $null = $p.WaitForExit(30000)
+              }
+            } catch {
+              $exitCode = "start failed: $_"
+            }
+            $outcome = 'NoResult'; $duration = ''; $diag = ''; $err = ''
+            if ($timedOutRun) {
+              $outcome = 'Timeout'
+              $err = "killed after $runTimeoutMs ms"
+            } elseif (Test-Path $trxPath) {
+              try {
+                [xml]$x = Get-Content -Raw -Path $trxPath
+                $nsm = New-Object System.Xml.XmlNamespaceManager($x.NameTable)
+                $nsm.AddNamespace('t', $ns)
+                $node = $x.SelectSingleNode('//t:UnitTestResult', $nsm)
+                if ($node -ne $null) {
+                  $outcome = $node.GetAttribute('outcome')
+                  $duration = $node.GetAttribute('duration')
+                  $stdout = $node.SelectSingleNode('.//t:StdOut', $nsm)
+                  if ($stdout -ne $null) {
+                    $diag = (($stdout.InnerText -split "`r?`n") | Where-Object { $_ -like 'DIAG*' } | Select-Object -First 1)
+                  }
+                  $message = $node.SelectSingleNode('.//t:ErrorInfo/t:Message', $nsm)
+                  if ($message -ne $null) { $err = $message.InnerText }
+                }
+              } catch {
+                $err = "trx parse failed: $_"
+              }
+            }
+            if ($outcome -eq 'Passed' -and "$exitCode" -eq '0') {
+              $counts.passed++
+              Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $runLogDir, $stdoutPath, $stderrPath
+            } else {
+              switch ($outcome) {
+                'Timeout' { $counts.timedOut++ }
+                'NotExecuted' { $counts.notExecuted++ }
+                'NoResult' { $counts.noResult++ }
+                default { $counts.failed++ }
+              }
+              $failureDetails.Add("run=$i startUtc=$($start.ToString('O')) exitCode=$exitCode outcome=$outcome duration=$duration`n$diag`n$err`n")
+            }
+            Add-Content -Path $tsv -Value ("$i`t$($start.ToString('O'))`t$exitCode`t$outcome`t$duration`t$(& $clean $diag)`t$(& $clean $err)")
+            $null = & $writeSummary ''
+          }
+          $line = & $writeSummary 'completed'
+          Get-Content -Path $summaryPath | ForEach-Object { Write-Host $_ }
+          $bad = $counts.failed + $counts.notExecuted + $counts.timedOut + $counts.noResult
+          if ($bad -gt 0) {
+            Write-Host "##vso[task.logissue type=warning]COLDSTART non-passing runs=$bad of $($counts.runs)"
+            exit 1
+          }
+          exit 0
+        displayName: Cold-start PushEvents loop
+        errorActionPreference: continue
+        condition: succeededOrFailed()
+        continueOnError: true
+        timeoutInMinutes: 115
 
       - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)

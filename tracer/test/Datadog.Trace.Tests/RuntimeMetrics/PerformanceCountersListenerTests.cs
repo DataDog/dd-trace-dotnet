@@ -5,7 +5,6 @@
 
 #if NETFRAMEWORK
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,17 +17,11 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
-using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
     public class PerformanceCountersListenerTests
     {
-        private const int MaxRecordedFailuresPerPhase = 20;
-        private static readonly TimeSpan SameListenerBudget = TimeSpan.FromMinutes(5);
-        private static readonly TimeSpan FreshListenerBudget = TimeSpan.FromMinutes(3);
-        private static readonly TimeSpan SameListenerDelay = TimeSpan.FromMilliseconds(10);
-
         private readonly ITestOutputHelper _output;
 
         public PerformanceCountersListenerTests(ITestOutputHelper output)
@@ -76,100 +69,6 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         }
 
         [Fact]
-        public async Task PushEventsStressDiagnostic()
-        {
-            var phaseAFailures = new List<string>();
-            var phaseBFailures = new List<string>();
-            var started = DateTime.UtcNow;
-            var sameListenerRefreshes = 0;
-            var sameListenerFailures = 0;
-            var freshListeners = 0;
-            var freshListenerFailures = 0;
-
-            try
-            {
-                var statsd = new Mock<IDogStatsd>();
-                using (var listener = new PerformanceCountersListener(new TestStatsdManager(statsd.Object)))
-                {
-                    await listener.WaitForInitialization();
-                    var sw = Stopwatch.StartNew();
-                    while (sw.Elapsed < SameListenerBudget)
-                    {
-                        statsd.Invocations.Clear();
-                        sameListenerRefreshes++;
-                        try
-                        {
-                            listener.Refresh();
-                            var gauges = CountHeapGauges(statsd);
-                            if (gauges < 4)
-                            {
-                                sameListenerFailures++;
-                                if (phaseAFailures.Count < MaxRecordedFailuresPerPhase)
-                                {
-                                    phaseAFailures.Add("phase=A " + Describe(listener, sameListenerRefreshes, gauges));
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            sameListenerFailures++;
-                            if (phaseAFailures.Count < MaxRecordedFailuresPerPhase)
-                            {
-                                phaseAFailures.Add("phase=A threw " + ex + " " + Describe(listener, sameListenerRefreshes, -1));
-                            }
-                        }
-
-                        await Task.Delay(SameListenerDelay);
-                    }
-                }
-
-                var swFresh = Stopwatch.StartNew();
-                while (swFresh.Elapsed < FreshListenerBudget)
-                {
-                    var freshStatsd = new Mock<IDogStatsd>();
-                    using var listener = new PerformanceCountersListener(new TestStatsdManager(freshStatsd.Object));
-                    await listener.WaitForInitialization();
-                    freshListeners++;
-                    try
-                    {
-                        listener.Refresh();
-                        var gauges = CountHeapGauges(freshStatsd);
-                        if (gauges < 4)
-                        {
-                            freshListenerFailures++;
-                            if (phaseBFailures.Count < MaxRecordedFailuresPerPhase)
-                            {
-                                phaseBFailures.Add("phase=B " + Describe(listener, freshListeners, gauges));
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        freshListenerFailures++;
-                        if (phaseBFailures.Count < MaxRecordedFailuresPerPhase)
-                        {
-                            phaseBFailures.Add("phase=B threw " + ex + " " + Describe(listener, freshListeners, -1));
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                _output.WriteLine(
-                    $"DIAG summary: started={started:O} ended={DateTime.UtcNow:O} " +
-                    $"sameListenerRefreshes={sameListenerRefreshes} sameListenerFailures={sameListenerFailures} " +
-                    $"freshListeners={freshListeners} freshListenerFailures={freshListenerFailures}");
-                foreach (var failure in phaseAFailures.Concat(phaseBFailures))
-                {
-                    _output.WriteLine(failure);
-                }
-            }
-
-            var summary = $"DIAG sameListenerFailures={sameListenerFailures}/{sameListenerRefreshes} freshListenerFailures={freshListenerFailures}/{freshListeners}";
-            phaseAFailures.Concat(phaseBFailures).Should().BeEmpty(summary + Environment.NewLine + string.Join(Environment.NewLine, phaseAFailures.Concat(phaseBFailures)));
-        }
-
-        [Fact]
         public void AsynchronousInitialization()
         {
             var barrier = new Barrier(2);
@@ -197,9 +96,6 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             // All done, free the thread and cleanup
             barrier.SignalAndWait();
         }
-
-        private static int CountHeapGauges(Mock<IDogStatsd> statsd)
-            => statsd.Invocations.Count(i => i.Method.Name == nameof(IDogStatsd.Gauge));
 
         private static string Describe(PerformanceCountersListener listener, int iteration, int observed)
         {
