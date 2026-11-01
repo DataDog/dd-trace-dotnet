@@ -8,7 +8,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -20,6 +22,165 @@ namespace Datadog.Trace.Tests.RemoteConfigurationManagement;
 
 public class RcmSubscriptionManagerTests
 {
+    [Fact]
+    [Trait("Category", "FormalMethodsPhase2")]
+    public async Task Diagnostic_ConcurrentCapabilityUpdatesLoseAnEnabledBit()
+    {
+        const int iterationCount = 20_000;
+        var manager = new RcmSubscriptionManager();
+        var firstCapability = BigInteger.One << 1024;
+        var secondCapability = BigInteger.One << 2048;
+        var bothCapabilities = firstCapability | secondCapability;
+        using var start = new Barrier(3);
+        using var finished = new Barrier(3);
+
+        var firstWorker = Task.Run(
+            () =>
+            {
+                for (var i = 0; i < iterationCount; i++)
+                {
+                    start.SignalAndWait();
+                    manager.SetCapability(firstCapability, available: true);
+                    finished.SignalAndWait();
+                }
+            });
+        var secondWorker = Task.Run(
+            () =>
+            {
+                for (var i = 0; i < iterationCount; i++)
+                {
+                    start.SignalAndWait();
+                    manager.SetCapability(secondCapability, available: true);
+                    finished.SignalAndWait();
+                }
+            });
+
+        var observedLostUpdate = false;
+        for (var i = 0; i < iterationCount; i++)
+        {
+            manager.SetCapability(bothCapabilities, available: false);
+            start.SignalAndWait();
+            finished.SignalAndWait();
+
+            var actual = new BigInteger(manager.GetCapabilities(), isUnsigned: true, isBigEndian: true);
+            observedLostUpdate |= (actual & bothCapabilities) != bothCapabilities;
+        }
+
+        await Task.WhenAll(firstWorker, secondWorker);
+        observedLostUpdate.Should().BeTrue("SetCapability performs an unsynchronized read-modify-write");
+    }
+
+    [Fact]
+    [Trait("Category", "FormalMethods")]
+    public async Task Diagnostic_ApplyFailureIsNotRetriedForIdenticalRemoteState()
+    {
+        var manager = new RcmSubscriptionManager();
+        var invocations = 0;
+        Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>, ApplyDetails[]> failingSubscriber =
+            (_, _) =>
+            {
+                invocations++;
+                throw new InvalidOperationException("injected apply failure");
+            };
+        manager.SubscribeToChanges(
+            new Subscription(failingSubscriber, RcmProducts.AsmFeatures));
+
+        var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
+
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([entry])));
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([entry], targetsVersion: 2)));
+
+        invocations.Should().Be(1, "the cache suppresses the identical state even though delivery failed");
+    }
+
+    [Fact]
+    [Trait("Category", "FormalMethods")]
+    public async Task Diagnostic_RemoveFailureIsNotRetriedForIdenticalRemoteState()
+    {
+        var manager = new RcmSubscriptionManager();
+        var removalInvocations = 0;
+        manager.SubscribeToChanges(
+            new Subscription(
+                (configs, removed) =>
+                {
+                    if (removed is not null)
+                    {
+                        removalInvocations++;
+                        throw new InvalidOperationException("injected remove failure");
+                    }
+
+                    return configs.SelectMany(x => x.Value)
+                                  .Select(x => ApplyDetails.FromOk(x.Path.Path))
+                                  .ToArray();
+                },
+                RcmProducts.AsmFeatures));
+
+        var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([entry])));
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([], targetsVersion: 2)));
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([], targetsVersion: 3)));
+
+        removalInvocations.Should().Be(1, "the cache entry is deleted before the subscriber confirms removal");
+    }
+
+    [Fact]
+    [Trait("Category", "FormalMethods")]
+    public async Task Diagnostic_RemovalIsDeliveredToSubscriberForUnrelatedProduct()
+    {
+        var manager = new RcmSubscriptionManager();
+        Dictionary<string, List<RemoteConfigurationPath>> unrelatedRemovals = null;
+        manager.SubscribeToChanges(
+            new Subscription(
+                (configs, _) => configs.SelectMany(x => x.Value)
+                                       .Select(x => ApplyDetails.FromOk(x.Path.Path))
+                                       .ToArray(),
+                RcmProducts.AsmFeatures));
+        manager.SubscribeToChanges(
+            new Subscription(
+                (_, removed) =>
+                {
+                    unrelatedRemovals = removed;
+                    return [];
+                },
+                RcmProducts.LiveDebugging));
+
+        var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([entry])));
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([], targetsVersion: 2)));
+
+        unrelatedRemovals.Should().ContainKey(RcmProducts.AsmFeatures);
+    }
+
+    [Fact]
+    [Trait("Category", "FormalMethods")]
+    public async Task Diagnostic_LateSubscriberDoesNotReceiveAlreadyCachedState()
+    {
+        var manager = new RcmSubscriptionManager();
+        manager.SubscribeToChanges(
+            new Subscription(
+                (configs, _) => configs.SelectMany(x => x.Value)
+                                       .Select(x => ApplyDetails.FromOk(x.Path.Path))
+                                       .ToArray(),
+                RcmProducts.AsmFeatures));
+
+        var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([entry])));
+
+        var lateSubscriberInvocations = 0;
+        manager.SubscribeToChanges(
+            new Subscription(
+                (_, _) =>
+                {
+                    lateSubscriberInvocations++;
+                    return [];
+                },
+                RcmProducts.AsmFeatures));
+
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(CreateSingleProductResponse([entry], targetsVersion: 2)));
+
+        lateSubscriberInvocations.Should().Be(0, "deduplication is global rather than per subscriber");
+    }
+
     // some values (noted below) can trigger BigInteger.ToByteArray() to an an extra 0x00 byte,
     // so we're testing a few values to make sure the conversion is correct
     [Theory]

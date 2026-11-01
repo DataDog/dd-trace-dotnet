@@ -720,6 +720,34 @@ namespace Datadog.Trace.Tests.Agent
             await closing.WaitAsync(TimeSpan.FromMilliseconds(30000));
         }
 
+        [Fact]
+        [Trait("Category", "FormalMethodsPhase2")]
+        public async Task Diagnostic_SecondConcurrentCloseReturnsWhileSerializationIsStillRunning()
+        {
+            using var processingStarted = new ManualResetEventSlim();
+            using var releaseProcessing = new ManualResetEventSlim();
+            var statsAggregator = new StubStatsAggregator(
+                shouldKeepTrace: true,
+                spans =>
+                {
+                    processingStarted.Set();
+                    releaseProcessing.Wait(TimeSpan.FromSeconds(30));
+                    return spans;
+                });
+            var agent = AgentWriterHelper.CreateWithManualFlush(Mock.Of<IApi>(), statsAggregator);
+            agent.WriteTrace(CreateTraceChunk(1));
+            processingStarted.Wait(TimeSpan.FromSeconds(30)).Should().BeTrue();
+
+            var firstClose = agent.FlushAndCloseAsync();
+            var secondClose = agent.FlushAndCloseAsync();
+
+            await secondClose.WaitAsync(TimeSpan.FromSeconds(1));
+            firstClose.IsCompleted.Should().BeFalse("the serialization worker is still blocked");
+
+            releaseProcessing.Set();
+            await firstClose.WaitAsync(TimeSpan.FromSeconds(30));
+        }
+
         /// <summary>
         /// Writes a trace and blocks until the serialization thread has serialized it. The
         /// watermark is enqueued after the trace and the queue has a single consumer, so the
