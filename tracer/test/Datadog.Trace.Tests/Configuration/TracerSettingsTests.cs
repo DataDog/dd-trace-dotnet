@@ -1462,7 +1462,7 @@ namespace Datadog.Trace.Tests.Configuration
                 yield return (Count.OpenTelemetryConfigHiddenByDatadogConfig, otelSetting, ddSetting);
             }
 
-            if (!hasSupportedPropagator || propagators.Any(s => !IsSupportedOtelPropagator(s)))
+            if (propagators.Length == 0 || !propagators.All(IsSupportedOtelPropagator)
             {
                 yield return (Count.OpenTelemetryConfigInvalid, otelSetting, ddSetting);
             }
