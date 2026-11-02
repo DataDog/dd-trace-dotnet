@@ -343,7 +343,7 @@ internal static class NUnitIntegration
                 break;
             }
 
-            resultMessage = string.Join(":", resultSplittedMessage.Skip(1)).Trim();
+            resultMessage = string.Join(':', resultSplittedMessage.Skip(1)).Trim();
             exceptionType = tmpExType;
         }
     }
