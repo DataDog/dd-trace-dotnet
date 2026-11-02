@@ -127,7 +127,6 @@ dotnet_diagnostic.MA0077.severity = none # A class that provides Equals(T) shoul
 dotnet_diagnostic.MA0089.severity = none # Optimize string method usage - some suggested overloads (e.g. char overloads) aren't available on net461/netstandard2.0, so may require polyfills
 dotnet_diagnostic.MA0096.severity = none # A class that implements IComparable<T> should also implement IEquatable<T>
 dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T> or IComparable should override comparison operators
-dotnet_diagnostic.MA0098.severity = none # Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0102.severity = none # Make member readonly
 dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from the BCL
 dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter
