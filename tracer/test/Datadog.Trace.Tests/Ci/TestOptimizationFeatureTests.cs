@@ -2747,12 +2747,19 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             var result = CreateNUnitResult(currentTest, NUnitTestStatus.Failed);
             var context = new NUnitContextStub { CurrentTest = currentTest, CurrentResult = result.Object };
             var command = new Mock<NUnitCommand>();
-            command.Setup(x => x.Execute(It.IsAny<NUnitContext>())).Returns(result.Object);
+            Test completedTest = null;
+            command.Setup(x => x.Execute(It.IsAny<NUnitContext>()))
+                   .Callback<NUnitContext>(executionContext => completedTest = NUnitIntegration.GetOrCreateTest(executionContext.CurrentTest))
+                   .Returns(result.Object);
             new NUnitTestCommand(command.Object).Execute(context);
 
             command.Verify(x => x.Execute(It.IsAny<NUnitContext>()), Times.Once);
             result.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            var completedTest = NUnitIntegration.GetOrCreateTest(currentTest);
+            // The integration cache is weak: retain the actual execution across collection instead of creating a new test after it closes.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            completedTest.Should().NotBeNull();
             var tags = completedTest.GetTags();
             tags.TestIsNew.Should().Be("true");
             long newTests = 0;
@@ -2767,6 +2774,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             tags.TestRetryReason.Should().BeNull();
             tags.AttemptToFixPassed.Should().BeNull();
             tags.FinalStatus.Should().Be(TestTags.StatusFail);
+            GC.KeepAlive(completedTest);
         }
         finally
         {
