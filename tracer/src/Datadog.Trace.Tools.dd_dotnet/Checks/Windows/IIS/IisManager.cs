@@ -24,8 +24,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 
         public static IisManager? Create(string? applicationHostConfigurationPath)
         {
-            var appHostAdminManagerGuid = Guid.Parse("228FB8F7-FB53-4FD5-8C7B-FF59DE606C5B");
-            var iAppHostAdminManagerGuid = Guid.Parse("9BE77978-73ED-4A9A-87FD-13F09FEC1B13");
+            var appHostAdminManagerGuid = new Guid(0x228FB8F7u, 0xFB53, 0x4FD5, 0x8C, 0x7B, 0xFF, 0x59, 0xDE, 0x60, 0x6C, 0x5B); // 228FB8F7-FB53-4FD5-8C7B-FF59DE606C5B
+            var iAppHostAdminManagerGuid = new Guid(0x9BE77978u, 0x73ED, 0x4A9A, 0x87, 0xFD, 0x13, 0xF0, 0x9F, 0xEC, 0x1B, 0x13); // 9BE77978-73ED-4A9A-87FD-13F09FEC1B13
 
             int result = NativeMethods.CoCreateInstance(
                 in appHostAdminManagerGuid,
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 
         private unsafe class PathMapper : IAppHostPathMapper
         {
-            private static readonly Guid Guid = Guid.Parse("e7927575-5cc3-403b-822e-328a6b904bee");
+            private static readonly Guid Guid = new Guid(0xE7927575u, 0x5CC3, 0x403B, 0x82, 0x2E, 0x32, 0x8A, 0x6B, 0x90, 0x4B, 0xEE); // e7927575-5cc3-403b-822e-328a6b904bee
 
             private readonly string _applicationHostConfigurationPath;
 
