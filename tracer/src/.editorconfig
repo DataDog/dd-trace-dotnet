@@ -149,4 +149,3 @@ dotnet_diagnostic.MA0209.severity = none # Use in keyword for in parameter
 dotnet_diagnostic.MA0217.severity = none # Use a static lambda
 dotnet_diagnostic.MA0221.severity = none # TryGetValue method should use [MaybeNullWhen(false)] on the value parameter
 dotnet_diagnostic.MA0239.severity = none # Use 'typeof' instead of 'GetType()' when the type is sealed
-dotnet_diagnostic.MA0242.severity = none # Use a value factory to compute the value only when the key is not in the ConcurrentDictionary
