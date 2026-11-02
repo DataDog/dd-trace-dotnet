@@ -131,7 +131,6 @@ dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T
 dotnet_diagnostic.MA0098.severity = none # Use indexer instead of LINQ methods
 dotnet_diagnostic.MA0102.severity = none # Make member readonly
 dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from the BCL
-dotnet_diagnostic.MA0105.severity = none # Use the lambda parameters instead of using a closure
 dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter
 dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
