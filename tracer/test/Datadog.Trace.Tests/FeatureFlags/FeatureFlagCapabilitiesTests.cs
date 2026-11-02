@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Numerics;
 using Datadog.Trace.FeatureFlags;
 using FluentAssertions;
@@ -21,7 +20,7 @@ public class FeatureFlagCapabilitiesTests
     [InlineData("dependent-flag-variant-key-v1", true)]
     public void GatesBothTransports(string? capability, bool supported)
     {
-        var capabilities = capability is null ? Array.Empty<string>() : new[] { capability };
+        string[] capabilities = capability is null ? [] : [capability];
         FeatureFlagCapabilities.HeaderValue(capabilities).Should().Be(supported ? "dependent-flag-variant-key-v1" : null);
         FeatureFlagCapabilities.RemoteConfigMask(capabilities).Should().Be(new BigInteger((1UL << 46) | (supported ? 1UL << 50 : 0)));
     }
