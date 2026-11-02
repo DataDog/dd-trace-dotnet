@@ -222,7 +222,8 @@ namespace Datadog.Trace
                         }
                         else
                         {
-                            await CheckAgentAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
+                            var isHealthy = await host.CheckHealthAsync(metadata).ConfigureAwait(false);
+                            await ActOnHealthCheckAsync(host, metadata, isHealthy, maxRetryInterval).ConfigureAwait(false);
                         }
 
                         if (metadata.ProcessState == ProcessState.ReadyToStart)
@@ -330,15 +331,16 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// A regular check after the first one. One health check and one reading of our own process decide whether the
-        /// agent is healthy, whether to start a new one, restart ours, or wait for more failed checks.
+        /// Acts on a regular health check after the first one. Its result and one reading of our own process decide whether
+        /// the agent is healthy, whether to start a new one, restart ours, or wait for more failed checks. The caller runs the
+        /// health check, so a check that needs no start or restart allocates no task. Not being async also saves a task on a
+        /// start or restart.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal static async Task CheckAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+        internal static Task ActOnHealthCheckAsync<THost>(THost host, ProcessMetadata metadata, bool isHealthy, int maxRetryInterval)
             where THost : struct, IAgentHost
         {
             var previousState = metadata.ProcessState;
-            var isHealthy = await host.CheckHealthAsync(metadata).ConfigureAwait(false);
 
             // Check whether our own process is running only after the health check, so an exit during the
             // check is logged and counted. Every decision below uses this one reading.
@@ -351,21 +353,19 @@ namespace Datadog.Trace
             if (isHealthy)
             {
                 MarkHealthy(host, metadata, previousState);
-                return;
+                return Task.CompletedTask;
             }
 
             metadata.HealthySinceMs = null;
             switch (action)
             {
                 case KeepAliveAction.Start:
-                    await PrepareToStartAsync(host, metadata, previousState, ownProcessExited, maxRetryInterval).ConfigureAwait(false);
-                    break;
+                    return PrepareToStartAsync(host, metadata, previousState, ownProcessExited, maxRetryInterval);
                 case KeepAliveAction.Restart:
-                    await RestartOwnProcessAsync(host, metadata, maxRetryInterval).ConfigureAwait(false);
-                    break;
+                    return RestartOwnProcessAsync(host, metadata, maxRetryInterval);
                 default:
                     MarkUnhealthy(metadata, previousState, ownProcessIsRunning, maxRetryInterval);
-                    break;
+                    return Task.CompletedTask;
             }
         }
 
@@ -498,10 +498,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Starts a new agent process, then waits for it with <see cref="WaitForStartedAgentAsync"/>.
+        /// Starts a new agent process, then waits for it with <see cref="WaitForStartedAgentAsync"/>. Not async, so a start
+        /// allocates no task of its own.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal static async Task StartAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
+        internal static Task StartAgentAsync<THost>(THost host, ProcessMetadata metadata, int maxRetryInterval)
             where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
@@ -540,15 +541,15 @@ namespace Datadog.Trace
                 Log.Debug("Started {AgentPath} with pid {ChildPid}.", path, childPid);
             }
 
-            metadata.ProcessState = await WaitForStartedAgentAsync(host, metadata, childPid, logAboveDebug, maxRetryInterval).ConfigureAwait(false);
+            return WaitForStartedAgentAsync(host, metadata, childPid, logAboveDebug, maxRetryInterval);
         }
 
         /// <summary>
-        /// Waits up to <see cref="StartupTimeout"/> for a just-started agent to pass a health check. Returns Healthy when
-        /// it does (or another instance does), Faulted when our process exited first so the retry backoff applies, or
+        /// Waits up to <see cref="StartupTimeout"/> for a just-started agent to pass a health check. Sets the state to Healthy
+        /// when it does (or another instance does), Faulted when our process exited first so the retry backoff applies, or
         /// Unhealthy when it is still running but not ready, so the regular checks take over.
         /// </summary>
-        private static async Task<ProcessState> WaitForStartedAgentAsync<THost>(THost host, ProcessMetadata metadata, int? childPid, bool logAboveDebug, int maxRetryInterval)
+        private static async Task WaitForStartedAgentAsync<THost>(THost host, ProcessMetadata metadata, int? childPid, bool logAboveDebug, int maxRetryInterval)
             where THost : struct, IAgentHost
         {
             var path = metadata.ProcessPath;
@@ -573,7 +574,8 @@ namespace Datadog.Trace
                         Log.Information("Successfully started {AgentPath} with pid {ChildPid}.", path, childPid);
                     }
 
-                    return ProcessState.Healthy;
+                    metadata.ProcessState = ProcessState.Healthy;
+                    return;
                 }
 
                 if (metadata.Process == null || metadata.Process.HasExited)
@@ -591,7 +593,8 @@ namespace Datadog.Trace
                     }
 
                     ForgetOwnProcess(metadata);
-                    return ProcessState.Faulted;
+                    metadata.ProcessState = ProcessState.Faulted;
+                    return;
                 }
 
                 await host.DelayAsync(100).ConfigureAwait(false);
@@ -606,7 +609,7 @@ namespace Datadog.Trace
                 Log.Debug<string, int?, string>("{AgentPath} with pid {ChildPid} is running but did not pass its health check while starting ({Reason}).", path, childPid, metadata.LastHealthCheckFailure);
             }
 
-            return ProcessState.Unhealthy;
+            metadata.ProcessState = ProcessState.Unhealthy;
         }
 
         /// <summary>
@@ -927,7 +930,7 @@ namespace Datadog.Trace
             /// </summary>
             public bool PipeIsPresent { get; set; }
 
-            // Built on the first failure rather than at startup, and kept: the same reasons repeat on every failed check
+            // Built the first time a check fails (on a cold start, the first check), and kept: the same reasons repeat on every failed check
             private PipeFailureReasons FailureReasons => _pipeFailureReasons ??= new PipeFailureReasons(PipeName);
 
             public bool OwnProcessIsRunning()
