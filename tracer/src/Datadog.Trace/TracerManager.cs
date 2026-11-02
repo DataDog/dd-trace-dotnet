@@ -628,7 +628,7 @@ namespace Datadog.Trace
                     if (instance.SpanContextPropagator.InjectorNames.SequenceEqual(instance.SpanContextPropagator.ExtractorNames))
                     {
                         writer.WritePropertyName("OTEL_PROPAGATORS");
-                        writer.WriteValue(instance.SpanContextPropagator.InjectorNames.Any() ? string.Join(",", instance.SpanContextPropagator.InjectorNames) : "none");
+                        writer.WriteValue(instance.SpanContextPropagator.InjectorNames.Any() ? string.Join(',', instance.SpanContextPropagator.InjectorNames) : "none");
                     }
 
                     // Custom samplers may ignore the configured global rate; an unset or invalid rate
@@ -740,7 +740,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
 
                     writer.WritePropertyName("tracer_datadog_json_configuration_filepaths");
-                    writer.WriteValue(string.Join(";", instanceSettings.JsonConfigurationFilePaths));
+                    writer.WriteValue(string.Join(';', instanceSettings.JsonConfigurationFilePaths));
 
                     writer.WritePropertyName("trace_propagation_behavior_extract");
                     writer.WriteValue(instanceSettings.PropagationBehaviorExtract);

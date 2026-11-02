@@ -313,7 +313,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
             var description = response.TargetFiles?.Count > 0
-                                  ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
+                                  ? "with the following paths: " + string.Join(',', response.TargetFiles.Select(t => t.Path))
                                   : "that is empty.";
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }

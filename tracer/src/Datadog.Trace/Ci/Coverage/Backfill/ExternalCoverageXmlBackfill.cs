@@ -2169,7 +2169,7 @@ internal static class ExternalCoverageXmlBackfill
             return true;
         }
 
-        if (path.StartsWith("\\", StringComparison.Ordinal) ||
+        if (path.StartsWith('\\') ||
             path.StartsWith("//", StringComparison.Ordinal))
         {
             return true;

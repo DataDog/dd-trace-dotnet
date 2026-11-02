@@ -666,7 +666,7 @@ internal class CreatedumpCommand : Command
             }
             else
             {
-                AddError($"Unable to parse the command-line arguments: {string.Join(" ", allArguments)}");
+                AddError($"Unable to parse the command-line arguments: {string.Join(' ', allArguments)}");
             }
         }
         catch (Exception ex)
@@ -973,7 +973,7 @@ internal class CreatedumpCommand : Command
             }
             else
             {
-                DebugPrint($"Calling createdump with arguments: {string.Join(" ", commandLineArgs[2..])}");
+                DebugPrint($"Calling createdump with arguments: {string.Join(' ', commandLineArgs[2..])}");
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(commandLineArgs[2], commandLineArgs[3..]) { UseShellExecute = false })!.WaitForExit();
             }
         }

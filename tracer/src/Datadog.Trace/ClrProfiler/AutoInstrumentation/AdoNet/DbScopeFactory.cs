@@ -180,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     dbType = DbType.Sqlite;
                     return true;
                 default:
-                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
+                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf('.') + 1);
                     if (IsDisabledCommandType(commandTypeName, disabledAdoNetCommandTypes))
                     {
                         integrationId = null;
@@ -189,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
 
                     const string commandSuffix = "Command";
-                    int lastIndex = commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal);
+                    int lastIndex = commandTypeFullName.LastIndexOf('.');
                     string namespaceName = lastIndex > 0 ? commandTypeFullName.Substring(0, lastIndex) : string.Empty;
                     integrationId = IntegrationId.AdoNet;
                     dbType = commandTypeName switch

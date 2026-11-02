@@ -510,7 +510,7 @@ namespace Datadog.Trace.DuckTyping
                     else
                     {
                         // Nested types are separated with a "." on explicit implementation.
-                        interfaceTypeName = interfaceTypeName.Replace("+", ".");
+                        interfaceTypeName = interfaceTypeName.Replace('+', '.');
 
                         name = interfaceTypeName + "." + name;
                     }

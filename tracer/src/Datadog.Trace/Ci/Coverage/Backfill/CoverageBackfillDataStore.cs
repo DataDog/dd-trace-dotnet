@@ -1513,7 +1513,7 @@ internal static class CoverageBackfillDataStore
 
     private static string BuildResultFolderSnapshot(List<string> resultFiles)
     {
-        return string.Join("|", resultFiles);
+        return string.Join('|', resultFiles);
     }
 
     private static bool HasTemporaryAtomicFile(string? directoryPath, string fileNamePrefix)

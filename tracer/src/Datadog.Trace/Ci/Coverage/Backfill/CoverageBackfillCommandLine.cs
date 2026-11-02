@@ -335,7 +335,7 @@ internal readonly struct CoverageBackfillCommandLine
         {
             var argument = line.Trim();
             if (StringUtil.IsNullOrEmpty(argument) ||
-                argument.StartsWith("#", StringComparison.Ordinal))
+                argument.StartsWith('#'))
             {
                 continue;
             }
@@ -1302,7 +1302,7 @@ internal readonly struct CoverageBackfillCommandLine
                     var nextArgument = StripSurroundingQuotes(_arguments[i + 1]);
                     if (!StringUtil.IsNullOrEmpty(nextArgument) &&
                         !nextArgument.Equals("--", StringComparison.Ordinal) &&
-                        !nextArgument.StartsWith("-", StringComparison.Ordinal))
+                        !nextArgument.StartsWith('-'))
                     {
                         value = nextArgument;
                         foundValue = true;
@@ -2515,7 +2515,7 @@ internal readonly struct CoverageBackfillCommandLine
             {
                 var nextArgument = StripSurroundingQuotes(_arguments[i + 1]);
                 if (!nextArgument.Equals("--", StringComparison.Ordinal) &&
-                    !nextArgument.StartsWith("-", StringComparison.Ordinal))
+                    !nextArgument.StartsWith('-'))
                 {
                     value = nextArgument;
                     foundValue = true;
@@ -3066,7 +3066,7 @@ internal readonly struct CoverageBackfillCommandLine
             return true;
         }
 
-        if (argument.StartsWith("/", StringComparison.Ordinal))
+        if (argument.StartsWith('/'))
         {
             return argument.IndexOf('/', 1) > 0;
         }
@@ -3101,7 +3101,7 @@ internal readonly struct CoverageBackfillCommandLine
 
         var nextArgument = StripSurroundingQuotes(_arguments[optionIndex + 1]);
         if (nextArgument.Equals("--", StringComparison.Ordinal) ||
-            nextArgument.StartsWith("-", StringComparison.Ordinal))
+            nextArgument.StartsWith('-'))
         {
             return true;
         }
@@ -3855,7 +3855,7 @@ internal readonly struct CoverageBackfillCommandLine
         argument = StripSurroundingQuotes(argument);
         foreach (var optionName in optionNames)
         {
-            if (optionName.EndsWith(":", StringComparison.Ordinal))
+            if (optionName.EndsWith(':'))
             {
                 if (argument.StartsWith(optionName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -4982,7 +4982,7 @@ internal readonly struct CoverageBackfillCommandLine
         outputPath = StripSurroundingQuotes(outputPath);
         return outputPath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) ||
                outputPath.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal) ||
-               outputPath.EndsWith("\\", StringComparison.Ordinal);
+               outputPath.EndsWith('\\');
     }
 
     private string EnsureTrailingDirectorySeparator(string path)

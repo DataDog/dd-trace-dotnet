@@ -40,7 +40,7 @@ internal sealed class ProcessTags
 
     public string SerializedTags
     {
-        get => field ??= string.Join(",", TagsList); // don't forget to refresh the hash in ServiceRemappingHash on write if this value becomes mutable
+        get => field ??= string.Join(',', TagsList); // don't forget to refresh the hash in ServiceRemappingHash on write if this value becomes mutable
     }
 
     private static List<string> GetTagsList(bool serviceNameUserDefined, string autoServiceName)

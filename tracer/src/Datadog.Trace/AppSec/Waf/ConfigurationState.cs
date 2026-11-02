@@ -386,7 +386,7 @@ internal sealed record ConfigurationState
             AutoUserInstrumMode = "unknown value";
             Log.Error(
                 "AutoUserInstrumMode was 'unknown value', source data: {AutoUserInstrumByFile}",
-                string.Join(",", AutoUserInstrumByFile.Values.Select(x => x?.Mode)));
+                string.Join(',', AutoUserInstrumByFile.Values.Select(x => x?.Mode)));
         }
         else
         {

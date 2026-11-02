@@ -35,7 +35,7 @@ internal sealed class JsonTokenizer : ITokenizer
 
         // Remove new lines from the value by space
         // to get the correct position of the token with the .LinePosition property
-        value = value.Replace("\n", " ");
+        value = value.Replace('\n', ' ');
 
         var redactedRanges = new List<Range>();
         using var sr = new StringReader(value);

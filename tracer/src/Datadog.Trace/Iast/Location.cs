@@ -31,7 +31,7 @@ internal readonly struct Location
         if (index >= 0)
         {
             Class = method.Substring(0, length: index);
-            var bracketIndex = method.IndexOf("(", startIndex: index + 2, StringComparison.Ordinal);
+            var bracketIndex = method.IndexOf('(', startIndex: index + 2);
             Method = bracketIndex > 0
                          ? method.Substring(index + 2, length: bracketIndex - index - 2)
                          : method.Substring(index + 2);

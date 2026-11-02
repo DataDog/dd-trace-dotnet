@@ -43,7 +43,9 @@ namespace Datadog.Trace.OpenTracing
 
             // Comma appears to be the right separator to join several values for the same header name
             // source: https://stackoverflow.com/a/3097052
+#pragma warning disable MA0089 // Use an overload with char instead of string - string.Join(char, ...) isn't available on .NET Framework or .NET Standard 2.0, and this assembly has no polyfill
             return string.Join(",", values);
+#pragma warning restore MA0089
         }
 
         /// <summary>
@@ -56,7 +58,9 @@ namespace Datadog.Trace.OpenTracing
         {
             foreach (KeyValuePair<string, IEnumerable<string>> header in _headers)
             {
+#pragma warning disable MA0089 // Use an overload with char instead of string - string.Join(char, ...) isn't available on .NET Framework or .NET Standard 2.0, and this assembly has no polyfill
                 yield return new KeyValuePair<string, string>(header.Key, header.Value == null ? null : string.Join(",", header.Value));
+#pragma warning restore MA0089
             }
         }
 

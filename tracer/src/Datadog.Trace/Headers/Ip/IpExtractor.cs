@@ -124,7 +124,7 @@ namespace Datadog.Trace.Headers.Ip
             return ipAddress.IsIPv6UniqueLocal;
 #else
             var ipAddressString = ipAddress.ToString();
-            var indexOfColon = ipAddressString.IndexOf(":", StringComparison.InvariantCulture);
+            var indexOfColon = ipAddressString.IndexOf(':');
             var firstWord = indexOfColon < 1 ? ipAddressString : ipAddressString.Substring(0, indexOfColon);
             // These days Unique Local Addresses (ULA) are used in place of Site Local. ULA has two variants:
             // fc00::/8 is not defined yet, but might be used in the future for internal-use addresses

@@ -1320,7 +1320,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             var orderedResultIds = coverageReports
                                   .Select(coverageReport => GetCoverletXmlFallbackResultId(sessionSpanId, coverageReport))
                                   .OrderBy(resultId => resultId, StringComparer.Ordinal);
-            var payload = Encoding.UTF8.GetBytes($"{CodeCoverageReportSource.CoverletXmlFallback}|group|v1|{sessionSpanId}|{string.Join("|", orderedResultIds)}");
+            var payload = Encoding.UTF8.GetBytes($"{CodeCoverageReportSource.CoverletXmlFallback}|group|v1|{sessionSpanId}|{string.Join('|', orderedResultIds)}");
 #if NET6_0_OR_GREATER
             var hash = SHA256.HashData(payload);
 #else
@@ -2397,7 +2397,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 if (!values.Contains(datadogCoverageCollector, StringComparer.OrdinalIgnoreCase))
                 {
                     Log.Information("InjectCodeCoverageCollector.DotnetTest: Appending the Datadog data collector.");
-                    item = $"{collectProperty}\"{string.Join(";", values.Concat(datadogCoverageCollector))}\"";
+                    item = $"{collectProperty}\"{string.Join(';', values.Concat(datadogCoverageCollector))}\"";
                     msbuildArgsList[isCollectIndex] = item;
                 }
                 else
@@ -2426,7 +2426,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     if (!values.Contains(codeCoverageCollectorPath))
                     {
                         Log.Information("InjectCodeCoverageCollector.DotnetTest: Appending the Datadog data collector folder path.");
-                        item = $"{testAdapterPathProperty}\"{string.Join(";", values.Concat(codeCoverageCollectorPath))}\"";
+                        item = $"{testAdapterPathProperty}\"{string.Join(';', values.Concat(codeCoverageCollectorPath))}\"";
                         msbuildArgsList[isTestAdapterPathIndex] = item;
                     }
                     else

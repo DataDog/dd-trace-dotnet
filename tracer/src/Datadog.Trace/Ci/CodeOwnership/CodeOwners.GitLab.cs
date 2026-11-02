@@ -72,7 +72,7 @@ namespace Datadog.Trace.Ci.CodeOwnership
         }
 
         private static bool IsUnparsableSectionHeader(string raw)
-            => raw.StartsWith("[", StringComparison.Ordinal) || raw.StartsWith("^[", StringComparison.Ordinal);
+            => raw.StartsWith('[') || raw.StartsWith("^[", StringComparison.Ordinal);
 
         private static bool IsStrictSectionHeader(string raw)
         {
