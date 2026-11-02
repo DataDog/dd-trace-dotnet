@@ -424,7 +424,11 @@ namespace Datadog.Trace.FeatureFlags
             InvokeConfigurationHandler(replay, "RegisterOnNewConfigEventHandler");
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure = false)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+            => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposure: false);
+
+        // With deferExposure, the exposure waits for CommitExposure instead of being recorded and sent.
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
@@ -444,7 +448,10 @@ namespace Datadog.Trace.FeatureFlags
                 return notReady;
             }
 
-            var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes), deferExposure);
+            var context = new EvaluationContext(targetingKey, attributes);
+            var evaluation = deferExposure
+                                 ? evaluator.EvaluateWithDeferredExposure(flagKey, resultType, defaultValue, context)
+                                 : evaluator.Evaluate(flagKey, resultType, defaultValue, context);
             if (evaluation.PendingExposure is { } pending && evaluation.FlagMetadata is { } metadata)
             {
                 _deferredExposures.Add(metadata, new StrongBox<ExposureEvent>(pending));

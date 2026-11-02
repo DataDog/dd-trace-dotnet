@@ -71,7 +71,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture();
         // Evaluator failures carry a descriptive message separately from their stable code.
-        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new FailedEvaluation(code), 1234);
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new FailedEvaluation(code), 1234, deferredExposure: false);
         var details = new FlagEvaluationDetails<bool>(
             resolution.FlagKey,
             resolution.Value,
@@ -106,7 +106,7 @@ public class FlagEvalEVPHookTests
             metadata[FeatureFlagMetadataKeys.FeatureTypes] = "42:holdout.should_include_in_holdout_analysisb";
         }
 
-        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new MetadataEvaluation(metadata), 1234);
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new MetadataEvaluation(metadata), 1234, deferredExposure: false);
         var details = new FlagEvaluationDetails<bool>(resolution.FlagKey, resolution.Value, resolution.ErrorType, resolution.Reason, resolution.Variant, resolution.ErrorMessage, resolution.FlagMetadata);
 
         await fixture.EvaluateAndCompleteAsync(Context(), details);
@@ -137,7 +137,7 @@ public class FlagEvalEVPHookTests
             metadata["errorCode"] = errorCode;
         }
 
-        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new MetadataEvaluation(metadata), 1234);
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new MetadataEvaluation(metadata), 1234, deferredExposure: false);
         var details = new FlagEvaluationDetails<bool>(resolution.FlagKey, resolution.Value, resolution.ErrorType, resolution.Reason, resolution.Variant, resolution.ErrorMessage, resolution.FlagMetadata);
         var fast = new Fixture { AcceptsFeatures = false };
         var slow = new Fixture { AcceptsFeatures = true };

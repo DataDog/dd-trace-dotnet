@@ -139,7 +139,7 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool deferredExposure = false)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate, FlagEvalEVPHook? evaluationEventsHook, bool deferredExposure)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
@@ -218,7 +218,7 @@ internal static class FeatureFlagsSdk
                }
                : null;
 
-    internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs, bool deferredExposure = false)
+    internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs, bool deferredExposure)
     {
         // OpenFeature substitutes the caller's default only when a provider throws. This provider
         // reports errors as details instead, so every error must carry the default itself.

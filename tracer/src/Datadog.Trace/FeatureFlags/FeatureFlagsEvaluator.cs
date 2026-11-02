@@ -69,9 +69,15 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal ServerConfiguration? Configuration => _config;
 
-        // With deferExposure, an exposure is left on Evaluation.PendingExposure instead of being recorded
-        // and sent, for the caller to commit once the evaluation has completed.
-        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure = false)
+        public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: false);
+
+        // Leaves an exposure on Evaluation.PendingExposure instead of recording and sending it, for the
+        // caller to commit once the evaluation has completed.
+        public Evaluation EvaluateWithDeferredExposure(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: true);
+
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure)
         {
             // Capture before evaluating: even an exception after a configuration update keeps this consent.
             var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";

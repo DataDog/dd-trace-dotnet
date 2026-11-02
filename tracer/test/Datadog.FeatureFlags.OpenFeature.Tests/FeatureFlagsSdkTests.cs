@@ -31,7 +31,7 @@ public class FeatureFlagsSdkTests
             metadata[FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent;
         }
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), 1234);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), 1234, deferredExposure: false);
 
         result.FlagMetadata.Should().NotBeNull();
         result.FlagMetadata!.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData).Should().Be(expected);
@@ -44,7 +44,7 @@ public class FeatureFlagsSdkTests
     [Fact]
     public void OldTracerWithoutMetadataDefaultsToProtected()
     {
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null), 1234);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null), 1234, deferredExposure: false);
 
         result.Value.Should().BeTrue();
         result.FlagMetadata!.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData).Should().BeFalse();
@@ -54,7 +54,7 @@ public class FeatureFlagsSdkTests
     [Fact]
     public void ResolutionWithoutEventHookPreservesDefaultAndOmitsPrivateMetadata()
     {
-        var result = FeatureFlagsSdk.Resolve("flag", Trace.FeatureFlags.ValueType.Boolean, false, null);
+        var result = FeatureFlagsSdk.Resolve("flag", Trace.FeatureFlags.ValueType.Boolean, false, null, evaluate: null, evaluationEventsHook: null, deferredExposure: false);
 
         result.Value.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.ProviderNotReady);
@@ -73,7 +73,7 @@ public class FeatureFlagsSdkTests
     public void ErrorsPreserveCallerDefaultAndEvaluationMetadata(string error)
     {
         var metadata = new Dictionary<string, string> { [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "true" };
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata, error), 1234);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata, error), 1234, deferredExposure: false);
 
         result.Value.Should().BeFalse();
         result.ErrorType.Should().NotBe(ErrorType.None);
@@ -95,7 +95,7 @@ public class FeatureFlagsSdkTests
             ["errorCode"] = error ?? string.Empty,
         };
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata, error), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata, error), null, deferredExposure: false);
 
         result.Value.Should().Be(error is null);
         result.FlagMetadata!.GetBool(FeatureFlagMetadataKeys.DoLog).Should().BeTrue();
@@ -112,7 +112,7 @@ public class FeatureFlagsSdkTests
     [Fact]
     public void DisabledEventsDoNotInventMetadataForAnOldTracer()
     {
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null), null, deferredExposure: false);
 
         result.Value.Should().BeTrue();
         result.FlagMetadata.Should().BeNull();
@@ -134,7 +134,7 @@ public class FeatureFlagsSdkTests
             ["errorCode"] = string.Empty,
         };
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null, deferredExposure: false);
 
         var converted = result.FlagMetadata!;
         converted.GetBool(FeatureFlagMetadataKeys.DoLog).Should().BeTrue();
@@ -166,7 +166,7 @@ public class FeatureFlagsSdkTests
             metadata[FeatureFlagMetadataKeys.FeatureTypes] = types;
         }
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), 1);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), 1, deferredExposure: false);
 
         var converted = result.FlagMetadata!;
         converted.GetString("__dd_feature.flag").Should().Be(types == "4:flagb" ? null : "true");
@@ -195,7 +195,7 @@ public class FeatureFlagsSdkTests
             [FeatureFlagMetadataKeys.FeatureTypes] = types,
         };
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null, deferredExposure: false);
 
         result.ErrorType.Should().Be(ErrorType.None, because);
         result.FlagMetadata!.GetString("__dd_feature.flag").Should().Be("true", because);
@@ -213,7 +213,7 @@ public class FeatureFlagsSdkTests
             [FeatureFlagMetadataKeys.FeatureTypes] = "4:flagz4:yearn",
         };
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null, deferredExposure: false);
 
         result.FlagMetadata!.GetString("__dd_feature.flag").Should().Be("true");
         result.FlagMetadata!.GetDouble("__dd_feature.year").Should().Be(2026);
@@ -224,7 +224,7 @@ public class FeatureFlagsSdkTests
     {
         var metadata = new Dictionary<string, string> { [FeatureFlagMetadataKeys.SplitSerialId] = "4294967295" };
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null, deferredExposure: false);
 
         result.FlagMetadata!.GetInt(FeatureFlagMetadataKeys.SplitSerialId).Should().Be(-1);
     }
@@ -240,7 +240,7 @@ public class FeatureFlagsSdkTests
             [FeatureFlagMetadataKeys.FeatureTypes] = "42:holdout.should_include_in_holdout_analysisb",
         };
 
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null, deferredExposure: false);
 
         var features = FeatureFlagsSdk.GetHookFeatures(result.FlagMetadata);
         features.Should().NotBeNull();
@@ -254,7 +254,7 @@ public class FeatureFlagsSdkTests
     {
         var metadata = new Dictionary<string, string> { ["__dd_exposure_feature.holdout.key"] = "06ad", ["__dd_feature.hook"] = "x" };
 
-        var converted = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null).FlagMetadata!;
+        var converted = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null, deferredExposure: false).FlagMetadata!;
 
         FeatureFlagsSdk.GetEvaluationFeatures(converted).Should().BeNull("exposure and hook features do not split evaluation counts");
         FeatureFlagsSdk.GetHookFeatures(converted)!.Should().ContainKey("hook");
@@ -263,7 +263,7 @@ public class FeatureFlagsSdkTests
     [Fact]
     public void HookFeaturesAreAbsentWithoutFeatureMetadata()
     {
-        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(new Dictionary<string, string> { ["__dd_allocation_key"] = "alloc" }), null);
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(new Dictionary<string, string> { ["__dd_allocation_key"] = "alloc" }), null, deferredExposure: false);
 
         FeatureFlagsSdk.GetHookFeatures(result.FlagMetadata).Should().BeNull();
     }
