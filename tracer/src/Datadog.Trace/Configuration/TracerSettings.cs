@@ -105,17 +105,17 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
 
-            var otelSdkDisabled = GetOtelSdkDisabled(config);
-            OtelSdkDisabled = otelSdkDisabled.ConfigurationResult is { IsValid: true, Result: true };
+            var otelSdkDisabledResult = GetOtelSdkDisabled(config);
+            var otelSdkDisabled = otelSdkDisabledResult.ConfigurationResult is { IsValid: true, Result: true };
 
             // Unlike other OTEL_* settings, OTEL_SDK_DISABLED=true takes precedence over its Datadog equivalent.
             // Otherwise it's unset or invalid, so OverrideWith only uses it to report a hidden or invalid value.
             var activityListenerEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
                                          .AsBoolResult();
-            IsActivityListenerEnabled = OtelSdkDisabled
+            IsActivityListenerEnabled = otelSdkDisabled
                                             ? DisableIfOtelSdkDisabled(activityListenerEnabled.ConfigurationResult is { IsValid: true, Result: true }, ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
-                                            : activityListenerEnabled.OverrideWith(in otelSdkDisabled, ErrorLog, defaultValue: false);
+                                            : activityListenerEnabled.OverrideWith(in otelSdkDisabledResult, ErrorLog, defaultValue: false);
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -181,13 +181,6 @@ namespace Datadog.Trace.Configuration
             {
                 RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
             }
-            else if (OtelSdkDisabled)
-            {
-                // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false.
-                // Only a valid DD_RUNTIME_METRICS_ENABLED overrides it: an empty or invalid value is treated as unset.
-                RuntimeMetricsEnabled = false;
-                telemetry.Record(ConfigurationKeys.RuntimeMetricsEnabled, false, ConfigurationOrigins.Calculated);
-            }
             else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true, Result: false })
             {
                 // OTEL_METRICS_EXPORTER=none explicitly disables metrics export, which takes precedence
@@ -197,6 +190,13 @@ namespace Datadog.Trace.Configuration
             else
             {
                 RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
+            }
+
+            if (otelSdkDisabled && !runtimeMetricsEnabledResult.ConfigurationResult.IsPresent)
+            {
+                // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false. A DD_RUNTIME_METRICS_ENABLED value overrides it.
+                RuntimeMetricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.RuntimeMetricsEnabled, false, ConfigurationOrigins.Calculated);
             }
 
             var runtimeMetricsDiagnosticsMetricsApiEnabledResult = config
@@ -949,7 +949,7 @@ namespace Datadog.Trace.Configuration
             // so it takes precedence over the DD_* and OTEL_* settings that enable it.
             bool DisableIfOtelSdkDisabled(bool enabled, string key)
             {
-                if (!OtelSdkDisabled)
+                if (!otelSdkDisabled)
                 {
                     return enabled;
                 }
@@ -1452,15 +1452,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether OpenTelemetry mode is disabled for every signal.
-        /// When <c>true</c>, the OpenTelemetry tracing and metrics APIs and OTLP metrics and logs export are disabled.
-        /// So are tracing and runtime metrics, unless <see cref="ConfigurationKeys.TraceEnabled"/> or
-        /// <see cref="ConfigurationKeys.RuntimeMetricsEnabled"/> is set to a valid value.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/>
-        internal bool OtelSdkDisabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.

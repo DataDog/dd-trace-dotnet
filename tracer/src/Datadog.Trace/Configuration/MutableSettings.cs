@@ -970,20 +970,16 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var traceEnabledResult = config
                                 .WithKeys(ConfigurationKeys.TraceEnabled)
                                 .AsBoolResult();
+        var traceEnabled = traceEnabledResult.OverrideWith(in otelTracesExporterResult, errorLog, defaultValue: true);
 
         // Read OTEL_SDK_DISABLED from this snapshot's source rather than tracerSettings,
         // so that settings created without default sources ignore it.
-        bool traceEnabled;
-        if (TracerSettings.IsOtelSdkDisabled(config) && traceEnabledResult.ConfigurationResult is not { IsValid: true })
+        if (TracerSettings.IsOtelSdkDisabled(config) && traceEnabledResult.ConfigurationResult is not { IsPresent: true })
         {
             // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false and takes precedence over OTEL_TRACES_EXPORTER.
-            // Only a valid DD_TRACE_ENABLED overrides it: an empty or invalid value is treated as unset.
+            // As with OverrideWith, a DD_TRACE_ENABLED value overrides it.
             telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
             traceEnabled = false;
-        }
-        else
-        {
-            traceEnabled = traceEnabledResult.OverrideWith(in otelTracesExporterResult, errorLog, defaultValue: true);
         }
 
         if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)

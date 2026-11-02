@@ -344,20 +344,25 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false, and an empty or invalid value is treated as unset
+        // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false.
+        // The composite source ignores an empty or invalid value, so it doesn't override OTEL_SDK_DISABLED
         [InlineData(null, false)]
         [InlineData("", false)]
         [InlineData("invalid", false)]
-        // Only a valid DD_RUNTIME_METRICS_ENABLED overrides it
+        // A DD_RUNTIME_METRICS_ENABLED value overrides it
         [InlineData("true", true)]
         [InlineData("1", true)]
         [InlineData("false", false)]
         public void RuntimeMetricsEnabledWithOtelSdkDisabled(string value, bool expected)
         {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
-                (ConfigurationKeys.RuntimeMetricsEnabled, value),
-                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"));
+            // Use a composite source, as in production
+            var source = new CompositeConfigurationSource(
+            [
+                CreateConfigurationSource(
+                    (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                    (ConfigurationKeys.RuntimeMetricsEnabled, value),
+                    (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true")),
+            ]);
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
 
@@ -698,7 +703,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             var expectedEnabled = !expectedDisabled;
             using var scope = new AssertionScope();
-            settings.OtelSdkDisabled.Should().Be(expectedDisabled);
             settings.IsActivityListenerEnabled.Should().Be(expectedEnabled);
             settings.OpenTelemetryMetricsEnabled.Should().Be(expectedEnabled);
             settings.OpenTelemetryLogsEnabled.Should().Be(expectedEnabled);
@@ -748,8 +752,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settings = new TracerSettings(source);
 
+            // Both TracerSettings and MutableSettings resolve OTEL_SDK_DISABLED=true
             using var scope = new AssertionScope();
-            settings.OtelSdkDisabled.Should().BeTrue();
             settings.IsActivityListenerEnabled.Should().BeFalse();
             settings.Manager.InitialMutableSettings.TraceEnabled.Should().BeFalse();
         }
