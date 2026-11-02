@@ -188,7 +188,7 @@ namespace Datadog.Trace.AppSec
 #if NETFRAMEWORK
         private static MemberExtractor?[] CreateDataContractAwareExtractors(Type bodyType)
         {
-            return bodyType.GetCustomAttribute<DataContractAttribute>() is not null
+            return Attribute.IsDefined(bodyType, typeof(DataContractAttribute))
                 ? CreateDataContractExtractors(bodyType)
                 : CreateDataContractDefaultExtractors(bodyType);
         }
@@ -202,7 +202,7 @@ namespace Datadog.Trace.AppSec
             foreach (var property in bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 if (property.GetIndexParameters().Length > 0
-                    || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                    || Attribute.IsDefined(property, typeof(IgnoreDataMemberAttribute))
                     || property.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember
                     || property.GetGetMethod(nonPublic: true) is not { } getter)
                 {
@@ -215,7 +215,7 @@ namespace Datadog.Trace.AppSec
 
             foreach (var field in bodyType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                if (field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                if (Attribute.IsDefined(field, typeof(IgnoreDataMemberAttribute))
                     || field.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
                 {
                     continue;
@@ -229,7 +229,7 @@ namespace Datadog.Trace.AppSec
             // Those are invisible to the non-DeclaredOnly queries above, so walk the hierarchy explicitly.
             for (var type = bodyType.BaseType; type is not null && type != typeof(object); type = type.BaseType)
             {
-                if (type.GetCustomAttribute<DataContractAttribute>() is null)
+                if (!Attribute.IsDefined(type, typeof(DataContractAttribute)))
                 {
                     break;
                 }
@@ -239,7 +239,7 @@ namespace Datadog.Trace.AppSec
                     var getter = property.GetGetMethod(nonPublic: true);
                     if (getter?.IsPrivate is not true
                         || property.GetIndexParameters().Length > 0
-                        || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                        || Attribute.IsDefined(property, typeof(IgnoreDataMemberAttribute))
                         || property.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
                     {
                         continue;
@@ -252,7 +252,7 @@ namespace Datadog.Trace.AppSec
                 foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                 {
                     if (!field.IsPrivate
-                        || field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                        || Attribute.IsDefined(field, typeof(IgnoreDataMemberAttribute))
                         || field.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
                     {
                         continue;
@@ -293,7 +293,7 @@ namespace Datadog.Trace.AppSec
             foreach (var property in bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
             {
                 if (property.GetIndexParameters().Length > 0
-                    || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                    || Attribute.IsDefined(property, typeof(IgnoreDataMemberAttribute))
                     || property.GetGetMethod() is not { } getter
                     || (property.GetSetMethod() is null && !IsCollectionType(property.PropertyType)))
                 {
@@ -309,7 +309,7 @@ namespace Datadog.Trace.AppSec
             // but NOT public readonly (IsInitOnly) fields.
             foreach (var field in bodyType.GetFields(BindingFlags.Instance | BindingFlags.Public))
             {
-                if (field.IsInitOnly || field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null)
+                if (field.IsInitOnly || Attribute.IsDefined(field, typeof(IgnoreDataMemberAttribute)))
                 {
                     continue;
                 }

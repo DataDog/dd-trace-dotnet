@@ -734,13 +734,13 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo proxyProperty in proxyTypeProperties)
             {
                 // Ignore the properties marked with `DuckIgnore` attribute
-                if (proxyProperty.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (Attribute.IsDefined(proxyProperty, typeof(DuckIgnoreAttribute), true))
                 {
                     continue;
                 }
 
                 // Check if proxy is a reverse method (shouldn't be called from here)
-                if (proxyProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                if (Attribute.IsDefined(proxyProperty, typeof(DuckReverseMethodAttribute), true))
                 {
                     return DuckTypeIncorrectReversePropertyUsageException.Create(proxyProperty);
                 }
@@ -941,7 +941,7 @@ namespace Datadog.Trace.DuckTyping
             foreach (PropertyInfo implementationProperty in delegationTypeProperties)
             {
                 // Ignore methods without a `DuckReverse` attribute
-                if (implementationProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
+                if (!Attribute.IsDefined(implementationProperty, typeof(DuckReverseMethodAttribute), true))
                 {
                     continue;
                 }
@@ -1076,7 +1076,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (proxyFieldInfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (Attribute.IsDefined(proxyFieldInfo, typeof(DuckIgnoreAttribute), true))
                 {
                     continue;
                 }
@@ -1273,7 +1273,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Ignore the fields marked with `DuckIgnore` attribute
-                if (finfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                if (Attribute.IsDefined(finfo, typeof(DuckIgnoreAttribute), true))
                 {
                     continue;
                 }
