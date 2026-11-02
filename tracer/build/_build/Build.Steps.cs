@@ -2401,6 +2401,8 @@ partial class Build
                 .SetToolInstallationPath(ToolInstallDirectory)
                 .SetSources(ToolSourceDirectory)
                 .SetProcessArgumentConfigurator(args => args.Add("--no-cache"))
+                // Explicit, because without a version dotnet tool install ignores prerelease packages
+                .SetVersion(FullVersion)
                 .SetPackageName("dd-trace"));
          });
 

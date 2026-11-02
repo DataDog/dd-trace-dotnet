@@ -597,7 +597,6 @@ partial class Build : NukeBuild
                     var scenarioDict = SmokeTests.SmokeTestScenarios.GetAllScenarios();
                     var allScenarios = scenarioDict
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
-                        .Where(x => !IsPrerelease || !x.details.ExcludeWhenPrerelease)
                         .Select(x => (x.category, x.scenario, entry: (object)new
                         {
                             category = x.category.ToString(),
