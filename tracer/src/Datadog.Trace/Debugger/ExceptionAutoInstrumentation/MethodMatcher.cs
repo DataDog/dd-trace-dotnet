@@ -505,9 +505,9 @@ internal static class MethodMatcher
 
         // Check if this is a local function (but not an async lambda)
         var isLocalFunction = methodBase.TypeParts.Length > 0 &&
-                             methodBase.TypeParts.Last().StartsWithOrdinal("<<") &&
-                             methodBase.TypeParts.Last().EndsWithOrdinal(">d") &&
-                             !methodBase.TypeParts.Last().Contains("b__");
+                             methodBase.TypeParts[methodBase.TypeParts.Length - 1].StartsWithOrdinal("<<") &&
+                             methodBase.TypeParts[methodBase.TypeParts.Length - 1].EndsWithOrdinal(">d") &&
+                             !methodBase.TypeParts[methodBase.TypeParts.Length - 1].Contains("b__");
 
         if (isLocalFunction)
         {
@@ -524,7 +524,7 @@ internal static class MethodMatcher
             }
 
             // For .NET Core local functions, extract the original method name
-            var lastPart = methodBase.TypeParts.Last();
+            var lastPart = methodBase.TypeParts[methodBase.TypeParts.Length - 1];
             var functionName = lastPart.Substring(1, lastPart.Length - 3);
             return stackTrace.MethodName == functionName;
         }
@@ -550,7 +550,7 @@ internal static class MethodMatcher
                 return true;
             }
 
-            var lastPart = methodBase.TypeParts.Last();
+            var lastPart = methodBase.TypeParts[methodBase.TypeParts.Length - 1];
             var methodStart = lastPart.IndexOf('<') + 1;
             var methodEnd = lastPart.LastIndexOf('>');
             if (methodStart <= 0 || methodEnd <= methodStart)

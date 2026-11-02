@@ -235,7 +235,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 if (ActiveChildNodes?.Count > 0)
                 {
-                    var firstChild = ActiveChildNodes.First();
+                    var firstChild = ActiveChildNodes[0];
                     return SimpleHash.Combine(Method.MetadataToken, firstChild.LeaveSequenceHash);
                 }
 
