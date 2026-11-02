@@ -500,7 +500,7 @@ internal static class XUnitIntegration
         var moduleName = GetTestModuleName(ref runnerInstance);
         var itrShouldSkip = Common.ShouldSkip(testClassName, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters(), out var matchedSkippableTest, moduleName, metadataTestName: runnerInstance.TestCase.DisplayName ?? string.Empty);
         traits ??= runnerInstance.TestCase.Traits;
-        isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+        isUnskippable = traits?.ContainsKey(IntelligentTestRunnerTags.UnskippableTraitName) == true;
         isForcedRun = matchedSkippableTest is not null && isUnskippable;
         var shouldSkip = itrShouldSkip && !isUnskippable;
         skippableTest = shouldSkip ? matchedSkippableTest : null;

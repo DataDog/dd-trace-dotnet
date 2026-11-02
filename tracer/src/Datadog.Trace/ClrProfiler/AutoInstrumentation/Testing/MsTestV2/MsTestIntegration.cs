@@ -293,7 +293,7 @@ internal static class MsTestIntegration
             includeMetadataTestNameInFingerprint: false,
             useParameterIndexForUnnamedParameters: true);
         traits ??= GetTraits(testMethod);
-        isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+        isUnskippable = traits?.ContainsKey(IntelligentTestRunnerTags.UnskippableTraitName) == true;
         isForcedRun = matchedSkippableTest is not null && isUnskippable;
         var shouldSkip = itrShouldSkip && !isUnskippable;
         skippableTest = shouldSkip ? matchedSkippableTest : null;
