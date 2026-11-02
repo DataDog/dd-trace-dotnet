@@ -8,11 +8,14 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tagging;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
 internal readonly struct TestAutomationExclusions
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestAutomationExclusions>();
+
     internal TestAutomationExclusions(bool preventFailureSuppression, bool noAutoRetry)
     {
         PreventFailureSuppression = preventFailureSuppression;
@@ -48,7 +51,7 @@ internal readonly struct TestAutomationExclusions
         }
         catch (Exception ex)
         {
-            TestOptimization.Instance.Log.Error(ex, "Unable to read test automation exclusion attributes.");
+            Log.Error(ex, "Unable to read test automation exclusion attributes.");
         }
 
         return new TestAutomationExclusions(preventFailureSuppression, noAutoRetry);
