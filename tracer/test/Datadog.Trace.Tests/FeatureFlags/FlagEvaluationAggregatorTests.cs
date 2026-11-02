@@ -57,6 +57,37 @@ public class FlagEvaluationAggregatorTests
         entry.ContextAttrs.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void EvaluationFeaturesSplitBucketsInBothTiers(bool degraded)
+    {
+        var aggregator = degraded ? new FlagEvaluationAggregator(0, 0, 10) : new FlagEvaluationAggregator(10, 10, 10);
+        aggregator.Add(Observation(features: new Dictionary<string, object?> { ["holdout.assignment_group"] = "status_quo", ["holdout.key"] = "h1" }));
+        aggregator.Add(Observation(features: new Dictionary<string, object?> { ["holdout.key"] = "h1", ["holdout.assignment_group"] = "status_quo" }));
+        aggregator.Add(Observation(features: new Dictionary<string, object?> { ["holdout.key"] = "h1", ["holdout.assignment_group"] = "all_shipped" }));
+        aggregator.Add(Observation(features: new Dictionary<string, object?> { ["weight"] = "1" }));
+        aggregator.Add(Observation(features: new Dictionary<string, object?> { ["weight"] = 1d }));
+        aggregator.Add(Observation());
+
+        var drained = aggregator.Drain();
+        IEnumerable<EvaluationEntry> entries = degraded ? drained.Degraded.Values : drained.Full.Values;
+
+        (degraded ? drained.Full.Count : drained.Degraded.Count).Should().Be(0);
+        entries.Select(e => e.Count).Should().BeEquivalentTo(new[] { 2L, 1L, 1L, 1L, 1L }, "key order does not matter, but values and their types do");
+        entries.Single(e => e.Count == 2).Features.Should().BeEquivalentTo(new Dictionary<string, object?> { ["holdout.key"] = "h1", ["holdout.assignment_group"] = "status_quo" });
+        entries.Where(e => e.Features is null).Should().ContainSingle();
+    }
+
+    [Fact]
+    public void EvaluationFeaturesAreKeptWithoutConsent()
+    {
+        var observation = Observation(consent: false, attrs: new Dictionary<string, object?> { ["pii"] = "canary" }, features: new Dictionary<string, object?> { ["holdout.key"] = "h1" });
+
+        observation.ContextAttrs.Should().BeNull();
+        observation.Features.Should().BeEquivalentTo(new Dictionary<string, object?> { ["holdout.key"] = "h1" });
+    }
+
     [Fact]
     public void ProtectedEventsNeverInspectCallerAttributes()
     {
@@ -229,8 +260,8 @@ public class FlagEvaluationAggregatorTests
         entry.LastEvaluationMs.Should().Be(20);
     }
 
-    private static FlagEvalEvent Observation(string flag = "flag", string? variant = "on", string? target = "subject", long time = 10, bool consent = false, IReadOnlyDictionary<string, object?>? attrs = null, string? error = null) =>
-        new(flag, variant, "allocation", target, time, attrs, error, consent);
+    private static FlagEvalEvent Observation(string flag = "flag", string? variant = "on", string? target = "subject", long time = 10, bool consent = false, IReadOnlyDictionary<string, object?>? attrs = null, string? error = null, IReadOnlyDictionary<string, object?>? features = null) =>
+        new(flag, variant, "allocation", target, time, attrs, error, consent, features);
 
     private sealed class ExplosiveValue
     {

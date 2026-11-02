@@ -25,7 +25,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
-    private static readonly ConditionalWeakTable<ImmutableMetadata, IReadOnlyDictionary<string, object>> HookFeatures = new();
+    private static readonly ConditionalWeakTable<ImmutableMetadata, SplitFeatures> Features = new();
 
     // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
     private static readonly ConditionalWeakTable<ImmutableMetadata, EvaluationContext> EvaluatedContexts = new();
@@ -50,6 +50,16 @@ internal static class FeatureFlagsSdk
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static void EnqueueEVP(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int flags)
+    {
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool CanEnqueueEVPWithFeatures() => false;
+
+    // Called only when the split has EVALUATION features: the ninth argument takes CallTarget's
+    // allocating slow path, which every other evaluation avoids by calling EnqueueEVP.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void EnqueueEVPWithFeatures(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, IReadOnlyDictionary<string, object?>? features, int flags)
     {
     }
 
@@ -149,7 +159,11 @@ internal static class FeatureFlagsSdk
     /// records the typed map beside the result it built; the entry dies with the result.
     /// </summary>
     internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
-        => metadata is not null && HookFeatures.TryGetValue(metadata, out var features) ? features : null;
+        => metadata is not null && Features.TryGetValue(metadata, out var features) ? features.Hook : null;
+
+    /// <summary>The selected split's EVALUATION-destination features, for evaluation counts.</summary>
+    internal static IReadOnlyDictionary<string, object?>? GetEvaluationFeatures(ImmutableMetadata? metadata)
+        => metadata is not null && Features.TryGetValue(metadata, out var features) ? features.Evaluation : null;
 
     /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
@@ -226,6 +240,7 @@ internal static class FeatureFlagsSdk
 
         var dic = new Dictionary<string, object>();
         Dictionary<string, object>? hookFeatures = null;
+        Dictionary<string, object?>? evaluationFeatures = null;
         if (metadata is not null)
         {
             foreach (var pair in metadata)
@@ -236,6 +251,11 @@ internal static class FeatureFlagsSdk
                 {
                     hookFeatures ??= new Dictionary<string, object>();
                     hookFeatures[pair.Key.Substring(FeatureFlagMetadataKeys.FeaturePrefix.Length)] = converted;
+                }
+                else if (pair.Key.StartsWith(FeatureFlagMetadataKeys.EvaluationFeaturePrefix, StringComparison.Ordinal))
+                {
+                    evaluationFeatures ??= new Dictionary<string, object?>();
+                    evaluationFeatures[pair.Key.Substring(FeatureFlagMetadataKeys.EvaluationFeaturePrefix.Length)] = converted;
                 }
             }
         }
@@ -255,9 +275,9 @@ internal static class FeatureFlagsSdk
         }
 
         var immutable = new ImmutableMetadata(dic);
-        if (hookFeatures is not null)
+        if (hookFeatures is not null || evaluationFeatures is not null)
         {
-            HookFeatures.Add(immutable, hookFeatures);
+            Features.Add(immutable, new SplitFeatures(hookFeatures, evaluationFeatures));
         }
 
         return immutable;
@@ -348,5 +368,12 @@ internal static class FeatureFlagsSdk
     private static Value ConvertArray(object?[] array)
     {
         return new Value(array.Select(ConvertObject).ToList());
+    }
+
+    private sealed class SplitFeatures(IReadOnlyDictionary<string, object>? hook, IReadOnlyDictionary<string, object?>? evaluation)
+    {
+        internal IReadOnlyDictionary<string, object>? Hook { get; } = hook;
+
+        internal IReadOnlyDictionary<string, object?>? Evaluation { get; } = evaluation;
     }
 }

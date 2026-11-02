@@ -35,6 +35,8 @@ public class FlagEvaluationBridgeTests
     [Theory]
     [InlineData(typeof(OpenFeatureSdkCanEnqueueEVPIntegration))]
     [InlineData(typeof(OpenFeatureSdkEnqueueEVPIntegration))]
+    [InlineData(typeof(OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration))]
+    [InlineData(typeof(OpenFeatureSdkEnqueueEVPWithFeaturesIntegration))]
     [InlineData(typeof(OpenFeatureSdkRecordEVPHookErrorIntegration))]
     [InlineData(typeof(OpenFeatureSdkIsEvaluationEventsEnabledIntegration))]
     public void GeneratedDefinitionsRegisterCallbacksAsOpenFeature(Type integration)
@@ -161,6 +163,40 @@ public class FlagEvaluationBridgeTests
             {
                 row["context"].Should().BeNull();
             }
+        }
+        finally
+        {
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+            await collector.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public void EnqueueWithFeaturesCallbackBindsThroughCallTargetSlowPath()
+    {
+        var generated = IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(OpenFeatureSdkEnqueueEVPWithFeaturesIntegration), typeof(object))!;
+        var invoke = (BeginMethodSlowHandler<OpenFeatureSdkEnqueueEVPWithFeaturesIntegration, object>.InvokeDelegate)generated.CreateDelegate(typeof(BeginMethodSlowHandler<OpenFeatureSdkEnqueueEVPWithFeaturesIntegration, object>.InvokeDelegate));
+        object[] arguments = ["flag", "on", null!, "subject", 1790000000000L, null!, null!, new Dictionary<string, object?> { ["holdout.key"] = "h1" }, 0];
+        Action call = () => invoke(null, arguments);
+        call.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BridgeForwardsEvaluationFeaturesWhateverTheConsent(bool consent)
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var bodies = new ConcurrentQueue<string>();
+        var writer = Writer(bodies, collector);
+        try
+        {
+            var features = new Dictionary<string, object?> { ["holdout.key"] = "h1", ["holdout.should_include_in_holdout_analysis"] = true };
+            OpenFeatureSdkEnqueueEVPIntegration.Enqueue(writer, "flag", "on", null, "subject", 1790000000000, null, null, consent ? FlagEvaluationBridge.ObserveFullEvaluationData : 0, features);
+            await writer.FlushAsync();
+            var row = JObject.Parse(bodies.Should().ContainSingle().Subject)["flagEvaluations"]![0]!;
+            row["features"]!["holdout.key"]!.Value<string>().Should().Be("h1");
+            row["features"]!["holdout.should_include_in_holdout_analysis"]!.Value<bool>().Should().BeTrue();
         }
         finally
         {

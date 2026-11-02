@@ -67,6 +67,30 @@ public class FlagEvaluationPayloadTests
     }
 
     [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void EvaluationFeaturesAreWrittenOnEveryRow(bool consent, bool degraded)
+    {
+        var aggregator = new FlagEvaluationAggregator(degraded ? 0 : 10, 10, 10);
+        var features = new Dictionary<string, object?> { ["holdout.key"] = "h1", ["holdout.should_include_in_holdout_analysis"] = false, ["weight"] = 2.5 };
+        aggregator.Add(new FlagEvalEvent("flag", "on", "allocation", TargetCanary, Epoch, null, null, consent, features));
+        aggregator.Add(new FlagEvalEvent("flag", "on", "allocation", TargetCanary, Epoch, null, null, consent));
+
+        var rows = Rows(Encode(aggregator.Drain()).Payloads.Single()).ToList();
+
+        rows.Should().HaveCount(2);
+        rows.ForEach(AssertRequiredShape);
+        var withFeatures = rows.Should().ContainSingle(r => r["features"] != null).Subject;
+        var written = (JObject)withFeatures["features"]!;
+        written.Properties().Select(p => p.Name).Should().BeEquivalentTo("holdout.key", "holdout.should_include_in_holdout_analysis", "weight");
+        written["holdout.key"]!.Type.Should().Be(JTokenType.String);
+        written["holdout.should_include_in_holdout_analysis"]!.Type.Should().Be(JTokenType.Boolean);
+        written["weight"]!.Value<double>().Should().Be(2.5);
+    }
+
+    [Theory]
     [InlineData(false, true)]
     [InlineData(true, false)]
     public void SerializerIndependentlyProtectsOverPermissiveEntries(bool keyConsent, bool entryConsent)
@@ -370,7 +394,7 @@ public class FlagEvaluationPayloadTests
         row.Properties().Select(p => p.Name).Should().OnlyContain(name => new[]
         {
             "timestamp", "flag", "first_evaluation", "last_evaluation", "evaluation_count",
-            "variant", "allocation", "runtime_default_used", "targeting_key", "context", "error",
+            "variant", "allocation", "runtime_default_used", "targeting_key", "context", "error", "features",
         }.Contains(name));
         row["timestamp"]!.Type.Should().Be(JTokenType.Integer);
         row["timestamp"]!.Value<long>().Should().Be(Epoch + 100);

@@ -25,6 +25,8 @@ internal sealed class FlagEvalEVPHook : Hook
 
     private readonly Func<bool> _canEnqueue;
     private readonly Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, int> _enqueue;
+    private readonly Func<bool> _canEnqueueWithFeatures;
+    private readonly Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, IReadOnlyDictionary<string, object?>?, int> _enqueueWithFeatures;
     private readonly Action _recordError;
     private readonly CaptureSnapshot _capture;
     // OpenFeature 2.3 passes the original context to Finally, not the context updated by Before.
@@ -33,7 +35,7 @@ internal sealed class FlagEvalEVPHook : Hook
     private readonly ConditionalWeakTable<ImmutableMetadata, EvaluatedContext> _evaluatedContexts = new();
 
     internal FlagEvalEVPHook()
-        : this(FeatureFlagsSdk.CanEnqueueEVP, FeatureFlagsSdk.EnqueueEVP, FeatureFlagsSdk.RecordEVPHookError, FlagEvaluationContextSnapshot.Capture)
+        : this(FeatureFlagsSdk.CanEnqueueEVP, FeatureFlagsSdk.EnqueueEVP, FeatureFlagsSdk.RecordEVPHookError, FlagEvaluationContextSnapshot.Capture, FeatureFlagsSdk.CanEnqueueEVPWithFeatures, FeatureFlagsSdk.EnqueueEVPWithFeatures)
     {
     }
 
@@ -41,10 +43,14 @@ internal sealed class FlagEvalEVPHook : Hook
         Func<bool> canEnqueue,
         Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, int> enqueue,
         Action recordError,
-        CaptureSnapshot capture)
+        CaptureSnapshot capture,
+        Func<bool>? canEnqueueWithFeatures = null,
+        Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, IReadOnlyDictionary<string, object?>?, int>? enqueueWithFeatures = null)
     {
         _canEnqueue = canEnqueue;
         _enqueue = enqueue;
+        _canEnqueueWithFeatures = canEnqueueWithFeatures ?? (static () => false);
+        _enqueueWithFeatures = enqueueWithFeatures ?? (static (_, _, _, _, _, _, _, _, _) => { });
         _recordError = recordError;
         _capture = capture;
     }
@@ -131,7 +137,15 @@ internal sealed class FlagEvalEVPHook : Hook
             var variant = metadata is null && details.ErrorType != ErrorType.None && details.Variant == string.Empty
                               ? null
                               : details.Variant;
-            _enqueue(context.FlagKey, variant, allocationKey, targetingKey, evalTimeMs, errorCode, attributes, flags);
+            // An older tracer does not accept features; the evaluation is still counted without them.
+            if (FeatureFlagsSdk.GetEvaluationFeatures(metadata) is { } features && _canEnqueueWithFeatures())
+            {
+                _enqueueWithFeatures(context.FlagKey, variant, allocationKey, targetingKey, evalTimeMs, errorCode, attributes, features, flags);
+            }
+            else
+            {
+                _enqueue(context.FlagKey, variant, allocationKey, targetingKey, evalTimeMs, errorCode, attributes, flags);
+            }
         }
         catch (Exception)
         {

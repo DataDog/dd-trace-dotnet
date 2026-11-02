@@ -92,6 +92,35 @@ public class FlagEvalEVPHookTests
     }
 
     [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task EvaluationFeaturesReachTheTracerOnlyWhenItAcceptsThem(bool tracerAccepts, bool splitHasFeatures)
+    {
+        var fixture = new Fixture { AcceptsFeatures = tracerAccepts };
+        var metadata = new Dictionary<string, string> { ["__dd_allocation_key"] = "allocation", [FeatureFlagMetadataKeys.FeaturePrefix + "holdout.key"] = "hook-only" };
+        if (splitHasFeatures)
+        {
+            metadata[FeatureFlagMetadataKeys.EvaluationFeaturePrefix + "holdout.key"] = "h1";
+            metadata[FeatureFlagMetadataKeys.EvaluationFeaturePrefix + "holdout.should_include_in_holdout_analysis"] = "false";
+        }
+
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new MetadataEvaluation(metadata), 1234);
+        var details = new FlagEvaluationDetails<bool>(resolution.FlagKey, resolution.Value, resolution.ErrorType, resolution.Reason, resolution.Variant, resolution.ErrorMessage, resolution.FlagMetadata);
+
+        await fixture.EvaluateAndCompleteAsync(Context(), details);
+
+        var featurePath = tracerAccepts && splitHasFeatures;
+        fixture.FeatureEnqueues.Should().Be(featurePath ? 1 : 0);
+        fixture.Enqueues.Should().Be(featurePath ? 0 : 1, "the evaluation is counted exactly once either way");
+        fixture.FlagKey.Should().Be("flag");
+        if (featurePath)
+        {
+            fixture.Features.Should().BeEquivalentTo(new Dictionary<string, object?> { ["holdout.key"] = "h1", ["holdout.should_include_in_holdout_analysis"] = false });
+        }
+    }
+
+    [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
     [InlineData("FLAG_NOT_FOUND", "FLAG_NOT_FOUND")]
@@ -360,6 +389,21 @@ public class FlagEvalEVPHookTests
         return new FlagEvaluationDetails<bool>("flag", true, error, "static", variant, "pii-error-canary", new ImmutableMetadata(metadata));
     }
 
+    private sealed class MetadataEvaluation(IDictionary<string, string> metadata) : IEvaluation
+    {
+        public string FlagKey => "flag";
+
+        public object Value => true;
+
+        public EvaluationReason Reason => EvaluationReason.Static;
+
+        public string? Variant => "on";
+
+        public string? Error => null;
+
+        public IDictionary<string, string>? FlagMetadata => metadata;
+    }
+
     private sealed class FailedEvaluation(string errorCode) : IEvaluation
     {
         public string FlagKey => "flag";
@@ -407,10 +451,24 @@ public class FlagEvalEVPHookTests
                         throw new InvalidOperationException("pii-canary");
                     }
                 },
-                Capture);
+                Capture,
+                () => AcceptsFeatures,
+                (flag, variant, allocation, target, time, error, attrs, features, flags) =>
+                {
+                    FeatureEnqueues++;
+                    FlagKey = flag;
+                    TargetingKey = target;
+                    Features = features;
+                });
         }
 
         public FlagEvalEVPHook Hook { get; }
+
+        public bool AcceptsFeatures { get; set; } = true;
+
+        public int FeatureEnqueues { get; private set; }
+
+        public IReadOnlyDictionary<string, object?>? Features { get; private set; }
 
         public bool Available { get; set; } = true;
 
