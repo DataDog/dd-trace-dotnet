@@ -16,12 +16,12 @@
   -->
   <PropertyGroup>
     <!-- The version currently under development on this branch. Three parts, numeric only. -->
-    <DD_VersionPrefix>3.57.0</DD_VersionPrefix>
+    <DD_VersionPrefix>3.58.0</DD_VersionPrefix>
 
     <!-- The semver prerelease suffix, including its leading '-' (e.g. -prerelease), or empty for a
          release. Almost always empty. Any suffix makes this version a prerelease. Native code
          receives it as the DD_VERSION_SUFFIX definition. -->
-    <DD_VersionSuffix></DD_VersionSuffix>
+    <DD_VersionSuffix>-prerelease</DD_VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
