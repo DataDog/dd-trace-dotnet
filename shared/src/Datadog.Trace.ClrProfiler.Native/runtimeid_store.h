@@ -19,6 +19,7 @@ private:
     // only for test only
     friend class runtimeid_store_EnsureRuntimeIsDifferentFor2DifferentAppDomains_Test;
     friend class runtimeid_store_EnsureNewAppDomainAtReusedAddressGetsNewRuntimeId_Test;
+    friend class runtimeid_store_EnsureNewAppDomainAtUnseenAddressGetsRuntimeId_Test;
     RuntimeIdStore(bool isIis);
 
 public:

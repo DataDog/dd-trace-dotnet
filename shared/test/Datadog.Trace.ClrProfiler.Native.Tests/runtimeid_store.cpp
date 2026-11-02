@@ -67,6 +67,23 @@ TEST(runtimeid_store, EnsureNewAppDomainAtReusedAddressGetsNewRuntimeId)
     ASSERT_EQ(otherRid, store.Get(otherId));
 }
 
+TEST(runtimeid_store, EnsureNewAppDomainAtUnseenAddressGetsRuntimeId)
+{
+    AppDomainID newId = 42;
+    AppDomainID otherId = 21;
+
+    RuntimeIdStore store(true);
+    const std::string otherRid = store.Get(otherId);
+
+    store.OnAppDomainCreationStarted(newId);
+    auto const& newRid = store.Get(newId);
+
+    ASSERT_FALSE(newRid.empty());
+    ASSERT_NE(otherRid, newRid);
+    ASSERT_EQ(newRid, store.Get(newId));
+    ASSERT_EQ(otherRid, store.Get(otherId));
+}
+
 TEST(runtimeid_store, EnsureRuntimeIdIsPerProcessOutsideIisWhenAppDomainIsCreated)
 {
     AppDomainID id = 42;
