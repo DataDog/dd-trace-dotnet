@@ -326,7 +326,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             // Update the status only if we're dealing with probes marked as ERRORs.
                             foreach (var status in statuses)
                             {
-                                var probe = receivedOrRequestedRejitStatusProbeIds.FirstOrDefault(p => p.ProbeId == status.ProbeId);
+                                var probe = receivedOrRequestedRejitStatusProbeIds.Find(p => p.ProbeId == status.ProbeId);
                                 if (probe != null)
                                 {
                                     probe.ProbeStatus = status.Status;

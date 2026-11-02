@@ -111,7 +111,6 @@ dotnet_diagnostic.MA0010.severity = none # Mark attributes with AttributeUsageAt
 dotnet_diagnostic.MA0012.severity = none # Do not raise reserved exception type - deferred (not mechanical): fixing means choosing a replacement exception type per site; ThrowHelper.ThrowNullReferenceException has many callers (incl. DuckTyping), plus direct NullReferenceException/IndexOutOfRangeException throws in Activity, IAST, the obfuscator and the debugger
 dotnet_diagnostic.MA0015.severity = none # Specify the parameter name in ArgumentException - deferred (likely handled later; not mechanical): only some hits map to a real parameter, many debugger sites throw argument exceptions about internal state (should be a different exception type), and ThrowHelper/Base64DecodingStream helpers need a paramName
 dotnet_diagnostic.MA0017.severity = none # Abstract types should not have public or internal constructors
-dotnet_diagnostic.MA0020.severity = none # Use direct methods instead of LINQ methods
 dotnet_diagnostic.MA0023.severity = none # Use RegexOptions.ExplicitCapture or named groups
 dotnet_diagnostic.MA0028.severity = none # Optimize StringBuilder usage
 dotnet_diagnostic.MA0040.severity = none # Forward the CancellationToken parameter to methods that take one - skipped: the in-scope tokens are mostly the wrong ones to forward (per-request timeouts, RequestAborted), and the rest would only add an explicit CancellationToken.None
