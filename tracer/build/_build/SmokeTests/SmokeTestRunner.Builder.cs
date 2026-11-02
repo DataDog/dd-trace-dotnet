@@ -193,7 +193,11 @@ public static partial class SmokeTestRunner
                     ["RUNTIME_IMAGE"] = ImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["INSTALL_CMD"] = scenario.InstallCommand,
-                    ["TOOL_VERSION"] = toolVersion + (scenario.PackageVersionSuffix ?? ""),
+                    // Mirrors the package's own version: Datadog.Trace.Trimming.csproj only adds its -prerelease
+                    // suffix when the version doesn't already end with it
+                    ["TOOL_VERSION"] = scenario.PackageVersionSuffix is { } suffix && !toolVersion.EndsWith(suffix)
+                                           ? toolVersion + suffix
+                                           : toolVersion,
                     ["PACKAGE_NAME"] = scenario.PackageName,
                     ["RUNTIME_IDENTIFIER"] = scenario.RuntimeId,
                 };

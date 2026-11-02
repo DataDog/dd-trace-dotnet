@@ -732,10 +732,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-bullseye-slim", "bullseye", true),
-                    // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-bullseye", "bullseye", true),
-                },
-                excludeWhenPrerelease: TargetFramework.NETCOREAPP3_1);
+                });
 
             yield return GetDotnetToolNuget(
                 shortName: "alpine",
@@ -750,10 +748,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/sdk", "8.0-alpine3.18", "3.18", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/sdk", "7.0-alpine3.16", "3.16", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/sdk", "6.0-alpine3.16", "3.16", true),
-                    // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available
                     (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/sdk", "3.1-alpine3.15", "3.15", true),
-                },
-                excludeWhenPrerelease: TargetFramework.NETCOREAPP3_1);
+                });
         }
 
         // ─────────────────────────────────────────────────────────
@@ -931,8 +927,7 @@ public static class SmokeTestScenarios
             string shortName,
             string os,
             string runtimeId,
-            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios,
-            string? excludeWhenPrerelease = null)
+            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
             => scenarios.Select(scenario => new DotnetToolScenario
             {
                 ShortName = shortName,
@@ -943,15 +938,13 @@ public static class SmokeTestScenarios
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
-                ExcludeWhenPrerelease = excludeWhenPrerelease is not null && scenario.PublishFramework == excludeWhenPrerelease,
             });
 
         static IEnumerable<DotnetToolNugetScenario> GetDotnetToolNuget(
             string shortName,
             string os,
             string runtimeId,
-            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios,
-            string? excludeWhenPrerelease = null)
+            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
             => scenarios.Select(scenario => new DotnetToolNugetScenario
             {
                 ShortName = shortName,
@@ -962,7 +955,6 @@ public static class SmokeTestScenarios
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
-                ExcludeWhenPrerelease = excludeWhenPrerelease is not null && scenario.PublishFramework == excludeWhenPrerelease,
             });
 
         static IEnumerable<TrimmingScenario> GetTrimming(
