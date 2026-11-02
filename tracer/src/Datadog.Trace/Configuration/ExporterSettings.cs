@@ -631,10 +631,7 @@ namespace Datadog.Trace.Configuration
 
                 // OpenTelemetry semantics mode makes OTLP the default traces exporter
                 var otelSemanticsEnabled = config.WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled).AsBool(defaultValue: false);
-                var tracesExporterConfig = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter);
-                OtelTracesExporter = otelSemanticsEnabled
-                                         ? tracesExporterConfig.AsString(defaultValue: "otlp").Trim()
-                                         : tracesExporterConfig.AsString()?.Trim();
+                OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString(otelSemanticsEnabled ? () => "otlp" : null, validator: null)?.Trim();
 
                 OtlpProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
                 OtlpEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
