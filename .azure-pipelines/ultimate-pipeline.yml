@@ -103,7 +103,7 @@ variables:
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
   CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
-  SystemTestsBranch: $[coalesce(variables['system_tests_branch'], 'main')]
+  SystemTestsBranch: $[coalesce(variables['system_tests_branch'], 'andrew/handle-prereleases')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
