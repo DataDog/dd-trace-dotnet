@@ -79,38 +79,38 @@ internal abstract class DebuggerUploadApiBase
             var environment = TraceUtil.NormalizeTag(mutableSettings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
-                sb.Append($"env:{environment},");
+                sb.Append("env:").Append(environment).Append(',');
             }
 
             var version = mutableSettings.ServiceVersion;
             if (!string.IsNullOrEmpty(version))
             {
-                sb.Append($"version:{version},");
+                sb.Append("version:").Append(version).Append(',');
             }
 
             var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
             if (!string.IsNullOrEmpty(hostName))
             {
-                sb.Append($"host:{hostName},");
+                sb.Append("host:").Append(hostName).Append(',');
             }
 
             var runtimeId = Tracer.RuntimeId;
             if (!string.IsNullOrEmpty(runtimeId))
             {
-                sb.Append($"{Tags.RuntimeId}:{runtimeId},");
+                sb.Append(Tags.RuntimeId).Append(':').Append(runtimeId).Append(',');
             }
 
             if (_gitMetadataTagsProvider != null &&
                 _gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata) &&
                 gitMetadata != GitMetadata.Empty)
             {
-                sb.Append($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl},");
-                sb.Append($"{CommonTags.GitCommit}:{gitMetadata.CommitSha},");
+                sb.Append(CommonTags.GitRepository).Append(':').Append(gitMetadata.RepositoryUrl).Append(',');
+                sb.Append(CommonTags.GitCommit).Append(':').Append(gitMetadata.CommitSha).Append(',');
             }
 
             foreach (var kvp in mutableSettings.GlobalTags)
             {
-                sb.Append($"{kvp.Key}:{kvp.Value},");
+                sb.Append(kvp.Key).Append(':').Append(kvp.Value).Append(',');
             }
 
             if (sb[sb.Length - 1] == ',')
