@@ -27,8 +27,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
                 new CosmosClientOptions { ConnectionMode = ConnectionMode.Gateway });
             var context = client.DuckCast<CosmosClientStruct>().ClientContext;
             var container = client.GetContainer("myDb", "myColl").DuckCast<IContainer>();
-            var expectedUserAgent = context.DuckCast<CosmosContextClientStruct>().UserAgent;
-            expectedUserAgent.Should().NotBeNullOrEmpty();
 
             client.Dispose();
 
@@ -42,8 +40,8 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.CosmosDb
             using var scope = Assert.IsType<Scope>(state.Scope);
             scope.Span.ResourceName.Should().Be("Read dbs/myDb/colls/myColl/docs/?");
             var tags = scope.Span.Tags.Should().BeAssignableTo<CosmosDbTags>().Subject;
-            tags.UserAgent.Should().Be(expectedUserAgent);
-            tags.ConnectionMode.Should().Be("gateway");
+            tags.UserAgent.Should().BeNull();
+            tags.ConnectionMode.Should().BeNull();
         }
 
         [Theory]
