@@ -16,7 +16,7 @@
   -->
   <PropertyGroup>
     <!-- The version currently under development on this branch. Three parts, numeric only. -->
-    <DD_VersionPrefix>3.57.0</DD_VersionPrefix>
+    <DD_VersionPrefix>3.58.0</DD_VersionPrefix>
 
     <!-- true if this version should publish as X.Y.Z-prerelease. Almost always false. -->
     <DD_IsPrerelease>false</DD_IsPrerelease>
