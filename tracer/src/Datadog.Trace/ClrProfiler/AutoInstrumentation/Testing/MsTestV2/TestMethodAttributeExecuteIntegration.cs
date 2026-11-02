@@ -600,11 +600,11 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             if (execution is not { HasNativeRetry: true } && TestOptimization.Instance.TestManagementFeature?.Enabled == true && testTags is not null)
             {
                 var isQuarantined = !testTags.AutomationExclusions.PreventFailureSuppression && testTags.IsQuarantined == "true";
-                var isAttemptToFix = Common.IsAttemptToFix(testTags);
+                var isAttemptToFix = !testTags.AutomationExclusions.PreventFailureSuppression && Common.IsAttemptToFix(testTags);
                 var isDisabled = !testTags.AutomationExclusions.PreventFailureSuppression && testTags.IsDisabled == "true";
 
-                // Only mask outcome on final execution for ATF
-                // Quarantined and disabled tests always mask outcome
+                // Only mask outcome on final execution for ATF.
+                // Failure protection applies independently of retry eligibility.
                 if (isQuarantined || isDisabled || (isAttemptToFix && (retryState.IsLastRetry || (!retryState.IsARetry && !retryState.RetriesUnconditionally))))
                 {
                     shouldMaskOutcome = true;

@@ -129,6 +129,23 @@ public class TestAutomationExclusionsTests
     }
 
     [Fact]
+    public void AttributesApplyToInheritedDeclarationsButNotOverrides()
+    {
+        var inherited = typeof(InheritedDeclarations).GetMethod(nameof(BaseDeclarations.Protected));
+        var overridden = typeof(OverriddenDeclarations).GetMethod(nameof(BaseDeclarations.Protected));
+        inherited.Should().NotBeNull();
+        overridden.Should().NotBeNull();
+
+        var inheritedExclusions = TestAutomationExclusions.From(inherited);
+        inheritedExclusions.PreventFailureSuppression.Should().BeTrue();
+        inheritedExclusions.NoAutoRetry.Should().BeTrue();
+
+        var overriddenExclusions = TestAutomationExclusions.From(overridden);
+        overriddenExclusions.PreventFailureSuppression.Should().BeFalse();
+        overriddenExclusions.NoAutoRetry.Should().BeFalse();
+    }
+
+    [Fact]
     public void RemovingExclusionsOmitsTagsAndRestoresPolicy()
     {
         var tags = new TestSpanTags();
@@ -138,6 +155,26 @@ public class TestAutomationExclusionsTests
         tags.NoAutoRetry.Should().BeNull();
         var assigned = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(true, true, true);
         TestAutomationExclusions.From(tags).ApplyTo(assigned).Should().BeSameAs(assigned);
+    }
+
+    private class BaseDeclarations
+    {
+        [PreventFailureSuppression]
+        [NoAutoRetry]
+        public virtual void Protected()
+        {
+        }
+    }
+
+    private sealed class InheritedDeclarations : BaseDeclarations
+    {
+    }
+
+    private sealed class OverriddenDeclarations : BaseDeclarations
+    {
+        public override void Protected()
+        {
+        }
     }
 
     private sealed class Declarations

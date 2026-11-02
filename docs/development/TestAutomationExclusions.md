@@ -13,7 +13,7 @@ public void CriticalTest()
 }
 ```
 
-Keep the framework's usual test attribute (`Fact`, `Theory`, `Test`, or `TestMethod`). A method annotation applies to all of that method's parameterized cases. The attributes do not propagate from classes or base methods.
+Keep the framework's usual test attribute (`Fact`, `Theory`, `Test`, or `TestMethod`). A method annotation applies to all of that method's parameterized cases. The attributes apply to individual method declarations, including unchanged methods inherited from a base class. They do not apply to classes or propagate to an overriding method; annotate the override explicitly.
 
 `PreventFailureSuppression` prevents Datadog quarantine and disabling from controlling the test. A terminal failure remains blocking. It does not prevent otherwise permitted retries.
 

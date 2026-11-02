@@ -20,7 +20,9 @@ using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -2776,6 +2778,85 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         }
     }
 
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task MsTestAttemptToFixRetainsRetriesAndHonorsFailureProtection(bool nativeRetry, bool preventSuppression, bool nativeRecovers)
+    {
+        var methodName = nativeRecovers ? nameof(ExcludedTest) : preventSuppression ? nameof(ProtectedTest) : nameof(OrdinaryTest);
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+        method.Should().NotBeNull();
+        var management = new Mock<ITestOptimizationTestManagementFeature>();
+        management.Setup(x => x.Enabled).Returns(true);
+        management.Setup(x => x.TestManagementAttemptToFixRetryCount).Returns(2);
+        management.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                  .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(false, false, true));
+        var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.TestManagementFeature).Returns(management.Object);
+        TestOptimization.Instance = optimization.Object;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+        TestSuite suite = null;
+        MsTestExecution execution = null;
+        try
+        {
+            module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameMsTestV2, "4.4.0");
+            suite = module.GetOrCreateSuite("Fixture");
+            var testMethod = new MsTestMethodStub(method, [], methodName) { RetryAttribute = nativeRetry ? new object() : null };
+            if (nativeRetry)
+            {
+                execution = new MsTestExecution(CallTargetState.GetDefault(), parent: null);
+                execution.ObserveTestMethod(testMethod);
+                execution.HasNativeRetry.Should().BeTrue();
+            }
+
+            object[] results = null;
+            for (var i = 0; i < (nativeRetry ? 2 : 1); i++)
+            {
+                execution?.StartNativeAttempt();
+                var test = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: i > 0);
+                test.Should().NotBeNull();
+                test.GetTags().IsAttemptToFix.Should().Be("true");
+                Common.IsAttemptToFix(test.GetTags()).Should().Be(!nativeRecovers);
+                var state = new TestMethodAttributeExecuteAsyncIntegration.TestRunnerState(testMethod, test, execution, retryContext: null);
+                object[] attemptResults = [nativeRecovers && i > 0 ? new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null } : new MsTestResultStub()];
+                results = await TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(new object(), attemptResults, exception: null, new CallTargetState(null, state));
+            }
+
+            if (execution is not null)
+            {
+                await execution.ApplyDatadogRetriesAsync(results);
+                execution.CloseTests();
+            }
+
+            testMethod.InvokeCount.Should().Be(nativeRecovers ? 0 : 1);
+            // Inspect the final retry result directly when no native policy selects the result.
+            var selected = nativeRetry ? results.Should().ContainSingle().Subject.Should().BeOfType<MsTestResultStub>().Subject : testMethod.LastResult;
+            selected.Should().NotBeNull();
+            selected.Outcome.Should().Be(nativeRecovers ? UnitTestOutcome.Passed : preventSuppression ? UnitTestOutcome.Failed : UnitTestOutcome.Ignored);
+            if (preventSuppression && !nativeRecovers)
+            {
+                selected.TestFailureException.Should().NotBeNull();
+            }
+            else
+            {
+                selected.TestFailureException.Should().BeNull();
+            }
+        }
+        finally
+        {
+            execution?.CloseTests();
+            suite?.Close();
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
     [Datadog.Trace.Ci.PreventFailureSuppression]
     [Datadog.Trace.Ci.NoAutoRetry]
     private static void ExcludedTest()
@@ -2919,7 +3000,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         }
     }
 
-    private sealed class MsTestMethodStub : MsTestMethod
+    private sealed class MsTestMethodStub : ITestMethodV3, ITestMethodInfoWithRetry
     {
         private readonly MethodInfo _methodInfo;
         private readonly object[] _arguments;
@@ -2944,10 +3025,61 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public object[] Arguments => _arguments;
 
+        public object RetryAttribute { get; set; }
+
+        public object TestContext { get; set; }
+
+        public int InvokeCount { get; private set; }
+
+        public MsTestResultStub LastResult { get; private set; }
+
+        public Attribute[] GetAllAttributes(bool inherit) => [];
+
+        public object Invoke(object[] arguments)
+        {
+            InvokeCount++;
+            return LastResult = new MsTestResultStub();
+        }
+
+        public void SetArguments(object[] arguments)
+        {
+        }
+
         public ref TReturn GetInternalDuckTypedInstance<TReturn>()
         {
             throw new NotImplementedException();
         }
+    }
+
+    private sealed class MsTestResultStub : ITestResultV4_4
+    {
+        public object Instance => this;
+
+        public Type Type => typeof(MsTestResultStub);
+
+        public UnitTestOutcome Outcome { get; set; } = UnitTestOutcome.Failed;
+
+        public Exception TestFailureException { get; set; } = new InvalidOperationException("test failure");
+
+        public int InnerResultsCount { get; set; }
+
+        public TimeSpan Duration { get; set; }
+
+        public string DisplayName { get; set; }
+
+        public int RetryAttemptNumber { get; set; }
+
+        public bool IsSupersededRetryAttempt { get; set; }
+
+        public Guid ExecutionId { get; set; }
+
+        public Guid ParentExecId { get; set; }
+
+        public int DatarowIndex { get; set; }
+
+        public object AssociatedUnitTestElement { get; set; }
+
+        public ref TReturn GetInternalDuckTypedInstance<TReturn>() => throw new NotImplementedException();
     }
 
     private sealed class NUnitTestStub : NUnitTest
