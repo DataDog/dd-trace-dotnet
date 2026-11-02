@@ -238,7 +238,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var exceptionId = new ExceptionIdentifier(exceptionTypes, allParticipatingFramesFlattened, errorOrigin);
 
-            var trackedExceptionCase = _trackedExceptionCases.GetOrAdd(exceptionId, _ => new TrackedExceptionCase(exceptionId, exception.ToString(), _maxFramesToCapture));
+            var trackedExceptionCase = _trackedExceptionCases.GetOrAdd(exceptionId, id => new TrackedExceptionCase(id, exception.ToString(), _maxFramesToCapture));
 
             if (trackedExceptionCase.IsDone)
             {
