@@ -16,7 +16,7 @@ internal sealed class IEventMessagePackFormatter : IMessagePackFormatter<IEvent>
 {
     public IEvent Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public int Serialize(ref byte[] bytes, int offset, IEvent value, IFormatterResolver formatterResolver)

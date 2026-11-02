@@ -22,7 +22,7 @@ internal sealed class CustomTestCase : ITestCase
 
     public ref TReturn? GetInternalDuckTypedInstance<TReturn>()
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public override string ToString()

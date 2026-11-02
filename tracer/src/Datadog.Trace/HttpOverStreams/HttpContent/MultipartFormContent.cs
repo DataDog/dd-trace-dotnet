@@ -77,7 +77,7 @@ internal sealed class MultipartFormContent : IHttpContent
     {
         // This CopyToAsync overload is only used to read responses
         // And we never use PushStreamContent for that
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     private async Task WriteMultiPartForm(Stream wrappedStream)

@@ -36,10 +36,10 @@ internal readonly struct RpcHttpHeadersCollection<T> : IHeadersCollection
     }
 
     // These aren't used
-    public IEnumerable<string> GetValues(string name) => throw new NotImplementedException();
+    public IEnumerable<string> GetValues(string name) => throw new NotSupportedException();
 
-    public void Add(string name, string value) => throw new NotImplementedException();
+    public void Add(string name, string value) => throw new NotSupportedException();
 
-    public void Remove(string name) => throw new NotImplementedException();
+    public void Remove(string name) => throw new NotSupportedException();
 }
 #endif
