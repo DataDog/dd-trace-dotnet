@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -238,7 +239,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var exceptionId = new ExceptionIdentifier(exceptionTypes, allParticipatingFramesFlattened, errorOrigin);
 
-            var trackedExceptionCase = _trackedExceptionCases.GetOrAdd(exceptionId, id => new TrackedExceptionCase(id, exception.ToString(), _maxFramesToCapture));
+            var trackedExceptionCase = _trackedExceptionCases.GetOrAdd(
+                exceptionId,
+                static (id, args) => new TrackedExceptionCase(id, args.Exception.ToString(), args.MaxFramesToCapture),
+                new TrackedExceptionCaseArgs(exception, _maxFramesToCapture));
 
             if (trackedExceptionCase.IsDone)
             {
@@ -825,5 +829,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag("_dd.di._er", exceptionPhase);
             span.Tags.SetTag("_dd.di._eh", exceptionHash.ToStringInvariant());
         }
+
+        private readonly record struct TrackedExceptionCaseArgs(Exception Exception, int MaxFramesToCapture);
     }
 }

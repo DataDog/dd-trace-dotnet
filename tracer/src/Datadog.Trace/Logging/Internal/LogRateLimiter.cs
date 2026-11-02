@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging
@@ -47,12 +48,11 @@ namespace Datadog.Trace.Logging
             var currentTimeBucket = (int)(timestamp / _secondsBetweenLogs);
             System.Diagnostics.Debug.Assert(currentTimeBucket > 0, $"Time bucket should be greater than 0");
 
-#pragma warning disable MA0242 // Use a value factory to compute the value only when the key is not in the ConcurrentDictionary - LogRateBucketInfo is a struct, so building it eagerly is cheaper than allocating another factory delegate per call
             var newLogInfo = _buckets.AddOrUpdate(
                 key,
-                new LogRateBucketInfo(currentTimeBucket, skipCount: 0, 0),
-                (_, prev) => GetUpdatedLimitInfo(prev, currentTimeBucket));
-#pragma warning restore MA0242
+                static (_, timeBucket) => new LogRateBucketInfo(timeBucket, skipCount: 0, 0),
+                static (_, prev, timeBucket) => GetUpdatedLimitInfo(prev, timeBucket),
+                currentTimeBucket);
 
             skipCount = newLogInfo.PreviousSkipCount;
             return newLogInfo.SkipCount == 0;
