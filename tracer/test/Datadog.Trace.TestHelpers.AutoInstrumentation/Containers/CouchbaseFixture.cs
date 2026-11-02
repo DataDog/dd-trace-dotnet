@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -122,7 +123,8 @@ public class CouchbaseFixture : ContainerFixture
                  || (result.Stdout.IndexOf(retryableError, StringComparison.Ordinal) < 0
                   && result.Stderr.IndexOf(retryableError, StringComparison.Ordinal) < 0))
                 {
-                    throw new InvalidOperationException($"Couchbase {command} failed: {result.Stdout}{result.Stderr}");
+                    var diagnostics = command == "bucket-create" ? await CaptureBucketDiagnosticsAsync(container).ConfigureAwait(false) : string.Empty;
+                    throw new InvalidOperationException($"Couchbase {command} failed: {result.Stdout}{result.Stderr}{diagnostics}");
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(1), timeout.Token).ConfigureAwait(false);
@@ -131,6 +133,81 @@ public class CouchbaseFixture : ContainerFixture
         catch (OperationCanceledException exception) when (timeout.IsCancellationRequested && retryableError is not null)
         {
             throw new TimeoutException($"Couchbase {command} did not complete within two minutes: {result.Stdout}{result.Stderr}", exception);
+        }
+    }
+
+    private static async Task<string> CaptureBucketDiagnosticsAsync(IContainer container)
+    {
+        // Docker stdout does not contain the server logs that explain why a bucket failed to become healthy.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            var directory = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", "build_data", "container-logs", nameof(CouchbaseFixture), container.Id);
+            Directory.CreateDirectory(directory);
+            var failures = new List<string>();
+            const string systemStateCommand = """
+                date -u
+                ps -eo pid,ppid,stat,pcpu,pmem,comm
+                df -h /opt/couchbase/var/lib/couchbase
+                for file in /proc/loadavg /proc/meminfo /proc/pressure/* /proc/diskstats /proc/sys/fs/file-nr \
+                            /sys/fs/cgroup/cpu.stat /sys/fs/cgroup/memory.current /sys/fs/cgroup/memory.max \
+                            /sys/fs/cgroup/memory.events /sys/fs/cgroup/io.stat /sys/fs/cgroup/pids.*; do
+                    if [ -r "$file" ]; then printf '\n%s\n' "$file"; cat "$file"; fi
+                done
+                for pid in $(pidof beam.smp memcached); do
+                    for file in /proc/$pid/status /proc/$pid/limits /proc/$pid/io /proc/$pid/wchan; do
+                        if [ -r "$file" ]; then printf '\n%s\n' "$file"; cat "$file"; fi
+                    done
+                    printf '\nOpen file descriptors for process %s: ' "$pid"
+                    ls /proc/$pid/fd | wc -l
+                done
+                """;
+            await CaptureCommandAsync("system-state.txt", ["sh", "-c", systemStateCommand.Replace("\r\n", "\n")]).ConfigureAwait(false);
+            await CaptureEndpointAsync("bucket-status.txt", "/pools/default/buckets/default").ConfigureAwait(false);
+            await CaptureEndpointAsync("cluster-status.txt", "/pools/default").ConfigureAwait(false);
+            await CaptureEndpointAsync("node-services.txt", "/pools/default/nodeServices").ConfigureAwait(false);
+
+            // Include crash reports and rotated logs, whose names cannot be predicted in advance.
+            const string archivePath = "/tmp/couchbase-startup-logs.tar.gz";
+            await CaptureCommandAsync(
+                "archive-logs.txt",
+                ["tar", "-czf", archivePath, "-C", "/opt/couchbase/var/lib/couchbase", "logs"],
+                timeoutSeconds: 15).ConfigureAwait(false);
+            try
+            {
+                // tar can return a nonzero exit code when active logs change; still retrieve the archive.
+                var contents = await container.ReadFileAsync(archivePath, timeout.Token).ConfigureAwait(false);
+                File.WriteAllBytes(Path.Combine(directory, "couchbase-startup-logs.tar.gz"), contents);
+            }
+            catch (Exception exception)
+            {
+                failures.Add($"Unable to retrieve Couchbase server logs: {exception.Message}");
+            }
+
+            return $"\nCouchbase bucket diagnostics saved to {directory}.\n{string.Join("\n", failures)}";
+
+            Task CaptureEndpointAsync(string file, string endpoint)
+                => CaptureCommandAsync(file, ["curl", "--silent", "--show-error", "--max-time", "4", "--include", "--user", "default:password", $"http://localhost:8091{endpoint}"]);
+
+            async Task CaptureCommandAsync(string file, string[] command, int timeoutSeconds = 5)
+            {
+                using var commandTimeout = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token);
+                commandTimeout.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+                var started = DateTime.UtcNow;
+                try
+                {
+                    var result = await container.ExecAsync(command, commandTimeout.Token).ConfigureAwait(false);
+                    File.WriteAllText(Path.Combine(directory, file), $"Started: {started:O}\nExit code: {result.ExitCode}\n{result.Stdout}{result.Stderr}");
+                }
+                catch (Exception exception)
+                {
+                    failures.Add($"Unable to capture {file}: {exception.Message}");
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            return $"\nUnable to capture Couchbase bucket diagnostics: {exception.Message}";
         }
     }
 }
