@@ -129,7 +129,7 @@ dotnet_diagnostic.MA0096.severity = none # A class that implements IComparable<T
 dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T> or IComparable should override comparison operators
 dotnet_diagnostic.MA0102.severity = none # Make member readonly
 dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from the BCL
-dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter
+dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter - skipped for now: the overloads are .NET Core-only, so call sites would need #if. Could add polyfill extension methods (GetOrAdd/AddOrUpdate with a factory argument) to simplify call sites, though they wouldn't give a perf benefit on .NET Framework
 dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
