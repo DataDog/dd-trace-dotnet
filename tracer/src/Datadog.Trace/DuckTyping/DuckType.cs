@@ -430,7 +430,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (parentType == typeToDeriveFrom)
             {
-                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.Where(pCtor => pCtor.GetParameters().Length == 0).FirstOrDefault();
+                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.FirstOrDefault(pCtor => pCtor.GetParameters().Length == 0);
                 if (proxyCtor != null)
                 {
                     ctorIL.Emit(OpCodes.Ldarg_0);
