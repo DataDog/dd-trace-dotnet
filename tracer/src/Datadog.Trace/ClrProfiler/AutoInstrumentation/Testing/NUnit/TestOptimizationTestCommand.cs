@@ -29,6 +29,8 @@ internal sealed class TestOptimizationTestCommand
         var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ? contextWithRepeatCount : contextObject.DuckCast<ITestExecutionContext>();
         var result = context.CurrentResult;
 
+        var exclusions = TestAutomationExclusions.From(context.CurrentTest.Method?.MethodInfo);
+
         // Getting test management properties
         TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties = null;
         if (testOptimization.TestManagementFeature?.Enabled == true)
@@ -37,7 +39,7 @@ internal sealed class TestOptimizationTestCommand
                 NUnitIntegration.GetTestSuiteFrom(context.CurrentTest) is { } suite &&
                 context.CurrentTest.Method?.MethodInfo?.Name is { } testMethodName)
             {
-                testManagementProperties = testOptimization.TestManagementFeature?.GetTestProperties(module.Name, suite.Name, testMethodName);
+                testManagementProperties = exclusions.ApplyTo(testOptimization.TestManagementFeature.GetTestProperties(module.Name, suite.Name, testMethodName));
             }
         }
 
@@ -67,14 +69,14 @@ internal sealed class TestOptimizationTestCommand
 
         // Determine if retries will happen (used for final_status decision)
         var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-        var efdWillRetry = !isSkippedOrInconclusive && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
+        var efdWillRetry = !exclusions.NoAutoRetry && !isSkippedOrInconclusive && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
         var atrRemainingBudget = testOptimization.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
         // -1 = uninitialized → assume retries possible; 0 = exhausted → no retries
         var atrHasBudget = atrRemainingBudget != 0;
-        var atrWillRetry = resultStatus == TestStatus.Failed &&
+        var atrWillRetry = !exclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
                            testOptimization.FlakyRetryFeature?.Enabled == true &&
                            atrHasBudget;
-        var atfWillRetry = !isSkippedOrInconclusive && testManagementProperties is { AttemptToFix: true };
+        var atfWillRetry = !exclusions.NoAutoRetry && !isSkippedOrInconclusive && testManagementProperties is { AttemptToFix: true };
 
         // Apply retries
         if (efdWillRetry)
@@ -240,12 +242,12 @@ internal sealed class TestOptimizationTestCommand
             if (!retryState.IsARetry && testTags.FinalStatus is null)
             {
                 var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-                var efdWillRetry = TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
+                var efdWillRetry = !testTags.AutomationExclusions.NoAutoRetry && TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
                 var atrRemainingBudget = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
-                var atrWillRetry = resultStatus == TestStatus.Failed &&
+                var atrWillRetry = !testTags.AutomationExclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
                                    TestOptimization.Instance.FlakyRetryFeature?.Enabled == true &&
                                    atrRemainingBudget != 0;
-                var atfWillRetry = testTags.IsAttemptToFix == "true";
+                var atfWillRetry = Common.IsAttemptToFix(testTags);
                 var willRetry = !isSkippedOrInconclusive && (efdWillRetry || atrWillRetry || atfWillRetry);
 
                 if (!willRetry)

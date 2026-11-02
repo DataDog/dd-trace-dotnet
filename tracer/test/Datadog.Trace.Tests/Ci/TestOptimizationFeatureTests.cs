@@ -35,12 +35,15 @@ using Xunit;
 using MsTestIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.MsTestIntegration;
 using MsTestMethod = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.ITestMethod;
 using NUnitAttemptToFixRetryBehavior = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.AttemptToFixRetryBehavior;
+using NUnitCommand = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestCommand;
+using NUnitContext = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestExecutionContext;
 using NUnitIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitIntegration;
 using NUnitMethodInfo = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IMethodInfo;
 using NUnitPropertyBag = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IPropertyBag;
 using NUnitResultState = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IResultState;
 using NUnitRunState = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.RunState;
 using NUnitTest = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITest;
+using NUnitTestCommand = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.TestOptimizationTestCommand;
 using NUnitTestResult = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestResult;
 using NUnitTestStatus = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.TestStatus;
 using NUnitTypeInfo = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITypeInfo;
@@ -2627,6 +2630,172 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         TestOptimizationFlakyRetryFeature.Create(settings, localSettings).GetFlakyRetryCount(TimeSpan.FromSeconds(1)).Should().Be(expectedRetryCount);
     }
 
+    [Theory]
+    [InlineData(nameof(ExcludedTest), false, false, false)]
+    [InlineData(nameof(NoAutoRetryTest), true, true, false)]
+    [InlineData(nameof(ProtectedTest), false, false, true)]
+    [InlineData(nameof(OrdinaryTest), true, true, true)]
+    public void FrameworkManagementDecisionsRespectExclusions(string methodName, bool quarantined, bool disabled, bool attemptToFix)
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+        method.Should().NotBeNull();
+        var assigned = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(true, true, true);
+        var feature = new Mock<ITestOptimizationTestManagementFeature>();
+        feature.Setup(x => x.Enabled).Returns(true);
+        feature.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(assigned);
+        var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.TestManagementFeature).Returns(feature.Object);
+        TestOptimization.Instance = optimization.Object;
+        try
+        {
+            var runner = new TestRunnerStruct { TestClass = typeof(TestOptimizationFeatureTests), TestMethod = method };
+            var xunit = XUnitIntegration.GetTestManagementProperties(ref runner);
+            var mstest = MsTestIntegration.GetTestProperties(new MsTestMethodStub(method, [], methodName));
+            foreach (var effective in new[] { xunit, mstest })
+            {
+                effective.Quarantined.Should().Be(quarantined);
+                effective.Disabled.Should().Be(disabled);
+                effective.AttemptToFix.Should().Be(attemptToFix);
+            }
+
+            assigned.Quarantined.Should().BeTrue();
+            assigned.Disabled.Should().BeTrue();
+            assigned.AttemptToFix.Should().BeTrue();
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Theory]
+    [InlineData(nameof(ExcludedTest), false)]
+    [InlineData(nameof(NoAutoRetryTest), true)]
+    public void NUnitDiscoveryAppliesExclusionsBeforeDisabledDecision(string methodName, bool shouldDisable)
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+        method.Should().NotBeNull();
+        var feature = new Mock<ITestOptimizationTestManagementFeature>();
+        feature.Setup(x => x.Enabled).Returns(true);
+        feature.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+               .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(false, true, true));
+        var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.IsRunning).Returns(true);
+        optimization.Setup(x => x.TestManagementFeature).Returns(feature.Object);
+        TestOptimization.Instance = optimization.Object;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+        TestSuite suite = null;
+        try
+        {
+            var assembly = new NUnitTestStub(method, "Annotations", [], testType: "Assembly");
+            var fixture = new NUnitTestStub(method, "Fixture", [], testType: "TestFixture", parent: assembly);
+            var currentTest = new NUnitTestStub(method, methodName, [], parent: fixture);
+            module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameNUnit, "3.0.0");
+            suite = module.GetOrCreateSuite("Fixture");
+            NUnitIntegration.SetTestModuleTo(assembly, module);
+            NUnitIntegration.SetTestSuiteTo(fixture, suite);
+            NUnitWorkItemPerformWorkIntegration.OnMethodBegin(new NUnitWorkItemStub(currentTest));
+            currentTest.RunState.Should().Be(shouldDisable ? NUnitRunState.Ignored : NUnitRunState.Runnable);
+        }
+        finally
+        {
+            suite?.Close();
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public void NUnitExcludedFailureRunsOnceAndKeepsAssignedProperties()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(ExcludedTest), BindingFlags.NonPublic | BindingFlags.Static);
+        method.Should().NotBeNull();
+        var assigned = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(true, true, true);
+        var management = new Mock<ITestOptimizationTestManagementFeature>();
+        management.Setup(x => x.Enabled).Returns(true);
+        management.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(assigned);
+        var earlyFlake = new Mock<ITestOptimizationEarlyFlakeDetectionFeature>();
+        earlyFlake.Setup(x => x.Enabled).Returns(true);
+        earlyFlake.Setup(x => x.EarlyFlakeDetectionSettings).Returns(new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(true, new TestOptimizationClient.SlowTestRetriesSettingsResponse(), 100));
+        var known = new Mock<ITestOptimizationKnownTestsFeature>();
+        known.Setup(x => x.Enabled).Returns(true);
+        var settings = CreateSettings((ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"));
+        var optimization = CreateTestOptimization(settings, Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.TestManagementFeature).Returns(management.Object);
+        optimization.Setup(x => x.EarlyFlakeDetectionFeature).Returns(earlyFlake.Object);
+        optimization.Setup(x => x.KnownTestsFeature).Returns(known.Object);
+        optimization.Setup(x => x.FlakyRetryFeature).Returns(TestOptimizationFlakyRetryFeature.Create(settings, CreateRemoteSettingsResponse(false)));
+        TestOptimization.Instance = optimization.Object;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+        TestSuite suite = null;
+        try
+        {
+            var assembly = new NUnitTestStub(method, "Annotations", [], testType: "Assembly");
+            var fixture = new NUnitTestStub(method, "Fixture", [], testType: "TestFixture", parent: assembly);
+            var currentTest = new NUnitTestStub(method, nameof(ExcludedTest), [], parent: fixture) { Id = Guid.NewGuid().ToString() };
+            module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameNUnit, "3.0.0");
+            suite = module.GetOrCreateSuite("Fixture");
+            NUnitIntegration.SetTestModuleTo(assembly, module);
+            NUnitIntegration.SetTestSuiteTo(fixture, suite);
+            var result = CreateNUnitResult(currentTest, NUnitTestStatus.Failed);
+            var context = new NUnitContextStub { CurrentTest = currentTest, CurrentResult = result.Object };
+            var command = new Mock<NUnitCommand>();
+            command.Setup(x => x.Execute(It.IsAny<NUnitContext>())).Returns(result.Object);
+            new NUnitTestCommand(command.Object).Execute(context);
+
+            command.Verify(x => x.Execute(It.IsAny<NUnitContext>()), Times.Once);
+            result.Verify(x => x.SetResult(It.IsAny<NUnitResultState>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            var completedTest = NUnitIntegration.GetOrCreateTest(currentTest);
+            var tags = completedTest.GetTags();
+            tags.TestIsNew.Should().Be("true");
+            long newTests = 0;
+            long totalTests = 1;
+            Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(completedTest, isRetry: true, ref newTests, ref totalTests);
+            newTests.Should().Be(0, "a native retry must not rediscover an excluded test as new");
+            tags.IsQuarantined.Should().Be("true");
+            tags.IsDisabled.Should().Be("true");
+            tags.IsAttemptToFix.Should().Be("true");
+            tags.PreventFailureSuppression.Should().Be("true");
+            tags.NoAutoRetry.Should().Be("true");
+            tags.TestRetryReason.Should().BeNull();
+            tags.AttemptToFixPassed.Should().BeNull();
+            tags.FinalStatus.Should().Be(TestTags.StatusFail);
+        }
+        finally
+        {
+            suite?.Close();
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Datadog.Trace.Ci.PreventFailureSuppression]
+    [Datadog.Trace.Ci.NoAutoRetry]
+    private static void ExcludedTest()
+    {
+    }
+
+    [Datadog.Trace.Ci.NoAutoRetry]
+    private static void NoAutoRetryTest()
+    {
+    }
+
+    [Datadog.Trace.Ci.PreventFailureSuppression]
+    private static void ProtectedTest()
+    {
+    }
+
+    private static void OrdinaryTest()
+    {
+    }
+
     private static TestOptimizationSettings CreateSettings(params (string Key, string Value)[] values)
     {
         CoverageBackfillCapability.ResetCommandLineCacheForTests();
@@ -2802,7 +2971,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public Type Type => typeof(NUnitTestStub);
 
-        public string Id => "nunit-test-id";
+        public string Id { get; set; } = "nunit-test-id";
 
         public string Name => _name;
 
@@ -2847,6 +3016,15 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         {
             throw new NotImplementedException();
         }
+    }
+
+    private sealed class NUnitContextStub
+    {
+        public NUnitTest CurrentTest { get; set; }
+
+        public NUnitTestResult CurrentResult { get; set; }
+
+        public object TestObject { get; set; }
     }
 
     private sealed class NUnitWorkItemStub : NUnitWorkItem

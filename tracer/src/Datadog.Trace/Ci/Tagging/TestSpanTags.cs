@@ -11,6 +11,9 @@ namespace Datadog.Trace.Ci.Tagging;
 
 internal sealed partial class TestSpanTags : TestSuiteSpanTags
 {
+    // Most tests have no exclusion declarations or tags, so allocate their storage only on first use.
+    private AutomationExclusionTags? _automationExclusionTags;
+
     public TestSpanTags()
     {
     }
@@ -123,6 +126,32 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
     [Tag(TestTags.TestIsAttemptToFix)]
     public string? IsAttemptToFix { get; set; }
 
+    [Tag(TestTags.TestPreventFailureSuppression)]
+    public string? PreventFailureSuppression
+    {
+        get => _automationExclusionTags?.PreventFailureSuppression;
+        set
+        {
+            if (value is not null || _automationExclusionTags is not null)
+            {
+                (_automationExclusionTags ??= new()).PreventFailureSuppression = value;
+            }
+        }
+    }
+
+    [Tag(TestTags.TestNoAutoRetry)]
+    public string? NoAutoRetry
+    {
+        get => _automationExclusionTags?.NoAutoRetry;
+        set
+        {
+            if (value is not null || _automationExclusionTags is not null)
+            {
+                (_automationExclusionTags ??= new()).NoAutoRetry = value;
+            }
+        }
+    }
+
     [Tag(TestTags.TestHasFailedAllRetries)]
     public string? HasFailedAllRetries { get; set; }
 
@@ -149,4 +178,26 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix)]
     public string? CapabilitiesTestManagementAttemptToFix { get; set; }
+
+    internal TestAutomationExclusions AutomationExclusions
+    {
+        get => _automationExclusionTags?.Declarations ?? default;
+        set
+        {
+            if (value.PreventFailureSuppression || value.NoAutoRetry || _automationExclusionTags is not null)
+            {
+                (_automationExclusionTags ??= new()).Declarations = value;
+            }
+        }
+    }
+
+    private sealed class AutomationExclusionTags
+    {
+        public string? PreventFailureSuppression { get; set; }
+
+        public string? NoAutoRetry { get; set; }
+
+        // Span tags are mutable telemetry; only attribute metadata can change execution policy.
+        public TestAutomationExclusions Declarations { get; set; }
+    }
 }

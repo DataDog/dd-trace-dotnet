@@ -405,7 +405,7 @@ internal sealed class MsTestExecution
             }
 
             var tags = completed.Test.GetTags();
-            if (tags.IsQuarantined != "true" && tags.IsDisabled != "true" && tags.IsAttemptToFix != "true")
+            if (!Common.IsFailureSuppressed(tags) && !Common.IsAttemptToFix(tags))
             {
                 continue;
             }
@@ -495,7 +495,7 @@ internal sealed class MsTestExecution
                                    ? Common.CalculateFinalStatus(anyPassed, _anyFailed, _lastAttempt.Status == TestStatus.Skip, tags)
                                    : null;
             tags.HasFailedAllRetries = isLastAttempt && _executionCount > 1 && _allRetriesFailed ? "true" : null;
-            if (tags.IsAttemptToFix == "true" && isLastAttempt && _executionCount > 1)
+            if (Common.IsAttemptToFix(tags) && isLastAttempt && _executionCount > 1)
             {
                 tags.AttemptToFixPassed = _anyFailed ? "false" : "true";
             }
