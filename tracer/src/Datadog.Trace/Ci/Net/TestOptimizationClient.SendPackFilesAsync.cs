@@ -126,7 +126,7 @@ internal sealed partial class TestOptimizationClient
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
+        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(' ', commitsToExclude.Select(c => "^" + c)) + " " + string.Join(' ', commitsToInclude);
         var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
@@ -154,7 +154,7 @@ internal sealed partial class TestOptimizationClient
             return new ObjectPackFilesResult([], temporaryFolder);
         }
 
-        objectsOutput = string.Join("\n", lstObjectsSha) + "\n";
+        objectsOutput = string.Join('\n', lstObjectsSha) + "\n";
 
         Log.Debug<int>("TestOptimizationClient: Packing {NumObjects} objects...", lstObjectsSha.Count);
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
