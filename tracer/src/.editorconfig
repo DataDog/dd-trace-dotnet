@@ -143,4 +143,3 @@ dotnet_diagnostic.MA0200.severity = none # Do not use empty property patterns wi
 dotnet_diagnostic.MA0209.severity = none # Use in keyword for in parameter
 dotnet_diagnostic.MA0217.severity = none # Use a static lambda
 dotnet_diagnostic.MA0221.severity = none # TryGetValue method should use [MaybeNullWhen(false)] on the value parameter
-dotnet_diagnostic.MA0239.severity = none # Use 'typeof' instead of 'GetType()' when the type is sealed
