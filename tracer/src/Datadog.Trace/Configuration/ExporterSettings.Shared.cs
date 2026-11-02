@@ -54,6 +54,40 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal const string DefaultTracesUnixDomainSocket = "/var/run/datadog/apm.socket";
 
+        internal static string? GetOtlpProtocolName(OtlpProtocol protocol)
+            => protocol switch
+            {
+                OtlpProtocol.Grpc => "grpc",
+                OtlpProtocol.HttpProtobuf => "http/protobuf",
+                OtlpProtocol.HttpJson => "http/json",
+                _ => null,
+            };
+
+        private static OtlpProtocol? ParseOtlpProtocol(string? protocol)
+            => protocol switch
+            {
+                _ when string.Equals(protocol, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
+                _ when string.Equals(protocol, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
+                _ when string.Equals(protocol, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
+                _ => null,
+            };
+
+        private static string GetDefaultOtlpBaseUri(OtlpProtocol protocol, string? agentHost)
+        {
+            var defaultHost = string.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
+            var defaultPort = protocol == OtlpProtocol.Grpc ? DefaultOtlpGrpcPort : DefaultOtlpHttpPort;
+            return $"http://{defaultHost}:{defaultPort}";
+        }
+
+        private static string AppendOtlpSignalPath(string endpoint, string signal)
+        {
+            var baseEndpoint = endpoint.TrimEnd('/');
+            var signalPath = $"/v1/{signal}";
+
+            // Like the OpenTelemetry .NET SDK, don't append the signal path if the endpoint already ends with it
+            return baseEndpoint.EndsWith(signalPath, StringComparison.OrdinalIgnoreCase) ? baseEndpoint : baseEndpoint + signalPath;
+        }
+
         private TraceTransportSettings GetTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
         {
             var origin = ConfigurationOrigins.Default; // default because only called from constructor
@@ -137,26 +171,42 @@ namespace Datadog.Trace.Configuration
         }
 
         private OtlpTransportSettings GetOtlpTracesTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("traces", signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpJson, agentHost); // TODO: Make default HttpProtobuf
+            => GetOtlpTransport("traces", ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpJson, agentHost); // TODO: Make default HttpProtobuf
 
         private OtlpTransportSettings GetOtlpMetricsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
-            => GetOtlpTransport("metrics", signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
+            => GetOtlpTransport("metrics", ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.HttpProtobuf, agentHost);
 
-        private OtlpTransportSettings GetOtlpTransport(string signal, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost)
+        private OtlpTransportSettings GetOtlpLogsTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, string? agentHost)
+            => GetOtlpTransport("logs", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, signalEndpoint, generalEndpoint, signalProtocol, generalProtocol, OtlpProtocol.Grpc, agentHost, supportsHttpJson: false); // the logs exporter only serializes protobuf
+
+        private OtlpTransportSettings GetOtlpTransport(string signal, string endpointKey, string protocolKey, string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol, OtlpProtocol defaultProtocol, string? agentHost, bool supportsHttpJson = true)
         {
-            var origin = ConfigurationOrigins.Default; // default because only called from constructor
-
-            var protocol = (signalProtocol ?? generalProtocol) switch
+            var isSignalProtocolSet = !string.IsNullOrEmpty(signalProtocol);
+            var configuredProtocol = isSignalProtocolSet ? signalProtocol : generalProtocol;
+            var parsedProtocol = ParseOtlpProtocol(configuredProtocol);
+            if (parsedProtocol is null && !string.IsNullOrEmpty(configuredProtocol))
             {
-                "grpc" => OtlpProtocol.Grpc,
-                "http/protobuf" => OtlpProtocol.HttpProtobuf,
-                "http/json" => OtlpProtocol.HttpJson,
-                _ => defaultProtocol,
-            };
+                WarnUnsupportedOtlpProtocol(signal, configuredProtocol!, defaultProtocol, supportsHttpJson);
+            }
+
+            var protocol = parsedProtocol ?? defaultProtocol;
+
+            if (protocol == OtlpProtocol.HttpJson && !supportsHttpJson)
+            {
+                // http/protobuf targets the same endpoint as http/json
+                ValidationWarnings.Add($"OTLP protocol 'http/json' is not supported for {signal}. Using http/protobuf instead.");
+                protocol = OtlpProtocol.HttpProtobuf;
+            }
+
+            // A signal protocol used as-is was already recorded when it was read
+            if (parsedProtocol is null || !isSignalProtocolSet || protocol != parsedProtocol)
+            {
+                _telemetry.Record(protocolKey, GetOtlpProtocolName(protocol), recordValue: true, parsedProtocol is null ? ConfigurationOrigins.Default : ConfigurationOrigins.Calculated);
+            }
 
             if (!string.IsNullOrEmpty(signalEndpoint))
             {
-                if (TryGetOtlpUri(signal, signalEndpoint!, origin, protocol, agentHost, out var settings))
+                if (TryGetOtlpUri(signal, endpointKey, signalEndpoint!, origin: null, protocol, agentHost, out var settings))
                 {
                     return settings;
                 }
@@ -164,30 +214,27 @@ namespace Datadog.Trace.Configuration
 
             if (!string.IsNullOrEmpty(generalEndpoint))
             {
-                // For both grpc and unix:// endpoints, do not modify the URI path
-                // For UDS, the path will be added to requests as needed (e.g. /v1/{signal}) for non-grpc OTLP protocols.
-                var isUdsEndpoint = generalEndpoint!.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase);
-                if ((protocol == OtlpProtocol.Grpc || isUdsEndpoint) && TryGetOtlpUri(signal, generalEndpoint!, origin, protocol, agentHost, out var asIsSettings))
+                // gRPC and unix:// endpoints are used as-is (for UDS, the signal path is added per request).
+                // For HTTP, v1/{signal} is appended to the base endpoint, keeping any base path.
+                var useAsIs = protocol == OtlpProtocol.Grpc || generalEndpoint!.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase);
+                var url = useAsIs ? generalEndpoint! : AppendOtlpSignalPath(generalEndpoint!, signal);
+
+                if (TryGetOtlpUri(signal, endpointKey, url, ConfigurationOrigins.Calculated, protocol, agentHost, out var generalSettings))
                 {
-                    return asIsSettings;
-                }
-                else if (protocol != OtlpProtocol.Grpc && !isUdsEndpoint)
-                {
-                    if (generalEndpoint!.EndsWith("/") && TryGetOtlpUri(signal, $"{generalEndpoint!}v1/{signal}", origin, protocol, agentHost, out var httpSettings))
-                    {
-                        return httpSettings;
-                    }
-                    else if (!generalEndpoint!.EndsWith("/") && TryGetOtlpUri(signal, $"{generalEndpoint!}/v1/{signal}", origin, protocol, agentHost, out var httpAdditionalSlashSettings))
-                    {
-                        return httpAdditionalSlashSettings;
-                    }
+                    return generalSettings;
                 }
             }
 
-            ValidationWarnings.Add("No transport configuration found, using default values");
+            ValidationWarnings.Add($"No OTLP transport configuration found for {signal}, using default values");
 
             // we know this URL is valid so don't use TrySet, otherwise can't guarantee _agentUri is non null
-            return GetOtlpUri(signal, CreateDefaultOtlpUri(protocol, signal, agentHost), origin, protocol, agentHost);
+            return GetOtlpUri(signal, endpointKey, CreateDefaultOtlpUri(protocol, signal, agentHost), ConfigurationOrigins.Default, protocol, agentHost);
+        }
+
+        private void WarnUnsupportedOtlpProtocol(string signal, string configuredProtocol, OtlpProtocol defaultProtocol, bool supportsHttpJson)
+        {
+            var supportedValues = supportsHttpJson ? "'grpc', 'http/protobuf' and 'http/json'" : "'grpc' and 'http/protobuf'";
+            ValidationWarnings.Add($"Unsupported OTLP protocol '{configuredProtocol}' for {signal}. Supported values are {supportedValues}. Using default: {GetOtlpProtocolName(defaultProtocol)}");
         }
 
         private bool TryGetAgentUriAndTransport(string host, int port, out TraceTransportSettings settings)
@@ -265,7 +312,7 @@ namespace Datadog.Trace.Configuration
             return new(transport, agentUri, UdsPath: udsPath);
         }
 
-        private bool TryGetOtlpUri(string signal, string url, ConfigurationOrigins origin, OtlpProtocol otlpProtocol, string? agentHost, out OtlpTransportSettings settings)
+        private bool TryGetOtlpUri(string signal, string endpointKey, string url, ConfigurationOrigins? origin, OtlpProtocol otlpProtocol, string? agentHost, out OtlpTransportSettings settings)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
@@ -274,11 +321,11 @@ namespace Datadog.Trace.Configuration
                 return false;
             }
 
-            settings = GetOtlpUri(signal, uri, origin, otlpProtocol, agentHost);
+            settings = GetOtlpUri(signal, endpointKey, uri, origin, otlpProtocol, agentHost);
             return true;
         }
 
-        private OtlpTransportSettings GetOtlpUri(string signal, Uri uri, ConfigurationOrigins origin, OtlpProtocol otlpProtocol, string? agentHost)
+        private OtlpTransportSettings GetOtlpUri(string signal, string endpointKey, Uri uri, ConfigurationOrigins? origin, OtlpProtocol otlpProtocol, string? agentHost)
         {
 #if !NETCOREAPP3_1_OR_GREATER
             if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
@@ -286,12 +333,16 @@ namespace Datadog.Trace.Configuration
                 // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets, but it's _explicitly_ being
                 // configured here, so warn the user, and switch to using the default transport instead.
                 ValidationWarnings.Add($"The provided Uri {uri} represents a Unix Domain Socket (UDS), but the current runtime doesn't support UDS. Falling back to the default TCP transport.");
-                // TODO: Record OTLP transport telemetry
-                return GetOtlpUri(signal, CreateDefaultOtlpUri(otlpProtocol, signal, agentHost), ConfigurationOrigins.Calculated, otlpProtocol, agentHost);
+                return GetOtlpUri(signal, endpointKey, CreateDefaultOtlpUri(otlpProtocol, signal, agentHost), ConfigurationOrigins.Calculated, otlpProtocol, agentHost);
             }
 
 #endif
-            // TODO: Record OTLP transport telemetry
+            // A null origin means the URI is the configured signal endpoint, already recorded when it was read
+            if (origin is { } resolvedOrigin)
+            {
+                _telemetry.Record(endpointKey, uri.ToString(), recordValue: true, resolvedOrigin);
+            }
+
             return new(uri, OtlpProtocol: otlpProtocol);
         }
 
@@ -322,11 +373,11 @@ namespace Datadog.Trace.Configuration
 
         private Uri CreateDefaultOtlpUri(OtlpProtocol protocol, string signal, string? agentHost)
         {
-            var defaultHost = string.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
+            var baseUri = GetDefaultOtlpBaseUri(protocol, agentHost);
             return protocol switch
             {
-                OtlpProtocol.Grpc => new Uri($"http://{defaultHost}:{DefaultOtlpGrpcPort}"),
-                OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"http://{defaultHost}:{DefaultOtlpHttpPort}/v1/{signal}"),
+                OtlpProtocol.Grpc => new Uri(baseUri),
+                OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"{baseUri}/v1/{signal}"),
                 _ => throw new ArgumentException($"Invalid protocol: {protocol}"),
             };
         }

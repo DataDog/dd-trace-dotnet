@@ -288,7 +288,7 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
-        private static DebuggerManager CreateDebuggerManager(ExceptionReplaySettings? exceptionReplaySettings = null)
+        internal static DebuggerManager CreateDebuggerManager(ExceptionReplaySettings? exceptionReplaySettings = null)
         {
             var constructor = typeof(DebuggerManager).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
@@ -300,6 +300,13 @@ namespace Datadog.Trace.Tests.Debugger
             var debuggerSettings = new DebuggerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             exceptionReplaySettings ??= new ExceptionReplaySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             return (DebuggerManager)constructor!.Invoke([debuggerSettings, exceptionReplaySettings]);
+        }
+
+        internal static void InvokeShutdownTasks(DebuggerManager manager)
+        {
+            var method = typeof(DebuggerManager).GetMethod("ShutdownTasks", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Should().NotBeNull();
+            method!.Invoke(manager, [null]);
         }
 
         private static DebuggerSettings CreateDebuggerSettings(string redactedIdentifier)
@@ -359,13 +366,6 @@ namespace Datadog.Trace.Tests.Debugger
             var method = typeof(DebuggerManager).GetMethod("HandleSymbolUploaderStartFailure", BindingFlags.Instance | BindingFlags.NonPublic);
             method.Should().NotBeNull();
             method!.Invoke(manager, [failedUploader, null]);
-        }
-
-        private static void InvokeShutdownTasks(DebuggerManager manager)
-        {
-            var method = typeof(DebuggerManager).GetMethod("ShutdownTasks", BindingFlags.Instance | BindingFlags.NonPublic);
-            method.Should().NotBeNull();
-            method!.Invoke(manager, [null]);
         }
 
         private class DebuggerUploaderMock : IDebuggerUploader

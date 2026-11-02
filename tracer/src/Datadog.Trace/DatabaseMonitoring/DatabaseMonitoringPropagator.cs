@@ -52,16 +52,11 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
-            if (command.CommandType == CommandType.StoredProcedure)
+            if (command.CommandType == CommandType.StoredProcedure && (!injectStoredProcedure || integrationId != IntegrationId.SqlClient))
             {
-                // ODP.NET includes the leading comment in its generated PL/SQL invocation without changing command type or bindings.
-                // SQL Server requires the opt-in below because its RPC must instead be rewritten as an EXEC text command.
-                var oracleServiceComment = integrationId == IntegrationId.Oracle && propagationLevel == DbmPropagationLevel.Service;
-                var sqlServerComment = integrationId == IntegrationId.SqlClient && injectStoredProcedure;
-                if (!oracleServiceComment && !sqlServerComment)
-                {
-                    return false;
-                }
+                // We don't inject into StoredProcedures unless enabled as we change the commands
+                // We don't inject into StoredProcedures unless we are in SqlClient
+                return false;
             }
 
             var propagatorStringBuilder = StringBuilderCache.Acquire();

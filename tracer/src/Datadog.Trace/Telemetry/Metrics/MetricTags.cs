@@ -468,6 +468,12 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;success:false")] Error
     }
 
+    public enum WafConfigAction
+    {
+        [Description("waf_version;event_rules_version;action:init")] Init,
+        [Description("waf_version;event_rules_version;action:update")] Update
+    }
+
     public enum UserEventSdk
     {
         [Description("event_type:login_success;sdk_version:v1")] UserEventLoginSuccessSdkV1,

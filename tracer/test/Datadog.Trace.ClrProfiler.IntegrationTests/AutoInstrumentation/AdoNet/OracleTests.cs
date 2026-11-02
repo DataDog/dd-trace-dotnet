@@ -61,26 +61,6 @@ public class OracleTests : TracingIntegrationTest
                           .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
     }
 
-    [SkippableTheory]
-    [InlineData("disabled")]
-    [InlineData("service")]
-    [InlineData("dynamic_service")]
-    [InlineData("full")]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "ArmUnsupported")]
-    public async Task InjectsServiceCommentsIntoStoredProcedureInvocations(string dbmPropagation)
-    {
-        SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
-        SetEnvironmentVariable("DD_SERVICE", "oracle-stored-procedure-comments");
-        // Oracle service comments do not require SQL Server's stored-procedure rewriting flag.
-        SetEnvironmentVariable("DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED", "false");
-
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = await RunSampleAndWaitForExit(agent, arguments: "--stored-procedure-comments");
-
-        process.StandardOutput.Should().Contain("Stored procedure comment checks passed.");
-    }
-
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
     {
         return span.IsOracle(metadataSchemaVersion);

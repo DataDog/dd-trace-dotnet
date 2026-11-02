@@ -935,6 +935,7 @@
       "tags": [
         "waf_version",
         "event_rules_version",
+        "action",
         "config_key",
         "scope"
       ],
