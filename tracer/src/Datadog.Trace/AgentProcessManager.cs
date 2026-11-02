@@ -62,8 +62,6 @@ namespace Datadog.Trace
 
         private static readonly byte[] TraceAgentInfoRequest = Encoding.ASCII.GetBytes("GET /info HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
 
-        private static readonly byte[] HttpStatusLineStart = Encoding.ASCII.GetBytes("HTTP/");
-
         internal enum ProcessState
         {
             NeverChecked,
@@ -100,6 +98,8 @@ namespace Datadog.Trace
             /// </summary>
             long GetTimestampMs();
         }
+
+        private static ReadOnlySpan<byte> HttpStatusLineStart => "HTTP/"u8;
 
         /// <summary>
         /// Invoked by the loader
@@ -857,6 +857,7 @@ namespace Datadog.Trace
             private string _processPath;
             private string _pipeName;
             private string _pipePath;
+            private PipeFailureReasons _pipeFailureReasons;
 
             public string PipeName
             {
@@ -865,6 +866,7 @@ namespace Datadog.Trace
                 {
                     _pipeName = value;
                     _pipePath = null;
+                    _pipeFailureReasons = null;
                 }
             }
 
@@ -925,6 +927,9 @@ namespace Datadog.Trace
             /// </summary>
             public bool PipeIsPresent { get; set; }
 
+            // Built on the first failure rather than at startup, and kept: the same reasons repeat on every failed check
+            private PipeFailureReasons FailureReasons => _pipeFailureReasons ??= new PipeFailureReasons(PipeName);
+
             public bool OwnProcessIsRunning()
             {
                 try
@@ -940,7 +945,8 @@ namespace Datadog.Trace
 
             /// <summary>
             /// Checks whether the agent is healthy, whoever started it: its named pipe must exist, and the trace
-            /// agent must also answer GET /info. Sets <see cref="PipeIsPresent"/>, and <see cref="LastHealthCheckFailure"/> when it is not healthy.
+            /// agent must also answer GET /info within the connect and response timeouts, so a hung agent fails the check.
+            /// Sets <see cref="PipeIsPresent"/>, and <see cref="LastHealthCheckFailure"/> when it is not healthy.
             /// Whether the process this keep-alive started is still running is checked by <see cref="OwnProcessIsRunning"/>.
             /// </summary>
             public async Task<bool> ProcessIsHealthyAsync()
@@ -948,12 +954,33 @@ namespace Datadog.Trace
                 PipeIsPresent = NamedPipeIsBound();
                 if (!PipeIsPresent)
                 {
-                    LastHealthCheckFailure = $"named pipe {PipeName} is not present";
+                    LastHealthCheckFailure = FailureReasons.PipeMissing;
                     return false;
                 }
 
                 // DogStatsD never replies, so its pipe being present is all we can check
-                LastHealthCheckFailure = IsTraceAgent ? await GetTraceAgentFailureAsync().ConfigureAwait(false) : null;
+                if (!IsTraceAgent)
+                {
+                    LastHealthCheckFailure = null;
+                    return true;
+                }
+
+                // In this method rather than its own, which would add an async state machine to every check
+                using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
+                using var timeoutCancellation = new CancellationTokenSource();
+                var exchange = SendInfoRequestAsync(pipe);
+                var completed = await Task.WhenAny(exchange, Task.Delay(TraceAgentResponseTimeout, timeoutCancellation.Token)).ConfigureAwait(false);
+                if (completed == exchange)
+                {
+                    timeoutCancellation.Cancel();
+                    LastHealthCheckFailure = await exchange.ConfigureAwait(false);
+                }
+                else
+                {
+                    // Disposing the pipe on the way out aborts the pending exchange
+                    LastHealthCheckFailure = FailureReasons.NoResponse;
+                }
+
                 return LastHealthCheckFailure == null;
             }
 
@@ -972,25 +999,8 @@ namespace Datadog.Trace
 
             /// <summary>
             /// Sends GET /info over the trace agent's pipe and checks that an HTTP response comes back.
-            /// The connect and the response are both bounded, so a hung agent fails the check.
             /// Returns null if the agent answered, otherwise why it did not.
             /// </summary>
-            private async Task<string> GetTraceAgentFailureAsync()
-            {
-                using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
-                using var timeoutCancellation = new CancellationTokenSource();
-                var exchange = SendInfoRequestAsync(pipe);
-                var completed = await Task.WhenAny(exchange, Task.Delay(TraceAgentResponseTimeout, timeoutCancellation.Token)).ConfigureAwait(false);
-                if (completed == exchange)
-                {
-                    timeoutCancellation.Cancel();
-                    return await exchange.ConfigureAwait(false);
-                }
-
-                // Disposing the pipe on the way out aborts the pending exchange
-                return $"no response to GET /info on named pipe {PipeName} within {TraceAgentResponseTimeout} ms";
-            }
-
             private async Task<string> SendInfoRequestAsync(NamedPipeClientStream pipe)
             {
                 try
@@ -1001,7 +1011,7 @@ namespace Datadog.Trace
                     }
                     catch (TimeoutException)
                     {
-                        return $"could not connect to named pipe {PipeName} within {TraceAgentConnectTimeout} ms";
+                        return FailureReasons.NoConnection;
                     }
 
                     await pipe.WriteAsync(TraceAgentInfoRequest, 0, TraceAgentInfoRequest.Length).ConfigureAwait(false);
@@ -1014,13 +1024,13 @@ namespace Datadog.Trace
                         var count = await pipe.ReadAsync(statusLineStart, read, statusLineStart.Length - read).ConfigureAwait(false);
                         if (count == 0)
                         {
-                            return $"named pipe {PipeName} closed before a response to GET /info";
+                            return FailureReasons.ClosedEarly;
                         }
 
                         read += count;
                     }
 
-                    return statusLineStart.AsSpan().SequenceEqual(HttpStatusLineStart) ? null : $"unexpected response to GET /info on named pipe {PipeName}";
+                    return statusLineStart.AsSpan().SequenceEqual(HttpStatusLineStart) ? null : FailureReasons.UnexpectedResponse;
                 }
                 catch (Exception ex)
                 {
@@ -1029,6 +1039,22 @@ namespace Datadog.Trace
                     Log.Debug(ex, "Health check request to the trace agent failed on named pipe {PipeName}.", PipeName);
                     return $"{ex.GetType().Name} on named pipe {PipeName}: {ex.Message}";
                 }
+            }
+
+            /// <summary>
+            /// The health check's failure reasons that depend only on the pipe name.
+            /// </summary>
+            private sealed class PipeFailureReasons(string pipeName)
+            {
+                public string PipeMissing { get; } = $"named pipe {pipeName} is not present";
+
+                public string NoConnection { get; } = $"could not connect to named pipe {pipeName} within {TraceAgentConnectTimeout} ms";
+
+                public string NoResponse { get; } = $"no response to GET /info on named pipe {pipeName} within {TraceAgentResponseTimeout} ms";
+
+                public string ClosedEarly { get; } = $"named pipe {pipeName} closed before a response to GET /info";
+
+                public string UnexpectedResponse { get; } = $"unexpected response to GET /info on named pipe {pipeName}";
             }
         }
     }
