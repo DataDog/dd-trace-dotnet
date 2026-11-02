@@ -26,7 +26,7 @@ internal sealed class FlagEvalEvent
 
         // Split features come from flag configuration, not from the evaluation context, so they are
         // kept whatever the consent setting.
-        Features = FlagEvaluationContext.Copy(features, out _);
+        Features = FlagEvaluationContext.CopyFeatures(features);
         ErrorCode = errorCode;
         ObserveFullEvaluationData = observeFullEvaluationData;
     }

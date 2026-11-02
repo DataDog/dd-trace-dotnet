@@ -80,6 +80,27 @@ public class FlagEvaluationAggregatorTests
     }
 
     [Fact]
+    public void EvaluationFeaturesAreNotBoundByTheContextLimits()
+    {
+        var longText = new string('k', 300);
+        var many = Enumerable.Range(0, 300).ToDictionary(i => $"feature.{i:D3}", i => (object?)"value");
+        var withLongKey = new Dictionary<string, object?>(many) { [longText] = "value" };
+        var withLongValue = new Dictionary<string, object?>(many) { ["long.value"] = longText };
+        var aggregator = new FlagEvaluationAggregator(10, 10, 10);
+
+        aggregator.Add(Observation(features: many));
+        aggregator.Add(Observation(features: withLongKey));
+        aggregator.Add(Observation(features: withLongValue));
+        aggregator.Add(Observation(features: new Dictionary<string, object?>(many) { ["feature.299"] = "other" }));
+
+        var entries = aggregator.Drain().Full.Values.ToList();
+        entries.Should().HaveCount(4, "a feature past the 256th, a long key, a long value and the last feature all split buckets");
+        entries.Select(e => e.Features!.Count).Should().BeEquivalentTo(new[] { 300, 301, 301, 300 });
+        entries.Should().Contain(e => e.Features!.ContainsKey(longText));
+        entries.Should().Contain(e => e.Features!.ContainsKey("long.value") && Equals(e.Features["long.value"], longText));
+    }
+
+    [Fact]
     public void EvaluationFeaturesAreKeptWithoutConsent()
     {
         var observation = Observation(consent: false, attrs: new Dictionary<string, object?> { ["pii"] = "canary" }, features: new Dictionary<string, object?> { ["holdout.key"] = "h1" });

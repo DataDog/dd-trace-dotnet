@@ -85,6 +85,34 @@ internal static class FlagEvaluationContext
         }
     }
 
+    // Split features come from flag configuration, which already bounds them, so they skip the context
+    // limits: dropping one would merge buckets that differ only in that feature.
+    internal static Dictionary<string, object?>? CopyFeatures(IReadOnlyDictionary<string, object?>? features)
+    {
+        if (features is null || features.Count == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var result = new Dictionary<string, object?>(features.Count, StringComparer.Ordinal);
+            foreach (var pair in features)
+            {
+                if (pair.Key is not null && FlagEvaluationPrivacy.IsValidText(pair.Key) && IsScalar(pair.Value))
+                {
+                    result[pair.Key] = pair.Value;
+                }
+            }
+
+            return result.Count == 0 ? null : result;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
     internal static string CanonicalKey(Dictionary<string, object?>? attributes)
     {
         if (attributes is null || attributes.Count == 0)
