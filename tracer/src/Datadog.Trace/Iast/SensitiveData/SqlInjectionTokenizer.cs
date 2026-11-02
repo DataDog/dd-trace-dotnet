@@ -30,11 +30,11 @@ internal sealed class SqlInjectionTokenizer : ITokenizer
     private const string DecimalNumber = "\\d*\\.\\d+";
     private const string HexNumber = "x'[0-9a-f]+'|0x[0-9a-f]+";
     private const string BinNumber = "b'[0-9a-f]+'|0b[0-9a-f]+";
-    private static string numericLiteral = $"[-+]?(?:{string.Join("|", HexNumber, BinNumber, DecimalNumber + Exponent, IntegerNumber + Exponent)})";
-    private static string _ansiDialectPattern = string.Join("|", numericLiteral, StringLiteral, LineComment, BlockComment);
-    private static string _oracleDialectPattern = string.Join("|", numericLiteral, OracleEscapedLiteral, StringLiteral, LineComment, BlockComment);
-    private static string _postgresqlDialectPattern = string.Join("|", numericLiteral, PostgresqlEscapedLiteral, StringLiteral, LineComment, BlockComment);
-    private static string _mySqlDialectPattern = string.Join("|", numericLiteral, MysqlStringLiteral, StringLiteral, LineComment, BlockComment);
+    private static string numericLiteral = $"[-+]?(?:{string.Join('|', HexNumber, BinNumber, DecimalNumber + Exponent, IntegerNumber + Exponent)})";
+    private static string _ansiDialectPattern = string.Join('|', numericLiteral, StringLiteral, LineComment, BlockComment);
+    private static string _oracleDialectPattern = string.Join('|', numericLiteral, OracleEscapedLiteral, StringLiteral, LineComment, BlockComment);
+    private static string _postgresqlDialectPattern = string.Join('|', numericLiteral, PostgresqlEscapedLiteral, StringLiteral, LineComment, BlockComment);
+    private static string _mySqlDialectPattern = string.Join('|', numericLiteral, MysqlStringLiteral, StringLiteral, LineComment, BlockComment);
     private Regex _ansiDialectRegex;
     private Regex _oracleDialectRegex;
     private Regex _postgresqlDialectRegex;

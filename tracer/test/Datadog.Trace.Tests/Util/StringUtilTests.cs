@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
 using Xunit;
@@ -153,6 +154,26 @@ public class StringUtilTests
         StringUtil.Invariant($"[{span}]").Should().Be("[pa]");
     }
 #endif
+
+    [Theory]
+    [InlineData(',')]
+    [InlineData(';')]
+    [InlineData('|')]
+    [InlineData(':')]
+    [InlineData(' ')]
+    [InlineData('\n')]
+    [InlineData('#')] // not one of the cached separators
+    public void JoinChar_BehavesAsJoinString(char separator)
+    {
+        var values = new[] { "a", null, string.Empty, "b" };
+        var separatorString = separator.ToString();
+
+        string.Join(separator, values).Should().Be(string.Join(separatorString, values));
+        string.Join(separator, "a", "b", "c").Should().Be(string.Join(separatorString, "a", "b", "c"));
+        string.Join(separator, new List<string?>(values)).Should().Be(string.Join(separatorString, new List<string?>(values)));
+        string.Join(separator, new[] { 1, 2, 3 }).Should().Be(string.Join(separatorString, new[] { 1, 2, 3 }));
+        string.Join(separator, Array.Empty<string>()).Should().Be(string.Empty);
+    }
 
 #if NETFRAMEWORK
     [Theory]

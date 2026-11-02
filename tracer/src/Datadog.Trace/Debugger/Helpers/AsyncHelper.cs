@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Helpers
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncHelper));
 
         private const string StateMachineNamePrefix = "<";
-        private const string StateMachineNameSuffix = ">";
+        private const char StateMachineNameSuffix = '>';
         private const string StateMachineFieldsNamePrefix = "<>";
         private const string ThisName = "__this";
         private const string StateMachineThisFieldName = StateMachineFieldsNamePrefix + "4" + ThisName;
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Debugger.Helpers
 
                 if (foundInArguments == false)
                 {
-                    var indexOfStateMachineSuffix = field.Name.IndexOf(StateMachineNameSuffix, StringComparison.Ordinal);
+                    var indexOfStateMachineSuffix = field.Name.IndexOf(StateMachineNameSuffix);
                     if (indexOfStateMachineSuffix > 0)
                     {
                         foundFields.Add(new FieldInfoNameSanitized(field, SanitizeAsyncHoistedLocalName(field.Name, indexOfStateMachineSuffix)));

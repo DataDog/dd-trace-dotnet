@@ -627,7 +627,7 @@ namespace Datadog.Trace.Configuration
                             Log.Warning<int, string>(
                                 "DD_TRACE_STATS_ADDITIONAL_TAGS exceeds the maximum of {Max} keys. The following keys were dropped: {Dropped}",
                                 maxStatsAdditionalTagKeys,
-                                string.Join(",", dropped));
+                                string.Join(',', dropped));
                         }
                     }
                     else

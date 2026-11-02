@@ -114,7 +114,7 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
                 log.Warning(
                     "OpenTelemetry configuration {OpenTelemetryConfiguration} contains unsupported values '{UnsupportedValues}', which will be ignored.",
                     otelKey,
-                    string.Join(",", unsupportedValues));
+                    string.Join(',', unsupportedValues));
                 OpenTelemetryHelpers.GetConfigurationMetricTags(otelKey, out var openTelemetryConfig, out var datadogConfig);
                 metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
             });

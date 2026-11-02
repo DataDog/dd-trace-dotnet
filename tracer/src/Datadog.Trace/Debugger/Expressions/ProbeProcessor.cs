@@ -574,7 +574,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 targetSpan.SetTag(probeIdTag, probeInfo.ProbeId);
                 if (decoration.Errors?.Length > 0)
                 {
-                    targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                    targetSpan.SetTag(evaluationErrorTag, string.Join(';', decoration.Errors));
                 }
                 else if (targetSpan.GetTag(evaluationErrorTag) != null)
                 {
@@ -1050,7 +1050,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         string? membersAsString = null;
                         if (members?.Count > 0)
                         {
-                            membersAsString = string.Join(";", members);
+                            membersAsString = string.Join(';', members);
                         }
 
                         Log.Error("Evaluation state error: Target Method: Type = {Type}, Name = {Name}. Method Members: {Members}", instance.Type?.FullName ?? instance.Type?.Name, instance.Name, membersAsString);

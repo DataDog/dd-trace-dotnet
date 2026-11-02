@@ -294,8 +294,8 @@ public sealed class Test
         }
         else if (!string.Equals(suiteTagValue, testTagValue, StringComparison.Ordinal))
         {
-            if (suiteTagValue.StartsWith("[", StringComparison.Ordinal) &&
-                suiteTagValue.EndsWith("]", StringComparison.Ordinal))
+            if (suiteTagValue.StartsWith('[') &&
+                suiteTagValue.EndsWith(']'))
             {
                 // If the source file is an array, we add the new source file to it
                 List<string>? files;

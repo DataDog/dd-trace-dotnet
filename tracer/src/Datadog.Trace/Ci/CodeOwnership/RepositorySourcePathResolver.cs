@@ -254,7 +254,7 @@ internal sealed class RepositorySourcePathResolver
     private static bool IsPathRootedCrossPlatform(string path)
     {
         if (Path.IsPathRooted(path) ||
-            path.StartsWith("\\", StringComparison.Ordinal) ||
+            path.StartsWith('\\') ||
             path.StartsWith("//", StringComparison.Ordinal))
         {
             return true;

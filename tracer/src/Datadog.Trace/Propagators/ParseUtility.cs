@@ -50,7 +50,7 @@ namespace Datadog.Trace.Propagators
                     Log.Warning(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                     _firstWarning = false;
                 }
                 else
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Propagators
                     Log.Debug(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                 }
             }
 
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Propagators
                     Log.Warning(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                     _firstWarning = false;
                 }
                 else
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Propagators
                     Log.Debug(
                         "Could not parse {HeaderName} headers: {HeaderValues}",
                         headerName,
-                        string.Join(",", headerValues));
+                        string.Join(',', headerValues));
                 }
             }
 

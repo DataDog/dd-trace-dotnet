@@ -75,7 +75,7 @@ namespace Datadog.Trace.PlatformHelpers
                 return;
             }
 
-            var firstWord = fullVersion.IndexOf(value: " ", StringComparison.OrdinalIgnoreCase);
+            var firstWord = fullVersion.IndexOf(value: ' ');
             if (firstWord < 0)
             {
                 return;

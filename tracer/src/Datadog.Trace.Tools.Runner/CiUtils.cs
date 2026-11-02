@@ -825,7 +825,7 @@ internal static class CiUtils
         {
             var argument = line.Trim();
             if (StringUtil.IsNullOrEmpty(argument) ||
-                argument.StartsWith("#", StringComparison.Ordinal))
+                argument.StartsWith('#'))
             {
                 continue;
             }
