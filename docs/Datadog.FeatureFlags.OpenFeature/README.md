@@ -74,12 +74,9 @@ Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/
 
 ## Exposures in your own data store
 
-The provider sends exposures to Datadog. It also puts its exposure decision and the selected split's
-features into the flag metadata of every evaluation, so any OpenFeature hook can record exposures
-in your own data store (see [Flag metadata](#flag-metadata)).
-
-For convenience, this package ships `ExposureHook`, which reads that metadata for you. It receives
-every completed evaluation, with the same exposure decision the provider uses for Datadog.
+The provider sends exposures to Datadog. To record exposures in your own data store, use
+`ExposureHook`. It receives every completed evaluation, with the same exposure decision that the
+provider uses for Datadog, and the features of the selected split.
 
 ```csharp
 using Datadog.FeatureFlags.OpenFeature;
@@ -144,20 +141,13 @@ does not know and logs a warning once for each one.
 
 ### Flag metadata
 
-The same data is in the evaluation's flag metadata, for hooks that use only the OpenFeature API.
-Read it in the hook's `finally` stage, where the details match what the application receives, and
-skip details that have an error. `ExposureHook` does both.
+The public flag metadata is the `__dd_feature.<key>` entries. There is one entry for each feature of
+the selected split that lists the `HOOK` destination. The value is a `string`, `double` or `bool`.
+Read these entries in the hook's `finally` stage, and skip details that have an error.
 
-| Key | Type | Meaning |
-|---|---|---|
-| `__dd_allocation_key` | String | The selected allocation |
-| `__dd_do_log` | Boolean | Whether the allocation logs exposures. Present when the allocation logs exposures or span enrichment is on |
-| `__dd_exposure_cache_hit` | Boolean | The subject was already exposed. Present only when `__dd_do_log` is true |
-| `__dd_split_serial_id` | Integer | The split's serial id. Present when `__dd_do_log` is present and the split has a serial id |
-| `__dd_feature.<key>` | String, Double or Boolean | One entry for each feature of the selected split that lists the `HOOK` destination |
-
-The tracer and this package ship separately, and the tracer fills the metadata. An older tracer
-emits fewer keys, and the hooks treat a missing key as its fail-safe value.
+Other keys that start with `__dd_` are internal. They can change, and they can be missing. Do not
+read the exposure decision from them. Use `ExposureHook` to get the exposure decision: `IsExposure`,
+`IsCacheHit` and `ShouldSend`.
 
 ### Stop sending exposures to Datadog
 
