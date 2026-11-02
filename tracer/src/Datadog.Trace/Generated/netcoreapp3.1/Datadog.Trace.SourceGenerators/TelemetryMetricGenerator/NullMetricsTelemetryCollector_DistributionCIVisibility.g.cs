@@ -76,6 +76,18 @@ internal sealed partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordDistributionCIVisibilityKnownTestsPagesFetched(double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityKnownTestsTotalFetchMs(double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityKnownTestsTotalRequestMs(double value)
+    {
+    }
+
     public void RecordDistributionCIVisibilityImpactedTestsDetectionRequestMs(double value)
     {
     }
