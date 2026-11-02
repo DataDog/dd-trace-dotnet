@@ -34,7 +34,7 @@ internal abstract class EventMessagePackFormatter<T> : EventMessagePackFormatter
 {
     public virtual T Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public abstract int Serialize(ref byte[] bytes, int offset, T value, IFormatterResolver formatterResolver);

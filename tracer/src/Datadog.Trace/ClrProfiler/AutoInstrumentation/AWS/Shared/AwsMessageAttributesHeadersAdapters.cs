@@ -44,7 +44,7 @@ internal static class AwsMessageAttributesHeadersAdapters
 
         public byte[] TryGetLastBytes(string name)
         {
-            throw new NotImplementedException("this adapter can only be use to write to a StringBuilder, not to read data");
+            throw new NotSupportedException("this adapter can only be use to write to a StringBuilder, not to read data");
         }
 
         public void Add(string key, byte[] value)
@@ -145,7 +145,7 @@ internal static class AwsMessageAttributesHeadersAdapters
 
         public void Add(string name, byte[] value)
         {
-            throw new NotImplementedException("this is meant to read attributes only, not write them");
+            throw new NotSupportedException("this is meant to read attributes only, not write them");
         }
 
         private static bool IsCompletePathwayEncoding(Span<byte> bytes)

@@ -35,7 +35,7 @@ internal readonly struct CarrierWithDelegate<TCarrier> : IHeadersCollection
             return _getter(_carrier, name);
         }
 
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public void Set(string name, string value)
@@ -46,7 +46,7 @@ internal readonly struct CarrierWithDelegate<TCarrier> : IHeadersCollection
         }
         else
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 
@@ -58,12 +58,12 @@ internal readonly struct CarrierWithDelegate<TCarrier> : IHeadersCollection
         }
         else
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 
     public void Remove(string name)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }
