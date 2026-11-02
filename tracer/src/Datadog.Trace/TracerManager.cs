@@ -26,7 +26,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.OpenTelemetry;
-using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
@@ -876,9 +875,6 @@ namespace Datadog.Trace
 
             // Record the service discovery metadata
             ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
-
-            // Must run after the process context has been published, since it extends it in place
-            OtelProcessContextAnnouncer.Announce(tracerSettings);
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);

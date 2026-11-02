@@ -127,6 +127,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             log.Should().NotContain(
                 "OpenTelemetry thread context publication was requested but is unavailable",
                 "the feature is supported on this platform, so it must not fall back to a no-op");
+
+            log.Should().NotContain(
+                "Failed to include OpenTelemetry thread context metadata",
+                "libdatadog must include the discovery metadata before publishing the process context");
         }
 
         private static void AssertThreadContext(
