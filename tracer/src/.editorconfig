@@ -136,7 +136,6 @@ dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of Sequence
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0159.severity = none # Use 'Order' instead of 'OrderBy'
-dotnet_diagnostic.MA0160.severity = none # Use ContainsKey instead of TryGetValue
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - drop `in` for small/BCL/Nullable types, make our structs readonly where possible, and suppress where `in` is required (P/Invoke, IAST aspect signatures)
 dotnet_diagnostic.MA0176.severity = none # Optimize guid creation
 dotnet_diagnostic.MA0179.severity = none # Use Attribute.IsDefined instead of GetCustomAttribute(s)
