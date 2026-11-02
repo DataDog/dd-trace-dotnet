@@ -8,7 +8,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -689,7 +688,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
 
             var first = contexts[0].SpanContext;
-            return contexts.All(ctx =>
+            return contexts.TrueForAll(ctx =>
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);

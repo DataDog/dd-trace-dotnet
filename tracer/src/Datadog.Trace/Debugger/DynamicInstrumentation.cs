@@ -822,7 +822,7 @@ namespace Datadog.Trace.Debugger
 
                 foreach (var updateResult in updateResults)
                 {
-                    var config = configs.FirstOrDefault(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
+                    var config = configs.Find(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
                     if (config != null)
                     {
                         result.Add(

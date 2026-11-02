@@ -288,7 +288,7 @@ internal static class MethodMatcher
         // If we have multiple candidates, try to match by async method builder attribute
         if (candidates.Count > 1)
         {
-            var matchingMethod = candidates.FirstOrDefault(HasMatchingAsyncMethodBuilder);
+            var matchingMethod = candidates.Find(HasMatchingAsyncMethodBuilder);
             if (matchingMethod != null)
             {
                 return matchingMethod;

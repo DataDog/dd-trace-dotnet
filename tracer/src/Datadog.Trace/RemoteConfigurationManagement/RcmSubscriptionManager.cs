@@ -350,7 +350,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                     continue;
                 }
 
-                var targetFile = response.TargetFiles?.FirstOrDefault(file => file.Path == remoteConfigurationPath.Path);
+                var targetFile = response.TargetFiles?.Find(file => file.Path == remoteConfigurationPath.Path);
                 if (targetFile is null)
                 {
                     ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
