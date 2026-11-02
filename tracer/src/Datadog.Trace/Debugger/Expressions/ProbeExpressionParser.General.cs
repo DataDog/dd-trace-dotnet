@@ -545,7 +545,7 @@ internal partial class ProbeExpressionParser<T>
 
     private ConstantExpression RedactedValue()
     {
-        return Expression.Constant("{REDACTED}");
+        return Expression.Constant(RedactedValueDump);
     }
 
     private GotoExpression ReturnDefaultValueExpression()

@@ -25,6 +25,7 @@ namespace Datadog.Trace.FeatureFlags
     internal sealed class FeatureFlagsEvaluator
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
+        internal const string MetadataErrorCode = "errorCode";
 
         internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
         internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
@@ -51,6 +52,11 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         private delegate bool NumberEquality(double a, double b);
+
+        /// <summary>
+        /// Gets the configuration this evaluator resolves against, which diagnostics use to identify it.
+        /// </summary>
+        internal ServerConfiguration? Configuration => _config;
 
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
@@ -615,7 +621,7 @@ namespace Datadog.Trace.FeatureFlags
             return int.Parse(Convert.ToString(value)!, CultureInfo.InvariantCulture);
         }
 
-        private static string? AllocationKey(Evaluation evaluation)
+        internal static string? AllocationKey(Evaluation evaluation)
         {
             if (evaluation.FlagMetadata == null)
             {
@@ -623,6 +629,20 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return evaluation.FlagMetadata.TryGetValue(MetadataAllocationKey, out var key) ? key : null;
+        }
+
+        /// <summary>
+        /// Returns the structured error code, which is always one of a fixed set, unlike
+        /// <see cref="Evaluation.Error"/>, which can carry an exception message.
+        /// </summary>
+        internal static string? ErrorCode(Evaluation evaluation)
+        {
+            if (evaluation.FlagMetadata == null)
+            {
+                return null;
+            }
+
+            return evaluation.FlagMetadata.TryGetValue(MetadataErrorCode, out var code) ? code : null;
         }
 
         internal static IDictionary<string, object?> FlattenContext(EvaluationContext? context)
@@ -745,6 +765,10 @@ namespace Datadog.Trace.FeatureFlags
             {
                 DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
             }
+            else
+            {
+                Log.Debug<string, string>("Feature Flags: exposure not recorded for {FlagKey}: allocation {AllocationKey} has exposure logging disabled", flagKey, allocation.Key);
+            }
 
             return evaluation;
 
@@ -776,6 +800,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (allocationKey == null || variantKey == null)
             {
+                Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
                 return;
             }
 

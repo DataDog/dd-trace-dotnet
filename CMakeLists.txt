@@ -16,7 +16,8 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.APM.Native" VERSION 2.18.0)
+include("${CMAKE_CURRENT_LIST_DIR}/build/cmake/DdVersion.cmake")
+project("Datadog.APM.Native" VERSION ${DD_VERSION})
 
 # ******************************************************
 # Environment detection

@@ -76,8 +76,7 @@ internal sealed partial class CircularChannel : IChannel
             initiallyOwned: false,
             FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}");
 
-        var hasHandle = _mutex.WaitOne(_settings.MutexTimeout);
-        if (!hasHandle)
+        if (!TryAcquireMutex())
         {
             throw new TimeoutException("CircularChannel: Failed to acquire mutex within the time limit.");
         }
@@ -87,16 +86,24 @@ internal sealed partial class CircularChannel : IChannel
             // Let's open or create the file we want to map
             var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
 
-            // Ensure we have the correct size
-            stream.SetLength(_settings.BufferSize);
+            // Only a file we have just created, or one with an unexpected size, needs initializing. The other side of
+            // the channel may already be using an existing one, and resetting its pointers drops every unread message.
+            var initialize = stream.Length != _settings.BufferSize;
+            if (initialize)
+            {
+                stream.SetLength(_settings.BufferSize);
+            }
 
             // Create the memory mapped file from the stream
             _mmf = MemoryMappedFile.CreateFromFile(stream, mapName: null, _settings.BufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, leaveOpen: false);
 
-            // Initialize the write and read pointer
-            using var accessor = _mmf.CreateViewAccessor();
-            accessor.Write(0, (ushort)0); // Write pointer
-            accessor.Write(2, (ushort)0); // Read pointer
+            if (initialize)
+            {
+                // Initialize the write and read pointer
+                using var accessor = _mmf.CreateViewAccessor();
+                accessor.Write(0, (ushort)0); // Write pointer
+                accessor.Write(2, (ushort)0); // Read pointer
+            }
         }
         finally
         {
@@ -129,5 +136,23 @@ internal sealed partial class CircularChannel : IChannel
         _reader?.Dispose();
         _mmf.Dispose();
         _mutex.Dispose();
+    }
+
+    /// <summary>
+    /// Waits for the channel mutex. WaitOne grants ownership even when the previous owner abandoned the mutex,
+    /// so an abandoned mutex counts as acquired and the caller must release it as usual.
+    /// </summary>
+    /// <returns>False when the mutex wasn't acquired within the configured timeout.</returns>
+    private bool TryAcquireMutex()
+    {
+        try
+        {
+            return _mutex.WaitOne(_settings.MutexTimeout);
+        }
+        catch (AbandonedMutexException ex)
+        {
+            Log.Warning(ex, "CircularChannel: Mutex was abandoned. Continuing with ownership.");
+            return true;
+        }
     }
 }

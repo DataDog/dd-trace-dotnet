@@ -28,13 +28,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private const int Fixed64 = 1;
         private const int LengthDelimited = 2;
 
-        private readonly OtlpTemporalityPreference _otlpMetricsTemporalityPreference;
         private byte[] _cachedResourceData;
 
-        public OtlpMetricsSerializer(TracerSettings settings, OtlpTemporalityPreference otlpMetricsTemporalityPreference)
+        public OtlpMetricsSerializer(TracerSettings settings)
         {
-            _otlpMetricsTemporalityPreference = otlpMetricsTemporalityPreference;
-
             UpdateCachedResourceData(settings.Manager.InitialMutableSettings);
             settings.Manager.SubscribeToChanges(changes =>
             {
@@ -82,6 +79,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             return sb.ToString();
         }
+
+        /// <summary>
+        /// Returns the temporality the data point was aggregated with, so the exported label always matches the values.
+        /// Points are grouped by instrument type, so every point in a group shares the same temporality.
+        /// </summary>
+        private static AggregationTemporality GetAggregationTemporality(MetricPoint metric)
+            => metric.AggregationTemporality ?? AggregationTemporality.Cumulative;
 
         private byte[] SerializeResourceMetrics(IReadOnlyList<MetricPoint> metrics)
         {
@@ -337,28 +341,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
 
             var firstMetric = metrics[0];
-            AggregationTemporality temporality;
-            bool isMonotonic;
-
-            if (firstMetric.InstrumentType is InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter)
-            {
-                temporality = AggregationTemporality.Cumulative;
-                isMonotonic = false;
-            }
-            else
-            {
-                temporality = _otlpMetricsTemporalityPreference switch
-                {
-                    OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
-                    OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
-                    OtlpTemporalityPreference.Cumulative => AggregationTemporality.Cumulative,
-                    _ => AggregationTemporality.Delta
-                };
-                isMonotonic = true;
-            }
+            var isMonotonic = firstMetric.InstrumentType is not (InstrumentType.UpDownCounter or InstrumentType.ObservableUpDownCounter);
 
             WriteTag(writer, FieldNumbers.AggregationTemporality, VarInt);
-            WriteVarInt(writer, (int)temporality);
+            WriteVarInt(writer, (int)GetAggregationTemporality(firstMetric));
 
             WriteTag(writer, FieldNumbers.IsMonotonic, VarInt);
             WriteVarInt(writer, isMonotonic ? 1 : 0);
@@ -395,15 +381,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 writer.Write(dataPointData);
             }
 
-            var temporality = _otlpMetricsTemporalityPreference switch
-            {
-                OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
-                OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
-                OtlpTemporalityPreference.Cumulative => AggregationTemporality.Cumulative,
-                _ => AggregationTemporality.Delta
-            };
             WriteTag(writer, FieldNumbers.AggregationTemporality, VarInt);
-            WriteVarInt(writer, (int)temporality);
+            WriteVarInt(writer, (int)GetAggregationTemporality(metrics[0]));
 
             return buffer.ToArray();
         }
