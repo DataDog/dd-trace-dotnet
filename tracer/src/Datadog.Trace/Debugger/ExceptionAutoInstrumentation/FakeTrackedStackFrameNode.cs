@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 if (ActiveChildNodes?.Count > 0)
                 {
-                    var firstChild = ActiveChildNodes.First();
+                    var firstChild = ActiveChildNodes[0];
                     return firstChild.LeaveSequenceHash;
                 }
 
