@@ -673,7 +673,7 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                IEnumerable<PropertyInfo> newProps = imInterface.GetProperties().Where(p => selectedProperties.All(i => i.Name != p.Name));
+                IEnumerable<PropertyInfo> newProps = imInterface.GetProperties().Where(p => selectedProperties.TrueForAll(i => i.Name != p.Name));
                 selectedProperties.AddRange(newProps);
             }
         }
