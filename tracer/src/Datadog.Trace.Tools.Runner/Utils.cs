@@ -364,7 +364,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             if (string.IsNullOrEmpty(command))
             {
-                return new string[0];
+                return [];
             }
 
             var inQuote = false;

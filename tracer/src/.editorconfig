@@ -106,7 +106,6 @@ dotnet_diagnostic.MA0189.severity = none # Use InlineArray instead of fixed-size
 # except where the note on the line says the rule was skipped, and why.
 # ---------------------------------------------------------------------------------------------------
 dotnet_diagnostic.MA0003.severity = none # Add parameter name to improve readability - ~940 null/bool literal arguments across ~350 files. Mechanical (code fix available in the IDE), but a large diff
-dotnet_diagnostic.MA0005.severity = none # Use Array.Empty<T>()
 dotnet_diagnostic.MA0007.severity = none # Add a comma after the last value - StyleCop SA1413 (suppressed in tracer/GlobalSuppressions.cs) should be re-enabled at the same time. Trailing commas simplify merge conflicts
 dotnet_diagnostic.MA0009.severity = none # Add regex evaluation timeout
 dotnet_diagnostic.MA0010.severity = none # Mark attributes with AttributeUsageAttribute
