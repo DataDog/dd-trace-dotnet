@@ -26,6 +26,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 internal static class FeatureFlagsSdk
 {
     private static readonly ConditionalWeakTable<ImmutableMetadata, SplitFeatures> Features = new();
+    private static readonly string[] FeaturePrefixes = [FeatureFlagMetadataKeys.FeaturePrefix, FeatureFlagMetadataKeys.ExposureFeaturePrefix, FeatureFlagMetadataKeys.EvaluationFeaturePrefix];
 
     // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
     private static readonly ConditionalWeakTable<ImmutableMetadata, EvaluationContext> EvaluatedContexts = new();
@@ -243,9 +244,15 @@ internal static class FeatureFlagsSdk
         Dictionary<string, object?>? evaluationFeatures = null;
         if (metadata is not null)
         {
+            var featureTypes = metadata.TryGetValue(FeatureFlagMetadataKeys.FeatureTypes, out var encodedTypes) ? ParseFeatureTypes(encodedTypes) : null;
             foreach (var pair in metadata)
             {
-                var converted = ConvertMetadataValue(pair.Key, pair.Value);
+                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes)
+                {
+                    continue;
+                }
+
+                var converted = ConvertMetadataValue(pair.Key, pair.Value, featureTypes);
                 dic[pair.Key] = converted;
                 if (pair.Key.StartsWith(FeatureFlagMetadataKeys.FeaturePrefix, StringComparison.Ordinal))
                 {
@@ -285,7 +292,7 @@ internal static class FeatureFlagsSdk
 
     // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
     // typed values, so the keys with a known type are converted here.
-    private static object ConvertMetadataValue(string key, string value)
+    private static object ConvertMetadataValue(string key, string value, Dictionary<string, char>? featureTypes)
     {
         if (key == FeatureFlagMetadataKeys.DoLog || key == FeatureFlagMetadataKeys.ExposureCacheHit)
         {
@@ -299,34 +306,65 @@ internal static class FeatureFlagsSdk
             return unchecked((int)serialId);
         }
 
-        if (key.StartsWith(FeatureFlagMetadataKeys.FeaturePrefix, StringComparison.Ordinal)
-            || key.StartsWith(FeatureFlagMetadataKeys.ExposureFeaturePrefix, StringComparison.Ordinal)
-            || key.StartsWith(FeatureFlagMetadataKeys.EvaluationFeaturePrefix, StringComparison.Ordinal))
+        if (FeatureKey(key) is { } featureKey)
         {
-            return ConvertFeatureValue(value);
+            return ConvertFeatureValue(value, featureTypes is not null && featureTypes.TryGetValue(featureKey, out var type) ? type : '\0');
         }
 
         return value;
     }
 
-    // Feature values cross the package boundary as strings; the evaluator encodes booleans and
-    // numbers so this restores their type. A string feature whose value happens to look like a
-    // boolean or a number is indistinguishable after that channel and comes back typed.
-    private static object ConvertFeatureValue(string value)
+    private static string? FeatureKey(string metadataKey)
     {
-        if (value == "true")
+        foreach (var prefix in FeaturePrefixes)
         {
-            return true;
+            if (metadataKey.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return metadataKey.Substring(prefix.Length);
+            }
         }
 
-        if (value == "false")
+        return null;
+    }
+
+    // A value is a boolean or a number only when the tracer listed it as one, so a string feature
+    // whose value looks like a boolean or a number stays a string.
+    private static object ConvertFeatureValue(string value, char type) => type switch
+    {
+        'b' when value == "true" => true,
+        'b' when value == "false" => false,
+        'n' when double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => number,
+        _ => value,
+    };
+
+    // Reads FeatureFlagMetadataKeys.FeatureTypes. A malformed item never fails the evaluation: an
+    // unknown type letter skips that item, and a broken length prefix ends parsing, so the remaining
+    // values stay strings.
+    private static Dictionary<string, char>? ParseFeatureTypes(string encoded)
+    {
+        Dictionary<string, char>? types = null;
+        var position = 0;
+        while (position < encoded.Length)
         {
-            return false;
+            var colon = encoded.IndexOf(':', position);
+            if (colon <= position
+                || !int.TryParse(encoded.Substring(position, colon - position), NumberStyles.None, CultureInfo.InvariantCulture, out var length)
+                || length > encoded.Length - colon - 2)
+            {
+                break;
+            }
+
+            var key = encoded.Substring(colon + 1, length);
+            var type = encoded[colon + 1 + length];
+            position = colon + 2 + length;
+            if (type is 'b' or 'n')
+            {
+                types ??= new Dictionary<string, char>(StringComparer.Ordinal);
+                types[key] = type;
+            }
         }
 
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
-            ? number
-            : value;
+        return types;
     }
 
     public static Value JsonToValue(object? obj)

@@ -438,6 +438,7 @@ public partial class FeatureFlagsEvaluatorTests
         metadata["__dd_evaluation_feature.internal.count"].Should().Be("3");
         metadata.Keys.Should().NotContain("__dd_exposure_feature.holdout.assignment_group");
         metadata.Keys.Should().NotContain("__dd_feature.internal.count");
+        metadata[FeatureFlagMetadataKeys.FeatureTypes].Should().Be("42:holdout.should_include_in_holdout_analysisb14:internal.countn13:exposure.onlyn", "only non-string values are listed, once per key");
 
         events.Should().ContainSingle();
         events[0].Features.Should().BeEquivalentTo(new Dictionary<string, object> { ["holdout.key"] = "06ad", ["exposure.only"] = 7d });
@@ -486,7 +487,27 @@ public partial class FeatureFlagsEvaluatorTests
 
         result.FlagMetadata!.Keys.Should().NotContain(k => k.StartsWith("__dd_feature.", StringComparison.Ordinal)
                                                         || k.StartsWith("__dd_exposure_feature.", StringComparison.Ordinal)
-                                                        || k.StartsWith("__dd_evaluation_feature.", StringComparison.Ordinal));
+                                                        || k.StartsWith("__dd_evaluation_feature.", StringComparison.Ordinal)
+                                                        || k == FeatureFlagMetadataKeys.FeatureTypes);
+    }
+
+    [Fact]
+    public void StringFeaturesThatLookTypedAreNotListedAsTyped()
+    {
+        var features = new List<Feature>
+        {
+            new("looks.bool", "true", new List<string> { "HOOK" }),
+            new("looks.number", "2026", new List<string> { "EVALUATION" }),
+            new("unknown.only", true, new List<string> { "SOMEWHERE_NEW" }),
+        };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features, doLog: false) });
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        var metadata = result.FlagMetadata!;
+        metadata["__dd_feature.looks.bool"].Should().Be("true");
+        metadata["__dd_evaluation_feature.looks.number"].Should().Be("2026");
+        metadata[FeatureFlagMetadataKeys.FeatureTypes].Should().BeEmpty("the marker is present, and lists neither strings nor features that went nowhere");
     }
 
     [Fact]

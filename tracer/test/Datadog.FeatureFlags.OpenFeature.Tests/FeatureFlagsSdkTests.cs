@@ -130,6 +130,7 @@ public class FeatureFlagsSdkTests
             ["__dd_feature.holdout.key"] = "06ad",
             ["__dd_feature.holdout.should_include_in_holdout_analysis"] = "false",
             ["__dd_feature.internal.count"] = "3.5",
+            [FeatureFlagMetadataKeys.FeatureTypes] = "42:holdout.should_include_in_holdout_analysisb14:internal.countn",
             ["errorCode"] = string.Empty,
         };
 
@@ -145,6 +146,77 @@ public class FeatureFlagsSdkTests
         converted.GetString("__dd_feature.holdout.key").Should().Be("06ad");
         converted.GetBool("__dd_feature.holdout.should_include_in_holdout_analysis").Should().BeFalse();
         converted.GetDouble("__dd_feature.internal.count").Should().Be(3.5);
+        converted.GetString(FeatureFlagMetadataKeys.FeatureTypes).Should().BeNull("the type marker is internal to the provider");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("4:flagb")]
+    public void StringFeaturesThatLookTypedStayStrings(string? types)
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            ["__dd_feature.flag"] = "true",
+            ["__dd_feature.year"] = "2026",
+            ["__dd_evaluation_feature.year"] = "2026",
+        };
+        if (types is not null)
+        {
+            metadata[FeatureFlagMetadataKeys.FeatureTypes] = types;
+        }
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), 1);
+
+        var converted = result.FlagMetadata!;
+        converted.GetString("__dd_feature.flag").Should().Be(types == "4:flagb" ? null : "true");
+        converted.GetString("__dd_feature.year").Should().Be("2026");
+        FeatureFlagsSdk.GetHookFeatures(converted)!["year"].Should().Be("2026");
+        FeatureFlagsSdk.GetEvaluationFeatures(converted)!["year"].Should().Be("2026");
+        converted.GetString(FeatureFlagMetadataKeys.FeatureTypes).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("4:flag", "a truncated item")]
+    [InlineData("99:flagb", "a length beyond the entry")]
+    [InlineData("x:flagb", "a non-numeric length")]
+    [InlineData("-4:flagb", "a signed length")]
+    [InlineData("4flagb", "a missing separator")]
+    [InlineData("99999999999999999999:flagb", "an overflowing length")]
+    [InlineData("4:flagz", "an unknown type letter")]
+    [InlineData("7:missingb", "a listed key with no matching feature")]
+    [InlineData("4:yearb", "a value that is not of the listed type")]
+    public void AMalformedTypeMarkerFallsBackToStrings(string types, string because)
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            ["__dd_feature.flag"] = "true",
+            ["__dd_feature.year"] = "2026",
+            [FeatureFlagMetadataKeys.FeatureTypes] = types,
+        };
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+
+        result.ErrorType.Should().Be(ErrorType.None, because);
+        result.FlagMetadata!.GetString("__dd_feature.flag").Should().Be("true", because);
+        result.FlagMetadata!.GetString("__dd_feature.year").Should().Be("2026", because);
+        result.FlagMetadata!.GetString(FeatureFlagMetadataKeys.FeatureTypes).Should().BeNull(because);
+    }
+
+    [Fact]
+    public void AnUnknownTypeLetterSkipsOnlyItsOwnItem()
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            ["__dd_feature.flag"] = "true",
+            ["__dd_feature.year"] = "2026",
+            [FeatureFlagMetadataKeys.FeatureTypes] = "4:flagz4:yearn",
+        };
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);
+
+        result.FlagMetadata!.GetString("__dd_feature.flag").Should().Be("true");
+        result.FlagMetadata!.GetDouble("__dd_feature.year").Should().Be(2026);
     }
 
     [Fact]
@@ -165,6 +237,7 @@ public class FeatureFlagsSdkTests
             ["__dd_feature.holdout.key"] = "06ad",
             ["__dd_feature.holdout.should_include_in_holdout_analysis"] = "false",
             ["__dd_exposure_feature.holdout.key"] = "06ad",
+            [FeatureFlagMetadataKeys.FeatureTypes] = "42:holdout.should_include_in_holdout_analysisb",
         };
 
         var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null);

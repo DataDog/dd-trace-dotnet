@@ -103,6 +103,7 @@ public class FlagEvalEVPHookTests
         {
             metadata[FeatureFlagMetadataKeys.EvaluationFeaturePrefix + "holdout.key"] = "h1";
             metadata[FeatureFlagMetadataKeys.EvaluationFeaturePrefix + "holdout.should_include_in_holdout_analysis"] = "false";
+            metadata[FeatureFlagMetadataKeys.FeatureTypes] = "42:holdout.should_include_in_holdout_analysisb";
         }
 
         var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new MetadataEvaluation(metadata), 1234);
