@@ -14,7 +14,7 @@ internal static class TypeExtensions
 {
     public static bool IsAnonymous(this TypeInfo type)
     {
-        return type.GetCustomAttribute<CompilerGeneratedAttribute>() != null
+        return Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute))
             && type.IsGenericType && type.Name.Contains("AnonymousType")
             && (type.Name.StartsWithOrdinal("<>") || type.Name.StartsWithOrdinal("VB$"))
             && (type.Attributes & TypeAttributes.Public) != TypeAttributes.Public;
