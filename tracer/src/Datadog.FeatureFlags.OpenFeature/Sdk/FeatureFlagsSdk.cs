@@ -252,17 +252,24 @@ internal static class FeatureFlagsSdk
                     continue;
                 }
 
-                var converted = ConvertMetadataValue(pair.Key, pair.Value, featureTypes);
+                if (FeaturePrefixOf(pair.Key) is not { } prefix)
+                {
+                    dic[pair.Key] = ConvertMetadataValue(pair.Key, pair.Value);
+                    continue;
+                }
+
+                var featureKey = pair.Key.Substring(prefix.Length);
+                var converted = ConvertFeatureValue(pair.Value, featureTypes is not null && featureTypes.TryGetValue(featureKey, out var type) ? type : '\0');
                 dic[pair.Key] = converted;
-                if (pair.Key.StartsWith(FeatureFlagMetadataKeys.FeaturePrefix, StringComparison.Ordinal))
+                if (prefix == FeatureFlagMetadataKeys.FeaturePrefix)
                 {
                     hookFeatures ??= new Dictionary<string, object>();
-                    hookFeatures[pair.Key.Substring(FeatureFlagMetadataKeys.FeaturePrefix.Length)] = converted;
+                    hookFeatures[featureKey] = converted;
                 }
-                else if (pair.Key.StartsWith(FeatureFlagMetadataKeys.EvaluationFeaturePrefix, StringComparison.Ordinal))
+                else if (prefix == FeatureFlagMetadataKeys.EvaluationFeaturePrefix)
                 {
                     evaluationFeatures ??= new Dictionary<string, object?>();
-                    evaluationFeatures[pair.Key.Substring(FeatureFlagMetadataKeys.EvaluationFeaturePrefix.Length)] = converted;
+                    evaluationFeatures[featureKey] = converted;
                 }
             }
         }
@@ -292,7 +299,7 @@ internal static class FeatureFlagsSdk
 
     // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
     // typed values, so the keys with a known type are converted here.
-    private static object ConvertMetadataValue(string key, string value, Dictionary<string, char>? featureTypes)
+    private static object ConvertMetadataValue(string key, string value)
     {
         if (key == FeatureFlagMetadataKeys.DoLog || key == FeatureFlagMetadataKeys.ExposureCacheHit)
         {
@@ -306,21 +313,16 @@ internal static class FeatureFlagsSdk
             return unchecked((int)serialId);
         }
 
-        if (FeatureKey(key) is { } featureKey)
-        {
-            return ConvertFeatureValue(value, featureTypes is not null && featureTypes.TryGetValue(featureKey, out var type) ? type : '\0');
-        }
-
         return value;
     }
 
-    private static string? FeatureKey(string metadataKey)
+    private static string? FeaturePrefixOf(string metadataKey)
     {
         foreach (var prefix in FeaturePrefixes)
         {
             if (metadataKey.StartsWith(prefix, StringComparison.Ordinal))
             {
-                return metadataKey.Substring(prefix.Length);
+                return prefix;
             }
         }
 
