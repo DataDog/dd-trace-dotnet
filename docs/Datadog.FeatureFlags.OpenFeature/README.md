@@ -121,6 +121,17 @@ OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
   level, later ones at debug level; pass an `ILogger` to the hook to route them, otherwise they go
   to `System.Diagnostics.Trace`.
 
+### When exposures are sent
+
+The provider records and sends an exposure only after OpenFeature has completed the evaluation
+without an error, so an evaluation that a later hook fails sends and records nothing. This needs a
+tracer version that supports it; with an older tracer, the tracer sends the exposure during the
+evaluation, before hooks run.
+
+The exposure is sent from a provider hook. If you call the provider's `Resolve...ValueAsync` methods
+directly instead of through an OpenFeature client, no hooks run and no exposure is sent or recorded.
+The synchronous methods below run the provider's hooks and do send exposures.
+
 ### Features
 
 `Features` returns the features of the selected split whose destinations include the customer

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -69,6 +70,10 @@ namespace Datadog.Trace.FeatureFlags
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Keyed by the metadata dictionary handed to the provider, which hands the same instance back
+        // to commit. An evaluation that is never committed (an error, or no hooks ran) is collected.
+        private readonly ConditionalWeakTable<IDictionary<string, string>, StrongBox<ExposureEvent>> _deferredExposures = new();
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -419,7 +424,7 @@ namespace Datadog.Trace.FeatureFlags
             InvokeConfigurationHandler(replay, "RegisterOnNewConfigEventHandler");
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure = false)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
@@ -439,7 +444,11 @@ namespace Datadog.Trace.FeatureFlags
                 return notReady;
             }
 
-            var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
+            var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes), deferExposure);
+            if (evaluation.PendingExposure is { } pending && evaluation.FlagMetadata is { } metadata)
+            {
+                _deferredExposures.Add(metadata, new StrongBox<ExposureEvent>(pending));
+            }
 
             LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
 
@@ -864,6 +873,23 @@ namespace Datadog.Trace.FeatureFlags
 
                 return res;
             }
+        }
+
+        /// <summary>
+        /// Records and sends the exposure deferred by an evaluation, once that evaluation has completed
+        /// without an error. Returns one of the <see cref="ExposureCommitResult"/> values; a second
+        /// commit for the same evaluation finds nothing pending.
+        /// </summary>
+        internal int CommitExposure(IDictionary<string, string>? evaluationMetadata)
+        {
+            if (evaluationMetadata is null
+                || !_deferredExposures.TryGetValue(evaluationMetadata, out var pending)
+                || !_deferredExposures.Remove(evaluationMetadata))
+            {
+                return ExposureCommitResult.NothingPending;
+            }
+
+            return ReportExposure(pending.Value) == ExposureRecordResult.Repeat ? ExposureCommitResult.Repeat : ExposureCommitResult.New;
         }
 
         private ExposureRecordResult ReportExposure(in ExposureEvent exposure)

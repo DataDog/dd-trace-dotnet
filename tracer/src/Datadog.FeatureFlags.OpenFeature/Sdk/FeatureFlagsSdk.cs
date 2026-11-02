@@ -25,7 +25,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
-    private static readonly ConditionalWeakTable<ImmutableMetadata, SplitFeatures> Features = new();
+    private static readonly ConditionalWeakTable<ImmutableMetadata, ResultState> Results = new();
     private static readonly string[] FeaturePrefixes = [FeatureFlagMetadataKeys.FeaturePrefix, FeatureFlagMetadataKeys.ExposureFeaturePrefix, FeatureFlagMetadataKeys.EvaluationFeaturePrefix];
 
     // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
@@ -94,6 +94,28 @@ internal static class FeatureFlagsSdk
     {
     }
 
+    /// <summary>Gets a value indicating whether the tracer supports <see cref="EvaluateDeferred"/> and <see cref="CommitExposure"/>.</summary>
+    /// <returns> True when the tracer intercepts both </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool CanDeferExposures() => false;
+
+    // Like Evaluate, but the tracer keeps the exposure pending instead of recording and sending it.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static IEvaluation? EvaluateDeferred(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+    {
+        if (flagKey is null)
+        {
+            throw new ArgumentNullException(nameof(flagKey));
+        }
+
+        return null;
+    }
+
+    // Takes the metadata dictionary instance that EvaluateDeferred returned: the tracer finds the
+    // pending exposure by that reference, so a copy would commit nothing.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static int CommitExposure(IDictionary<string, string> evaluationMetadata) => ExposureCommitResult.NothingPending;
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static IEvaluation? Evaluate(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
     {
@@ -117,14 +139,14 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool deferredExposure = false)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
         var evaluation = evaluate is null
                              ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
-        var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
+        var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs, deferredExposure);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
         // Only exposures need the context in ExposureHook, so other evaluations skip the table.
         if (context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
@@ -160,17 +182,43 @@ internal static class FeatureFlagsSdk
     /// records the typed map beside the result it built; the entry dies with the result.
     /// </summary>
     internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
-        => metadata is not null && Features.TryGetValue(metadata, out var features) ? features.Hook : null;
+        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state.HookFeatures : null;
 
     /// <summary>The selected split's EVALUATION-destination features, for evaluation counts.</summary>
     internal static IReadOnlyDictionary<string, object?>? GetEvaluationFeatures(ImmutableMetadata? metadata)
-        => metadata is not null && Features.TryGetValue(metadata, out var features) ? features.Evaluation : null;
+        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state.EvaluationFeatures : null;
 
     /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
         => metadata is not null && EvaluatedContexts.TryGetValue(metadata, out var context) ? context : null;
 
-    internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs)
+    /// <summary>
+    /// Commits the exposure that a deferred evaluation left pending, at most once per result, and keeps
+    /// the verdict for <see cref="GetExposureCacheHit"/>.
+    /// </summary>
+    internal static void CommitPendingExposure(ImmutableMetadata? metadata, Func<IDictionary<string, string>, int> commit)
+    {
+        if (metadata is null || !Results.TryGetValue(metadata, out var state)
+            || Interlocked.Exchange(ref state.PendingExposure, null) is not { } evaluationMetadata)
+        {
+            return;
+        }
+
+        state.ExposureVerdict = commit(evaluationMetadata);
+    }
+
+    /// <summary>The verdict of the committed exposure, or null when this result committed none.</summary>
+    internal static bool? GetExposureCacheHit(ImmutableMetadata? metadata)
+        => metadata is not null && Results.TryGetValue(metadata, out var state)
+               ? state.ExposureVerdict switch
+               {
+                   ExposureCommitResult.New => false,
+                   ExposureCommitResult.Repeat => true,
+                   _ => null,
+               }
+               : null;
+
+    internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs, bool deferredExposure = false)
     {
         // OpenFeature substitutes the caller's default only when a provider throws. This provider
         // reports errors as details instead, so every error must carry the default itself.
@@ -183,7 +231,7 @@ internal static class FeatureFlagsSdk
                         default,
                         default,
                         "FeatureFlagsSdk is disabled",
-                        ToMetadata(null, evalTimeMs));
+                        ToMetadata(null, evalTimeMs, false));
         }
 
         var errorType = ToErrorType(evaluation.Reason, evaluation.Error);
@@ -197,7 +245,7 @@ internal static class FeatureFlagsSdk
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
-            ToMetadata(evaluation.FlagMetadata, evalTimeMs));
+            ToMetadata(evaluation.FlagMetadata, evalTimeMs, deferredExposure));
         return res;
     }
 
@@ -232,7 +280,7 @@ internal static class FeatureFlagsSdk
         _ => "unknown"
     };
 
-    private static ImmutableMetadata? ToMetadata(IDictionary<string, string>? metadata, long? evalTimeMs)
+    private static ImmutableMetadata? ToMetadata(IDictionary<string, string>? metadata, long? evalTimeMs, bool deferredExposure)
     {
         if (metadata is null && evalTimeMs is null)
         {
@@ -289,9 +337,13 @@ internal static class FeatureFlagsSdk
         }
 
         var immutable = new ImmutableMetadata(dic);
-        if (hookFeatures is not null || evaluationFeatures is not null)
+        // Keeps the tracer's own dictionary instance, not a copy, for CommitExposure.
+        var pendingExposure = deferredExposure && metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"
+                                  ? metadata
+                                  : null;
+        if (hookFeatures is not null || evaluationFeatures is not null || pendingExposure is not null)
         {
-            Features.Add(immutable, new SplitFeatures(hookFeatures, evaluationFeatures));
+            Results.Add(immutable, new ResultState(hookFeatures, evaluationFeatures, pendingExposure));
         }
 
         return immutable;
@@ -410,10 +462,15 @@ internal static class FeatureFlagsSdk
         return new Value(array.Select(ConvertObject).ToList());
     }
 
-    private sealed class SplitFeatures(IReadOnlyDictionary<string, object>? hook, IReadOnlyDictionary<string, object?>? evaluation)
+    private sealed class ResultState(IReadOnlyDictionary<string, object>? hookFeatures, IReadOnlyDictionary<string, object?>? evaluationFeatures, IDictionary<string, string>? pendingExposure)
     {
-        internal IReadOnlyDictionary<string, object>? Hook { get; } = hook;
+#pragma warning disable SA1401 // Fields should be private: exchanged atomically, so a commit runs at most once
+        internal IDictionary<string, string>? PendingExposure = pendingExposure;
+        internal volatile int ExposureVerdict = ExposureCommitResult.NothingPending;
+#pragma warning restore SA1401
 
-        internal IReadOnlyDictionary<string, object?>? Evaluation { get; } = evaluation;
+        internal IReadOnlyDictionary<string, object>? HookFeatures { get; } = hookFeatures;
+
+        internal IReadOnlyDictionary<string, object?>? EvaluationFeatures { get; } = evaluationFeatures;
     }
 }
