@@ -7,7 +7,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.FileSystemGlobbing;
 
@@ -198,12 +197,12 @@ internal static class FiltersHelper
             return false;
         }
 
-        if (filter.Count(f => f == '[') > 1)
+        if (filter.IndexOf('[') != filter.LastIndexOf('['))
         {
             return false;
         }
 
-        if (filter.Count(f => f == ']') > 1)
+        if (filter.IndexOf(']') != filter.LastIndexOf(']'))
         {
             return false;
         }
