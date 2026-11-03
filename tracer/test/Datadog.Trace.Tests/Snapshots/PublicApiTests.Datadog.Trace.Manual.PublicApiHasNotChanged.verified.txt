@@ -39,7 +39,7 @@ namespace Datadog.Trace
     }
     public static class HttpHeaderNames
     {
-        [System.Obsolete]
+        [System.Obsolete("This header is used internally by the tracer and should not be referenced.")]
         public const string DatadogTags = "x-datadog-tags";
         public const string Origin = "x-datadog-origin";
         public const string ParentId = "x-datadog-parent-id";
