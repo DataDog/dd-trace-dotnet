@@ -117,7 +117,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         [FieldOffset(8)]
         public double DoubleValue;
 
-        public bool BoolValue => Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL && BoolByte != 0;
+        public readonly bool BoolValue => Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL && BoolByte != 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal object? Decode()
@@ -170,19 +170,19 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal List<string> DecodeStringArray()
+        internal readonly List<string> DecodeStringArray()
         {
             return DecodeArray<string>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal List<object> DecodeObjectArray()
+        internal readonly List<object> DecodeObjectArray()
         {
             return DecodeArray<object>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal unsafe Dictionary<string, object?> DecodeMap()
+        internal readonly unsafe Dictionary<string, object?> DecodeMap()
         {
             var nbEntries = Size;
             var res = new Dictionary<string, object?>(nbEntries);
@@ -213,7 +213,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe List<T> DecodeArray<T>()
+        private readonly unsafe List<T> DecodeArray<T>()
         {
             var nbEntries = Size;
             var res = new List<T>(nbEntries);

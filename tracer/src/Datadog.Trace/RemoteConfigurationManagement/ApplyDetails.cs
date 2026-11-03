@@ -35,7 +35,7 @@ internal struct ApplyDetails
 
     public static ApplyDetails FromError(string fileName, string? error) => new(fileName) { ApplyState = ApplyStates.ERROR, Error = error };
 
-    public override string ToString()
+    public override readonly string ToString()
     {
         return $"{Filename}, {ApplyState}, {Error}";
     }

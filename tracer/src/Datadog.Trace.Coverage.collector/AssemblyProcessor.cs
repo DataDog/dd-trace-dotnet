@@ -1328,7 +1328,7 @@ namespace Datadog.Trace.Coverage.Collector
 
             public HashSet<int> Lines { get; }
 
-            public int MaxLine => Lines.Max();
+            public readonly int MaxLine => Lines.Max();
         }
     }
 }

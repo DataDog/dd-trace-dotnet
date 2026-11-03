@@ -625,7 +625,7 @@ internal static class StringModuleImpl
             ParamCount = 5;
         }
 
-        public string? this[int index]
+        public readonly string? this[int index]
         {
             get
             {
@@ -646,7 +646,7 @@ internal static class StringModuleImpl
             }
         }
 
-        public bool CanBeTainted()
+        public readonly bool CanBeTainted()
         {
             for (int x = 0; x < ParamCount; x++)
             {

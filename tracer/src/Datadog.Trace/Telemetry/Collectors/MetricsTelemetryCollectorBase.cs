@@ -248,7 +248,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
             Tags = tags;
         }
 
-        public bool HasValues => _values is { Count: > 0 };
+        public readonly bool HasValues => _values is { Count: > 0 };
 
         public void AddValue(long timestamp, int value)
         {
@@ -258,7 +258,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
             _values.Add(new(timestamp, value));
         }
 
-        public MetricSeries? GetAndClear()
+        public readonly MetricSeries? GetAndClear()
         {
             if (_values is { Count: > 0 } values)
             {
@@ -281,7 +281,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
             Tags = tags;
         }
 
-        public bool HasValues => _values is { Count: > 0 };
+        public readonly bool HasValues => _values is { Count: > 0 };
 
         public void AddValue(double value)
         {
@@ -289,7 +289,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
             _values.Add(value);
         }
 
-        public List<double>? GetAndClear()
+        public readonly List<double>? GetAndClear()
         {
             if (_values is { Count: > 0 } values)
             {

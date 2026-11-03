@@ -48,7 +48,7 @@ namespace Datadog.Trace.Debugger.PInvoke
             TargetSignatureTypesLength = (ushort)(targetParameterTypesFullName?.Length ?? 0);
         }
 
-        public void Dispose()
+        public readonly void Dispose()
         {
             var ptr = TargetParameterTypes;
             for (var i = 0; i < TargetSignatureTypesLength; i++)

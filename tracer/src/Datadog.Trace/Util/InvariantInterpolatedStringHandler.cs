@@ -52,16 +52,16 @@ internal ref struct InvariantInterpolatedStringHandler
         _builder = StringBuilderCache.Acquire(literalLength + (formattedCount * 11));
     }
 
-    public void AppendLiteral(string value) => _builder.Append(value);
+    public readonly void AppendLiteral(string value) => _builder.Append(value);
 
     // Non-generic overloads for the most common holes, so they don't box on .NET Framework
-    public void AppendFormatted(int value) => _builder.Append(value.ToString(CultureInfo.InvariantCulture));
+    public readonly void AppendFormatted(int value) => _builder.Append(value.ToString(CultureInfo.InvariantCulture));
 
-    public void AppendFormatted(long value) => _builder.Append(value.ToString(CultureInfo.InvariantCulture));
+    public readonly void AppendFormatted(long value) => _builder.Append(value.ToString(CultureInfo.InvariantCulture));
 
-    public void AppendFormatted<T>(T value) => AppendFormatted(value, format: null);
+    public readonly void AppendFormatted<T>(T value) => AppendFormatted(value, format: null);
 
-    public void AppendFormatted<T>(T value, string? format)
+    public readonly void AppendFormatted<T>(T value, string? format)
     {
         if (value is IFormattable formattable)
         {
@@ -73,9 +73,9 @@ internal ref struct InvariantInterpolatedStringHandler
         }
     }
 
-    public void AppendFormatted(string? value) => _builder.Append(value);
+    public readonly void AppendFormatted(string? value) => _builder.Append(value);
 
-    public void AppendFormatted(ReadOnlySpan<char> value)
+    public readonly void AppendFormatted(ReadOnlySpan<char> value)
     {
 #if NETCOREAPP2_1_OR_GREATER
         _builder.Append(value);
@@ -84,6 +84,6 @@ internal ref struct InvariantInterpolatedStringHandler
 #endif
     }
 
-    public string ToStringAndClear() => StringBuilderCache.GetStringAndRelease(_builder);
+    public readonly string ToStringAndClear() => StringBuilderCache.GetStringAndRelease(_builder);
 #endif
 }

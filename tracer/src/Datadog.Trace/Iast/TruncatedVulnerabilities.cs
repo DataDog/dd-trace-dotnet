@@ -29,7 +29,7 @@ internal struct TruncatedVulnerabilities
         this.vulnerabilities = vulnerabilities;
     }
 
-    public List<Vulnerability> Vulnerabilities => vulnerabilities;
+    public readonly List<Vulnerability> Vulnerabilities => vulnerabilities;
 
     public sealed class VulnerabilityConverter : JsonConverter<Vulnerability?>
     {

@@ -50,9 +50,9 @@ internal struct CString : IDisposable
         }
     }
 
-    public unsafe string ToUtf8String() => StringEncoding.UTF8.GetString((byte*)Ptr, (int)Length);
+    public readonly unsafe string ToUtf8String() => StringEncoding.UTF8.GetString((byte*)Ptr, (int)Length);
 
-    public void Dispose()
+    public readonly void Dispose()
     {
         if (Ptr == IntPtr.Zero)
         {

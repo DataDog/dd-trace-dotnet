@@ -22,15 +22,15 @@ internal struct NoThrowAwaiter : ICriticalNotifyCompletion
         _preserveContext = preserveContext;
     }
 
-    public bool IsCompleted => _task.IsCompleted;
+    public readonly bool IsCompleted => _task.IsCompleted;
 
-    public NoThrowAwaiter GetAwaiter() => this;
+    public readonly NoThrowAwaiter GetAwaiter() => this;
 
-    public void GetResult()
+    public readonly void GetResult()
     {
     }
 
-    public void OnCompleted(Action continuation) => _task.ConfigureAwait(_preserveContext).GetAwaiter().OnCompleted(continuation);
+    public readonly void OnCompleted(Action continuation) => _task.ConfigureAwait(_preserveContext).GetAwaiter().OnCompleted(continuation);
 
-    public void UnsafeOnCompleted(Action continuation) => OnCompleted(continuation);
+    public readonly void UnsafeOnCompleted(Action continuation) => OnCompleted(continuation);
 }

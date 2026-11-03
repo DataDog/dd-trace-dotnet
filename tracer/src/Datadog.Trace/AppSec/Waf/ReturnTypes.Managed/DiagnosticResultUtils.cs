@@ -196,7 +196,7 @@ internal struct ReportedDiagnostics
         Rules.Errors = errors;
     }
 
-    public bool HasErrors => Rules.HasErrors || Rest.HasErrors;
+    public readonly bool HasErrors => Rules.HasErrors || Rest.HasErrors;
 }
 
 internal struct WafStats
@@ -212,9 +212,9 @@ internal struct WafStats
     {
     }
 
-    public int Total => (Failed + Loaded + Skipped);
+    public readonly int Total => (Failed + Loaded + Skipped);
 
-    public bool HasErrors => Errors is { Count: > 0 } || Warnings is { Count: > 0 };
+    public readonly bool HasErrors => Errors is { Count: > 0 } || Warnings is { Count: > 0 };
 }
 
 #pragma warning restore SA1402 // File may only contain a single type

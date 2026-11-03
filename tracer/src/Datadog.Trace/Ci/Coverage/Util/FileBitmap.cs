@@ -972,9 +972,9 @@ internal readonly unsafe ref struct FileBitmap
             _size = size;
         }
 
-        public byte Current => _bitMap[_index];
+        public readonly byte Current => _bitMap[_index];
 
-        object IEnumerator.Current => Current;
+        readonly object IEnumerator.Current => Current;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext() => ++_index < _size;
