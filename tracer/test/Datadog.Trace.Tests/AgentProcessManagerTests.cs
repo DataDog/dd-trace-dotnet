@@ -70,6 +70,50 @@ public class AgentProcessManagerTests
                            .Should().Be(KeepAliveAction.None);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("/")]
+    public void CreateMetadata_DefaultsToTheAgentFolderNextToTheTracerHome(string trailingSeparator)
+    {
+        // The site extension ships ...\v3_57_0\Tracer and ...\v3_57_0\Agent side by side
+        var extensionDirectory = Path.Combine(Path.GetTempPath(), "SiteExtensions", "Datadog", "v3_57_0");
+        var agentDirectory = Path.Combine(extensionDirectory, "Agent");
+        var tracerHome = Path.Combine(extensionDirectory, "Tracer") + trailingSeparator;
+
+        var traceAgent = AgentProcessManager.CreateTraceAgentMetadata(tracerHome, pipeName: null, processPath: null, processArguments: null);
+        traceAgent.ProcessPath.Should().Be(Path.Combine(agentDirectory, "datadog-trace-agent.exe"));
+        traceAgent.ProcessArguments.Should().Be("--config " + Path.Combine(agentDirectory, "datadog.yaml"));
+
+        var dogStatsD = AgentProcessManager.CreateDogStatsDMetadata(tracerHome, pipeName: null, processPath: null, processArguments: null);
+        dogStatsD.ProcessPath.Should().Be(Path.Combine(agentDirectory, "dogstatsd.exe"));
+        dogStatsD.ProcessArguments.Should().Be("start -c " + agentDirectory);
+    }
+
+    [Fact]
+    public void CreateMetadata_PrefersTheAgentVariablesOverTheDefaults()
+    {
+        var tracerHome = Path.Combine(Path.GetTempPath(), "v3_57_0", "Tracer");
+
+        var traceAgent = AgentProcessManager.CreateTraceAgentMetadata(tracerHome, "trace-pipe", "custom-trace-agent.exe", "--config custom.yaml");
+        traceAgent.PipeName.Should().Be("trace-pipe");
+        traceAgent.ProcessPath.Should().Be("custom-trace-agent.exe");
+        traceAgent.ProcessArguments.Should().Be("--config custom.yaml");
+
+        var dogStatsD = AgentProcessManager.CreateDogStatsDMetadata(tracerHome, "statsd-pipe", "custom-dogstatsd.exe", "start -c custom");
+        dogStatsD.PipeName.Should().Be("statsd-pipe");
+        dogStatsD.ProcessPath.Should().Be("custom-dogstatsd.exe");
+        dogStatsD.ProcessArguments.Should().Be("start -c custom");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(" ")]
+    public void CreateMetadata_HasNoProcessPathWithoutATracerHome(string tracerHome)
+    {
+        AgentProcessManager.CreateTraceAgentMetadata(tracerHome, null, null, null).ProcessPath.Should().BeNull();
+        AgentProcessManager.CreateDogStatsDMetadata(tracerHome, null, null, null).ProcessPath.Should().BeNull();
+    }
+
     [Fact]
     public async Task ProcessIsHealthyAsync_IgnoresProcessNotStartedByUsWhenPipeIsMissing()
     {

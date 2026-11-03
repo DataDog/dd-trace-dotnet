@@ -38,22 +38,17 @@ namespace Datadog.Trace
         private const int TraceAgentConnectTimeout = 500;
         private const int StopTimeout = 1_000;
 
-        internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
-        {
-            Name = "datadog-trace-agent",
-            IsTraceAgent = true,
-            PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
-            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
-        };
+        internal static readonly ProcessMetadata TraceAgentMetadata = CreateTraceAgentMetadata(
+            tracerHome: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DotNetTracerHome),
+            pipeName: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
+            processPath: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
+            processArguments: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs));
 
-        internal static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
-        {
-            Name = "dogstatsd",
-            PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
-            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
-        };
+        internal static readonly ProcessMetadata DogStatsDMetadata = CreateDogStatsDMetadata(
+            tracerHome: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DotNetTracerHome),
+            pipeName: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
+            processPath: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
+            processArguments: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs));
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
 
@@ -75,6 +70,64 @@ namespace Datadog.Trace
             None,
             Start,
             Restart
+        }
+
+        /// <summary>
+        /// Creates the trace agent's metadata. A path or arguments that aren't set default to the agent the site extension
+        /// ships next to the tracer home, with the values the site extension used to set.
+        /// </summary>
+        internal static ProcessMetadata CreateTraceAgentMetadata(string tracerHome, string pipeName, string processPath, string processArguments)
+        {
+            var agentDirectory = GetBundledAgentDirectory(tracerHome);
+            return new ProcessMetadata
+            {
+                Name = "datadog-trace-agent",
+                IsTraceAgent = true,
+                PipeName = pipeName,
+                ProcessPath = GetValueOrDefault(processPath, agentDirectory, dir => Path.Combine(dir, "datadog-trace-agent.exe")),
+                ProcessArguments = GetValueOrDefault(processArguments, agentDirectory, dir => "--config " + Path.Combine(dir, "datadog.yaml")),
+            };
+        }
+
+        /// <summary>
+        /// Creates DogStatsD's metadata, with the same defaults as <see cref="CreateTraceAgentMetadata"/>.
+        /// </summary>
+        internal static ProcessMetadata CreateDogStatsDMetadata(string tracerHome, string pipeName, string processPath, string processArguments)
+        {
+            var agentDirectory = GetBundledAgentDirectory(tracerHome);
+            return new ProcessMetadata
+            {
+                Name = "dogstatsd",
+                PipeName = pipeName,
+                ProcessPath = GetValueOrDefault(processPath, agentDirectory, dir => Path.Combine(dir, "dogstatsd.exe")),
+                ProcessArguments = GetValueOrDefault(processArguments, agentDirectory, dir => "start -c " + dir),
+            };
+        }
+
+        /// <summary>
+        /// Gets the Agent folder that the Azure App Services site extension ships next to the tracer home, such as
+        /// <c>...\v3_57_0\Agent</c> for the tracer home <c>...\v3_57_0\Tracer</c>, or null without a tracer home.
+        /// Only the site extension starts this class, so the folder is there whenever the tracer home is.
+        /// </summary>
+        internal static string GetBundledAgentDirectory(string tracerHome)
+        {
+            if (StringUtil.IsNullOrWhiteSpace(tracerHome))
+            {
+                return null;
+            }
+
+            var extensionDirectory = Path.GetDirectoryName(tracerHome.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return StringUtil.IsNullOrEmpty(extensionDirectory) ? null : Path.Combine(extensionDirectory, "Agent");
+        }
+
+        private static string GetValueOrDefault(string value, string agentDirectory, Func<string, string> getDefault)
+        {
+            if (!StringUtil.IsNullOrWhiteSpace(value) || agentDirectory is null)
+            {
+                return value;
+            }
+
+            return getDefault(agentDirectory);
         }
 
         /// <summary>
