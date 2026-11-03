@@ -57,8 +57,7 @@ internal static class Common
         => testManagementProperties is { Disabled: true, AttemptToFix: false };
 
     internal static bool CanApplyItrSkip(TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
-        => testManagementProperties is not { Quarantined: true } &&
-           testManagementProperties is not { AttemptToFix: true } &&
+        => testManagementProperties is not { Quarantined: true } and not { AttemptToFix: true } &&
            !IsDisabledByTestManagement(testManagementProperties);
 
     internal static string GetParametersValueData(object? paramValue)
