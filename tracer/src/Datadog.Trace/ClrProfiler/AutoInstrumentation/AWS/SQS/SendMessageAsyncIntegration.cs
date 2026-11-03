@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
         {
-            return AwsSqsHandlerCommon.AfterSend(response, exception, state);
+            return AwsSqsHandlerCommon.AfterSend(response, exception, in state);
         }
     }
 }

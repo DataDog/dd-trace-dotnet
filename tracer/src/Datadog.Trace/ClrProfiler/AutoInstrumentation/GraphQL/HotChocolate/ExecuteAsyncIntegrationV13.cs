@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         {
             if (request.Instance is not null)
             {
-                return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromQueryRequest(Tracer.Instance, request));
+                return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromQueryRequest(Tracer.Instance, in request));
             }
 
             return CallTargetState.GetDefault();

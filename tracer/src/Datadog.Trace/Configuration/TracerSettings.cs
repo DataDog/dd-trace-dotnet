@@ -105,7 +105,7 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.ApmTracingEnabled)
                                       .AsBool(defaultValue: true);
 
-            var otelSdkDisabledResult = GetOtelSdkDisabled(config);
+            var otelSdkDisabledResult = GetOtelSdkDisabled(in config);
             var otelSdkDisabled = otelSdkDisabledResult.ConfigurationResult is { IsValid: true, Result: true };
 
             // Unlike other OTEL_* settings, OTEL_SDK_DISABLED=true takes precedence over its Datadog equivalent.
@@ -1530,7 +1530,7 @@ namespace Datadog.Trace.Configuration
                                 : ParsingResult<bool>.Failure());
 
         internal static bool IsOtelSdkDisabled(in ConfigurationBuilder config)
-            => GetOtelSdkDisabled(config).ConfigurationResult is { IsValid: true, Result: true };
+            => GetOtelSdkDisabled(in config).ConfigurationResult is { IsValid: true, Result: true };
 
         internal static ReadOnlyDictionary<string, string>? TrimConfigKeysValues(ConfigurationBuilder.HasKeys key)
         {

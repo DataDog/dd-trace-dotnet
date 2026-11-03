@@ -36,7 +36,7 @@ internal sealed class EdgeTags
     {
         if (!_cacheNodeHash)
         {
-            return HashHelper.CalculateNodeHash(nodeHashBase, Tags);
+            return HashHelper.CalculateNodeHash(in nodeHashBase, Tags);
         }
 
         var snapshot = Volatile.Read(ref _nodeHash);
@@ -48,7 +48,7 @@ internal sealed class EdgeTags
         // The base changes when settings are updated, so the cached hash must be recomputed.
         // Racing threads may use different bases; every reader checks the snapshot's base
         // before reusing its hash, so an older snapshot can only cause another recomputation.
-        var nodeHash = HashHelper.CalculateNodeHash(nodeHashBase, Tags);
+        var nodeHash = HashHelper.CalculateNodeHash(in nodeHashBase, Tags);
         Volatile.Write(ref _nodeHash, new NodeHashSnapshot(nodeHashBase.Value, nodeHash));
         return nodeHash;
     }

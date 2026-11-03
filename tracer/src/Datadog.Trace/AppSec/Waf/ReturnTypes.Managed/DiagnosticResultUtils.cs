@@ -102,7 +102,7 @@ internal static class DiagnosticResultUtils
                 return new ReportedDiagnostics(errors);
             }
 
-            var diagResult = new DiagnosticResult(diagObject);
+            var diagResult = new DiagnosticResult(in diagObject);
             if (diagResult.Rules is not null)
             {
                 rules.Loaded = (ushort)(diagResult.Rules.Loaded?.Count ?? 0);

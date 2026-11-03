@@ -83,7 +83,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
             if (rareSpanFound)
             {
-                UpdateSeenSpans(trace);
+                UpdateSeenSpans(in trace);
             }
 
             return rareSpanFound;

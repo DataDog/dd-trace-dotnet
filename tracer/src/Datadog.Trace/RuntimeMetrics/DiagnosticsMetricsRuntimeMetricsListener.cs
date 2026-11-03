@@ -123,7 +123,7 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             // GCMemoryInfo.MemoryLoadBytes and GCMemoryInfo.HighMemoryLoadThresholdBytes are both scaled by the
             // GC's total_physical_mem, but TotalAvailableMemoryBytes switches to heap_hard_limit whenever a GC
             // hard limit is in play, so getting the memory load is not simple
-            if (GcMemoryLoadCalculator.TryGetMemoryLoadPercentage(gcInfo) is { } memoryLoad)
+            if (GcMemoryLoadCalculator.TryGetMemoryLoadPercentage(in gcInfo) is { } memoryLoad)
             {
                 statsd.Gauge(MetricsNames.GcMemoryLoad, memoryLoad);
             }

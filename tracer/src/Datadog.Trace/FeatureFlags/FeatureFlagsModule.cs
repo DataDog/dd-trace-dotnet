@@ -896,7 +896,7 @@ namespace Datadog.Trace.FeatureFlags
                 return ExposureCommitResult.NothingPending;
             }
 
-            return ReportExposure(pending.Value) switch
+            return ReportExposure(in pending.Value) switch
             {
                 ExposureRecordResult.New => ExposureCommitResult.New,
                 ExposureRecordResult.Repeat => ExposureCommitResult.Repeat,
@@ -911,7 +911,7 @@ namespace Datadog.Trace.FeatureFlags
             // for the rest of the process, so exposures are dropped from that point on.
             if (GetExposureApi() is { } exposureApi)
             {
-                return exposureApi.SendExposure(exposure);
+                return exposureApi.SendExposure(in exposure);
             }
 
             _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);

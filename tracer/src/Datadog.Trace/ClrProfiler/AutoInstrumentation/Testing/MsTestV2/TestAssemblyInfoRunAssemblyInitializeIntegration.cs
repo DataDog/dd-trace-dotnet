@@ -120,5 +120,5 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegrationV3_9
         => TestAssemblyInfoRunAssemblyInitializeIntegration.OnMethodBegin(instance, testContext);
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
-        => TestAssemblyInfoRunAssemblyInitializeIntegration.OnMethodEnd(instance, exception, state);
+        => TestAssemblyInfoRunAssemblyInitializeIntegration.OnMethodEnd(instance, exception, in state);
 }
