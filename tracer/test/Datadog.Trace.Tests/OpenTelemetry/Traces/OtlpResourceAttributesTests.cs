@@ -147,6 +147,37 @@ public class OtlpResourceAttributesTests
 
     [Theory]
     [CombinatorialData]
+    public async Task Payload_ChunksWithDifferentEnvironmentOrVersion_AreWrittenUnderTheirOwnResource(bool useJson, bool changeVersion)
+    {
+        // Span.SetTag("env"/"version") updates the trace's TraceContext, and env/version are only written on the
+        // resource (never on spans), so a chunk whose trace has a different env/version needs its own resource.
+        await using var tracer = TracerHelper.CreateWithFakeAgent(CreateSettings(environment: "prod", serviceVersion: "1.0.0"));
+        var tagKey = changeVersion ? "version" : "env";
+        var resourceKey = changeVersion ? "service.version" : "deployment.environment.name";
+        var defaultValue = changeVersion ? "1.0.0" : "prod";
+
+        var first = CreateFinishedSpan(tracer, "default-1");
+
+        var changed = CreateFinishedSpan(tracer, "changed", span => span.SetTag(tagKey, "other"));
+
+        var request = SerializePayload(
+            useJson,
+            new SpanCollection([first]),
+            new SpanCollection([changed]),
+            new SpanCollection([CreateFinishedSpan(tracer, "default-2")]));
+
+        var resourceSpans = request["resourceSpans"]!.ToList();
+
+        using var assertions = new AssertionScope();
+        resourceSpans.Should().HaveCount(3);
+        resourceSpans.Select(r => GetResourceAttributes(r)[resourceKey]["stringValue"]!.Value<string>())
+                     .Should().Equal(defaultValue, "other", defaultValue);
+        resourceSpans.Select(r => string.Join(",", GetSpans(r).Keys))
+                     .Should().Equal("default-1", "changed", "default-2");
+    }
+
+    [Theory]
+    [CombinatorialData]
     public async Task SerializeSpans_ChunkThatWasNotCommitted_DoesNotOpenAResource(bool useJson)
     {
         await using var tracerUs = TracerHelper.CreateWithFakeAgent(CreateSettings(ddTags: "region:us1"));
@@ -326,7 +357,7 @@ public class OtlpResourceAttributesTests
         return new ReadOnlyDictionary<string, string>(tags);
     }
 
-    private static TracerSettings CreateSettings(string? ddTags = null, string? otelResourceAttributes = null, bool otelSemanticsEnabled = false)
+    private static TracerSettings CreateSettings(string? ddTags = null, string? otelResourceAttributes = null, bool otelSemanticsEnabled = false, string? environment = null, string? serviceVersion = null)
     {
         var config = new Dictionary<string, string>
         {
@@ -345,14 +376,25 @@ public class OtlpResourceAttributesTests
             config["OTEL_RESOURCE_ATTRIBUTES"] = otelResourceAttributes;
         }
 
+        if (environment is not null)
+        {
+            config["DD_ENV"] = environment;
+        }
+
+        if (serviceVersion is not null)
+        {
+            config["DD_VERSION"] = serviceVersion;
+        }
+
         return new TracerSettings(new DictionaryConfigurationSource(config));
     }
 
-    private static Span CreateFinishedSpan(ScopedTracer tracer, string operationName)
+    private static Span CreateFinishedSpan(ScopedTracer tracer, string operationName, Action<Span>? configure = null)
     {
         using var scope = tracer.StartActive(operationName);
         var span = (Span)scope.Span;
         span.ResourceName = operationName;
+        configure?.Invoke(span);
         return span;
     }
 
