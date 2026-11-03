@@ -13,7 +13,7 @@ namespace Datadog.Trace.ServiceFabric
 #pragma warning disable SA1402 // File must contain single type
     internal abstract partial class ServiceRemotingTags : InstrumentationTags
     {
-        public ServiceRemotingTags(string spanKind)
+        protected ServiceRemotingTags(string spanKind)
         {
             SpanKind = spanKind;
         }
