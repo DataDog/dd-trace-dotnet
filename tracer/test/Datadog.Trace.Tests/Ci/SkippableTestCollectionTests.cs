@@ -126,7 +126,10 @@ public class SkippableTestCollectionTests
         {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             var tests = new SkippableTestCollection([Candidate("""{"arguments":{"value":1.5}}""")]);
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            // Keep the formatting difference explicit even when ICU locale data is unavailable.
+            var queryCulture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            queryCulture.NumberFormat.NumberDecimalSeparator = ",";
+            CultureInfo.CurrentCulture = queryCulture;
 
             Match(tests, ["1,5"], OneParameter).Should().NotBeNull();
             Match(tests, ["1.5"], OneParameter).Should().BeNull();
