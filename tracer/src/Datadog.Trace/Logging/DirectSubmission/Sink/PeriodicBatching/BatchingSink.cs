@@ -35,7 +35,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         {
         }
 
-        internal BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction, bool startBackgroundLoop, IDatadogLogger? log = null)
+        protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction, bool startBackgroundLoop, IDatadogLogger? log = null)
         {
             if (sinkOptions == null)
             {

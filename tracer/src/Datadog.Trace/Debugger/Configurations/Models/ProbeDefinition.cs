@@ -10,7 +10,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 {
     internal abstract class ProbeDefinition : IEquatable<ProbeDefinition>
     {
-        internal ProbeDefinition()
+        protected ProbeDefinition()
         {
             EvaluateAt = EvaluateAt.Exit;
         }

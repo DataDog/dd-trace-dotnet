@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tagging
 #pragma warning disable SA1402 // File must contain single type
     internal abstract partial class GrpcTags : InstrumentationTags
     {
-        public GrpcTags(string spanKind)
+        protected GrpcTags(string spanKind)
         {
             SpanKind = spanKind;
         }
