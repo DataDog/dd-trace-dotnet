@@ -91,7 +91,7 @@ namespace Datadog.Trace.Ci
 
         protected override bool ShouldEnableRemoteConfiguration(TracerSettings settings) => false;
 
-        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, double>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
             // Check for agentless scenario
             if (_settings.Agentless)

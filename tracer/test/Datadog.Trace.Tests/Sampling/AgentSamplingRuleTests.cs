@@ -17,18 +17,18 @@ namespace Datadog.Trace.Tests.Sampling
     {
         [Theory]
         // Value returned by the agent per default
-        [InlineData("service:,env:", "hello", "world", 0.5f)]
+        [InlineData("service:,env:", "hello", "world", 0.5d)]
         // Does not match
-        [InlineData("service:nope,env:nope", "hello", "world", 1f)]
+        [InlineData("service:nope,env:nope", "hello", "world", 1d)]
         // Nominal case
-        [InlineData("service:hello,env:world", "hello", "world", .5f)]
+        [InlineData("service:hello,env:world", "hello", "world", .5d)]
         // Too many values
-        [InlineData("service:hello,env:world,xxxx", "hello", "world", 1f)]
+        [InlineData("service:hello,env:world,xxxx", "hello", "world", 1d)]
         // ':' in service name
-        [InlineData("service:hello:1,env:world", "hello:1", "world", .5f)]
+        [InlineData("service:hello:1,env:world", "hello:1", "world", .5d)]
         // ':' in env name
-        [InlineData("service:hello,env:world:1", "hello", "world:1", .5f)]
-        public async Task KeyParsing(string key, string expectedService, string expectedEnv, float expectedRate)
+        [InlineData("service:hello,env:world:1", "hello", "world:1", .5d)]
+        public async Task KeyParsing(string key, string expectedService, string expectedEnv, double expectedRate)
         {
             // create span, setting service and environment
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, expectedService } });
@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             // create sampling rule
             var rule = new AgentSamplingRule();
-            rule.SetDefaultSampleRates(new Dictionary<string, float> { { key, .5f } });
+            rule.SetDefaultSampleRates(new Dictionary<string, double> { { key, .5d } });
 
             // assert that the sampling rate applied to the span is correct
             rule.GetSamplingRate(scope.Span).Should().Be(expectedRate);
@@ -65,16 +65,16 @@ namespace Datadog.Trace.Tests.Sampling
             var secondSpan = secondScope.Span;
             secondSpan.SetService(unconfiguredService, null);
 
-            rule.GetSamplingRate(firstSpan).Should().Be(1f); // as we haven't configured it yet.
+            rule.GetSamplingRate(firstSpan).Should().Be(1d); // as we haven't configured it yet.
 
-            rule.SetDefaultSampleRates(new Dictionary<string, float>
+            rule.SetDefaultSampleRates(new Dictionary<string, double>
             {
-                { "service:,env:", .5f },
-                { $"service:{configuredService},env:{configuredEnv}", .1f }
+                { "service:,env:", .5d },
+                { $"service:{configuredService},env:{configuredEnv}", .1d }
             });
 
-            rule.GetSamplingRate(firstSpan).Should().Be(.1f);
-            rule.GetSamplingRate(secondSpan).Should().Be(.5f); // as it should use the new default sampling.
+            rule.GetSamplingRate(firstSpan).Should().Be(.1d);
+            rule.GetSamplingRate(secondSpan).Should().Be(.5d); // as it should use the new default sampling.
         }
     }
 }

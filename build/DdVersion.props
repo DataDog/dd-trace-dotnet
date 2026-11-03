@@ -1,0 +1,28 @@
+<Project>
+
+  <!--
+    The SDK version for native (.vcxproj) projects: they import this file instead of version.props,
+    which managed projects import directly. It is the MSBuild equivalent of build/cmake/DdVersion.cmake.
+
+    As well as the properties from tracer/build/_build/version.props, it adds the DD_VERSION_MAJOR,
+    DD_VERSION_MINOR and DD_VERSION_PATCH preprocessor definitions that shared/src/native-src/dd_version.h
+    expects - the same set that DdVersion.cmake defines. dd_version.h derives everything else from them,
+    so new derived values belong there, not here.
+  -->
+
+  <Import Project="$(MSBuildThisFileDirectory)..\tracer\build\_build\version.props" />
+
+  <PropertyGroup>
+    <DD_NativeVersionDefinitions>DD_VERSION_MAJOR=$([System.Version]::Parse('$(DD_VersionPrefix)').Major);DD_VERSION_MINOR=$([System.Version]::Parse('$(DD_VersionPrefix)').Minor);DD_VERSION_PATCH=$([System.Version]::Parse('$(DD_VersionPrefix)').Build)</DD_NativeVersionDefinitions>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>$(DD_NativeVersionDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>$(DD_NativeVersionDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+
+</Project>

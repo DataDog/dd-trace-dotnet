@@ -136,7 +136,7 @@ public class OtlpHeaderTests(ITestOutputHelper output)
         }
         else
         {
-            var exporter = new LogsExporter(settings);
+            var exporter = new LogsExporter(settings, exporterSettings);
             try
             {
                 (await exporter.ExportAsync([new LogPoint { Message = "header-test", LogLevel = 2, CategoryName = "test" }])).Should().Be(ExportResult.Success);

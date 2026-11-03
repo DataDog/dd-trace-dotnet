@@ -26,6 +26,14 @@ public:
     // started if manually enabled (DD_PROFILING_ENABLED=true) or enabled by SII and triggered heuristics (long lived + spans)
     virtual bool IsProfilerStarted() = 0;
 
+    // called when the delayed start of the services failed: IsProfilerStarted() will then always return false
+    virtual void OnDelayedStartFailed() = 0;
+
+    // This represents the case where the profiler failed to start correctly (ex: some service failed to start)
+    // This is different from IsProfilerStarted: It answers the question "can we ever start profiling?"
+    // While IsProfilerStarted answers the question "can we start profiling right now?"
+    virtual bool IsProfilingPermanentlyDisabled() const = 0;
+
     // send metrics
     virtual void ProcessStart() = 0;
     virtual void ProcessEnd() = 0;

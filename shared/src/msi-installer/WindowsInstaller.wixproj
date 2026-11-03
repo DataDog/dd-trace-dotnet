@@ -7,9 +7,13 @@
     <MsiOutputPath Condition="'$(MsiOutputPath)' == ''">bin\$(Configuration)\$(Platform)\</MsiOutputPath>
     <OutputPath>$(MsiOutputPath)</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
-    <OutputName>datadog-dotnet-apm-3.57.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
+    <OutputName>datadog-dotnet-apm-$(DD_SemVer)-$(Platform)</OutputName>
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
-    <DefineConstants>InstallerVersion=3.57.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
+    <!--
+      InstallerVersion becomes the Windows Installer ProductVersion, which has to be numeric
+      major.minor.build with no suffix, and which needs to increase monotonically for upgrades to work.
+    -->
+    <DefineConstants>InstallerVersion=$(DD_VersionPrefix);MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>

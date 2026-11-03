@@ -268,7 +268,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
                     // https://github.com/dotnet/runtime/issues/66707
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
+                    // Arm64 .NET 5 buster-slim images are currently flaky
+                    // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", false),
                 });
 
@@ -483,7 +484,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
+                    // Arm64 .NET 5 buster-slim images are currently flaky
+                    // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", false),
                 });
 
@@ -645,7 +647,8 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy", "jammy", true),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim", "bullseye", true),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
+                    // Arm64 .NET 5 buster-slim images are currently flaky
+                    // (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim", "buster", false),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal", "focal", false),
                 });
 
