@@ -100,7 +100,7 @@ namespace Datadog.Trace.Activity
                 {
                     ActivityListenerHandler.OnActivityWithSourceStarted(sourceName, activity);
                 }
-                else if (value.Key.Length == dotIndex + 4 + 1 && value.Key.LastIndexOf("Stop", StringComparison.Ordinal) == dotIndex + 1)
+                else if (value.Key.Length == dotIndex + 4 + 1 && value.Key.LastIndexOf("Stop", StringComparison.Ordinal) == dotIndex + 1 && activity.Instance is not null)
                 {
                     ActivityListenerHandler.OnActivityWithSourceStopped(sourceName, activity);
                 }
