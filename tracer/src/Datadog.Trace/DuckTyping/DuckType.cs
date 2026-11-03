@@ -1189,7 +1189,7 @@ namespace Datadog.Trace.DuckTyping
             // populated. Checked here so that it fails on the dry run too
             if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
             {
-                return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
+                return DuckTypeDuckCopyStructDoesNotContainsAnyFieldException.Create(proxyDefinitionType);
             }
 
             return null;
@@ -1231,7 +1231,7 @@ namespace Datadog.Trace.DuckTyping
             return createProxyMethod.CreateDelegate(delegateType);
         }
 
-        private static DuckTypeDuckCopyStructDoesNotContainsAnyField? CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType, out Delegate? activator)
+        private static DuckTypeDuckCopyStructDoesNotContainsAnyFieldException? CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType, out Delegate? activator)
         {
             activator = null;
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
@@ -1296,7 +1296,7 @@ namespace Datadog.Trace.DuckTyping
             // only runs after that succeeded. Kept as a defensive guard.
             if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
             {
-                return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
+                return DuckTypeDuckCopyStructDoesNotContainsAnyFieldException.Create(proxyDefinitionType);
             }
 
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);

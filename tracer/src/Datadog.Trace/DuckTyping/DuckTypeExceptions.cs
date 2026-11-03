@@ -47,14 +47,14 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy type definition is null
     /// </summary>
-    internal sealed class DuckTypeProxyTypeDefinitionIsNull : DuckTypeException
+    internal sealed class DuckTypeProxyTypeDefinitionIsNullException : DuckTypeException
     {
-        private DuckTypeProxyTypeDefinitionIsNull()
+        private DuckTypeProxyTypeDefinitionIsNullException()
             : base($"The proxy type definition is null.")
         {
         }
 
-        internal static DuckTypeProxyTypeDefinitionIsNull Create() => new();
+        internal static DuckTypeProxyTypeDefinitionIsNullException Create() => new();
 
         [DebuggerHidden]
         [DoesNotReturn]
@@ -64,14 +64,14 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType target object instance is null
     /// </summary>
-    internal sealed class DuckTypeTargetObjectInstanceIsNull : DuckTypeException
+    internal sealed class DuckTypeTargetObjectInstanceIsNullException : DuckTypeException
     {
-        private DuckTypeTargetObjectInstanceIsNull()
+        private DuckTypeTargetObjectInstanceIsNullException()
             : base($"The target object instance is null.")
         {
         }
 
-        internal static DuckTypeTargetObjectInstanceIsNull Create() => new();
+        internal static DuckTypeTargetObjectInstanceIsNullException Create() => new();
 
         [DebuggerHidden]
         [DoesNotReturn]
@@ -396,13 +396,13 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Ducktype DuckCopy struct does not contains any field
     /// </summary>
-    internal sealed class DuckTypeDuckCopyStructDoesNotContainsAnyField : DuckTypeException
+    internal sealed class DuckTypeDuckCopyStructDoesNotContainsAnyFieldException : DuckTypeException
     {
-        private DuckTypeDuckCopyStructDoesNotContainsAnyField(string type)
+        private DuckTypeDuckCopyStructDoesNotContainsAnyFieldException(string type)
             : base($"The [DuckCopy] struct '{type}' does not contains any public field. Remember that DuckCopy proxies must be declared using fields instead of properties.")
         {
         }
 
-        internal static DuckTypeDuckCopyStructDoesNotContainsAnyField Create(Type type) => new(type?.FullName ?? type?.Name ?? "NULL");
+        internal static DuckTypeDuckCopyStructDoesNotContainsAnyFieldException Create(Type type) => new(type?.FullName ?? type?.Name ?? "NULL");
     }
 }
