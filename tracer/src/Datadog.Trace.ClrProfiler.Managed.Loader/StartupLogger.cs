@@ -203,9 +203,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
             var isAas = !string.IsNullOrEmpty(envVars.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
-            var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(Startup.AzureAppServicesSiteExtensionKey) ?? false;
 
-            if (isAas || usingAasSiteExtension)
+            if (isAas)
             {
                 // Azure App Services and Azure Functions
                 var aasLogDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
@@ -213,6 +212,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // With the Azure App Services site extension (DD_AZURE_APP_SERVICES=1),
                 // each extension version logs to its own subfolder, such as datadog\v3_57_0.
                 // The native components pick the same folder (GetDefaultLogDir in shared/src/native-src/pal.h).
+                var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(Startup.AzureAppServicesSiteExtensionKey) ?? false;
                 var versionFolder = usingAasSiteExtension ? GetAasSiteExtensionVersionFolder(envVars.GetEnvironmentVariable(Startup.TracerHomePathKey)) : null;
                 return string.IsNullOrEmpty(versionFolder) ? aasLogDirectory : Path.Combine(aasLogDirectory, versionFolder);
             }
