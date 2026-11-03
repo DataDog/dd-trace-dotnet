@@ -6,9 +6,11 @@
 
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
@@ -47,17 +49,25 @@ public sealed class JobFilterCollectionCtorIntegration
             return CallTargetReturn.GetDefault();
         }
 
-        if (Interlocked.Exchange(ref _filtersRegistered, 0) != 1)
+        if (Volatile.Read(ref _filtersRegistered) != 1)
         {
             // filters already registered, skip injection of datadog job filter
+            return CallTargetReturn.GetDefault();
+        }
+
+        // Hangfire only reads GlobalJobFilters.Filters, which may not be the first collection built.
+        // Reading it runs its initializer; inside that initializer it is still null and this instance is it.
+        var target = GetGlobalFilters(instance) ?? instance;
+        if (Interlocked.Exchange(ref _filtersRegistered, 0) != 1)
+        {
             return CallTargetReturn.GetDefault();
         }
 
         HangfireCommon.CreateDatadogFilter(out var serverFilter, out var clientFilter);
         if (serverFilter is not null && clientFilter is not null)
         {
-            instance.Add(serverFilter);
-            instance.Add(clientFilter);
+            target.Add(serverFilter);
+            target.Add(clientFilter);
         }
         else
         {
@@ -65,5 +75,23 @@ public sealed class JobFilterCollectionCtorIntegration
         }
 
         return CallTargetReturn.GetDefault();
+    }
+
+    private static IJobFilterCollectionProxy? GetGlobalFilters<TTarget>(TTarget instance)
+        where TTarget : IJobFilterCollectionProxy
+    {
+        try
+        {
+            var filters = instance.Type.Assembly
+                                  .GetType("Hangfire.GlobalJobFilters")
+                                 ?.GetProperty("Filters", BindingFlags.Public | BindingFlags.Static)
+                                 ?.GetValue(null);
+            return filters?.DuckCast<IJobFilterCollectionProxy>();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Unable to read Hangfire GlobalJobFilters.Filters");
+            return null;
+        }
     }
 }

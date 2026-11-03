@@ -51,6 +51,21 @@ public class HangfireTests : TracingIntegrationTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public async Task SubmitsTracesWhenApplicationBuildsJobFilterCollectionFirst()
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = await RunSampleAndWaitForExit(agent, arguments: "custom-filter-collection");
+
+        var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 15000);
+        var parent = spans.Should().ContainSingle(s => s.Resource == "OtelParent").Subject;
+        var job = spans.Should().ContainSingle(s => s.Name == "hangfire.perform").Subject;
+        job.TraceId.Should().Be(parent.TraceId);
+        job.ParentId.Should().Be(parent.SpanId);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
         using (var telemetry = this.ConfigureTelemetry())

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Hangfire;
+using Hangfire.Common;
 using Hangfire.MemoryStorage;
 using Hangfire.States;
 using Samples.Hangfire.Infrastructure;
@@ -16,6 +17,13 @@ public class Program
     private static readonly ActivitySource AdditionalActivitySource = new("AdditionalActivitySource");
     public static async Task Main(string[] args)
     {
+        var isCustomFilterCollectionScenario = args.Length > 0 && args[0] == "custom-filter-collection";
+        if (isCustomFilterCollectionScenario)
+        {
+            // An application collection built before GlobalJobFilters, as with a custom filter provider.
+            _ = new JobFilterCollection();
+        }
+
         GlobalConfiguration.Configuration
                            .UseSimpleAssemblyNameTypeSerializer()
                            .UseRecommendedSerializerSettings()
@@ -48,6 +56,12 @@ public class Program
             if (isBaggageScenario)
             {
                 await Should_Not_Accumulate_Baggage_Across_Jobs();
+                return;
+            }
+
+            if (isCustomFilterCollectionScenario)
+            {
+                await Should_Create_Span();
                 return;
             }
 
