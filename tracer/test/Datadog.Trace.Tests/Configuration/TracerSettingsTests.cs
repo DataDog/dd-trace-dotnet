@@ -344,38 +344,28 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false.
-        // The composite source ignores an empty or invalid value, so it doesn't override OTEL_SDK_DISABLED
-        [InlineData(null, false)]
-        [InlineData("", false)]
-        [InlineData("invalid", false)]
-        // A DD_RUNTIME_METRICS_ENABLED value overrides it
-        [InlineData("true", true)]
-        [InlineData("1", true)]
-        [InlineData("false", false)]
-        public void RuntimeMetricsEnabledWithOtelSdkDisabled(string value, bool expected)
+        // OTEL_SDK_DISABLED=true disables runtime metrics, even when DD_RUNTIME_METRICS_ENABLED=true
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("invalid")]
+        [InlineData("true")]
+        [InlineData("1")]
+        [InlineData("false")]
+        public void RuntimeMetricsEnabledWithOtelSdkDisabled(string value)
         {
-            // Use a composite source, as in production
-            var source = new CompositeConfigurationSource(
-            [
-                CreateConfigurationSource(
-                    (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
-                    (ConfigurationKeys.RuntimeMetricsEnabled, value),
-                    (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true")),
-            ]);
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                (ConfigurationKeys.RuntimeMetricsEnabled, value),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, "true"));
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new OverrideErrorLog());
 
             using var scope = new AssertionScope();
-            settings.RuntimeMetricsEnabled.Should().Be(expected);
-            // OpenTelemetry metrics stay disabled, so re-enabled runtime metrics are sent to DogStatsD rather than over OTLP
+            settings.RuntimeMetricsEnabled.Should().BeFalse();
             settings.OtlpRuntimeMetricsEnabled.Should().BeFalse();
-
-            var mappedToFalse = value is null or "" or "invalid";
             telemetry.GetQueueForTesting()
-                     .Any(e => e is { Key: ConfigurationKeys.RuntimeMetricsEnabled, Origin: ConfigurationOrigins.Calculated, BoolValue: false })
                      .Should()
-                     .Be(mappedToFalse);
+                     .Contain(e => e.Key == ConfigurationKeys.RuntimeMetricsEnabled && e.Origin == ConfigurationOrigins.Calculated && e.BoolValue == false);
         }
 
 #if NET6_0_OR_GREATER

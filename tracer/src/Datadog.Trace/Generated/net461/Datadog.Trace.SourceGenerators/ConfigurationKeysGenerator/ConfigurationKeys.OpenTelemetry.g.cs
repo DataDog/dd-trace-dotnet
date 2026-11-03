@@ -212,11 +212,10 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key for disabling OpenTelemetry mode for every signal.
-        /// When set to <c>true</c> (case-insensitive), the OpenTelemetry tracing and metrics APIs
-        /// and OTLP export of metrics and logs are disabled, even when their own settings enable them.
-        /// It also sets <see cref="ConfigurationKeys.TraceEnabled"/> and <see cref="ConfigurationKeys.RuntimeMetricsEnabled"/>
-        /// to false, which stops all trace export and runtime metrics, unless those keys are set.
-        /// Other values have no effect.
+        /// When set to <c>true</c> (case-insensitive), the OpenTelemetry tracing and metrics APIs,
+        /// OTLP export of metrics and logs, and runtime metrics are disabled, even when their own settings enable them.
+        /// It also sets <see cref="ConfigurationKeys.TraceEnabled"/> to false, which stops all trace export,
+        /// unless that key is set. Other values have no effect.
         /// </summary>
         public const string SdkDisabled = "OTEL_SDK_DISABLED";
 

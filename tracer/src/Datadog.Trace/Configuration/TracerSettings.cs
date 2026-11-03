@@ -192,11 +192,13 @@ namespace Datadog.Trace.Configuration
                 RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
             }
 
-            if (otelSdkDisabled && !runtimeMetricsEnabledResult.ConfigurationResult.IsPresent)
+            if (otelSdkDisabled)
             {
-                // OTEL_SDK_DISABLED=true maps to DD_RUNTIME_METRICS_ENABLED=false. A DD_RUNTIME_METRICS_ENABLED value overrides it.
-                RuntimeMetricsEnabled = false;
-                telemetry.Record(ConfigurationKeys.RuntimeMetricsEnabled, false, ConfigurationOrigins.Calculated);
+                // OTEL_SDK_DISABLED=true disables runtime metrics, even when DD_RUNTIME_METRICS_ENABLED=true.
+                // Only warn when they were enabled explicitly, not by the .NET 6+ default.
+                RuntimeMetricsEnabled = DisableIfOtelSdkDisabled(
+                    runtimeMetricsEnabledResult.ConfigurationResult is { IsValid: true, Result: true },
+                    ConfigurationKeys.RuntimeMetricsEnabled);
             }
 
             var runtimeMetricsDiagnosticsMetricsApiEnabledResult = config
