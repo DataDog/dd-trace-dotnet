@@ -9,7 +9,9 @@ namespace Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
+#pragma warning disable MA0049 // Type name should not match containing namespace - long-standing name; renaming the type or namespace would touch many files for little benefit
 internal sealed class AsmFeatures
+#pragma warning restore MA0049
 {
     public AsmFeature? Asm { get; set; } = new();
 
