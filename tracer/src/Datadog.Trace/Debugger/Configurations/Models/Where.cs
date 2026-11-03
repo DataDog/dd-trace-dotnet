@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public string[]? Lines { get; set; }
 
-        public bool Equals(Where? other)
+        public bool Equals([NotNullWhen(true)] Where? other)
         {
             if (ReferenceEquals(null, other))
             {
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             return TypeName == other.TypeName && MethodName == other.MethodName && SourceFile == other.SourceFile && Signature == other.Signature && Lines.NullableSequentialEquals(other.Lines);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             if (ReferenceEquals(null, obj))
             {

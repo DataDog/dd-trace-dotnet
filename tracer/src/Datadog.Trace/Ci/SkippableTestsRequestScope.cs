@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -79,7 +80,7 @@ internal readonly struct SkippableTestsRequestScope : IEquatable<SkippableTestsR
            string.Equals(Fingerprint, other.Fingerprint, StringComparison.Ordinal);
 
     /// <inheritdoc />
-    public override bool Equals(object? obj)
+    public override bool Equals([NotNullWhen(true)] object? obj)
         => obj is SkippableTestsRequestScope other && Equals(other);
 
     /// <inheritdoc />

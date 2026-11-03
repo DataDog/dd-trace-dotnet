@@ -7,7 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
-
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Logging
                 LineNo = lineNo;
             }
 
-            public override bool Equals(object? obj)
+            public override bool Equals([NotNullWhen(true)] object? obj)
             {
                 return obj is LogRateBucketKey key &&
                        FilePath == key.FilePath &&

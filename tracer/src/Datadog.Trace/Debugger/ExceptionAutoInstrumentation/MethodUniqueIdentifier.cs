@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -67,7 +68,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return Probes.SequenceEqual(other.Probes);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ExceptionCase other && Equals(other);
         }
@@ -128,7 +129,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                    StackTrace.SequenceEqual(other.StackTrace);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ExceptionIdentifier && Equals((ExceptionIdentifier)obj);
         }

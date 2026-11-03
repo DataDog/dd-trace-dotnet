@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Xml;
@@ -3192,7 +3193,7 @@ internal static class ExternalCoverageXmlBackfill
                StartLine == other.StartLine &&
                EndLine == other.EndLine;
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
             => obj is CoverageLineKey other && Equals(other);
 
         public override int GetHashCode()
@@ -3227,7 +3228,7 @@ internal static class ExternalCoverageXmlBackfill
             => ResolvedPathComparer.Equals(SourcePath, other.SourcePath) &&
                Line == other.Line;
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
             => obj is MicrosoftSourceLineKey other && Equals(other);
 
         public override int GetHashCode()

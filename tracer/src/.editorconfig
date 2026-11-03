@@ -131,7 +131,6 @@ dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0159.severity = none # Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - deferred: needs per-site decisions rather than a mechanical fix. Most hits are BCL types that are only non-readonly on net461/netstandard2.0 (CancellationToken, DateTimeOffset?, ArraySegment, Guid, RuntimeMethodHandle), including 13 CallTarget OnMethodBegin handlers; others are signatures we can't change (public SetBenchmarkMetadata, P/Invoke, IAST Uri aspects, [DuckCopy] gRPC structs). Also, ProbeInfo can't simply become readonly: DynamicInstrumentation.SetProbeStatusToEmitting writes probe.IsEmitted on a by-value copy, a dead store that means EMITTING is re-sent on every emission (a bug worth fixing separately)
 dotnet_diagnostic.MA0184.severity = none # Do not use interpolated string without parameters
-dotnet_diagnostic.MA0186.severity = none # Equals method should use [NotNullWhen(true)] on the parameter
 dotnet_diagnostic.MA0194.severity = none # Merge is expressions on the same value
 dotnet_diagnostic.MA0200.severity = none # Do not use empty property patterns with non-nullable value types
 dotnet_diagnostic.MA0209.severity = none # Use in keyword for in parameter
