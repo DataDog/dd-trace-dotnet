@@ -519,10 +519,10 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, true, TracesEncoding.OtlpJson)] // semantics mode exports traces over OTLP by default
+        [InlineData(null, true, TracesEncoding.OtlpProtobuf)] // semantics mode exports traces over OTLP by default
         [InlineData(null, false, TracesEncoding.DatadogV0_4)]
-        [InlineData("otlp", true, TracesEncoding.OtlpJson)]
-        [InlineData("otlp", false, TracesEncoding.OtlpJson)]
+        [InlineData("otlp", true, TracesEncoding.OtlpProtobuf)]
+        [InlineData("otlp", false, TracesEncoding.OtlpProtobuf)]
         [InlineData("none", true, TracesEncoding.DatadogV0_4)] // an explicit exporter takes precedence
         public void TracesEncoding_DefaultsToOtlpWhenOtelSemanticsEnabled(string tracesExporter, bool otelSemanticsEnabled, object expected)
         {
