@@ -42,6 +42,28 @@ public class ExposureHookTests
     }
 
     [Fact]
+    public async Task CallbackReceivesTheContextABeforeHookReturned()
+    {
+        var domain = $"exposure-context-{Guid.NewGuid():N}";
+        string? evaluatedTargetingKey = null;
+        using var provider = new DatadogProvider((flag, type, defaultValue, targetingKey, attributes) =>
+        {
+            evaluatedTargetingKey = targetingKey;
+            return new TestEvaluation(new Dictionary<string, string> { ["__dd_allocation_key"] = "alloc", [FeatureFlagMetadataKeys.DoLog] = "true" });
+        });
+        await Api.Instance.SetProviderAsync(domain, provider);
+        var client = Api.Instance.GetClient(domain);
+        var received = new List<ExposureEvaluation>();
+        client.AddHooks(new ExposureHook(e => received.Add(e)));
+
+        await client.GetBooleanDetailsAsync("flag", false, EvaluationContext.Builder().SetTargetingKey("original").Build(), new FlagEvaluationOptions(new ReplaceTargetingKeyHook("evaluated")));
+
+        evaluatedTargetingKey.Should().Be("evaluated");
+        received.Should().ContainSingle().Which.TargetingKey.Should().Be("evaluated", "the exposure belongs to the subject the provider evaluated");
+        received[0].Context!.TargetingKey.Should().Be("evaluated");
+    }
+
+    [Fact]
     public async Task IsExposureRequiresASuccessfulEvaluationOfALoggedAllocation()
     {
         foreach (var (error, variant, allocation, doLog, expected) in new[]
@@ -201,6 +223,12 @@ public class ExposureHookTests
     {
         var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, evaluation, null);
         return new FlagEvaluationDetails<bool>(resolution.FlagKey, resolution.Value, resolution.ErrorType, resolution.Reason, resolution.Variant, resolution.ErrorMessage, resolution.FlagMetadata);
+    }
+
+    internal sealed class ReplaceTargetingKeyHook(string targetingKey) : Hook
+    {
+        public override ValueTask<EvaluationContext> BeforeAsync<T>(HookContext<T> context, IReadOnlyDictionary<string, object>? hints = null, System.Threading.CancellationToken cancellationToken = default)
+            => new(EvaluationContext.Builder().SetTargetingKey(targetingKey).Build());
     }
 
     internal sealed class TestEvaluation(Dictionary<string, string> metadata) : IEvaluation

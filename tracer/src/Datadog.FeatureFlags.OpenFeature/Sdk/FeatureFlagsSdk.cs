@@ -27,6 +27,9 @@ internal static class FeatureFlagsSdk
 {
     private static readonly ConditionalWeakTable<ImmutableMetadata, IReadOnlyDictionary<string, object>> HookFeatures = new();
 
+    // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
+    private static readonly ConditionalWeakTable<ImmutableMetadata, EvaluationContext> EvaluatedContexts = new();
+
     internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
 
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
@@ -112,6 +115,12 @@ internal static class FeatureFlagsSdk
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
         var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
+        // Only exposures need the context in ExposureHook, so other evaluations skip the table.
+        if (context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
+        {
+            EvaluatedContexts.Add(metadata, context);
+        }
+
         return resolution;
     }
 
@@ -141,6 +150,10 @@ internal static class FeatureFlagsSdk
     /// </summary>
     internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
         => metadata is not null && HookFeatures.TryGetValue(metadata, out var features) ? features : null;
+
+    /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
+    internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
+        => metadata is not null && EvaluatedContexts.TryGetValue(metadata, out var context) ? context : null;
 
     internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs)
     {

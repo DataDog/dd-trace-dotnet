@@ -57,14 +57,15 @@ public sealed class ExposureHook : Hook
     {
         try
         {
+            var evaluationContext = FeatureFlagsSdk.GetEvaluatedContext(details.FlagMetadata) ?? context.EvaluationContext;
             _onEvaluation(
                 new ExposureEvaluation(
                     details.ErrorType == ErrorType.None,
                     details.FlagKey,
                     details.Variant,
                     details.FlagMetadata?.GetString(FeatureFlagMetadataKeys.AllocationKey),
-                    context.EvaluationContext?.TargetingKey,
-                    context.EvaluationContext,
+                    evaluationContext?.TargetingKey,
+                    evaluationContext,
                     details.FlagMetadata));
         }
         catch (Exception ex)
