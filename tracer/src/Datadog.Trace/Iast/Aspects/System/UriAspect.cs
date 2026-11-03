@@ -217,7 +217,7 @@ public sealed class UriAspect
     [AspectMethodReplace("System.Uri::TryCreate(System.String,System.UriCreationOptions,System.Uri)", AspectFilter.StringLiteral_0)]
     public static bool TryCreate(string uri, in UriCreationOptions options, out Uri? uriCreated)
     {
-        var result = Uri.TryCreate(uri, options, out uriCreated);
+        var result = Uri.TryCreate(uri, in options, out uriCreated);
         try
         {
             if (uriCreated is not null)

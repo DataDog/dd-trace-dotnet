@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         {
             logFormatter.FormatLog(
                 sb,
-                logEntry,
+                in logEntry,
                 timestamp,
                 logEntry.RenderedMessage,
                 eventId: null,

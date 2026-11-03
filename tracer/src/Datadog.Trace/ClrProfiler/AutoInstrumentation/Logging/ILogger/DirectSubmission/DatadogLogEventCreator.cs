@@ -42,7 +42,7 @@ internal sealed class DatadogLogEventCreator : ILogEventCreator
             formatter,
             _scopeProvider);
 
-        var serializedLog = LoggerLogFormatter.FormatLogEvent(_logFormatter, logEntry);
+        var serializedLog = LoggerLogFormatter.FormatLogEvent(_logFormatter, in logEntry);
         return new LoggerDirectSubmissionLogEvent(serializedLog);
     }
 

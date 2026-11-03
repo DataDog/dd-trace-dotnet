@@ -508,26 +508,26 @@ public sealed class TracerSettings
         // Could probably source gen this if we can be bothered
         var results = new Dictionary<string, object?>();
 
-        AddIfChanged(results, TracerSettingKeyConstants.AgentUriKey, _agentUri);
-        AddIfChanged(results, TracerSettingKeyConstants.AnalyticsEnabledKey, _analyticsEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.EnvironmentKey, _environment);
-        AddIfChanged(results, TracerSettingKeyConstants.CustomSamplingRules, _customSamplingRules);
-        AddIfChanged(results, TracerSettingKeyConstants.GlobalSamplingRateKey, _globalSamplingRate);
-        AddIfChanged(results, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, _kafkaCreateConsumerScopeEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.LogsInjectionEnabledKey, _logsInjectionEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, _maxTracesSubmittedPerSecond);
-        AddIfChanged(results, TracerSettingKeyConstants.ServiceNameKey, _serviceName);
-        AddIfChanged(results, TracerSettingKeyConstants.ServiceVersionKey, _serviceVersion);
-        AddIfChanged(results, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, _startupDiagnosticLogEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.StatsComputationEnabledKey, _statsComputationEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.TraceEnabledKey, _traceEnabled);
-        AddIfChanged(results, TracerSettingKeyConstants.TracerMetricsEnabledKey, _tracerMetricsEnabled);
+        AddIfChanged(results, TracerSettingKeyConstants.AgentUriKey, in _agentUri);
+        AddIfChanged(results, TracerSettingKeyConstants.AnalyticsEnabledKey, in _analyticsEnabled);
+        AddIfChanged(results, TracerSettingKeyConstants.EnvironmentKey, in _environment);
+        AddIfChanged(results, TracerSettingKeyConstants.CustomSamplingRules, in _customSamplingRules);
+        AddIfChanged(results, TracerSettingKeyConstants.GlobalSamplingRateKey, in _globalSamplingRate);
+        AddIfChanged(results, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, in _kafkaCreateConsumerScopeEnabled);
+        AddIfChanged(results, TracerSettingKeyConstants.LogsInjectionEnabledKey, in _logsInjectionEnabled);
+        AddIfChanged(results, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, in _maxTracesSubmittedPerSecond);
+        AddIfChanged(results, TracerSettingKeyConstants.ServiceNameKey, in _serviceName);
+        AddIfChanged(results, TracerSettingKeyConstants.ServiceVersionKey, in _serviceVersion);
+        AddIfChanged(results, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, in _startupDiagnosticLogEnabled);
+        AddIfChanged(results, TracerSettingKeyConstants.StatsComputationEnabledKey, in _statsComputationEnabled);
+        AddIfChanged(results, TracerSettingKeyConstants.TraceEnabledKey, in _traceEnabled);
+        AddIfChanged(results, TracerSettingKeyConstants.TracerMetricsEnabledKey, in _tracerMetricsEnabled);
 
         // We have to check if any of the tags have changed
-        AddIfChangedDictionary(results, TracerSettingKeyConstants.GlobalTagsKey, _globalTags);
-        AddIfChangedDictionary(results, TracerSettingKeyConstants.GrpcTags, _grpcTags);
-        AddIfChangedDictionary(results, TracerSettingKeyConstants.HeaderTags, _headerTags);
-        AddIfChangedHashSet(results, TracerSettingKeyConstants.DisabledIntegrationNamesKey, _disabledIntegrationNames);
+        AddIfChangedDictionary(results, TracerSettingKeyConstants.GlobalTagsKey, in _globalTags);
+        AddIfChangedDictionary(results, TracerSettingKeyConstants.GrpcTags, in _grpcTags);
+        AddIfChangedDictionary(results, TracerSettingKeyConstants.HeaderTags, in _headerTags);
+        AddIfChangedHashSet(results, TracerSettingKeyConstants.DisabledIntegrationNamesKey, in _disabledIntegrationNames);
 
         // These are write-only, so only send them if we have them
         if (_serviceNameMappings is not null)
