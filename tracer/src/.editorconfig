@@ -119,7 +119,6 @@ dotnet_diagnostic.MA0053.severity = none # Make class or record sealed - skipped
 dotnet_diagnostic.MA0096.severity = none # A class that implements IComparable<T> should also implement IEquatable<T> - skipped: the IComparable types (ExceptionCaseScheduler.ScheduledException, SnapshotPruner.Node, FeatureFlags SemanticVersion) would need new equality semantics defined to match CompareTo, which changes reference equality for the two classes
 dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T> or IComparable should override comparison operators - skipped: would only add comparison operators that nothing uses on 6 internal or private types
 dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter - skipped for now: the overloads are .NET Core-only, so call sites would need #if. Could add polyfill extension methods (GetOrAdd/AddOrUpdate with a factory argument) to simplify call sites, though they wouldn't give a perf benefit on .NET Framework
-dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0147.severity = none # Avoid async void method for delegate
