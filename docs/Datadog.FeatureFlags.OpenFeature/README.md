@@ -95,7 +95,8 @@ OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
     }
 
     var features = evaluation.Features;
-    queue.Add(new ExposureRecord(
+    // TryAdd never blocks the evaluation: when the queue is full, the record is dropped.
+    queue.TryAdd(new ExposureRecord(
         evaluation.FlagKey,
         evaluation.Variant,
         evaluation.TargetingKey,
@@ -106,7 +107,8 @@ OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
 ```
 
 - The callback runs on the evaluation thread. Do not write to the data store from the callback:
-  copy what you need and hand it to a background queue.
+  copy what you need and hand it to a background queue. Do not block: use a non-blocking add, so
+  a slow data store cannot delay flag evaluations.
 - `ShouldSend` is true for a successful evaluation of an allocation that logs exposures, for a
   subject not yet exposed to the same allocation, variant and serial id. These are exactly the
   exposures the provider sends to Datadog while Datadog logging is on. The serial id and the
