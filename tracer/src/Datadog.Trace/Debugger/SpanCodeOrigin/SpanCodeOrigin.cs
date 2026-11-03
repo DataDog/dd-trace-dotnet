@@ -20,7 +20,9 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
+#pragma warning disable MA0049 // Type name should not match containing namespace - long-standing name; renaming the type or namespace would touch many files for little benefit
     internal sealed class SpanCodeOrigin
+#pragma warning restore MA0049
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
