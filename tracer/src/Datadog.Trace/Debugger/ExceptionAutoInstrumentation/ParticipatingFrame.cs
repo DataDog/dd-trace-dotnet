@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 #nullable enable
@@ -51,7 +52,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return MethodIdentifier.Equals(other.MethodIdentifier);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ParticipatingFrame other && Equals(other);
         }

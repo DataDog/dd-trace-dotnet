@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
@@ -64,7 +65,7 @@ internal sealed class Source
         return IastUtils.GetHashCode(_origin, Name, Value);
     }
 
-    public override bool Equals(object? obj) => GetHashCode() == obj?.GetHashCode();
+    public override bool Equals([NotNullWhen(true)] object? obj) => GetHashCode() == obj?.GetHashCode();
 
     internal static string RedactString(string value)
     {

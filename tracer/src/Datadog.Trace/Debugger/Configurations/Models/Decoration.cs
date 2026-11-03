@@ -7,6 +7,7 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Configurations.Models;
@@ -17,7 +18,7 @@ internal sealed record Decoration
 
     public Tags[]? Tags { get; set; }
 
-    public bool Equals(Decoration? other)
+    public bool Equals([NotNullWhen(true)] Decoration? other)
     {
         if (ReferenceEquals(null, other))
         {
@@ -51,7 +52,7 @@ internal sealed record TagValue
 
     public SnapshotSegment[]? Segments { get; set; }
 
-    public bool Equals(TagValue? other)
+    public bool Equals([NotNullWhen(true)] TagValue? other)
     {
         if (ReferenceEquals(null, other))
         {

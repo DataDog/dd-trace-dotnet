@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
@@ -97,13 +98,13 @@ internal sealed class FlagSelection : IEquatable<FlagSelection>
         return new FlagSelection(canonicalTags, canonicalKeyPatterns, reason);
     }
 
-    public bool Equals(FlagSelection? other)
+    public bool Equals([NotNullWhen(true)] FlagSelection? other)
         => other is not null
         && DropReason == other.DropReason
         && SequenceEqual(_tags, other._tags)
         && SequenceEqual(_keyPatterns, other._keyPatterns);
 
-    public override bool Equals(object? obj) => obj is FlagSelection other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is FlagSelection other && Equals(other);
 
     public override int GetHashCode()
     {

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
@@ -17,7 +18,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public Capture? Capture { get; set; }
 
-        public bool Equals(CaptureExpression? other)
+        public bool Equals([NotNullWhen(true)] CaptureExpression? other)
         {
             if (ReferenceEquals(null, other))
             {
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             return Name == other.Name && Equals(Expr, other.Expr) && Equals(Capture, other.Capture);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             if (ReferenceEquals(null, obj))
             {
