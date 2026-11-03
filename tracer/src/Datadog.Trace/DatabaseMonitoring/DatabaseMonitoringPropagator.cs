@@ -171,7 +171,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 {
                     foreach (DbParameter? param in command.Parameters)
                     {
-                        if (param == null)
+                        if (param is null)
                         {
                             continue;
                         }
@@ -250,7 +250,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 {
                     foreach (DbParameter? param in command.Parameters)
                     {
-                        if (param == null)
+                        if (param is null)
                         {
                             continue;
                         }
@@ -416,7 +416,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             // NOTE: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
             //       Since the feature isn't available for Npgsql we avoid this due to the integrationId check above
-            if (command.Connection == null)
+            if (command.Connection is null)
             {
                 return false;
             }

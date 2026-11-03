@@ -92,7 +92,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -100,7 +100,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             var taintedObjects = iastContext.GetTaintedObjects();
             var taintedSelf = taintedObjects.Get(input);
 
-            if (taintedSelf == null)
+            if (taintedSelf is null)
             {
                 return result;
             }

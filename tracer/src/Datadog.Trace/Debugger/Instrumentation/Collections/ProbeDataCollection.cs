@@ -75,7 +75,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
 
                 var processor = ProbeExpressionsProcessor.Instance.Get(probeId);
 
-                if (processor == null)
+                if (processor is null)
                 {
                     return ref ProbeData.Empty;
                 }

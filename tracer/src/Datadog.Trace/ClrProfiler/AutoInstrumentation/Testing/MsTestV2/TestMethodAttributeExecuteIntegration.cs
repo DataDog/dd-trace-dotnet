@@ -694,7 +694,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     private static void SetFinalStatusIfApplicable<TTestMethod>(Test test, TTestMethod testMethod, string cacheKey, TestStatus testStatus, RetryState retryState)
     {
         var testTags = test.GetTags();
-        if (testTags == null)
+        if (testTags is null)
         {
             return;
         }

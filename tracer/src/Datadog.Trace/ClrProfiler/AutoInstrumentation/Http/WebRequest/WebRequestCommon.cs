@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 int? cachedSamplingPriority = null;
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
-                if (tracer.ActiveScope == null)
+                if (tracer.ActiveScope is null)
                 {
                     cachedSamplingPriority = cachedSpanContext?.SamplingPriority;
                 }

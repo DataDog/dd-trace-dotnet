@@ -76,7 +76,7 @@ namespace Datadog.Trace.Debugger.Symbols
             try
             {
                 var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(assembly);
-                if (datadogMetadataReader == null)
+                if (datadogMetadataReader is null)
                 {
                     Log.Debug("DatadogMetadataReader is null for assembly {Assembly}", assembly.FullName);
                     return null;
@@ -210,7 +210,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 var classLanguageSpecifics = GetClassLanguageSpecifics(type);
                 SourceLocationInfo linesAndSource = default;
                 var allScopes = nestedClassesScopeIndex == 0 ? null : new Model.Scope[nestedClassesScopeIndex];
-                if (allScopes == null)
+                if (allScopes is null)
                 {
                     linesAndSource = GetClassSourceLocationInfo(null);
                     classScope = new Model.Scope
@@ -282,7 +282,7 @@ namespace Datadog.Trace.Debugger.Symbols
             int classStartLine = int.MaxValue;
             int classEndLine = 0;
             string? classSourceFile = null;
-            if (allScopes == null)
+            if (allScopes is null)
             {
                 return new SourceLocationInfo(startLine: UnknownMethodStartLine, endLine: UnknownMethodEndLine, path: classSourceFile);
             }
@@ -308,7 +308,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 for (int i = 0; i < allScopes.Length; i++)
                 {
                     var scope = allScopes[i];
-                    if (scope.Scopes == null)
+                    if (scope.Scopes is null)
                     {
                         continue;
                     }
@@ -556,12 +556,12 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (startColumn == null || startColumn > scope.LanguageSpecifics.Value.StartColumn)
+                    if (startColumn is null || startColumn > scope.LanguageSpecifics.Value.StartColumn)
                     {
                         startColumn = scope.LanguageSpecifics.Value.StartColumn;
                     }
 
-                    if (endColumn == null || endColumn < scope.LanguageSpecifics.Value.EndColumn)
+                    if (endColumn is null || endColumn < scope.LanguageSpecifics.Value.EndColumn)
                     {
                         endColumn = scope.LanguageSpecifics.Value.EndColumn;
                     }

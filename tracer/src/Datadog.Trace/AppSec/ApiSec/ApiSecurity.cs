@@ -66,14 +66,14 @@ internal sealed class ApiSecurity
             {
                 var httpMethod = localRootSpan.GetHttpMethod();
                 statusCode ??= localRootSpan.GetHttpStatusCode();
-                if (httpMethod == null || statusCode == null)
+                if (httpMethod is null || statusCode is null)
                 {
                     Log.Debug("Unsupported groupkey for api security {Method}, {Status}", httpMethod, statusCode);
                     return SamplingDecision.Skip;
                 }
 
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
-                if (httpRouteTag == null)
+                if (httpRouteTag is null)
                 {
                     Log.Debug("No route for api security, {Method}, {Status}", httpMethod, statusCode);
 

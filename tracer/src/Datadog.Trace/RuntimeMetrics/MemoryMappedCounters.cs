@@ -146,7 +146,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             var contentionCount = perf.LocksAndThreads.Contention;
 
-            if (_lastContentionCount == null)
+            if (_lastContentionCount is null)
             {
                 _lastContentionCount = contentionCount;
             }

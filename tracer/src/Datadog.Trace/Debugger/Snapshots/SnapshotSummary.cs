@@ -133,7 +133,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static string FormatCapturedValues(CapturedValue[] capturedValues)
         {
-            if (capturedValues == null || capturedValues.Length == 0)
+            if (capturedValues is null || capturedValues.Length == 0)
             {
                 return null;
             }

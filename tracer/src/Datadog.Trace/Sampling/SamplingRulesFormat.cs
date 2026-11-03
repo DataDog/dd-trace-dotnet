@@ -19,7 +19,7 @@ internal static class SamplingRulesFormat
 
     public static bool IsValid(string format, out string normalized)
     {
-        if (format == null!)
+        if (format is null)
         {
             // default value if not specified
             normalized = Regex;

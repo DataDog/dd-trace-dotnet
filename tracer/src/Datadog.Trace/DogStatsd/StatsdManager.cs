@@ -80,7 +80,7 @@ internal sealed class StatsdManager : IStatsdManager
         while (true)
         {
             var current = Volatile.Read(ref _current);
-            if (current == null)
+            if (current is null)
             {
                 return default;
             }

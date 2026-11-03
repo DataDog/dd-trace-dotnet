@@ -171,7 +171,7 @@ namespace Datadog.Trace.Debugger.Configurations
 
         private bool IsEnvAndVersionMatch(ProbeDefinition probe)
         {
-            if (probe.Tags == null || probe.Tags.Length == 0)
+            if (probe.Tags is null || probe.Tags.Length == 0)
             {
                 return true;
             }

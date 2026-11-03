@@ -46,7 +46,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The configuration source to add.</param>
         public void Add(IConfigurationSource source)
         {
-            if (source == null!) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
+            if (source is null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
             _sources.Add(source);
         }

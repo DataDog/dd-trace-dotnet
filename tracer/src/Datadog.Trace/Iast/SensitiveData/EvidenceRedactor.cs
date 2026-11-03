@@ -47,7 +47,7 @@ internal sealed class EvidenceRedactor
 
     public bool IsKeySensitive(string? key)
     {
-        if (key == null)
+        if (key is null)
         {
             return false;
         }
@@ -65,7 +65,7 @@ internal sealed class EvidenceRedactor
 
     public bool IsValueSensitive(string? value)
     {
-        if (value == null)
+        if (value is null)
         {
             return false;
         }
@@ -114,7 +114,7 @@ internal sealed class EvidenceRedactor
         }
 
         // We can skip new vulnerabilities creation for vulnerability types without redaction
-        if (sensitive == null)
+        if (sensitive is null)
         {
             return vulnerability;
         }

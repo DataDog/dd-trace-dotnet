@@ -111,7 +111,7 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
     private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {
-        if (messagesList == null || messagesList.Count == 0)
+        if (messagesList is null || messagesList.Count == 0)
         {
             return null;
         }

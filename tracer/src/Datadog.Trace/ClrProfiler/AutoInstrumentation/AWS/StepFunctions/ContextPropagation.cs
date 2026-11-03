@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         {
             // Inject the tracing headers
             var input = carrier.Input;
-            if (input == null)
+            if (input is null)
             {
                 return;
             }

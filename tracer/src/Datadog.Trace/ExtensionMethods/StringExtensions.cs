@@ -23,7 +23,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>A new string with <paramref name="suffix"/> removed from the end, if found. Otherwise, <paramref name="value"/>.</returns>
         public static string TrimEnd(this string value, string suffix, StringComparison comparisonType)
         {
-            if (value == null) { ThrowHelper.ThrowArgumentNullException(nameof(value)); }
+            if (value is null) { ThrowHelper.ThrowArgumentNullException(nameof(value)); }
 
             return !string.IsNullOrEmpty(suffix) && value.EndsWith(suffix, comparisonType)
                        ? value.Substring(0, value.Length - suffix.Length)
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns><c>true</c> or <c>false</c> if <paramref name="value"/> is one of the accepted values; <c>null</c> otherwise.</returns>
         public static bool? ToBoolean(this string value)
         {
-            if (value == null) { ThrowHelper.ThrowArgumentNullException(nameof(value)); }
+            if (value is null) { ThrowHelper.ThrowArgumentNullException(nameof(value)); }
 
             if (value.Length == 0)
             {

@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         [TestingAndPrivateOnly]
         internal static string ConstructErrorMessage(IExecutionErrors executionErrors)
         {
-            if (executionErrors == null)
+            if (executionErrors is null)
             {
                 return string.Empty;
             }

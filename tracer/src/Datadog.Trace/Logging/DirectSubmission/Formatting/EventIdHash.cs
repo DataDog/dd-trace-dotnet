@@ -40,7 +40,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         /// <returns>A 32-bit hash of the template.</returns>
         public static uint Compute(string messageTemplate, string? stackTrace = null)
         {
-            if (messageTemplate == null)
+            if (messageTemplate is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(messageTemplate));
             }

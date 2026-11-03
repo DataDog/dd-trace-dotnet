@@ -53,7 +53,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private bool EnsureEnterHashComputed()
         {
-            if (_enterSequenceHash == null)
+            if (_enterSequenceHash is null)
             {
                 lock (_locker)
                 {
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private bool EnsureLeaveHashComputed()
         {
-            if (_leaveSequenceHash == null)
+            if (_leaveSequenceHash is null)
             {
                 lock (_locker)
                 {

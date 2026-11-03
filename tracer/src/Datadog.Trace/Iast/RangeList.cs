@@ -25,7 +25,7 @@ internal sealed class RangeList
 
     public void Add(Range[]? ranges, int length, int shift)
     {
-        if (ranges == null || length == 0 || _remaining == 0)
+        if (ranges is null || length == 0 || _remaining == 0)
         {
             return;
         }

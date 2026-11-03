@@ -108,7 +108,7 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
     {
         lock (Log)
         {
-            if (_instance == null)
+            if (_instance is null)
             {
                 _instance = new HardcodedSecretsAnalyzer(regexTimeout);
                 LifetimeManager.Instance.AddShutdownTask(_ => _instance.Dispose());
@@ -118,7 +118,7 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
 
     internal string? CheckSecret(string secret)
     {
-        if (_secretRules == null)
+        if (_secretRules is null)
         {
             _secretRules = GenerateSecretRules(_regexTimeout);
         }

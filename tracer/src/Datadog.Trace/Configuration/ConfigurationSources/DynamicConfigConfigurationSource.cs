@@ -81,7 +81,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             {
                 var rawValue = item?.Value<string>();
 
-                if (rawValue == null)
+                if (rawValue is null)
                 {
                     continue;
                 }

@@ -92,7 +92,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
         {
-            if (_statsd == null)
+            if (_statsd is null)
             {
                 // I know it sounds crazy at first, but because OnEventSourceCreated is called from the base constructor,
                 // and EnableEvents is called from OnEventSourceCreated, it's entirely possible that OnEventWritten

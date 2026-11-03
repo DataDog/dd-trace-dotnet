@@ -44,7 +44,7 @@ internal static class MethodMatcher
         var stackTraceParts = ParseMethodName(normalizedStackTrace);
         var methodBaseParts = ParseMethodName(methodBase.DeclaringType?.FullName + "." + methodBase.Name);
 
-        if (stackTraceParts == null || methodBaseParts == null)
+        if (stackTraceParts is null || methodBaseParts is null)
         {
             return normalizedStackTrace.Equals(methodBase.Name, StringComparison.Ordinal);
         }
@@ -273,7 +273,7 @@ internal static class MethodMatcher
         }
 
         var originalMethodName = ExtractMethodNameFromStateMachine(stateMachineType.Name);
-        if (originalMethodName == null)
+        if (originalMethodName is null)
         {
             return null;
         }
@@ -350,7 +350,7 @@ internal static class MethodMatcher
         }
 
         var originalMethodName = ExtractMethodNameFromStateMachine(stateMachineType.Name);
-        if (originalMethodName == null)
+        if (originalMethodName is null)
         {
             return null;
         }

@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             try
             {
                 var methodBody = method.GetMethodBody();
-                if (methodBody == null)
+                if (methodBody is null)
                 {
                     return null; // Could not read method body, so we can't verify locals
                 }

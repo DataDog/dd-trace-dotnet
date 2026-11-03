@@ -55,13 +55,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static bool AnalyzeMethodBody(MethodBase methodToAnalyze, Type targetType, string methodName)
         {
             var methodBody = methodToAnalyze.GetMethodBody();
-            if (methodBody == null)
+            if (methodBody is null)
             {
                 return false;
             }
 
             var il = methodBody.GetILAsByteArray();
-            if (il == null)
+            if (il is null)
             {
                 return false;
             }

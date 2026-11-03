@@ -36,7 +36,7 @@ namespace Datadog.Trace.OpenTracing
         public string Get(string key)
         {
             _headers.TryGetValues(key, out IEnumerable<string> values);
-            if (values == null)
+            if (values is null)
             {
                 return null;
             }
@@ -59,7 +59,7 @@ namespace Datadog.Trace.OpenTracing
             foreach (KeyValuePair<string, IEnumerable<string>> header in _headers)
             {
 #pragma warning disable MA0089 // Use an overload with char instead of string - string.Join(char, ...) isn't available on .NET Framework or .NET Standard 2.0, and this assembly has no polyfill
-                yield return new KeyValuePair<string, string>(header.Key, header.Value == null ? null : string.Join(",", header.Value));
+                yield return new KeyValuePair<string, string>(header.Key, header.Value is null ? null : string.Join(",", header.Value));
 #pragma warning restore MA0089
             }
         }

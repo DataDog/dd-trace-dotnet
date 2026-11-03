@@ -74,7 +74,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         if (!Directory.Exists(processLogDir))
         {
             Utils.WriteError("Instrumentation verification output directory does not exist.");
-            if (pid == null && string.IsNullOrEmpty(processName) && string.IsNullOrEmpty(logDirectory))
+            if (pid is null && string.IsNullOrEmpty(processName) && string.IsNullOrEmpty(logDirectory))
             {
                 Utils.WriteError("Please provide either process name, process ID or instrumentation verification logs directory path");
             }
@@ -154,7 +154,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             return null;
         }
 
-        if (string.IsNullOrEmpty(processName) && pid == null)
+        if (string.IsNullOrEmpty(processName) && pid is null)
         {
             DirectoryInfo dir = null;
             if (dirs.Count > 1)
@@ -171,7 +171,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         }
 
         var processNamePattern = string.IsNullOrEmpty(processName) ? "[A-Za-z0-9.]*" : $"({processName})";
-        var pidPattern = pid == null ? "\\d+" : pid.Value.ToStringInvariant();
+        var pidPattern = pid is null ? "\\d+" : pid.Value.ToStringInvariant();
         var pattern = $"^{processNamePattern}(_){pidPattern}(_)[0-9-_]+$";
         var candidates = dirs.Where(d => Regex.IsMatch(d.Name, pattern)).ToList();
         if (candidates.Count == 1)

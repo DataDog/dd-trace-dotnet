@@ -149,7 +149,7 @@ namespace Datadog.Trace.OpenTracing
                     return this;
                 }
 
-                if (_tags == null)
+                if (_tags is null)
                 {
                     _tags = new Dictionary<string, string>();
                 }
@@ -164,7 +164,7 @@ namespace Datadog.Trace.OpenTracing
             var openTracingSpanContext = _parent as OpenTracingSpanContext;
             var parentContext = openTracingSpanContext?.Context;
 
-            if (parentContext == null && !_ignoreActiveSpan)
+            if (parentContext is null && !_ignoreActiveSpan)
             {
                 // if parent was not set explicitly, default to active span as parent (unless disabled)
                 return _tracer.ActiveSpan?.Span.Context;

@@ -124,7 +124,7 @@ internal static class FiltersHelper
         }
 
         module = Path.GetFileNameWithoutExtension(module);
-        if (module == null)
+        if (module is null)
         {
             return false;
         }
@@ -179,7 +179,7 @@ internal static class FiltersHelper
 
     public static bool IsValidFilterExpression(string? filter)
     {
-        if (filter == null)
+        if (filter is null)
         {
             return false;
         }

@@ -84,7 +84,7 @@ namespace Datadog.Trace.FeatureFlags
             try
             {
                 var config = _config;
-                if (config == null)
+                if (config is null)
                 {
                     return new Evaluation(
                         flagKey,
@@ -340,13 +340,13 @@ namespace Datadog.Trace.FeatureFlags
             if (condition.Operator == ConditionOperator.IS_NULL)
             {
                 var value = ResolveAttribute(condition.Attribute, context);
-                var isNull = value == null;
+                var isNull = value is null;
                 var expectedNull = condition.Value is bool b ? b : throw new FormatException("Bool value expected");
                 return isNull == expectedNull;
             }
 
             var attributeValue = ResolveAttribute(condition.Attribute, context);
-            if (attributeValue == null)
+            if (attributeValue is null)
             {
                 return false;
             }
@@ -500,7 +500,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private static DateTime? ParseDate(string? dateString)
         {
-            if (dateString == null)
+            if (dateString is null)
             {
                 return null;
             }
@@ -514,7 +514,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private static object? ResolveAttribute(string? name, EvaluationContext? context)
         {
-            if (name == null || context is null)
+            if (name is null || context is null)
             {
                 return null;
             }
@@ -642,7 +642,7 @@ namespace Datadog.Trace.FeatureFlags
 
         internal static string? AllocationKey(Evaluation evaluation)
         {
-            if (evaluation.FlagMetadata == null)
+            if (evaluation.FlagMetadata is null)
             {
                 return null;
             }
@@ -656,7 +656,7 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal static string? ErrorCode(Evaluation evaluation)
         {
-            if (evaluation.FlagMetadata == null)
+            if (evaluation.FlagMetadata is null)
             {
                 return null;
             }
@@ -687,9 +687,9 @@ namespace Datadog.Trace.FeatureFlags
                             continue;
                         }
 
-                        if (value == null || seen.Add(value))
+                        if (value is null || seen.Add(value))
                         {
-                            if (value == null)
+                            if (value is null)
                             {
                                 result[entry.Key] = null;
                             }
@@ -850,7 +850,7 @@ namespace Datadog.Trace.FeatureFlags
                 return ParseError($"Allocation key is null for {flagKey}");
             }
 
-            if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant == null)
+            if (flag.Variations is null || !flag.Variations.TryGetValue(variationKey, out var variant) || variant is null)
             {
                 return ParseError($"Variant not found for: {variationKey}");
             }
@@ -939,7 +939,7 @@ namespace Datadog.Trace.FeatureFlags
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;
 
-            if (allocationKey == null || variantKey == null)
+            if (allocationKey is null || variantKey is null)
             {
                 Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
                 return null;

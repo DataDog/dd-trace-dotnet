@@ -281,7 +281,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     {
         var configurationDictionary = configurationResult.WithDefault(new DefaultResult<IDictionary<string, string>>(null!, "[]"));
 
-        if (configurationDictionary == null!)
+        if (configurationDictionary is null)
         {
             return null;
         }
@@ -437,7 +437,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         static bool AreEqual(ReadOnlyDictionary<string, string>? dictionary1, ReadOnlyDictionary<string, string>? dictionary2)
         {
-            if (dictionary1 == null || dictionary2 == null)
+            if (dictionary1 is null || dictionary2 is null)
             {
                 return ReferenceEquals(dictionary1, dictionary2);
             }
@@ -530,7 +530,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     {
         var source = serverStatusCode ? HttpServerErrorStatusCodes : HttpClientErrorStatusCodes;
 
-        if (source == null)
+        if (source is null)
         {
             return false;
         }

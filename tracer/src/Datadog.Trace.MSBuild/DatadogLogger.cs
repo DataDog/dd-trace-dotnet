@@ -75,7 +75,7 @@ namespace Datadog.Trace.MSBuild
         /// <inheritdoc />
         public void Initialize(IEventSource eventSource)
         {
-            if (eventSource == null)
+            if (eventSource is null)
             {
                 return;
             }

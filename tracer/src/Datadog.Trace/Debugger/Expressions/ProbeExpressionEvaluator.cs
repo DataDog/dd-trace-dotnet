@@ -157,7 +157,7 @@ internal sealed class ProbeExpressionEvaluator
 
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers, out ProbeExpressionsCacheEntry? entry)
     {
-        if (Templates == null && Condition == null && Metric == null && SpanDecorations == null && CaptureExpressions == null)
+        if (Templates is null && Condition is null && Metric is null && SpanDecorations is null && CaptureExpressions is null)
         {
             entry = null;
             return default;
@@ -204,7 +204,7 @@ internal sealed class ProbeExpressionEvaluator
 
     internal void EvaluateCaptureExpressions(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, ProbeExpressionsCacheEntry? entry)
     {
-        if (CaptureExpressions == null)
+        if (CaptureExpressions is null)
         {
             return;
         }
@@ -247,12 +247,12 @@ internal sealed class ProbeExpressionEvaluator
         var resultBuilder = StringBuilderCache.Acquire();
         try
         {
-            if (Templates == null)
+            if (Templates is null)
             {
                 return;
             }
 
-            if (compiledExpressions == null)
+            if (compiledExpressions is null)
             {
                 return;
             }
@@ -386,7 +386,7 @@ internal sealed class ProbeExpressionEvaluator
 
     private void EvaluateSpanDecorations(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? compiledDecorations)
     {
-        if (SpanDecorations == null)
+        if (SpanDecorations is null)
         {
             return;
         }
@@ -394,7 +394,7 @@ internal sealed class ProbeExpressionEvaluator
         List<ExpressionEvaluationResult.DecorationResult>? decorations = null;
         try
         {
-            if (compiledDecorations == null)
+            if (compiledDecorations is null)
             {
                 Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: compiled decorations is null");
                 return;
@@ -545,7 +545,7 @@ internal sealed class ProbeExpressionEvaluator
 
     private void EvaluateCaptureExpressionsCore(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<object>[]? compiledExpressions, CaptureExpressionDefinition[] captureExpressions)
     {
-        if (compiledExpressions == null)
+        if (compiledExpressions is null)
         {
             return;
         }
@@ -611,7 +611,7 @@ internal sealed class ProbeExpressionEvaluator
 
     private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers)
     {
-        if (Templates == null)
+        if (Templates is null)
         {
             return null;
         }
@@ -660,7 +660,7 @@ internal sealed class ProbeExpressionEvaluator
 
     private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? CompileDecorations(MethodScopeMembers scopeMembers)
     {
-        if (SpanDecorations == null)
+        if (SpanDecorations is null)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -729,7 +729,7 @@ internal sealed class ProbeExpressionEvaluator
 
     internal CompiledExpression<object>[]? CompileCaptureExpressions(MethodScopeMembers scopeMembers)
     {
-        if (CaptureExpressions == null)
+        if (CaptureExpressions is null)
         {
             return null;
         }
@@ -761,7 +761,7 @@ internal sealed class ProbeExpressionEvaluator
 
     private bool IsLiteral<T>(CompiledExpression<T> expression)
     {
-        return expression.BudgetedDelegate == null && expression.ParsedExpression == null && expression.Errors == null && expression.RawExpression is not null;
+        return expression.BudgetedDelegate is null && expression.ParsedExpression is null && expression.Errors is null && expression.RawExpression is not null;
     }
 
     private bool? IsExpression(DebuggerExpression? expression)
@@ -817,7 +817,7 @@ internal sealed class ProbeExpressionEvaluator
                 }
         }
 
-        if (relevant == null || !relevant.Contains(resultAssignment))
+        if (relevant is null || !relevant.Contains(resultAssignment))
         {
             relevant = compiledExpression.ParsedExpression.ToString();
         }

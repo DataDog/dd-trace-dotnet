@@ -82,7 +82,7 @@ public sealed class HandlerWrapperSetHandlerIntegration
             Scope scope;
             object requestId = null;
             var proxyInstance = arg.DuckCast<IInvocationRequest>();
-            if (proxyInstance == null)
+            if (proxyInstance is null)
             {
                 LambdaCommon.Log("DuckCast.IInvocationRequest got null proxyInstance", debug: false);
                 scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, null);
@@ -124,7 +124,7 @@ public sealed class HandlerWrapperSetHandlerIntegration
             try
             {
                 var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
-                if (proxyInstance == null)
+                if (proxyInstance is null)
                 {
                     LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
                     await LambdaCommon.EndInvocationAsync(string.Empty, exception, callTargetState, RequestBuilder).ConfigureAwait(false);

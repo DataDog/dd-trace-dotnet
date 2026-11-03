@@ -321,7 +321,7 @@ internal partial class ProbeExpressionParser<T>
         var sb = StringBuilderCache.Acquire();
         try
         {
-            if (value == null)
+            if (value is null)
             {
                 sb.Append("null");
                 return sb.ToString();

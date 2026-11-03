@@ -50,7 +50,7 @@ internal sealed class EvidenceDictionaryConverter
     {
         var result = new Dictionary<string, object>();
 
-        if (evidence.Ranges == null || evidence.Ranges.Length == 0)
+        if (evidence.Ranges is null || evidence.Ranges.Length == 0)
         {
             TruncationUtils.InsertTruncatableValue(result, "value", evidence.Value, _maxValueLength);
         }
@@ -121,7 +121,7 @@ internal sealed class EvidenceDictionaryConverter
 
     private void ProcessValuePart(EvidenceConverterHelper.ValuePart? part, List<object> valueParts)
     {
-        if (part == null)
+        if (part is null)
         {
             return;
         }
@@ -154,7 +154,7 @@ internal sealed class EvidenceDictionaryConverter
         var parts = new EvidenceConverterHelper.ValuePartIterator(value, tainted, sensitive);
         foreach (var part in parts)
         {
-            if (part == null)
+            if (part is null)
             {
                 continue;
             }

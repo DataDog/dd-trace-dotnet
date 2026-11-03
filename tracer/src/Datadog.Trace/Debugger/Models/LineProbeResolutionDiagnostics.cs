@@ -60,7 +60,7 @@ namespace Datadog.Trace.Debugger.Models
 
         private static string? Format(string key, object? value)
         {
-            return value == null ? null : $"{key}={value}";
+            return value is null ? null : $"{key}={value}";
         }
     }
 }

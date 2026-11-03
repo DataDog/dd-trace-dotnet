@@ -31,7 +31,7 @@ internal static class SpanPointers
     // S3 hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/S3/Object/README.md
     public static void AddS3SpanPointer(Span span, string? bucketName, string? key, string? eTag)
     {
-        if (bucketName is null || key is null || eTag == null)
+        if (bucketName is null || key is null || eTag is null)
         {
             return;
         }

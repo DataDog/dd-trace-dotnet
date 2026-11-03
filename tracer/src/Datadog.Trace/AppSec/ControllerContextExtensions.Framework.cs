@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec
             }
 
             var scope = SharedItems.TryPeekScope(context, peekScopeKey);
-            if (scope == null)
+            if (scope is null)
             {
                 return;
             }

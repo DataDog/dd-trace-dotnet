@@ -368,7 +368,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    if (_agentVersion == null)
+                    if (_agentVersion is null)
                     {
                         var version = response.GetHeader(AgentHttpHeaderNames.AgentVersion);
                         LogPartialFlushWarningIfRequired(version ?? string.Empty);

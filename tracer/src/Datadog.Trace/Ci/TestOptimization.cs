@@ -604,13 +604,13 @@ internal sealed class TestOptimization : ITestOptimization
 
             // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
             // We query the settings api for those
-            if (settings.CodeCoverageEnabled == null
-             || settings.TestsSkippingEnabled == null
+            if (settings.CodeCoverageEnabled is null
+             || settings.TestsSkippingEnabled is null
              || settings.EarlyFlakeDetectionEnabled != false
-             || settings.FlakyRetryEnabled == null
-             || settings.DynamicInstrumentationEnabled == null
-             || settings.ImpactedTestsDetectionEnabled == null
-             || settings.TestManagementEnabled == null)
+             || settings.FlakyRetryEnabled is null
+             || settings.DynamicInstrumentationEnabled is null
+             || settings.ImpactedTestsDetectionEnabled is null
+             || settings.TestManagementEnabled is null)
             {
                 Log.Information("TestOptimization: Calling the configuration api.");
                 var remoteSettings = await client.GetSettingsAsync().ConfigureAwait(false);
@@ -633,7 +633,7 @@ internal sealed class TestOptimization : ITestOptimization
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, this);
                 TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
 
-                if (settings.CodeCoverageEnabled == null && remoteSettings.CodeCoverage.HasValue)
+                if (settings.CodeCoverageEnabled is null && remoteSettings.CodeCoverage.HasValue)
                 {
                     Log.Information("TestOptimization: Code Coverage has been changed to {Value} by settings api.", remoteSettings.CodeCoverage.Value);
                     settings.SetCodeCoverageEnabled(remoteSettings.CodeCoverage.Value);

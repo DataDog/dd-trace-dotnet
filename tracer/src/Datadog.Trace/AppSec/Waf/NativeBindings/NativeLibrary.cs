@@ -44,7 +44,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static bool TryLoad(string libraryPath, out IntPtr handle)
         {
-            if (libraryPath == null)
+            if (libraryPath is null)
             {
                 throw new ArgumentNullException(nameof(libraryPath));
             }

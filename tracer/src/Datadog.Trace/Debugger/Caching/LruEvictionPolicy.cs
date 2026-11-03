@@ -66,7 +66,7 @@ namespace Datadog.Trace.Debugger.Caching
             _lock.EnterWriteLock();
             try
             {
-                if (_list.Last == null)
+                if (_list.Last is null)
                 {
                     throw new InvalidOperationException("Cache is empty");
                 }

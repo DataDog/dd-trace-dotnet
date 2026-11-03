@@ -730,7 +730,7 @@ namespace Datadog.Trace.Debugger
 
         private ApplyDetails[] AcceptAddedConfiguration(List<RemoteConfiguration>? configs)
         {
-            if (configs == null || IsDisposed)
+            if (configs is null || IsDisposed)
             {
                 return [];
             }
@@ -826,7 +826,7 @@ namespace Datadog.Trace.Debugger
                     if (config is not null)
                     {
                         result.Add(
-                            updateResult.Error == null
+                            updateResult.Error is null
                                 ? ApplyDetails.FromOk(config.Path.Path)
                                 : ApplyDetails.FromError(config.Path.Path, updateResult.Error));
                     }
@@ -842,7 +842,7 @@ namespace Datadog.Trace.Debugger
 
         private void AcceptRemovedConfiguration(List<RemoteConfigurationPath>? paths)
         {
-            if (paths == null || IsDisposed)
+            if (paths is null || IsDisposed)
             {
                 return;
             }

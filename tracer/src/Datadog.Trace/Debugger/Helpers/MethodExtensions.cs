@@ -54,7 +54,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 {
                     // Append t.FullName, replacing '+' with '.'
                     var fullName = declaringType.FullName;
-                    if (fullName == null)
+                    if (fullName is null)
                     {
                         return null;
                     }

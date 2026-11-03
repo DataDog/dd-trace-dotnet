@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static void Log(string message, object?[] args)
         {
-            if (StartupLogFilePath == null)
+            if (StartupLogFilePath is null)
             {
                 return;
             }

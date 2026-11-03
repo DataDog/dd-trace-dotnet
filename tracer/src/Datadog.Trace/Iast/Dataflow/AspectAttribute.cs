@@ -27,9 +27,9 @@ internal abstract class AspectAttribute : Attribute
 
     protected AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
     {
-        if (paramShift == null || paramShift.Length == 0) { paramShift = [0]; }
-        if (boxParam == null || boxParam.Length == 0) { boxParam = [false]; }
-        if (filters == null || filters.Length == 0) { filters = [AspectFilter.None]; }
+        if (paramShift is null || paramShift.Length == 0) { paramShift = [0]; }
+        if (boxParam is null || boxParam.Length == 0) { boxParam = [false]; }
+        if (filters is null || filters.Length == 0) { filters = [AspectFilter.None]; }
 
         if (paramShift.Length > 1 && boxParam.Length == 1)
         {

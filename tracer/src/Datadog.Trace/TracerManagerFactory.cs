@@ -159,7 +159,7 @@ namespace Datadog.Trace
 
             if (ShouldEnableRemoteConfiguration(settings))
             {
-                if (remoteConfigurationManager == null)
+                if (remoteConfigurationManager is null)
                 {
                     var sw = RefStopwatch.Create();
 

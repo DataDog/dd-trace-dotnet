@@ -89,7 +89,7 @@ namespace Datadog.Trace.Debugger.Configurations
         public string GetStringStartingWith(string prefix)
         {
             var node = SearchNode(prefix, prefixMode: false);
-            if (node == null)
+            if (node is null)
             {
                 return null;
             }
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Debugger.Configurations
 
         public static string ReverseStr(string str)
         {
-            if (str == null)
+            if (str is null)
             {
                 return null;
             }

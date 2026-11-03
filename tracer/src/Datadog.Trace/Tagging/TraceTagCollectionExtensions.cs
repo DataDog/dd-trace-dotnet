@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tagging
     {
         public static TraceSources GetTraceSources(this TraceTagCollection? tags)
         {
-            if (tags == null)
+            if (tags is null)
             {
                 return TraceSources.None;
             }

@@ -1497,7 +1497,7 @@ namespace Datadog.Trace.DuckTyping
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
                 TargetType = targetType;
-                Success = proxyType != null && exceptionInfo == null;
+                Success = proxyType != null && exceptionInfo is null;
                 if (exceptionInfo is not null)
                 {
                     MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -1566,7 +1566,7 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool CanCreate()
             {
-                return _exceptionInfo == null;
+                return _exceptionInfo is null;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

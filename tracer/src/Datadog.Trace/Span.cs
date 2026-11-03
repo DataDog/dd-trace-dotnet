@@ -145,7 +145,7 @@ namespace Datadog.Trace
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
-        internal bool IsTopLevel => Context.Parent == null
+        internal bool IsTopLevel => Context.Parent is null
                                  || Context.Parent.SpanId == 0
                                  || Context.Parent switch
                                  {
@@ -233,7 +233,7 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.Env:
-                    if (Context.TraceContext == null)
+                    if (Context.TraceContext is null)
                     {
                         LogMissingTraceContext(key, value);
                         return this;
@@ -242,7 +242,7 @@ namespace Datadog.Trace
                     Context.TraceContext.Environment = value;
                     break;
                 case Trace.Tags.Version:
-                    if (Context.TraceContext == null)
+                    if (Context.TraceContext is null)
                     {
                         LogMissingTraceContext(key, value);
                         return this;
@@ -251,7 +251,7 @@ namespace Datadog.Trace
                     Context.TraceContext.ServiceVersion = value;
                     break;
                 case Trace.Tags.Origin:
-                    if (Context.TraceContext == null)
+                    if (Context.TraceContext is null)
                     {
                         LogMissingTraceContext(key, value);
                         return this;
@@ -275,7 +275,7 @@ namespace Datadog.Trace
                     break;
 
                 case Trace.Tags.SamplingPriority:
-                    if (Context.TraceContext == null)
+                    if (Context.TraceContext is null)
                     {
                         LogMissingTraceContext(key, value);
                         return this;
@@ -294,7 +294,7 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.ManualKeep:
-                    if (Context.TraceContext == null)
+                    if (Context.TraceContext is null)
                     {
                         LogMissingTraceContext(key, value);
                         return this;
@@ -308,7 +308,7 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.ManualDrop:
-                    if (Context.TraceContext == null)
+                    if (Context.TraceContext is null)
                     {
                         LogMissingTraceContext(key, value);
                         return this;

@@ -377,7 +377,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal string GetVersion()
         {
-            if (_version == null)
+            if (_version is null)
             {
                 var ptr = _getVersionField();
                 _version = Marshal.PtrToStringAnsi(ptr);

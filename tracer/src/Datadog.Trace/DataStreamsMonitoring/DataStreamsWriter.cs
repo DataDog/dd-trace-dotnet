@@ -226,7 +226,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
         _drainSignal.Set();
 
         // nothing else to do, since the writer was not fully initialized
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null || _flushTask == null)
+        if (!Volatile.Read(ref _isInitialized) || _processTask is null || _flushTask is null)
         {
             return;
         }
@@ -278,7 +278,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
     public async Task FlushAsync()
     {
-        if (!Volatile.Read(ref _isInitialized) || _processTask == null)
+        if (!Volatile.Read(ref _isInitialized) || _processTask is null)
         {
             return;
         }

@@ -39,7 +39,7 @@ internal sealed class AsmGenericProduct : IAsmConfigUpdater
             foreach (var file in files)
             {
                 var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<JToken>();
-                if (payload.TypedFile == null)
+                if (payload.TypedFile is null)
                 {
                     continue;
                 }

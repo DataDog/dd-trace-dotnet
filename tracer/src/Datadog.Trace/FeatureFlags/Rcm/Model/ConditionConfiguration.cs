@@ -24,7 +24,7 @@ internal sealed class ConditionConfiguration
 
     internal bool MatchesRegex(object attributeValue)
     {
-        if (_regex == null)
+        if (_regex is null)
         {
             var pattern = Value?.ToString() ?? string.Empty;
             if (pattern is not { Length: > 0 })

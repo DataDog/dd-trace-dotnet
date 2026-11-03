@@ -42,7 +42,7 @@ namespace Datadog.Trace.Configuration
                     var jsonContent = Encoding.UTF8.GetString(config.Contents);
                     var configData = ParseConfiguration(config.Path.Id, jsonContent);
 
-                    if (configData == null)
+                    if (configData is null)
                     {
                         continue;
                     }
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Configuration
             {
                 var configDto = JsonHelper.DeserializeObject<ApmTracingConfigDto>(jsonContent);
 
-                if (configDto?.LibConfig == null)
+                if (configDto?.LibConfig is null)
                 {
                     Log.Warning("APM_TRACING configuration {ConfigId} has no lib_config", configId);
                     return null;

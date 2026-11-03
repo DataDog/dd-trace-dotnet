@@ -58,7 +58,7 @@ internal sealed class AwsSqsHandlerCommon
     private static void InjectForSingleMessage<TSendMessageRequest>(Tracer tracer, TSendMessageRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<IContainsMessageAttributes>();
-        if (requestProxy == null)
+        if (requestProxy is null)
         {
             return;
         }
@@ -78,7 +78,7 @@ internal sealed class AwsSqsHandlerCommon
     private static void InjectForBatch<TSendMessageBatchRequest>(Tracer tracer, TSendMessageBatchRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
-        if (requestProxy == null || requestProxy.Entries == null)
+        if (requestProxy is null || requestProxy.Entries is null)
         {
             return;
         }
@@ -160,7 +160,7 @@ internal sealed class AwsSqsHandlerCommon
                 foreach (var o in response.Messages)
                 {
                     var message = o.DuckCast<IMessage>();
-                    if (message == null)
+                    if (message is null)
                     {
                         continue; // should not happen
                     }

@@ -41,7 +41,7 @@ namespace Datadog.Trace.Configuration
 
         public void Start()
         {
-            if (Interlocked.Exchange(ref _subscription, new Subscription(ConfigurationUpdated, ProductName)) == null)
+            if (Interlocked.Exchange(ref _subscription, new Subscription(ConfigurationUpdated, ProductName)) is null)
             {
                 _subscriptionManager.SubscribeToChanges(_subscription!);
 

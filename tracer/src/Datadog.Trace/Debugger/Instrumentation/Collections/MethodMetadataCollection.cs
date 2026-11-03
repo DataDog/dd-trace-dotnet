@@ -77,7 +77,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                     return false;
                 }
 
-                var targetType = targetObject == null ? Type.GetTypeFromHandle(typeHandle) : targetObject.GetType();
+                var targetType = targetObject is null ? Type.GetTypeFromHandle(typeHandle) : targetObject.GetType();
                 Items[index] = MethodMetadataInfoFactory.Create(method, targetType, asyncKickOffInfo);
             }
 

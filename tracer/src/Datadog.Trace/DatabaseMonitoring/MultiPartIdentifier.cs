@@ -160,7 +160,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                             if (IsWhitespace(testchar))
                             { // If it is Whitespace
                                 parsedNames[stringCount] = sb.ToString(); // Set the currently parsed string
-                                if (whitespaceSB == null)
+                                if (whitespaceSB is null)
                                 {
                                     whitespaceSB = new StringBuilder();
                                 }
@@ -287,7 +287,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                     return [];
             }
 
-            if (parsedNames[0] == null)
+            if (parsedNames[0] is null)
             {
                 if (ThrowOnEmptyMultipartName)
                 {

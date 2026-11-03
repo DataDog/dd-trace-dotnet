@@ -140,7 +140,7 @@ namespace Datadog.Trace
         {
             if (azureAppServiceSettings.DebugModeEnabled)
             {
-                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Agent.LogLevel) == null)
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Agent.LogLevel) is null)
                 {
                     // This ensures that a single setting from applicationConfig can enable debug logs for every aspect of the extension
                     EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Agent.LogLevel, "debug");
@@ -264,7 +264,7 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.Healthy;
                                         if (previousState == ProcessState.Unhealthy)
                                         {
-                                            if (metadata.Process == null)
+                                            if (metadata.Process is null)
                                             {
                                                 Log.Information("{AgentPath} is now healthy.", path);
                                             }
@@ -408,7 +408,7 @@ namespace Datadog.Trace
                                         {
                                             metadata.HealthyStopwatch = Stopwatch.StartNew();
                                             metadata.ProcessState = ProcessState.Healthy;
-                                            if (metadata.Process == null || metadata.Process.HasExited)
+                                            if (metadata.Process is null || metadata.Process.HasExited)
                                             {
                                                 // The health check passed because of another instance, not the one we started
                                                 Log.Information(
@@ -426,7 +426,7 @@ namespace Datadog.Trace
                                             break;
                                         }
 
-                                        if (metadata.Process == null || metadata.Process.HasExited)
+                                        if (metadata.Process is null || metadata.Process.HasExited)
                                         {
                                             // Retried with backoff, so not an Error
                                             var failures = metadata.SequentialFailures + 1;
@@ -545,7 +545,7 @@ namespace Datadog.Trace
         private static bool TryStopOwnProcess(ProcessMetadata metadata, bool firstAttempt)
         {
             var process = metadata.Process;
-            if (process == null)
+            if (process is null)
             {
                 return true;
             }
@@ -643,7 +643,7 @@ namespace Datadog.Trace
         internal static bool RecordOwnProcessExit(ProcessMetadata metadata)
         {
             var process = metadata.Process;
-            if (process == null)
+            if (process is null)
             {
                 return false;
             }
@@ -825,7 +825,7 @@ namespace Datadog.Trace
 
                 // DogStatsD never replies, so its pipe being present is all we can check
                 LastHealthCheckFailure = IsTraceAgent ? await GetTraceAgentFailureAsync().ConfigureAwait(false) : null;
-                return LastHealthCheckFailure == null;
+                return LastHealthCheckFailure is null;
             }
 
             private bool NamedPipeIsBound()

@@ -190,7 +190,7 @@ namespace Datadog.Trace.Debugger
         private FilePathLookup? CreateLookupForSourceFilePaths(Assembly loadedAssembly)
         {
             var documents = GetDocumentsFromPDB(loadedAssembly);
-            if (documents == null)
+            if (documents is null)
             {
                 return null; // No PDB available or unsupported assembly
             }
@@ -277,7 +277,7 @@ namespace Datadog.Trace.Debugger
             try
             {
                 var sourceFile = probe.Where?.SourceFile;
-                if (sourceFile == null)
+                if (sourceFile is null)
                 {
                     return new LineProbeResolveResult(
                         LiveProbeResolveStatus.Error,

@@ -35,7 +35,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// use the methods on <see cref="TraceContext"/> instead.</remarks>
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
         {
-            if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
+            if (span is null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
             if (span.Context is SpanContext { TraceContext: { } traceContext })
             {
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ExtensionMethods
             else
             {
                 var rawHttpStatusCode = span.GetHttpStatusCodeString();
-                if (rawHttpStatusCode == null || !int.TryParseInvariant(rawHttpStatusCode, out var httpStatusCode))
+                if (rawHttpStatusCode is null || !int.TryParseInvariant(rawHttpStatusCode, out var httpStatusCode))
                 {
                     return null;
                 }

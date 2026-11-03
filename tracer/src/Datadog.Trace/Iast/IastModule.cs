@@ -485,7 +485,7 @@ internal static partial class IastModule
         }
 
         OnExecutedSinkTelemetry(IastVulnerabilityType.WeakHash);
-        if (algorithm == null || !InvalidHashAlgorithm(algorithm))
+        if (algorithm is null || !InvalidHashAlgorithm(algorithm))
         {
             return IastModuleResponse.Empty;
         }

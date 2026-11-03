@@ -61,12 +61,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             var loaderModule = FindLoader(process);
             var nativeTracerModule = FindNativeTracerModule(process, loaderModule is not null);
 
-            if (loaderModule == null)
+            if (loaderModule is null)
             {
                 Utils.WriteWarning(LoaderNotLoaded);
             }
 
-            if (nativeTracerModule == null)
+            if (nativeTracerModule is null)
             {
                 Utils.WriteWarning(NativeTracerNotLoaded);
                 ok = false;
@@ -299,13 +299,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             var continuousProfilerModule = FindContinuousProfilerModule(process);
 
-            if (continuousProfilerModule == null)
+            if (continuousProfilerModule is null)
             {
                 Utils.WriteWarning(ContinuousProfilerNotLoaded);
                 ok = false;
             }
 
-            if (loaderModule == null)
+            if (loaderModule is null)
             {
                 Utils.WriteError(ContinuousProfilerWithoutLoader);
                 ok = false;
@@ -315,7 +315,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             {
                 process.EnvironmentVariables.TryGetValue("LD_PRELOAD", out var ldPreload);
 
-                if (ldPreload == null)
+                if (ldPreload is null)
                 {
                     Utils.WriteError(LdPreloadNotSet);
                     ok = false;
@@ -493,7 +493,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         {
             var profilerPath = registry.GetLocalMachineValue(registryKey);
 
-            if (profilerPath == null)
+            if (profilerPath is null)
             {
                 Utils.WriteWarning(MissingRegistryKey(registryKey));
                 return false;

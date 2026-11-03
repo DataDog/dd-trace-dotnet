@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static int RegisterIastAspects(string[] aspects)
         {
-            if (aspects == null || aspects.Length == 0)
+            if (aspects is null || aspects.Length == 0)
             {
                 return 0;
             }
@@ -161,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static int RegisterCallTargetDefinitions(string id, NativeCallTargetDefinition3[] items, uint enabledCategories)
         {
-            if (items == null || items.Length == 0)
+            if (items is null || items.Length == 0)
             {
                 return 0;
             }

@@ -79,14 +79,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             // This can happen if we operate in optimized code and the original async method was inside a generic class
             // or in case the original async method was generic, in which case the state machine is a generic value type
             // See more here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L70
-            if (instance == null)
+            if (instance is null)
             {
                 return;
             }
 
             var stateMachineType = instance.GetType();
             var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
-            if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
+            if (kickoffInfo.KickoffParentObject is null && kickoffInfo.KickoffMethod.IsStatic == false)
             {
                 Log.Warning(nameof(BeginMethod) + ": hoisted 'this' has not found. {KickoffParentType}.{KickoffMethod}", kickoffInfo.KickoffParentType.Name, kickoffInfo.KickoffMethod.Name);
             }
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             // This can happen if we operate in optimized code and the original async method was inside a generic class
             // or in case the original async method was generic, in which case the state machine is a generic value type
             // See more here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L70
-            if (instance == null)
+            if (instance is null)
             {
                 state = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
                 return;
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var stateMachineType = instance.GetType();
             var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
-            if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
+            if (kickoffInfo.KickoffParentObject is null && kickoffInfo.KickoffMethod.IsStatic == false)
             {
                 Log.Warning(nameof(BeginMethod) + ": hoisted 'this' has not found. {KickoffParentType}.{KickoffMethod}", kickoffInfo.KickoffParentType.Name, kickoffInfo.KickoffMethod.Name);
             }

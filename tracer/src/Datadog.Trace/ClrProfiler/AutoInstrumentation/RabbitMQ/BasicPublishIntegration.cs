@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     }
 
                     // add distributed tracing headers to the message
-                    if (basicProperties.Headers == null)
+                    if (basicProperties.Headers is null)
                     {
                         basicProperties.Headers = new Dictionary<string, object>();
                     }

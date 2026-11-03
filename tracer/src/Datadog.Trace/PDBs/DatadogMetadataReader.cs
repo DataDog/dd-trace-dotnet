@@ -162,7 +162,7 @@ namespace Datadog.Trace.Pdb
                 dnlibModule = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
                 var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
                 dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, dnlibModule.Metadata, pdbStream);
-                if (dnlibReader == null)
+                if (dnlibReader is null)
                 {
                     Logger.Debug("A standalone PDB file was found for {Assembly} but a dnlib PDB reader could not be created. AssemblyLocation={AssemblyLocation}, PdbPath={PdbPath}", assembly.FullName, assembly.Location, pdbFullPath);
                     var noDnlibReaderResult = new DatadogMetadataReader(peReader, metadataReader, null, null, null, null, null);
@@ -254,7 +254,7 @@ namespace Datadog.Trace.Pdb
         private StandaloneSignature? GetLocalSignature(MethodDefinition method)
         {
             var methodBodyBlock = _peReader?.GetMethodBody(method.RelativeVirtualAddress);
-            if (methodBodyBlock == null || methodBodyBlock.LocalSignature.IsNil)
+            if (methodBodyBlock is null || methodBodyBlock.LocalSignature.IsNil)
             {
                 return null;
             }
@@ -355,7 +355,7 @@ namespace Datadog.Trace.Pdb
         internal DatadogSequencePoint[]? GetMethodSequencePoints(int methodToken, bool searchMoveNext = true)
         {
             using var memory = GetMethodSequencePointsAsMemoryOwner(methodToken, searchMoveNext, out var count);
-            if (count == 0 || memory == null)
+            if (count == 0 || memory is null)
             {
                 return null;
             }
@@ -512,7 +512,7 @@ namespace Datadog.Trace.Pdb
                 }
 
                 var fixedArgValue = decoded.FixedArguments[0].Value;
-                if (fixedArgValue == null)
+                if (fixedArgValue is null)
                 {
                     return default;
                 }
@@ -544,7 +544,7 @@ namespace Datadog.Trace.Pdb
 
         private string? GetDocumentName(DocumentHandle doc)
         {
-            if (PdbReader == null || doc.IsNil)
+            if (PdbReader is null || doc.IsNil)
             {
                 return null;
             }
@@ -607,7 +607,7 @@ namespace Datadog.Trace.Pdb
 
             string? GetNormalizedPath(string? path)
             {
-                return path == null ? null : Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return path is null ? null : Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             }
         }
 
@@ -675,7 +675,7 @@ namespace Datadog.Trace.Pdb
 
         private string[]? GetLocalVariableNames(int methodToken, bool searchMoveNext)
         {
-            if (PdbReader == null)
+            if (PdbReader is null)
             {
                 return null;
             }
@@ -690,7 +690,7 @@ namespace Datadog.Trace.Pdb
             }
 
             var signature = GetLocalSignature(method);
-            if (signature == null)
+            if (signature is null)
             {
                 return null;
             }
@@ -894,7 +894,7 @@ namespace Datadog.Trace.Pdb
                 }
 
                 var signature = GetLocalSignature(method);
-                if (signature == null)
+                if (signature is null)
                 {
                     return null;
                 }

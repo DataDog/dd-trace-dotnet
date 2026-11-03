@@ -47,7 +47,7 @@ internal static class StringModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -55,7 +55,7 @@ internal static class StringModuleImpl
             var taintedObjects = iastContext.GetTaintedObjects();
             var taintedTarget = PropagationModuleImpl.GetTainted(taintedObjects, target);
             var taintedValue = PropagationModuleImpl.GetTainted(taintedObjects, value);
-            if (taintedValue == null && taintedTarget == null)
+            if (taintedValue is null && taintedTarget is null)
             {
                 return result;
             }
@@ -151,7 +151,7 @@ internal static class StringModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -200,7 +200,7 @@ internal static class StringModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -411,7 +411,7 @@ internal static class StringModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -419,17 +419,17 @@ internal static class StringModuleImpl
             TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
             TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? PropagationModuleImpl.GetTainted(taintedObjects, left) : null;
             TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? PropagationModuleImpl.GetTainted(taintedObjects, right) : null;
-            if (taintedLeft == null && taintedRight == null)
+            if (taintedLeft is null && taintedRight is null)
             {
                 return result;
             }
 
             Range[]? ranges;
-            if (taintedRight == null)
+            if (taintedRight is null)
             {
                 ranges = taintedLeft!.Ranges;
             }
-            else if (taintedLeft == null)
+            else if (taintedLeft is null)
             {
                 ranges = new Range[taintedRight!.Ranges!.Length];
                 Ranges.CopyShift(taintedRight!.Ranges, ranges, 0, left.Length);
@@ -464,7 +464,7 @@ internal static class StringModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -484,7 +484,7 @@ internal static class StringModuleImpl
                 var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
                 if (parameterTainted is not null)
                 {
-                    if (ranges == null)
+                    if (ranges is null)
                     {
                         if (length == 0)
                         {
@@ -534,7 +534,7 @@ internal static class StringModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -554,7 +554,7 @@ internal static class StringModuleImpl
                 var taintedParameter = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
                 if (taintedParameter is not null)
                 {
-                    if (ranges == null)
+                    if (ranges is null)
                     {
                         if (length == 0)
                         {

@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             var tracerHome = GetHomePath(applicationContext.RunnerFolder);
 
-            if (tracerHome == null)
+            if (tracerHome is null)
             {
                 return null;
             }
@@ -504,7 +504,7 @@ namespace Datadog.Trace.Tools.Runner
 
             tracerHome ??= GetHomePath(runnerFolder);
 
-            if (tracerHome == null)
+            if (tracerHome is null)
             {
                 WriteError("Error: The home directory can't be found. Check that the tool is correctly installed, or use --tracer-home to set a custom path.");
                 return null;

@@ -38,7 +38,7 @@ internal readonly struct CharSlice : IDisposable
     /// <param name="str">The string to copy into memory.</param>
     internal CharSlice(string? str)
     {
-        if (str == null)
+        if (str is null)
         {
             Ptr = IntPtr.Zero;
             Len = UIntPtr.Zero;

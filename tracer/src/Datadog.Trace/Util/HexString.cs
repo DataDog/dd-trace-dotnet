@@ -189,7 +189,7 @@ internal static class HexString
     {
         // this overload exists in NETCOREAPP3_1_OR_GREATER so we can catch null strings,
         // otherwise we can't distinguish them from empty ReadOnlySpan<char>
-        if (chars == null! || chars.Length != bytes.Count * 2)
+        if (chars is null || chars.Length != bytes.Count * 2)
         {
             return false;
         }

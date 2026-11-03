@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tagging
         /// <returns><see langword="true"/> if the tag is added to the collection, <see langword="false"/> otherwise.</returns>
         public bool TryAddTag(string name, string value)
         {
-            if (value == null!)
+            if (value is null)
             {
                 // if tag exists we won't change it, and if it doesn't exist we won't add it,
                 // so nothing to do here
@@ -94,12 +94,12 @@ namespace Datadog.Trace.Tagging
 
         private bool SetTag(string name, string? value, bool replaceIfExists)
         {
-            if (name == null!)
+            if (name is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            if (value == null)
+            if (value is null)
             {
                 return RemoveTag(name);
             }
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Tagging
             }
 
             var tags = _tags;
-            if (tags == null)
+            if (tags is null)
             {
                 var newTags = new List<KeyValuePair<string, string>>(2);
                 tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tagging
 
         public bool RemoveTag(string name)
         {
-            if (name == null!)
+            if (name is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
@@ -181,7 +181,7 @@ namespace Datadog.Trace.Tagging
             }
 
             var tags = _tags;
-            if (tags == null || tags.Count == 0)
+            if (tags is null || tags.Count == 0)
             {
                 // tag not found
                 return false;
@@ -212,7 +212,7 @@ namespace Datadog.Trace.Tagging
 
         public string? GetTag(string name)
         {
-            if (name == null!)
+            if (name is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
@@ -223,7 +223,7 @@ namespace Datadog.Trace.Tagging
             }
 
             var tags = _tags;
-            if (tags == null || tags.Count == 0)
+            if (tags is null || tags.Count == 0)
             {
                 return null;
             }
@@ -260,7 +260,7 @@ namespace Datadog.Trace.Tagging
                 // add missing "_dd.p.tid" tag with the upper 64 bits of the trace id,
                 // or replace existing tag if it has the wrong value
                 // (parse the hex string and compare ulongs to avoid allocating another string)
-                if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
+                if (tagValue is null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
                 {
                     SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
                 }

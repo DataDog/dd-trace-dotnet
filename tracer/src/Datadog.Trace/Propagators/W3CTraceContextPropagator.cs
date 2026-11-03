@@ -249,7 +249,7 @@ namespace Datadog.Trace.Propagators
 
             traceParent = default;
 
-            if (header == null!)
+            if (header is null)
             {
                 return false;
             }

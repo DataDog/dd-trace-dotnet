@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows
 
             var registryKey = Registry.LocalMachine.OpenSubKey(key);
 
-            if (registryKey == null)
+            if (registryKey is null)
             {
                 return Array.Empty<string>();
             }
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows
 
             var registryKey = Registry.LocalMachine.OpenSubKey(key);
 
-            if (registryKey == null)
+            if (registryKey is null)
             {
                 return Array.Empty<string>();
             }
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows
 
             var registryKey = Registry.LocalMachine.OpenSubKey(key);
 
-            if (registryKey == null)
+            if (registryKey is null)
             {
                 return string.Empty;
             }

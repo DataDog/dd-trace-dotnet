@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
 
         public static void SetTags(AwsS3Tags? tags, string? bucketName, string? objectKey)
         {
-            if (tags == null)
+            if (tags is null)
             {
                 return;
             }

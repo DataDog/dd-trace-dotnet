@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
     {
         public bool Equals(SpanContext? x, SpanContext? y)
         {
-            if (x == null || y == null)
+            if (x is null || y is null)
             {
                 return x == y;
             }

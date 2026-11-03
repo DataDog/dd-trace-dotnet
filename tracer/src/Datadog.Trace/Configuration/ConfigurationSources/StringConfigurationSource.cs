@@ -44,7 +44,7 @@ namespace Datadog.Trace.Configuration
             // A null return value means the key was not present,
             // and CompositeConfigurationSource depends on this behavior
             // (it returns the first non-null value it finds).
-            if (data == null)
+            if (data is null)
             {
                 return null;
             }

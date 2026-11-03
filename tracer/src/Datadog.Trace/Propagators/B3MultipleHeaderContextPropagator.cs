@@ -64,14 +64,14 @@ namespace Datadog.Trace.Propagators
 
             var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, TraceId)?.Trim();
 
-            if (rawTraceId == null || !HexString.TryParseTraceId(rawTraceId, out var traceId) || traceId == Trace.TraceId.Zero)
+            if (rawTraceId is null || !HexString.TryParseTraceId(rawTraceId, out var traceId) || traceId == Trace.TraceId.Zero)
             {
                 return false;
             }
 
             var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanId)?.Trim();
 
-            if (rawSpanId == null || !HexString.TryParseUInt64(rawSpanId, out var parentId))
+            if (rawSpanId is null || !HexString.TryParseUInt64(rawSpanId, out var parentId))
             {
                 return false;
             }

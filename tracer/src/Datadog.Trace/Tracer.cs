@@ -250,7 +250,7 @@ namespace Datadog.Trace
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         {
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.OpenTracing);
-            if (ignoreActiveScope && parent == null)
+            if (ignoreActiveScope && parent is null)
             {
                 // don't set the span's parent,
                 // even if there is an active span
@@ -317,7 +317,7 @@ namespace Datadog.Trace
                 // and the new span we are creating belongs in the same TraceContext
                 traceContext = parentSpanContext.TraceContext;
 
-                if (traceContext == null)
+                if (traceContext is null)
                 {
                     var propagatedTags = parentSpanContext.PropagatedTags;
                     var samplingPriority = parentSpanContext.SamplingPriority;

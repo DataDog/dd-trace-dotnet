@@ -80,7 +80,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public override string ToString()
         {
-            var probesInfo = Probes == null ? "null" : $"{Probes.Length} probes";
+            var probesInfo = Probes is null ? "null" : $"{Probes.Length} probes";
             var processorsCount = Processors?.Count ?? 0;
             return $"ExceptionCase: Probes=[{probesInfo}], Processors={processorsCount}";
         }

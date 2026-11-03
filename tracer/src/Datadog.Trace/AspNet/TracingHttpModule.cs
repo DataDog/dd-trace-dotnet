@@ -193,7 +193,7 @@ namespace Datadog.Trace.AspNet
 
                 var httpContext = (sender as HttpApplication)?.Context;
 
-                if (httpContext == null)
+                if (httpContext is null)
                 {
                     return;
                 }
@@ -231,7 +231,7 @@ namespace Datadog.Trace.AspNet
                 var headers = requestHeaders.Wrap();
                 PropagationContext extractedContext = default;
 
-                if (tracer.InternalActiveScope == null)
+                if (tracer.InternalActiveScope is null)
                 {
                     try
                     {

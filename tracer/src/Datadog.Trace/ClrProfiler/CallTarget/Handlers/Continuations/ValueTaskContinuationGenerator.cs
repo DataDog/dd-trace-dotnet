@@ -64,7 +64,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
 
         public override TReturn? ExecuteCallback(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         {
-            if (exception is not null || returnValue == null)
+            if (exception is not null || returnValue is null)
             {
                 try
                 {
@@ -135,7 +135,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
 
         public override TReturn ExecuteCallback(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         {
-            var previousValueTask = returnValue == null ? new ValueTask() : FromTReturn<ValueTask>(returnValue);
+            var previousValueTask = returnValue is null ? new ValueTask() : FromTReturn<ValueTask>(returnValue);
             return ToTReturn(ContinuationAction(previousValueTask, instance, state, exception));
         }
 

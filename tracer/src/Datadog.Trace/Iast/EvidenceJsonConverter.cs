@@ -70,7 +70,7 @@ internal sealed class EvidenceJsonConverter : JsonConverter<Evidence?>
         var evidenceValue = evidence.Value;
 
         writer.WriteStartObject();
-        if (evidenceValue.Ranges == null || evidenceValue.Ranges.Length == 0)
+        if (evidenceValue.Ranges is null || evidenceValue.Ranges.Length == 0)
         {
             writer.WritePropertyName("value");
             writer.WriteTruncatableValue(evidenceValue.Value, _maxValueLength);
@@ -117,7 +117,7 @@ internal sealed class EvidenceJsonConverter : JsonConverter<Evidence?>
 
     private void WriteValuePart(JsonWriter writer, string? value, Source? source = null)
     {
-        if (value == null) { return; }
+        if (value is null) { return; }
         writer.WriteStartObject();
         writer.WritePropertyName("value");
         writer.WriteTruncatableValue(value, _maxValueLength);

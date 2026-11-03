@@ -19,7 +19,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
     {
         public override TufRoot? ReadJson(JsonReader reader, Type objectType, TufRoot? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            if (reader.Value == null || reader.ValueType != typeof(string))
+            if (reader.Value is null || reader.ValueType != typeof(string))
             {
                 return null;
             }

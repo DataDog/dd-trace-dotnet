@@ -283,7 +283,7 @@ internal static class XUnitIntegration
 
     private static void WriteFinalTagsFromMetadata(Test test, TestCaseMetadata? testCaseMetadata, bool isSkip)
     {
-        if (testCaseMetadata == null)
+        if (testCaseMetadata is null)
         {
             return;
         }

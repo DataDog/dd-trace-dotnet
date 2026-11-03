@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             try
             {
                 var httpContext = controllerContext.HttpContext;
-                if (httpContext == null)
+                if (httpContext is null)
                 {
                     return null;
                 }
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         resourceName = httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string;
                     }
 
-                    if (route == null && routeData?.Route?.GetType().FullName == RouteCollectionRouteTypeName)
+                    if (route is null && routeData?.Route?.GetType().FullName == RouteCollectionRouteTypeName)
                     {
                         var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
 
@@ -197,7 +197,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     PropagationContext extractedContext = default;
                     NameValueHeadersCollection? headers = null;
 
-                    if (tracer.InternalActiveScope == null)
+                    if (tracer.InternalActiveScope is null)
                     {
                         try
                         {

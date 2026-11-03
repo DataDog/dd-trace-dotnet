@@ -58,7 +58,7 @@ internal sealed class InferredProxyCoordinator
             }
 
             var scope = _spanFactory.CreateSpan(tracer, proxyData, propagationContext.SpanContext);
-            if (scope == null)
+            if (scope is null)
             {
                 return null;
             }

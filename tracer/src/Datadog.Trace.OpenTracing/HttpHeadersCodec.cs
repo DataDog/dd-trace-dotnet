@@ -16,7 +16,7 @@ namespace Datadog.Trace.OpenTracing
         {
             var map = carrier as ITextMap;
 
-            if (map == null)
+            if (map is null)
             {
                 throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }
@@ -40,7 +40,7 @@ namespace Datadog.Trace.OpenTracing
         {
             var map = carrier as ITextMap;
 
-            if (map == null)
+            if (map is null)
             {
                 throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }

@@ -66,7 +66,7 @@ public sealed class EventDataBatchTryAddIntegration
     {
         if (state.Scope is not null)
         {
-            if (exception == null && returnValue is bool success && success && instance is not null)
+            if (exception is null && returnValue is bool success && success && instance is not null)
             {
                 BatchSpanContextStorage.AddSpanContext(instance, state.Scope.Span.Context);
             }

@@ -33,14 +33,14 @@ namespace Datadog.Trace.Debugger.Helpers
         /// <returns>An async-friendly readable representation of the stack trace.</returns>
         public static IEnumerable<StackFrame> GetAsyncFriendlyFrameMethods(this IEnumerable<StackFrame?> stackFrames)
         {
-            if (stackFrames == null)
+            if (stackFrames is null)
             {
                 yield break;
             }
 
             foreach (var frame in stackFrames)
             {
-                if (frame == null)
+                if (frame is null)
                 {
                     continue;
                 }

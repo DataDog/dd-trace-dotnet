@@ -191,7 +191,7 @@ namespace Datadog.Trace.AppSec
                         .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
                         .AsBool();
 
-            NoCustomLocalRules = Rules == null;
+            NoCustomLocalRules = Rules is null;
             var envConfig = new ConfigurationBuilder(new EnvironmentConfigurationSource(), telemetry);
             DdDotnetTracerHome = envConfig.WithKeys(ConfigurationKeys.DotNetTracerHome).AsString();
             InternalTraceNativeEnginePath = envConfig.WithKeys(ConfigurationKeys.InternalTraceNativeEnginePath).AsString();
@@ -361,7 +361,7 @@ namespace Datadog.Trace.AppSec
                 intPart = wafTimeoutString.Substring(0, wafTimeoutString.Length - 1);
             }
 
-            if (intPart == null)
+            if (intPart is null)
             {
                 return ParsingResult<int>.Failure();
             }

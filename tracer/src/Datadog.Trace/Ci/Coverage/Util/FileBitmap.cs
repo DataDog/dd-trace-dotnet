@@ -671,7 +671,7 @@ internal readonly unsafe ref struct FileBitmap
     public void Set(int line)
     {
         // Check if the pointer is valid
-        if (_bitmap == null)
+        if (_bitmap is null)
         {
             return;
         }
@@ -704,7 +704,7 @@ internal readonly unsafe ref struct FileBitmap
     public bool Get(int line)
     {
         // Check if the pointer is valid
-        if (_bitmap == null)
+        if (_bitmap is null)
         {
             return false;
         }

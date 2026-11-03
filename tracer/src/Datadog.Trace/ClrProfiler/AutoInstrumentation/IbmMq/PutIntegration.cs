@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         where TMessage : IMqMessage, IDuckType
         where TTarget : IMqQueue, IDuckType
         {
-            if (instance.Instance == null || msg.Instance == null)
+            if (instance.Instance is null || msg.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }

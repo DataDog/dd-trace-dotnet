@@ -133,7 +133,7 @@ namespace Datadog.Trace
 
         private void CurrentDomain_UnhandledException(object? sender, UnhandledExceptionEventArgs e)
         {
-            if (e == null || e.ExceptionObject is OutOfMemoryException)
+            if (e is null || e.ExceptionObject is OutOfMemoryException)
             {
                 // At this point, the runtime is in a bad state so we give up on exiting gracefully
                 return;

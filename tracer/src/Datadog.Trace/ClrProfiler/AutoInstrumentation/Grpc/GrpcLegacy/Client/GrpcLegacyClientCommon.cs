@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 var existingSpanContext = existingContext.SpanContext;
 
                 // If this operation creates the trace, then we will need to re-apply the sampling priority
-                bool setSamplingPriority = existingSpanContext?.SamplingPriority is not null && tracer.ActiveScope == null;
+                bool setSamplingPriority = existingSpanContext?.SamplingPriority is not null && tracer.ActiveScope is null;
 
                 // grab the temporary values we stored in the metadata
                 ExtractTemporaryHeaders(

@@ -64,13 +64,13 @@ internal sealed class SqlInjectionTokenizer : ITokenizer
 
         Regex? pattern = null;
         if (integrationId is not null) { _dialectPatterns.TryGetValue(integrationId.Value, out pattern); }
-        if (pattern == null) { pattern = _ansiDialectRegex; }
+        if (pattern is null) { pattern = _ansiDialectRegex; }
 
         var res = new List<Range>(5);
         var matches = pattern.Matches(value);
         foreach (Match? match in matches)
         {
-            if (match == null || !match.Success) { continue; }
+            if (match is null || !match.Success) { continue; }
             int start = match.Index;
             int end = match.Index + match.Length;
             char startChar = value[start];

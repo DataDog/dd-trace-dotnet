@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             var size = MessageSizeHelper.TryGetSize(message.Key);
             size += MessageSizeHelper.TryGetSize(message.Value);
 
-            if (message.Headers == null)
+            if (message.Headers is null)
             {
                 return size;
             }
@@ -318,7 +318,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         CheckpointKind.Consume,
                         edgeTags,
                         message?.Instance is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
-                        tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
+                        tags.MessageQueueTimeMs is null ? 0 : (long)tags.MessageQueueTimeMs,
                         pathwayContext);
 
                     // TemporaryBase64PathwayContext is only written by our consumer code when
@@ -397,7 +397,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             TMessage? message)
             where TMessage : IMessage
         {
-            if (message?.Instance == null)
+            if (message?.Instance is null)
             {
                 return;
             }

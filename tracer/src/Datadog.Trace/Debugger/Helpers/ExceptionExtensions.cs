@@ -18,7 +18,7 @@ namespace Datadog.Trace.Debugger.Helpers
         {
             matchedException = checkSelfAndInner;
 
-            if (checkSelfAndInner == null)
+            if (checkSelfAndInner is null)
             {
                 return false;
             }
