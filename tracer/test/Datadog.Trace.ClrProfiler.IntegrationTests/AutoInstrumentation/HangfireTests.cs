@@ -48,19 +48,24 @@ public class HangfireTests : TracingIntegrationTest
         process.StandardOutput.Should().Contain("Baggage for job-two: [job-two=two]");
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData("custom-filter-collection")]
+    [InlineData("custom-filter-provider")]
+    [InlineData("custom-filter-combined")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task SubmitsTracesWhenApplicationBuildsJobFilterCollectionFirst()
+    public async Task SubmitsTracesWithApplicationJobFilterCollections(string scenario)
     {
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = await RunSampleAndWaitForExit(agent, arguments: "custom-filter-collection");
+        using var process = await RunSampleAndWaitForExit(agent, arguments: scenario);
 
-        var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 15000);
-        var parent = spans.Should().ContainSingle(s => s.Resource == "OtelParent").Subject;
-        var job = spans.Should().ContainSingle(s => s.Name == "hangfire.perform").Subject;
-        job.TraceId.Should().Be(parent.TraceId);
-        job.ParentId.Should().Be(parent.SpanId);
+        var jobs = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 15000, operationName: "hangfire.perform");
+        var parents = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 15000, operationName: "internal");
+        jobs.Should().HaveCount(1);
+        parents.Should().HaveCount(1);
+        jobs[0].Error.Should().Be(0);
+        jobs[0].TraceId.Should().Be(parents[0].TraceId);
+        jobs[0].ParentId.Should().Be(parents[0].SpanId);
     }
 
     [SkippableFact]
