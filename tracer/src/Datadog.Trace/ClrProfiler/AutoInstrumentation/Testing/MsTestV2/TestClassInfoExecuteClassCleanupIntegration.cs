@@ -82,7 +82,7 @@ public static class TestClassInfoExecuteClassCleanupIntegrationV3_9
     {
         // MSTest 3.9 returns the cleanup failure, just like its later async implementation.
         exception ??= returnValue as Exception;
-        TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, state);
+        TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, in state);
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
@@ -122,7 +122,7 @@ public static class TestClassInfoExecuteClassCleanupAsyncIntegration
     {
         // MSTest returns a TestFailedException for cleanup failures instead of throwing it.
         exception ??= returnValue as Exception;
-        TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, state);
+        TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, in state);
         return returnValue;
     }
 }

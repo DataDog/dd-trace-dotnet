@@ -797,7 +797,7 @@ namespace Datadog.Trace.Agent
                         }
 
                         hasDequeuedTraces = true;
-                        SerializeTrace(item.Trace);
+                        SerializeTrace(in item.Trace);
                     }
                 }
                 catch (Exception ex)

@@ -217,7 +217,7 @@ internal readonly struct TraceChunkModel
 
         return new SpanModel(
             span,
-            this,
+            in this,
             isLocalRoot: isLocalRoot,
             isChunkOrphan: isChunkOrphan,
             isFirstSpanInChunk: isFirstSpan);

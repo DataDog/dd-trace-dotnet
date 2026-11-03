@@ -231,7 +231,7 @@ internal sealed class DataStreamsManager
 
         var writer = Volatile.Read(ref _writer);
         var point = new BacklogPoint(tags, value, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
-        writer?.AddBacklog(point);
+        writer?.AddBacklog(in point);
     }
 
     /// <summary>
@@ -311,7 +311,7 @@ internal sealed class DataStreamsManager
             var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
 
             // Cached on the EdgeTags instance, recomputed when the base changes (settings updates).
-            var nodeHash = edgeTags.GetNodeHash(nodeHashBase);
+            var nodeHash = edgeTags.GetNodeHash(in nodeHashBase);
 
             var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);

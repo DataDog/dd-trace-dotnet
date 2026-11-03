@@ -116,5 +116,5 @@ public static class TestClassInfoRunClassCleanupIntegrationV2
         => TestClassInfoExecuteClassCleanupIntegration.OnMethodBegin(instance);
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
-        => TestClassInfoRunClassCleanupIntegration.OnMethodEnd(instance, returnValue, exception, state);
+        => TestClassInfoRunClassCleanupIntegration.OnMethodEnd(instance, returnValue, exception, in state);
 }

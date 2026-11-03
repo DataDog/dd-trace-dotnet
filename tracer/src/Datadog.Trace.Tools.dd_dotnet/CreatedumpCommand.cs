@@ -766,7 +766,7 @@ internal class CreatedumpCommand : Command
 
         using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
 
-        int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
+        int result = iunknown.QueryInterface(in ICrashReport.Guid, out var crashReportPtr);
 
         if (result != 0)
         {

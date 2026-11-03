@@ -80,7 +80,7 @@ internal static class XUnitRetryCoordinator
                         testCaseMetadata.PrepareForRetry();
                         if (await retryRunner.RunAsync().ConfigureAwait(false) is { } retrySummary)
                         {
-                            runSummary.Aggregate(retrySummary);
+                            runSummary.Aggregate(in retrySummary);
                         }
                         else
                         {

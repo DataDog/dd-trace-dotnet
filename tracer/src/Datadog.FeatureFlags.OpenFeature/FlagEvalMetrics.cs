@@ -80,7 +80,7 @@ internal sealed class FlagEvalMetrics : IDisposable
             tags.Add(TagAllocationKey, allocationKey);
         }
 
-        _counter.Add(1, tags);
+        _counter.Add(1, in tags);
     }
 
     /// <inheritdoc/>

@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 else if (!applicationProperties.ContainsKey(DataStreamsPropagationHeaders.PropagationKeyBase64))
                 {
                     var parentContext = tracer.InternalActiveScope?.Span?.Context.PathwayContext;
-                    var pathwayContext = dataStreamsManager.SetCheckpoint(parentContext, CheckpointKind.Produce, edgeTags, msgSize, 0);
+                    var pathwayContext = dataStreamsManager.SetCheckpoint(in parentContext, CheckpointKind.Produce, edgeTags, msgSize, 0);
                     dataStreamsManager.InjectPathwayContextAsBase64String(
                         pathwayContext,
                         new AzureHeadersCollectionAdapter(applicationProperties));

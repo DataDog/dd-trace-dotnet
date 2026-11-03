@@ -30,13 +30,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 
             logFormatter.FormatLog(
                 sb,
-                logEntry,
+                in logEntry,
                 logEntry.Timestamp,
                 message,
                 logEntry.EventId == 0 ? null : logEntry.EventId,
                 GetLogLevelString(logEntry.LogLevel),
                 logEntry.Exception,
-                (JsonTextWriter w, in LogEntry<T> e) => RenderProperties(w, e));
+                (JsonTextWriter w, in LogEntry<T> e) => RenderProperties(w, in e));
 
             return StringBuilderCache.GetStringAndRelease(sb);
         }
