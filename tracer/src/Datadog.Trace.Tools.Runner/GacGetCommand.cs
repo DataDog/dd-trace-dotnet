@@ -46,7 +46,7 @@ internal class GacGetCommand : CommandWithExamples
                 _ => string.Empty
             };
 
-            AnsiConsole.WriteLine($"Assembly Found!");
+            AnsiConsole.WriteLine("Assembly Found!");
             AnsiConsole.WriteLine($"  Flag={asmFlags}");
             AnsiConsole.WriteLine($"  Path={asmInfo.CurrentAssemblyPath}");
             AnsiConsole.WriteLine(StringUtil.Invariant($"  SizeInKb={asmInfo.AssemblySizeInKb}"));
