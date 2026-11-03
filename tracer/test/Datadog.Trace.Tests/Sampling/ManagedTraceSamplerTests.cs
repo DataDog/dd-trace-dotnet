@@ -15,11 +15,12 @@ namespace Datadog.Trace.Tests.Sampling
     public class ManagedTraceSamplerTests
     {
         [Theory]
-        [InlineData(null, typeof(AgentSamplingRule))]
-        [InlineData("otlp", typeof(OtlpDefaultSamplingRule))]
-        public void NoSamplingRules_UsesDefaultMechanism(string tracesExporter, Type expectedRuleType)
+        [InlineData(null, false, typeof(AgentSamplingRule))]
+        [InlineData("otlp", false, typeof(OtlpDefaultSamplingRule))]
+        [InlineData(null, true, typeof(OtlpDefaultSamplingRule))] // semantics mode exports traces over OTLP by default
+        public void NoSamplingRules_UsesDefaultMechanism(string tracesExporter, bool otelSemanticsEnabled, Type expectedRuleType)
         {
-            var sampler = CreateSampler(tracesExporter, globalSamplingRate: null);
+            var sampler = CreateSampler(tracesExporter, globalSamplingRate: null, otelSemanticsEnabled);
 
             sampler.GetRules().Should().ContainSingle().Which.Should().BeOfType(expectedRuleType);
 
@@ -46,9 +47,12 @@ namespace Datadog.Trace.Tests.Sampling
             decision.LimiterRate.Should().NotBeNull();
         }
 
-        private static ManagedTraceSampler CreateSampler(string tracesExporter, double? globalSamplingRate)
+        private static ManagedTraceSampler CreateSampler(string tracesExporter, double? globalSamplingRate, bool otelSemanticsEnabled = false)
         {
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, object>
+            {
+                { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false" },
+            };
 
             if (tracesExporter is not null)
             {
