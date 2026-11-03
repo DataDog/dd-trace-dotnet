@@ -118,7 +118,6 @@ dotnet_diagnostic.MA0047.severity = none # Declare types in namespaces
 dotnet_diagnostic.MA0049.severity = none # Type name should not match containing namespace
 dotnet_diagnostic.MA0052.severity = none # Replace constant Enum.ToString with nameof
 dotnet_diagnostic.MA0053.severity = none # Make class or record sealed
-dotnet_diagnostic.MA0070.severity = none # Obsolete attributes should include explanations
 dotnet_diagnostic.MA0096.severity = none # A class that implements IComparable<T> should also implement IEquatable<T> - skipped: the IComparable types (ExceptionCaseScheduler.ScheduledException, SnapshotPruner.Node, FeatureFlags SemanticVersion) would need new equality semantics defined to match CompareTo, which changes reference equality for the two classes
 dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T> or IComparable should override comparison operators - skipped: would only add comparison operators that nothing uses on 6 internal or private types
 dotnet_diagnostic.MA0104.severity = none # Do not create a type with a name from the BCL
