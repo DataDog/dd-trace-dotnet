@@ -145,7 +145,7 @@ namespace Datadog.Trace.Coverage.Collector
                         // We check for the Debuggable attribute to enable jit optimizations and improve coverage performance.
                         if (attrFullName == DebuggableAttributeFullName)
                         {
-                            _logger.Debug($"Modifying the DebuggableAttribute to enable jit optimizations");
+                            _logger.Debug("Modifying the DebuggableAttribute to enable jit optimizations");
 
                             // If the attribute is using the .ctor: DebuggableAttribute(DebuggableAttribute+DebuggingModes)
                             // We change it to `Default (1)` to enable jit optimizations.
@@ -1264,7 +1264,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var matchTarget = NetCorePattern.Match(targetValue);
                     if (matchTarget.Success)
                     {
-                        _logger.Debug($"GetTracerTarget: NetCoreApp pattern detected.");
+                        _logger.Debug("GetTracerTarget: NetCoreApp pattern detected.");
                         var versionValue = matchTarget.Groups[1].Value;
                         _logger.Debug($"GetTracerTarget: Version value {versionValue}");
                         if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var version))

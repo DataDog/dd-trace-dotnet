@@ -50,7 +50,7 @@ namespace Datadog.Trace.DuckTyping
     internal sealed class DuckTypeProxyTypeDefinitionIsNullException : DuckTypeException
     {
         private DuckTypeProxyTypeDefinitionIsNullException()
-            : base($"The proxy type definition is null.")
+            : base("The proxy type definition is null.")
         {
         }
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.DuckTyping
     internal sealed class DuckTypeTargetObjectInstanceIsNullException : DuckTypeException
     {
         private DuckTypeTargetObjectInstanceIsNullException()
-            : base($"The target object instance is null.")
+            : base("The target object instance is null.")
         {
         }
 

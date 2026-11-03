@@ -44,7 +44,7 @@ internal sealed class StatsCardinalityReporter(IMetricsTelemetryCollector teleme
             // Write the cardinality exceeded log, once per flush period
             _logger.Debug(
                 $"Client-side stats values are being collapsed to '{StatsAggregator.BlockedByTracerSentinel}' in " +
-                $"the current flush window. This is caused by a tag value exceeding 200 characters, " +
+                "the current flush window. This is caused by a tag value exceeding 200 characters, " +
                 "or by exceeding one of the DD_TRACE_STATS_*_CARDINALITY_LIMIT caps.");
         }
 

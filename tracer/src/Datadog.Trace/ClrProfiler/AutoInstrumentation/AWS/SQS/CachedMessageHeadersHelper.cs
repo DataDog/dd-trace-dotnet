@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes);
 
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
-                $"KafkaCachedMessageHeadersHelpers",
+                "KafkaCachedMessageHeadersHelpers",
                 messageAttributeValueType,
                 parameterTypes: new Type[] { typeof(string) },
                 typeof(DuckType).Module,

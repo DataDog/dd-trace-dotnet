@@ -45,7 +45,7 @@ namespace Datadog.Trace.Logging
             var timestamp = ((DateTimeOffset)Clock.UtcNow).ToUnixTimeSeconds();
 
             var currentTimeBucket = (int)(timestamp / _secondsBetweenLogs);
-            System.Diagnostics.Debug.Assert(currentTimeBucket > 0, $"Time bucket should be greater than 0");
+            System.Diagnostics.Debug.Assert(currentTimeBucket > 0, "Time bucket should be greater than 0");
 
 #pragma warning disable MA0242 // Use a value factory to compute the value only when the key is not in the ConcurrentDictionary - LogRateBucketInfo is a struct, so building it eagerly is cheaper than allocating a factory delegate per call
             var newLogInfo = _buckets.AddOrUpdate(

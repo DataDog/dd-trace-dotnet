@@ -33,7 +33,7 @@ internal sealed partial class GacNativeMethods : IDisposable
 
         if (lPointer == IntPtr.Zero)
         {
-            throw new Exception($"Error loading fusion library.");
+            throw new Exception("Error loading fusion library.");
         }
 
         return new GacNativeMethods(lPointer);
