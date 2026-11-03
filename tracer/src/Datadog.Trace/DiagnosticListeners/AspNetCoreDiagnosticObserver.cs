@@ -98,7 +98,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnHostingHttpRequestInStart(arg);
                 }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+                else if (eventName.AsSpan().Slice(PrefixLength) is "Hosting.HttpRequestIn.Start")
                 {
                     _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
@@ -128,22 +128,22 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var suffix = eventName.AsSpan().Slice(PrefixLength);
 
-                if (suffix.SequenceEqual("Mvc.BeforeAction"))
+                if (suffix is "Mvc.BeforeAction")
                 {
                     _mvcBeforeActionEventKey = eventName;
                     OnMvcBeforeAction(arg);
                 }
-                else if (suffix.SequenceEqual("Mvc.AfterAction"))
+                else if (suffix is "Mvc.AfterAction")
                 {
                     _mvcAfterActionEventKey = eventName;
                     OnMvcAfterAction(arg);
                 }
-                else if (suffix.SequenceEqual("Hosting.UnhandledException"))
+                else if (suffix is "Hosting.UnhandledException")
                 {
                     _hostingUnhandledExceptionEventKey = eventName;
                     OnHostingUnhandledException(arg);
                 }
-                else if (suffix.SequenceEqual("Diagnostics.UnhandledException"))
+                else if (suffix is "Diagnostics.UnhandledException")
                 {
                     _diagnosticsUnhandledExceptionEventKey = eventName;
                     OnHostingUnhandledException(arg);
@@ -158,7 +158,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnHostingHttpRequestInStop(arg);
                 }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+                else if (eventName.AsSpan().Slice(PrefixLength) is "Hosting.HttpRequestIn.Stop")
                 {
                     _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
@@ -173,7 +173,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnRoutingEndpointMatched(arg);
                 }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+                else if (eventName.AsSpan().Slice(PrefixLength) is "Routing.EndpointMatched")
                 {
                     _routingEndpointMatchedKey = eventName;
                     OnRoutingEndpointMatched(arg);
