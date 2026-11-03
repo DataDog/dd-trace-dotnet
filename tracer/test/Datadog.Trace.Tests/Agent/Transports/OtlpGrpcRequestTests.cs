@@ -1,0 +1,203 @@
+// <copyright file="OtlpGrpcRequestTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#if NETCOREAPP3_1_OR_GREATER
+#nullable enable
+
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
+using FluentAssertions;
+using Xunit;
+
+namespace Datadog.Trace.Tests.Agent.Transports;
+
+public class OtlpGrpcRequestTests
+{
+    private static readonly Uri Endpoint = new("http://localhost:4317" + OtlpTransportStrategy.TracesGrpcMethodPath);
+
+    [Fact]
+    public async Task PostAsync_SendsLengthPrefixedMessageOverHttp2()
+    {
+        var handler = new FakeHandler(() => CreateResponse(grpcStatus: "0"));
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [new("api-key", "secret")], TimeSpan.FromSeconds(10), handler);
+
+        using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([0xFF, 1, 2, 3, 0xFF], 1, 3), MimeTypes.XProtobuf);
+
+        response.StatusCode.Should().Be(200);
+
+        var request = handler.Request!;
+        request.Method.Should().Be(HttpMethod.Post);
+        request.RequestUri.Should().Be(Endpoint);
+        request.Version.Should().Be(HttpVersion.Version20);
+#if NET5_0_OR_GREATER
+        // Set with reflection by the .NET Core 3.1 build of the tracer, which .NET 5 uses
+        request.VersionPolicy.Should().Be(HttpVersionPolicy.RequestVersionExact);
+#endif
+        request.Headers.TE.Should().ContainSingle(x => x.Value == "trailers");
+        request.Headers.GetValues("api-key").Should().Equal("secret");
+        handler.ContentType.Should().Be("application/grpc");
+
+        // Not compressed, then the message length as a big-endian 32-bit integer, then the message
+        handler.Content.Should().Equal(0, 0, 0, 0, 3, 1, 2, 3);
+    }
+
+    [Theory]
+    [InlineData("0", 200)] // OK
+    [InlineData("14", 503)] // UNAVAILABLE, retryable
+    [InlineData("4", 503)] // DEADLINE_EXCEEDED, retryable
+    [InlineData("8", 500)] // RESOURCE_EXHAUSTED without RetryInfo, not retryable
+    [InlineData("3", 500)] // INVALID_ARGUMENT, not retryable
+    [InlineData("12", 500)] // UNIMPLEMENTED, not retryable
+    [InlineData(null, 500)] // grpc-status is missing
+    public async Task PostAsync_MapsGrpcStatusToHttpStatusCode(string? grpcStatus, int expectedStatusCode)
+    {
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10), new FakeHandler(() => CreateResponse(grpcStatus)));
+
+        using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), MimeTypes.XProtobuf);
+
+        response.StatusCode.Should().Be(expectedStatusCode);
+    }
+
+    [Fact]
+    public async Task PostAsync_RetriesResourceExhaustedWithRetryInfo()
+    {
+        var handler = new FakeHandler(
+            () =>
+            {
+                var response = CreateResponse(grpcStatus: "8");
+                response.TrailingHeaders.Add("grpc-status-details-bin", CreateStatusDetailsWithRetryInfo());
+                return response;
+            });
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10), handler);
+
+        using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), MimeTypes.XProtobuf);
+
+        response.StatusCode.Should().Be(429);
+    }
+
+    [Fact]
+    public async Task PostAsync_ReadsGrpcStatusFromHeadersOfTrailersOnlyResponse()
+    {
+        var handler = new FakeHandler(
+            () =>
+            {
+                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]) };
+                response.Headers.Add("grpc-status", "14");
+                return response;
+            });
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10), handler);
+
+        using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), MimeTypes.XProtobuf);
+
+        response.StatusCode.Should().Be(503);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task PostAsync_ReturnsHttpStatusCodeOfNonGrpcResponse(HttpStatusCode statusCode)
+    {
+        // gRPC servers always reply with a 200 status code, so other ones come from a proxy or a non-gRPC server
+        var handler = new FakeHandler(() => new HttpResponseMessage(statusCode) { Content = new StringContent("not gRPC") });
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10), handler);
+
+        using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), MimeTypes.XProtobuf);
+
+        response.StatusCode.Should().Be((int)statusCode);
+        (await response.ReadAsStringAsync()).Should().Be("not gRPC");
+    }
+
+    [Fact]
+    public async Task PostAsync_DescribesGrpcStatusOfFailedCall()
+    {
+        // The gRPC status message is percent-encoded
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10), new FakeHandler(() => CreateResponse("14", "collector%20is%20down")));
+
+        using var response = await factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), MimeTypes.XProtobuf);
+
+        (await response.ReadAsStringAsync()).Should().Be("gRPC status Unavailable: collector is down");
+    }
+
+    [Theory]
+    [InlineData(MimeTypes.Json, null)]
+    [InlineData(MimeTypes.XProtobuf, "gzip")]
+    public async Task PostAsync_OnlySupportsUncompressedProtobuf(string contentType, string? contentEncoding)
+    {
+        var factory = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10), new FakeHandler(() => CreateResponse("0")));
+
+        var post = () => factory.Create(Endpoint).PostAsync(new ArraySegment<byte>([1]), contentType, contentEncoding);
+
+        await post.Should().ThrowAsync<NotSupportedException>();
+    }
+
+#if !NET6_0_OR_GREATER
+    [Fact]
+    public void CreatingFactory_DoesNotChangeHttp2UnencryptedSupportSwitch()
+    {
+        // On .NET Core 3.1, HTTP/2 without TLS is only allowed for the factory's own handler
+        const string switchName = "System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport";
+        var wasSet = AppContext.TryGetSwitch(switchName, out var value);
+
+        _ = new OtlpGrpcRequestFactory(Endpoint, [], TimeSpan.FromSeconds(10));
+
+        AppContext.TryGetSwitch(switchName, out var valueAfter).Should().Be(wasSet);
+        valueAfter.Should().Be(value);
+    }
+#endif
+
+    // A google.rpc.Status with a google.rpc.RetryInfo detail, serialized as protobuf and base64-encoded
+    private static string CreateStatusDetailsWithRetryInfo()
+    {
+        byte[] retryInfo = [0x0A, 0x02, 0x08, 0x01]; // retry_delay: { seconds: 1 }
+        var typeUrl = Encoding.UTF8.GetBytes("type.googleapis.com/google.rpc.RetryInfo");
+        byte[] detail = [0x0A, (byte)typeUrl.Length, .. typeUrl, 0x12, (byte)retryInfo.Length, .. retryInfo]; // google.protobuf.Any
+        byte[] status = [0x08, 0x08, 0x1A, (byte)detail.Length, .. detail]; // code: RESOURCE_EXHAUSTED, details: [detail]
+        return Convert.ToBase64String(status);
+    }
+
+    private static HttpResponseMessage CreateResponse(string? grpcStatus, string? grpcMessage = null)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]) };
+        if (grpcStatus is not null)
+        {
+            response.TrailingHeaders.Add("grpc-status", grpcStatus);
+        }
+
+        if (grpcMessage is not null)
+        {
+            response.TrailingHeaders.Add("grpc-message", grpcMessage);
+        }
+
+        return response;
+    }
+
+    private sealed class FakeHandler(Func<HttpResponseMessage> createResponse) : HttpMessageHandler
+    {
+        public HttpRequestMessage? Request { get; private set; }
+
+        public string? ContentType { get; private set; }
+
+        public byte[]? Content { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            // The content is disposed once the request is sent, so capture it now
+            Request = request;
+            ContentType = request.Content?.Headers.ContentType?.MediaType;
+            Content = request.Content is null ? null : await request.Content.ReadAsByteArrayAsync();
+
+            var response = createResponse();
+            response.RequestMessage = request;
+            return response;
+        }
+    }
+}
+#endif

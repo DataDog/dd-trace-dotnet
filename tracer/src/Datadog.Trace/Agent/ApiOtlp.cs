@@ -49,7 +49,7 @@ namespace Datadog.Trace.Agent
             _metricsRequestFactory = metricsRequestFactory;
             _tracesEncoding = exporterSettings.TracesEncoding;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The base endpoint for OTLP traces already includes the path component
-            _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
+            _statsEndpoint = _metricsRequestFactory.GetEndpoint(null); // Same for OTLP metrics
             _spanMetricsEnabled = settings.OtelTracesSpanMetricsEnabled;
             _metricsEncoding = exporterSettings.OtlpMetricsProtocol;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
