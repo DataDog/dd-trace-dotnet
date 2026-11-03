@@ -48,36 +48,36 @@ namespace Datadog.Trace.Debugger
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
-                                         .AsInt32(DefaultMaxDepthToSerialize, maxDepth => maxDepth > 0)
+                                         .AsInt32(DefaultMaxDepthToSerialize, static maxDepth => maxDepth > 0)
                                          .Value;
 
             MaxSerializationTimeInMilliseconds = config
                                                 .WithKeys(ConfigurationKeys.Debugger.MaxTimeToSerialize)
                                                 .AsInt32(
                                                      DefaultMaxSerializationTimeInMilliseconds,
-                                                     serializationTimeThreshold => serializationTimeThreshold > 0)
+                                                     static serializationTimeThreshold => serializationTimeThreshold > 0)
                                                 .Value;
 
             MaxEvaluationTimeInMilliseconds = config
                                              .WithKeys(ConfigurationKeys.Debugger.EvaluationTimeoutMs)
                                              .AsInt32(
                                                   DefaultMaxEvaluationTimeInMilliseconds,
-                                                  evaluationTimeThreshold => evaluationTimeThreshold is >= MinAllowedEvaluationTimeInMilliseconds and <= MaxAllowedEvaluationTimeInMilliseconds)
+                                                  static evaluationTimeThreshold => evaluationTimeThreshold is >= MinAllowedEvaluationTimeInMilliseconds and <= MaxAllowedEvaluationTimeInMilliseconds)
                                              .Value;
 
             UploadBatchSize = config
                              .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
-                             .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
+                             .AsInt32(DefaultUploadBatchSize, static batchSize => batchSize > 0)
                              .Value;
 
             SymbolDatabaseBatchSizeInBytes = config
                                          .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes)
-                                         .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
+                                         .AsInt32(DefaultSymbolBatchSizeInBytes, static batchSize => batchSize > 0)
                                          .Value;
 
             MaxProbesPerType = config
                               .WithKeys(ConfigurationKeys.Debugger.InternalDynamicInstrumentationMaxProbesPerType)
-                              .AsInt32(DefaultMaxProbesPerType, maxProbes => maxProbes >= 0)
+                              .AsInt32(DefaultMaxProbesPerType, static maxProbes => maxProbes >= 0)
                               .Value;
 
             var thirdPartyIncludes = config
@@ -114,12 +114,12 @@ namespace Datadog.Trace.Debugger
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
-                                        .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
+                                        .AsInt32(DefaultDiagnosticsIntervalSeconds, static interval => interval > 0)
                                         .Value;
 
             UploadFlushIntervalMilliseconds = config
                                              .WithKeys(ConfigurationKeys.Debugger.UploadFlushInterval)
-                                             .AsInt32(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
+                                             .AsInt32(DefaultUploadFlushIntervalMilliseconds, static flushInterval => flushInterval >= 0)
                                              .Value;
 
             var redactedIdentifiers = config
@@ -158,7 +158,7 @@ namespace Datadog.Trace.Debugger
 
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
-                                         .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
+                                         .AsInt32(DefaultCodeOriginExitSpanFrames, static frames => frames > 0)
                                          .Value;
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);

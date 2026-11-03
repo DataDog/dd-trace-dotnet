@@ -60,8 +60,8 @@ internal static partial class IastModule
     private const int VulnerabilityStatsRouteLimit = 4096;
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly IastSettings IastSettings = Iast.Instance.Settings;
-    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
-    private static readonly Func<TaintedObject, bool> Always = (x) => true;
+    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(static () => CreateRedactor(IastSettings));
+    private static readonly Func<TaintedObject, bool> Always = static (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
     private static readonly HashSet<int> LoggedAspectExceptionMessages = [];
@@ -624,7 +624,7 @@ internal static partial class IastModule
             var key = $"{method}#{route}";
             if (key.Length > 1)
             {
-                return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
+                return _vulnerabilityStats.GetOrAdd(key, static (k) => new(k));
             }
         }
 

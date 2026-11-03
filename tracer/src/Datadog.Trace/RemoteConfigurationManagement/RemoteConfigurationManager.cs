@@ -106,7 +106,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public void Start()
         {
             _ = Task.Run(StartPollingAsync)
-               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
+               .ContinueWith(static t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public void Dispose()

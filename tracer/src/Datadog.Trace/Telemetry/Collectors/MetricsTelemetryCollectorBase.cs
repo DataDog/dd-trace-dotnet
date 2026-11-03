@@ -34,7 +34,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
         _aggregateTask = Task.Run(AggregateMetricsLoopAsync);
         _ = _aggregateTask
            .ContinueWith(
-                t =>
+                static t =>
                 {
                     // There's a complex relationship between metrics and logs initialization, so we don't log anything in this case
                 },

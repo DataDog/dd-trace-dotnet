@@ -667,7 +667,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                 var fileOffset = 0;
                 var fileBitmapBuffer = stackalloc byte[512];
-                foreach (var fileMetadata in fileDictionaryIndex.Values.OrderBy(v => v.Index))
+                foreach (var fileMetadata in fileDictionaryIndex.Values.OrderBy(static v => v.Index))
                 {
                     var maxLine = fileMetadata.MaxLine;
                     lstMetadataInstructions.Add(Instruction.Create(OpCodes.Ldarg_0));
@@ -785,10 +785,10 @@ namespace Datadog.Trace.Coverage.Collector
         /// <param name="assemblyFilePath">The assembly path to overwrite.</param>
         /// <param name="strongNameKeyBlob">The optional strong-name key used when rewriting signed assemblies.</param>
         internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob)
-            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, static (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
 
         private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, ICollectorLogger logger)
-            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger);
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, static (source, destination, backup) => File.Replace(source, destination, backup), logger);
 
         internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile)
             => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, replaceFile, logger: null);

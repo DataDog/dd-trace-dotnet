@@ -103,7 +103,7 @@ namespace Datadog.Trace.Pdb
         {
             // Determine if the given mdMethod is a kickoff of a state machine(aka an async method)
             // The first step is to check if the method is decorated with the attribute `AsyncStateMachine`
-            var stateMachineAttributeOfMdMethod = mdMethod?.CustomAttributes?.FirstOrDefault(ca => ca.TypeFullName == AsyncStateMachineAttribute);
+            var stateMachineAttributeOfMdMethod = mdMethod?.CustomAttributes?.FirstOrDefault(static ca => ca.TypeFullName == AsyncStateMachineAttribute);
             // Grab the generated inner type state machine from the argument given by the compiler to the AsyncStateMachineAttribute
             var stateMachineInnerTypeTypeDefOrRefSig = (stateMachineAttributeOfMdMethod?.ConstructorArguments.FirstOrDefault().Value as TypeDefOrRefSig);
             // Grab the MoveNext from inside the stateMachine and from there the corresponding debugInfo

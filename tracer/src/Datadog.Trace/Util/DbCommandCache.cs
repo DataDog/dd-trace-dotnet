@@ -61,7 +61,7 @@ namespace Datadog.Trace.Util
             }
 
             // ReSharper disable once ConvertClosureToMethodGroup -- Lambdas are cached by the compiler
-            return _cache.GetOrAdd(connectionString, cs => ExtractTagsFromConnectionString(cs));
+            return _cache.GetOrAdd(connectionString, static cs => ExtractTagsFromConnectionString(cs));
         }
 
         private static TagsCacheItem ExtractTagsFromConnectionString(string connectionString)

@@ -20,7 +20,7 @@ internal static class HeadersInjectedCache
 #if NETCOREAPP3_1_OR_GREATER
         Cache.AddOrUpdate(headers, InjectedValue);
 #else
-        Cache.GetValue(headers, _ => InjectedValue);
+        Cache.GetValue(headers, static _ => InjectedValue);
 #endif
     }
 

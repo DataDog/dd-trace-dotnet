@@ -108,7 +108,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             var result = new VerificationsRunner(
                 instrumentedAssembly.InstrumentedAssemblyPath,
                 instrumentedAssembly.OriginalAssemblyPath,
-                instrumentedAssembly.ModifiedMethods.Select(m => (m.TypeFullName, m.MethodAndArgumentsName)).ToList()).Run();
+                instrumentedAssembly.ModifiedMethods.Select(static m => (m.TypeFullName, m.MethodAndArgumentsName)).ToList()).Run();
             AnsiConsole.WriteLine($"Verification for {instrumentedAssembly.InstrumentedAssemblyPath} {(result.IsValid ? "passed." : "failed: " + result.FailureReason)}");
             allVerificationsPassed = allVerificationsPassed && result.IsValid;
         }
@@ -148,7 +148,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             return null;
         }
 
-        List<DirectoryInfo> dirs = Directory.EnumerateDirectories(instrumentationVerificationLogs).Select(d => new DirectoryInfo(d)).ToList();
+        List<DirectoryInfo> dirs = Directory.EnumerateDirectories(instrumentationVerificationLogs).Select(static d => new DirectoryInfo(d)).ToList();
         if (dirs.Count == 0)
         {
             return null;
@@ -160,7 +160,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             if (dirs.Count > 1)
             {
                 AnsiConsole.WriteLine($"There is more than one directory in {instrumentationVerificationLogs}, taking the last modified one");
-                dir = dirs.OrderByDescending(di => di.LastWriteTime).First();
+                dir = dirs.OrderByDescending(static di => di.LastWriteTime).First();
             }
             else
             {
@@ -186,7 +186,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         }
 
         AnsiConsole.WriteLine("There is more than one directory that match the argument, taking the last modified directory");
-        return candidates.OrderByDescending(dir => dir.LastWriteTime).First().FullName;
+        return candidates.OrderByDescending(static dir => dir.LastWriteTime).First().FullName;
     }
 
     private string GetLogDirectory(int? pid)

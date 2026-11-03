@@ -117,7 +117,7 @@ namespace Datadog.Trace.Telemetry
                                                        .WithKeys(ConfigurationKeys.Site)
                                                        .AsString(
                                                             defaultValue: "datadoghq.com",
-                                                            validator: siteFromEnv => !string.IsNullOrEmpty(siteFromEnv));
+                                                            validator: static siteFromEnv => !string.IsNullOrEmpty(siteFromEnv));
                                            return $"{TelemetryConstants.TelemetryIntakePrefix}.{ddSite}/";
                                        },
                                        validator: requestedTelemetryUri =>
@@ -142,12 +142,12 @@ namespace Datadog.Trace.Telemetry
 
             var heartbeatInterval = config
                                    .WithKeys(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds)
-                                   .AsDouble(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
+                                   .AsDouble(defaultValue: 60, static rawInterval => rawInterval is > 0 and <= 3600)
                                    .Value;
 
             var extendedHeartbeatInterval = config
                                            .WithKeys(ConfigurationKeys.Telemetry.ExtendedHeartbeatIntervalSeconds)
-                                           .AsInt32(defaultValue: 86400, rawInterval => rawInterval is > 0 and <= 604800)
+                                           .AsInt32(defaultValue: 86400, static rawInterval => rawInterval is > 0 and <= 604800)
                                            .Value;
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);

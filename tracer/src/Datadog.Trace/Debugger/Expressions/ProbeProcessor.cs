@@ -470,7 +470,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.Errors is { Count: > 0 } errors)
             {
-                Log.Debug("Evaluation errors: {Errors}", errors.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
+                Log.Debug("Evaluation errors: {Errors}", errors.Select(static er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
             }
 
             if (evaluationResult.Metric.HasValue && probeInfo.MetricKind.HasValue)
@@ -961,13 +961,13 @@ namespace Datadog.Trace.Debugger.Expressions
                     case SpanDecorationProbe spanDecorationProbe:
                         spanDecorations = spanDecorationProbe.
                             Decorations
-                          ?.Where(dec => dec != null)
+                          ?.Where(static dec => dec != null)
                            .Select(
-                                dec =>
+                                static dec =>
                                 {
                                     var whenExpression = ToDebuggerExpression(dec.When);
                                     var keyValuePairs = dec.Tags?.Select(
-                                                                tag => new KeyValuePair<string?, DebuggerExpression?[]>(
+                                                                static tag => new KeyValuePair<string?, DebuggerExpression?[]>(
                                                                     tag.Name,
                                                                     tag.Value?.Segments?.Select(ToDebuggerExpression).ToArray() ?? []))
                                                            .ToArray();
@@ -1046,7 +1046,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         var instance = methodScopeMembers.InvocationTarget;
-                        var members = methodScopeMembers.Members?.Select(m => new { Name = m.Name, Type = m.Type?.FullName ?? m.Type?.Name }).ToList();
+                        var members = methodScopeMembers.Members?.Select(static m => new { Name = m.Name, Type = m.Type?.FullName ?? m.Type?.Name }).ToList();
                         string? membersAsString = null;
                         if (members?.Count > 0)
                         {

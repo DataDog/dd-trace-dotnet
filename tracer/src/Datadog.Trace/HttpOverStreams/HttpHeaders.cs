@@ -74,7 +74,7 @@ namespace Datadog.Trace.HttpOverStreams
 
         public override string ToString()
         {
-            return string.Join(", ", _headers.Select(h => $"{h.Name}: {h.Value}"));
+            return string.Join(", ", _headers.Select(static h => $"{h.Name}: {h.Value}"));
         }
 
         public readonly struct HttpHeader

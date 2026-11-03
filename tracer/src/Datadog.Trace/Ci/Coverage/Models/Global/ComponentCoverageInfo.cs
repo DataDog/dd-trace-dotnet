@@ -43,7 +43,7 @@ internal sealed class ComponentCoverageInfo(string? name) : CoverageInfo
 
             var aFiles = a.Files ?? Enumerable.Empty<FileCoverageInfo>();
             var bFiles = b.Files ?? Enumerable.Empty<FileCoverageInfo>();
-            foreach (var filesGroup in aFiles.Concat(bFiles).GroupBy(f => f.Path))
+            foreach (var filesGroup in aFiles.Concat(bFiles).GroupBy(static f => f.Path))
             {
                 var filesGroupArray = filesGroup.ToArray();
                 if (filesGroupArray.Length == 1)

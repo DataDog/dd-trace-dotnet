@@ -66,20 +66,20 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
             var callTargetInvokerType = typeof(CallTargetInvoker);
             CallTargetInvokerMethods = callTargetInvokerType.GetMethods();
-            LogExceptionMethodInfo = CallTargetInvokerMethods.FirstOrDefault(m => m.Name == "LogException");
-            GetDefaultValueMethodInfo = CallTargetInvokerMethods.FirstOrDefault(m => m.Name == "GetDefaultValue");
+            LogExceptionMethodInfo = CallTargetInvokerMethods.FirstOrDefault(static m => m.Name == "LogException");
+            GetDefaultValueMethodInfo = CallTargetInvokerMethods.FirstOrDefault(static m => m.Name == "GetDefaultValue");
 
             var callTargetStateType = typeof(CallTargetState);
             CallTargetStateGetDefaultMethodInfo = callTargetStateType.GetMethod("GetDefault", BindingFlags.Public | BindingFlags.Static);
 
             CallTargetReturnVoid = typeof(CallTargetReturn);
             var callTargetReturnVoidMethods = CallTargetReturnVoid.GetMethods();
-            CallTargetReturnVoidGetDefaultValueMethodInfo = callTargetReturnVoidMethods.FirstOrDefault(m => m.Name == "GetDefault");
+            CallTargetReturnVoidGetDefaultValueMethodInfo = callTargetReturnVoidMethods.FirstOrDefault(static m => m.Name == "GetDefault");
 
             CallTargetReturn = typeof(CallTargetReturn<>);
             var callTargetReturnMethods = CallTargetReturn.GetMethods();
-            CallTargetReturnGetReturnValueMethodInfo = callTargetReturnMethods.FirstOrDefault(m => m.Name == "GetReturnValue");
-            CallTargetReturnGetDefaultValueMethodInfo = callTargetReturnMethods.FirstOrDefault(m => m.Name == "GetDefault");
+            CallTargetReturnGetReturnValueMethodInfo = callTargetReturnMethods.FirstOrDefault(static m => m.Name == "GetReturnValue");
+            CallTargetReturnGetDefaultValueMethodInfo = callTargetReturnMethods.FirstOrDefault(static m => m.Name == "GetDefault");
         }
 
         public static void ProcessFolder(string inputFolder, string outputFolder)

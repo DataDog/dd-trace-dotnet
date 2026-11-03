@@ -49,13 +49,13 @@ internal sealed class TestOptimization : ITestOptimization
         using var cd = CodeDurationRef.Create();
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
         Log.Debug("TestOptimization: .ctor [CommandLine: {CommandLine}]", Environment.CommandLine);
-        _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
+        _ciVariablesLazy = new(static () => CIEnvironmentValues.Instance);
         _enablement = InternalEnabled(Log);
     }
 
     public static ITestOptimization Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization())!;
+        get => LazyInitializer.EnsureInitialized(ref _instance, static () => new TestOptimization())!;
         internal set => _instance = value;
     }
 
@@ -84,7 +84,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public TestOptimizationSettings Settings
     {
-        get => LazyInitializer.EnsureInitialized(ref _settings, () => TestOptimizationSettings.FromDefaultSources())!;
+        get => LazyInitializer.EnsureInitialized(ref _settings, static () => TestOptimizationSettings.FromDefaultSources())!;
         private set
         {
             _settings = value;

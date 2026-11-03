@@ -168,7 +168,7 @@ namespace Datadog.Trace.Agent
             }
 
             _flushTask = Task.Run(Flush);
-            _ = _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = _flushTask.ContinueWith(static t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
             if (_isOtlp)
             {
@@ -856,7 +856,7 @@ namespace Datadog.Trace.Agent
                 // Sort, deduplicate, and pre-compute the UTF-8 key prefixes so that
                 // BuildKey can hash without per-call string encoding.
                 var precomputed = new List<PeerTagKey>(config.PeerTags.Count);
-                foreach (var tag in config.PeerTags.Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x))
+                foreach (var tag in config.PeerTags.Where(static x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(static x => x))
                 {
                     precomputed.Add(new PeerTagKey(tag));
                 }

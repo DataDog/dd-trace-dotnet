@@ -643,13 +643,13 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     float i => sb.Append(i),
                     double i => sb.Append(i),
                     bool i => sb.Append(i),
-                    IEnumerable<KeyValuePair<string, JToken>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
-                    IEnumerable<KeyValuePair<string, string>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
-                    IEnumerable<KeyValuePair<string, List<string>>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    IEnumerable<KeyValuePair<string, JToken>> objDict => FormatDictionary(objDict.Select(static x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    IEnumerable<KeyValuePair<string, string>> objDict => FormatDictionary(objDict.Select(static x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    IEnumerable<KeyValuePair<string, List<string>>> objDict => FormatDictionary(objDict.Select(static x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     // dont remove IEnumerable<KeyValuePair<string, string[]>>, it is used for logging cookies which are this type in debug mode
-                    IEnumerable<KeyValuePair<string, string[]>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    IEnumerable<KeyValuePair<string, string[]>> objDict => FormatDictionary(objDict.Select(static x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, object>> objDict => FormatDictionary(objDict, sb),
-                    IEnumerable<KeyValuePair<string, bool>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    IEnumerable<KeyValuePair<string, bool>> objDict => FormatDictionary(objDict.Select(static x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IList<JToken> objs => FormatList(objs, sb),
                     IList<string> objs => FormatList(objs, sb),
                     // this becomes ugly but this should change once PR improving marshalling of the waf is merged

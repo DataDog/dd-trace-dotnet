@@ -19,9 +19,9 @@ namespace Datadog.Trace.Util
         private static string _runtimeId;
         private static string _rootSessionId;
 
-        public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => GetImpl());
+        public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, static () => GetImpl());
 
-        public static string GetRootSessionId() => LazyInitializer.EnsureInitialized(ref _rootSessionId, () => GetRootSessionIdImpl());
+        public static string GetRootSessionId() => LazyInitializer.EnsureInitialized(ref _rootSessionId, static () => GetRootSessionIdImpl());
 
         [TestingAndPrivateOnly]
         internal static void ResetForTests() => _rootSessionId = null;

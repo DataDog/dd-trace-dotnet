@@ -542,7 +542,7 @@ internal partial class ProbeExpressionParser<T>
 
         var genericDictionaryType = sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == typeof(IDictionary<,>)
                                         ? sourceType
-                                        : sourceType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+                                        : sourceType.GetInterfaces().FirstOrDefault(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
 
         if (genericDictionaryType != null)
         {
@@ -556,7 +556,7 @@ internal partial class ProbeExpressionParser<T>
 
         var enumerableType = sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
                                  ? sourceType
-                                 : sourceType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                                 : sourceType.GetInterfaces().FirstOrDefault(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
 
         if (enumerableType != null)
         {
@@ -773,7 +773,7 @@ internal partial class ProbeExpressionParser<T>
         return type != null &&
                IsMicrosoftType(type) &&
                ((type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>)) ||
-                type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>)));
+                type.GetInterfaces().Any(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>)));
     }
 
     private bool IsIEnumerable(Type type)
@@ -784,7 +784,7 @@ internal partial class ProbeExpressionParser<T>
     private bool IsCollection(Type type)
     {
         return type.GetInterfaces()
-                   .Any(i =>
+                   .Any(static i =>
                             i.IsGenericType
                          && (i.GetGenericTypeDefinition() == typeof(ICollection)
                           || i.GetGenericTypeDefinition() == typeof(ICollection<>)
@@ -820,7 +820,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (type == typeof(IReadOnlyList<>) ||
             (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>)) ||
-            type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IReadOnlyList<>)))
+            type.GetInterfaces().Any(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IReadOnlyList<>)))
         {
             assignableFrom = typeof(IReadOnlyList<>);
             return true;

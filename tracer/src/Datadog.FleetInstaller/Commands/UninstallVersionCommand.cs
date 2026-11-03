@@ -18,7 +18,7 @@ internal sealed class UninstallVersionCommand : CommandBase
     private const string Command = "uninstall-version";
     private const string CommandDescription = "Uninstalls a single of the .NET library";
 
-    private readonly Option<string> _versionedPathOption = new("--home-path", () => null!)
+    private readonly Option<string> _versionedPathOption = new("--home-path", static () => null!)
     {
         Description = "Path to the tracer-home-directory",
         IsRequired = true

@@ -299,7 +299,7 @@ internal static class GitCommandHelper
                     return null;
                 }
 
-                var maxCount = modifiedLines.Max(m => m.End);
+                var maxCount = modifiedLines.Max(static m => m.End);
                 var bitmap = FileBitmap.FromLineCount(maxCount);
                 foreach (var tuple in modifiedLines)
                 {
@@ -424,7 +424,7 @@ internal static class GitCommandHelper
 
                 candidateBranches.AddRange(
                     SplitLines(branchesOutput.Output)
-                       .Select(b => b.Trim('\'', ' '))
+                       .Select(static b => b.Trim('\'', ' '))
                        .Where(b =>
                         {
                             if (!string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))

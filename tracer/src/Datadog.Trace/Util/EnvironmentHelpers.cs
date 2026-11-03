@@ -19,7 +19,7 @@ internal static class EnvironmentHelpers
 {
     // EnvironmentHelpers is called when initialising DataDogLogging.SharedLogger
     // Using Lazy<> here avoids setting the Logger field to the "null" logger, before initialization is complete
-    private static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
+    private static readonly Lazy<IDatadogLogger> Logger = new(static () => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
 
     /// <summary>
     /// Safe wrapper around Environment.SetEnvironmentVariable

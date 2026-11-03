@@ -362,25 +362,25 @@ namespace Datadog.Trace.FeatureFlags
                 case ConditionOperator.NOT_ONE_OF:
                     return !IsOneOf(attributeValue, condition.Value);
                 case ConditionOperator.GTE:
-                    return CompareNumber(attributeValue, condition.Value, (a, b) => a >= b);
+                    return CompareNumber(attributeValue, condition.Value, static (a, b) => a >= b);
                 case ConditionOperator.GT:
-                    return CompareNumber(attributeValue, condition.Value, (a, b) => a > b);
+                    return CompareNumber(attributeValue, condition.Value, static (a, b) => a > b);
                 case ConditionOperator.LTE:
-                    return CompareNumber(attributeValue, condition.Value, (a, b) => a <= b);
+                    return CompareNumber(attributeValue, condition.Value, static (a, b) => a <= b);
                 case ConditionOperator.LT:
-                    return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
+                    return CompareNumber(attributeValue, condition.Value, static (a, b) => a < b);
                 case ConditionOperator.SEMVER_EQ:
-                    return CompareSemanticVersion(attributeValue, condition.Value, result => result == 0);
+                    return CompareSemanticVersion(attributeValue, condition.Value, static result => result == 0);
                 case ConditionOperator.SEMVER_NEQ:
-                    return CompareSemanticVersion(attributeValue, condition.Value, result => result != 0);
+                    return CompareSemanticVersion(attributeValue, condition.Value, static result => result != 0);
                 case ConditionOperator.SEMVER_LT:
-                    return CompareSemanticVersion(attributeValue, condition.Value, result => result < 0);
+                    return CompareSemanticVersion(attributeValue, condition.Value, static result => result < 0);
                 case ConditionOperator.SEMVER_LTE:
-                    return CompareSemanticVersion(attributeValue, condition.Value, result => result <= 0);
+                    return CompareSemanticVersion(attributeValue, condition.Value, static result => result <= 0);
                 case ConditionOperator.SEMVER_GT:
-                    return CompareSemanticVersion(attributeValue, condition.Value, result => result > 0);
+                    return CompareSemanticVersion(attributeValue, condition.Value, static result => result > 0);
                 case ConditionOperator.SEMVER_GTE:
-                    return CompareSemanticVersion(attributeValue, condition.Value, result => result >= 0);
+                    return CompareSemanticVersion(attributeValue, condition.Value, static result => result >= 0);
                 default:
                     throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
             }

@@ -47,7 +47,7 @@ internal static class RegexBuilder
             case SamplingRulesFormat.Glob:
                 // the "any" pattern matches any value regardless of type (e.g. string, int, floating point, etc).
                 // for span tags, it means the tag must exist, but its value can be any value and any type.
-                if (pattern.Length > 0 && pattern.All(c => c == '*'))
+                if (pattern.Length > 0 && pattern.All(static c => c == '*'))
                 {
                     // match all without using a regex
                     return null;

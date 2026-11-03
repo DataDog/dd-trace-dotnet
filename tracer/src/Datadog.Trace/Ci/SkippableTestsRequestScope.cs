@@ -155,7 +155,7 @@ internal readonly struct SkippableTestsRequestScope : IEquatable<SkippableTestsR
             return;
         }
 
-        configurations.Sort((left, right) => string.CompareOrdinal(left.Key, right.Key));
+        configurations.Sort(static (left, right) => string.CompareOrdinal(left.Key, right.Key));
         foreach (var item in configurations)
         {
             Append(builder, $"custom.{item.Key}", item.Value);

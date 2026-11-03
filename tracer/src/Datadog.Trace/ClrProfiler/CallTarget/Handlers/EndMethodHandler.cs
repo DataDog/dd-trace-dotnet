@@ -30,7 +30,7 @@ internal static class EndMethodHandler<TIntegration, TTarget>
         }
         finally
         {
-            _invokeDelegate ??= (TTarget? instance, Exception? exception, in CallTargetState state) => CallTargetReturn.GetDefault();
+            _invokeDelegate ??= static (TTarget? instance, Exception? exception, in CallTargetState state) => CallTargetReturn.GetDefault();
         }
     }
 

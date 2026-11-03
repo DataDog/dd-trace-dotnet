@@ -30,7 +30,7 @@ namespace Datadog.Trace.Serverless
         /// from <c>DD_SERVERLESS_COMPAT_PATH</c> via the telemetry-enabled configuration readers
         /// in <see cref="Configuration.ExporterSettings.Raw"/>. <c>null</c> means use the default path.</param>
         internal static bool IsCompatLayerAvailableWithPipeSupport(string? compatPathOverride)
-            => IsCompatLayerAvailableWithPipeSupport(compatPathOverride, File.Exists, path => AssemblyName.GetAssemblyName(path).Version);
+            => IsCompatLayerAvailableWithPipeSupport(compatPathOverride, File.Exists, static path => AssemblyName.GetAssemblyName(path).Version);
 
         /// <summary>
         /// Testable overload that accepts I/O dependencies as delegates.

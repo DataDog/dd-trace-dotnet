@@ -21,7 +21,7 @@ internal static class LibDatadogAvailabilityHelper
     // This confirms that we are in an automatic instrumentation environment (and so P/Invokes have been re-written)
     // and that the libdatadog library has been deployed (which is not the case in some serverless environments).
     // We should add or remove conditions from here as our deployment requirements change.
-    private static readonly Lazy<LibDatadogAvailableResult> LibDatadogAvailable = new(() =>
+    private static readonly Lazy<LibDatadogAvailableResult> LibDatadogAvailable = new(static () =>
     {
         var isServerless = EnvironmentHelpersNoLogging.IsServerlessEnvironment(out var possibleException);
         return new(!isServerless && EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe(), possibleException);

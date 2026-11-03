@@ -58,7 +58,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 _instance = new OtelMetricsPipeline(settings, exporter);
                 _instance.Start();
 
-                LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());
+                LifetimeManager.Instance.AddAsyncShutdownTask(static (_) => StopAsync());
             }
         }
 

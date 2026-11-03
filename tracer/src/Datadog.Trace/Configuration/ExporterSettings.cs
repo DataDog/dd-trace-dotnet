@@ -105,8 +105,8 @@ namespace Datadog.Trace.Configuration
             OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
             var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+            OtlpTracesHeaders = tracesHeaders?.Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(static kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
                                                  .ToArray() ?? [];
             OtlpTracesTimeoutMs = rawSettings.OtlpTracesTimeoutMs;
 
@@ -146,8 +146,8 @@ namespace Datadog.Trace.Configuration
             OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
             var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
-            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                                 .Select(kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
+            OtlpMetricsHeaders = metricsHeaders?.Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                 .Select(static kvp => new KeyValuePair<string, string>(kvp.Key, Uri.UnescapeDataString(kvp.Value)))
                                                  .ToArray() ?? [];
             OtlpMetricsTimeoutMs = rawSettings.OtlpMetricsTimeoutMs;
 
@@ -344,7 +344,7 @@ namespace Datadog.Trace.Configuration
 
         [TestingOnly]
         internal static ExporterSettings Create(Dictionary<string, object?> settings)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), File.Exists, new ConfigurationTelemetry());
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(static x => x.Key, static x => x.Value?.ToString()!)), File.Exists, new ConfigurationTelemetry());
 
         private static string GetMetricsHostNameFromAgentUri(Uri agentUri)
         {
@@ -624,18 +624,18 @@ namespace Datadog.Trace.Configuration
 
                 TracesPipeTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
-                                     .AsInt32(500, value => value > 0)
+                                     .AsInt32(500, static value => value > 0)
                                      .Value;
 
                 // OpenTelemetry semantics mode makes OTLP the default traces exporter
                 var otelSemanticsEnabled = config.WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled).AsBool(defaultValue: false);
-                OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString(otelSemanticsEnabled ? () => "otlp" : null, validator: null)?.Trim();
+                OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString(otelSemanticsEnabled ? static () => "otlp" : null, validator: null)?.Trim();
 
                 OtlpProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
                 OtlpEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
                 OtlpTimeoutMs = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
-                    .AsInt32(10_000, value => value > 0)
+                    .AsInt32(10_000, static value => value > 0)
                     .Value;
                 OtlpHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsRedactedString()?.Trim();
 
@@ -644,7 +644,7 @@ namespace Datadog.Trace.Configuration
                 OtlpMetricsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint).AsString()?.Trim();
                 OtlpMetricsTimeoutMs = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
-                    .AsInt32(OtlpTimeoutMs, value => value > 0)
+                    .AsInt32(OtlpTimeoutMs, static value => value > 0)
                     .Value;
                 OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsRedactedString()?.Trim();
 
@@ -655,7 +655,7 @@ namespace Datadog.Trace.Configuration
                 OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
                 OtlpTracesTimeoutMs = config
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesTimeoutMs)
-                    .AsInt32(OtlpTimeoutMs, value => value > 0)
+                    .AsInt32(OtlpTimeoutMs, static value => value > 0)
                     .Value;
                 OtlpTracesHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders).AsRedactedString()?.Trim();
             }

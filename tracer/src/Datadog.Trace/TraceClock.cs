@@ -23,7 +23,7 @@ internal sealed class TraceClock
 
     static TraceClock()
     {
-        LifetimeManager.Instance.AddShutdownTask(_ => ProcessExit.TrySetResult(true));
+        LifetimeManager.Instance.AddShutdownTask(static _ => ProcessExit.TrySetResult(true));
         _instance = new TraceClock();
         _ = UpdateClockAsync();
     }

@@ -844,7 +844,7 @@ namespace Datadog.Trace.FeatureFlags
                             selectedConfig.Flags?.InvalidFlagKeys.Count() ?? 0,
                             selectedConfig.Environment?.Name ?? "unset",
                             selectedConfig.CreatedAt ?? "unset",
-                            string.Join(", ", list.Select(p => p.Key)));
+                            string.Join(", ", list.Select(static p => p.Key)));
                         FeatureFlagsDiagnostics.LogRejectedFlags(_log, "remote_config", selectedConfig);
                     }
                 }

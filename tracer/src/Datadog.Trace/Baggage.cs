@@ -384,7 +384,7 @@ internal sealed class Baggage : IDictionary<string, string?>
 #if NETCOREAPP3_1_OR_GREATER
                 return new(items);
 #else
-                return new Dictionary<string, string?>(items.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                return new Dictionary<string, string?>(items.ToDictionary(static kvp => kvp.Key, static kvp => kvp.Value));
 #endif
             }
         }

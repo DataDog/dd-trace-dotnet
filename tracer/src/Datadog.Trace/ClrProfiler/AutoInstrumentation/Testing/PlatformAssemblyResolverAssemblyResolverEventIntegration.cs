@@ -49,7 +49,7 @@ public sealed class PlatformAssemblyResolverAssemblyResolverEventIntegration
         // to check if the `Datadog.Trace` to load is the same as the autoinstrumentation version. If that is the case
         // we just pass this assembly, if not we bail out so their custom resolver can pick the request.
 #if NETCOREAPP
-        AssemblyLoadContext.Default.Resolving += (context, name) =>
+        AssemblyLoadContext.Default.Resolving += static (context, name) =>
         {
             if (name.FullName == CiVisibilityAssembly.FullName)
             {
@@ -60,7 +60,7 @@ public sealed class PlatformAssemblyResolverAssemblyResolverEventIntegration
             return null;
         };
 #else
-        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+        AppDomain.CurrentDomain.AssemblyResolve += static (sender, args) =>
         {
             if (new AssemblyName(args.Name).FullName == CiVisibilityAssembly.FullName)
             {

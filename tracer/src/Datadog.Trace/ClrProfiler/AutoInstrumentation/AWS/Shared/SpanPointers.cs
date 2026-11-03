@@ -59,7 +59,7 @@ internal static class SpanPointers
             return;
         }
 
-        var sortedKeys = keys.KeyNames.OrderBy(k => k, StringComparer.Ordinal).ToArray();
+        var sortedKeys = keys.KeyNames.OrderBy(static k => k, StringComparer.Ordinal).ToArray();
         var key1 = sortedKeys[0];
         var value1 = AwsDynamoDbCommon.GetValueFromDynamoDbAttribute(keys[key1]);
         var key2 = string.Empty;

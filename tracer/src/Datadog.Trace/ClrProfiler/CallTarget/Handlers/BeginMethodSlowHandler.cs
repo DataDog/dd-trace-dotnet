@@ -28,7 +28,7 @@ internal static class BeginMethodSlowHandler<TIntegration, TTarget>
         }
         finally
         {
-            _invokeDelegate ??= (_, _) => CallTargetState.GetDefault();
+            _invokeDelegate ??= static (_, _) => CallTargetState.GetDefault();
         }
     }
 

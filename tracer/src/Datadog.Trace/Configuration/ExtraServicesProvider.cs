@@ -35,7 +35,7 @@ internal sealed class ExtraServicesProvider
         }
 
         Interlocked.Increment(ref _serviceCount);
-        _extraServices.AddOrUpdate(serviceName, FakeValue, (_, _) => null!);
+        _extraServices.AddOrUpdate(serviceName, FakeValue, static (_, _) => null!);
     }
 
     internal string[]? GetExtraServices()

@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     return true;
                 }
 
-                if (headerValues is not null && headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
+                if (headerValues is not null && headerValues.Any(static s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
                 {
                     // tracing is disabled for this request via http header
                     return false;

@@ -399,7 +399,7 @@ internal sealed class DataStreamsManager
     /// </summary>
     public bool ShouldExtractSchema(Span span, string operation, out int weight)
     {
-        var limiter = _schemaRateLimiters.GetOrAdd(operation, _ => new RateLimiter());
+        var limiter = _schemaRateLimiters.GetOrAdd(operation, static _ => new RateLimiter());
         if (limiter.PeekDecision())
         {
             // we only want to "consume" a decision to extract the schema for a span that we are going to keep

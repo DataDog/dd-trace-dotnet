@@ -109,7 +109,7 @@ namespace Datadog.Trace.DuckTyping
         {
             return DuckTypeCache.GetOrAdd(
                 new TypesTuple(proxyType, targetType),
-                key => new Lazy<CreateTypeResult>(() =>
+                static key => new Lazy<CreateTypeResult>(() =>
                 {
                     var dryResult = CreateProxyType(key.ProxyDefinitionType, key.TargetType, true);
                     if (dryResult.CanCreate())
@@ -151,7 +151,7 @@ namespace Datadog.Trace.DuckTyping
         {
             return DuckTypeCache.GetOrAdd(
                 new TypesTuple(typeToDeriveFrom, delegationType),
-                key => new Lazy<CreateTypeResult>(() =>
+                static key => new Lazy<CreateTypeResult>(() =>
                 {
                     var dryResult = CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, true);
                     if (dryResult.CanCreate())
@@ -430,7 +430,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (parentType == typeToDeriveFrom)
             {
-                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.FirstOrDefault(pCtor => pCtor.GetParameters().Length == 0);
+                var proxyCtor = typeToDeriveFrom.GetTypeInfo().DeclaredConstructors.FirstOrDefault(static pCtor => pCtor.GetParameters().Length == 0);
                 if (proxyCtor != null)
                 {
                     ctorIL.Emit(OpCodes.Ldarg_0);

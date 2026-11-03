@@ -109,12 +109,12 @@ internal sealed class FeatureFlagsSettings
 
         PollInterval = TimeSpan.FromSeconds(
             config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds)
-                  .AsInt32(DefaultPollIntervalSeconds, v => v > 0 && v <= MaxPollIntervalSeconds)
+                  .AsInt32(DefaultPollIntervalSeconds, static v => v > 0 && v <= MaxPollIntervalSeconds)
                   .Value);
 
         RequestTimeout = TimeSpan.FromSeconds(
             config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds)
-                  .AsInt32(DefaultRequestTimeoutSeconds, v => v > 0)
+                  .AsInt32(DefaultRequestTimeoutSeconds, static v => v > 0)
                   .Value);
 
         // DD_SITE and DD_API_KEY are not extracted on TracerSettings, so they are read here as the
@@ -128,7 +128,7 @@ internal sealed class FeatureFlagsSettings
 
         var initializationTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs)
-                                     .AsInt32(DefaultInitializationTimeoutMs, timeout => timeout > 0)
+                                     .AsInt32(DefaultInitializationTimeoutMs, static timeout => timeout > 0)
                                      .Value;
         InitializationTimeout = TimeSpan.FromMilliseconds(initializationTimeoutMs);
     }

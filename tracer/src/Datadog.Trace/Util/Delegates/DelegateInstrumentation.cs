@@ -33,7 +33,7 @@ internal static class DelegateInstrumentation
 
         var activatorHelper = ActivatorHelper<TCallbacks>.Cache.GetOrAdd(
                               targetType,
-                              tType =>
+                              static tType =>
                               {
                                   var invokeMethod = tType.GetMethod("Invoke");
                                   var returnType = invokeMethod!.ReturnType;

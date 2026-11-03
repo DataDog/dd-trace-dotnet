@@ -187,7 +187,7 @@ namespace Datadog.Trace.Debugger.Models
     {
         public static CapturedValue[] ToCapturedValue(JToken token)
         {
-            return token.Children<JProperty>().Select(c =>
+            return token.Children<JProperty>().Select(static c =>
             {
                 var jsonObject = c.Children().FirstOrDefault();
                 if (jsonObject is null)

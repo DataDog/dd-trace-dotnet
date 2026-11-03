@@ -380,7 +380,7 @@ namespace Datadog.Trace.Tools.Runner
 
             return new string(chars).Split('\n')
                 .Select(x => keepQuote ? x : x.Trim('"'))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Where(static x => !string.IsNullOrWhiteSpace(x))
                 .ToArray();
         }
 

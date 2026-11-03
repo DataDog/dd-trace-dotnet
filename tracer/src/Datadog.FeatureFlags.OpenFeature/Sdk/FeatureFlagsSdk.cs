@@ -164,7 +164,7 @@ internal static class FeatureFlagsSdk
             return null;
         }
 
-        return context.AsDictionary().Select(p => new KeyValuePair<string, object?>(p.Key, ToObject(p.Value))).ToDictionary(p => p.Key, p => p.Value);
+        return context.AsDictionary().Select(static p => new KeyValuePair<string, object?>(p.Key, ToObject(p.Value))).ToDictionary(static p => p.Key, static p => p.Value);
     }
 
     private static object? ToObject(Value value) => value switch
@@ -453,7 +453,7 @@ internal static class FeatureFlagsSdk
 
     private static Value ConvertStructure(Dictionary<string, object?> structure)
     {
-        var dic = structure.ToDictionary(p => p.Key, p => ConvertObject(p.Value));
+        var dic = structure.ToDictionary(static p => p.Key, static p => ConvertObject(p.Value));
         return new Value(new Structure(dic));
     }
 

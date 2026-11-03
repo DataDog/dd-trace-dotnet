@@ -113,7 +113,7 @@ internal static class DebugLogReader
             }
 
             // order by most recently modified (note swapped order in compareto)
-            filesToUpload.Sort((info1, info2) => info2.LastWriteTimeUtc.CompareTo(info1.LastWriteTimeUtc));
+            filesToUpload.Sort(static (info1, info2) => info2.LastWriteTimeUtc.CompareTo(info1.LastWriteTimeUtc));
 
             foreach (var fileDetails in filesToUpload)
             {

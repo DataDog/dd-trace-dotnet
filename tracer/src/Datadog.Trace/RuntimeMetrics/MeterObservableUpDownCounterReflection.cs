@@ -27,14 +27,14 @@ internal static class MeterObservableUpDownCounterReflection
     // .NET 7's DiagnosticSource 7.0 only ships the 4-param shape; .NET 8+ adds 5-param overloads with
     // a required `tags` argument alongside the original 4-param ones. Pinning to Length == 4 picks
     // an overload that exists on every supported host and avoids ambiguity on .NET 8+.
-    private static readonly MethodInfo? FuncOfTMethod = FindOverload(secondParam =>
+    private static readonly MethodInfo? FuncOfTMethod = FindOverload(static secondParam =>
         secondParam.IsGenericType
         && secondParam.GetGenericTypeDefinition() == typeof(Func<>)
         // Func<T> where T is the method's own generic parameter -- excludes Func<Measurement<T>>
         // and Func<IEnumerable<Measurement<T>>>, which FuncOfMeasurementsMethod handles.
         && secondParam.GetGenericArguments()[0].IsGenericMethodParameter);
 
-    private static readonly MethodInfo? FuncOfMeasurementsMethod = FindOverload(secondParam =>
+    private static readonly MethodInfo? FuncOfMeasurementsMethod = FindOverload(static secondParam =>
     {
         if (!secondParam.IsGenericType || secondParam.GetGenericTypeDefinition() != typeof(Func<>))
         {

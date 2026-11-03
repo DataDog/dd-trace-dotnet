@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration
             var otelConfig = builder
                             .WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel)
                             .AsBoolResult(
-                                 value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
+                                 static value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
                                               ? ParsingResult<bool>.Success(result: true)
                                               : ParsingResult<bool>.Failure());
 

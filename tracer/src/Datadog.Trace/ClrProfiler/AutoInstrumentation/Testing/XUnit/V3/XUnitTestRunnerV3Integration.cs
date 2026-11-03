@@ -44,8 +44,8 @@ public static class XUnitTestRunnerV3Integration
             {
                 DisplayName = context.Test.TestCase.TestCaseDisplayName,
                 Traits = context.Test.Traits.ToDictionary(
-                    k => k.Key,
-                    v => v.Value as List<string> ?? v.Value?.ToList()),
+                    static k => k.Key,
+                    static v => v.Value as List<string> ?? v.Value?.ToList()),
                 UniqueID = context.Test.TestCase.UniqueID
             },
             TestClass = context.Test.TestCase.TestClass.Class,

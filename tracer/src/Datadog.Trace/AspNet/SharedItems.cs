@@ -22,8 +22,8 @@ namespace Datadog.Trace.AspNet
         // ASP.NET span is updated by Datadog integrations across both ASP.NET request pipelines.
         // De-duplicate recorded exceptions by storing a mapping of Span => Exceptions.
         private static readonly ConditionalWeakTable<ISpan, RecordedExceptions> RecordedExceptionsBySpan = new();
-        private static readonly Func<Stack<Scope>, Scope> Pop = stack => stack.Pop();
-        private static readonly Func<Stack<Scope>, Scope> Peek = stack => stack.Peek();
+        private static readonly Func<Stack<Scope>, Scope> Pop = static stack => stack.Pop();
+        private static readonly Func<Stack<Scope>, Scope> Peek = static stack => stack.Peek();
 
         internal static bool TryMarkExceptionRecorded(ISpan span, Exception exception)
             => RecordedExceptionsBySpan.GetValue(span, static _ => new RecordedExceptions()).TryAdd(exception);

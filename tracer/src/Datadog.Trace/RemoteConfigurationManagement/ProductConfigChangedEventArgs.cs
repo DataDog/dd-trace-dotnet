@@ -23,7 +23,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public IEnumerable<NamedTypedFile<T>> GetDeserializedConfigurations<T>()
         {
-            return ConfigContents.Select(configContent => configContent.Deserialize<T>());
+            return ConfigContents.Select(static configContent => configContent.Deserialize<T>());
         }
 
         public IEnumerable<NamedTypedFile<string>> GetConfigurationAsString()
@@ -39,7 +39,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void Acknowledge(string filename)
         {
-            GetOrCreateApplyDetails(filename, applyDetails =>
+            GetOrCreateApplyDetails(filename, static applyDetails =>
             {
                 // can only move from unack to ack
                 if (applyDetails.ApplyState == ApplyStates.UNACKNOWLEDGED)

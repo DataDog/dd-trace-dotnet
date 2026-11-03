@@ -107,7 +107,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get => LazyInitializer.EnsureInitialized(ref _instance!, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new Security(null, null, null));
+            get => LazyInitializer.EnsureInitialized(ref _instance!, ref _globalInstanceInitialized, ref _globalInstanceLock, static () => new Security(null, null, null));
 
             set
             {
@@ -267,14 +267,14 @@ namespace Datadog.Trace.AppSec
 
                 if (string.IsNullOrEmpty(finalError) || onlyUnknownMatcherErrors)
                 {
-                    foreach (var config in configsByProduct.Values.SelectMany(v => v))
+                    foreach (var config in configsByProduct.Values.SelectMany(static v => v))
                     {
                         applyDetails[index++] = ApplyDetails.FromOk(config.Path.Path);
                     }
                 }
                 else
                 {
-                    foreach (var config in configsByProduct.Values.SelectMany(v => v))
+                    foreach (var config in configsByProduct.Values.SelectMany(static v => v))
                     {
                         applyDetails[index++] = ApplyDetails.FromError(config.Path.Path, finalError);
                     }

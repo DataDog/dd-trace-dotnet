@@ -27,7 +27,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             return MightMisleadStacktrace.GetOrAdd(
                 this,
-                identifier => ILAnalyzer.HasDirectCallTo(
+                static identifier => ILAnalyzer.HasDirectCallTo(
                     identifier.Method,
                     typeof(System.Runtime.ExceptionServices.ExceptionDispatchInfo),
                     "Throw"));
@@ -141,8 +141,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public override string ToString()
         {
-            var exceptionTypes = string.Join(", ", ExceptionTypes.Select(t => t.FullName));
-            var stackTrace = string.Join("; ", StackTrace.Select(frame => frame.ToString()));
+            var exceptionTypes = string.Join(", ", ExceptionTypes.Select(static t => t.FullName));
+            var stackTrace = string.Join("; ", StackTrace.Select(static frame => frame.ToString()));
             return $"ErrorOrigin: {ErrorOrigin}, ExceptionTypes: [{exceptionTypes}], StackTrace: [{stackTrace}]";
         }
     }

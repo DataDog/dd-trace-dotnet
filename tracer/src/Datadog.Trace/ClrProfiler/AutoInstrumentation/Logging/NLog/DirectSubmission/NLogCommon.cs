@@ -456,7 +456,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var reverseProxy = target.DuckImplement(_targetType);
             if (_hasMappedDiagnosticsContext || _hasMappedDiagnosticsLogicalContext)
             {
-                target.SetGetContextPropertiesFunc(() => GetContextProperties());
+                target.SetGetContextPropertiesFunc(static () => GetContextProperties());
             }
 
             var targetProxy = reverseProxy.DuckCast<ITargetProxy>();

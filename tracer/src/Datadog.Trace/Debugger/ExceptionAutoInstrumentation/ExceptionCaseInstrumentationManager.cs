@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                .ToArray();
 
             var neverSeenBeforeMethods = uniqueMethods
-                                        .Where(frame => !MethodToProbe.ContainsKey(frame))
+                                        .Where(static frame => !MethodToProbe.ContainsKey(frame))
                                         .ToArray();
 
             foreach (var frame in neverSeenBeforeMethods)
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 MethodToProbe.TryAdd(frame, new ExceptionReplayProbe(frame, maxFramesToCapture));
             }
 
-            var probes = participatingUserMethods.Select((m, frameIndex) => MethodToProbe[m]).ToArray();
+            var probes = participatingUserMethods.Select(static (m, frameIndex) => MethodToProbe[m]).ToArray();
 
             var thresholdIndex = participatingUserMethods.Count - maxFramesToCapture;
             var targetMethods = new HashSet<MethodUniqueIdentifier>();
@@ -153,7 +153,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 Log.Information("ExceptionTrackManager: Reverting {RevertCount} Probes.", revertProbeIds.Count.ToString());
 
-                var removeProbesRequests = revertProbeIds.Select(p => new NativeRemoveProbeRequest(p)).ToArray();
+                var removeProbesRequests = revertProbeIds.Select(static p => new NativeRemoveProbeRequest(p)).ToArray();
                 DebuggerNativeMethods.InstrumentProbes(
                     Array.Empty<NativeMethodProbeDefinition>(),
                     Array.Empty<NativeLineProbeDefinition>(),

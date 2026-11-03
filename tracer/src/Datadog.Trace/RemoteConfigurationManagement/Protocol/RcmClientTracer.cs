@@ -78,7 +78,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         private static List<string> GetTags(string? environment, string? serviceVersion, ReadOnlyDictionary<string, string>? globalTags)
         {
             var tags = globalTags?.Count > 0
-                           ? globalTags.Select(pair => pair.Key + ":" + pair.Value).ToList()
+                           ? globalTags.Select(static pair => pair.Key + ":" + pair.Value).ToList()
                            : [];
 
             if (!string.IsNullOrEmpty(environment))

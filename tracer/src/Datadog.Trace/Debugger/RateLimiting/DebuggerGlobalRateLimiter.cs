@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private const int LogCooldownSeconds = 60;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerGlobalRateLimiter));
-        private static readonly Lazy<DebuggerGlobalRateLimiter> InstanceLazy = new(() => new DebuggerGlobalRateLimiter());
+        private static readonly Lazy<DebuggerGlobalRateLimiter> InstanceLazy = new(static () => new DebuggerGlobalRateLimiter());
 
         private readonly Func<double, IAdaptiveSampler> _samplerFactory;
         private readonly ILogRateLimiter _logRateLimiter;

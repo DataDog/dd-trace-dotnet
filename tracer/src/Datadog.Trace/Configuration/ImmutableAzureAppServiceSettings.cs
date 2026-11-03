@@ -98,7 +98,7 @@ namespace Datadog.Trace.Configuration
             CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
             NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
             AgentMaxRetryIntervalSeconds = config.WithKeys(ConfigurationKeys.AzureAppService.AasAgentMaxRetryIntervalSeconds)
-                                                 .AsInt32(DefaultAgentMaxRetryIntervalSeconds, x => x > 0)
+                                                 .AsInt32(DefaultAgentMaxRetryIntervalSeconds, static x => x > 0)
                                                  .Value;
         }
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Configuration
         {
             var websiteOwner = new ConfigurationBuilder(source, telemetry)
                               .WithKeys(PlatformKeys.AzureAppService.WebsiteOwnerNameKey)
-                              .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
+                              .AsString(static websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
 
             if (!string.IsNullOrWhiteSpace(websiteOwner))
             {

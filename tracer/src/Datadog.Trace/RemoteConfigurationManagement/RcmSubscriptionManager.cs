@@ -259,7 +259,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
             foreach (var cache in _appliedConfigurations.Values)
             {
-                cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
+                cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(static kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
                 configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
             }
 
@@ -313,7 +313,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
             var description = response.TargetFiles?.Count > 0
-                                  ? "with the following paths: " + string.Join(',', response.TargetFiles.Select(t => t.Path))
+                                  ? "with the following paths: " + string.Join(',', response.TargetFiles.Select(static t => t.Path))
                                   : "that is empty.";
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }
@@ -483,5 +483,5 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
     }
 
-    private void RefreshProductKeys() => ProductKeys = _subscriptions.SelectMany(s => s.ProductKeys).Distinct().ToList();
+    private void RefreshProductKeys() => ProductKeys = _subscriptions.SelectMany(static s => s.ProductKeys).Distinct().ToList();
 }

@@ -31,7 +31,7 @@ internal sealed class GlobalCoverageInfo : CoverageInfo
         var globalCovInfo = new GlobalCoverageInfo();
         var aComponents = a?.Components ?? Enumerable.Empty<ComponentCoverageInfo>();
         var bComponents = b?.Components ?? Enumerable.Empty<ComponentCoverageInfo>();
-        foreach (var componentGroup in aComponents.Concat(bComponents).GroupBy(m => m.Name))
+        foreach (var componentGroup in aComponents.Concat(bComponents).GroupBy(static m => m.Name))
         {
             var componentGroupArray = componentGroup.ToArray();
             if (componentGroupArray.Length == 1)

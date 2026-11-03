@@ -58,8 +58,8 @@ public static class XUnitTestRunnerV3_4XIntegration
             {
                 DisplayName = context.Test.TestCase.TestCaseDisplayName,
                 Traits = context.Test.Traits.ToDictionary(
-                    keyValuePair => keyValuePair.Key,
-                    keyValuePair => keyValuePair.Value as List<string> ?? keyValuePair.Value?.ToList()),
+                    static keyValuePair => keyValuePair.Key,
+                    static keyValuePair => keyValuePair.Value as List<string> ?? keyValuePair.Value?.ToList()),
                 UniqueID = context.Test.TestCase.UniqueID,
             },
             TestClass = context.Test.TestCase.TestClass.Class,

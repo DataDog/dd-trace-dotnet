@@ -11,5 +11,5 @@ namespace Datadog.Trace.PlatformHelpers;
 
 internal static class PlatformStrategy
 {
-    public static Func<Scope?, bool> ShouldSkipClientSpan { get; set; } = _ => false;
+    public static Func<Scope?, bool> ShouldSkipClientSpan { get; set; } = static _ => false;
 }

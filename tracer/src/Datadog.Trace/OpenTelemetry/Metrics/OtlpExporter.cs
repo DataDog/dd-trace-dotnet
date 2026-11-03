@@ -249,7 +249,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 // otlpPayload was serialized with startPosition=5 => slice off the 5-byte reservation.
                 return await SendWithRetry(
                         otlpPayload,
-                        (p, endpoint, headers) =>
+                        static (p, endpoint, headers) =>
                         {
                             var content = new ByteArrayContent(p, 5, p.Length - 5);
                             content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");

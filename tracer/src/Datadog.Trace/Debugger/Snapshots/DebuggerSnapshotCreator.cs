@@ -736,7 +736,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
         {
             _errors = evaluationResult.Errors;
-            _message = _errors?.Find(error => !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
+            _message = _errors?.Find(static error => !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
             if (evaluationResult.HasConditionError)
             {
                 _omitCaptureData = true;
@@ -1071,7 +1071,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             var stackFrames = (new StackTrace(true).GetFrames() ?? Array.Empty<StackFrame>())
-                             .SkipWhile(frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWithOrdinal("Datadog") == true).ToArray();
+                             .SkipWhile(static frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWithOrdinal("Datadog") == true).ToArray();
 
             JsonWriter.WritePropertyName("stack");
             JsonWriter.WriteStartArray();

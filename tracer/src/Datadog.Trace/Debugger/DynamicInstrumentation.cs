@@ -104,8 +104,8 @@ namespace Datadog.Trace.Debugger
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
-                    var addedResult = AcceptAddedConfiguration(updates?.Values.SelectMany(u => u).ToList());
-                    AcceptRemovedConfiguration(removals?.Values.SelectMany(u => u).ToList());
+                    var addedResult = AcceptAddedConfiguration(updates?.Values.SelectMany(static u => u).ToList());
+                    AcceptRemovedConfiguration(removals?.Values.SelectMany(static u => u).ToList());
                     return addedResult;
                 },
                 RcmProducts.LiveDebugging);
@@ -252,21 +252,21 @@ namespace Datadog.Trace.Debugger
 
             _ = _diagnosticsUploader.StartFlushingAsync()
                                     .ContinueWith(
-                                         t => Log.Error(t?.Exception, "Error in diagnostic uploader"),
+                                         static t => Log.Error(t?.Exception, "Error in diagnostic uploader"),
                                          CancellationToken.None,
                                          TaskContinuationOptions.OnlyOnFaulted,
                                          TaskScheduler.Default);
 
             _ = _snapshotUploader.StartFlushingAsync()
                                  .ContinueWith(
-                                      t => Log.Error(t?.Exception, "Error in snapshot uploader"),
+                                      static t => Log.Error(t?.Exception, "Error in snapshot uploader"),
                                       CancellationToken.None,
                                       TaskContinuationOptions.OnlyOnFaulted,
                                       TaskScheduler.Default);
 
             _ = _logUploader.StartFlushingAsync()
                             .ContinueWith(
-                                 t => Log.Error(t?.Exception, "Error in log uploader"),
+                                 static t => Log.Error(t?.Exception, "Error in log uploader"),
                                  CancellationToken.None,
                                  TaskContinuationOptions.OnlyOnFaulted,
                                  TaskScheduler.Default);
@@ -386,7 +386,7 @@ namespace Datadog.Trace.Debugger
                     _instrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
                 }
 
-                var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
+                var probeIds = fetchProbeStatus.Select(static fp => fp.ProbeId).ToArray();
                 _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
 
                 // This log entry is being checked in integration test
@@ -514,7 +514,7 @@ namespace Datadog.Trace.Debugger
                 if (probesToRemoveFromNative.Count != 0)
                 {
                     var revertProbes = probesToRemoveFromNative
-                       .Select(probeId => new NativeRemoveProbeRequest(probeId));
+                       .Select(static probeId => new NativeRemoveProbeRequest(probeId));
 
                     _instrumentProbes([], [], [], revertProbes.ToArray());
                 }
@@ -1013,7 +1013,7 @@ namespace Datadog.Trace.Debugger
                     if (!IsDisposed && probeIds.Length != 0)
                     {
                         Log.Information<int>("Dynamic Instrumentation is disabled, reverting the instrumentation of {Count} probes.", probeIds.Length);
-                        _instrumentProbes([], [], [], probeIds.Select(probeId => new NativeRemoveProbeRequest(probeId)).ToArray());
+                        _instrumentProbes([], [], [], probeIds.Select(static probeId => new NativeRemoveProbeRequest(probeId)).ToArray());
                     }
                 }
                 catch (Exception e)
@@ -1053,7 +1053,7 @@ namespace Datadog.Trace.Debugger
             }
 
             _ = _dogStats?.DisposeAsync().ContinueWith(
-                t => Log.Error(t.Exception, "Error waiting for StatsD disposal"),
+                static t => Log.Error(t.Exception, "Error waiting for StatsD disposal"),
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted,
                 TaskScheduler.Default);

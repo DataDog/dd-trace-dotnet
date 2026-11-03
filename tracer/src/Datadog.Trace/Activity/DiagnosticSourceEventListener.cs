@@ -66,7 +66,7 @@ namespace Datadog.Trace.Activity
             catch (Exception ex)
             {
                 Log.Error(ex, "Error on DiagnosticSourceEventListener static constructor");
-                OnNextActivityDelegate = (s, pair, arg3) => { };
+                OnNextActivityDelegate = static (s, pair, arg3) => { };
             }
         }
 

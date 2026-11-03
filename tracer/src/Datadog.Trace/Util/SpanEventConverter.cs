@@ -39,7 +39,7 @@ internal sealed class SpanEventConverter : JsonConverter<SpanEvent>
 
             if (acceptedAttr.Count > 0)
             {
-                var jObject = new JObject(acceptedAttr.Select(kvp => new JProperty(kvp.Key, JToken.FromObject(kvp.Value))));
+                var jObject = new JObject(acceptedAttr.Select(static kvp => new JProperty(kvp.Key, JToken.FromObject(kvp.Value))));
                 eventJObject.Add("attributes", jObject);
             }
         }

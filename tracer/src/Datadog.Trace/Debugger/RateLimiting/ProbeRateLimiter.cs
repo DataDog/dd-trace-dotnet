@@ -43,7 +43,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     ref _instance,
                     ref _globalInstanceInitialized,
                     ref _globalInstanceLock,
-                    () => new ProbeRateLimiter());
+                    static () => new ProbeRateLimiter());
             }
         }
 

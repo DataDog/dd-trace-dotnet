@@ -21,7 +21,7 @@ internal static class ProfilerAvailabilityHelper
     // We should add or remove conditions from here as our deployment requirements change.
     // Longer term, we'd like to be able to pass this information from the native side to the managed side, but
     // today that only works on Windows (hence the early short-circuit).
-    private static readonly Lazy<bool> ProfilerIsAvailable = new(() => GetIsContinuousProfilerAvailable(
+    private static readonly Lazy<bool> ProfilerIsAvailable = new(static () => GetIsContinuousProfilerAvailable(
                                                                      EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe,
                                                                      AwsInfo.Instance.IsAwsLambda,
                                                                      AzureInfo.Instance.IsAzureFunction));

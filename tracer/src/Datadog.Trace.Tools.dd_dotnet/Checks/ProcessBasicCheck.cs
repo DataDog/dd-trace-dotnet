@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             var tracerVersions = FindTracerModules(process)
                 .Select(FileVersionInfo.GetVersionInfo)
-                .DistinctBy(v => v.FileVersion)
+                .DistinctBy(static v => v.FileVersion)
                 .ToArray();
 
             if (tracerVersions.Length == 0)
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     }
                 }
 
-                Utils.WriteWarning(MultipleTracers(tracerVersions.Select(v => v.FileVersion ?? "{empty}")));
+                Utils.WriteWarning(MultipleTracers(tracerVersions.Select(static v => v.FileVersion ?? "{empty}")));
 
                 if (!areAllVersion2)
                 {

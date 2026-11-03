@@ -404,7 +404,7 @@ namespace Datadog.Trace.DuckTyping
                 OpCodes.Calli,
                 method.CallingConvention,
                 method.ReturnType,
-                method.GetParameters().Select(p => p.ParameterType).ToArray(),
+                method.GetParameters().Select(static p => p.ParameterType).ToArray(),
                 null!);
         }
 

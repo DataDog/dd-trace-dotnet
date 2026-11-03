@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public override IEnumerable<ParticipatingFrame> GetAllFlattenedFrames()
         {
-            foreach (var frame in InnerFrames.SelectMany(innerFrame => innerFrame.GetAllFlattenedFrames()))
+            foreach (var frame in InnerFrames.SelectMany(static innerFrame => innerFrame.GetAllFlattenedFrames()))
             {
                 yield return frame;
             }
