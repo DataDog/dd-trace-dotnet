@@ -1,3 +1,11 @@
 <Project>
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\build\DdVersion.props" />
+
+  <!-- The semver from version.props as a string literal, so dd_version_test.cpp can check that dd_version.h
+       produces the same value. Test-only: production code derives it from the DD_VERSION_* definitions. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>DD_EXPECTED_SEMANTIC_VERSION="$(DD_SemanticVersion)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

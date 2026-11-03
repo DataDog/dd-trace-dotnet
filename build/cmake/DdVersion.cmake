@@ -48,7 +48,10 @@ if(NOT _dd_version_suffix MATCHES "^(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$")
     message(FATAL_ERROR "<DD_VersionSuffix> in ${DD_VERSION_PROPS} must be empty or a semver prerelease suffix such as -prerelease, but was '${_dd_version_suffix}'.")
 endif()
 
-message(STATUS "Datadog SDK version: ${DD_VERSION}${_dd_version_suffix}")
+# The semver (e.g. 1.2.3-prerelease), for tests that check dd_version.h derives the same value
+set(DD_SEMANTIC_VERSION "${DD_VERSION}${_dd_version_suffix}")
+
+message(STATUS "Datadog SDK version: ${DD_SEMANTIC_VERSION}")
 
 # Directory-scoped, so they apply to every target in this directory and below.
 # DD_VERSION_SUFFIX is an unquoted token (possibly empty), which dd_version.h stringifies.

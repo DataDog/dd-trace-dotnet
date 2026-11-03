@@ -62,6 +62,10 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
 )
 
+# The semver from version.props as a string literal, so dd_version_test.cpp can check that dd_version.h
+# produces the same value. Test-only: production code derives it from the DD_VERSION_* definitions.
+target_compile_definitions(${TEST_EXECUTABLE_NAME} PRIVATE DD_EXPECTED_SEMANTIC_VERSION="${DD_SEMANTIC_VERSION}")
+
 add_dependencies(${TEST_EXECUTABLE_NAME} gtest Datadog.Tracer.Native.static coreclr)
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
