@@ -133,7 +133,6 @@ dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref rea
 dotnet_diagnostic.MA0184.severity = none # Do not use interpolated string without parameters
 dotnet_diagnostic.MA0186.severity = none # Equals method should use [NotNullWhen(true)] on the parameter
 dotnet_diagnostic.MA0194.severity = none # Merge is expressions on the same value
-dotnet_diagnostic.MA0197.severity = none # Add dedicated documentation on types
 dotnet_diagnostic.MA0200.severity = none # Do not use empty property patterns with non-nullable value types
 dotnet_diagnostic.MA0209.severity = none # Use in keyword for in parameter
 dotnet_diagnostic.MA0217.severity = none # Use a static lambda
