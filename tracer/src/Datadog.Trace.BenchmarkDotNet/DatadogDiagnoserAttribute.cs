@@ -11,6 +11,7 @@ namespace Datadog.Trace.BenchmarkDotNet;
 /// <summary>
 /// Datadog BenchmarkDotNet diagnoser attribute
 /// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly)]
 public class DatadogDiagnoserAttribute : Attribute, IConfigSource
 {
     /// <summary>
