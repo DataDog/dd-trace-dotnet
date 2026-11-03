@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
@@ -396,6 +397,19 @@ public partial class FeatureFlagsEvaluatorTests
             result.FlagMetadata!.Should().ContainKey("__dd_feature.kept", "only the out-of-range feature is skipped");
             result.FlagMetadata!.Keys.Should().NotContain("__dd_feature.huge");
         }
+    }
+
+    [Fact]
+    public void DateLikeStringFeaturesAreKeptAsStrings()
+    {
+        var json = "{\"flags\":{\"features-flag\":{\"key\":\"features-flag\",\"enabled\":true,\"variationType\":\"STRING\",\"variations\":{\"on\":{\"key\":\"on\",\"value\":\"value\"}},\"allocations\":[{\"key\":\"alloc\",\"splits\":[{\"variationKey\":\"on\",\"shards\":[],\"features\":[{\"key\":\"holdout.start\",\"value\":\"2026-11-02T00:00:00Z\",\"destinations\":[\"HOOK\"]}]}]}]}}}";
+        var config = JsonConvert.DeserializeObject<ServerConfiguration>(json);
+        var evaluator = new FeatureFlagsEvaluator(null, config!);
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        var value = result.FlagMetadata!["__dd_feature.holdout.start"];
+        DateTimeOffset.Parse(value, CultureInfo.InvariantCulture).Should().Be(new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero), "the same instant survives, even when the text differs");
     }
 
     [Fact]
