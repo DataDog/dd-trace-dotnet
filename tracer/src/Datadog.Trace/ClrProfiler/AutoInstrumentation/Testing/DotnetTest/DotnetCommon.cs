@@ -2628,7 +2628,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 var sb = StringBuilderCache.Acquire();
                 sb.AppendLine("InjectCodeCoverageCollector.VsConsoleTest: arguments:");
 
-                if (args != null)
+                if (args is not null)
                 {
                     for (var i = 0; i < args.Length; i++)
                     {

@@ -36,13 +36,13 @@ internal sealed class SmallCacheOrNoCache<TKey, TValue>
     /// <summary>
     /// Gets a value indicating whether caching is currently enabled. Caching is disabled after receiving too many entries.
     /// </summary>
-    public bool IsCaching => _cache != null;
+    public bool IsCaching => _cache is not null;
 
     public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory)
     {
         var cache = _cache;
 
-        if (cache != null)
+        if (cache is not null)
         {
             if (cache.TryGetValue(key, out var tags))
             {
@@ -58,7 +58,7 @@ internal sealed class SmallCacheOrNoCache<TKey, TValue>
 
             // The assumption that this cache should be small was wrong, disabling it entirely
             // Use atomic operation to log only once
-            if (Interlocked.Exchange(ref _cache, value: null) != null)
+            if (Interlocked.Exchange(ref _cache, value: null) is not null)
             {
                 Log.Information<int, string>("More than {MaxCapacity} different {KeyType} were used, disabling cache", _maxCapacity, _logFriendlyKeyType);
             }

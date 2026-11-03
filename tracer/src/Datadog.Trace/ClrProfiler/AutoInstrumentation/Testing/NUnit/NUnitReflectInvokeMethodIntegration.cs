@@ -28,7 +28,7 @@ public static class NUnitReflectInvokeMethodIntegration
 {
     internal static CallTargetReturn<object> OnMethodEnd<TTarget>(object returnValue, Exception? exception, in CallTargetState state)
     {
-        if (exception != null)
+        if (exception is not null)
         {
             // Use the inner exception if available
             exception = exception.InnerException ?? exception;

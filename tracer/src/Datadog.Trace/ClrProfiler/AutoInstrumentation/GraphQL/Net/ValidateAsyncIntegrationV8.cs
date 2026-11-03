@@ -43,7 +43,7 @@ public sealed class ValidateAsyncIntegrationV8
 
         try
         {
-            if (exception != null)
+            if (exception is not null)
             {
                 scope.Span?.SetException(exception);
             }

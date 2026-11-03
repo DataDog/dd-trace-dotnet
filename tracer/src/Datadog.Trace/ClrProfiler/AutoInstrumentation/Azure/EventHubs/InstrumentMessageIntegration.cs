@@ -45,7 +45,7 @@ public sealed class InstrumentMessageIntegration
         if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs))
         {
             var activeScope = Tracer.Instance.ActiveScope;
-            if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)
+            if (activeScope?.Span?.Context is SpanContext spanContext && properties is not null)
             {
                 AzureMessagingCommon.InjectContext(properties, activeScope as Scope);
             }

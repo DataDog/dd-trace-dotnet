@@ -50,7 +50,7 @@ namespace Datadog.Trace.Configuration.Telemetry
             lock (_allData)
             {
                 var latestData = GetLatestData();
-                if (latestData != null)
+                if (latestData is not null)
                 {
                     _allData.Add(latestData);
                 }
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Configuration.Telemetry
                 // We have to make sure we include all the data that isn't
                 // yet reported through other means
                 var latestData = GetLatestData();
-                if (latestData != null)
+                if (latestData is not null)
                 {
                     _allData.Add(latestData);
                 }

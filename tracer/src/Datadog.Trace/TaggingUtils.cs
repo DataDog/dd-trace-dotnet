@@ -31,14 +31,14 @@ internal static class TaggingUtils
         Action<string, string> setTag;
         if (replaceIfExists)
         {
-            setTag = traceContext != null
+            setTag = traceContext is not null
                          ? (name, value) => traceContext.Tags.SetTag(name, value)
                          : (name, value) => span.SetTag(name, value);
         }
         else
         {
             setTag =
-                traceContext != null
+                traceContext is not null
                     ? (name, value) => traceContext.Tags.TryAddTag(name, value)
                     : (name, value) =>
                     {

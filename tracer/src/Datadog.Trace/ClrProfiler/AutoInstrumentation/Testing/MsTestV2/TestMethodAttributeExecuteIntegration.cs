@@ -490,7 +490,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         var testException = testResult.TestFailureException?.InnerException ??
                             testResult.TestFailureException ??
                             exception;
-        if (testException != null)
+        if (testException is not null)
         {
             var testExceptionType = testException.GetType();
             var testExceptionName = testExceptionType.Name;

@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
                 // - ResourceName (Recalculate with both Method and Uri)
 
                 Scope scope = ScopeFactory.CreateOutboundHttpScope(tracer, httpMethod: null, requestUri: null, WebRequestCommon.IntegrationId, out _);
-                if (scope != null)
+                if (scope is not null)
                 {
                     // Add distributed tracing headers to the HTTP request.
                     // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.

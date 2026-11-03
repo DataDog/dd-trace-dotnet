@@ -71,19 +71,19 @@ internal static class EvidenceConverterHelper
 
         public LinkedList<Range>? SensitiveRanges { get; }
 
-        public bool ShouldRedact => !IsRedacted && (SensitiveRanges != null || (Source != null && Source.IsSensitive));
+        public bool ShouldRedact => !IsRedacted && (SensitiveRanges is not null || (Source is not null && Source.IsSensitive));
 
         public List<ValuePart> Split()
         {
             var parts = new List<ValuePart>();
-            if (Value != null)
+            if (Value is not null)
             {
-                if (Source != null && Source.IsSensitive)
+                if (Source is not null && Source.IsSensitive)
                 {
                     // redact the full tainted value as the source is sensitive (password, certificate, ...)
                     AddValuePart(0, Value.Length, true, parts);
                 }
-                else if (SensitiveRanges != null)
+                else if (SensitiveRanges is not null)
                 {
                     // redact only sensitive parts
                     int index = 0;
@@ -108,7 +108,7 @@ internal static class EvidenceConverterHelper
 
         private void AddValuePart(int start, int end, bool redact, List<ValuePart> valueParts)
         {
-            if (start < end && Value != null)
+            if (start < end && Value is not null)
             {
                 var chunk = Value.Substring(start, end - start);
                 if (!redact)
@@ -116,11 +116,11 @@ internal static class EvidenceConverterHelper
                     // append the value
                     valueParts.Add(new ValuePart(chunk, Source));
                 }
-                else if (Source?.Value != null)
+                else if (Source?.Value is not null)
                 {
                     var length = chunk.Length;
                     var matching = Source.Value.IndexOfOrdinal(chunk);
-                    if (matching >= 0 && Source.RedactedValue != null)
+                    if (matching >= 0 && Source.RedactedValue is not null)
                     {
                         // if matches append the matching part from the redacted value
                         var pattern = Source.RedactedValue.Substring(matching, length);
@@ -347,7 +347,7 @@ internal static class EvidenceConverterHelper
             private void AddNextStringValuePart(int end, LinkedList<ValuePart>? target)
             {
                 var part = NextStringValuePart(end);
-                if (part != null && target != null)
+                if (part is not null && target is not null)
                 {
                     target.AddLast(part.Value);
                 }

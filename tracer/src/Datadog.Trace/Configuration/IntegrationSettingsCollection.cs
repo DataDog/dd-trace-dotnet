@@ -64,7 +64,7 @@ namespace Datadog.Trace.Configuration
             {
                 var name = IntegrationRegistry.Names[i];
 
-                if (name != null)
+                if (name is not null)
                 {
                     var explicitlyDisabled = disabledIntegrationNames.Contains(name);
                     integrations[i] = new IntegrationSettings(name, source, explicitlyDisabled, fallbackValues?[name]);

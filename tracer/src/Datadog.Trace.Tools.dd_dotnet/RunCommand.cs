@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tools.dd_dotnet
                 processInfo.Environment[item.Key.ToString()!] = item.Value!.ToString();
             }
 
-            if (environmentVariables != null)
+            if (environmentVariables is not null)
             {
                 foreach (var item in environmentVariables)
                 {
@@ -206,7 +206,7 @@ namespace Datadog.Trace.Tools.dd_dotnet
 
             var additionalEnvironmentVariables = invocationContext.ParseResult.GetValueForOption(settings.AdditionalEnvironmentVariables);
 
-            if (additionalEnvironmentVariables != null)
+            if (additionalEnvironmentVariables is not null)
             {
                 foreach (var env in additionalEnvironmentVariables)
                 {
@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tools.dd_dotnet
 
             var envVars = Utils.GetBaseProfilerEnvironmentVariables(tracerHomeFolder);
 
-            if (envVars != null)
+            if (envVars is not null)
             {
                 var environment = options.Environment.GetValue(context);
 
@@ -273,7 +273,7 @@ namespace Datadog.Trace.Tools.dd_dotnet
                 return;
             }
 
-            if (Program.CallbackForTests != null)
+            if (Program.CallbackForTests is not null)
             {
                 Program.CallbackForTests(program, arguments, profilerEnvironmentVariables);
                 return;

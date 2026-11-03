@@ -22,7 +22,7 @@ internal class CompositeConfigurationSource : IConfigurationSource
         {
             var value = source.GetString(key);
 
-            if (value != null)
+            if (value is not null)
             {
                 return value;
             }

@@ -83,7 +83,7 @@ internal static partial class IastModule
 
     internal static string? OnUnvalidatedRedirect(string? evidence)
     {
-        if (Iast.Instance.Settings.Enabled && evidence != null && OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
+        if (Iast.Instance.Settings.Enabled && evidence is not null && OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
         {
             return new string(evidence.ToCharArray());
         }
@@ -666,7 +666,7 @@ internal static partial class IastModule
         var isRequest = rootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
-        if (!isRequest && taintValidator != null)
+        if (!isRequest && taintValidator is not null)
         {
             return IastModuleResponse.Empty;
         }
@@ -679,7 +679,7 @@ internal static partial class IastModule
         }
 
         TaintedObject? tainted = null;
-        if (taintValidator != null)
+        if (taintValidator is not null)
         {
             tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
             if (tainted is null || !taintValidator(tainted))

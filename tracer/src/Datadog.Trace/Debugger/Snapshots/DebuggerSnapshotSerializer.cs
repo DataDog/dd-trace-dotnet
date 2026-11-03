@@ -90,7 +90,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 if (source is IEnumerable enumerable &&
                     TryGetSupportedEnumerableInfo(source, out var enumerableInfo))
                 {
-                    if (variableName != null)
+                    if (variableName is not null)
                     {
                         jsonWriter.WritePropertyName(variableName);
                     }
@@ -177,7 +177,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             var opened = false;
 
-            if (variableName != null)
+            if (variableName is not null)
             {
                 jsonWriter.WritePropertyName(variableName);
             }
@@ -553,7 +553,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void WriteRedactedValue(JsonWriter jsonWriter, Type type, string variableName, RedactionReason redactionReason, ref uint incompleteReasons)
         {
-            if (variableName != null)
+            if (variableName is not null)
             {
                 jsonWriter.WritePropertyName(variableName);
             }
@@ -665,12 +665,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                                 return false;
                             }
 
-                            if (field.DeclaringType == null || (source != null && !field.DeclaringType.IsInstanceOfType(source)))
+                            if (field.DeclaringType == null || (source is not null && !field.DeclaringType.IsInstanceOfType(source)))
                             {
                                 return false;
                             }
 
-                            if (source != null)
+                            if (source is not null)
                             {
                                 value = field.GetValue(source);
                                 return true;
@@ -709,12 +709,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                                 return false;
                             }
 
-                            if (property.DeclaringType == null || (source != null && !property.DeclaringType.IsInstanceOfType(source)))
+                            if (property.DeclaringType == null || (source is not null && !property.DeclaringType.IsInstanceOfType(source)))
                             {
                                 return false;
                             }
 
-                            if (source != null)
+                            if (source is not null)
                             {
                                 value = property.GetValue(source);
                                 return true;

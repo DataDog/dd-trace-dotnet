@@ -95,17 +95,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
         public static string GetValueFromDynamoDbAttribute(IDynamoDbAttributeValue value)
         {
-            if (value.S != null)
+            if (value.S is not null)
             {
                 return value.S;
             }
 
-            if (value.N != null)
+            if (value.N is not null)
             {
                 return value.N;
             }
 
-            if (value.B != null)
+            if (value.B is not null)
             {
 #if NETCOREAPP3_1_OR_GREATER
                 if (value.B.TryGetBuffer(out var buffer))

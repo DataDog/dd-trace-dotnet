@@ -241,7 +241,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     metricData = SerializeHistogramMetric(group);
                 }
 
-                if (metricData != null)
+                if (metricData is not null)
                 {
                     WriteTag(writer, FieldNumbers.Metrics, LengthDelimited);
                     WriteVarInt(writer, metricData.Length);

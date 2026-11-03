@@ -38,13 +38,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
             where TTarget : IMqQueue, IDuckType
         {
-            if (instance.Instance != null)
+            if (instance.Instance is not null)
             {
-                if (state.State != null && state.State.TryDuckCast<IMqMessage>(out var msg))
+                if (state.State is not null && state.State.TryDuckCast<IMqMessage>(out var msg))
                 {
                     var scope = IbmMqHelper.CreateConsumerScope(Tracer.Instance, state.StartTime, instance, msg);
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                    if (dataStreams.IsEnabled && exception == null && scope != null)
+                    if (dataStreams.IsEnabled && exception == null && scope is not null)
                     {
                         var adapter = IbmMqHelper.GetHeadersAdapter(msg);
                         PathwayContext? pathwayContext = null;

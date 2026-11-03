@@ -34,10 +34,10 @@ internal sealed class CommandTokenizer : ITokenizer
 
         var res = new List<Range>(1);
         var match = _patternRegex.Match(value);
-        if (match != null && match.Success)
+        if (match is not null && match.Success)
         {
             var group = match.Groups[1];
-            if (group != null && group.Success)
+            if (group is not null && group.Success)
             {
                 int start = group.Index;
                 int end = group.Index + group.Length;

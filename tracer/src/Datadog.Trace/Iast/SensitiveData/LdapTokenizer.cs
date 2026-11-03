@@ -35,10 +35,10 @@ internal sealed class LdapTokenizer : ITokenizer
         var res = new List<Range>(5);
         foreach (Match? match in _ldapRegex.Matches(value))
         {
-            if (match != null && match.Success)
+            if (match is not null && match.Success)
             {
                 var group = match.Groups["LITERAL"];
-                if (group != null && group.Success)
+                if (group is not null && group.Success)
                 {
                     int start = group.Index;
                     int end = group.Index + group.Length;

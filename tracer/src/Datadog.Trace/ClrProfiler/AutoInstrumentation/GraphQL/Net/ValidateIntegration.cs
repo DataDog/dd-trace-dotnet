@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                if (exception != null)
+                if (exception is not null)
                 {
                     scope.Span?.SetException(exception);
                 }

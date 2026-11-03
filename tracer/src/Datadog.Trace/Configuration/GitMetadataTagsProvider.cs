@@ -59,7 +59,7 @@ internal sealed class GitMetadataTagsProvider : IGitMetadataTagsProvider
                 return true;
             }
 
-            if (_cachedGitTags != null)
+            if (_cachedGitTags is not null)
             {
                 gitMetadata = _cachedGitTags;
                 return true;
@@ -157,7 +157,7 @@ internal sealed class GitMetadataTagsProvider : IGitMetadataTagsProvider
             // We'll try up to 100 times, but if a span is active, we'll give up immediately, as that means
             // the application is already fully up and running and we're not going to be able to retrieve the entry assembly.
             var nbTries = Interlocked.Increment(ref _tryCount);
-            if (nbTries > 100 || _scopeManager.Active?.Span != null)
+            if (nbTries > 100 || _scopeManager.Active?.Span is not null)
             {
                 Log.Debug("Giving up on trying to locate entry assembly. SourceLink information will not be retrieved.");
                 result = GitMetadata.Empty;

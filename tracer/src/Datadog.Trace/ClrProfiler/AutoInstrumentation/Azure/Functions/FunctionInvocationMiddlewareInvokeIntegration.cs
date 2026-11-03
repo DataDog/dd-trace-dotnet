@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, Iast.Iast.Instance, httpContext, resourceName: null);
 
-                if (scope != null)
+                if (scope is not null)
                 {
                     return new CallTargetState(scope, state: httpContext);
                 }
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var httpContext = state.State as HttpContext;
                 try
                 {
-                    if (exception != null)
+                    if (exception is not null)
                     {
                         AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, security, scope.Span, httpContext, exception);
                     }

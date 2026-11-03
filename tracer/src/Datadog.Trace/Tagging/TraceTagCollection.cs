@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tagging
                         }
                     }
 
-                    if (samplingMechanismPair != null)
+                    if (samplingMechanismPair is not null)
                     {
                         tags.Remove(samplingMechanismPair.Value);
                         _samplingMechanismValue = samplingMechanismPair.Value.Value;
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
         /// </summary>
-        public int Count => (_tags?.Count ?? 0) + (_samplingMechanismValue != null ? 1 : 0);
+        public int Count => (_tags?.Count ?? 0) + (_samplingMechanismValue is not null ? 1 : 0);
 
         /// <summary>
         /// Adds a new tag to the collection.
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tagging
 
             if (name == Trace.Tags.Propagated.DecisionMaker)
             {
-                if (_samplingMechanismValue != null && !replaceIfExists)
+                if (_samplingMechanismValue is not null && !replaceIfExists)
                 {
                     return false;
                 }
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tagging
                     SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
                 }
             }
-            else if (traceId.Upper == 0 && tagValue != null)
+            else if (traceId.Upper == 0 && tagValue is not null)
             {
                 // remove tag "_dd.p.tid" if trace id is only 64 bits
                 RemoveTag(Trace.Tags.Propagated.TraceIdUpper);
@@ -287,7 +287,7 @@ namespace Datadog.Trace.Tagging
         public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
             where TTagEnumerator : struct, ITagEnumerator
         {
-            if (_samplingMechanismValue != null)
+            if (_samplingMechanismValue is not null)
             {
                 tagEnumerator.Next(new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _samplingMechanismValue));
             }

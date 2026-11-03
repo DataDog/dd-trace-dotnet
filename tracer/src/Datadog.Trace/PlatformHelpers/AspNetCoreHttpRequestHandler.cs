@@ -135,7 +135,7 @@ namespace Datadog.Trace.PlatformHelpers
             if (tracer.Settings.InferredProxySpansEnabled && request.Headers is { } headers)
             {
                 proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new HeadersCollectionAdapter(headers), extractedContext);
-                if (proxyContext != null)
+                if (proxyContext is not null)
                 {
                     extractedContext = proxyContext.Value.Context;
                 }
@@ -172,7 +172,7 @@ namespace Datadog.Trace.PlatformHelpers
             if (dataStreamsManager.IsTransactionTrackingEnabled)
             {
                 var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders);
-                if (extractors != null)
+                if (extractors is not null)
                 {
                     foreach (var extractor in extractors)
                     {
@@ -253,7 +253,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext, Scope proxyScope)
         {
-            if (rootScope != null)
+            if (rootScope is not null)
             {
                 // We may need to update the resource name if none of the routing/mvc events updated it.
                 // If we had an unhandled exception, the status code will already be updated correctly,
@@ -285,7 +285,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
 
-                if (proxyScope?.Span != null)
+                if (proxyScope?.Span is not null)
                 {
                     proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
                     proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
@@ -314,7 +314,7 @@ namespace Datadog.Trace.PlatformHelpers
             // root span. In "normal" operation, this will be the same span returned by
             // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
             // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
-            if (rootSpan != null && httpContext is not null && exception is not null)
+            if (rootSpan is not null && httpContext is not null && exception is not null)
             {
                 var statusCode = 500;
 
@@ -326,7 +326,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
 
-                if (proxyScope?.Span != null)
+                if (proxyScope?.Span is not null)
                 {
                     proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
                 }
@@ -334,7 +334,7 @@ namespace Datadog.Trace.PlatformHelpers
                 if (BlockException.GetBlockException(exception) is null)
                 {
                     rootSpan.SetException(exception);
-                    if (proxyScope?.Span != null)
+                    if (proxyScope?.Span is not null)
                     {
                         proxyScope.Span.SetException(exception);
                     }

@@ -495,7 +495,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (CodeOrigin != null)
+                if (CodeOrigin is not null)
                 {
                     Log.Debug("Code Origin for Spans is already initialized");
                     return;
@@ -539,7 +539,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (ExceptionReplay != null)
+                if (ExceptionReplay is not null)
                 {
                     Log.Debug("Exception Replay is already initialized");
                     return;
@@ -586,7 +586,7 @@ namespace Datadog.Trace.Debugger
             }
 
             var requestedDiState = debuggerSettings.DynamicInstrumentationEnabled || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true;
-            var currentDiState = DynamicInstrumentation != null;
+            var currentDiState = DynamicInstrumentation is not null;
             var state = Volatile.Read(ref _diState);
 
             if (!requestedDiState && (currentDiState || state == 1))
@@ -607,7 +607,7 @@ namespace Datadog.Trace.Debugger
             var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var prev = Interlocked.Exchange(ref _diDebounceGate, gate);
             prev?.TrySetResult(false);
-            Log.Debug("Previous DI update request exists: {Value}", prev != null);
+            Log.Debug("Previous DI update request exists: {Value}", prev is not null);
 
             try
             {
@@ -764,7 +764,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (di != null)
+                if (di is not null)
                 {
                     SafeDisposal.TryDispose(di);
                     return;
@@ -787,7 +787,7 @@ namespace Datadog.Trace.Debugger
             bool disabled = false;
             lock (_syncLock)
             {
-                if (_dynamicInstrumentation != null)
+                if (_dynamicInstrumentation is not null)
                 {
                     // During process exit we only dispose, reverting the probes would only add ReJIT work
                     if (_processExit.Task.IsCompleted)
@@ -860,7 +860,7 @@ namespace Datadog.Trace.Debugger
             Volatile.Write(ref _diState, 0);
             DisableSymbolUploader();
 
-            if (ex != null)
+            if (ex is not null)
             {
                 Log.Debug(ex, "Shutdown task for DebuggerManager is running with exception");
             }

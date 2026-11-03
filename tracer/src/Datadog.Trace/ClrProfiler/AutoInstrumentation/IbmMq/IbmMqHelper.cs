@@ -117,7 +117,7 @@ internal static class IbmMqHelper
             var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.IbmMq);
             if (parent is not null &&
                 parent.OperationName == operationName &&
-                parent.GetTag(Tags.InstrumentationName) != null)
+                parent.GetTag(Tags.InstrumentationName) is not null)
             {
                 return null;
             }

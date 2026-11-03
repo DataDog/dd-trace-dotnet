@@ -105,17 +105,17 @@ namespace Datadog.Trace.RuntimeMetrics
             var gen1 = GC.CollectionCount(1);
             var gen2 = GC.CollectionCount(2);
 
-            if (_previousGen0Count != null)
+            if (_previousGen0Count is not null)
             {
                 statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
             }
 
-            if (_previousGen1Count != null)
+            if (_previousGen1Count is not null)
             {
                 statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
             }
 
-            if (_previousGen2Count != null)
+            if (_previousGen2Count is not null)
             {
                 statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
             }
@@ -165,7 +165,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             var value = counter.GetValue(_instanceName);
 
-            if (value != null)
+            if (value is not null)
             {
                 statsd.Gauge(path, value.Value);
             }
@@ -198,7 +198,7 @@ namespace Datadog.Trace.RuntimeMetrics
             // See https://docs.microsoft.com/en-us/dotnet/framework/debug-trace-profile/performance-counters-and-in-process-side-by-side-applications#performance-counters-for-in-process-side-by-side-applications
             var fullName = instanceNames.FirstOrDefault(n => n.StartsWithOrdinal(StringUtil.Invariant($"{_processName}_p{_processId}_r")));
 
-            if (fullName != null)
+            if (fullName is not null)
             {
                 return Tuple.Create(fullName, true);
             }

@@ -41,7 +41,7 @@ public sealed class EventHubProducerClientSendBatchAsyncIntegration
         where TEventBatch : IEventDataBatch, IDuckType
     {
         var spanLinks = BatchSpanContextStorage.ExtractSpanContexts(eventBatch?.Instance);
-        var messageCount = eventBatch?.Instance != null ? eventBatch.Count : (int?)null;
+        var messageCount = eventBatch?.Instance is not null ? eventBatch.Count : (int?)null;
 
         return EventHubsCommon.CreateSenderSpan(
             instance,

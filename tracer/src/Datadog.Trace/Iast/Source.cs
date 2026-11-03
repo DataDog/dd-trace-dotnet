@@ -82,7 +82,7 @@ internal sealed class Source
     {
         if (_redacted) { return; }
         _redacted = true;
-        if (_value != null)
+        if (_value is not null)
         {
             _redactedValue = NewString(ComputeLength(_value), RedactedSourceBuffer);
         }

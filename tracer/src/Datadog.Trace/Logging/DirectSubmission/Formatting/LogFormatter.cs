@@ -321,7 +321,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 writer.WriteValue(logLevel);
             }
 
-            if (exception != null)
+            if (exception is not null)
             {
                 writer.WritePropertyName("@x", escape: false);
                 writer.WriteValue(exception.ToString());

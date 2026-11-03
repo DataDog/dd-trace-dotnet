@@ -274,7 +274,7 @@ namespace Datadog.Trace.Tagging
                 }
 
                 // If we get there, the tag wasn't in the collection
-                if (value != null)
+                if (value is not null)
                 {
                     metrics.Add(new KeyValuePair<string, double>(key, value.Value));
                 }
@@ -346,7 +346,7 @@ namespace Datadog.Trace.Tagging
                     }
 
                     // If we get there, the key wasn't in the collection
-                    if (value != null)
+                    if (value is not null)
                     {
                         metastruct.Add(new KeyValuePair<string, byte[]>(key, value));
                     }
@@ -379,7 +379,7 @@ namespace Datadog.Trace.Tagging
 
             var tags = Volatile.Read(ref _tags);
 
-            if (tags != null)
+            if (tags is not null)
             {
                 lock (tags)
                 {
@@ -392,7 +392,7 @@ namespace Datadog.Trace.Tagging
 
             var metrics = Volatile.Read(ref _metrics);
 
-            if (metrics != null)
+            if (metrics is not null)
             {
                 lock (metrics)
                 {
@@ -405,7 +405,7 @@ namespace Datadog.Trace.Tagging
 
             var metaStruct = Volatile.Read(ref _metaStruct);
 
-            if (metaStruct != null)
+            if (metaStruct is not null)
             {
                 lock (metaStruct)
                 {

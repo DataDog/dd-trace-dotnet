@@ -65,7 +65,7 @@ namespace Datadog.Trace.ServiceFabric
                 try
                 {
                     // inject propagation context into message headers for distributed tracing
-                    if (messageHeaders != null)
+                    if (messageHeaders is not null)
                     {
                         var context = new PropagationContext(span.Context, Baggage.Current);
 

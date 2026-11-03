@@ -418,7 +418,7 @@ namespace Datadog.Trace.Configuration
                     portSource: dogStatsDPortSource,
                     out settings);
             }
-            else if (dogStatsdPort > 0 || agentHost != null)
+            else if (dogStatsdPort > 0 || agentHost is not null)
             {
                 var hostSource = agentHost is null ? ConfigurationKeys.AgentHost : null;
                 SetUdp(

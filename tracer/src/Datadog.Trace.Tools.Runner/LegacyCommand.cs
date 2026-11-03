@@ -128,7 +128,7 @@ namespace Datadog.Trace.Tools.Runner
 
                     var arguments = args.Length > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
-                    if (Program.CallbackForTests != null)
+                    if (Program.CallbackForTests is not null)
                     {
                         Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
                         return;

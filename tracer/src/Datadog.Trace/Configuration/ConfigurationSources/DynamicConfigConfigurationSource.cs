@@ -50,7 +50,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
         {
             var jobject = JsonHelper.DeserializeObject(config) as JObject;
 
-            if (jobject != null)
+            if (jobject is not null)
             {
                 return jobject["lib_config"];
             }
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 
         private static JToken? GetLibConfigToken(JToken? configToken)
         {
-            return configToken != null ? configToken["lib_config"] : configToken;
+            return configToken is not null ? configToken["lib_config"] : configToken;
         }
 
         private static Dictionary<string, string> ReadHeaderTags(JToken token)

@@ -64,8 +64,8 @@ namespace Datadog.Trace.Pdb
             _dnlibModule = dnlibModule;
             DnlibPdbReader = dnlibPdbReader;
             PdbFullPath = pdbFullPath;
-            _isDnlibPdbReader = dnlibPdbReader != null;
-            IsPdbExist = PdbReader != null || DnlibPdbReader != null;
+            _isDnlibPdbReader = dnlibPdbReader is not null;
+            IsPdbExist = PdbReader is not null || DnlibPdbReader is not null;
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace Datadog.Trace.Pdb
                 // when the application directory contains a large number of files or is located on a slow network share (see https://github.com/DataDog/dd-trace-dotnet/issues/4226)
                 string fileName = Path.GetFileName(pdbInSameFolder);
                 string applicationDirectory = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
-                if (applicationDirectory != null)
+                if (applicationDirectory is not null)
                 {
                     var pdbInAppDirectory = Path.Combine(applicationDirectory, "bin", fileName);
                     if (File.Exists(pdbInAppDirectory))
@@ -332,7 +332,7 @@ namespace Datadog.Trace.Pdb
                 return GetSourceLinkJsonDocumentDnlib();
             }
 
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 // Iterate over the CustomDebugInformation table to find the source link entry
                 foreach (var dciHandle in PdbReader.CustomDebugInformation)
@@ -372,7 +372,7 @@ namespace Datadog.Trace.Pdb
                 return GetMethodSequencePointsDnlib(methodToken, searchMoveNext, out count);
             }
 
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 var methodDefHandle = GetMethodDefHandle(methodToken);
                 if (methodDefHandle.IsNil)
@@ -438,7 +438,7 @@ namespace Datadog.Trace.Pdb
                 return GetMethodSourceLocationDnlib(methodToken, searchMoveNext);
             }
 
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 var methodDefHandle = GetMethodDefHandle(methodToken);
                 var methodDef = GetMethodDef(methodDefHandle);
@@ -567,7 +567,7 @@ namespace Datadog.Trace.Pdb
                 return GetContainingMethodTokenAndOffsetDnlib(filePath, line, column, out byteCodeOffset);
             }
 
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 var normalizeFilePath = GetNormalizedPath(filePath);
                 if (string.IsNullOrEmpty(normalizeFilePath))
@@ -629,7 +629,7 @@ namespace Datadog.Trace.Pdb
                 }
             }
 
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 docs = new List<string>(PdbReader.Documents.Count);
                 foreach (var document in PdbReader.Documents)
@@ -665,7 +665,7 @@ namespace Datadog.Trace.Pdb
                 return GetLocalVariableNamesDnlib(methodToken, localVariablesCount, searchMoveNext);
             }
 
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 return GetLocalVariableNames(methodToken, searchMoveNext);
             }
@@ -738,7 +738,7 @@ namespace Datadog.Trace.Pdb
             }
 
             CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 var methodHandle = MetadataTokens.MethodDefinitionHandle(RidOf(methodToken));
                 if (methodHandle.IsNil)
@@ -883,7 +883,7 @@ namespace Datadog.Trace.Pdb
             }
 
             ImmutableArray<LocalScope>.Builder? localScopes = default;
-            if (PdbReader != null)
+            if (PdbReader is not null)
             {
                 var methodDefHandle = GetMethodDefHandle(methodToken);
                 var method = GetMethodDef(methodDefHandle);

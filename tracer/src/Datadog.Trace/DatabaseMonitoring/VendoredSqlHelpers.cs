@@ -67,7 +67,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                     bld.Append('.');
                 }
 
-                if (strings[i] != null && 0 != strings[i].Length)
+                if (strings[i] is not null && 0 != strings[i].Length)
                 {
                     AppendQuotedString(bld, "[", "]", strings[i]);
                 }

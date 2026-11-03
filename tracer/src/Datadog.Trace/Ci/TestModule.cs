@@ -585,7 +585,7 @@ public sealed class TestModule
 
     internal bool EnableIpcClient()
     {
-        if (_fakeSession != null || Tags.SessionId == 0)
+        if (_fakeSession is not null || Tags.SessionId == 0)
         {
             return false;
         }

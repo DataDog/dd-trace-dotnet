@@ -24,7 +24,7 @@ namespace Datadog.Trace.Util
         {
             var service = tags.AwsService;
             var region = tags.Region;
-            if (isAwsLambda && region != null)
+            if (isAwsLambda && region is not null)
             {
                 switch (service)
                 {
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Util
                     case "S3":
                         if (tags is AwsS3Tags s3Tags)
                         {
-                            if (s3Tags.BucketName != null)
+                            if (s3Tags.BucketName is not null)
                             {
                                 tags.PeerService = $"{s3Tags.BucketName}.s3.{region}.amazonaws.com";
                             }
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Util
                         break;
                 }
 
-                if (tags.PeerService != null)
+                if (tags.PeerService is not null)
                 {
                     tags.PeerServiceSource = "peer.service";
                 }

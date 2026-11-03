@@ -98,7 +98,7 @@ internal sealed class EvidenceDictionaryConverter
         var result = new Dictionary<string, object>();
         TruncationUtils.InsertTruncatableValue(result, "value", value, _maxValueLength);
 
-        if (source != null)
+        if (source is not null)
         {
             result["source"] = source.GetInternalId();
         }
@@ -111,7 +111,7 @@ internal sealed class EvidenceDictionaryConverter
         var result = new Dictionary<string, object> { { "redacted", true } };
         TruncationUtils.InsertTruncatableValue(result, "pattern", value, _maxValueLength);
 
-        if (source != null)
+        if (source is not null)
         {
             result["source"] = source.GetInternalId();
         }
@@ -149,7 +149,7 @@ internal sealed class EvidenceDictionaryConverter
     private List<object> CreateRedactedValueParts(List<object> valueParts, string value, Range[] ranges, Range[]? sensitiveRanges)
     {
         var tainted = new LinkedList<Range>(ranges);
-        var sensitive = sensitiveRanges != null ? new LinkedList<Range>(sensitiveRanges) : new LinkedList<Range>();
+        var sensitive = sensitiveRanges is not null ? new LinkedList<Range>(sensitiveRanges) : new LinkedList<Range>();
 
         var parts = new EvidenceConverterHelper.ValuePartIterator(value, tainted, sensitive);
         foreach (var part in parts)

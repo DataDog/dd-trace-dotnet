@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 
             var appHostAdminManager = NativeObjects.IAppHostAdminManager.Wrap(ptr);
 
-            if (applicationHostConfigurationPath != null)
+            if (applicationHostConfigurationPath is not null)
             {
                 var pathMapper = new PathMapper(applicationHostConfigurationPath);
                 appHostAdminManager.SetMetadata("pathMapper", pathMapper.Object);

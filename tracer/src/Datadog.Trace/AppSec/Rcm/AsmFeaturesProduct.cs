@@ -29,7 +29,7 @@ internal sealed class AsmFeaturesProduct : IAsmConfigUpdater
             foreach (var file in files)
             {
                 var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
-                if (asmFeatures.TypedFile != null)
+                if (asmFeatures.TypedFile is not null)
                 {
                     if (asmFeatures.TypedFile.Asm?.Enabled is not null)
                     {

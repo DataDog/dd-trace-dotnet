@@ -64,7 +64,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     Log.Debug("Leave: The top of the shadowstack is different than the unwinding method, keeping it aside for future unwindings");
                 }
 
-                if (exception != null)
+                if (exception is not null)
                 {
                     _prematurelyUnwoundedFrames.TryAdd(trackedStackFrameNode, exception);
                 }
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var parent = currentActiveNode!.RecordFunctionExit(exception);
 
-            if (parent == null && exception != null)
+            if (parent == null && exception is not null)
             {
                 _trackedStackFrameRootNode = currentActiveNode;
             }
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             // Try to handle previously collected prematurely unwounded frames.
             if (!_prematurelyUnwoundedFrames.IsEmpty &&
-                _trackedStackFrameActiveNode.Value != null &&
+                _trackedStackFrameActiveNode.Value is not null &&
                 _prematurelyUnwoundedFrames.TryRemove(_trackedStackFrameActiveNode.Value, out var prematureException))
             {
                 Leave(_trackedStackFrameActiveNode.Value, prematureException);

@@ -67,13 +67,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             IReadOnlyBasicProperties? basicProperties = null;
             string? messageSize = null;
 
-            if (basicGetResult.Instance != null)
+            if (basicGetResult.Instance is not null)
             {
                 messageSize = basicGetResult.Body?.Length.ToString();
                 var basicPropertiesHeaders = basicGetResult.BasicProperties?.Headers;
 
                 // try to extract propagated context values from headers
-                if (basicPropertiesHeaders != null)
+                if (basicPropertiesHeaders is not null)
                 {
                     try
                     {
@@ -90,22 +90,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, context: extractedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
             {
-                if (scope != null)
+                if (scope is not null)
                 {
                     string? queueDisplayName = string.IsNullOrEmpty(queue) || !queue!.StartsWithOrdinal("amq.gen-") ? queue : "<generated>";
                     scope.Span.ResourceName = $"{Command} {queueDisplayName}";
 
-                    if (tags != null && messageSize != null)
+                    if (tags is not null && messageSize is not null)
                     {
                         tags.MessageSize = messageSize;
                     }
 
-                    if (exception != null)
+                    if (exception is not null)
                     {
                         scope.Span.SetException(exception);
                     }
 
-                    if (basicProperties != null && tags is not null)
+                    if (basicProperties is not null && tags is not null)
                     {
                         RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
                             Tracer.Instance,

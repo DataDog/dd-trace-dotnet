@@ -28,7 +28,7 @@ namespace Datadog.Trace.Util
             if (capacity <= MaxBuilderSize)
             {
                 var sb = _cachedInstance;
-                if (sb != null)
+                if (sb is not null)
                 {
                     // Avoid StringBuilder block fragmentation by getting a new StringBuilder
                     // when the requested size is larger than the current capacity

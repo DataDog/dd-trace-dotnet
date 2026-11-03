@@ -313,7 +313,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 
         var folder = GetSubFolderForVersion();
 
-        if (folder != null)
+        if (folder is not null)
         {
             foreach (var path in frameworkPaths)
             {

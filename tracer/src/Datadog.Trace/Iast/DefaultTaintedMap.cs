@@ -68,7 +68,7 @@ internal sealed class DefaultTaintedMap : ITaintedMap
         _map.TryGetValue(IndexObject(objectToFind), out var entry);
         bool isString = objectToFind is string;
 
-        while (entry != null)
+        while (entry is not null)
         {
             if (isString)
             {
@@ -278,7 +278,7 @@ internal sealed class DefaultTaintedMap : ITaintedMap
         foreach (var value in _map.Values)
         {
             var copy = value;
-            while (copy != null)
+            while (copy is not null)
             {
                 list.Add(copy);
                 copy = copy.Next;

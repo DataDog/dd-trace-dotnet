@@ -321,7 +321,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     rollWindowCallback = _rollWindowCallback;
                 }
 
-                if (rollWindowCallback != null)
+                if (rollWindowCallback is not null)
                 {
                     rollWindowCallback();
                 }

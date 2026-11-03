@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (dataStreamsManager.IsTransactionTrackingEnabled)
                 {
                     var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders);
-                    if (extractors != null)
+                    if (extractors is not null)
                     {
                         foreach (var extractor in extractors)
                         {
@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
                     bool executeOnDownstreamResponse = false;
 #if NETCOREAPP
-                    if (requestMessage != null)
+                    if (requestMessage is not null)
                     {
                         var rootSpan = tracer.InternalActiveScope?.Root?.Span;
                         try
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, protocolVersion);
                 }
 
-                if (exception != null)
+                if (exception is not null)
                 {
                     scope.Span.SetException(exception);
                 }
@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
         private static bool IsTracingEnabled(Tracer tracer, IRequestHeaders headers, IntegrationId? implementationIntegrationId)
 #endif
         {
-            if (implementationIntegrationId != null && !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(implementationIntegrationId.Value))
+            if (implementationIntegrationId is not null && !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(implementationIntegrationId.Value))
             {
                 return false;
             }
@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     return true;
                 }
 
-                if (headerValues != null && headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
+                if (headerValues is not null && headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
                 {
                     // tracing is disabled for this request via http header
                     return false;

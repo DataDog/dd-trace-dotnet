@@ -63,7 +63,7 @@ internal sealed class SqlInjectionTokenizer : ITokenizer
         if (value is null) { return []; }
 
         Regex? pattern = null;
-        if (integrationId != null) { _dialectPatterns.TryGetValue(integrationId.Value, out pattern); }
+        if (integrationId is not null) { _dialectPatterns.TryGetValue(integrationId.Value, out pattern); }
         if (pattern == null) { pattern = _ansiDialectRegex; }
 
         var res = new List<Range>(5);

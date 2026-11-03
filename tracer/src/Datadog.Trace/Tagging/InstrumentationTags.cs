@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tagging
 
         public void SetAnalyticsSampleRate(IntegrationId integration, MutableSettings settings, bool enabledWithGlobalSetting)
         {
-            if (settings != null)
+            if (settings is not null)
             {
 #pragma warning disable 618 // App analytics is deprecated, but still used
                 AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);

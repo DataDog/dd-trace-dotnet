@@ -126,7 +126,7 @@ internal static class SourceLinkInformationExtractor
                     }
                 }
 
-                if (repositoryUrl != null && commitSha != null)
+                if (repositoryUrl is not null && commitSha is not null)
                 {
                     return true;
                 }

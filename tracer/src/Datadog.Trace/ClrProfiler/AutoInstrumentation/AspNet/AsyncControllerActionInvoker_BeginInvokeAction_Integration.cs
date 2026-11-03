@@ -56,12 +56,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                if (HttpContext.Current != null)
+                if (HttpContext.Current is not null)
                 {
                     var duckedControllerContext = controllerContext.DuckCast<ControllerContextStruct>();
                     Scope scope = AspNetMvcIntegration.CreateScope(duckedControllerContext);
 
-                    if (scope != null)
+                    if (scope is not null)
                     {
                         SharedItems.PushScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey, scope);
                         return new CallTargetState(scope);

@@ -61,7 +61,7 @@ internal class CheckAgentCommand : Command
     {
         var url = commandResult.GetValueForArgument(_urlArgument);
 
-        if (url != null)
+        if (url is not null)
         {
             try
             {

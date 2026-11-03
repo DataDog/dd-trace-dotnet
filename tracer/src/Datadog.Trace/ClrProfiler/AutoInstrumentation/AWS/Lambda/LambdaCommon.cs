@@ -47,7 +47,7 @@ internal abstract class LambdaCommon
         span.ResourceName = InvocationSpanName;
 
         // Need to set request_id to copy tracer tags to the aws.lambda span
-        if (awsRequestId != null)
+        if (awsRequestId is not null)
         {
             span.SetTag("request_id", awsRequestId);
         }
@@ -62,7 +62,7 @@ internal abstract class LambdaCommon
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context?.ClientContext?.Custom);
         var awsRequestId = context?.AwsRequestId;
-        if (awsRequestId != null)
+        if (awsRequestId is not null)
         {
             request.Headers.Add(LambdaRuntimeAwsRequestIdHeader, awsRequestId);
         }
@@ -95,7 +95,7 @@ internal abstract class LambdaCommon
     {
         var scope = stateObject.Scope;
 
-        if (exception != null && scope is { Span: var span })
+        if (exception is not null && scope is { Span: var span })
         {
             span.SetException(exception);
         }
@@ -106,7 +106,7 @@ internal abstract class LambdaCommon
 
         try
         {
-            SendEndInvocation(requestBuilder, stateObject, exception != null, returnValue);
+            SendEndInvocation(requestBuilder, stateObject, exception is not null, returnValue);
         }
         catch (Exception ex)
         {
@@ -154,7 +154,7 @@ internal abstract class LambdaCommon
 
     private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
     {
-        if (context != null)
+        if (context is not null)
         {
             foreach (var kv in context)
             {

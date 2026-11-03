@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
             where TResponse : IGetRecordsResponse, IDuckType
         {
-            if (response.Instance != null && response.Records is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
+            if (response.Instance is not null && response.Records is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager is { IsEnabled: true })

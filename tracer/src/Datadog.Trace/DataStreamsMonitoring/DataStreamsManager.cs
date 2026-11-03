@@ -405,7 +405,7 @@ internal sealed class DataStreamsManager
             // we only want to "consume" a decision to extract the schema for a span that we are going to keep
             // && we don't want to make the sampling decision if we know we have no chance of getting selected by the rate limiter
             var spanSamplingDecision = span.Context.GetOrMakeSamplingDecision();
-            if (spanSamplingDecision != null && SamplingPriorityValues.IsKeep(spanSamplingDecision.Value))
+            if (spanSamplingDecision is not null && SamplingPriorityValues.IsKeep(spanSamplingDecision.Value))
             {
                 return limiter.GetDecision(out weight);
             }

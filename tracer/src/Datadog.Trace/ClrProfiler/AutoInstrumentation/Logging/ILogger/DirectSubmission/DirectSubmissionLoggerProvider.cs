@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         [DuckReverseMethod(ParameterTypeNames = new[] { "Microsoft.Extensions.Logging.IExternalScopeProvider, Microsoft.Extensions.Logging.Abstractions" })]
         public void SetScopeProvider(IExternalScopeProvider scopeProvider)
         {
-            if (_logFormatter != null)
+            if (_logFormatter is not null)
             {
                 _logEventCreator = new DatadogLogEventCreator(_logFormatter, scopeProvider);
             }

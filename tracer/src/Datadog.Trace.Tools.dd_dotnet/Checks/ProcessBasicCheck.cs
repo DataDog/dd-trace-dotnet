@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             AnsiConsole.WriteLine(ModuleCheck());
             var loaderModule = FindLoader(process);
-            var nativeTracerModule = FindNativeTracerModule(process, loaderModule != null);
+            var nativeTracerModule = FindNativeTracerModule(process, loaderModule is not null);
 
             if (loaderModule == null)
             {

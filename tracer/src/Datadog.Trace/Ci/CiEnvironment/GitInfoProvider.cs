@@ -32,13 +32,13 @@ internal abstract class GitInfoProvider : IGitInfoProvider
         // If not let's try to find the .git folder in a parent folder
         var parentGitFolder = GitInfo.GetParentGitFolder(folder);
         IGitInfo? pFolderGitInfo = null;
-        if (parentGitFolder != null && TryGetFrom(parentGitFolder, out pFolderGitInfo))
+        if (parentGitFolder is not null && TryGetFrom(parentGitFolder, out pFolderGitInfo))
         {
             gitInfo = pFolderGitInfo;
             return true;
         }
 
-        if (gitInfo != null || pFolderGitInfo != null)
+        if (gitInfo is not null || pFolderGitInfo is not null)
         {
             gitInfo = new GitInfo
             {

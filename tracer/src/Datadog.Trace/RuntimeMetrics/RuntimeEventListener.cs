@@ -149,7 +149,7 @@ namespace Datadog.Trace.RuntimeMetrics
                     {
                         var heapHistory = HeapHistory.FromPayload(eventData.Payload);
 
-                        if (heapHistory.MemoryLoad != null)
+                        if (heapHistory.MemoryLoad is not null)
                         {
                             statsd.Gauge(MetricsNames.GcMemoryLoad, heapHistory.MemoryLoad.Value);
                         }

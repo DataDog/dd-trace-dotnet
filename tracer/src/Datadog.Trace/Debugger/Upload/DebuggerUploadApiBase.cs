@@ -100,7 +100,7 @@ internal abstract class DebuggerUploadApiBase
                 sb.Append(Tags.RuntimeId).Append(':').Append(runtimeId).Append(',');
             }
 
-            if (_gitMetadataTagsProvider != null &&
+            if (_gitMetadataTagsProvider is not null &&
                 _gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata) &&
                 gitMetadata != GitMetadata.Empty)
             {

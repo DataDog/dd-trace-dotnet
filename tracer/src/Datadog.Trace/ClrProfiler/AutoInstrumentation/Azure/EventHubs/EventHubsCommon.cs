@@ -111,7 +111,7 @@ internal static class EventHubsCommon
                 tags.MessagingBatchMessageCount = actualMessageCount.ToStringInvariant();
             }
 
-            if (actualMessageCount == 1 && messages != null)
+            if (actualMessageCount == 1 && messages is not null)
             {
                 foreach (var message in messages)
                 {

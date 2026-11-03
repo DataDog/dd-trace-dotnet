@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tools.Runner
             {
                 var additionalEnvironmentVariables = invocationContext.ParseResult.GetValueForOption(runSettings.AdditionalEnvironmentVariables);
 
-                if (additionalEnvironmentVariables != null)
+                if (additionalEnvironmentVariables is not null)
                 {
                     foreach (var env in additionalEnvironmentVariables)
                     {

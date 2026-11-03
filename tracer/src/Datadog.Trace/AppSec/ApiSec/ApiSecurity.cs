@@ -81,7 +81,7 @@ internal sealed class ApiSecurity
                     return statusCode != 404 && localRootSpan.GetTag(Tags.AppSecBlocked) != "true" ? SamplingDecision.MissingRoute : SamplingDecision.Skip;
                 }
 
-                if (routeValues != null)
+                if (routeValues is not null)
                 {
                     foreach (var routeValue in routeValues)
                     {

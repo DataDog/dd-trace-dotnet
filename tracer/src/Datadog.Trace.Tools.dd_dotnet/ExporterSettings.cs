@@ -91,7 +91,7 @@ public partial class ExporterSettings
         {
             var value = configuration?.GetString(key)?.Trim();
 
-            if (value != null)
+            if (value is not null)
             {
                 return value;
             }

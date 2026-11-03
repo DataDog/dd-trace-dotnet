@@ -212,7 +212,7 @@ internal static class MsTestIntegration
                 if (tAttrName == "TestPropertyAttribute")
                 {
                     testProperties ??= new Dictionary<string, List<string>?>();
-                    if (tattr.TryDuckCast<TestPropertyAttributeStruct>(out var tattrStruct) && tattrStruct.Name != null)
+                    if (tattr.TryDuckCast<TestPropertyAttributeStruct>(out var tattrStruct) && tattrStruct.Name is not null)
                     {
                         if (!testProperties.TryGetValue(tattrStruct.Name, out var propertyList))
                         {
@@ -240,7 +240,7 @@ internal static class MsTestIntegration
                             testProperties["Category"] = categoryList;
                         }
 
-                        if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct) && tattrStruct.TestCategories != null)
+                        if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct) && tattrStruct.TestCategories is not null)
                         {
                             categoryList?.AddRange(tattrStruct.TestCategories);
                         }

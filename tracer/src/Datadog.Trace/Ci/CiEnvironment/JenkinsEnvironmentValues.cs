@@ -48,12 +48,12 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
 
         // Pipeline Name algorithm from: https://github.com/DataDog/dd-trace-java/blob/master/internal-api/src/main/java/datadog/trace/bootstrap/instrumentation/api/ci/JenkinsInfo.java
         var pipelineName = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.JobName);
-        if (pipelineName != null)
+        if (pipelineName is not null)
         {
             CleanBranchAndTag();
 
             // First, the git branch is removed from the raw jobName
-            var jobNameNoBranch = Branch != null ? pipelineName.Trim().Replace("/" + Branch, string.Empty) : pipelineName;
+            var jobNameNoBranch = Branch is not null ? pipelineName.Trim().Replace("/" + Branch, string.Empty) : pipelineName;
 
             // Once the branch has been removed, we try to extract
             // the configurations from the job name.

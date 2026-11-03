@@ -123,7 +123,7 @@ namespace Datadog.Trace.Debugger.Configurations
         private ProbeConfiguration GetEffectiveConfiguration(ProbeConfiguration? fileConfigurationOverride = null)
         {
             var fileConfiguration = fileConfigurationOverride ?? _fileConfiguration;
-            if (fileConfiguration != null && _removedRcmProbeIds.Count != 0)
+            if (fileConfiguration is not null && _removedRcmProbeIds.Count != 0)
             {
                 fileConfiguration = ProbeConfigurationUtils.RemoveItems(fileConfiguration, _removedRcmProbeIds, removeServiceConfiguration: false);
             }

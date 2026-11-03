@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger.Sink.Models
         {
             Exception = new ProbeException();
 
-            if (exception != null)
+            if (exception is not null)
             {
                 Exception = new ProbeException()
                 {

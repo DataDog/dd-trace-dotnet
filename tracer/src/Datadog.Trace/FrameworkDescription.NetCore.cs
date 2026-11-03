@@ -130,7 +130,7 @@ namespace Datadog.Trace
             // if we fail to extract version from assembly path,
             // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]
             foundVersion ??= GetVersionFromAssemblyAttributes();
-            if (foundVersion != null)
+            if (foundVersion is not null)
             {
                 productVersion = foundVersion;
                 if (Version.TryParse(foundVersion, out var parsedVersion))

@@ -68,7 +68,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
 
             try
             {
-                if (cosmosContainerCore?.Instance != null)
+                if (cosmosContainerCore?.Instance is not null)
                 {
                     tags.ContainerId = cosmosContainerCore.Id;
                     tags.DatabaseId = cosmosContainerCore.Database?.Id;
@@ -78,7 +78,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
                 tags.SetEndpoint(client?.Endpoint);
 
                 var clientContextObject = client?.ClientContext;
-                if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
+                if (clientContextObject is not null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
                 {
                     tags.UserAgent = clientContext.UserAgent;
 
@@ -122,7 +122,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
     {
         var scope = state.Scope;
 
-        if (scope != null && returnValue.Instance is not null)
+        if (scope is not null && returnValue.Instance is not null)
         {
             try
             {
@@ -130,7 +130,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
                 var statusCode = (int)returnValue.StatusCode;
                 tags.ResponseStatusCode = statusCode.ToString(CultureInfo.InvariantCulture);
 
-                if (returnValue.Headers?.Instance != null)
+                if (returnValue.Headers?.Instance is not null)
                 {
                     var subStatusCode = returnValue.Headers.SubStatusCodeLiteral;
                     if (!StringUtil.IsNullOrEmpty(subStatusCode))

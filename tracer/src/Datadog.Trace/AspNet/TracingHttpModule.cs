@@ -155,7 +155,7 @@ namespace Datadog.Trace.AspNet
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
             if (!Tracer.Instance.CurrentTraceSettings.Settings.HeaderTags.IsNullOrEmpty() &&
-                httpContext != null &&
+                httpContext is not null &&
                 HttpRuntime.UsingIntegratedPipeline &&
                 _canAccessHttpHeaders)
             {
@@ -564,12 +564,12 @@ namespace Datadog.Trace.AspNet
                     var scope = container.Scope;
                     var proxyScope = container.ProxyScope;
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
-                    if (proxyScope != null)
+                    if (proxyScope is not null)
                     {
                         AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
                     }
 
-                    if (exception != null && !is404 && exception is not AppSec.BlockException)
+                    if (exception is not null && !is404 && exception is not AppSec.BlockException)
                     {
                         // The Web API exception handler may already have recorded this exception on the
                         // same span when OpenTelemetry semantics coalesce the ASP.NET and Web API spans.

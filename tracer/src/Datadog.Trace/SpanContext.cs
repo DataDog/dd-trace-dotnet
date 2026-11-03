@@ -485,7 +485,7 @@ namespace Datadog.Trace
             TraceTagCollection propagatedTags;
 
             // use the value from TraceContext if available
-            if (TraceContext != null)
+            if (TraceContext is not null)
             {
                 propagatedTags = TraceContext.Tags;
             }
@@ -526,7 +526,7 @@ namespace Datadog.Trace
         /// <param name="parent">The parent context, if known</param>
         internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, EdgeTags edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent)
         {
-            if (manager != null)
+            if (manager is not null)
             {
                 PathwayContext = manager.SetCheckpoint(in parent, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
             }

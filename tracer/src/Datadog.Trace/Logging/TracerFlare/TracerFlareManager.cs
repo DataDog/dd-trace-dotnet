@@ -186,7 +186,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
         {
             var enableDebugDeleted = false;
 
-            if (_debugEnabledConfigPath != null)
+            if (_debugEnabledConfigPath is not null)
             {
                 foreach (var removedConfig in config)
                 {

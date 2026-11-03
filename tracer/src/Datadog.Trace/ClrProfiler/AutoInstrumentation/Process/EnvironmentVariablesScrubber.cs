@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
         internal static string ScrubEnvironmentVariables(IDictionary<string, string> envVariables)
         {
-            if (envVariables != null)
+            if (envVariables is not null)
             {
                 var variableLine = StringBuilderCache.Acquire();
 

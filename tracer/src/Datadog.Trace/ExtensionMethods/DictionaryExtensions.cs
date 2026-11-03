@@ -107,7 +107,7 @@ namespace Datadog.Trace.ExtensionMethods
             where TK : notnull
             where TV : class
         {
-            if (map != null && map.TryGetValue(key, out var val))
+            if (map is not null && map.TryGetValue(key, out var val))
             {
                 map.Remove(key);
                 return val;

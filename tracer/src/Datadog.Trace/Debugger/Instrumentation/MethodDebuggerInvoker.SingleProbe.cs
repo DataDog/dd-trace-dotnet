@@ -279,7 +279,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             state.InvocationTarget = instance;
             var probeData = state.ProbeData;
 
-            if (exception != null)
+            if (exception is not null)
             {
                 var captureInfo = new CaptureInfo<Exception>(state.MethodMetadataIndex, value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
@@ -334,7 +334,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal static bool TryGetLocalName(int index, string[] localNamesFromPdb, out string localName)
         {
             localName = null;
-            if (localNamesFromPdb != null)
+            if (localNamesFromPdb is not null)
             {
                 if (index >= localNamesFromPdb.Length)
                 {

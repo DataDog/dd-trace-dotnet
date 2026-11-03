@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 
             var mutableSettings = tracer.CurrentTraceSettings.Settings;
             var properties = loggingEvent.Properties;
-            if (mutableSettings.LogsInjectionEnabled && properties != null && !properties.Contains(CorrelationIdentifier.ServiceKey))
+            if (mutableSettings.LogsInjectionEnabled && properties is not null && !properties.Contains(CorrelationIdentifier.ServiceKey))
             {
                 properties[CorrelationIdentifier.ServiceKey] = mutableSettings.DefaultServiceName;
                 properties[CorrelationIdentifier.VersionKey] = mutableSettings.ServiceVersion ?? string.Empty;

@@ -66,7 +66,7 @@ internal sealed class IastRequestContext
                 IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
             }
 
-            if (_vulnerabilityBatch != null)
+            if (_vulnerabilityBatch is not null)
             {
                 if (Iast.Instance.IsMetaStructSupported())
                 {
@@ -86,7 +86,7 @@ internal sealed class IastRequestContext
                 }
             }
 
-            if (_executedTelemetryHelper != null)
+            if (_executedTelemetryHelper is not null)
             {
                 _executedTelemetryHelper.GenerateMetricTags(span.Tags, _taintedObjects.GetEstimatedSize());
             }
@@ -181,7 +181,7 @@ internal sealed class IastRequestContext
 
     private void AddExtractedBody(object? bodyExtracted, string? key)
     {
-        if (bodyExtracted != null)
+        if (bodyExtracted is not null)
         {
             // We get either string, List<object> or Dictionary<string, object>
             if (bodyExtracted is string bodyExtractedStr)
@@ -243,7 +243,7 @@ internal sealed class IastRequestContext
         if (!_routedParametersAdded)
         {
             _executedTelemetryHelper?.AddExecutedSource(IastSourceType.RoutedParameterValue);
-            if (routeData != null)
+            if (routeData is not null)
             {
                 foreach (var item in routeData)
                 {
@@ -294,7 +294,7 @@ internal sealed class IastRequestContext
 
             var queryString = RequestDataHelper.GetQueryString(request);
 
-            if (queryString != null)
+            if (queryString is not null)
             {
                 foreach (var key in queryString.AllKeys)
                 {
@@ -380,7 +380,7 @@ internal sealed class IastRequestContext
                 helper.AddExecutedSource(IastSourceType.RequestQuery);
             }
 
-            if (request.Query != null)
+            if (request.Query is not null)
             {
                 foreach (var item in request.Query)
                 {

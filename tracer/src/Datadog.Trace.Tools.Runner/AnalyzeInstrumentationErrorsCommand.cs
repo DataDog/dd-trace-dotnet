@@ -48,7 +48,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         var logDirectory = _logDirectoryOption.GetValue(context);
 
         var process = $"'{processName ?? "na"}'";
-        if (pid != null)
+        if (pid is not null)
         {
             process += ", pid: " + pid.Value.ToStringInvariant();
         }
@@ -192,7 +192,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
     private string GetLogDirectory(int? pid)
     {
         string logDirectory = null;
-        if (pid != null)
+        if (pid is not null)
         {
             logDirectory = ProcessConfiguration.GetProcessLogDirectory(pid.Value);
         }

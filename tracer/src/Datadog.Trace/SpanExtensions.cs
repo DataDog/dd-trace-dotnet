@@ -77,7 +77,7 @@ namespace Datadog.Trace
                 setTag(Tags.User.Scope, userDetails.Scope);
             }
 
-            if (spanClass != null)
+            if (spanClass is not null)
             {
                 RunBlockingCheck(spanClass, userDetails.Id, userDetails.SessionId);
             }

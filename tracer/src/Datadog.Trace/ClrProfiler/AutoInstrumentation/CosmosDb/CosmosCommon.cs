@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
                 var parent = tracer.ActiveScope?.Span;
 
-                if (parent != null &&
+                if (parent is not null &&
                     parent.Type == SpanTypes.Sql &&
                     parent.GetTag(Tags.DbType) == "cosmosdb" &&
                     parent.ResourceName == query)

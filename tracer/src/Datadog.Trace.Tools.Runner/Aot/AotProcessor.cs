@@ -245,7 +245,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                             foreach (var typeDefinition in moduleDefinition.Types)
                             {
                                 var baseTypeReference = typeDefinition.BaseType;
-                                if (baseTypeReference != null && baseTypeReference.FullName == Marshal.PtrToStringUni(definition.TargetType))
+                                if (baseTypeReference is not null && baseTypeReference.FullName == Marshal.PtrToStringUni(definition.TargetType))
                                 {
                                     RetrieveMethodsInTypeDefinition(typeDefinition, definition, lstDefinitionsDefs, assemblyDefinition);
                                 }

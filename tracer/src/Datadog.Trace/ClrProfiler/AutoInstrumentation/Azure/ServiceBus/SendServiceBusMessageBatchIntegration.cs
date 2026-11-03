@@ -94,9 +94,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(TTarget instance, bool returnValue, Exception? exception, in CallTargetState state)
         {
-            if (state.Scope != null)
+            if (state.Scope is not null)
             {
-                if (returnValue && instance != null)
+                if (returnValue && instance is not null)
                 {
                     BatchSpanContextStorage.AddSpanContext(instance, state.Scope.Span.Context);
                 }

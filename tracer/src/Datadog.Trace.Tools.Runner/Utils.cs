@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tools.Runner
             };
 
             IDictionary currentEnvVars = Environment.GetEnvironmentVariables();
-            if (currentEnvVars != null)
+            if (currentEnvVars is not null)
             {
                 foreach (DictionaryEntry item in currentEnvVars)
                 {
@@ -273,7 +273,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            if (environmentVariables != null)
+            if (environmentVariables is not null)
             {
                 foreach (KeyValuePair<string, string> item in environmentVariables)
                 {

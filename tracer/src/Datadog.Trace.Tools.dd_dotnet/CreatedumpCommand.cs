@@ -535,7 +535,7 @@ internal class CreatedumpCommand : Command
 
     private static string GetCrashMessage(ClrException? exception, uint? nativeExceptionCode, int? signal, int? signalCode)
     {
-        if (exception != null)
+        if (exception is not null)
         {
             var msgPart = string.IsNullOrEmpty(exception.Message)
                 ? string.Empty
@@ -543,13 +543,13 @@ internal class CreatedumpCommand : Command
             return $"Process was terminated due to an unhandled exception of type '{exception.Type.Name}'.{msgPart}";
         }
 
-        if (nativeExceptionCode != null)
+        if (nativeExceptionCode is not null)
         {
             var exceptionCode = nativeExceptionCode.Value;
             return $"Process was terminated due to an unknown unhandled exception of type {GetExceptionFromNativeCode(exceptionCode)} (0x{exceptionCode:X})";
         }
 
-        if (signal != null)
+        if (signal is not null)
         {
             var sig = signal.Value;
             var (name, codeName) = GetSignalInfo(sig, signalCode);
@@ -623,7 +623,7 @@ internal class CreatedumpCommand : Command
         {
             var typeName = method.Type.Name;
 
-            if (typeName != null)
+            if (typeName is not null)
             {
                 if (typeName.Contains("BlockingMiddleware"))
                 {
@@ -806,9 +806,9 @@ internal class CreatedumpCommand : Command
 
         if (crashThread == null)
         {
-            var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException != null);
+            var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException is not null);
 
-            if (firstThreadWithException != null)
+            if (firstThreadWithException is not null)
             {
                 crashThread = (int)firstThreadWithException.OSThreadId;
                 DebugPrint(StringUtil.Invariant($"Crashing thread is not set, using the first thread with an exception: {crashThread}"));
@@ -818,7 +818,7 @@ internal class CreatedumpCommand : Command
         ClrException? exception = null;
 
         // Check if there's an exception on the crash thread
-        if (crashThread != null)
+        if (crashThread is not null)
         {
             exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
         }
@@ -857,7 +857,7 @@ internal class CreatedumpCommand : Command
             DebugPrint("Found a suspicious frame");
         }
 
-        if (!isSuspicious && exception != null)
+        if (!isSuspicious && exception is not null)
         {
             // The stacks aren't suspicious, but maybe the exception is
             var exceptionType = exception.Type.Name ?? string.Empty;
@@ -1083,7 +1083,7 @@ internal class CreatedumpCommand : Command
 
         var tags = new (string Key, string Value)[] { ("language", "dotnet"), ("runtime_version", $"{flavor} {version}"), ("library_version", ProjectInfo.SemanticVersion) };
 
-        if (exception != null)
+        if (exception is not null)
         {
             tags = [.. tags, ("exception", exception.ToString())];
         }

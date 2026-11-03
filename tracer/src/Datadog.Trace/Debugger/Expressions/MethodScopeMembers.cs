@@ -51,7 +51,7 @@ internal sealed class MethodScopeMembers : IPoolable<MethodScopeMembersParameter
 
     internal void Dispose()
     {
-        if (Members != null)
+        if (Members is not null)
         {
             ArrayPool<ScopeMember>.Shared.Return(Members);
         }

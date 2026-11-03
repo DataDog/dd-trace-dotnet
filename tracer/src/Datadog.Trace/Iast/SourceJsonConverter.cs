@@ -44,28 +44,28 @@ internal sealed class SourceJsonConverter : JsonConverter<Source>
 
     public override void WriteJson(JsonWriter writer, Source? source, JsonSerializer serializer)
     {
-        if (source != null)
+        if (source is not null)
         {
             writer.WriteStartObject();
             writer.WritePropertyName("origin");
             writer.WriteValue(SourceTypeUtils.GetString(source.Origin));
-            if (source.Name != null)
+            if (source.Name is not null)
             {
                 writer.WritePropertyName("name");
                 writer.WriteValue(source.Name);
             }
 
-            if (source.IsRedacted && source.Value != null)
+            if (source.IsRedacted && source.Value is not null)
             {
                 writer.WritePropertyName("redacted");
                 writer.WriteValue(true);
-                if (source.RedactedValue != null)
+                if (source.RedactedValue is not null)
                 {
                     writer.WritePropertyName("pattern");
                     writer.WriteTruncatableValue(source.RedactedValue, _maxValueLength);
                 }
             }
-            else if (source.Value != null)
+            else if (source.Value is not null)
             {
                 writer.WritePropertyName("value");
                 writer.WriteTruncatableValue(source.Value, _maxValueLength);

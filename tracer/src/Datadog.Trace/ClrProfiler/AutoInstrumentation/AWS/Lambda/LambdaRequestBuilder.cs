@@ -60,21 +60,21 @@ internal sealed class LambdaRequestBuilder : ILambdaExtensionRequest
             }
 
             var errorMessage = span.GetTag("error.msg");
-            if (errorMessage != null)
+            if (errorMessage is not null)
             {
                 var encodedErrMessage = System.Text.Encoding.UTF8.GetBytes(errorMessage);
                 request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, Convert.ToBase64String(encodedErrMessage));
             }
 
             var errorType = span.GetTag("error.type");
-            if (errorType != null)
+            if (errorType is not null)
             {
                 var encodedErrType = System.Text.Encoding.UTF8.GetBytes(errorType);
                 request.Headers.Set(HttpHeaderNames.InvocationErrorType, Convert.ToBase64String(encodedErrType));
             }
 
             var errorStack = span.GetTag("error.stack");
-            if (errorStack != null)
+            if (errorStack is not null)
             {
                 var encodedErrStack = System.Text.Encoding.UTF8.GetBytes(errorStack);
                 request.Headers.Set(HttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));

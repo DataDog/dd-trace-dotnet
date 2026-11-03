@@ -203,7 +203,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     continue;
                 }
 
-                if (e.InnerException != null && !(e is AggregateException))
+                if (e.InnerException is not null && !(e is AggregateException))
                 {
                     // Aggregate exceptions contains the InnerException in its InnerExceptions list
                     exceptionList.Push(e.InnerException);
@@ -289,7 +289,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             _parent = null;
-            if (ActiveChildNodes != null)
+            if (ActiveChildNodes is not null)
             {
                 foreach (var node in ActiveChildNodes)
                 {
@@ -333,7 +333,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     }
                 }
 
-                if (LeavingException != null)
+                if (LeavingException is not null)
                 {
                     _childNodesAlreadyCleansed = true;
                 }

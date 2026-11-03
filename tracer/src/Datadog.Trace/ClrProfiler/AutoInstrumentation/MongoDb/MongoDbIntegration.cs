@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 return null;
             }
 
-            if (GetActiveMongoDbScope(tracer) != null)
+            if (GetActiveMongoDbScope(tracer) is not null)
             {
                 // There is already a parent MongoDb span (nested calls)
                 return null;
@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             resourceName = null;
 
             if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
-             && protocolWithCommand.Command != null
+             && protocolWithCommand.Command is not null
              && protocolWithCommand.Command.TryDuckCast<IBsonDocumentProxy>(out var bsonDocument))
             {
                 try
@@ -164,9 +164,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             var parent = scope?.Span;
 
-            if (parent != null &&
+            if (parent is not null &&
                 parent.Type == SpanTypes.MongoDb &&
-                parent.GetTag(Tags.InstrumentationName) != null)
+                parent.GetTag(Tags.InstrumentationName) is not null)
             {
                 return scope;
             }

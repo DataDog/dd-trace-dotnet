@@ -236,7 +236,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             PropagationContext extractedContext = default;
 
             // try to extract propagated context values from headers
-            if (basicProperties?.Headers != null)
+            if (basicProperties?.Headers is not null)
             {
                 try
                 {
@@ -260,14 +260,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 exchange: exchange,
                 routingKey: routingKey);
 
-            if (scope is not null && tags != null)
+            if (scope is not null && tags is not null)
             {
                 if (body.Instance is not null)
                 {
                     tags.MessageSize = body.Length.ToString() ?? "0";
                 }
 
-                var timeInQueue = basicProperties != null ? GetTimeInQueueMs(basicProperties.Timestamp.UnixTime) : 0;
+                var timeInQueue = basicProperties is not null ? GetTimeInQueueMs(basicProperties.Timestamp.UnixTime) : 0;
                 SetDataStreamsCheckpointOnConsume(
                     Tracer.Instance,
                     scope.Span,
@@ -281,7 +281,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         }
 
         internal static bool IsRabbitMqSpan(Tracer tracer, [NotNullWhen(true)] ISpan? span, string spanKind)
-            => span != null && span.OperationName == GetOperationName(tracer, spanKind);
+            => span is not null && span.OperationName == GetOperationName(tracer, spanKind);
 
         private static bool IsActiveScopeRabbitMqConsume(Tracer tracer)
             => IsRabbitMqSpan(tracer, tracer.InternalActiveScope?.Span, SpanKinds.Consumer);

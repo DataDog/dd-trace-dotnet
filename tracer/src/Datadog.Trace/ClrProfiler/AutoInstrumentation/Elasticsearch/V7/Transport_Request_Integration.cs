@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
             {
                 var tags = (ElasticsearchTags?)state.State;
 
-                if (tags != null)
+                if (tags is not null)
                 {
                     tags.Url = uri.ToString();
                     tags.Host = HttpRequestUtils.GetNormalizedHost(uri.Host);

@@ -24,7 +24,7 @@ internal sealed class ServiceRemappingHash
     public ServiceRemappingHash(string? serializedProcessTags)
     {
         _serializedProcessTags = serializedProcessTags;
-        if (serializedProcessTags != null)
+        if (serializedProcessTags is not null)
         {
             // containers tags hash is always null at creation, because we discover it later (if any)
             Base64Value = Compute(serializedProcessTags, containerTagsHash: null);
@@ -54,7 +54,7 @@ internal sealed class ServiceRemappingHash
     {
         ContainerTagsHash = containerTagsHash;
 
-        if (_serializedProcessTags != null)
+        if (_serializedProcessTags is not null)
         {
             Base64Value = Compute(_serializedProcessTags, containerTagsHash);
         }
@@ -63,7 +63,7 @@ internal sealed class ServiceRemappingHash
     private static string Compute(string processTags, string? containerTagsHash)
     {
         var hash = FnvHash64.GenerateHash(processTags, FnvHash64.Version.V1);
-        if (containerTagsHash != null)
+        if (containerTagsHash is not null)
         {
             hash = FnvHash64.GenerateHash(containerTagsHash, FnvHash64.Version.V1, hash);
         }

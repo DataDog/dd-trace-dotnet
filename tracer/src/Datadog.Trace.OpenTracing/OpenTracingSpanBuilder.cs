@@ -72,7 +72,7 @@ namespace Datadog.Trace.OpenTracing
                 ISpan ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
                 var otSpan = new OpenTracingSpan(ddSpan);
 
-                if (_tags != null)
+                if (_tags is not null)
                 {
                     foreach (var pair in _tags)
                     {

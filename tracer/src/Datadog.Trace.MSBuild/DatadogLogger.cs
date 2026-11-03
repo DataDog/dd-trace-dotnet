@@ -191,7 +191,7 @@ namespace Datadog.Trace.MSBuild
                 string targetName = string.IsNullOrEmpty(e.TargetNames) ? "build" : e.TargetNames?.ToLowerInvariant();
                 Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
 
-                if (projectName != null)
+                if (projectName is not null)
                 {
                     projectSpan.SetService(projectName, Datadog.Trace.Configuration.Schema.ServiceNameMetadata.Manual);
                 }

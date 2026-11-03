@@ -167,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     builder.AppendLine($"{Tab}{{");
 
                     var message = executionError.Message;
-                    if (message != null)
+                    if (message is not null)
                     {
                         builder.Append($"{Tab + Tab}\"message\": \"")
                                .Append(message.Replace("\r", "\\r").Replace("\n", "\\n"))
@@ -175,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var paths = executionError.Path;
-                    if (paths != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
+                    if (paths is not null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
                         builder.Append($"{Tab + Tab}\"path\": \"");
                         var addSeparator = false;
@@ -194,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var code = executionError.Code;
-                    if (code != null)
+                    if (code is not null)
                     {
                         builder.Append($"{Tab + Tab}\"code\": \"")
                                .Append(code)
@@ -202,7 +202,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var locations = executionError.Locations;
-                    if (locations != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
+                    if (locations is not null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
                         ConstructErrorLocationsMessage(builder, locations);
                     }
@@ -295,13 +295,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var message = executionError.Message;
-                    if (message != null)
+                    if (message is not null)
                     {
                         eventAttributes.Add(new KeyValuePair<string, object>("message", message));
                     }
 
                     var paths = executionError.Path;
-                    if (paths != null)
+                    if (paths is not null)
                     {
                         var pathAttribute = new List<string>();
                         foreach (var path in paths)
@@ -313,7 +313,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var code = executionError.Code;
-                    if (code != null)
+                    if (code is not null)
                     {
                         eventAttributes.Add(new KeyValuePair<string, object>("code", code));
                     }
@@ -334,7 +334,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var stacktrace = executionError.StackTrace;
-                    if (stacktrace != null)
+                    if (stacktrace is not null)
                     {
                         eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", stacktrace));
                     }

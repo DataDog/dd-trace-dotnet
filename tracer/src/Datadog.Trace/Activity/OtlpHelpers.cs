@@ -287,9 +287,9 @@ namespace Datadog.Trace.Activity
                 var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
                 var samplingPriority = traceParentSample switch
                 {
-                    true when traceState.SamplingPriority != null && SamplingPriorityValues.IsKeep(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
+                    true when traceState.SamplingPriority is not null && SamplingPriorityValues.IsKeep(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
                     true => SamplingPriorityValues.AutoKeep,
-                    false when traceState.SamplingPriority != null && SamplingPriorityValues.IsDrop(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
+                    false when traceState.SamplingPriority is not null && SamplingPriorityValues.IsDrop(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
                     false => SamplingPriorityValues.AutoReject
                 };
 

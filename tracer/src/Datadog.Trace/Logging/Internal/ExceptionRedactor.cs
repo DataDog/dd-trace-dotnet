@@ -231,7 +231,7 @@ internal static class ExceptionRedactor
                     displayFilenames = false;
                 }
 
-                if (fileName != null)
+                if (fileName is not null)
                 {
                     // tack on " in c:\tmp\MyFile.cs:line 5"
                     sb.Append(' ');
@@ -325,7 +325,7 @@ internal static class ExceptionRedactor
                 // append the parameter list.
             }
 
-            if (pi != null)
+            if (pi is not null)
             {
                 // arguments printing
                 sb.Append('(');
@@ -349,7 +349,7 @@ internal static class ExceptionRedactor
 
                     sb.Append(typeName);
                     var parameterName = pi[j].Name;
-                    if (parameterName != null)
+                    if (parameterName is not null)
                     {
                         sb.Append(' ');
                         sb.Append(parameterName);
@@ -374,7 +374,7 @@ internal static class ExceptionRedactor
                 // then the file name will be null.
                 var fileName = sf.GetFileName();
 
-                if (fileName != null)
+                if (fileName is not null)
                 {
                     // tack on " in c:\tmp\MyFile.cs:line 5"
                     sb.Append(' ');

@@ -75,7 +75,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                     suite.Tags.Status = TestTags.StatusFail;
 
                     // Handle setup errors
-                    if (result.ResultState.Site == FailureSite.SetUp && compositeWorkItem?.Children != null)
+                    if (result.ResultState.Site == FailureSite.SetUp && compositeWorkItem?.Children is not null)
                     {
                         foreach (var child in compositeWorkItem.Children)
                         {
@@ -164,7 +164,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
 
             if (workItem.Result.ResultState.Site == FailureSite.SetUp &&
                 workItem.Instance.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem) &&
-                compositeWorkItem.Children != null)
+                compositeWorkItem.Children is not null)
             {
                 foreach (var child in compositeWorkItem.Children)
                 {

@@ -35,7 +35,7 @@ public sealed class KafkaConsumerCommitIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
         var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-        if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance != null)
+        if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance is not null)
         {
             ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _, out var clusterId);
 

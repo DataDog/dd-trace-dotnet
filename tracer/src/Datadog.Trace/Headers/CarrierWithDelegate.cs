@@ -30,7 +30,7 @@ internal readonly struct CarrierWithDelegate<TCarrier> : IHeadersCollection
 
     public IEnumerable<string?> GetValues(string name)
     {
-        if (_getter != null)
+        if (_getter is not null)
         {
             return _getter(_carrier, name);
         }
@@ -40,7 +40,7 @@ internal readonly struct CarrierWithDelegate<TCarrier> : IHeadersCollection
 
     public void Set(string name, string value)
     {
-        if (_setter != null)
+        if (_setter is not null)
         {
             _setter(_carrier, name, value);
         }
@@ -52,7 +52,7 @@ internal readonly struct CarrierWithDelegate<TCarrier> : IHeadersCollection
 
     public void Add(string name, string value)
     {
-        if (_setter != null)
+        if (_setter is not null)
         {
             _setter(_carrier, name, value);
         }

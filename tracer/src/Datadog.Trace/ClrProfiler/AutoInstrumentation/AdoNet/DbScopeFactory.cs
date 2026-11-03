@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                                 spanContext.RawTraceId);
                         }
                     }
-                    else if (integrationId == IntegrationId.Oracle && dbmPropagationMode == DbmPropagationLevel.Service && baseHash != null)
+                    else if (integrationId == IntegrationId.Oracle && dbmPropagationMode == DbmPropagationLevel.Service && baseHash is not null)
                     {
                         // With the service hash enabled, Oracle uses the session ACTION instead of a comment (no CommandText change).
                         // The backend resolves the service from the span carrying the same hash, so only tag the span on success.
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        if (baseHash != null)
+                        if (baseHash is not null)
                         {
                             // note: it's ok that we don't write the basehash in the span if "alreadyInjected" because we only need one span to get the tag values
                             tags.BaseHash = baseHash;

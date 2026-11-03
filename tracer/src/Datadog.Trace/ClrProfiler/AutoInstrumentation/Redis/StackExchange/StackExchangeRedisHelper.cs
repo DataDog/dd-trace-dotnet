@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string? host = null;
             string? port = null;
 
-            if (config != null)
+            if (config is not null)
             {
                 // config can contain several settings separated by commas:
                 // hostname:port,name=MyName,keepAlive=180,syncTimeout=10000,abortConnect=False
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
                                         .FirstOrDefault(p => !p.Contains("="))
                                        ?.Split(':');
 
-                if (hostAndPort != null)
+                if (hostAndPort is not null)
                 {
                     host = hostAndPort[0];
                 }

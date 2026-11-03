@@ -20,7 +20,7 @@ internal static class Helper
     public static bool DisableInstrumentationIfInternalProtobufType<TMessage>()
     {
         var typeName = typeof(TMessage).FullName;
-        if (typeName != null &&
+        if (typeName is not null &&
             // Google uses protobuf internally in the protobuf library, we don't want to capture those.
             (typeName.StartsWith("Google.Protobuf.", StringComparison.OrdinalIgnoreCase)
              // Microsoft has some protobuf definitions in https://github.com/microsoft/durabletask-protobuf for instance

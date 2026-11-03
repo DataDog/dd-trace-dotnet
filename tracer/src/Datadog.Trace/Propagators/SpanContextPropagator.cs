@@ -334,7 +334,7 @@ namespace Datadog.Trace.Propagators
                         return null;
                     });
 
-                    if (tagNameResult != null)
+                    if (tagNameResult is not null)
                     {
                         processor.ProcessTag(tagNameResult, headerValue);
                     }
@@ -474,7 +474,7 @@ namespace Datadog.Trace.Propagators
         {
             public IEnumerable<string?> Get(IReadOnlyDictionary<string, string?>? carrier, string key)
             {
-                if (carrier != null && carrier.TryGetValue(key, out var value))
+                if (carrier is not null && carrier.TryGetValue(key, out var value))
                 {
                     return new[] { value };
                 }

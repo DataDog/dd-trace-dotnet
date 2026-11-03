@@ -46,7 +46,7 @@ internal struct TruncatedVulnerabilities
 
         public override void WriteJson(JsonWriter writer, Vulnerability? value, JsonSerializer serializer)
         {
-            if (value != null)
+            if (value is not null)
             {
                 writer.WriteStartObject();
                 writer.WritePropertyName("type");
@@ -78,7 +78,7 @@ internal struct TruncatedVulnerabilities
 
         public override void WriteJson(JsonWriter writer, Evidence? value, JsonSerializer serializer)
         {
-            if (value != null)
+            if (value is not null)
             {
                 writer.WriteStartObject();
                 writer.WritePropertyName("value");

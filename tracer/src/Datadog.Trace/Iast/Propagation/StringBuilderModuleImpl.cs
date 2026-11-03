@@ -150,10 +150,10 @@ internal static class StringBuilderModuleImpl
                 valueToInsertRanges = GetRepeatedRange(valueToInsertRepetitions, valueLenght, taintedValue);
             }
 
-            var newRangesLeft = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
+            var newRangesLeft = taintedTarget is not null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
             var newRangesLeftLength = newRangesLeft?.Length ?? 0;
 
-            var newRangesRight = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
+            var newRangesRight = taintedTarget is not null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
             var newRangesRightLength = newRangesRight?.Length ?? 0;
 
             var valueToInsertRangesLength = valueToInsertRanges?.Length ?? 0;
@@ -309,7 +309,7 @@ internal static class StringBuilderModuleImpl
     private static Range[]? GetRepeatedRange(int count, int valueLenght, TaintedObject? taintedValue)
     {
         var valueRanges = taintedValue?.Ranges;
-        if (valueRanges != null && count > 1)
+        if (valueRanges is not null && count > 1)
         {
             var originalValueLength = valueLenght / count;
             for (int i = 1; i < count; i++)

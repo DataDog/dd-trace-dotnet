@@ -379,7 +379,7 @@ internal static class NUnitIntegration
 
         // Get traits
         Dictionary<string, List<string>?>? traits = null;
-        if (testMethodProperties != null)
+        if (testMethodProperties is not null)
         {
             skipReason ??= testMethodProperties.Get(SkipReasonKey) as string;
             ExtractTraits(currentTest, ref traits);

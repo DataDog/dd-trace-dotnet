@@ -66,13 +66,13 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static CallTargetReturn<TReturn> Invoke(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        if (_continuationGenerator != null)
+        if (_continuationGenerator is not null)
         {
             returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, in state);
             IntegrationOptions.RestoreScopeFromAsyncExecution(in state);
         }
 
-        if (_invokeDelegate != null)
+        if (_invokeDelegate is not null)
         {
             var returnWrap = _invokeDelegate(instance, returnValue, exception, in state);
             returnValue = returnWrap.GetReturnValue();

@@ -50,13 +50,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             try
             {
-                if (exception != null)
+                if (exception is not null)
                 {
                     scope.Span?.SetException(exception);
                 }
                 else if (executionResult.TryDuckCast<IQueryResult>(out var result))
                 {
-                    if (result.Errors != null)
+                    if (result.Errors is not null)
                     {
                         HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, result.Errors);
                     }

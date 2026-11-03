@@ -156,7 +156,7 @@ namespace Datadog.Trace.Activity.Handlers
 
                 // if there's an existing Activity we try to use its TraceId and SpanId,
                 // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
-                if (activityTraceId != null && activitySpanId != null)
+                if (activityTraceId is not null && activitySpanId is not null)
                 {
                     if (traceId == TraceId.Zero)
                     {
@@ -269,8 +269,8 @@ namespace Datadog.Trace.Activity.Handlers
                 // Non-w3c activities will have null trace/span IDs, even though they implement IW3CActivity
                 ActivityKey key;
                 if (activity is IW3CActivity w3cActivity
-                 && w3cActivity.TraceId != null!
-                 && w3cActivity.SpanId != null!)
+                 && w3cActivity.TraceId is not null
+                 && w3cActivity.SpanId is not null)
                 {
                     key = new(w3cActivity.TraceId, w3cActivity.SpanId);
                 }

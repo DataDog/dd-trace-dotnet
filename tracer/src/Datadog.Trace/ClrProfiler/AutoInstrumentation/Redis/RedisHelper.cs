@@ -30,9 +30,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             }
 
             var parent = tracer.ActiveScope?.Span;
-            if (parent != null &&
+            if (parent is not null &&
                 parent.Type == SpanTypes.Redis &&
-                parent.GetTag(Tags.InstrumentationName) != null)
+                parent.GetTag(Tags.InstrumentationName) is not null)
             {
                 return null;
             }

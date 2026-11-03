@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tagging
 
         public static TraceTagCollection? EnableTraceSources(this TraceTagCollection? tags, TraceSources sources)
         {
-            if (tags != null)
+            if (tags is not null)
             {
                 var value = GetTraceSources(tags.GetTag(Tags.Propagated.TraceSource)) | sources;
                 if (value != TraceSources.None)

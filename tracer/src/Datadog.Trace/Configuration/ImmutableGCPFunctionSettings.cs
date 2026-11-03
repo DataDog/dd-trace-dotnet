@@ -24,11 +24,11 @@ namespace Datadog.Trace.Configuration
 
             var deprecatedFunctionKey = config.WithKeys(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey).AsString();
             var deprecatedProjectKey = config.WithKeys(PlatformKeys.GcpFunction.DeprecatedProjectKey).AsString();
-            IsDeprecatedFunction = deprecatedFunctionKey != null && deprecatedProjectKey != null;
+            IsDeprecatedFunction = deprecatedFunctionKey is not null && deprecatedProjectKey is not null;
 
             var functionNameKey = config.WithKeys(PlatformKeys.GcpFunction.FunctionNameKey).AsString();
             var functionTargetKey = config.WithKeys(PlatformKeys.GcpFunction.FunctionTargetKey).AsString();
-            IsNewerFunction = functionNameKey != null && functionTargetKey != null;
+            IsNewerFunction = functionNameKey is not null && functionTargetKey is not null;
 
             IsGCPFunction = IsDeprecatedFunction || IsNewerFunction;
         }

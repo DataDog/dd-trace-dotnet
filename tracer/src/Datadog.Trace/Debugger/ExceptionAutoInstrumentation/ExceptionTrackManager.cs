@@ -195,7 +195,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (allParticipatingFramesFlattened.Length == 0)
             {
-                if (rootSpan != null)
+                if (rootSpan is not null)
                 {
                     SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NoFramesToInstrument, normalizedExHash);
                     _cachedInvalidatedCases.Add(normalizedExHash);
@@ -211,7 +211,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (!ShouldReportException(exception, allParticipatingFramesFlattened))
             {
-                if (rootSpan != null)
+                if (rootSpan is not null)
                 {
                     SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NoCustomerFrames, normalizedExHash);
                     _cachedInvalidatedCases.Add(normalizedExHash);
@@ -230,7 +230,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var currentFrame = allParticipatingFrames;
             var iterationLimit = 10;
 
-            while (iterationLimit-- >= 0 && currentFrame != null)
+            while (iterationLimit-- >= 0 && currentFrame is not null)
             {
                 exceptionTypes.Add(currentFrame.Exception.GetType());
                 currentFrame = currentFrame.InnerFrame;
@@ -242,7 +242,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (trackedExceptionCase.IsDone)
             {
-                if (rootSpan != null)
+                if (rootSpan is not null)
                 {
                     SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NonCachedDoneExceptionCase, normalizedExHash);
                     _evaluateWithRootSpanCases.Remove(normalizedExHash);
@@ -327,7 +327,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             foreach (var status in statuses)
                             {
                                 var probe = receivedOrRequestedRejitStatusProbeIds.Find(p => p.ProbeId == status.ProbeId);
-                                if (probe != null)
+                                if (probe is not null)
                                 {
                                     probe.ProbeStatus = status.Status;
                                     probe.ErrorMessage = status.Status is Status.ERROR ? status.ErrorMessage : null;
@@ -343,7 +343,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                         _evaluateWithRootSpanCases.Add(normalizedExHash);
 
-                        if (rootSpan != null)
+                        if (rootSpan is not null)
                         {
                             SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.InvalidatedCase, normalizedExHash);
                         }
@@ -352,7 +352,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     {
                         _evaluateWithRootSpanCases.Add(normalizedExHash);
 
-                        if (rootSpan != null)
+                        if (rootSpan is not null)
                         {
                             SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.EmptyCallStackTreeWhileCollecting, normalizedExHash);
                         }
@@ -517,7 +517,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 trackedExceptionCase.Instrument();
                 ExceptionCaseInstrumented?.Invoke(trackedExceptionCase.ExceptionIdentifier);
 
-                if (rootSpan != null)
+                if (rootSpan is not null)
                 {
                     SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NewCase, normalizedExHash);
                 }
@@ -528,7 +528,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             var noCaptureReason = string.Empty;
 
-            if (probe != null)
+            if (probe is not null)
             {
                 if (probe.MayBeOmittedFromCallStack)
                 {
@@ -687,7 +687,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 ExceptionRelatedFrames? innerFrame = null;
 
                 // the first inner exception in the inner exceptions list of the aggregate exception is similar to the inner exception`
-                innerFrame = e.InnerException != null ? CreateExceptionPath(e.InnerException, false) : null;
+                innerFrame = e.InnerException is not null ? CreateExceptionPath(e.InnerException, false) : null;
 
                 return new ExceptionRelatedFrames(e, frames.ToArray(), innerFrame);
             }
@@ -765,7 +765,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 var assembly = method.Module.Assembly;
                 var assemblyName = assembly.GetName().Name;
 
-                if (assemblyName != null && AssemblyFilter.IsDatadogAssembly(assemblyName))
+                if (assemblyName is not null && AssemblyFilter.IsDatadogAssembly(assemblyName))
                 {
                     continue;
                 }

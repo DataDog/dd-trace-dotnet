@@ -327,7 +327,7 @@ namespace Datadog.Trace.Agent
                     throw;
                 }
 
-                if (healthStats != null)
+                if (healthStats is not null)
                 {
                     // don't bother creating the tags array if trace metrics are disabled
                     string[] tags = { StringUtil.Invariant($"status:{response.StatusCode}") };

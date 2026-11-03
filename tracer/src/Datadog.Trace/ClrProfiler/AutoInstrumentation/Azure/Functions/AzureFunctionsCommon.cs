@@ -377,7 +377,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var activeScope = tracer.InternalActiveScope;
 
                 // Check if the ASP.NET Core scope is already active
-                if (aspNetCoreScope != null && activeScope == aspNetCoreScope)
+                if (aspNetCoreScope is not null && activeScope == aspNetCoreScope)
                 {
                     // The ASP.NET Core span is already active - don't create a new span,
                     // just update the existing span's tags to make it a "serverless" span.
@@ -637,7 +637,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     FunctionBindingsCommon.TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps))
                 {
                     var singleContext = Shared.AzureMessagingCommon.ExtractContext(singleProps);
-                    if (singleContext.SpanContext != null)
+                    if (singleContext.SpanContext is not null)
                     {
                         extractedContexts.Add(singleContext);
                     }
@@ -650,7 +650,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     foreach (var props in propsArray)
                     {
                         var batchContext = Shared.AzureMessagingCommon.ExtractContext(props);
-                        if (batchContext.SpanContext != null)
+                        if (batchContext.SpanContext is not null)
                         {
                             extractedContexts.Add(batchContext);
                         }
@@ -689,7 +689,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             var first = contexts[0].SpanContext;
             return contexts.TrueForAll(ctx =>
-                ctx.SpanContext != null &&
+                ctx.SpanContext is not null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
         }

@@ -97,7 +97,7 @@ namespace Datadog.Trace.Headers.Ip
                 if (!string.IsNullOrEmpty(potentialIp))
                 {
                     var ipInfo = IpExtractor.RealIpFromValue(potentialIp, isSecureConnection, headerIp.Extractor);
-                    if (ipInfo != null)
+                    if (ipInfo is not null)
                     {
                         return ipInfo;
                     }
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Headers.Ip
                 tags.NetworkClientIp = peerIp.IpAddress;
             }
 
-            if (ipInfo != null)
+            if (ipInfo is not null)
             {
                 tags.HttpClientIp = ipInfo.IpAddress;
             }

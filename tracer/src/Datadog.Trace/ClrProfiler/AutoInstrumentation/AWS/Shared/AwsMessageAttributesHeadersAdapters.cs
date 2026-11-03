@@ -72,14 +72,14 @@ internal static class AwsMessageAttributesHeadersAdapters
         {
             // IDictionary returns null if the key is not present
             var json = messageAttributes?[ContextPropagation.InjectionKey]?.DuckCast<IMessageAttributeValue>();
-            if (json != null)
+            if (json is not null)
             {
                 string? jsonString = null;
-                if (json.StringValue != null)
+                if (json.StringValue is not null)
                 {
                     jsonString = json.StringValue;
                 }
-                else if (json.BinaryValue != null)
+                else if (json.BinaryValue is not null)
                 {
                     // SNS encodes the json string in base64
                     if (json.BinaryValue.TryGetBuffer(out var bytes))
@@ -98,7 +98,7 @@ internal static class AwsMessageAttributesHeadersAdapters
                     }
                 }
 
-                if (jsonString != null)
+                if (jsonString is not null)
                 {
                     _ddAttributes = JsonHelper.DeserializeObject<Dictionary<string, string>>(jsonString);
                 }
@@ -107,7 +107,7 @@ internal static class AwsMessageAttributesHeadersAdapters
 
         public byte[] TryGetLastBytes(string name)
         {
-            if (_ddAttributes != null && _ddAttributes.TryGetValue(name, out var b64) && !StringUtil.IsNullOrEmpty(b64))
+            if (_ddAttributes is not null && _ddAttributes.TryGetValue(name, out var b64) && !StringUtil.IsNullOrEmpty(b64))
             {
                 var decodedBytes = Convert.FromBase64String(b64);
                 if (name != DataStreamsPropagationHeaders.PropagationKeyBase64)

@@ -106,7 +106,7 @@ namespace Datadog.Trace.Debugger.Helpers
                     // append the parameter list.
                 }
 
-                if (pi != null)
+                if (pi is not null)
                 {
                     // arguments printing
                     sb.Append('(');

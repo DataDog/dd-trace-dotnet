@@ -52,7 +52,7 @@ internal class CheckProcessCommand : Command
 
         AnsiConsole.WriteLine("Process name: " + process.Name);
 
-        var mainModule = process.MainModule != null ? Path.GetFileName(process.MainModule) : null;
+        var mainModule = process.MainModule is not null ? Path.GetFileName(process.MainModule) : null;
 
         if (mainModule == "w3wp.exe" || mainModule == "iisexpress.exe")
         {

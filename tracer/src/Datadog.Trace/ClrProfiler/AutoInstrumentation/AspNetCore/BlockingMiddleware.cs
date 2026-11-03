@@ -110,7 +110,7 @@ internal sealed class BlockingMiddleware
             }
         }
 
-        if (_next != null && !endedResponse)
+        if (_next is not null && !endedResponse)
         {
             // unlikely that security is disabled and there's a block exception, but might happen as race condition
             try

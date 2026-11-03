@@ -93,7 +93,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return;
             }
 
-            if (span.GetTag(_tags.Type) != null)
+            if (span.GetTag(_tags.Type) is not null)
             {
                 Log.Debug("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
@@ -363,7 +363,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
             finally
             {
-                if (frames != null)
+                if (frames is not null)
                 {
                     ArrayPool<FrameInfo>.Shared.Return(frames);
                 }

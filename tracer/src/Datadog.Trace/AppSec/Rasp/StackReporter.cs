@@ -44,7 +44,7 @@ internal static class StackReporter
         {
             var declaringType = frame?.GetMethod()?.DeclaringType;
             var assembly = declaringType?.Assembly.GetName().Name;
-            if (assembly != null && !AssemblyExcluded(assembly))
+            if (assembly is not null && !AssemblyExcluded(assembly))
             {
                 var fileName = System.IO.Path.GetFileName(frame?.GetFileName());
                 var fileNameValid = !string.IsNullOrEmpty(fileName);

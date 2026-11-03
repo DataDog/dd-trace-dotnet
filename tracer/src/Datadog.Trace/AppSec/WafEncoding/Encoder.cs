@@ -678,7 +678,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             sb.Append(enumerator.Current.Key);
             sb.Append(": ");
-            if (enumerator.Current.Value != null)
+            if (enumerator.Current.Value is not null)
             {
                 FormatArgsInternal(enumerator.Current.Value, sb);
             }
@@ -688,7 +688,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 sb.Append(", ");
                 sb.Append(enumerator.Current.Key);
                 sb.Append(": ");
-                if (enumerator.Current.Value != null)
+                if (enumerator.Current.Value is not null)
                 {
                     FormatArgsInternal(enumerator.Current.Value, sb);
                 }

@@ -438,7 +438,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
         if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404 && response.StatusCode != 502)
         {
-            var stringContent = responseContent != null ? Encoding.UTF8.GetString(responseContent) : string.Empty;
+            var stringContent = responseContent is not null ? Encoding.UTF8.GetString(responseContent) : string.Empty;
             if (finalTry)
             {
                 Log.Error<int, string>("TestOptimizationClient: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, stringContent);
@@ -486,7 +486,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                 // Before retry
                 var isSocketException = false;
                 var innerException = sourceException;
-                while (innerException != null)
+                while (innerException is not null)
                 {
                     if (innerException is SocketException)
                     {

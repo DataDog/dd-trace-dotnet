@@ -20,8 +20,8 @@ namespace Datadog.Trace
     {
         internal static void Inject<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
         {
-            if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
-            else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+            if (messageType is not null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
+            else if (messageType == null && target is not null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
             if (context is not SpanContext spanContext)
             {
@@ -41,7 +41,7 @@ namespace Datadog.Trace
                 var edgeTags = new EdgeTags(["direction:out", $"topic:{target}", $"type:{messageType}"], cacheNodeHash: false);
                 spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parent: null);
 
-                if (carrier != null)
+                if (carrier is not null)
                 {
                     dsm.InjectPathwayContextAsBase64String(spanContext.PathwayContext, new CarrierWithDelegate<TCarrier>(carrier, setter: setter));
                 }

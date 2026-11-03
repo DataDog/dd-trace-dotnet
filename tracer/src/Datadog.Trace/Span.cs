@@ -431,7 +431,7 @@ namespace Datadog.Trace
         /// <param name="markAsError">Whether to mark the span as an error. BlockExceptions are never marked as errors.</param>
         internal void SetException(Exception exception, bool markAsError)
         {
-            if (exception != null && exception is not AppSec.BlockException)
+            if (exception is not null and not AppSec.BlockException)
             {
                 if (markAsError)
                 {

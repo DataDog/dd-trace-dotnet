@@ -36,7 +36,7 @@ internal sealed class AsmDdProduct : IAsmConfigUpdater
                 var asmDd = new NamedRawFile(file!.Path, file.Contents);
                 var result = asmDd.Deserialize<JToken>();
 
-                if (result.TypedFile != null)
+                if (result.TypedFile is not null)
                 {
                     RuleSet ruleSet;
                     if (!result.TypedFile.HasValues)

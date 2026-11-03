@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         startTime: null,
                         addToTraceContext: false);
 
-                    if (span?.Context != null)
+                    if (span?.Context is not null)
                     {
                         // Add distributed tracing headers to the HTTP request.
                         // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
@@ -123,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         cachedSpanContext?.TraceId128 ?? TraceId.Zero,
                         cachedSpanContext?.SpanId ?? 0);
 
-                    if (scope != null)
+                    if (scope is not null)
                     {
                         if (cachedSamplingPriority is { } samplingPriority)
                         {

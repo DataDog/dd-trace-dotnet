@@ -169,7 +169,7 @@ namespace Datadog.Trace.AppSec
 
         internal static bool CalculateIsAnonUserTrackingMode(string? remote, string local)
         {
-            if (remote != null)
+            if (remote is not null)
             {
                 return remote is SecuritySettings.UserTrackingAnonMode;
             }
@@ -325,7 +325,7 @@ namespace Datadog.Trace.AppSec
 
             void SetAutomaticResponseContent()
             {
-                if (requestAcceptHeaders != null)
+                if (requestAcceptHeaders is not null)
                 {
                     foreach (var value in requestAcceptHeaders)
                     {
@@ -447,7 +447,7 @@ namespace Datadog.Trace.AppSec
 
         private string GetJsonResponse()
         {
-            if (_blockedJsonTemplateCache != null)
+            if (_blockedJsonTemplateCache is not null)
             {
                 return _blockedJsonTemplateCache;
             }
@@ -464,7 +464,7 @@ namespace Datadog.Trace.AppSec
 
         private string GetHtmlResponse()
         {
-            if (_blockedHtmlTemplateCache != null)
+            if (_blockedHtmlTemplateCache is not null)
             {
                 return _blockedHtmlTemplateCache;
             }
@@ -484,7 +484,7 @@ namespace Datadog.Trace.AppSec
             try
             {
                 var rootDir = AppDomain.CurrentDomain.BaseDirectory ?? Directory.GetCurrentDirectory();
-                if (templatePath != null)
+                if (templatePath is not null)
                 {
                     var fullPath =
                         Path.IsPathRooted(templatePath)
@@ -677,7 +677,7 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown(Exception? ex)
         {
-            if (_rcmSubscription != null)
+            if (_rcmSubscription is not null)
             {
                 _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
             }

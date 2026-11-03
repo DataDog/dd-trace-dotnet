@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             set => ShadowStackTree.Value = value!;
         }
 
-        public static bool IsShadowStackTrackingEnabled => ShadowStack != null;
+        public static bool IsShadowStackTrackingEnabled => ShadowStack is not null;
 
         public static ShadowStackTree EnsureShadowStackEnabled()
         {

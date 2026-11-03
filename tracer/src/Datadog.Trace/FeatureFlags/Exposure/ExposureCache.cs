@@ -82,7 +82,7 @@ internal sealed class ExposureCache
     private void RemoveLeastRecentlyUsed()
     {
         var last = _lruList.Last;
-        if (last != null)
+        if (last is not null)
         {
             _cache.Remove(last.Value);
             _lruList.RemoveLast();

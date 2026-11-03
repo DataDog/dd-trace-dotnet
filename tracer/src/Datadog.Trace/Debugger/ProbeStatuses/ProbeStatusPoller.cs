@@ -94,7 +94,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             try
             {
                 var timer = _pollerTimer;
-                if (timer != null && !_isDisposed)
+                if (timer is not null && !_isDisposed)
                 {
                     timer.Change(Timeout.Infinite, Timeout.Infinite);
                 }
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             try
             {
                 var timer = _pollerTimer;
-                if (timer != null && !_isDisposed)
+                if (timer is not null && !_isDisposed)
                 {
                     var waitPeriod = _isRecentlyForcedSchedule ? _shortPeriod : _longPeriod;
                     timer.Change(waitPeriod, waitPeriod);
@@ -228,7 +228,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                 if (_isPolling && !_isDisposed)
                 {
                     var timer = _pollerTimer;
-                    if (timer != null)
+                    if (timer is not null)
                     {
                         timer.Change(TimeSpan.FromSeconds(1), _shortPeriod);
                         _isRecentlyForcedSchedule = true;

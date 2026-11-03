@@ -145,7 +145,7 @@ internal readonly partial struct SecurityCoordinator
         };
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
-        if (headersDic != null)
+        if (headersDic is not null)
         {
             AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
         }

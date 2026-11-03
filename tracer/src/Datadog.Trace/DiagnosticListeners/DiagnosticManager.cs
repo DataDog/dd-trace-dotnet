@@ -37,7 +37,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public static DiagnosticManager? Instance { get; set; }
 
-        public bool IsRunning => _allListenersSubscription != null;
+        public bool IsRunning => _allListenersSubscription is not null;
 
         public void Start()
         {
@@ -63,7 +63,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     var subscribeMethod = allListenersProperty?.PropertyType.GetMethod("Subscribe");
                     _allListenersSubscription = subscribeMethod?.Invoke(allListeners, new[] { implementation }) as IDisposable;
 
-                    if (_allListenersSubscription != null)
+                    if (_allListenersSubscription is not null)
                     {
                         Log.Debug("Successfully subscribed to DiagnosticListener.AllListeners");
                     }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 IDisposable subscription = subscriber.SubscribeIfMatch(listener);
 
-                if (subscription != null)
+                if (subscription is not null)
                 {
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
@@ -106,7 +106,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public void Stop()
         {
-            if (_allListenersSubscription != null)
+            if (_allListenersSubscription is not null)
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {

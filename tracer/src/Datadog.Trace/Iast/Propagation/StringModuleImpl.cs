@@ -60,13 +60,13 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var newRanges1 = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
+            var newRanges1 = taintedTarget is not null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
             var newRanges1Length = newRanges1?.Length ?? 0;
 
             var newRanges2 = taintedValue?.Ranges;
             var newRanges2Length = newRanges2?.Length ?? 0;
 
-            var newRanges3 = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
+            var newRanges3 = taintedTarget is not null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
             var newRanges3Length = newRanges3?.Length ?? 0;
 
             var ranges = new RangeList(newRanges1Length + newRanges2Length + newRanges3Length);
@@ -269,7 +269,7 @@ internal static class StringModuleImpl
         if (!string.IsNullOrEmpty(element))
         {
             var elementTainted = PropagationModuleImpl.GetTainted(taintedObjects, element);
-            if (elementTainted != null)
+            if (elementTainted is not null)
             {
                 var elementRanges = elementTainted.Ranges;
                 if (elementRanges.Length > 0)
@@ -283,7 +283,7 @@ internal static class StringModuleImpl
         }
 
         pos += element.Length;
-        if (addDelimiterRanges && delimiterRanges != null)
+        if (addDelimiterRanges && delimiterRanges is not null)
         {
             for (int i = 0; i < delimiterRanges.Length; i++)
             {
@@ -482,7 +482,7 @@ internal static class StringModuleImpl
                 }
 
                 var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
-                if (parameterTainted != null)
+                if (parameterTainted is not null)
                 {
                     if (ranges == null)
                     {
@@ -506,7 +506,7 @@ internal static class StringModuleImpl
                 length += currentParameter!.Length;
             }
 
-            if (ranges != null)
+            if (ranges is not null)
             {
                 taintedObjects.Taint(result, ranges);
             }
@@ -552,7 +552,7 @@ internal static class StringModuleImpl
                 }
 
                 var taintedParameter = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
-                if (taintedParameter != null)
+                if (taintedParameter is not null)
                 {
                     if (ranges == null)
                     {
@@ -576,7 +576,7 @@ internal static class StringModuleImpl
                 length += currentParameter!.Length;
             }
 
-            if (ranges != null)
+            if (ranges is not null)
             {
                 taintedObjects.Taint(result, ranges);
             }

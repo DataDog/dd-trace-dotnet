@@ -96,7 +96,7 @@ internal sealed partial class SecurityReporter
         if (_span.IsAppsecEvent())
         {
             var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
-            if (route != null)
+            if (route is not null)
             {
                 _span.SetTag(Tags.HttpEndpoint, route);
             }
@@ -113,7 +113,7 @@ internal sealed partial class SecurityReporter
 
     private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
     {
-        if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
+        if (Log.IsEnabled(LogEventLevel.Debug) && results is not null)
         {
             foreach (var result in results)
             {
@@ -236,7 +236,7 @@ internal sealed partial class SecurityReporter
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
             var traceContext = _span.Context.TraceContext;
-            if (result.Data != null)
+            if (result.Data is not null)
             {
                 traceContext.AppSecRequestContext.AddWafSecurityEvents(result.Data);
             }
@@ -364,7 +364,7 @@ internal sealed partial class SecurityReporter
     internal void AddResponseHeaderTags()
     {
         var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
-        if (route != null)
+        if (route is not null)
         {
             _span.SetTag(Tags.HttpEndpoint, route);
         }

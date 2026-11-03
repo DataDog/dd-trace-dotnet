@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             get
             {
-                return _isInstrumented == 1 && ExceptionReplayProcessor != null && !string.IsNullOrEmpty(ProbeId);
+                return _isInstrumented == 1 && ExceptionReplayProcessor is not null && !string.IsNullOrEmpty(ProbeId);
             }
         }
 

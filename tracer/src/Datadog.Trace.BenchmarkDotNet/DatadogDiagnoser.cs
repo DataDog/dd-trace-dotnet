@@ -227,7 +227,7 @@ public class DatadogDiagnoser : IDiagnoser
         environment["CORECLR_PROFILER"] = ProfilerId;
         environment["DD_DOTNET_TRACER_HOME"] = monitoringHome;
 
-        if (profiler32Path != null)
+        if (profiler32Path is not null)
         {
             environment["COR_PROFILER_PATH_32"] = profiler32Path;
             environment["CORECLR_PROFILER_PATH_32"] = profiler32Path;
@@ -236,7 +236,7 @@ public class DatadogDiagnoser : IDiagnoser
         environment["COR_PROFILER_PATH_64"] = profiler64Path;
         environment["CORECLR_PROFILER_PATH_64"] = profiler64Path;
 
-        if (ldPreload != null)
+        if (ldPreload is not null)
         {
             environment["LD_PRELOAD"] = ldPreload;
         }

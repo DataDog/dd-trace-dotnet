@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 HttpHeadersCollection? headersCollection = null;
                 tags = new AspNetTags();
 
-                if (request != null && tracer.InternalActiveScope == null)
+                if (request is not null && tracer.InternalActiveScope == null)
                 {
                     try
                     {
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         const string httpContextKey = "MS_HttpContext";
                         if (request.Properties.TryGetValue(OwinContextKey, out var owinContextObj))
                         {
-                            if (owinContextObj != null)
+                            if (owinContextObj is not null)
                             {
                                 var owinContext = owinContextObj.DuckCast<OwinContextStruct>();
                                 Headers.Ip.RequestIpExtractor.AddIpToTags(

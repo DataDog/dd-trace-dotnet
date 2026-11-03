@@ -154,7 +154,7 @@ namespace Datadog.Trace.Sampling
             {
                 unchecked
                 {
-                    return ((_service != null ? _service.GetHashCode() : 0) * 397) ^ (_env != null ? _env.GetHashCode() : 0);
+                    return ((_service is not null ? _service.GetHashCode() : 0) * 397) ^ (_env is not null ? _env.GetHashCode() : 0);
                 }
             }
         }

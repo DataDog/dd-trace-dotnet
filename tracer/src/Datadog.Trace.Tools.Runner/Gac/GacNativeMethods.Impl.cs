@@ -59,7 +59,7 @@ internal sealed partial class GacNativeMethods
         }
 
         var lstAsmName = new List<AssemblyName>();
-        while (pAssemblyEnum.GetNextAssembly(IntPtr.Zero, out pAssemblyName, 0) == 0 && pAssemblyName != null)
+        while (pAssemblyEnum.GetNextAssembly(IntPtr.Zero, out pAssemblyName, 0) == 0 && pAssemblyName is not null)
         {
             var nSize = 260;
             var sbDisplayName = new StringBuilder(nSize);

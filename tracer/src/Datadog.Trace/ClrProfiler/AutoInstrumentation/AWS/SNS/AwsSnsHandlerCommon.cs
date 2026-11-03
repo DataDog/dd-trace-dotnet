@@ -58,7 +58,7 @@ internal sealed class AwsSnsHandlerCommon
                     {
                         var entry = t?.DuckCast<IContainsMessageAttributes>();
 
-                        if (entry != null)
+                        if (entry is not null)
                         {
                             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                             ContextPropagation.InjectHeadersIntoMessage(tracer, entry, context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);

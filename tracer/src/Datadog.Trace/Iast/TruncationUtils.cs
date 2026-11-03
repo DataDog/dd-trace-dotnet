@@ -22,7 +22,7 @@ internal static class TruncationUtils
 
     public static void WriteTruncatableValue(this JsonWriter writer, string? value, int maxValueLength)
     {
-        if (value != null && value.Length > maxValueLength && maxValueLength > 0)
+        if (value is not null && value.Length > maxValueLength && maxValueLength > 0)
         {
             writer.WriteValue(value.Substring(0, maxValueLength));
             writer.WritePropertyName(TRUNCATED);

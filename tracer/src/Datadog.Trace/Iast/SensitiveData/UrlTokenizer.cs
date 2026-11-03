@@ -36,7 +36,7 @@ internal sealed class UrlTokenizer : ITokenizer
         var res = new List<Range>(1);
         foreach (Match? match in _patternUrl.Matches(value))
         {
-            if (match != null && match.Success)
+            if (match is not null && match.Success)
             {
                 var group = match.Groups["AUTHORITY"];
                 if (group == null || !group.Success)
@@ -44,7 +44,7 @@ internal sealed class UrlTokenizer : ITokenizer
                     group = match.Groups["QUERY"];
                 }
 
-                if (group != null && group.Success)
+                if (group is not null && group.Success)
                 {
                     int start = group.Index;
                     int end = group.Index + group.Length;

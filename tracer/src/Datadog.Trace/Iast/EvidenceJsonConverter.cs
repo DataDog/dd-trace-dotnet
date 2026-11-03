@@ -121,7 +121,7 @@ internal sealed class EvidenceJsonConverter : JsonConverter<Evidence?>
         writer.WriteStartObject();
         writer.WritePropertyName("value");
         writer.WriteTruncatableValue(value, _maxValueLength);
-        if (source != null)
+        if (source is not null)
         {
             writer.WritePropertyName("source");
             writer.WriteValue(source.GetInternalId());
@@ -135,13 +135,13 @@ internal sealed class EvidenceJsonConverter : JsonConverter<Evidence?>
         writer.WriteStartObject();
         writer.WritePropertyName("redacted");
         writer.WriteValue(true);
-        if (value != null)
+        if (value is not null)
         {
             writer.WritePropertyName("pattern");
             writer.WriteTruncatableValue(value, _maxValueLength);
         }
 
-        if (source != null)
+        if (source is not null)
         {
             writer.WritePropertyName("source");
             writer.WriteValue(source.GetInternalId());
@@ -172,13 +172,13 @@ internal sealed class EvidenceJsonConverter : JsonConverter<Evidence?>
     private void ToRedactedJson(JsonWriter writer, string value, Range[]? taintedRanges, Range[]? sensitiveRanges)
     {
         writer.WriteStartArray();
-        LinkedList<Range> tainted = taintedRanges != null ? new LinkedList<Range>(taintedRanges) : new LinkedList<Range>();
-        LinkedList<Range> sensitive = sensitiveRanges != null ? new LinkedList<Range>(sensitiveRanges) : new LinkedList<Range>();
+        LinkedList<Range> tainted = taintedRanges is not null ? new LinkedList<Range>(taintedRanges) : new LinkedList<Range>();
+        LinkedList<Range> sensitive = sensitiveRanges is not null ? new LinkedList<Range>(sensitiveRanges) : new LinkedList<Range>();
 
         var parts = new EvidenceConverterHelper.ValuePartIterator(value, tainted, sensitive);
         foreach (var part in parts)
         {
-            if (part != null)
+            if (part is not null)
             {
                 Write(writer, part.Value);
             }

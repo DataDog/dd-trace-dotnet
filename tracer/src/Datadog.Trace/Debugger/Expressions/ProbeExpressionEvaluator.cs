@@ -336,7 +336,7 @@ internal sealed class ProbeExpressionEvaluator
 
             var condition = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
             result.Condition = condition;
-            if (compiledExpression.Errors != null)
+            if (compiledExpression.Errors is not null)
             {
                 (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
                 result.HasConditionError = true;
@@ -373,7 +373,7 @@ internal sealed class ProbeExpressionEvaluator
 
             var metric = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
             result.Metric = metric;
-            if (compiledExpression.Errors != null)
+            if (compiledExpression.Errors is not null)
             {
                 (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
             }
@@ -477,7 +477,7 @@ internal sealed class ProbeExpressionEvaluator
 
                                     var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
                                     resultBuilder.Append(value);
-                                    if (compiledExpression.Errors != null)
+                                    if (compiledExpression.Errors is not null)
                                     {
                                         (errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
                                         if (Log.IsEnabled(LogEventLevel.Debug))
@@ -491,7 +491,7 @@ internal sealed class ProbeExpressionEvaluator
                             {
                                 var message = e is EvaluationTimeBudgetExceededException ? EvaluationTimeBudgetExceededException.ErrorMessage : e.Message;
                                 (errors ??= new List<EvaluationError>()).Add(new() { Message = message, Expression = GetRelevantExpression(compiledExpression) });
-                                if (compiledExpression.Errors != null)
+                                if (compiledExpression.Errors is not null)
                                 {
                                     errors.AddRange(compiledExpression.Errors);
                                 }
@@ -574,7 +574,7 @@ internal sealed class ProbeExpressionEvaluator
                 var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
                 if (value is UndefinedValue)
                 {
-                    if (compiledExpression.Errors != null)
+                    if (compiledExpression.Errors is not null)
                     {
                         (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
                     }
@@ -590,7 +590,7 @@ internal sealed class ProbeExpressionEvaluator
                     value?.GetType() ?? typeof(object),
                     captureExpression.CaptureLimitInfo);
 
-                if (compiledExpression.Errors != null)
+                if (compiledExpression.Errors is not null)
                 {
                     (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
                 }
@@ -625,7 +625,7 @@ internal sealed class ProbeExpressionEvaluator
                 continue;
             }
 
-            if (current.Value.Json != null)
+            if (current.Value.Json is not null)
             {
                 compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Value.Json, scopeMembers);
             }
@@ -703,7 +703,7 @@ internal sealed class ProbeExpressionEvaluator
                         continue;
                     }
 
-                    if (tag.Value.Json != null)
+                    if (tag.Value.Json is not null)
                     {
                         compiledTagsK[k] = ProbeExpressionParser<string>.ParseExpression(tag.Value.Json, scopeMembers);
                     }
@@ -740,7 +740,7 @@ internal sealed class ProbeExpressionEvaluator
         for (int i = 0; i < CaptureExpressions.Length; i++)
         {
             var expression = CaptureExpressions[i].Expression;
-            if (expression?.Json != null && IsExpression(expression) == true)
+            if (expression?.Json is not null && IsExpression(expression) == true)
             {
                 compiledExpressions[i] = ProbeExpressionParser<object>.ParseCaptureExpression(expression.Value.Json, scopeMembers, CaptureExpressions[i].CaptureLimitInfo);
             }
@@ -761,7 +761,7 @@ internal sealed class ProbeExpressionEvaluator
 
     private bool IsLiteral<T>(CompiledExpression<T> expression)
     {
-        return expression.BudgetedDelegate == null && expression.ParsedExpression == null && expression.Errors == null && expression.RawExpression != null;
+        return expression.BudgetedDelegate == null && expression.ParsedExpression == null && expression.Errors == null && expression.RawExpression is not null;
     }
 
     private bool? IsExpression(DebuggerExpression? expression)
@@ -776,13 +776,13 @@ internal sealed class ProbeExpressionEvaluator
 
     private bool IsExpression<T>(CompiledExpression<T> expression)
     {
-        return expression.BudgetedDelegate != null && expression.ParsedExpression != null && expression.RawExpression != null;
+        return expression.BudgetedDelegate is not null && expression.ParsedExpression is not null && expression.RawExpression is not null;
     }
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
     {
         result.Errors ??= new List<EvaluationError>();
-        if (compiledExpression.Errors != null)
+        if (compiledExpression.Errors is not null)
         {
             result.Errors.AddRange(compiledExpression.Errors);
         }

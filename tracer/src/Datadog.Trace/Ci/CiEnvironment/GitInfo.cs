@@ -92,12 +92,12 @@ internal sealed class GitInfo : IGitInfo
         foreach (var provider in _gitInfoProviders)
         {
             // Try to load git metadata from the folder
-            if (provider.TryGetFrom(folder, out var gitInfo) && gitInfo != null)
+            if (provider.TryGetFrom(folder, out var gitInfo) && gitInfo is not null)
             {
                 return gitInfo;
             }
 
-            if (gitInfo != null)
+            if (gitInfo is not null)
             {
                 errors ??= new List<string>();
                 errors.AddRange(gitInfo.Errors);
@@ -106,7 +106,7 @@ internal sealed class GitInfo : IGitInfo
 
         // Return the partial gitInfo instance with the initial source root
         var value = new GitInfo { SourceRoot = new DirectoryInfo(folder).Parent?.FullName };
-        if (errors != null)
+        if (errors is not null)
         {
             value.Errors.AddRange(errors);
             Log.Warning("{Value}", string.Join(Environment.NewLine, value.Errors));
@@ -146,16 +146,16 @@ internal sealed class GitInfo : IGitInfo
             }
         }
 
-        if (gitDirectory != null)
+        if (gitDirectory is not null)
         {
             foreach (var provider in _gitInfoProviders)
             {
-                if (provider.TryGetFrom(gitDirectory.FullName, out var gitInfo) && gitInfo != null)
+                if (provider.TryGetFrom(gitDirectory.FullName, out var gitInfo) && gitInfo is not null)
                 {
                     return gitInfo;
                 }
 
-                if (gitInfo != null)
+                if (gitInfo is not null)
                 {
                     errors ??= new List<string>();
                     errors.AddRange(gitInfo.Errors);
@@ -164,7 +164,7 @@ internal sealed class GitInfo : IGitInfo
         }
 
         var value = new GitInfo { SourceRoot = gitDirectory?.Parent?.FullName };
-        if (errors != null)
+        if (errors is not null)
         {
             value.Errors.AddRange(errors);
             Log.Warning("{Value}", string.Join(Environment.NewLine, value.Errors));
@@ -192,7 +192,7 @@ internal sealed class GitInfo : IGitInfo
             return null;
         }
 
-        while (dirInfo != null)
+        while (dirInfo is not null)
         {
             try
             {

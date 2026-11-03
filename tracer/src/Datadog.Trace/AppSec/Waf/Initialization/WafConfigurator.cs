@@ -110,7 +110,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
             catch (Exception ex)
             {
-                if (rulesFilePath != null)
+                if (rulesFilePath is not null)
                 {
                     Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file \"{RulesFile}\". Reason: Invalid file format. AppSec will not run any protections in this application.", rulesFilePath);
                 }
@@ -231,7 +231,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                 if (configs.HasData)
                 {
-                    if (configs.Removes != null)
+                    if (configs.Removes is not null)
                     {
                         foreach (var path in configs.Removes)
                         {
@@ -244,7 +244,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         }
                     }
 
-                    if (configs.Updates != null)
+                    if (configs.Updates is not null)
                     {
                         foreach (var config in configs.Updates)
                         {
