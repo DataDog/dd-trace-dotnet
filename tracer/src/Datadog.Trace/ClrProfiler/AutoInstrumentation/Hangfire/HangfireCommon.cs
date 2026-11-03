@@ -67,7 +67,7 @@ internal static class HangfireCommon
 
         Assembly? hangfireAssembly = AppDomain.CurrentDomain
                                               .GetAssemblies()
-                                              .FirstOrDefault(asm => asm.GetName().Name == "Hangfire.Core");
+                                              .FirstOrDefault(static asm => asm.GetName().Name == "Hangfire.Core");
         if (hangfireAssembly == null)
         {
             Log.Debug("Error getting required Hangfire assembly. Hangfire integration is not enabled: abort injecting datadog filter");

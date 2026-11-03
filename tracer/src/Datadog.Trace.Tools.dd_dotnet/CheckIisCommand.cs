@@ -29,8 +29,8 @@ internal class CheckIisCommand : Command
 {
     private readonly Argument<string> _siteNameArgument = new("siteName") { Arity = ArgumentArity.ZeroOrOne };
 
-    private readonly Option<string?> _configurationPathOption = new("--iisConfigPath", () => null) { IsHidden = true };
-    private readonly Option<int> _workerProcessOption = new("--workerProcess", () => 0) { IsHidden = true };
+    private readonly Option<string?> _configurationPathOption = new("--iisConfigPath", static () => null) { IsHidden = true };
+    private readonly Option<int> _workerProcessOption = new("--workerProcess", static () => 0) { IsHidden = true };
 
     public CheckIisCommand()
         : base("iis")
@@ -157,7 +157,7 @@ internal class CheckIisCommand : Command
                 Utils.WriteWarning(IisMixedRuntimes);
             }
 
-            if (process.Modules.Any(m => Path.GetFileName(m).Equals("aspnetcorev2_outofprocess.dll", StringComparison.OrdinalIgnoreCase)))
+            if (process.Modules.Any(static m => Path.GetFileName(m).Equals("aspnetcorev2_outofprocess.dll", StringComparison.OrdinalIgnoreCase)))
             {
                 // IIS site is hosting aspnetcore in out-of-process mode
                 // Trying to locate the actual application process
@@ -205,7 +205,7 @@ internal class CheckIisCommand : Command
                     return 1;
                 }
             }
-            else if (process.Modules.Any(m => Path.GetFileName(m).Equals("aspnetcorev2.dll", StringComparison.OrdinalIgnoreCase)))
+            else if (process.Modules.Any(static m => Path.GetFileName(m).Equals("aspnetcorev2.dll", StringComparison.OrdinalIgnoreCase)))
             {
                 // aspnetcorev2 is found but not aspnetcorev2_outofprocess
                 // It could mean that the process is using in-process hosting,

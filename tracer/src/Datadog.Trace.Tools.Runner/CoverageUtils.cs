@@ -99,7 +99,7 @@ internal static class CoverageUtils
             AnsiConsole.WriteException(ex);
         }
 
-        Action<string> onFileProcessed = useStdOut ? file => Utils.WriteSuccess($"Processing: {file}") : null;
+        Action<string> onFileProcessed = useStdOut ? static file => Utils.WriteSuccess($"Processing: {file}") : null;
         if (!GlobalCoverageFileCombiner.TryCombine(
                 jsonFiles,
                 outputFile,

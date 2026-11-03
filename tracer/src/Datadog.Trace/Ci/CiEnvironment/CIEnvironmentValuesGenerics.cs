@@ -233,7 +233,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         Repository = GetVariableIfIsNotEmpty(
             ConfigurationKeys.CIVisibility.GitRepositoryUrl,
             Repository,
-            (value, defaultValue) =>
+            static (value, defaultValue) =>
             {
                 if (value is not null)
                 {
@@ -281,7 +281,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         Commit = GetVariableIfIsNotEmpty(
             ConfigurationKeys.CIVisibility.GitCommitSha,
             Commit,
-            (value, defaultValue) =>
+            static (value, defaultValue) =>
             {
                 if (value is not null)
                 {
@@ -323,7 +323,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         PrBaseCommit = GetVariableIfIsNotEmpty(
             ConfigurationKeys.CIVisibility.GitPullRequestBaseBranchSha,
             PrBaseCommit,
-            (value, defaultValue) =>
+            static (value, defaultValue) =>
             {
                 if (value is not null)
                 {

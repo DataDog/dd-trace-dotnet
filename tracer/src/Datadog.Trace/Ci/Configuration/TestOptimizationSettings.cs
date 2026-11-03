@@ -83,7 +83,7 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Test session name
             TestSessionName = config.WithKeys(ConfigurationKeys.CIVisibility.TestSessionName).AsString(
-                getDefaultValue: () =>
+                getDefaultValue: static () =>
                 {
                     // We try to get the command from the active test session or test module
                     var command = TestSession.ActiveTestSessions.FirstOrDefault()?.Command ??
@@ -118,10 +118,10 @@ namespace Datadog.Trace.Ci.Configuration
             FlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryEnabled).AsBool();
 
             // Maximum number of retry attempts for a single test case.
-            FlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryCount).AsInt32(defaultValue: 5, validator: val => val >= 1) ?? 5;
+            FlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryCount).AsInt32(defaultValue: 5, validator: static val => val >= 1) ?? 5;
 
             // Maximum number of retry attempts for the entire session.
-            TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
+            TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: static val => val >= 1) ?? 1_000;
 
             // Retry counts that depend on the duration of the first execution
             DynamicFlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled).AsBool(false);

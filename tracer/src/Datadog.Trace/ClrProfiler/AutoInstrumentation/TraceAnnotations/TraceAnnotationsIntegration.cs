@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         {
             var info = InstrumentedMethodCache.GetOrAdd(
                 new RuntimeHandleTuple(methodHandle, typeHandle),
-                key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
+                static key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
 
             var tags = new TraceAnnotationTags();
             var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);

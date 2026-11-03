@@ -12,7 +12,7 @@ namespace Datadog.Trace.Util
     /// </summary>
     internal sealed class DomainMetadata
     {
-        private static readonly Lazy<DomainMetadata> _instance = new(() => new DomainMetadata(), isThreadSafe: true);
+        private static readonly Lazy<DomainMetadata> _instance = new(static () => new DomainMetadata(), isThreadSafe: true);
 
         private string _currentProcessName;
         private string _currentProcessMachineName;

@@ -30,7 +30,7 @@ internal static class FiltersHelper
 
         var regexes = AttributesRegexes.GetOrAdd(
             filters,
-            list =>
+            static list =>
             {
                 var lstRegex = new List<Regex>(list.Count);
                 foreach (var item in list)
@@ -63,7 +63,7 @@ internal static class FiltersHelper
         {
             var value = Matchers.GetOrAdd(
                 filters,
-                list =>
+                static list =>
                 {
                     var instance = new Matcher();
                     var lstRegex = new List<Regex>();

@@ -156,7 +156,7 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV3_4XIntegration
             TestCase = new CustomTestCase
             {
                 DisplayName = testCase.TestCaseDisplayName,
-                Traits = testCase.Traits.ToDictionary(keyValuePair => keyValuePair.Key, keyValuePair => keyValuePair.Value?.ToList()),
+                Traits = testCase.Traits.ToDictionary(static keyValuePair => keyValuePair.Key, static keyValuePair => keyValuePair.Value?.ToList()),
                 UniqueID = testCase.UniqueID,
             },
             Aggregator = aggregator,

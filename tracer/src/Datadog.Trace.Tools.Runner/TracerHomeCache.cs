@@ -368,7 +368,7 @@ internal static class TracerHomeCache
             entries.Add(new CacheIntegrityEntry(entry.RelativePath, false, fileInfo.Length, ComputeSha256(entry.FullPath)));
         }
 
-        entries.Sort((left, right) => string.Compare(left.RelativePath, right.RelativePath, StringComparison.Ordinal));
+        entries.Sort(static (left, right) => string.Compare(left.RelativePath, right.RelativePath, StringComparison.Ordinal));
         return entries;
     }
 

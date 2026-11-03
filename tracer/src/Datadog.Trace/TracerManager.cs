@@ -144,7 +144,7 @@ namespace Datadog.Trace
                     ref _instance,
                     ref _globalInstanceInitialized,
                     ref _globalInstanceLock,
-                    () => CreateInitializedTracer(settings: null, TracerManagerFactory.Instance));
+                    static () => CreateInitializedTracer(settings: null, TracerManagerFactory.Instance));
             }
         }
 
@@ -612,7 +612,7 @@ namespace Datadog.Trace
                     // Restore promoted attributes as the OTLP serializers do to expose the effective resource configuration.
                     var resourceAttributes = mutableSettings.GlobalTags
                                                             .Where(static kvp => !OtlpMapper.IsHandledResourceAttribute(kvp.Key))
-                                                            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                                                            .ToDictionary(static kvp => kvp.Key, static kvp => kvp.Value);
                     if (!StringUtil.IsNullOrEmpty(mutableSettings.ServiceVersion))
                     {
                         resourceAttributes["service.version"] = mutableSettings.ServiceVersion;

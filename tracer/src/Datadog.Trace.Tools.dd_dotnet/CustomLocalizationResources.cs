@@ -89,7 +89,7 @@ internal class CustomLocalizationResources : LocalizationResources
     ///   Interpolates values into a localized string similar to Argument &apos;{0}&apos; not recognized. Must be one of:{1}.
     /// </summary>
     public override string UnrecognizedArgument(string unrecognizedArg, IReadOnlyCollection<string> allowedValues) =>
-        GetResourceString(Properties.Resources.UnrecognizedArgument, unrecognizedArg, $"\n\t{string.Join("\n\t", allowedValues.Select(v => $"'{v}'"))}");
+        GetResourceString(Properties.Resources.UnrecognizedArgument, unrecognizedArg, $"\n\t{string.Join("\n\t", allowedValues.Select(static v => $"'{v}'"))}");
 
     /// <summary>
     ///   Interpolates values into a localized string similar to Unrecognized command or argument &apos;{0}&apos;.

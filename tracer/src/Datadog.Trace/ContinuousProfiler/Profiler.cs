@@ -22,7 +22,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
         public static Profiler Instance
         {
-            get { return LazyInitializer.EnsureInitialized(ref _instance, () => Create()); }
+            get { return LazyInitializer.EnsureInitialized(ref _instance, static () => Create()); }
         }
 
         public ProfilerSettings Settings { get; }

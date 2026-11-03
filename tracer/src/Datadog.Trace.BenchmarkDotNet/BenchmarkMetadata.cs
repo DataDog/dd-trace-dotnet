@@ -24,7 +24,7 @@ internal static class BenchmarkMetadata
 
     public static void GetIds(object key, out TraceId traceId, out ulong spanId)
     {
-        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, static @case => new());
         if (value.TraceId is null)
         {
             var useAllBits = TestOptimization.Instance.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? true;
@@ -38,7 +38,7 @@ internal static class BenchmarkMetadata
 
     public static void SetStartTime(object key, DateTime dateTime)
     {
-        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, static @case => new());
         if (value.StartTime is null || dateTime < value.StartTime)
         {
             value.StartTime = dateTime;
@@ -47,7 +47,7 @@ internal static class BenchmarkMetadata
 
     public static void SetEndTime(object key, DateTime dateTime)
     {
-        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, static @case => new());
         if (value.EndTime is null || dateTime > value.EndTime)
         {
             value.EndTime = dateTime;
@@ -56,7 +56,7 @@ internal static class BenchmarkMetadata
 
     public static void GetTimes(object key, out DateTime? startTime, out DateTime? endTime)
     {
-        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, static @case => new());
         startTime = value.StartTime;
         endTime = value.EndTime;
     }

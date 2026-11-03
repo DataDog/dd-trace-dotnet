@@ -70,24 +70,24 @@ namespace Datadog.Trace.Logging.DirectSubmission
                                              // They didn't provide a URL, use the default (With DD_SITE if provided)
                                              var ddSite = config
                                                          .WithKeys(ConfigurationKeys.Site)
-                                                         .AsString(DefaultSite, x => !string.IsNullOrEmpty(x));
+                                                         .AsString(DefaultSite, static x => !string.IsNullOrEmpty(x));
 
                                              return $"{IntakePrefix}{ddSite}{IntakeSuffix}";
                                          },
-                                         validator: x => !string.IsNullOrEmpty(x));
+                                         validator: static x => !string.IsNullOrEmpty(x));
 
             MinimumLevel = config
                                              .WithKeys(ConfigurationKeys.DirectLogSubmission.MinimumLevel)
                                              .GetAs(
                                                   defaultValue: new(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
-                                                  converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
+                                                  converter: static x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
                                                   validator: null);
 
             var globalTags = config
                             .WithKeys(ConfigurationKeys.DirectLogSubmission.GlobalTags)
                             .AsDictionary()
-                           ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+                           ?.Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                            .ToDictionary(static kvp => kvp.Key.Trim(), static kvp => kvp.Value.Trim());
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags ?? []);
 
@@ -97,17 +97,17 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             BatchSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
-                                               .AsInt32(defaultBatchSize, x => x > 0)
+                                               .AsInt32(defaultBatchSize, static x => x > 0)
                                                .Value;
 
             QueueSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
-                                               .AsInt32(defaultQueueSize, x => x > 0)
+                                               .AsInt32(defaultQueueSize, static x => x > 0)
                                                .Value;
 
             var seconds = config
                      .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)
-                     .AsInt32(defaultBatchPeriod, x => x > 0)
+                     .AsInt32(defaultBatchPeriod, static x => x > 0)
                      .Value;
 
             BatchPeriod = TimeSpan.FromSeconds(seconds);
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                         validationErrors.Add(
                             "Unknown integration: " + integrationName +
                             ". Use a valid logs integration name: " +
-                            string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
+                            string.Join(", ", SupportedIntegrations.Select(static x => IntegrationRegistry.GetName(x))));
                         continue;
                     }
 
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                     {
                         validationErrors.Add(
                             "Integration: " + integrationName + " is not a supported direct log submission integration. " +
-                            "Use one of " + string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
+                            "Use one of " + string.Join(", ", SupportedIntegrations.Select(static x => IntegrationRegistry.GetName(x))));
                         continue;
                     }
 
@@ -283,7 +283,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         internal string ApiKey { get; }
 
         public IEnumerable<string> EnabledIntegrationNames
-            => SupportedIntegrations.Where(x => _enabledIntegrations?[(int)x] == true).Select(x => IntegrationRegistry.GetName(x));
+            => SupportedIntegrations.Where(x => _enabledIntegrations?[(int)x] == true).Select(static x => IntegrationRegistry.GetName(x));
 
         public BatchingSinkOptions CreateBatchingSinkOptions()
             => new(

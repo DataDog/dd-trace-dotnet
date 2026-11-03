@@ -89,7 +89,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             _ = Task.Run(() => _uploader.StartFlushingAsync())
                     .ContinueWith(
-                         t =>
+                         static t =>
                          {
                              if (t.Exception?.GetType() != typeof(OperationCanceledException))
                              {

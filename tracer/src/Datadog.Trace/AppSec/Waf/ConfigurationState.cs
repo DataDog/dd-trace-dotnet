@@ -85,12 +85,12 @@ internal sealed record ConfigurationState
 
         if (asmConfigs is not null)
         {
-            AsmConfigs = asmConfigs.ToDictionary(p => p.Key, p => JToken.FromObject(p.Value));
+            AsmConfigs = asmConfigs.ToDictionary(static p => p.Key, static p => JToken.FromObject(p.Value));
         }
 
         if (asmDataConfigs is not null)
         {
-            AsmDataConfigs = asmDataConfigs.ToDictionary(p => p.Key, p => JToken.FromObject(p.Value));
+            AsmDataConfigs = asmDataConfigs.ToDictionary(static p => p.Key, static p => JToken.FromObject(p.Value));
         }
     }
 
@@ -160,10 +160,10 @@ internal sealed record ConfigurationState
         if (updating && _pendingByProduct.Count > 0)
         {
             removes = _pendingByProduct
-                     .Where(entry => entry.Key != RcmProducts.AsmFeatures)
-                     .SelectMany(p => p.Value.Values)
-                     .Where(op => op.IsRemove)
-                     .Select(v => v.Path.Path)
+                     .Where(static entry => entry.Key != RcmProducts.AsmFeatures)
+                     .SelectMany(static p => p.Value.Values)
+                     .Where(static op => op.IsRemove)
+                     .Select(static v => v.Path.Path)
                      .ToList();
         }
 
@@ -357,7 +357,7 @@ internal sealed record ConfigurationState
         // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
         if (_canBeToggled)
         {
-            var rcmEnable = !AsmFeaturesByFile.IsEmpty() && !AsmFeaturesByFile.Any(a => a.Value?.Enabled is false);
+            var rcmEnable = !AsmFeaturesByFile.IsEmpty() && !AsmFeaturesByFile.Any(static a => a.Value?.Enabled is false);
             if (!appsecCurrentlyEnabled)
             {
                 IncomingUpdateState.ShouldInitAppsec = rcmEnable;
@@ -380,13 +380,13 @@ internal sealed record ConfigurationState
         }
 
         // empty, one value, or all values the same are valid states, anything else is an error
-        var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault(x => x?.Mode is not null);
+        var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault(static x => x?.Mode is not null);
         if (autoUserInstrumMode is not null && AutoUserInstrumByFile.Any(x => x.Value?.Mode is not null && x.Value.Mode != autoUserInstrumMode.Mode))
         {
             AutoUserInstrumMode = "unknown value";
             Log.Error(
                 "AutoUserInstrumMode was 'unknown value', source data: {AutoUserInstrumByFile}",
-                string.Join(',', AutoUserInstrumByFile.Values.Select(x => x?.Mode)));
+                string.Join(',', AutoUserInstrumByFile.Values.Select(static x => x?.Mode)));
         }
         else
         {

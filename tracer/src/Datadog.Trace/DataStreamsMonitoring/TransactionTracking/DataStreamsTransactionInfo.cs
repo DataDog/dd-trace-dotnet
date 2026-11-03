@@ -84,7 +84,7 @@ internal readonly struct DataStreamsTransactionInfo
             return CheckpointIdUnknown;
         }
 
-        return Cache.GetOrAdd(checkpoint, _ => Interlocked.Increment(ref _counter));
+        return Cache.GetOrAdd(checkpoint, static _ => Interlocked.Increment(ref _counter));
     }
 
     // Encodes a string to UTF-8, truncating to MaxIdBytes if necessary.
@@ -135,8 +135,8 @@ internal readonly struct DataStreamsTransactionInfo
         }
 
         // Pre-encode all names so we can size the buffer exactly and avoid a second encoding pass.
-        var encodedNames = Array.ConvertAll(entries, p => EncodeAndTruncate(p.Key));
-        var result = new byte[encodedNames.Sum(n => 2 + n.Length)];
+        var encodedNames = Array.ConvertAll(entries, static p => EncodeAndTruncate(p.Key));
+        var result = new byte[encodedNames.Sum(static n => 2 + n.Length)];
         var index = 0;
 
         for (var i = 0; i < entries.Length; i++)

@@ -74,7 +74,7 @@ namespace Datadog.Trace.Configuration
 #if NET6_0_OR_GREATER
                         string s => new HashSet<string>(s.Split(commaSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)),
 #else
-                        string s => new HashSet<string>(s.Split(commaSeparator, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())),
+                        string s => new HashSet<string>(s.Split(commaSeparator, StringSplitOptions.RemoveEmptyEntries).Select(static x => x.Trim())),
 #endif
                     };
 
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Configuration
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
                                         defaultValue: new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
-                                        converter: x => x switch
+                                        converter: static x => x switch
                                         {
                                             "v1" or "V1" => SchemaVersion.V1,
                                             "v0" or "V0" => SchemaVersion.V0,
@@ -151,7 +151,7 @@ namespace Datadog.Trace.Configuration
             var otelExporterResult = otelMetricsExporter
                .AsBoolResult(
                     null,
-                    value => value switch
+                    static value => value switch
                     {
                         not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
                         not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference)
                             .GetAs(
                                    defaultValue: new(OtlpTemporalityPreference.Delta, "delta"),
-                                   converter: x => x switch
+                                   converter: static x => x switch
                                    {
                                        not null when string.Equals(x, "cumulative", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Cumulative,
                                        not null when string.Equals(x, "delta", StringComparison.OrdinalIgnoreCase) => OtlpTemporalityPreference.Delta,
@@ -256,8 +256,8 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                             .AsRedactedDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
-                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => Uri.UnescapeDataString(kvp.Value?.Trim() ?? string.Empty));
+                            .Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                            .ToDictionary(static kvp => kvp.Key.Trim(), static kvp => Uri.UnescapeDataString(kvp.Value?.Trim() ?? string.Empty));
 
             OtlpLogsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs)
@@ -269,7 +269,7 @@ namespace Datadog.Trace.Configuration
             var otelLogsExporterResult = otelLogsExporter
                .AsBoolResult(
                     null,
-                    value => value switch
+                    static value => value switch
                     {
                         not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
                         not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
@@ -300,7 +300,7 @@ namespace Datadog.Trace.Configuration
             CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
                                               .GetAs(
                                                    defaultValue: new DefaultResult<string>(SamplingRulesFormat.Glob, "glob"),
-                                                   converter: value =>
+                                                   converter: static value =>
                                                    {
                                                        // We intentionally report invalid values as "valid" in the converter,
                                                        // because we don't want to automatically fall back to the
@@ -436,18 +436,18 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = config
                                                 .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegexTimeout)
-                                                .AsDouble(200, val1 => val1 is > 0).Value;
+                                                .AsDouble(200, static val1 => val1 is > 0).Value;
 
-            Func<string[], bool> injectionValidator = styles => styles is { Length: > 0 };
+            Func<string[], bool> injectionValidator = static styles => styles is { Length: > 0 };
             Func<string, ParsingResult<string[]>> otelConverter =
                 style => TrimSplitString(style, commaSeparator)
                         .Select(
-                             s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
+                             static s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
                                       ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"
                                       : s)
                         .ToArray();
 
-            var getDefaultPropagationHeaders = () => new DefaultResult<string[]>(
+            var getDefaultPropagationHeaders = static () => new DefaultResult<string[]>(
                 [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.W3CBaggage],
                 $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.W3CBaggage}");
 
@@ -455,7 +455,7 @@ namespace Datadog.Trace.Configuration
             var otelPropagation = NormalizeOtelPropagators(
                 config.WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
                       .GetAsClassResult(
-                           validator: styles => styles.Any(IsSupportedOtelPropagator),
+                           validator: static styles => styles.Any(IsSupportedOtelPropagator),
                            converter: otelConverter),
                 ErrorLog);
 
@@ -481,7 +481,7 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
                                              defaultValue: new(ExtractBehavior.Continue, "continue"),
-                                             converter: x => StringUtil.ToLowerInvariant(x) switch
+                                             converter: static x => StringUtil.ToLowerInvariant(x) switch
                                              {
                                                  "continue" => ExtractBehavior.Continue,
                                                  "restart" => ExtractBehavior.Restart,
@@ -514,7 +514,7 @@ namespace Datadog.Trace.Configuration
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
                                                    .AsInt32(
                                                         Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength,
-                                                        x => x is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength)
+                                                        static x => x is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength)
                                                    .Value;
 
             IpHeader = config
@@ -542,7 +542,7 @@ namespace Datadog.Trace.Configuration
                                                   .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
                                                   .GetAs(
                                                        defaultValue: new DefaultResult<List<DataStreamsTransactionExtractor>>([], "[]"),
-                                                       converter: json => ParsingResult<List<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
+                                                       converter: static json => ParsingResult<List<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
                                                        validator: null);
 
             // no legacy headers if we are in "enbaled by default" state
@@ -639,23 +639,23 @@ namespace Datadog.Trace.Configuration
 
             StatsAdditionalTagsCardinalityLimit = config
                                                  .WithKeys(ConfigurationKeys.StatsAdditionalTagsCardinalityLimit)
-                                                 .AsInt32(defaultValue: 100, validator: x => x > 0).Value;
+                                                 .AsInt32(defaultValue: 100, validator: static x => x > 0).Value;
 
             StatsResourceCardinalityLimit = config
                                            .WithKeys(ConfigurationKeys.StatsResourceCardinalityLimit)
-                                           .AsInt32(defaultValue: 1024, validator: x => x > 0).Value;
+                                           .AsInt32(defaultValue: 1024, validator: static x => x > 0).Value;
 
             StatsHttpEndpointCardinalityLimit = config
                                                .WithKeys(ConfigurationKeys.StatsHttpEndpointCardinalityLimit)
-                                               .AsInt32(defaultValue: 512, validator: x => x > 0).Value;
+                                               .AsInt32(defaultValue: 512, validator: static x => x > 0).Value;
 
             StatsPeerTagsCardinalityLimit = config
                                            .WithKeys(ConfigurationKeys.StatsPeerTagsCardinalityLimit)
-                                           .AsInt32(defaultValue: 512, validator: x => x > 0).Value;
+                                           .AsInt32(defaultValue: 512, validator: static x => x > 0).Value;
 
             StatsComputationBucketsCardinalityLimit = config
                                                      .WithKeys(ConfigurationKeys.StatsComputationBucketsCardinalityLimit)
-                                                     .AsInt32(defaultValue: 2048, validator: x => x > 0).Value;
+                                                     .AsInt32(defaultValue: 2048, validator: static x => x > 0).Value;
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
@@ -679,7 +679,7 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                     .GetAs(
                                          defaultValue: new(new(DbmPropagationLevel.Disabled), nameof(DbmPropagationLevel.Disabled)),
-                                         converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationResult>.Failure(),
+                                         converter: static x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationResult>.Failure(),
                                          validator: null);
             DbmPropagationMode = dbmPropagationMode.EffectiveLevel;
 
@@ -750,7 +750,7 @@ namespace Datadog.Trace.Configuration
 
             OpenTelemetryMetricsCardinalityLimit = config
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit)
-                                    .AsInt32(2000, value => value > 0).Value;
+                                    .AsInt32(2000, static value => value > 0).Value;
 
             OtlpRuntimeMetricsEnabled = OtlpMetricsExportEnabled && RuntimeMetricsEnabled;
 
@@ -834,7 +834,7 @@ namespace Datadog.Trace.Configuration
             PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
             PartialFlushMinSpans = config
                                   .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
-                                  .AsInt32(500, value => value > 0).Value;
+                                  .AsInt32(500, static value => value > 0).Value;
 
             GraphQLErrorExtensions = TrimSplitString(
                 config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
@@ -1525,7 +1525,7 @@ namespace Datadog.Trace.Configuration
             => config
               .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
               .AsBoolResult(
-                   value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                   static value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
                                 ? ParsingResult<bool>.Success(result: true)
                                 : ParsingResult<bool>.Failure());
 
@@ -1535,8 +1535,8 @@ namespace Datadog.Trace.Configuration
         internal static ReadOnlyDictionary<string, string>? TrimConfigKeysValues(ConfigurationBuilder.HasKeys key)
         {
             var mappings = key.AsDictionary()
-              ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+              ?.Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+               .ToDictionary(static kvp => kvp.Key.Trim(), static kvp => kvp.Value.Trim());
             return mappings is not null ? new(mappings) : null;
         }
 

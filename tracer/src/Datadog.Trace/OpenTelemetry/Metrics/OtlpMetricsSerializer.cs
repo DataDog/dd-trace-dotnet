@@ -60,7 +60,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             var copy = new KeyValuePair<string, object?>[tags.Length];
             Array.Copy(tags, copy, tags.Length);
-            Array.Sort(copy, (a, b) => string.CompareOrdinal(a.Key, b.Key));
+            Array.Sort(copy, static (a, b) => string.CompareOrdinal(a.Key, b.Key));
 
             var sb = new StringBuilder();
             for (int i = 0; i < copy.Length; i++)

@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 logEntry.EventId == 0 ? null : logEntry.EventId,
                 GetLogLevelString(logEntry.LogLevel),
                 logEntry.Exception,
-                (JsonTextWriter w, in LogEntry<T> e) => RenderProperties(w, in e));
+                static (JsonTextWriter w, in LogEntry<T> e) => RenderProperties(w, in e));
 
             return StringBuilderCache.GetStringAndRelease(sb);
         }

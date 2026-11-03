@@ -19,7 +19,7 @@ internal sealed class EnableIisInstrumentationCommand : CommandBase
     private const string Command = "enable-iis-instrumentation";
     private const string CommandDescription = "Enables instrumentation with the .NET library on IIS, for an already installed version of the .NET library";
 
-    private readonly Option<string> _versionedPathOption = new("--home-path", () => null!)
+    private readonly Option<string> _versionedPathOption = new("--home-path", static () => null!)
     {
         Description = "Path to the tracer-home-directory",
         IsRequired = true,

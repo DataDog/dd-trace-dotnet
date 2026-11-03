@@ -113,7 +113,7 @@ namespace DatadogDebugger.Util
                 }
             }
 
-            var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
+            var prunedNodes = nodes.Values.OrderBy(static n => n.Start).ToList();
             if (prunedNodes.Count == 0)
             {
                 return snapshot;

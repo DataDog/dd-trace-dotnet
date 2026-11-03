@@ -53,7 +53,7 @@ namespace Datadog.Trace.Debugger.Models
                 SameFileNameExamples is { Length: > 0 } ? $"sameFileNameExamples={sameFileNameExamples}" : null
             };
 
-            return string.Join("; ", values.Where(v => !string.IsNullOrEmpty(v)));
+            return string.Join("; ", values.Where(static v => !string.IsNullOrEmpty(v)));
         }
 
         public override string ToString() => ToSummary();

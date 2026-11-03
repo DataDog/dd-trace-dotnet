@@ -275,7 +275,7 @@ internal class CreatedumpCommand : Command
             }
 
             var frames = thread.EnumerateStackTrace()
-                               .Where(f => f.Kind == ClrStackFrameKind.ManagedMethod)
+                               .Where(static f => f.Kind == ClrStackFrameKind.ManagedMethod)
                                .ToList();
 
             var nativeMemory = NativeMemory.Alloc((nuint)frames.Count, (nuint)sizeof(ResolveMethodData));
@@ -806,7 +806,7 @@ internal class CreatedumpCommand : Command
 
         if (crashThread is null)
         {
-            var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException is not null);
+            var firstThreadWithException = _runtime.Threads.FirstOrDefault(static t => t.CurrentException is not null);
 
             if (firstThreadWithException is not null)
             {
@@ -877,7 +877,7 @@ internal class CreatedumpCommand : Command
             else if (exceptionType == "System.TypeLoadException")
             {
                 isSuspicious = exception.Message?.Contains("datadog", StringComparison.OrdinalIgnoreCase) == true
-                    || exception.StackTrace.Any(f => f.Method != null && IsMethodSuspicious(f.Method));
+                    || exception.StackTrace.Any(static f => f.Method != null && IsMethodSuspicious(f.Method));
             }
 
             if (isSuspicious)

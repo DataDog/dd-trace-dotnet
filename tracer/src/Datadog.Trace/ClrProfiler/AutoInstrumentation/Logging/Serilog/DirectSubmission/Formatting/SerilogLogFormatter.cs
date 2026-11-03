@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
                 eventId: null,
                 GetLogLevelString(logEvent.Level),
                 logEvent.Exception,
-                (JsonTextWriter w, in ILogEvent e) => RenderProperties(w, in e));
+                static (JsonTextWriter w, in ILogEvent e) => RenderProperties(w, in e));
         }
 
         private static string GetLogLevelString(LogEventLevelDuck logLevel) =>

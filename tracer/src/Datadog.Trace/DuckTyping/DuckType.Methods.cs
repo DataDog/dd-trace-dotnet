@@ -52,7 +52,7 @@ namespace Datadog.Trace.DuckTyping
 
                         if (!methodAlreadySelected)
                         {
-                            MethodInfo? prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
+                            MethodInfo? prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(static p => p.ParameterType).ToArray(), null);
                             if (prevMethod == null || !Attribute.IsDefined(prevMethod, typeof(DuckIgnoreAttribute)))
                             {
                                 selectedMethods.Add(interfaceMethod);
@@ -131,7 +131,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Extract the method parameters types
                 ParameterInfo[] proxyMethodDefinitionParameters = proxyMethodDefinition.GetParameters();
-                Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(p => p.ParameterType).ToArray();
+                Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(static p => p.ParameterType).ToArray();
 
                 // We select the target method to call
                 if (SelectTargetMethod<DuckAttribute>(targetType, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionParametersTypes, allTargetMethods, out var targetMethod) is { } selectError)
@@ -153,7 +153,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Gets the proxy method definition generic arguments
                 Type[] proxyMethodDefinitionGenericArguments = proxyMethodDefinition.GetGenericArguments();
-                string[] proxyMethodDefinitionGenericArgumentsNames = proxyMethodDefinitionGenericArguments.Select(a => a.Name).ToArray();
+                string[] proxyMethodDefinitionGenericArgumentsNames = proxyMethodDefinitionGenericArguments.Select(static a => a.Name).ToArray();
 
                 // Checks if the target method is a generic method while the proxy method is non generic (checks if the Duck attribute contains the generic parameters)
                 Type[] targetMethodGenericArguments = targetMethod.GetGenericArguments();
@@ -201,7 +201,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Gets target method parameters
                 ParameterInfo[] targetMethodParameters = targetMethod.GetParameters();
-                Type[] targetMethodParametersTypes = targetMethodParameters.Select(p => p.ParameterType).ToArray();
+                Type[] targetMethodParametersTypes = targetMethodParameters.Select(static p => p.ParameterType).ToArray();
 
                 // Make sure we have the right methods attributes.
                 MethodAttributes proxyMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
@@ -303,7 +303,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Extract the method parameters types
                 ParameterInfo[] implementationMethodParameters = implementationMethod.GetParameters();
-                Type[] implementationMethodParametersTypes = implementationMethodParameters.Select(p => p.ParameterType).ToArray();
+                Type[] implementationMethodParametersTypes = implementationMethodParameters.Select(static p => p.ParameterType).ToArray();
 
                 // We select the target method to call
                 if (SelectTargetMethod<DuckReverseMethodAttribute>(typeToDeriveFrom, implementationMethod, implementationMethodParameters, implementationMethodParametersTypes, overriddenMethods, out var overriddenMethod) is { } selectError)
@@ -322,7 +322,7 @@ namespace Datadog.Trace.DuckTyping
                 // Gets the proxy method definition generic arguments
                 Type[] overriddenMethodGenericArguments = overriddenMethod.GetGenericArguments();
                 Type[] implementationDefinitionGenericArguments = implementationMethod.GetGenericArguments();
-                string[] implementationDefinitionGenericArgumentsNames = implementationDefinitionGenericArguments.Select(a => a.Name).ToArray();
+                string[] implementationDefinitionGenericArgumentsNames = implementationDefinitionGenericArguments.Select(static a => a.Name).ToArray();
 
                 // Reverse duck typing doesn't support providing a non-generic implementation for a generic method
                 if (overriddenMethodGenericArguments.Length > 0
@@ -350,7 +350,7 @@ namespace Datadog.Trace.DuckTyping
                     return DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Create(implementationMethod, overriddenMethod);
                 }
 
-                Type[] overriddenMethodParametersTypes = overriddenMethodParameters.Select(p => p.ParameterType).ToArray();
+                Type[] overriddenMethodParametersTypes = overriddenMethodParameters.Select(static p => p.ParameterType).ToArray();
 
                 // Make sure we have the right methods attributes.
                 MethodAttributes proxyMethodAttributes = overriddenMethod.IsFamily
@@ -415,9 +415,9 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-            if (overriddenMethods.Exists(x => x.IsAbstract))
+            if (overriddenMethods.Exists(static x => x.IsAbstract))
             {
-                return DuckTypeReverseProxyMissingMethodImplementationException.Create(overriddenMethods.Where(x => x.IsAbstract));
+                return DuckTypeReverseProxyMissingMethodImplementationException.Create(overriddenMethods.Where(static x => x.IsAbstract));
             }
 
             return null;
@@ -463,8 +463,8 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 Type[] parameterTypes = proxyMethodDuckAttributeParameterTypeNames
-                                                                .Select(pName => GetTypeFromPartialName(pName))
-                                                                .Where(type => type is not null)
+                                                                .Select(static pName => GetTypeFromPartialName(pName))
+                                                                .Where(static type => type is not null)
                                                                 .ToArray()!;
                 if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)
                 {
@@ -1200,7 +1200,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // We create the dynamic method
-                Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();
+                Type[] originalTargetParameters = targetMethod.GetParameters().Select(static p => p.ParameterType).ToArray();
                 Type[] targetParameters = targetMethod.IsStatic ? originalTargetParameters : (new[] { typeof(object) }).Concat(originalTargetParameters).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);

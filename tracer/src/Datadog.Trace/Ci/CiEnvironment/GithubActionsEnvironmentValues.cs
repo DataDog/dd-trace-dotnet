@@ -258,7 +258,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                 PlatformKeys.Ci.GitHub.RunId,
                 PlatformKeys.Ci.GitHub.RunAttempt
             ],
-            kvp =>
+            static kvp =>
             {
                 if (kvp.Key == PlatformKeys.Ci.GitHub.ServerUrl)
                 {
@@ -299,9 +299,9 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                 // Look for Worker_*.log files, sorted by modification time (newest first)
                 // to get the most relevant/current job information
                 var workerLogFiles = Directory.GetFiles(diagDir, "Worker_*.log")
-                    .Select(f => new FileInfo(f))
-                    .OrderByDescending(f => f.LastWriteTimeUtc)
-                    .Select(f => f.FullName);
+                    .Select(static f => new FileInfo(f))
+                    .OrderByDescending(static f => f.LastWriteTimeUtc)
+                    .Select(static f => f.FullName);
 
                 foreach (var logFile in workerLogFiles)
                 {

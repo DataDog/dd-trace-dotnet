@@ -67,21 +67,21 @@ namespace Datadog.Trace.AppSec
                                            .AsInt32(
                                                 defaultValue: 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
                                                 converter: ParseWafTimeout,
-                                                validator: wafTimeout => wafTimeout > 0);
+                                                validator: static wafTimeout => wafTimeout > 0);
 
             ObfuscationParameterKeyRegex = config
                                           .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex)
-                                          .AsString(SecurityConstants.ObfuscationParameterKeyRegexDefault, x => !string.IsNullOrWhiteSpace(x));
+                                          .AsString(SecurityConstants.ObfuscationParameterKeyRegexDefault, static x => !string.IsNullOrWhiteSpace(x));
 
             ObfuscationParameterValueRegex = config
                                             .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
-                                            .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
+                                            .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, static x => !string.IsNullOrWhiteSpace(x));
 
             var newConfig =
                 config
                    .WithKeys(ConfigurationKeys.AppSec.UserEventsAutoInstrumentationMode)
                    .AsStringResult(
-                        val =>
+                        static val =>
                             val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
                          || val.Equals(UserTrackingIdentMode, StringComparison.OrdinalIgnoreCase)
                          || val.Equals(UserTrackingIdentShortMode, StringComparison.OrdinalIgnoreCase)
@@ -99,7 +99,7 @@ namespace Datadog.Trace.AppSec
                     config
                        .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
                        .AsStringResult(
-                            val =>
+                            static val =>
                                 val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
                              || val.Equals(DeprecatedUserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
                              || val.Equals(DeprecatedUserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase),
@@ -132,14 +132,14 @@ namespace Datadog.Trace.AppSec
                                        .AsBool(true);
 
             ApiSecuritySampleDelay = config.WithKeys(ConfigurationKeys.AppSec.ApiSecuritySampleDelay)
-                                           .AsDouble(30.0, val => val >= 0.0)
+                                           .AsDouble(30.0, static val => val >= 0.0)
                                            .Value;
 
             ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
                                                          .AsBool(true);
 
             ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
-                                                              .AsInt32(300, val => val >= 0)
+                                                              .AsInt32(300, static val => val >= 0)
                                                               .Value;
 
             ApiSecurityParseResponseBody = config
@@ -158,17 +158,17 @@ namespace Datadog.Trace.AppSec
 
             MaxStackTraces = config
                             .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                            .AsInt32(defaultValue: 2, validator: val => val >= 1)
+                            .AsInt32(defaultValue: 2, validator: static val => val >= 1)
                             .Value;
 
             MaxStackTraceDepth = config
                                 .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                .AsInt32(defaultValue: 32, validator: val => val >= 1)
+                                .AsInt32(defaultValue: 32, validator: static val => val >= 1)
                                 .Value;
 
             MaxStackTraceDepthTopPercent = config
                                           .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepthTopPercent)
-                                          .AsInt32(defaultValue: 75, validator: val => val >= 0 && val <= 100)
+                                          .AsInt32(defaultValue: 75, validator: static val => val >= 0 && val <= 100)
                                           .Value;
 
             WafDebugEnabled = config

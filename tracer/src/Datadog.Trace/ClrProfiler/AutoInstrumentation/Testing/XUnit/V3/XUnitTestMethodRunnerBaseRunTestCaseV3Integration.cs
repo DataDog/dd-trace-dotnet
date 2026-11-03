@@ -51,7 +51,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             TestCase = new CustomTestCase
             {
                 DisplayName = testcase.TestCaseDisplayName,
-                Traits = testcase.Traits.ToDictionary(k => k.Key, v => v.Value?.ToList()),
+                Traits = testcase.Traits.ToDictionary(static k => k.Key, static v => v.Value?.ToList()),
                 UniqueID = testcase.UniqueID,
             },
             Aggregator = context.Aggregator,

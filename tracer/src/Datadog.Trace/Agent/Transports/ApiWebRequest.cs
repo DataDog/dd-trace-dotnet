@@ -212,7 +212,7 @@ namespace Datadog.Trace.Agent.Transports
                 // currently, however, this _may_ change if we switch to using HttpCompletionMode.
                 // ResponseHeadersRead to avoid the full buffering into memory as we do today.
                 var deadlineExpired = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
-                using var tcsRegistration = cts.Token.Register(x => ((TaskCompletionSource<object?>)x!).TrySetResult(true), deadlineExpired, useSynchronizationContext: false);
+                using var tcsRegistration = cts.Token.Register(static x => ((TaskCompletionSource<object?>)x!).TrySetResult(true), deadlineExpired, useSynchronizationContext: false);
                 registration = cts.Token.Register(static s => { try { ((HttpWebRequest)s!).Abort(); } catch { } }, _request);
 
                 if (writeBody is not null)

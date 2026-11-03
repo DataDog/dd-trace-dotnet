@@ -105,7 +105,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
                 new CICodeCoveragePayload(settings, formatterResolver));
             _buffersArray[i] = buffers;
             var tskFlush = Task.Run(() => InternalFlushEventsAsync(this, buffers));
-            _ = tskFlush.ContinueWith(t => Log.Error(t.Exception, "CIVisibilityProtocolWriter: Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
+            _ = tskFlush.ContinueWith(static t => Log.Error(t.Exception, "CIVisibilityProtocolWriter: Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
             _buffersArray[i].SetFlushTask(tskFlush);
         }
 

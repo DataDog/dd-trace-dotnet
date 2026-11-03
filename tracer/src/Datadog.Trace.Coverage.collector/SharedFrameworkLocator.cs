@@ -147,7 +147,7 @@ internal static class SharedFrameworkLocator
         try
         {
             return Directory.EnumerateFiles(outputDirectory, "*.runtimeconfig.json", SearchOption.TopDirectoryOnly)
-                            .OrderBy(path => path, PathComparer)
+                            .OrderBy(static path => path, PathComparer)
                             .ToList();
         }
         catch (IOException)
@@ -234,7 +234,7 @@ internal static class SharedFrameworkLocator
         {
             var preferStable = !requestedVersion.IsPrerelease && !rollForwardToPrerelease;
             return Directory.EnumerateDirectories(frameworkRoot)
-                            .Select(path => new
+                            .Select(static path => new
                             {
                                 Path = path,
                                 Parsed = RuntimeVersion.TryParse(Path.GetFileName(path), out var version),
@@ -245,8 +245,8 @@ internal static class SharedFrameworkLocator
                                                 candidate.Version.Minor == requestedVersion.Minor &&
                                                 candidate.Version.CompareTo(requestedVersion) >= 0)
                             .OrderBy(candidate => preferStable && candidate.Version.IsPrerelease)
-                            .ThenByDescending(candidate => candidate.Version)
-                            .Select(candidate => candidate.Path)
+                            .ThenByDescending(static candidate => candidate.Version)
+                            .Select(static candidate => candidate.Path)
                             .FirstOrDefault();
         }
         catch (IOException)
@@ -300,7 +300,7 @@ internal static class SharedFrameworkLocator
             }
 
             var prerelease = separator < 0 ? [] : value.Substring(separator + 1).Split('.');
-            if (prerelease.Any(identifier => identifier.Length == 0))
+            if (prerelease.Any(static identifier => identifier.Length == 0))
             {
                 return false;
             }

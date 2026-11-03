@@ -48,7 +48,7 @@ namespace Datadog.Trace.OpenTracing
             if (context is OpenTracingSpanContext otSpanContext && otSpanContext.Context is SpanContext ddSpanContext)
             {
                 // this is a Datadog context
-                Injector.Inject(map, (carrier, name, value) => carrier.Set(name, value), ddSpanContext);
+                Injector.Inject(map, static (carrier, name, value) => carrier.Set(name, value), ddSpanContext);
             }
             else
             {

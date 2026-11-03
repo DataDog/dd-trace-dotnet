@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             return string.Join(
                 ' ',
                 cmdWithBinaryArgs.Select(
-                    bs =>
+                    static bs =>
                     {
                         try
                         {

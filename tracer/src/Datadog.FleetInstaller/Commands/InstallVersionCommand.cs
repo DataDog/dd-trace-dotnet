@@ -18,7 +18,7 @@ internal sealed class InstallVersionCommand : CommandBase
     private const string Command = "install-version";
     private const string CommandDescription = "Prepares a new version of the .NET tracer, without enabling instrumentation";
 
-    private readonly Option<string> _versionedPathOption = new("--home-path", () => null!)
+    private readonly Option<string> _versionedPathOption = new("--home-path", static () => null!)
     {
         Description = "Path to the tracer-home-directory",
         IsRequired = true,

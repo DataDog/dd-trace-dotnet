@@ -35,7 +35,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
         };
 
         internal DynamicConfigConfigurationSource(string json, ConfigurationOrigins origin)
-            : base(json, origin, j => Deserialize(j))
+            : base(json, origin, static j => Deserialize(j))
         {
             TreatNullDictionaryAsEmpty = false;
         }
@@ -65,12 +65,12 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 
         private static Dictionary<string, string> ReadHeaderTags(JToken token)
         {
-            return ((JArray)token).ToDictionary(t => t["header"]!.Value<string>()!, t => t["tag_name"]!.Value<string>()!);
+            return ((JArray)token).ToDictionary(static t => t["header"]!.Value<string>()!, static t => t["tag_name"]!.Value<string>()!);
         }
 
         private static Dictionary<string, string> ReadServiceMapping(JToken token)
         {
-            return ((JArray)token).ToDictionary(t => t["from_key"]!.Value<string>()!, t => t["to_name"]!.Value<string>()!);
+            return ((JArray)token).ToDictionary(static t => t["from_key"]!.Value<string>()!, static t => t["to_name"]!.Value<string>()!);
         }
 
         private static Dictionary<string, string> ReadGlobalTags(JToken token)

@@ -22,7 +22,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             var pollInterval = new ConfigurationBuilder(configurationSource, telemetry)
                               .WithKeys(ConfigurationKeys.Rcm.PollInterval)
-                              .AsDouble(DefaultPollIntervalSeconds, pollInterval => pollInterval is > 0 and <= 5);
+                              .AsDouble(DefaultPollIntervalSeconds, static pollInterval => pollInterval is > 0 and <= 5);
 
             PollInterval = TimeSpan.FromSeconds(pollInterval.Value);
         }

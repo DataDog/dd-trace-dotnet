@@ -52,7 +52,7 @@ internal static class DatadogLoggingFactory
 
         var rateLimit = new ConfigurationBuilder(source, telemetry)
                        .WithKeys(ConfigurationKeys.LogRateLimit)
-                       .AsInt32(DefaultRateLimit, x => x >= 0)
+                       .AsInt32(DefaultRateLimit, static x => x >= 0)
                        .Value;
 
         return new DatadogLoggingConfiguration(rateLimit, redactedErrorLogsConfig, fileConfig, consoleConfig);
@@ -303,14 +303,14 @@ internal static class DatadogLoggingFactory
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
                             .GetAs(
                                  defaultValue: new(DefaultMaxLogFileSize, DefaultMaxLogFileSize.ToString(CultureInfo.InvariantCulture)),
-                                 converter: x => long.TryParseInvariant(x, out var maxLogSize)
+                                 converter: static x => long.TryParseInvariant(x, out var maxLogSize)
                                                      ? maxLogSize
                                                      : ParsingResult<long>.Failure(),
-                                 validator: x => x >= 0);
+                                 validator: static x => x >= 0);
 
         var logFileRetentionDays = new ConfigurationBuilder(source, telemetry)
                                   .WithKeys(ConfigurationKeys.LogFileRetentionDays)
-                                  .AsInt32(32, x => x >= 0)
+                                  .AsInt32(32, static x => x >= 0)
                                   .Value;
 
         return new FileLoggingConfiguration(maxLogFileSize, logDirectory, logFileRetentionDays);

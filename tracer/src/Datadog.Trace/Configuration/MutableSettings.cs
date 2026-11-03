@@ -694,7 +694,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var manualCustomSamplingRules = manualConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).AsStringResult();
         // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
         // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
-        var remoteCustomSamplingRules = dynamicConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClassResult<string>(validator: null, converter: s => s);
+        var remoteCustomSamplingRules = dynamicConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClassResult<string>(validator: null, converter: static s => s);
         string? customSamplingRules;
         bool customSamplingRulesIsRemote;
 
@@ -779,8 +779,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
                 // Filter out tags with empty keys or empty values, and trim whitespace
                 r1 = r1
-                    .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+                    .Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                    .ToDictionary(static kvp => kvp.Key.Trim(), static kvp => kvp.Value.Trim());
 
                 if (removeGlobalTags)
                 {
@@ -829,7 +829,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
             // 2. Key-value pairs with empty values are allowed, instead of discarded
             // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
-            Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
+            Func<string, IDictionary<string, string>> updatedTagsParser = static (data) =>
             {
                 var dictionary = new ConcurrentDictionary<string, string>();
                 if (string.IsNullOrWhiteSpace(data))
@@ -878,11 +878,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
                              errorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+                             static () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
 
                          // Filter out tags with empty keys, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+                        .Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                        .ToDictionary(static kvp => kvp.Key.Trim(), static kvp => kvp.Value?.Trim() ?? string.Empty);
         }
         else
         {
@@ -892,11 +892,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
                              errorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+                             static () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
 
                          // Filter out tags with empty keys or empty values, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+                        .Where(static kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                        .ToDictionary(static kvp => kvp.Key.Trim(), static kvp => kvp.Value.Trim());
         }
 
         var environment = config
@@ -961,7 +961,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var otelTracesExporterResult = config
                                       .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
-                                      .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                      .AsBoolResult(static value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                                  ? ParsingResult<bool>.Success(result: false)
                                                                  : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
                                                                    ? ParsingResult<bool>.Success(result: true)
@@ -1107,7 +1107,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     public static MutableSettings CreateForTesting(TracerSettings tracerSettings, Dictionary<string, object?> settings)
         => CreateInitialMutableSettings(
-            new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
+            new DictionaryConfigurationSource(settings.ToDictionary(static x => x.Key, static x => x.Value?.ToString()!)),
             new ConfigurationTelemetry(),
             new OverrideErrorLog(),
             tracerSettings);

@@ -50,11 +50,11 @@ namespace Datadog.Trace.DuckTyping
         {
             if (_offset == _instructions.Count)
             {
-                _instructions.Add(il => il.BeginScope());
+                _instructions.Add(static il => il.BeginScope());
             }
             else
             {
-                _instructions.Insert(_offset, il => il.BeginScope());
+                _instructions.Insert(_offset, static il => il.BeginScope());
             }
 
             _offset++;
@@ -387,11 +387,11 @@ namespace Datadog.Trace.DuckTyping
         {
             if (_offset == _instructions.Count)
             {
-                _instructions.Add(il => il.EndScope());
+                _instructions.Add(static il => il.EndScope());
             }
             else
             {
-                _instructions.Insert(_offset, il => il.EndScope());
+                _instructions.Insert(_offset, static il => il.EndScope());
             }
 
             _offset++;

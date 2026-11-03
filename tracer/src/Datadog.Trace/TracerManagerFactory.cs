@@ -65,7 +65,7 @@ namespace Datadog.Trace
                 spanEventsManager: null,
                 featureFlags: null);
 
-            tracer.Settings.Manager.SubscribeToChanges(changes =>
+            tracer.Settings.Manager.SubscribeToChanges(static changes =>
             {
                 if (changes.UpdatedMutable is { } mutableSettings)
                 {

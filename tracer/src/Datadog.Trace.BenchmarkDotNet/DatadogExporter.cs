@@ -66,9 +66,9 @@ internal class DatadogExporter : IExporter
         if (summary.HostEnvironmentInfo is { Cpu.Value: { } cpuInfo, Os.Value: { } osInfo } hostEnvironmentInfo)
         {
             var groupedReports = summary.Reports
-                                        .Where(r => r?.BenchmarkCase?.Descriptor?.Type is not null)
-                                        .GroupBy(i => i.BenchmarkCase.Descriptor.Type)
-                                        .GroupBy(t => t.Key.Assembly);
+                                        .Where(static r => r?.BenchmarkCase?.Descriptor?.Type is not null)
+                                        .GroupBy(static i => i.BenchmarkCase.Descriptor.Type)
+                                        .GroupBy(static t => t.Key.Assembly);
 
             foreach (var benchmarkModule in groupedReports)
             {
@@ -118,7 +118,7 @@ internal class DatadogExporter : IExporter
                                 if (matchCollections.Count > 0)
                                 {
                                     // In the example: Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s
-                                    description = string.Join(", ", matchCollections.OfType<Match>().Select(x => x.Groups[1].Value));
+                                    description = string.Join(", ", matchCollections.OfType<Match>().Select(static x => x.Groups[1].Value));
                                 }
                                 else if (description?.StartsWithOrdinal("Job-") == true)
                                 {

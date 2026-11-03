@@ -126,7 +126,7 @@ internal sealed partial class TestOptimizationClient
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(' ', commitsToExclude.Select(c => "^" + c)) + " " + string.Join(' ', commitsToInclude);
+        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(' ', commitsToExclude.Select(static c => "^" + c)) + " " + string.Join(' ', commitsToInclude);
         var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {

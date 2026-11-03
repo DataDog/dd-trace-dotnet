@@ -38,7 +38,7 @@ internal sealed class TestOptimizationImpactedTestsDetectionFeature : ITestOptim
         else
         {
             Log.Information("{V}", "TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
-            _impactedTestsModule = new(() => ImpactedTestsModule.CreateNoOp());
+            _impactedTestsModule = new(static () => ImpactedTestsModule.CreateNoOp());
         }
     }
 

@@ -333,7 +333,7 @@ namespace Datadog.Trace.DuckTyping
     internal sealed class DuckTypeReverseProxyMissingPropertyImplementationException : DuckTypeException
     {
         private DuckTypeReverseProxyMissingPropertyImplementationException(IEnumerable<PropertyInfo> properties)
-            : base($"The duck reverse proxy was missing implementations for properties: {string.Join(", ", properties.Select(x => x.Name))}")
+            : base($"The duck reverse proxy was missing implementations for properties: {string.Join(", ", properties.Select(static x => x.Name))}")
         {
         }
 
@@ -346,7 +346,7 @@ namespace Datadog.Trace.DuckTyping
     internal sealed class DuckTypeReverseProxyMissingMethodImplementationException : DuckTypeException
     {
         private DuckTypeReverseProxyMissingMethodImplementationException(IEnumerable<MethodInfo> methods)
-            : base($"The duck reverse proxy was missing implementations for methods: {string.Join(", ", methods.Select(x => x.Name))}")
+            : base($"The duck reverse proxy was missing implementations for methods: {string.Join(", ", methods.Select(static x => x.Name))}")
         {
         }
 

@@ -800,7 +800,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             TryRestoreUnselectedProcessedCoverletCollectorXmlReports(coverageResultCandidateGroups, selectedCoverageReportPaths);
-            var orderedCoverageResults = coverageResults.OrderBy(report => report.Order).ToArray();
+            var orderedCoverageResults = coverageResults.OrderBy(static report => report.Order).ToArray();
             if (!TryMergeCoverageXmlResults(orderedCoverageResults, selectedValidationState, out var mergedCoverageResult))
             {
                 TryRestoreCoverageXmlReports(coverageReportBackups);
@@ -809,7 +809,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return CoverletCollectorXmlProcessingResult.FailedClosed;
             }
 
-            recordCoverageResult(orderedCoverageResults.Select(report => report.Report).ToArray(), mergedCoverageResult, selectedValidationState.BackfillValidated);
+            recordCoverageResult(orderedCoverageResults.Select(static report => report.Report).ToArray(), mergedCoverageResult, selectedValidationState.BackfillValidated);
             TryProcessUnselectedCoverletCollectorXmlReports(coverageReports, selectedCoverageReportPaths, processCoverageXml);
 
             if (coverageResults.Count > 0)
@@ -829,8 +829,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             var unselectedReportGroups = coverageReports
                                         .Where(coverageReport => !selectedCoverageReportPaths.Contains(coverageReport.FilePath))
-                                        .GroupBy(coverageReport => coverageReport.PublishPriority)
-                                        .OrderBy(group => group.Key);
+                                        .GroupBy(static coverageReport => coverageReport.PublishPriority)
+                                        .OrderBy(static group => group.Key);
 
             foreach (var unselectedReportGroup in unselectedReportGroups)
             {
@@ -1319,7 +1319,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
             var orderedResultIds = coverageReports
                                   .Select(coverageReport => GetCoverletXmlFallbackResultId(sessionSpanId, coverageReport))
-                                  .OrderBy(resultId => resultId, StringComparer.Ordinal);
+                                  .OrderBy(static resultId => resultId, StringComparer.Ordinal);
             var payload = Encoding.UTF8.GetBytes($"{nameof(CodeCoverageReportSource.CoverletXmlFallback)}|group|v1|{sessionSpanId}|{string.Join('|', orderedResultIds)}");
 #if NET6_0_OR_GREATER
             var hash = SHA256.HashData(payload);
@@ -1502,8 +1502,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             var selectedReportGroups = reportsByAttachmentDirectory.Values
-                                                                   .Select(reports => reports.OrderBy(report => report.Report.PublishPriority).ThenBy(report => report.Order).ToList())
-                                                                   .OrderBy(reports => reports[0].Order)
+                                                                   .Select(static reports => reports.OrderBy(static report => report.Report.PublishPriority).ThenBy(static report => report.Order).ToList())
+                                                                   .OrderBy(static reports => reports[0].Order)
                                                                    .ToList();
             return selectedReportGroups;
         }

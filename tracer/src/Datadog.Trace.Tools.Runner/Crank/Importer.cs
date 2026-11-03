@@ -95,11 +95,11 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                         DateTimeOffset minTimeStamp = DateTimeOffset.UtcNow;
                         DateTimeOffset maxTimeStamp = minTimeStamp;
-                        var measurements = jobResult.Measurements?.SelectMany(i => i).ToList() ?? new List<Models.Measurement>();
+                        var measurements = jobResult.Measurements?.SelectMany(static i => i).ToList() ?? new List<Models.Measurement>();
                         if (measurements.Count > 0)
                         {
-                            maxTimeStamp = measurements.Max(i => i.Timestamp).ToUniversalTime();
-                            minTimeStamp = measurements.Min(i => i.Timestamp).ToUniversalTime();
+                            maxTimeStamp = measurements.Max(static i => i.Timestamp).ToUniversalTime();
+                            minTimeStamp = measurements.Min(static i => i.Timestamp).ToUniversalTime();
                         }
 
                         var duration = (maxTimeStamp - minTimeStamp);

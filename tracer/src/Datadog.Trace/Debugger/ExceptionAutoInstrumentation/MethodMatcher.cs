@@ -120,7 +120,7 @@ internal static class MethodMatcher
         }
 
         var isAsyncStateMachine = declaringType.GetInterfaces()
-                                             .Any(i => i.FullName == "System.Runtime.CompilerServices.IAsyncStateMachine");
+                                             .Any(static i => i.FullName == "System.Runtime.CompilerServices.IAsyncStateMachine");
         if (!isAsyncStateMachine)
         {
             return false;
@@ -247,7 +247,7 @@ internal static class MethodMatcher
         }
 
         return declaringType.GetInterfaces()
-                          .Any(i => i.FullName == "System.Collections.IEnumerator" ||
+                          .Any(static i => i.FullName == "System.Collections.IEnumerator" ||
                                   (i.FullName?.StartsWithOrdinal("System.Collections.Generic.IEnumerator`") ?? false));
     }
 
@@ -458,11 +458,11 @@ internal static class MethodMatcher
 
         // Everything except the method name is type parts
         var typeParts = parts.Take(parts.Length - 1)
-                            .SelectMany(p => p.Split('+'))
+                            .SelectMany(static p => p.Split('+'))
                             .ToArray();
 
         // Normalize generic type parts by only keeping up to the first [ character
-        typeParts = typeParts.Select(p =>
+        typeParts = typeParts.Select(static p =>
         {
             var bracketIndex = p.IndexOf('[');
             if (bracketIndex > 0)
@@ -588,8 +588,8 @@ internal static class MethodMatcher
     private static bool IsStateMachineType(Type type)
     {
         return type.Name.Contains("d__") &&
-               (type.GetInterfaces().Any(i => i.FullName == "System.Runtime.CompilerServices.IAsyncStateMachine") ||
-                type.GetInterfaces().Any(i => i.FullName == "System.Collections.IEnumerator"));
+               (type.GetInterfaces().Any(static i => i.FullName == "System.Runtime.CompilerServices.IAsyncStateMachine") ||
+                type.GetInterfaces().Any(static i => i.FullName == "System.Collections.IEnumerator"));
     }
 
     /// <summary>

@@ -17,14 +17,14 @@ namespace Datadog.Trace.Pdb
             return
                 GetAllScopes(method)
                    .Where(s => s.StartOffset <= offset && s.EndOffset >= offset)
-                   .SelectMany(s => s.Locals);
+                   .SelectMany(static s => s.Locals);
         }
 
         public static IEnumerable<SymbolVariable> GetLocalVariables(this SymbolMethod method)
         {
             return
                 GetAllScopes(method)
-                   .SelectMany(s => s.Locals);
+                   .SelectMany(static s => s.Locals);
         }
 
         private static List<SymbolScope> GetAllScopes(SymbolMethod method)

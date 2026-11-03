@@ -40,7 +40,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         private static string[] GetParameterNames(MethodBase method)
         {
-            return method.GetParameters()?.Select(parameter => parameter.Name).ToArray() ?? Array.Empty<string>();
+            return method.GetParameters()?.Select(static parameter => parameter.Name).ToArray() ?? Array.Empty<string>();
         }
 
         /// <summary>

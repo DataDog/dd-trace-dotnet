@@ -82,7 +82,7 @@ namespace Datadog.Trace.Debugger.Configurations
             try
             {
                 var removedProbeIds = paths.Where(ProbeConfigurationUtils.IsProbePath).Select(ProbeConfigurationUtils.GetProbeIdFromPath).ToArray();
-                var isServiceConfigurationRemoved = paths.Exists(path => path.Id.StartsWith(DefinitionPaths.ServiceConfiguration, StringComparison.Ordinal));
+                var isServiceConfigurationRemoved = paths.Exists(static path => path.Id.StartsWith(DefinitionPaths.ServiceConfiguration, StringComparison.Ordinal));
                 foreach (var probeId in removedProbeIds)
                 {
                     _removedRcmProbeIds.Add(probeId);
@@ -180,7 +180,7 @@ namespace Datadog.Trace.Debugger.Configurations
                     probe.Tags
                          .Distinct()
                          .Select(Tag.FromString)
-                         .ToDictionary(tag => tag.Key, tag => tag.Value)
+                         .ToDictionary(static tag => tag.Key, static tag => tag.Value)
                 ;
 
             var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _env;

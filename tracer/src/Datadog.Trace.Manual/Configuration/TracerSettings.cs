@@ -491,7 +491,7 @@ public sealed class TracerSettings
             ThrowHelper.ThrowArgumentNullException(nameof(mappings));
         }
 
-        _serviceNameMappings = mappings.ToDictionary(x => x.Key, x => x.Value);
+        _serviceNameMappings = mappings.ToDictionary(static x => x.Key, static x => x.Value);
     }
 
     [Instrumented]

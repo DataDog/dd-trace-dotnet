@@ -57,7 +57,7 @@ internal sealed class DataStreamsTransactionExtractor
         try
         {
             return JsonHelper.DeserializeObject<List<DataStreamsTransactionExtractor>>(json)
-                            ?.FindAll(e => e.ParsedType != ExtractorType.Unknown)
+                            ?.FindAll(static e => e.ParsedType != ExtractorType.Unknown)
                    ?? [];
         }
         catch

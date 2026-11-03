@@ -101,7 +101,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            foreach (var probe in probes.Where(p => p.IsInstrumented))
+            foreach (var probe in probes.Where(static p => p.IsInstrumented))
             {
                 probe.ExceptionReplayProcessor?.InvalidateEnterLeave();
             }

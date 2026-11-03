@@ -59,7 +59,7 @@ internal static class EvidenceConverterHelper
             this.Source = range.Source;
 
             // shift ranges to the start of the tainted range and sort them
-            this.SensitiveRanges = new LinkedList<Range>(intersections.Select(r => r.Shift(-range.Start)).OrderBy(r => r.Start));
+            this.SensitiveRanges = new LinkedList<Range>(intersections.Select(r => r.Shift(-range.Start)).OrderBy(static r => r.Start));
             this.IsRedacted = false;
         }
 
@@ -298,7 +298,7 @@ internal static class EvidenceConverterHelper
                 if (nextTainted != null && nextSensitive != null && (intersection = nextTainted.Value.Intersection(nextSensitive)) != null)
                 {
                     nextTainted!.Value.Source?.MarkAsRedacted();
-                    iterator.intersections.Get(nextTainted.Value, r => new LinkedList<Range>()).AddLast(intersection.Value);
+                    iterator.intersections.Get(nextTainted.Value, static r => new LinkedList<Range>()).AddLast(intersection.Value);
                     nextSensitive = RemoveTaintedRange(nextSensitive.Value, nextTainted.Value);
                 }
 

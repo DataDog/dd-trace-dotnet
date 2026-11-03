@@ -70,7 +70,7 @@ namespace Datadog.Trace.Activity
             catch (Exception ex)
             {
                 Log.Error(ex, "Error on DiagnosticObserverListener static constructor");
-                OnShouldListenToDelegate = o => { };
+                OnShouldListenToDelegate = static o => { };
             }
         }
 

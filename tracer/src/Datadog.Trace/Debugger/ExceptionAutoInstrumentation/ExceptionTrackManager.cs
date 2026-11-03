@@ -54,7 +54,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             _exceptionProcessorTask = Task.Run(StartExceptionProcessingAsync);
             _ = _exceptionProcessorTask.ContinueWith(
-                t => Log.Error(t?.Exception, "Exception processor crashed"),
+                static t => Log.Error(t?.Exception, "Exception processor crashed"),
                 TaskContinuationOptions.OnlyOnFaulted);
 
             IsEditAndContinueFeatureEnabled = IsEnCFeatureEnabled();
@@ -313,15 +313,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     // Check if we failed to instrument all the probes.
 
-                    if (trackedExceptionCase.ExceptionCase.Probes.Any(p => p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED))
+                    if (trackedExceptionCase.ExceptionCase.Probes.Any(static p => p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED))
                     {
                         // Determine if there are any errored probe statuses by P/Invoking the native for RECEIVED/INSTALLED probes.
 
-                        var receivedOrRequestedRejitStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(p => p.IsInstrumented && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED)).ToList();
+                        var receivedOrRequestedRejitStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(static p => p.IsInstrumented && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED)).ToList();
 
                         if (receivedOrRequestedRejitStatusProbeIds.Count != 0)
                         {
-                            var statuses = DebuggerNativeMethods.GetProbesStatuses(receivedOrRequestedRejitStatusProbeIds.Select(p => p.ProbeId).ToArray());
+                            var statuses = DebuggerNativeMethods.GetProbesStatuses(receivedOrRequestedRejitStatusProbeIds.Select(static p => p.ProbeId).ToArray());
 
                             // Update the status only if we're dealing with probes marked as ERRORs.
                             foreach (var status in statuses)
@@ -336,7 +336,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         }
                     }
 
-                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.ProbeStatus == Status.RECEIVED || p.MayBeOmittedFromCallStack)))
+                    if (trackedExceptionCase.ExceptionCase.Probes.All(static p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.ProbeStatus == Status.RECEIVED || p.MayBeOmittedFromCallStack)))
                     {
                         Log.Information("Invalidating the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                         trackedExceptionCase.InvalidateCase();
@@ -607,7 +607,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(in f));
+            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(static f => FrameFilter.IsUserCode(in f));
         }
 
         private bool IsSupportedExceptionType(Exception ex) =>
@@ -661,7 +661,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 _exceptionProcessorTask?.Wait();
             }
-            catch (AggregateException ae) when (ae.InnerExceptions.All(e => e is TaskCanceledException))
+            catch (AggregateException ae) when (ae.InnerExceptions.All(static e => e is TaskCanceledException))
             {
                 Log.Information("ExceptionTrackManager: Background task was canceled as part of the stop process.");
             }
@@ -709,7 +709,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                              ? stackTrace.GetFrames()?.
                                           AsEnumerable().
                                           Reverse().
-                                          SkipWhile(frame =>
+                                          SkipWhile(static frame =>
                                           {
                                               MethodBase? method;
 

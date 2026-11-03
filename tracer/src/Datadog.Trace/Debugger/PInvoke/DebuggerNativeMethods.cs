@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.PInvoke
 
             return probesStatuses.Take(probesLength)
                                  .Select(
-                                      nativeProbeStatus =>
+                                      static nativeProbeStatus =>
                                           new ProbeStatus(
                                               Marshal.PtrToStringUni(nativeProbeStatus.ProbeId),
                                               nativeProbeStatus.Status,

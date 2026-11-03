@@ -100,6 +100,6 @@ internal abstract class AspectAttribute : Attribute
             return [];
         }
 
-        return expression.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrEmpty(e)).ToList<string>();
+        return expression.Split(',').Select(static e => e.Trim()).Where(static e => !string.IsNullOrEmpty(e)).ToList<string>();
     }
 }

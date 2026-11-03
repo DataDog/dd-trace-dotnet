@@ -52,7 +52,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         var nameProp = ev.Value<JValue>("name") ?? emptyJValue;
                         var conditionsArray = ev.Value<JArray>("conditions");
                         var addresses = conditionsArray?
-                            .SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs") ?? [])
+                            .SelectMany(static x => x.Value<JObject>("parameters")?.Value<JArray>("inputs") ?? [])
                             .ToList() ?? [];
 
                         Log.Debug("DDAS-0007-00: Loaded rule: {Id} - {Name} on addresses: {Addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses));

@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
                 return;
             }
 
-            var spanContexts = BatchToSpanContexts.GetValue(batchInstance, _ => new ConcurrentBag<SpanContext>());
+            var spanContexts = BatchToSpanContexts.GetValue(batchInstance, static _ => new ConcurrentBag<SpanContext>());
             spanContexts.Add(spanContext);
         }
 

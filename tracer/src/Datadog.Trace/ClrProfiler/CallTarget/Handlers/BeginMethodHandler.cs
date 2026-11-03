@@ -30,7 +30,7 @@ internal static class BeginMethodHandler<TIntegration, TTarget>
         }
         finally
         {
-            _invokeDelegate ??= _ => CallTargetState.GetDefault();
+            _invokeDelegate ??= static _ => CallTargetState.GetDefault();
         }
     }
 

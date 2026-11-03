@@ -98,7 +98,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             if (autoStartLoop)
             {
                 _discoveryTask = Task.Run(FetchConfigurationLoopAsync);
-                _ = _discoveryTask.ContinueWith(t => Log.Error(t.Exception, "Error in discovery task"), TaskContinuationOptions.OnlyOnFaulted);
+                _ = _discoveryTask.ContinueWith(static t => Log.Error(t.Exception, "Error in discovery task"), TaskContinuationOptions.OnlyOnFaulted);
             }
             else
             {
@@ -393,11 +393,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
             // Parse trace filter configuration
             var filterTags = jObject["filter_tags"];
             var filterTagsRegex = jObject["filter_tags_regex"];
-            var ignoreResources = (jObject["ignore_resources"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
-            var filterTagsRequire = (filterTags?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
-            var filterTagsReject = (filterTags?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
-            var filterTagsRegexRequire = (filterTagsRegex?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
-            var filterTagsRegexReject = (filterTagsRegex?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var ignoreResources = (jObject["ignore_resources"] as JArray)?.Values<string>().Where(static x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRequire = (filterTags?["require"] as JArray)?.Values<string>().Where(static x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsReject = (filterTags?["reject"] as JArray)?.Values<string>().Where(static x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexRequire = (filterTagsRegex?["require"] as JArray)?.Values<string>().Where(static x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexReject = (filterTagsRegex?["reject"] as JArray)?.Values<string>().Where(static x => !string.IsNullOrEmpty(x)).ToList();
 
             AgentTraceFilterConfig? traceFilterConfig = null;
             if (ignoreResources is not null || filterTagsRequire is not null || filterTagsReject is not null || filterTagsRegexRequire is not null || filterTagsRegexReject is not null)
@@ -408,8 +408,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             var evpProxyAllowedHeaders = (jObject["evp_proxy_allowed_headers"] as JArray)?.Values<string>().ToArray();
             var eventPlatformProxySupportsEvpOriginHeaders =
-                evpProxyAllowedHeaders?.Any(header => string.Equals(header?.Trim(), EvpOriginHeader, StringComparison.OrdinalIgnoreCase)) == true
-             && evpProxyAllowedHeaders.Any(header => string.Equals(header?.Trim(), EvpOriginVersionHeader, StringComparison.OrdinalIgnoreCase));
+                evpProxyAllowedHeaders?.Any(static header => string.Equals(header?.Trim(), EvpOriginHeader, StringComparison.OrdinalIgnoreCase)) == true
+             && evpProxyAllowedHeaders.Any(static header => string.Equals(header?.Trim(), EvpOriginVersionHeader, StringComparison.OrdinalIgnoreCase));
             string? configurationEndpoint = null;
             string? debuggerEndpoint = null;
             string? debuggerV2Endpoint = null;

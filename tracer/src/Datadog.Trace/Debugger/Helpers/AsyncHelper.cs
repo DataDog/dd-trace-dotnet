@@ -227,7 +227,7 @@ namespace Datadog.Trace.Debugger.Helpers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool IsAsync(MethodBase method)
         {
-            return method?.DeclaringType?.GetInterfaces().Any(i => i == typeof(IAsyncStateMachine)) == true;
+            return method?.DeclaringType?.GetInterfaces().Any(static i => i == typeof(IAsyncStateMachine)) == true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

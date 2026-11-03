@@ -32,12 +32,12 @@ namespace Datadog.Trace.Configuration
         private readonly JToken? _configuration;
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
-            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
+            : this(json, origin, static j => (JToken?)JsonHelper.DeserializeObject(j))
         {
         }
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string? filename)
-            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
+            : this(json, origin, static j => (JToken?)JsonHelper.DeserializeObject(j))
         {
             JsonConfigurationFilePath = filename;
         }

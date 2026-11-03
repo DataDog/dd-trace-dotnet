@@ -52,13 +52,13 @@ internal sealed class ProfilerSettings
                                // We stick with strings here instead of using the `GetAs` method,
                                // so that telemetry continues to store true/false/auto, instead of the enum values.
                               .AsString(
-                                   converter: x => x switch
+                                   converter: static x => x switch
                                    {
                                        "auto" => "auto",
                                        _ when x.ToBoolean() is { } boolean => boolean ? "true" : "false",
                                        _ => ParsingResult<string>.Failure(),
                                    },
-                                   getDefaultValue: () => "false",
+                                   getDefaultValue: static () => "false",
                                    validator: null);
 
         ProfilerState = profilingEnabled switch

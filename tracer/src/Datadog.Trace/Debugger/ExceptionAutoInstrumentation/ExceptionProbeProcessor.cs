@@ -80,11 +80,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private int? ComputeSequenceHash(ExceptionReplayProbe[] probes, bool reverseOrder = false)
         {
             // Ensure we have instrumented probes to work with
-            var instrumentedProbes = probes.Where(p => p.IsInstrumented).ToArray();
+            var instrumentedProbes = probes.Where(static p => p.IsInstrumented).ToArray();
 
             var probeIds = instrumentedProbes
-                          .Where(p => p.ProbeStatus == Status.RECEIVED || (p.ProbeStatus == Status.INSTALLED && !p.MayBeOmittedFromCallStack))
-                          .Select(p => p.ProbeId)
+                          .Where(static p => p.ProbeStatus == Status.RECEIVED || (p.ProbeStatus == Status.INSTALLED && !p.MayBeOmittedFromCallStack))
+                          .Select(static p => p.ProbeId)
                           .ToArray();
 
             var statuses = DebuggerNativeMethods.GetProbesStatuses(probeIds);
@@ -99,14 +99,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            if (instrumentedProbes.Any(p => !p.MayBeOmittedFromCallStack && p.ProbeStatus == Status.INSTALLED))
+            if (instrumentedProbes.Any(static p => !p.MayBeOmittedFromCallStack && p.ProbeStatus == Status.INSTALLED))
             {
                 // Not all request rejit carried out yet.
                 return null;
             }
 
             var installedProbes = instrumentedProbes
-                                    .Where(p => p.ProbeStatus is Status.INSTRUMENTED)
+                                    .Where(static p => p.ProbeStatus is Status.INSTRUMENTED)
                                     .ToArray();
 
             if (reverseOrder)

@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tools.Runner
 
             if (applicationContext.Platform == Platform.MacOS)
             {
-                this.SetHandler(context =>
+                this.SetHandler(static context =>
                 {
                     Utils.WriteError("The check command is not supported on MacOS.");
                     context.ExitCode = 1;

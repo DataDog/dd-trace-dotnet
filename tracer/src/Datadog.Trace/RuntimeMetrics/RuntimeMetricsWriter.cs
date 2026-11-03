@@ -399,7 +399,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 _inspectingFirstChanceException = true;
 
                 var name = e.Exception.GetType().Name;
-                _exceptionCounts.AddOrUpdate(name, 1, (_, count) => count + 1);
+                _exceptionCounts.AddOrUpdate(name, 1, static (_, count) => count + 1);
             }
             catch
             {

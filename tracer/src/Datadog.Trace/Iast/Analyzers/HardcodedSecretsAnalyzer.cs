@@ -34,7 +34,7 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
         _regexTimeout = regexTimeout;
         _ = Task.Run(() => PollingThread())
-            .ContinueWith(t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
+            .ContinueWith(static t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private async Task PollingThread()
@@ -111,7 +111,7 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
             if (_instance is null)
             {
                 _instance = new HardcodedSecretsAnalyzer(regexTimeout);
-                LifetimeManager.Instance.AddShutdownTask(_ => _instance.Dispose());
+                LifetimeManager.Instance.AddShutdownTask(static _ => _instance.Dispose());
             }
         }
     }

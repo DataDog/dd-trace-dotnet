@@ -131,8 +131,8 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             }
 
             var probesToFetch = _probes.
-                                Where(p => p.ShouldFetch())
-                               .Select(p => p.ProbeId)
+                                Where(static p => p.ShouldFetch())
+                               .Select(static p => p.ProbeId)
                                .ToArray();
 
             PInvoke.ProbeStatus[] probeStatuses = null;
@@ -315,8 +315,8 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                 }
 
                 return _probes
-                      .Where(p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING))
-                      .Select(p => p.ProbeId)
+                      .Where(static p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING))
+                      .Select(static p => p.ProbeId)
                       .ToArray();
             }
         }

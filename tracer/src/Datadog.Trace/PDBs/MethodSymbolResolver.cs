@@ -20,7 +20,7 @@ namespace Datadog.Trace.Pdb
     internal sealed class MethodSymbolResolver
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodSymbolResolver));
-        private static readonly Lazy<MethodSymbolResolver> _instance = new(() => new MethodSymbolResolver());
+        private static readonly Lazy<MethodSymbolResolver> _instance = new(static () => new MethodSymbolResolver());
 
         private readonly Dictionary<Module, ModuleDefMD?> _modulesDefMDs = new();
 

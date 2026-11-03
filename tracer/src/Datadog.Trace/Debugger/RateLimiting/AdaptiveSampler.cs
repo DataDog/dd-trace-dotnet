@@ -397,7 +397,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
             internal bool AddSample(long limit)
             {
-                return AtomicInt64.GetAndAccumulate(ref _sampleCount, limit, (prev, lim) => Math.Min(prev + 1, lim)) < limit;
+                return AtomicInt64.GetAndAccumulate(ref _sampleCount, limit, static (prev, lim) => Math.Min(prev + 1, lim)) < limit;
             }
 
             internal void AddSample()

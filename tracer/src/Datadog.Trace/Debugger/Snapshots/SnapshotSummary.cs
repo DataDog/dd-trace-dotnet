@@ -123,7 +123,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static string GetReturnValue(Snapshot snapshot)
         {
-            return snapshot.Debugger.Snapshot.Captures.Return?.Locals?.FirstOrDefault(local => local.Name == "@return")?.Value;
+            return snapshot.Debugger.Snapshot.Captures.Return?.Locals?.FirstOrDefault(static local => local.Name == "@return")?.Value;
         }
 
         private static CapturedValue[] GetLocals(Snapshot snapshot)
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             Array.Sort(capturedValues);
-            return string.Join(", ", capturedValues.Select(cv => cv?.Name + "=" + cv?.Value));
+            return string.Join(", ", capturedValues.Select(static cv => cv?.Name + "=" + cv?.Value));
         }
 
         private static CapturedContext GetLastCapture(Snapshot snapshot)

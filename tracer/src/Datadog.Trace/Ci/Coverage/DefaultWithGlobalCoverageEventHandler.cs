@@ -36,7 +36,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         _outputManager = new GlobalCoverageOutputManager(
             configuredOutputDirectory,
             Environment.CurrentDirectory,
-            runIdProvider ?? (() => TestOptimization.Instance.RunId));
+            runIdProvider ?? (static () => TestOptimization.Instance.RunId));
     }
 
     private enum AdmissionState

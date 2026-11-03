@@ -37,7 +37,7 @@ internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TA
         }
         finally
         {
-            _invokeDelegate ??= (TTarget? _, ref TArg1? _, ref TArg2? _, ref TArg3? _, ref TArg4? _, ref TArg5? _, ref TArg6? _, ref TArg7? _) => CallTargetState.GetDefault();
+            _invokeDelegate ??= static (TTarget? _, ref TArg1? _, ref TArg2? _, ref TArg3? _, ref TArg4? _, ref TArg5? _, ref TArg6? _, ref TArg7? _) => CallTargetState.GetDefault();
         }
     }
 

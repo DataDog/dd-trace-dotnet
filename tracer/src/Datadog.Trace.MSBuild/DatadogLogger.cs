@@ -378,7 +378,7 @@ namespace Datadog.Trace.MSBuild
                     eventId: null,
                     logLevel: _level,
                     exception: null,
-                    (JsonTextWriter writer, in Context? state) =>
+                    static (JsonTextWriter writer, in Context? state) =>
                     {
                         if (state is { } context)
                         {

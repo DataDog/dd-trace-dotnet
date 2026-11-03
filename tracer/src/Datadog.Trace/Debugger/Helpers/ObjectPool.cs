@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.Helpers
             }
 
             _objects = new ConcurrentBag<T>();
-            _objectFactory = objectFactory ?? (() => new T());
+            _objectFactory = objectFactory ?? (static () => new T());
             _maxSize = maxSize;
         }
 

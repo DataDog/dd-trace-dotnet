@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tagging
 {
     internal class TagsList : ITags
     {
-        protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
+        protected static readonly Lazy<IDatadogLogger> Logger = new(static () => DatadogLogging.GetLoggerFor<TagsList>());
         private const int DefaultCapacity = 4;
         private List<KeyValuePair<string, string>>? _tags;
         private List<KeyValuePair<string, double>>? _metrics;

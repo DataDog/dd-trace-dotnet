@@ -131,7 +131,7 @@ internal static class IntegrationMapper
                 }
 
                 targetParameterType = genericArgumentsTypes[targetParameterType.GenericParameterPosition];
-                var targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                var targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(static pType => pType != typeof(IDuckType));
                 if (targetParameterTypeConstraint is null)
                 {
                     callGenericTypes.Add(sourceParameterTypeElementType);
@@ -152,7 +152,7 @@ internal static class IntegrationMapper
             {
                 // ByRef generic parameters needs to be unwrapped before accessing the `IsGenericParameter` property.
                 var genTargetParameterType = genericArgumentsTypes[elementType.GenericParameterPosition];
-                var targetParameterTypeConstraint = genTargetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                var targetParameterTypeConstraint = genTargetParameterType.GetGenericParameterConstraints().FirstOrDefault(static pType => pType != typeof(IDuckType));
                 if (targetParameterTypeConstraint is null)
                 {
                     if (sourceParameterTypeElementType is null)
@@ -296,7 +296,7 @@ internal static class IntegrationMapper
             {
                 targetParameterType = genericArgumentsTypes[targetParameterType.GenericParameterPosition];
 
-                targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(static pType => pType != typeof(IDuckType));
                 if (targetParameterTypeConstraint is null)
                 {
                     callGenericTypes.Add(typeof(object));

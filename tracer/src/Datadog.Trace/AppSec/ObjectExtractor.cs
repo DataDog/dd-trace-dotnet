@@ -164,7 +164,7 @@ namespace Datadog.Trace.AppSec
             var fields = bodyType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
             if (!bodyType.GetTypeInfo().IsAnonymous())
             {
-                fields = fields.Where(x => x.IsPrivate && x.Name.EndsWithOrdinal("__BackingField")).ToArray();
+                fields = fields.Where(static x => x.IsPrivate && x.Name.EndsWithOrdinal("__BackingField")).ToArray();
             }
 
             var fieldExtractors = new MemberExtractor[fields.Length];

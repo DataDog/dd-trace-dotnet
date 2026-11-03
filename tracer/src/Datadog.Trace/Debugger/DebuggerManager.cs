@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger
 
         private static readonly Lazy<DebuggerManager> _lazyInstance =
             new(
-                () => new DebuggerManager(
+                static () => new DebuggerManager(
                     DebuggerSettings.FromDefaultSource(),
                     ExceptionReplaySettings.FromDefaultSource()),
                 LazyThreadSafetyMode.ExecutionAndPublication);

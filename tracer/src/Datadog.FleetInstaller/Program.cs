@@ -55,7 +55,7 @@ internal static class CustomErrorHandling
     public static CommandLineBuilder UseCustomErrorReporting(this CommandLineBuilder builder)
     {
         builder.AddMiddleware(
-            async (context, next) =>
+            static async (context, next) =>
             {
                 if (context.ParseResult.Errors.Count > 0)
                 {

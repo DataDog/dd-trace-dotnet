@@ -110,7 +110,7 @@ namespace Datadog.Trace.PlatformHelpers
         public static string? ParseContainerIdFromCgroupLines(IEnumerable<string> lines)
         {
             return lines.Select(ParseContainerIdFromCgroupLine)
-                        .FirstOrDefault(id => !string.IsNullOrWhiteSpace(id));
+                        .FirstOrDefault(static id => !string.IsNullOrWhiteSpace(id));
         }
 
         /// <summary>

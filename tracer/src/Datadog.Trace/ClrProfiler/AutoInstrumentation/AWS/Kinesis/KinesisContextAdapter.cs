@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         public readonly Dictionary<string, object> GetDictionary()
         {
             // Convert to Dictionary<string, object> to satisfy IHeadersCollection
-            return headers.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value);
+            return headers.ToDictionary(static kvp => kvp.Key, static kvp => (object)kvp.Value);
         }
 
         public readonly IEnumerable<string> GetValues(string name)
