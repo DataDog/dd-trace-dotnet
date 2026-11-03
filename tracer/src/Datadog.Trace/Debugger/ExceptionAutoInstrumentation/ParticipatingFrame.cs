@@ -16,7 +16,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         Blacklist
     }
 
-    internal readonly struct ParticipatingFrame
+    internal readonly struct ParticipatingFrame : IEquatable<ParticipatingFrame>
     {
         private const int UndefinedIlOffset = -1;
 
