@@ -14,6 +14,8 @@ namespace PrepareRelease
     {
         // A semver prerelease suffix: '-' then dot-separated identifiers of [0-9A-Za-z-], or empty for a release
         private const string VersionSuffixPattern = @"-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*";
+        private const string VersionPropsPath = "build/_build/version.props";
+
         private static readonly Regex VersionSuffixRegex = new($"^({VersionSuffixPattern})?$");
 
         protected SetAllVersions(string tracerDirectory, string tracerVersion, string versionSuffix)
@@ -88,6 +90,18 @@ namespace PrepareRelease
         {
             var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}";
             return withSuffix ? newVersion + VersionSuffix : newVersion;
+        }
+
+        private static string ReplaceElement(string text, string element, string value)
+        {
+            // version.props documents that each element appears exactly once, and is never mentioned in comments
+            var pattern = $"<{element}>[^<]*</{element}>";
+            if (!Regex.IsMatch(text, pattern))
+            {
+                throw new Exception($"Could not find <{element}> in version.props");
+            }
+
+            return Regex.Replace(text, pattern, $"<{element}>{value}</{element}>");
         }
 
         private string VersionPattern(string split = ".", bool withSuffix = false)
@@ -180,7 +194,7 @@ namespace PrepareRelease
                 // Always changes, because UpdateVersion rejects a bump that does not change the
                 // version number.
                 SynchronizeVersion(
-                    "build/_build/version.props",
+                    VersionPropsPath,
                     text =>
                     {
                         text = ReplaceElement(text, "DD_VersionPrefix", VersionString());
@@ -189,17 +203,23 @@ namespace PrepareRelease
 
                 Console.WriteLine($"Completed synchronizing source versions to {VersionString()}");
             }
+        }
 
-            private static string ReplaceElement(string text, string element, string value)
+        /// <summary>
+        /// Rewrites only the version suffix in version.props, leaving the numeric version number alone.
+        /// Used to stamp a dev build.
+        /// </summary>
+        public class Suffix : SetAllVersions
+        {
+            public Suffix(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
-                // version.props documents that each element appears exactly once, and is never mentioned in comments
-                var pattern = $"<{element}>[^<]*</{element}>";
-                if (!Regex.IsMatch(text, pattern))
-                {
-                    throw new Exception($"Could not find <{element}> in version.props");
-                }
+            }
 
-                return Regex.Replace(text, pattern, $"<{element}>{value}</{element}>");
+            public override void Run()
+            {
+                SynchronizeVersion(VersionPropsPath, text => ReplaceElement(text, "DD_VersionSuffix", VersionSuffix));
+                Console.WriteLine($"Set the version suffix to '{VersionSuffix}', so the version is now {VersionString(withSuffix: true)}");
             }
         }
     }
