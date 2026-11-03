@@ -16,7 +16,7 @@ using Datadog.Trace.Logging;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal sealed class ExceptionReplayProbe
+    internal sealed class ExceptionReplayProbe : IEquatable<ExceptionReplayProbe>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionReplayProbe>();
         private readonly int _hashCode;
@@ -153,9 +153,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return hashCode.ToHashCode();
         }
 
-        public bool Equals(ExceptionReplayProbe other)
+        public bool Equals(ExceptionReplayProbe? other)
         {
-            return Method.Equals(other.Method);
+            return other is not null && Method.Equals(other.Method);
         }
 
         public override bool Equals(object? obj)
