@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.IO;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -240,6 +241,22 @@ namespace Datadog.Trace.Configuration
             return new ConfigurationBuilder(source, telemetry)
                    .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
                    .AsString() == "1";
+        }
+
+        /// <summary>
+        /// Gets the site extension's version folder, such as <c>...\v3_57_0</c> for the tracer home
+        /// <c>...\v3_57_0\Tracer</c>, or null without a tracer home. The site extension ships the
+        /// <c>Tracer</c> and <c>Agent</c> folders side by side in it.
+        /// </summary>
+        internal static string? GetSiteExtensionVersionDirectory(string? tracerHome)
+        {
+            if (StringUtil.IsNullOrWhiteSpace(tracerHome))
+            {
+                return null;
+            }
+
+            var versionDirectory = Path.GetDirectoryName(tracerHome.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return StringUtil.IsNullOrEmpty(versionDirectory) ? null : versionDirectory;
         }
     }
 }

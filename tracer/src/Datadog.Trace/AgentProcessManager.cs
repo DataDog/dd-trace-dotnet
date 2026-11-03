@@ -74,8 +74,9 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Creates the trace agent's metadata. A path or arguments that aren't set default to the agent the site extension
-        /// ships next to the tracer home, with the values the site extension used to set.
+        /// ships next to the tracer home, with the same values the site extension sets.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal static ProcessMetadata CreateTraceAgentMetadata(string tracerHome, string pipeName, string processPath, string processArguments)
         {
             var agentDirectory = GetBundledAgentDirectory(tracerHome);
@@ -92,6 +93,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Creates DogStatsD's metadata, with the same defaults as <see cref="CreateTraceAgentMetadata"/>.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal static ProcessMetadata CreateDogStatsDMetadata(string tracerHome, string pipeName, string processPath, string processArguments)
         {
             var agentDirectory = GetBundledAgentDirectory(tracerHome);
@@ -109,15 +111,10 @@ namespace Datadog.Trace
         /// <c>...\v3_57_0\Agent</c> for the tracer home <c>...\v3_57_0\Tracer</c>, or null without a tracer home.
         /// Only the site extension starts this class, so the folder is there whenever the tracer home is.
         /// </summary>
-        internal static string GetBundledAgentDirectory(string tracerHome)
+        private static string GetBundledAgentDirectory(string tracerHome)
         {
-            if (StringUtil.IsNullOrWhiteSpace(tracerHome))
-            {
-                return null;
-            }
-
-            var extensionDirectory = Path.GetDirectoryName(tracerHome.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            return StringUtil.IsNullOrEmpty(extensionDirectory) ? null : Path.Combine(extensionDirectory, "Agent");
+            var versionDirectory = ImmutableAzureAppServiceSettings.GetSiteExtensionVersionDirectory(tracerHome);
+            return versionDirectory is null ? null : Path.Combine(versionDirectory, "Agent");
         }
 
         private static string GetValueOrDefault(string value, string agentDirectory, Func<string, string> getDefault)

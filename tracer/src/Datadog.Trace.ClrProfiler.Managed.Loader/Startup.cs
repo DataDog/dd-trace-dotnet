@@ -20,8 +20,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         // internal so ManagedProfilerAssemblyResolver can reference it, and const so it stays inlined.
         // Do not add non-const static members on Startup that the resolver needs - that would re-introduce the .cctor deadlock.
         internal const string AssemblyName = "Datadog.Trace, Version=" + ProjectInfo.AssemblyVersion + ", Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-        private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
-        private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
+        internal const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
+        internal const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
         private static int _startupCtorInitialized;
 

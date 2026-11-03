@@ -187,9 +187,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         /// Gets the site extension's version folder, such as <c>v3_57_0</c> for the tracer home <c>...\v3_57_0\Tracer</c>,
         /// or null without a tracer home.
         /// </summary>
-        internal static string? GetAasSiteExtensionVersionFolder(string? tracerHome)
+        private static string? GetAasSiteExtensionVersionFolder(string? tracerHome)
         {
-            if (tracerHome is null || tracerHome.Trim().Length == 0)
+            if (tracerHome is null || string.IsNullOrWhiteSpace(tracerHome))
             {
                 return null;
             }
@@ -203,15 +203,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
             var isAas = !string.IsNullOrEmpty(envVars.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
-            var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable("DD_AZURE_APP_SERVICES") ?? false;
+            var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(Startup.AzureAppServicesSiteExtensionKey) ?? false;
 
             if (isAas || usingAasSiteExtension)
             {
                 // Azure App Services and Azure Functions
                 var aasLogDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
 
-                // The site extension keeps each version's logs in their own folder, matching the native components
-                var versionFolder = usingAasSiteExtension ? GetAasSiteExtensionVersionFolder(envVars.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME")) : null;
+                // The site extension keeps each version's logs in their own folder, as the native components do
+                var versionFolder = usingAasSiteExtension ? GetAasSiteExtensionVersionFolder(envVars.GetEnvironmentVariable(Startup.TracerHomePathKey)) : null;
                 return string.IsNullOrEmpty(versionFolder) ? aasLogDirectory : Path.Combine(aasLogDirectory, versionFolder);
             }
 

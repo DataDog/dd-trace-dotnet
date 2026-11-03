@@ -59,7 +59,7 @@ const shared::WSTRING default_exclude_processes[]{
 
 // Also excluded when the Azure App Services site extension is in use (DD_AZURE_APP_SERVICES=1):
 // Application Insights and platform processes that run next to the app.
-// The site extension used to set these in DD_PROFILER_EXCLUDE_PROCESSES.
+// These are the processes the site extension lists in DD_PROFILER_EXCLUDE_PROCESSES.
 const shared::WSTRING azure_app_services_exclude_processes[]{
     WStr("SnapshotUploader.exe"),
     WStr("workerforwarder.exe"),
