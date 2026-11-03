@@ -984,7 +984,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
-    public void CommonShouldSkipFormatsArgumentsOnceAcrossHistoricalCandidates()
+    public void CommonShouldSkipFormatsArgumentsOnceAcrossNameLookupsAndHistoricalCandidates()
     {
         var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
         var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
@@ -999,11 +999,124 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         var argument = new CountingTestArgument();
         skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, method.Name, It.IsAny<string>())).Returns(new SkippableTestCollection(candidates));
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, "display-name", It.IsAny<string>())).Returns(new SkippableTestCollection(candidates));
         TestOptimization.Instance = testOptimization.Object;
         try
         {
-            Common.ShouldSkip(testSuite, method.Name, [argument], method.GetParameters()).Should().BeFalse();
+            Common.ShouldSkip(testSuite, method.Name, [argument], method.GetParameters(), metadataTestName: "display-name").Should().BeFalse();
             argument.ToStringCalls.Should().Be(1);
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void CommonShouldSkipPreservesCandidatePrecedenceWhenCoverageAllowsOrBlocksSkipping(bool methodMatches, bool coverageAllowsSkip)
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
+        var method = ((Action<int>)SampleParameterizedItrTest).Method;
+        var methodCandidate = new SkippableTest(method.Name, "Suite", "{\"arguments\":{\"value\":\"" + (methodMatches ? "1" : "2") + "\"}}", configurations: null, missingLineCodeCoverage: true);
+        var displayCandidate = new SkippableTest("row", "Suite", """{"arguments":{"value":"1"}}""", configurations: null, missingLineCodeCoverage: true);
+        var laterCandidate = new SkippableTest("row", "Suite", """{"arguments":{"value":"1"}}""", configurations: null, missingLineCodeCoverage: false);
+        var expected = methodMatches ? methodCandidate : displayCandidate;
+        var reason = "coverage fixture";
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName("Suite", method.Name, "Module")).Returns(new SkippableTestCollection([methodCandidate]));
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName("Suite", "row", "Module")).Returns(new SkippableTestCollection([displayCandidate, laterCandidate]));
+        skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
+        skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(It.IsAny<SkippableTest>(), "Module", out reason)).Returns(true);
+        skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(expected, "Module", out reason)).Returns(coverageAllowsSkip);
+        TestOptimization.Instance = testOptimization.Object;
+        try
+        {
+            Common.ShouldSkip("Suite", method.Name, [1], method.GetParameters(), out var matched, "Module", metadataTestName: "row").Should().Be(coverageAllowsSkip);
+            matched.Should().Be(expected);
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Theory]
+    [InlineData("match")]
+    [InlineData("miss")]
+    [InlineData("provider-failure")]
+    [InlineData("formatter-failure")]
+    [InlineData("disabled")]
+    public void CommonShouldSkipRestoresSynchronizationContextOnEveryExit(string scenario)
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        var method = ((Action<int>)SampleParameterizedItrTest).Method;
+        var candidate = new SkippableTest(method.Name, "Suite", """{"arguments":{"value":"1"}}""", configurations: null);
+        var lookup = skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName("Suite", method.Name, "Module"));
+        if (scenario == "provider-failure")
+        {
+            lookup.Throws(new InvalidOperationException("provider fixture"));
+        }
+        else
+        {
+            lookup.Returns(new SkippableTestCollection([candidate]));
+        }
+
+        testOptimization.Setup(x => x.SkippableFeature).Returns(scenario == "disabled" ? null : skippableFeature.Object);
+        TestOptimization.Instance = testOptimization.Object;
+        var previousContext = SynchronizationContext.Current;
+        var context = new SynchronizationContext();
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+            object argument = scenario is "formatter-failure" or "disabled" ? new ThrowingTestArgument() : scenario == "miss" ? 2 : 1;
+            Action match = () => Common.ShouldSkip("Suite", method.Name, [argument], method.GetParameters(), moduleName: "Module").Should().Be(scenario == "match");
+            if (scenario is "provider-failure" or "formatter-failure")
+            {
+                match.Should().Throw<InvalidOperationException>();
+            }
+            else
+            {
+                match();
+            }
+
+            SynchronizationContext.Current.Should().BeSameAs(context);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Theory]
+    [InlineData("Suite", "Test", "module", "1", true)]
+    [InlineData("Suite", "row", "module", "1", true)]
+    [InlineData("Suite", "Test", "Module", "1", false)]
+    [InlineData("Suite", "Test", "module", "2", false)]
+    [InlineData("OtherSuite", "Test", "module", "1", false)]
+    [InlineData("Suite", "OtherTest", "module", "1", false)]
+    public void CommonShouldSkipUsesTheIndexBuiltFromTheBackendResponse(string suite, string name, string module, string argument, bool expected)
+    {
+        var settings = CreateSettings();
+        var testOptimization = CreateTestOptimization(settings, Directory.GetCurrentDirectory());
+        var configurations = new TestsConfigurations("linux", string.Empty, "x64", null, null, null, null, "module");
+        var candidate = new SkippableTest("Test", "Suite", """{"arguments":{"value":"1"}}""", configurations);
+        var displayCandidate = new SkippableTest("row", "Suite", """{"arguments":{"value":"1"}}""", configurations);
+        var response = new TestOptimizationClient.SkippableTestsResponse("correlation", [candidate, displayCandidate]);
+        var feature = TestOptimizationSkippableFeature.Create(settings, CreateRemoteSettingsResponse(testsSkippingEnabled: true), new TestOptimizationClientStub(skippableTestsResponse: response), testOptimization.Object);
+        testOptimization.Setup(x => x.SkippableFeature).Returns(feature);
+        TestOptimization.Instance = testOptimization.Object;
+        try
+        {
+            var method = ((Action<int>)SampleParameterizedItrTest).Method;
+            Common.ShouldSkip(suite, name, [argument], method.GetParameters(), out var matched, module).Should().Be(expected);
+            matched.Should().Be(expected ? name == "row" ? displayCandidate : candidate : null);
         }
         finally
         {
@@ -2741,6 +2854,11 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             ToStringCalls++;
             return "new-parameter";
         }
+    }
+
+    private sealed class ThrowingTestArgument
+    {
+        public override string ToString() => throw new InvalidOperationException("formatter fixture");
     }
 
     private sealed class XUnitV3TestCaseWithArguments
