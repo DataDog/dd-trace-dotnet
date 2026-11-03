@@ -25,7 +25,7 @@ internal abstract class AspectAttribute : Attribute
     private static Regex nameSplitter = new Regex(@"(?:([^|]+)\|)?(([^:]+)(?:::[^()]+\(.*\))?)", RegexOptions.Compiled); // 1->Assembly 2->Function 3->Type
     private readonly List<object> parameters = [];
 
-    public AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
+    protected AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
     {
         if (paramShift == null || paramShift.Length == 0) { paramShift = [0]; }
         if (boxParam == null || boxParam.Length == 0) { boxParam = [false]; }

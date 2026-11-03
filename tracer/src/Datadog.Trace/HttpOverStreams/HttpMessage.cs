@@ -13,7 +13,7 @@ namespace Datadog.Trace.HttpOverStreams
 {
     internal abstract class HttpMessage
     {
-        public HttpMessage(HttpHeaders headers, IHttpContent content)
+        protected HttpMessage(HttpHeaders headers, IHttpContent content)
         {
             Headers = headers;
             Content = content;
