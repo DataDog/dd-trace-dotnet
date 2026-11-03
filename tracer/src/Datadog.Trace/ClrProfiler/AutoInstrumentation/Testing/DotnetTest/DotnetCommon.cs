@@ -1320,7 +1320,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             var orderedResultIds = coverageReports
                                   .Select(coverageReport => GetCoverletXmlFallbackResultId(sessionSpanId, coverageReport))
                                   .OrderBy(resultId => resultId, StringComparer.Ordinal);
-            var payload = Encoding.UTF8.GetBytes($"{CodeCoverageReportSource.CoverletXmlFallback}|group|v1|{sessionSpanId}|{string.Join('|', orderedResultIds)}");
+            var payload = Encoding.UTF8.GetBytes($"{nameof(CodeCoverageReportSource.CoverletXmlFallback)}|group|v1|{sessionSpanId}|{string.Join('|', orderedResultIds)}");
 #if NET6_0_OR_GREATER
             var hash = SHA256.HashData(payload);
 #else
@@ -1333,7 +1333,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         private static string GetCoverletXmlFallbackResultId(ulong sessionSpanId, CoverletCollectorXmlReport coverageReport)
         {
             var attachmentDirectory = GetAttachmentDirectoryKey(coverageReport.FilePath).Replace('\\', '/');
-            var payload = Encoding.UTF8.GetBytes($"{CodeCoverageReportSource.CoverletXmlFallback}|v1|{sessionSpanId}|{attachmentDirectory}");
+            var payload = Encoding.UTF8.GetBytes($"{nameof(CodeCoverageReportSource.CoverletXmlFallback)}|v1|{sessionSpanId}|{attachmentDirectory}");
 #if NET6_0_OR_GREATER
             var hash = SHA256.HashData(payload);
 #else
