@@ -989,8 +989,8 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
         var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
         testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
-        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleParameterizedItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
-        var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
+        var method = ((Action<int>)SampleParameterizedItrTest).Method;
+        const string testSuite = "Suite";
         var candidates = new List<SkippableTest>();
         for (var i = 0; i < 128; i++)
         {
