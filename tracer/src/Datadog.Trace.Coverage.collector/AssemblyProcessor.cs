@@ -1414,7 +1414,7 @@ namespace Datadog.Trace.Coverage.Collector
             public bool IsRedundant { get; set; }
         }
 
-        private struct FileMetadata
+        private readonly struct FileMetadata
         {
             public FileMetadata(int index, string fileName)
             {
@@ -1423,7 +1423,7 @@ namespace Datadog.Trace.Coverage.Collector
                 Lines = new HashSet<int>();
             }
 
-            public int Index { get; private set; }
+            public int Index { get; }
 
             public string FileName { get; }
 
