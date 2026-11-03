@@ -226,14 +226,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 var firstMetric = group[0];
 
                 if (firstMetric.InstrumentType is InstrumentType.Counter
-                    || firstMetric.InstrumentType is InstrumentType.UpDownCounter
-                    || firstMetric.InstrumentType is InstrumentType.ObservableCounter
-                    || firstMetric.InstrumentType is InstrumentType.ObservableUpDownCounter)
+                    or InstrumentType.UpDownCounter
+                    or InstrumentType.ObservableCounter
+                    or InstrumentType.ObservableUpDownCounter)
                 {
                     metricData = SerializeCounterMetric(group);
                 }
-                else if (firstMetric.InstrumentType is InstrumentType.Gauge
-                         || firstMetric.InstrumentType is InstrumentType.ObservableGauge)
+                else if (firstMetric.InstrumentType is InstrumentType.Gauge or InstrumentType.ObservableGauge)
                 {
                     metricData = SerializeGaugeMetric(group);
                 }
