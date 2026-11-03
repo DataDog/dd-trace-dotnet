@@ -220,7 +220,7 @@ namespace Datadog.Trace.Tests.Ci
             var previousSuite = TestSuite.Current;
             var previousModule = TestModule.Current;
 
-            skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(typeof(MsTestSkipTestMethodExecutorTests).FullName!, method.Name, expectedModuleName)).Returns([candidate]);
+            skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(typeof(MsTestSkipTestMethodExecutorTests).FullName!, method.Name, expectedModuleName)).Returns(new SkippableTestCollection([candidate]));
             skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, expectedModuleName, out reason)).Returns(true);
             TestOptimization.Instance = testOptimization.Object;
 

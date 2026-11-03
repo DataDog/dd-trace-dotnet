@@ -668,7 +668,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(nameof(SampleXUnitItrTest), testSuite, parameters: null, configurations: null);
         var reason = string.Empty;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(It.IsAny<SkippableTest>(), It.IsAny<string>(), out reason)).Returns(true);
 
@@ -714,7 +714,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(nameof(SampleXUnitItrTest), testSuite, parameters: null, configurations: null);
         var reason = "backend marked the test as missing line coverage";
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(It.IsAny<SkippableTest>(), It.IsAny<string>(), out reason)).Returns(false);
 
@@ -763,7 +763,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var previousModule = TestModule.Current;
         TestModule module = null;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), moduleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), moduleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, moduleName, out reason)).Returns(true);
 
@@ -810,7 +810,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var reason = string.Empty;
         var previousModule = TestModule.Current;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), moduleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), moduleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, moduleName, out reason)).Returns(true);
 
@@ -859,7 +859,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var previousModule = TestModule.Current;
         var previousSuite = TestSuite.Current;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), moduleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), moduleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, moduleName, out reason)).Returns(true);
 
@@ -929,7 +929,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(TestName, TestSuite, parameters: null, configurations: null);
         var reason = "backend marked the test as missing line coverage";
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(TestSuite, TestName, ModuleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(TestSuite, TestName, ModuleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, ModuleName, out reason)).Returns(false);
         TestOptimization.Instance = testOptimization.Object;
@@ -963,7 +963,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(TestName, TestSuite, parameters: null, configurations: null);
         var reason = string.Empty;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(TestSuite, TestName, ModuleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(TestSuite, TestName, ModuleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, ModuleName, out reason)).Returns(true);
         TestOptimization.Instance = testOptimization.Object;
@@ -975,6 +975,35 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             matchedSkippableTest.Should().Be(candidate);
             skippableFeature.Verify(x => x.GetSkippableTestsFromSuiteAndName(TestSuite, TestName, ModuleName), Times.Once);
             skippableFeature.Verify(x => x.CanSkipWithCoverageBackfill(candidate, ModuleName, out reason), Times.Once);
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public void CommonShouldSkipFormatsArgumentsOnceAcrossHistoricalCandidates()
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleParameterizedItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
+        var candidates = new List<SkippableTest>();
+        for (var i = 0; i < 128; i++)
+        {
+            candidates.Add(new SkippableTest(method.Name, testSuite, "{\"arguments\":{\"value\":\"historical-" + i + "\"}}", configurations: null));
+        }
+
+        var argument = new CountingTestArgument();
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, method.Name, It.IsAny<string>())).Returns(new SkippableTestCollection(candidates));
+        TestOptimization.Instance = testOptimization.Object;
+        try
+        {
+            Common.ShouldSkip(testSuite, method.Name, [argument], method.GetParameters()).Should().BeFalse();
+            argument.ToStringCalls.Should().Be(1);
         }
         finally
         {
@@ -997,7 +1026,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
 
         parameters.Should().HaveLength(5_000);
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1046,7 +1075,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var malformedCandidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, "{\"arguments\":{\"value\":\"...", configurations: null);
         var validCandidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, """{"arguments":{"value":"1"}}""", configurations: null);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([malformedCandidate, validCandidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([malformedCandidate, validCandidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1153,7 +1182,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         };
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, testParameters.ToJSON(), configurations: null);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1182,7 +1211,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var parameters = """{"metadata":{"test_name":"SampleParameterizedItrTest(value: 1)"},"arguments":{"value":"1"}}""";
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1208,7 +1237,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var parameters = """{"metadata":{"test_name":"SampleParameterizedItrTest(value: 1)"},"arguments":{"value":"1"}}""";
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1234,7 +1263,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var parameters = """{"arguments":{"value":"1","oldValue":"2"}}""";
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1285,7 +1314,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var previousModule = TestModule.Current;
         var previousSuite = TestSuite.Current;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, method.Name, moduleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, method.Name, moduleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, moduleName, out reason)).Returns(true);
 
@@ -1423,7 +1452,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
         var testMethod = new MsTestMethodStub(method, [1], DisplayName);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1456,7 +1485,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var testMethod = new MsTestMethodStub(method, [value], DisplayName);
 
         parameters.Should().Contain("_dd.parameters_fingerprint");
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1486,7 +1515,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
         var testMethod = new MsTestMethodStub(method, [1], nameof(SampleParameterizedItrTest));
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1516,7 +1545,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(nameof(SampleXUnitItrTest), testSuite, parameters, configurations: null);
         var testMethod = new MsTestMethodStub(method, [], nameof(SampleXUnitItrTest));
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1544,7 +1573,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(DisplayName, testSuite, parameters, configurations: null);
         var testMethod = new MsTestMethodStub(method, [1], DisplayName);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, DisplayName, It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, DisplayName, It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1575,7 +1604,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(DisplayName, testSuite, parameters, configurations: null);
         var testMethod = new MsTestMethodStub(method, [1], DisplayName);
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, DisplayName, It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, DisplayName, It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1602,7 +1631,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
         var testMethod = new MsTestMethodStub(method, [1], nameof(SampleParameterizedItrTest));
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         TestOptimization.Instance = testOptimization.Object;
 
         try
@@ -1631,7 +1660,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var reason = string.Empty;
         var previousModule = TestModule.Current;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), expectedModuleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), expectedModuleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, expectedModuleName, out reason)).Returns(true);
         TestOptimization.Instance = testOptimization.Object;
@@ -1671,7 +1700,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var reason = "backend marked the test as missing line coverage";
         var previousModule = TestModule.Current;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), expectedModuleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), expectedModuleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, expectedModuleName, out reason)).Returns(false);
         TestOptimization.Instance = testOptimization.Object;
@@ -1716,7 +1745,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var currentTest = new NUnitTestStub(method, nameof(SampleXUnitItrTest), []);
         var reason = "backend marked the test as missing line coverage";
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), It.IsAny<string>())).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, It.IsAny<string>(), out reason)).Returns(false);
         TestOptimization.Instance = testOptimization.Object;
@@ -1767,7 +1796,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var previousModule = TestModule.Current;
         TestModule module = null;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), ModuleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), ModuleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, ModuleName, out reason)).Returns(true);
         TestOptimization.Instance = testOptimization.Object;
@@ -1871,7 +1900,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var previousModule = TestModule.Current;
         TestModule module = null;
 
-        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), ModuleName)).Returns([candidate]);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleXUnitItrTest), ModuleName)).Returns(new SkippableTestCollection([candidate]));
         skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
         skippableFeature.Setup(x => x.CanSkipWithCoverageBackfill(candidate, ModuleName, out reason)).Returns(true);
         TestOptimization.Instance = testOptimization.Object;
@@ -2701,6 +2730,17 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
     private static void SampleParameterizedItrTest(int value)
     {
+    }
+
+    private sealed class CountingTestArgument
+    {
+        public int ToStringCalls { get; private set; }
+
+        public override string ToString()
+        {
+            ToStringCalls++;
+            return "new-parameter";
+        }
     }
 
     private sealed class XUnitV3TestCaseWithArguments
