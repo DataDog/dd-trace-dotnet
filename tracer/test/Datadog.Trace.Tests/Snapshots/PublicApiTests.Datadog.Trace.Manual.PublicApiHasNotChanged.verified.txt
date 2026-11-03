@@ -353,10 +353,12 @@ namespace Datadog.Trace.Ci
 }
 namespace Datadog.Trace.Ci.Coverage.Attributes
 {
+    [System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.All)]
     public sealed class AvoidCoverageAttribute : System.Attribute
     {
         public AvoidCoverageAttribute() { }
     }
+    [System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.All)]
     public sealed class CoveredAssemblyAttribute : System.Attribute
     {
         public CoveredAssemblyAttribute() { }
