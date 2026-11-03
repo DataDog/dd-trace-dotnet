@@ -198,7 +198,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             where T : struct
         {
             var result = GetAs(validator, converter);
-            return result is { Result: { } ddResult, IsValid: true } ? ddResult : null;
+            return result is { Result: var ddResult, IsValid: true } ? ddResult : null;
         }
 
         // ****************
@@ -227,7 +227,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var result = GetBoolResult(validator, converter: null);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -245,7 +245,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         {
             // We don't "pre-record" the default because it's expensive to create
             var result = GetBoolResult(validator, converter);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -283,7 +283,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var result = GetInt32Result(validator, converter);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -319,7 +319,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var result = GetDoubleResult(validator, converter);
-            if (result is { Result: { } ddResult, IsValid: true })
+            if (result is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -589,7 +589,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public T? WithDefault(T? defaultValue)
         {
-            if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
+            if (ConfigurationResult is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
@@ -623,7 +623,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return overridden;
             }
 
-            if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
+            if (ConfigurationResult is { Result: var ddResult, IsValid: true })
             {
                 return ddResult;
             }
