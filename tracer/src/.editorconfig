@@ -120,7 +120,6 @@ dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - drop `in` for small/BCL/Nullable types, make our structs readonly where possible, and suppress where `in` is required (P/Invoke, IAST aspect signatures)
 dotnet_diagnostic.MA0184.severity = none # Do not use interpolated string without parameters
-dotnet_diagnostic.MA0200.severity = none # Do not use empty property patterns with non-nullable value types
 dotnet_diagnostic.MA0209.severity = none # Use in keyword for in parameter
 dotnet_diagnostic.MA0217.severity = none # Use a static lambda
 dotnet_diagnostic.MA0221.severity = none # TryGetValue method should use [MaybeNullWhen(false)] on the value parameter - skipped: reports a single diagnostic with no source location in Datadog.Trace on net461/netstandard2.0, which can't be traced to a method or suppressed with a pragma
