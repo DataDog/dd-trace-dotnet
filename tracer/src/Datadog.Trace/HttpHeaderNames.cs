@@ -46,7 +46,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Deprecated.
         /// </summary>
-        [Obsolete]
+        [Obsolete("Use PropagatedTags instead.")]
         public const string DatadogTags = PropagatedTags;
 
         /// <summary>
