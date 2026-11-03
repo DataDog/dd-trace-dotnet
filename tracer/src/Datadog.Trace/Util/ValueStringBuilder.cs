@@ -35,20 +35,20 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>Gets the underlying storage of the builder.</summary>
-        public Span<char> RawChars => _chars;
+        public readonly Span<char> RawChars => _chars;
 
         public int Length
         {
-            get => _pos;
+            readonly get => _pos;
             set
             {
                 _pos = value;
             }
         }
 
-        public int Capacity => _chars.Length;
+        public readonly int Capacity => _chars.Length;
 
-        public ref char this[int index]
+        public readonly ref char this[int index]
         {
             get
             {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Util
         /// This overload is pattern matched in the C# 7.3+ compiler so you can omit
         /// the explicit method call, and write eg "fixed (char* c = builder)"
         /// </summary>
-        public ref char GetPinnableReference()
+        public readonly ref char GetPinnableReference()
         {
             return ref MemoryMarshal.GetReference(_chars);
         }
@@ -95,11 +95,11 @@ namespace Datadog.Trace.Util
             return s;
         }
 
-        public ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
+        public readonly ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
 
-        public ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
+        public readonly ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
 
-        public ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
+        public readonly ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
 
         public void Insert(int index, char value, int count)
         {

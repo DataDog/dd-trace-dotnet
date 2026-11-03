@@ -1075,7 +1075,7 @@ namespace Datadog.Trace.Pdb
             internal bool StateMachineHoistedLocal;
             internal int StateMachineKickoffMethodToken;
 
-            internal bool IsNil => LocalSlot == false && EncLambdaAndClosureMap == false && StateMachineHoistedLocal == false;
+            internal readonly bool IsNil => LocalSlot == false && EncLambdaAndClosureMap == false && StateMachineHoistedLocal == false;
         }
 
         internal record struct DatadogLocal

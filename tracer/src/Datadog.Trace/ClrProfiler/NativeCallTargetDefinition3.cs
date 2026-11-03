@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler
                 callTarget.IntegrationType);
         }
 
-        public bool HasCategory(InstrumentationCategory category)
+        public readonly bool HasCategory(InstrumentationCategory category)
         {
             var cat = (uint)category;
             return (Categories & cat) == cat;

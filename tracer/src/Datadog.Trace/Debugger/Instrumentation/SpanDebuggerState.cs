@@ -78,21 +78,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets the CallTarget BeginMethod scope
         /// </summary>
-        internal Scope Scope => _scope;
+        internal readonly Scope Scope => _scope;
 
         /// <summary>
         /// Gets the CallTarget BeginMethod state
         /// </summary>
-        public object State => _state;
+        public readonly object State => _state;
 
         /// <summary>
         /// Gets the CallTarget state StartTime
         /// </summary>
-        public DateTimeOffset? StartTime => _startTime;
+        public readonly DateTimeOffset? StartTime => _startTime;
 
-        internal Scope PreviousScope => _previousScope;
+        internal readonly Scope PreviousScope => _previousScope;
 
-        internal IReadOnlyDictionary<string, string> PreviousDistributedSpanContext => _previousDistributedSpanContext;
+        internal readonly IReadOnlyDictionary<string, string> PreviousDistributedSpanContext => _previousDistributedSpanContext;
 
         /// <summary>
         /// Gets or sets a value indicating whether we should still be capturing values,
@@ -114,7 +114,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// ToString override
         /// </summary>
         /// <returns>String value</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{typeof(SpanDebuggerState).FullName}({_previousScope}, {_scope}, {_state})";
         }

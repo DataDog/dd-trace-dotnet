@@ -288,9 +288,9 @@ internal readonly struct SpanCollection : IEnumerable<Span>
         /// <summary>
         /// Gets the element at the current position of the enumerator.
         /// </summary>
-        public Span Current => _current!;
+        public readonly Span Current => _current!;
 
-        object? IEnumerator.Current => _current;
+        readonly object? IEnumerator.Current => _current;
 
         /// <summary>
         /// Advances the enumerator to the next element of the <see cref="SpanCollection"/>.
@@ -322,12 +322,12 @@ internal readonly struct SpanCollection : IEnumerable<Span>
             return _current != null;
         }
 
-        void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
 
         /// <summary>
         /// Releases all resources used by the <see cref="Enumerator" />.
         /// </summary>
-        public void Dispose()
+        public readonly void Dispose()
         {
         }
     }

@@ -387,11 +387,11 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
             }
         }
 
-        public void OnCompleted()
+        public readonly void OnCompleted()
         {
         }
 
-        public void OnError(Exception error)
+        public readonly void OnError(Exception error)
         {
         }
     }

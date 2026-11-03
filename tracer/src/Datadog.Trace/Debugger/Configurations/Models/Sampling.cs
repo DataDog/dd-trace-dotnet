@@ -11,17 +11,17 @@ namespace Datadog.Trace.Debugger.Configurations.Models
     {
         public double SnapshotsPerSecond { get; set; }
 
-        public bool Equals(Sampling other)
+        public readonly bool Equals(Sampling other)
         {
             return SnapshotsPerSecond.Equals(other.SnapshotsPerSecond);
         }
 
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return obj is Sampling other && Equals(other);
         }
 
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return SnapshotsPerSecond.GetHashCode();
         }

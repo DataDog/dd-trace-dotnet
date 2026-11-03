@@ -22,13 +22,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         {
         }
 
-        public Dictionary<string, object> GetDictionary()
+        public readonly Dictionary<string, object> GetDictionary()
         {
             // Convert to Dictionary<string, object> to satisfy IHeadersCollection
             return headers.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value);
         }
 
-        public IEnumerable<string> GetValues(string name)
+        public readonly IEnumerable<string> GetValues(string name)
         {
             if (headers.TryGetValue(name, out var value))
             {
@@ -38,12 +38,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return Enumerable.Empty<string>();
         }
 
-        public void Set(string name, string value)
+        public readonly void Set(string name, string value)
         {
             headers[name] = new List<string> { value };
         }
 
-        public void Add(string name, string value)
+        public readonly void Add(string name, string value)
         {
             if (headers.TryGetValue(name, out var oldValues))
             {
@@ -55,12 +55,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
         }
 
-        public void Remove(string name)
+        public readonly void Remove(string name)
         {
             headers.Remove(name);
         }
 
-        public byte[] TryGetLastBytes(string name)
+        public readonly byte[] TryGetLastBytes(string name)
         {
             if (headers.TryGetValue(name, out var value))
             {
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return [];
         }
 
-        public void Add(string name, byte[] value)
+        public readonly void Add(string name, byte[] value)
         {
             Add(name, Convert.ToBase64String(value));
         }

@@ -54,7 +54,7 @@ internal struct CodeDuration : IDisposable
         return new(memberName, sourceFilePath, sourceLineNumber);
     }
 
-    public void Debug(string message)
+    public readonly void Debug(string message)
     {
         if (_started > 0)
         {
@@ -127,7 +127,7 @@ internal ref struct CodeDurationRef
         return new(memberName, sourceFilePath, sourceLineNumber);
     }
 
-    public void Debug(string message)
+    public readonly void Debug(string message)
     {
         if (_started > 0)
         {

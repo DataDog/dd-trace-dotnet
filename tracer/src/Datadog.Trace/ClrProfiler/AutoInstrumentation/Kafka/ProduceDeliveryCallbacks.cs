@@ -11,15 +11,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 internal struct ProduceDeliveryCallbacks : IBegin1Callbacks, IVoidReturnCallback
 {
-    public void OnException(object? sender, Exception ex)
+    public readonly void OnException(object? sender, Exception ex)
     {
     }
 
-    public void OnDelegateEnd(object? sender, Exception? exception, object? state)
+    public readonly void OnDelegateEnd(object? sender, Exception? exception, object? state)
     {
     }
 
-    public object? OnDelegateBegin<TDeliveryReport>(object? sender, ref TDeliveryReport deliveryReport)
+    public readonly object? OnDelegateBegin<TDeliveryReport>(object? sender, ref TDeliveryReport deliveryReport)
     {
         // no need to add logic here, we just need a dummy handler
         return null;

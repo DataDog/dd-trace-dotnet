@@ -24,9 +24,9 @@ internal ref struct RefStopwatch
         _started = Stopwatch.GetTimestamp();
     }
 
-    public TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started);
+    public readonly TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _started);
 
-    public double ElapsedMilliseconds => StopwatchHelpers.GetElapsedMilliseconds(Stopwatch.GetTimestamp() - _started);
+    public readonly double ElapsedMilliseconds => StopwatchHelpers.GetElapsedMilliseconds(Stopwatch.GetTimestamp() - _started);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static RefStopwatch Create() => new();

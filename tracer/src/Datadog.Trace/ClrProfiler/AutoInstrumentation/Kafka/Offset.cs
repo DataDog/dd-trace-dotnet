@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// https://github.com/confluentinc/confluent-kafka-dotnet/blob/643c8fdc90f54f4d82d5135ae7e91a995f0efdee/src/Confluent.Kafka/Offset.cs#L274
         /// </summary>
         /// <returns>A string that represents the Offset object</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             return Value switch
             {
