@@ -39,6 +39,25 @@ struct has_deprecated_log_folder<T, decltype(T::logging_environment::deprecated_
 {
 };
 
+// The site extension's version folder, such as "v3_57_0" for the tracer home ...\v3_57_0\Tracer,
+// or empty when there is no tracer home.
+inline fs::path GetAasSiteExtensionVersionFolder()
+{
+    fs::path tracer_home = GetEnvironmentValue(WStr("DD_DOTNET_TRACER_HOME"));
+    if (tracer_home.empty())
+    {
+        return {};
+    }
+
+    if (!tracer_home.has_filename())
+    {
+        // trailing separator
+        tracer_home = tracer_home.parent_path();
+    }
+
+    return tracer_home.parent_path().filename();
+}
+
 template <class TLoggerPolicy>
 inline fs::path GetDefaultLogDir()
 {
@@ -48,10 +67,13 @@ inline fs::path GetDefaultLogDir()
     if (isAas)
     {
 #ifdef _WIN32
-        return WStr(R"(C:\home\LogFiles\datadog\)");
+        fs::path aas_log_dir = WStr(R"(C:\home\LogFiles\datadog\)");
 #else
-        return WStr("/home/LogFiles/datadog/");
+        fs::path aas_log_dir = WStr("/home/LogFiles/datadog/");
 #endif
+        // DD_AZURE_APP_SERVICES means the site extension is in use, which keeps each version's logs in their own folder
+        const auto version_folder = GetAasSiteExtensionVersionFolder();
+        return version_folder.empty() ? aas_log_dir : aas_log_dir / version_folder;
     }
 
 #ifdef _WIN32

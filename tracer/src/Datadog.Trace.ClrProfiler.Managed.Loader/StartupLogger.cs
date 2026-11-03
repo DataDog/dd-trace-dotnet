@@ -183,16 +183,36 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
+        /// <summary>
+        /// Gets the site extension's version folder, such as <c>v3_57_0</c> for the tracer home <c>...\v3_57_0\Tracer</c>,
+        /// or null without a tracer home.
+        /// </summary>
+        internal static string? GetAasSiteExtensionVersionFolder(string? tracerHome)
+        {
+            if (tracerHome is null || tracerHome.Trim().Length == 0)
+            {
+                return null;
+            }
+
+            var extensionDirectory = Path.GetDirectoryName(tracerHome.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return string.IsNullOrEmpty(extensionDirectory) ? null : Path.GetFileName(extensionDirectory);
+        }
+
         internal static string GetDefaultLogDirectory<TEnvVars>(TEnvVars envVars)
             where TEnvVars : IEnvironmentVariableProvider
         {
             var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
             var isAas = !string.IsNullOrEmpty(envVars.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+            var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable("DD_AZURE_APP_SERVICES") ?? false;
 
-            if (isAas)
+            if (isAas || usingAasSiteExtension)
             {
                 // Azure App Services and Azure Functions
-                return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+                var aasLogDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+
+                // The site extension keeps each version's logs in their own folder, matching the native components
+                var versionFolder = usingAasSiteExtension ? GetAasSiteExtensionVersionFolder(envVars.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME")) : null;
+                return string.IsNullOrEmpty(versionFolder) ? aasLogDirectory : Path.Combine(aasLogDirectory, versionFolder);
             }
 
             if (isWindows)

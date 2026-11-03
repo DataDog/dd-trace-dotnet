@@ -214,15 +214,39 @@ internal static class DatadogLoggingFactory
         return Path.GetTempPath();
     }
 
+    /// <summary>
+    /// Gets the Azure App Services site extension's version folder, such as <c>v3_57_0</c> for the tracer home
+    /// <c>...\v3_57_0\Tracer</c>, or null without a tracer home.
+    /// </summary>
+    [TestingAndPrivateOnly]
+    internal static string? GetAasSiteExtensionVersionFolder(string? tracerHome)
+    {
+        if (StringUtil.IsNullOrWhiteSpace(tracerHome))
+        {
+            return null;
+        }
+
+        var extensionDirectory = Path.GetDirectoryName(tracerHome.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        return StringUtil.IsNullOrEmpty(extensionDirectory) ? null : Path.GetFileName(extensionDirectory);
+    }
+
     [TestingAndPrivateOnly]
     internal static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var isWindows = FrameworkDescription.Instance.IsWindows();
+        var usingAasSiteExtension = ImmutableAzureAppServiceSettings.IsUsingAzureAppServicesSiteExtension(source, telemetry);
 
-        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
+        if (usingAasSiteExtension ||
+            ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
             ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
         {
-            return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+            var aasLogDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+
+            // The site extension keeps each version's logs in their own folder, matching the native components
+            var versionFolder = usingAasSiteExtension
+                                    ? GetAasSiteExtensionVersionFolder(new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.DotNetTracerHome).AsString())
+                                    : null;
+            return StringUtil.IsNullOrEmpty(versionFolder) ? aasLogDirectory : Path.Combine(aasLogDirectory, versionFolder);
         }
 
         string logDirectory;
