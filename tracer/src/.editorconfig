@@ -121,7 +121,6 @@ dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T
 dotnet_diagnostic.MA0128.severity = none # Use 'is' operator instead of SequenceEqual
 dotnet_diagnostic.MA0141.severity = none # Use 'is not null' instead of '!= null'
 dotnet_diagnostic.MA0142.severity = none # Use 'is null' instead of '== null'
-dotnet_diagnostic.MA0159.severity = none # Use 'Order' instead of 'OrderBy'
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - drop `in` for small/BCL/Nullable types, make our structs readonly where possible, and suppress where `in` is required (P/Invoke, IAST aspect signatures)
 dotnet_diagnostic.MA0184.severity = none # Do not use interpolated string without parameters
 dotnet_diagnostic.MA0194.severity = none # Merge is expressions on the same value
