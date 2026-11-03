@@ -1227,7 +1227,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                 _ => ConfigurationResult<double>.ParseFailure(),
             };
 
-            if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
+            if (openTelemetrySampleRateResult is { Result: var sampleRateResult, IsValid: true })
             {
                 return sampleRateResult;
             }
