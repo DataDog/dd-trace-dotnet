@@ -60,16 +60,18 @@ public class HangfireTests : TracingIntegrationTest
         using var process = await RunSampleAndWaitForExit(agent, arguments: scenario);
 
         var jobs = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 15000, operationName: "hangfire.perform");
-        var parents = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 15000, operationName: "internal");
+        // The combined scenario adds a PostPerform span from a filter between the two Datadog filters.
+        var combined = scenario == "custom-filter-combined";
+        var internals = await agent.WaitForSpansAsync(combined ? 2 : 1, timeoutInMilliseconds: 15000, operationName: "internal");
         jobs.Should().HaveCount(1);
-        parents.Should().HaveCount(1);
+        internals.Should().HaveCount(combined ? 2 : 1);
+        var parent = internals.Should().ContainSingle(s => s.Resource == "OtelParent").Subject;
         jobs[0].Error.Should().Be(0);
-        jobs[0].TraceId.Should().Be(parents[0].TraceId);
-        jobs[0].ParentId.Should().Be(parents[0].SpanId);
-        if (scenario == "custom-filter-combined")
+        jobs[0].TraceId.Should().Be(parent.TraceId);
+        jobs[0].ParentId.Should().Be(parent.SpanId);
+        if (combined)
         {
-            // The span must cover PostPerformDelayFilter, which runs between the two Datadog filters.
-            jobs[0].Duration.Should().BeGreaterThanOrEqualTo(300_000_000); // ns
+            internals.Should().ContainSingle(s => s.Resource == "PostPerform").Which.ParentId.Should().Be(jobs[0].SpanId);
         }
     }
 

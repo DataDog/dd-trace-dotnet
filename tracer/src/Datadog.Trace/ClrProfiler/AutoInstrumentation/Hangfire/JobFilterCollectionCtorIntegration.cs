@@ -47,7 +47,7 @@ public sealed class JobFilterCollectionCtorIntegration
 
         // Hangfire reads GlobalJobFilters.Filters, but jobs can also take filters from an application
         // collection, so every collection gets the filters; they are idempotent when combined.
-        HangfireCommon.CreateDatadogFilter(out var serverFilter, out var clientFilter);
+        HangfireCommon.CreateDatadogFilter(instance.Type.Assembly, out var serverFilter, out var clientFilter);
         if (serverFilter is not null && clientFilter is not null)
         {
             instance.Add(serverFilter);

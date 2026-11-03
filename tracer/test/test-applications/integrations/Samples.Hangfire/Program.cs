@@ -39,7 +39,7 @@ public class Program
         {
             // Client and server read both collections, so each Datadog filter runs twice per job,
             // with this global filter between the two copies.
-            GlobalJobFilters.Filters.Add(new PostPerformDelayFilter());
+            GlobalJobFilters.Filters.Add(new PostPerformSpanFilter());
             JobFilterProviders.Providers.Add(customFilters!);
         }
 

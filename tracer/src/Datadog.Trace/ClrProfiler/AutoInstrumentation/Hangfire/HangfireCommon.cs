@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -60,19 +59,10 @@ internal static class HangfireCommon
         jobParams[key] = value;
     }
 
-    internal static void CreateDatadogFilter(out object? serverFilter, out object? clientFilter)
+    internal static void CreateDatadogFilter(Assembly hangfireAssembly, out object? serverFilter, out object? clientFilter)
     {
         serverFilter = null;
         clientFilter = null;
-
-        Assembly? hangfireAssembly = AppDomain.CurrentDomain
-                                              .GetAssemblies()
-                                              .FirstOrDefault(asm => asm.GetName().Name == "Hangfire.Core");
-        if (hangfireAssembly == null)
-        {
-            Log.Debug("Error getting required Hangfire assembly. Hangfire integration is not enabled: abort injecting datadog filter");
-            return;
-        }
 
         Type? serverFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter");
         Type? clientFilterType = hangfireAssembly.GetType("Hangfire.Client.IClientFilter");
