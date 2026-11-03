@@ -33,11 +33,18 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     internal const int AttributePerEventCountLimit = 128;
     internal const int AttributePerLinkCountLimit = 128;
 
+    // Closes one ResourceSpans: the repeated Span spans field, the ScopeSpans message,
+    // the repeated ScopeSpans field and the ResourceSpans message.
+    private const string ClosingResourceSpans = "]}]}";
+
+    // Closes the payload: the current ResourceSpans, the repeated ResourceSpans field
+    // and the ExportTraceServiceRequest message. Built from ClosingResourceSpans so the two can't drift.
+    private const string ClosingTraces = ClosingResourceSpans + "]}";
+
+    private static readonly byte[] ClosingTracesBytes = Encoding.UTF8.GetBytes(ClosingTraces);
+
     // The ResourceSpans opened in the current payload.
     private readonly OtlpResourceSpansGroups _resourceSpansGroups = new();
-
-    // Cache several strings required for encoding OTLP JSON
-    private static ReadOnlySpan<byte> ClosingTracesBytes => "]}]}]}"u8;
 
     public int HeaderSize => 0;
 
@@ -713,11 +720,10 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
         else if (newResource is not null)
         {
-            // Close the previous ResourceSpans: the repeated Span spans field, the ScopeSpans message,
-            // the repeated ScopeSpans field and the ResourceSpans message. Then open a new ResourceSpans.
+            // Close the previous ResourceSpans, then open a new ResourceSpans.
             // The JSON writer is re-entrant and its state is not synchronized to the fact that we're
             // in the `resourceSpans` array, so the separators are written raw.
-            jsonWriter.WriteRaw("]}]},");
+            jsonWriter.WriteRaw(ClosingResourceSpans + ",");
             WriteResourceSpans(jsonWriter, in traceChunk, resourceGlobalTags);
             WriteSpans(jsonWriter, in traceChunk, emitStartingComma: false, resourceGlobalTags);
         }

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
@@ -94,7 +93,7 @@ internal sealed class OtlpResourceGlobalTags
 
         foreach (var pair in globalTags)
         {
-            if (IsResourceAttribute(pair.Key, pair.Value))
+            if (IsResourceAttribute(pair.Key))
             {
                 lookup[pair.Key] = pair.Value;
             }
@@ -192,9 +191,9 @@ internal sealed class OtlpResourceGlobalTags
     /// Returns <c>true</c> when a global tag is written as a resource attribute (and omitted from spans).
     /// </summary>
     [TestingAndPrivateOnly]
-    internal static bool IsResourceAttribute(string? key, string? value)
+    internal static bool IsResourceAttribute(string? key)
     {
-        if (StringUtil.IsNullOrEmpty(key) || value is null)
+        if (StringUtil.IsNullOrEmpty(key))
         {
             return false;
         }
@@ -211,16 +210,8 @@ internal sealed class OtlpResourceGlobalTags
             return false;
         }
 
-        // Tags that the truncator would shorten on the span stay on the span, so they keep the exact
-        // same encoding as before instead of being written untruncated on the resource.
-        return !WouldBeTruncated(key, TruncatorTagsProcessor.MaxMetaKeyLen) &&
-               !WouldBeTruncated(value, TruncatorTagsProcessor.MaxMetaValLen);
-
-        // same check as TruncatorTagsProcessor, on a copy so the global tag isn't modified
-        static bool WouldBeTruncated(string s, int limit)
-        {
-            var copy = s;
-            return TraceUtil.TruncateUTF8(ref copy, limit);
-        }
+        // No length check: the tag truncator never runs when exporting OTLP, and resource attributes
+        // are exempt from attribute limits (https://opentelemetry.io/docs/specs/otel/common/#exempt-entities).
+        return true;
     }
 }

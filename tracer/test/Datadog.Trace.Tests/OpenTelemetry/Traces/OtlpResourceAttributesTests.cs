@@ -242,30 +242,30 @@ public class OtlpResourceAttributesTests
     }
 
     [Theory]
-    [InlineData("team", "core", true)]
-    [InlineData("service.instance.id", "abc", true)]
-    [InlineData("service", "svc", false)]
-    [InlineData("deployment.environment.name", "prod", false)]
-    [InlineData("Telemetry.Sdk.Language", "x", false)]
-    [InlineData("runtime-id", "x", false)]
-    [InlineData("git.commit.sha", "x", false)]
-    [InlineData("datadog.sdk.semantics", "x", false)]
-    [InlineData("_dd.origin", "x", false)]
-    [InlineData("_dd1.sr.eausr", "1", false)]
-    [InlineData("aas.site.name", "x", false)]
-    [InlineData("sampling.priority", "1", false)]
-    [InlineData("manual.keep", "true", false)]
-    [InlineData("peer.service", "x", false)]
-    [InlineData("span.kind", "server", false)]
-    [InlineData("error.msg", "x", false)]
-    [InlineData("http.method", "GET", false)]
-    [InlineData("http.request.method", "GET", false)]
-    [InlineData("http.status_code", "200", false)]
-    [InlineData("server.port", "8080", false)]
-    [InlineData("", "x", false)]
-    public void IsResourceAttribute(string key, string value, bool expected)
+    [InlineData("team", true)]
+    [InlineData("service.instance.id", true)]
+    [InlineData("service", false)]
+    [InlineData("deployment.environment.name", false)]
+    [InlineData("Telemetry.Sdk.Language", false)]
+    [InlineData("runtime-id", false)]
+    [InlineData("git.commit.sha", false)]
+    [InlineData("datadog.sdk.semantics", false)]
+    [InlineData("_dd.origin", false)]
+    [InlineData("_dd1.sr.eausr", false)]
+    [InlineData("aas.site.name", false)]
+    [InlineData("sampling.priority", false)]
+    [InlineData("manual.keep", false)]
+    [InlineData("peer.service", false)]
+    [InlineData("span.kind", false)]
+    [InlineData("error.msg", false)]
+    [InlineData("http.method", false)]
+    [InlineData("http.request.method", false)]
+    [InlineData("http.status_code", false)]
+    [InlineData("server.port", false)]
+    [InlineData("", false)]
+    public void IsResourceAttribute(string key, bool expected)
     {
-        OtlpResourceGlobalTags.IsResourceAttribute(key, value).Should().Be(expected);
+        OtlpResourceGlobalTags.IsResourceAttribute(key).Should().Be(expected);
     }
 
     [Theory]
@@ -337,13 +337,7 @@ public class OtlpResourceAttributesTests
 
         typedTagKeys.Should().Contain(["http.method", "http.request.method", "http.status_code", "server.port"]);
         // any key listed here must be added to OtlpResourceGlobalTags.TypedTagKeys
-        typedTagKeys.Where(key => OtlpResourceGlobalTags.IsResourceAttribute(key, "value")).Should().BeEmpty();
-    }
-
-    [Fact]
-    public void IsResourceAttribute_ValueThatWouldBeTruncated_StaysOnSpan()
-    {
-        OtlpResourceGlobalTags.IsResourceAttribute("team", new string('a', 6000)).Should().BeFalse();
+        typedTagKeys.Where(key => OtlpResourceGlobalTags.IsResourceAttribute(key)).Should().BeEmpty();
     }
 
     private static ReadOnlyDictionary<string, string> CreateGlobalTags(params string[] keyValues)
@@ -401,7 +395,7 @@ public class OtlpResourceAttributesTests
     private static JObject Serialize(bool useJson, SpanCollection spans)
     {
         ISpanBufferSerializer serializer = useJson ? new OtlpTracesJsonSerializer() : new OtlpTracesProtobufSerializer();
-        var chunk = new TraceChunkModel(spans);
+        var chunk = new TraceChunkModel(in spans);
         var buffer = new byte[64 * 1024];
         var written = serializer.SerializeSpans(ref buffer, 0, chunk, spanBufferOffset: 0, maxSize: buffer.Length);
         written.Should().BeGreaterThan(0);
@@ -426,7 +420,7 @@ public class OtlpResourceAttributesTests
 
     private static int Append(ISpanBufferSerializer serializer, ref byte[] temporaryBuffer, byte[] payload, int offset, SpanCollection spans)
     {
-        var size = serializer.SerializeSpans(ref temporaryBuffer, 0, new TraceChunkModel(spans), offset, maxSize: payload.Length);
+        var size = serializer.SerializeSpans(ref temporaryBuffer, 0, new TraceChunkModel(in spans), offset, maxSize: payload.Length);
         size.Should().BeGreaterThan(0);
         Buffer.BlockCopy(temporaryBuffer, 0, payload, offset, size);
         return size;
