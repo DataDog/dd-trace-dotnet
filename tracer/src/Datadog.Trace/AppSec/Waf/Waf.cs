@@ -20,7 +20,9 @@ namespace Datadog.Trace.AppSec.Waf
     /// <summary>
     /// Type using the underlying native library here: https://github.com/DataDog/libddwaf
     /// </summary>
+#pragma warning disable MA0049 // Type name should not match containing namespace - long-standing name; renaming the type or namespace would touch many files for little benefit
     internal sealed class Waf : IWaf
+#pragma warning restore MA0049
     {
         private const string InitContextError = "WAF ddwaf_init_context failed.";
         private const int BuilderLockTimeoutInMs = 4000;
