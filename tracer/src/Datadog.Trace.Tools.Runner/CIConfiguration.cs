@@ -99,43 +99,43 @@ namespace Datadog.Trace.Tools.Runner
         {
             CIName ciName;
 
-            if (Utils.GetEnvironmentVariable("TRAVIS") != null)
+            if (Utils.GetEnvironmentVariable("TRAVIS") is not null)
             {
                 ciName = CIName.Travis;
             }
-            else if (Utils.GetEnvironmentVariable("CIRCLECI") != null)
+            else if (Utils.GetEnvironmentVariable("CIRCLECI") is not null)
             {
                 ciName = CIName.CircleCI;
             }
-            else if (Utils.GetEnvironmentVariable("JENKINS_URL") != null)
+            else if (Utils.GetEnvironmentVariable("JENKINS_URL") is not null)
             {
                 ciName = CIName.Jenkins;
             }
-            else if (Utils.GetEnvironmentVariable("GITLAB_CI") != null)
+            else if (Utils.GetEnvironmentVariable("GITLAB_CI") is not null)
             {
                 ciName = CIName.Gitlab;
             }
-            else if (Utils.GetEnvironmentVariable("APPVEYOR") != null)
+            else if (Utils.GetEnvironmentVariable("APPVEYOR") is not null)
             {
                 ciName = CIName.AppVeyor;
             }
-            else if (Utils.GetEnvironmentVariable("TF_BUILD") != null)
+            else if (Utils.GetEnvironmentVariable("TF_BUILD") is not null)
             {
                 ciName = CIName.AzurePipelines;
             }
-            else if (Utils.GetEnvironmentVariable("BITBUCKET_COMMIT") != null)
+            else if (Utils.GetEnvironmentVariable("BITBUCKET_COMMIT") is not null)
             {
                 ciName = CIName.Bitbucket;
             }
-            else if (Utils.GetEnvironmentVariable("GITHUB_SHA") != null)
+            else if (Utils.GetEnvironmentVariable("GITHUB_SHA") is not null)
             {
                 ciName = CIName.GithubActions;
             }
-            else if (Utils.GetEnvironmentVariable("TEAMCITY_VERSION") != null)
+            else if (Utils.GetEnvironmentVariable("TEAMCITY_VERSION") is not null)
             {
                 ciName = CIName.Teamcity;
             }
-            else if (Utils.GetEnvironmentVariable("BUILDKITE") != null)
+            else if (Utils.GetEnvironmentVariable("BUILDKITE") is not null)
             {
                 ciName = CIName.Buildkite;
             }

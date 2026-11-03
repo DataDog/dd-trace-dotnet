@@ -55,7 +55,7 @@ public sealed class StringAspects
         var result = target.Trim(trimChars);
         try
         {
-            if (trimChars != null && trimChars.Length > 0)
+            if (trimChars is not null && trimChars.Length > 0)
             {
                 return StringModuleImpl.OnStringTrimArray(target, result, trimChars, true, true);
             }
@@ -108,7 +108,7 @@ public sealed class StringAspects
         var result = target.TrimStart(trimChars);
         try
         {
-            if (trimChars != null && trimChars.Length > 0)
+            if (trimChars is not null && trimChars.Length > 0)
             {
                 return StringModuleImpl.OnStringTrimArray(target, result, trimChars, true, false);
             }
@@ -182,7 +182,7 @@ public sealed class StringAspects
         var result = target.TrimEnd(trimChars);
         try
         {
-            if (trimChars != null && trimChars.Length > 0)
+            if (trimChars is not null && trimChars.Length > 0)
             {
                 return StringModuleImpl.OnStringTrimArray(target, result, trimChars, false, true);
             }

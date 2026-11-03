@@ -58,7 +58,7 @@ internal abstract class IpcDualChannel : IDisposable
         using var reader = new StreamReader(memoryStream, Util.EncodingHelpers.Utf8NoBom);
         using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
         var message = _jsonSerializer.Deserialize(jsonReader);
-        if (message != null)
+        if (message is not null)
         {
             _callback?.Invoke(message);
         }

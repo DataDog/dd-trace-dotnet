@@ -362,7 +362,7 @@ namespace Datadog.Trace.Coverage.Collector
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            if (_events != null)
+            if (_events is not null)
             {
                 _events.SessionStart -= OnSessionStart;
                 _events.SessionEnd -= OnSessionEnd;

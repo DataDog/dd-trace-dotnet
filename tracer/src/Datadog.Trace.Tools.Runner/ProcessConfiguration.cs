@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tools.Runner
 
             IConfigurationSource applicationConfigurationSource = NullConfigurationSource.Instance;
 
-            if (applicationConfig != null)
+            if (applicationConfig is not null)
             {
                 applicationConfigurationSource = new DictionaryConfigurationSource(applicationConfig);
             }

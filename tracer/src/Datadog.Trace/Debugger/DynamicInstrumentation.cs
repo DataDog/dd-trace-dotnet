@@ -152,7 +152,7 @@ namespace Datadog.Trace.Debugger
 
                 // Always attempt to load probes from file, even if RCM is unavailable
                 var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
-                if (probeConfiguration != null)
+                if (probeConfiguration is not null)
                 {
                     hasFileProbes = _configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration);
                     if (hasFileProbes)
@@ -689,7 +689,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (lineProbes?.Count > 0 && boundProbes != null)
+                if (lineProbes?.Count > 0 && boundProbes is not null)
                 {
                     Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: boundProbes.Count);
 
@@ -717,7 +717,7 @@ namespace Datadog.Trace.Debugger
                     _probeStatusPoller.UpdateProbes(probeIds, newProbeStatuses);
                 }
 
-                if (probesToRemoveFromRetry != null)
+                if (probesToRemoveFromRetry is not null)
                 {
                     foreach (var probeToRemove in probesToRemoveFromRetry)
                     {
@@ -753,7 +753,7 @@ namespace Datadog.Trace.Debugger
                     {
                         case { } id when id.StartsWithOrdinal(DefinitionPaths.LogProbe):
                             var logProbes = namedRawFile.Deserialize<LogProbe>().TypedFile;
-                            if (logProbes != null)
+                            if (logProbes is not null)
                             {
                                 logs.Add(logProbes);
                             }
@@ -761,7 +761,7 @@ namespace Datadog.Trace.Debugger
                             break;
                         case { } id when id.StartsWithOrdinal(DefinitionPaths.MetricProbe):
                             var metricProbes = namedRawFile.Deserialize<MetricProbe>().TypedFile;
-                            if (metricProbes != null)
+                            if (metricProbes is not null)
                             {
                                 metrics.Add(metricProbes);
                             }
@@ -769,7 +769,7 @@ namespace Datadog.Trace.Debugger
                             break;
                         case { } id when id.StartsWithOrdinal(DefinitionPaths.SpanDecorationProbe):
                             var spanDecorationProbes = namedRawFile.Deserialize<SpanDecorationProbe>().TypedFile;
-                            if (spanDecorationProbes != null)
+                            if (spanDecorationProbes is not null)
                             {
                                 spanDecoration.Add(spanDecorationProbes);
                             }
@@ -777,7 +777,7 @@ namespace Datadog.Trace.Debugger
                             break;
                         case { } id when id.StartsWithOrdinal(DefinitionPaths.SpanProbe):
                             var spanProbes = namedRawFile.Deserialize<SpanProbe>().TypedFile;
-                            if (spanProbes != null)
+                            if (spanProbes is not null)
                             {
                                 spans.Add(spanProbes);
                             }
@@ -823,7 +823,7 @@ namespace Datadog.Trace.Debugger
                 foreach (var updateResult in updateResults)
                 {
                     var config = configs.Find(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
-                    if (config != null)
+                    if (config is not null)
                     {
                         result.Add(
                             updateResult.Error == null

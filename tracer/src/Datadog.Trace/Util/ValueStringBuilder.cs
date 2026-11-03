@@ -288,7 +288,7 @@ namespace Datadog.Trace.Util
 
             char[]? toReturn = _arrayToReturnToPool;
             _chars = _arrayToReturnToPool = poolArray;
-            if (toReturn != null)
+            if (toReturn is not null)
             {
                 ArrayPool<char>.Shared.Return(toReturn);
             }
@@ -299,7 +299,7 @@ namespace Datadog.Trace.Util
         {
             char[]? toReturn = _arrayToReturnToPool;
             this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
-            if (toReturn != null)
+            if (toReturn is not null)
             {
                 ArrayPool<char>.Shared.Return(toReturn);
             }

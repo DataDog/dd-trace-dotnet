@@ -268,7 +268,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
             finally
             {
-                if (scopes != null)
+                if (scopes is not null)
                 {
                     ArrayPool<Model.Scope>.Shared.Return(scopes, true);
                 }
@@ -482,7 +482,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (methodScope.Scopes != null &&
+                    if (methodScope.Scopes is not null &&
                         methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: null })
                     {
                         var sourcePdbInfo = GetMethodSourceLocationInfo(ref methodScope);
@@ -534,7 +534,7 @@ namespace Datadog.Trace.Debugger.Symbols
             int? startColumn = null;
             int? endColumn = null;
             string? sourceFile = null;
-            if (methodScope.Scopes != null)
+            if (methodScope.Scopes is not null)
             {
                 for (int i = 0; i < methodScope.Scopes.Length; i++)
                 {
@@ -703,7 +703,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
             finally
             {
-                if (closureMethods != null)
+                if (closureMethods is not null)
                 {
                     // Clear only the populated portion to avoid keeping references alive via the pool
                     Array.Clear(closureMethods, 0, index);

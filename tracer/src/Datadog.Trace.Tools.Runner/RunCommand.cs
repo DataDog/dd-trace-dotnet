@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tools.Runner
                 Console.WriteLine("Running: {0} {1}", program, arguments);
             }
 
-            if (Program.CallbackForTests != null)
+            if (Program.CallbackForTests is not null)
             {
                 Program.CallbackForTests(program, arguments, profilerEnvironmentVariables);
                 return;

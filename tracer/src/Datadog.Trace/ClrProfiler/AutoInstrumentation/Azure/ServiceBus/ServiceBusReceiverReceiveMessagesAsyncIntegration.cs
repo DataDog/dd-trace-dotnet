@@ -62,7 +62,7 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         var messageCount = messagesList?.Count ?? 0;
 
         // Don't create spans when there's an exception or no messages
-        if (exception != null || messageCount == 0)
+        if (exception is not null || messageCount == 0)
         {
             return returnValue;
         }
@@ -78,12 +78,12 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         // Preserve reinjection for non-processor receives and the isolated Functions trigger handoff.
         // Other processor receives keep the producer context only when extraction continues the trace.
-        if (scope != null && messagesList != null && messageCount > 0 && shouldReinjectContext)
+        if (scope is not null && messagesList is not null && messageCount > 0 && shouldReinjectContext)
         {
             ReinjectContextIntoMessages(tracer, scope, messagesList);
         }
 
-        if (scope != null)
+        if (scope is not null)
         {
             scope.Dispose();
         }
@@ -128,10 +128,10 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
             foreach (var message in messagesList)
             {
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true &&
-                    serviceBusMessage.ApplicationProperties != null)
+                    serviceBusMessage.ApplicationProperties is not null)
                 {
                     var extractedContext = AzureMessagingCommon.ExtractContext(serviceBusMessage.ApplicationProperties);
-                    if (extractedContext.SpanContext != null)
+                    if (extractedContext.SpanContext is not null)
                     {
                         extractedContexts.Add(extractedContext.SpanContext);
                     }
@@ -220,7 +220,7 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
                 if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
                 {
                     var amqpMessage = serviceBusMessage.AmqpMessage;
-                    if (amqpMessage?.ApplicationProperties != null)
+                    if (amqpMessage?.ApplicationProperties is not null)
                     {
                         AzureMessagingCommon.InjectContext(amqpMessage.ApplicationProperties, scope);
                     }

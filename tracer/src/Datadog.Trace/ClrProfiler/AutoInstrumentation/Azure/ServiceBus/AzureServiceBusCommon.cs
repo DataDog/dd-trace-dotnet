@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 span.SetTag(Tags.MessagingBatchMessageCount, actualMessageCount.ToStringInvariant());
             }
 
-            if (actualMessageCount == 1 && messages != null)
+            if (actualMessageCount == 1 && messages is not null)
             {
                 foreach (var message in messages)
                 {

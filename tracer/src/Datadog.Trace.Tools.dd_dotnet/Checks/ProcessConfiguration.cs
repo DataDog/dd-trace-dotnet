@@ -20,7 +20,7 @@ internal static class ProcessConfiguration
 
         configurationSource.Add(new DictionaryConfigurationSource(process.EnvironmentVariables));
 
-        if (appSettings != null)
+        if (appSettings is not null)
         {
             configurationSource.Add(new DictionaryConfigurationSource(appSettings));
         }
@@ -37,14 +37,14 @@ internal static class ProcessConfiguration
                 Utils.WriteError("Error while trying to load application configuration: " + ex.Message);
             }
 
-            if (appConfigSource != null)
+            if (appConfigSource is not null)
             {
                 configurationSource.Add(new DictionaryConfigurationSource(appConfigSource));
             }
         }
 
         var jsonConfigurationSource = JsonConfigurationSource.TryLoadJsonConfigurationFile(configurationSource, baseDirectory, out string jsonDirectory);
-        if (jsonConfigurationSource != null)
+        if (jsonConfigurationSource is not null)
         {
             Utils.WriteInfo("Loaded JSON configuration file from: " + jsonDirectory);
             configurationSource.Add(jsonConfigurationSource);

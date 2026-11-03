@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var fnvHashCode = HashLine(outerExceptionType.AsSpan(), SimpleHash.FnvOffsetBias);
 
-            if (innerExceptionType != null)
+            if (innerExceptionType is not null)
             {
                 fnvHashCode = HashLine(innerExceptionType.AsSpan(), fnvHashCode);
             }

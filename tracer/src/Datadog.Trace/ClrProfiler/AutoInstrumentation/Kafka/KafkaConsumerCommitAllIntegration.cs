@@ -30,7 +30,7 @@ public sealed class KafkaConsumerCommitAllIntegration
         where TResponse : ITopicPartitionOffsets, IDuckType
     {
         var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-        if (exception is null && response.Instance is not null && dataStreams.IsEnabled && instance != null)
+        if (exception is null && response.Instance is not null && dataStreams.IsEnabled && instance is not null)
         {
             ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _, out var clusterId);
 

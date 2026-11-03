@@ -601,7 +601,7 @@ internal partial class ProbeExpressionParser<T>
     private bool IsMicrosoftType(Type type)
     {
         var @namespace = type.Namespace;
-        return @namespace != null &&
+        return @namespace is not null &&
                (@namespace is "System" or "Microsoft" ||
                 @namespace.StartsWithOrdinal("System.") ||
                 @namespace.StartsWithOrdinal("Microsoft."));

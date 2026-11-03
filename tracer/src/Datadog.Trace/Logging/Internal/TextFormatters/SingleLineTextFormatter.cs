@@ -33,7 +33,7 @@ internal sealed class SingleLineTextFormatter : ITextFormatter
         logEvent.RenderMessage(output, output.FormatProvider);
 
         // if there is an exception, write it to the output as a single line
-        if (logEvent.Exception != null)
+        if (logEvent.Exception is not null)
         {
             output.Write(" | ");
             output.Write(ToSingleLineString(logEvent.Exception));

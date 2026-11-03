@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static CallTargetState OnMethodBegin<TTarget, TOperationContext>(TTarget instance, TOperationContext operationContext)
             where TOperationContext : IOperationContextV13
         {
-            if (operationContext.Instance != null && operationContext.Operation.HasValue)
+            if (operationContext.Instance is not null && operationContext.Operation.HasValue)
             {
                 var operation = operationContext.Operation.Value;
                 var operationType = HotChocolateCommon.GetOperation(operation.OperationType);

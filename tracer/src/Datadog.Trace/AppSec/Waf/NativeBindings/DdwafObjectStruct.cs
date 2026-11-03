@@ -229,7 +229,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     for (var i = 0; i < nbEntries; i++)
                     {
                         var value = (T?)items[i].Decode();
-                        if (value != null)
+                        if (value is not null)
                         {
                             res.Add(value);
                         }

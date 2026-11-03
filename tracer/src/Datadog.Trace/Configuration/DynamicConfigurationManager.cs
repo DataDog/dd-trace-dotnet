@@ -61,7 +61,7 @@ namespace Datadog.Trace.Configuration
 
         public void Dispose()
         {
-            if (_subscription != null)
+            if (_subscription is not null)
             {
                 _subscriptionManager.Unsubscribe(_subscription);
             }

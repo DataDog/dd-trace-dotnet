@@ -105,7 +105,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     {
         lock (_initLock)
         {
-            if (_processTask != null)
+            if (_processTask is not null)
             {
                 return;
             }
@@ -194,7 +194,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     {
         _discoveryService.RemoveSubscription(HandleConfigUpdate);
 #if NETCOREAPP3_1_OR_GREATER
-        if (_flushTimer != null)
+        if (_flushTimer is not null)
         {
             await _flushTimer.DisposeAsync().ConfigureAwait(false);
         }

@@ -53,7 +53,7 @@ internal sealed class ApiSecurity
                     return false;
                 }
 
-                if (routeValues != null)
+                if (routeValues is not null)
                 {
                     foreach (var routeValue in routeValues)
                     {

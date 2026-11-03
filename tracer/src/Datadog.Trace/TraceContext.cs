@@ -388,7 +388,7 @@ namespace Datadog.Trace
             RateLimiterRate ??= limiterRate;
             SamplingMechanism ??= mechanism;
 
-            if (SamplingPriorityValues.IsKeep(p) && mechanism != null)
+            if (SamplingPriorityValues.IsKeep(p) && mechanism is not null)
             {
                 // report sampling mechanism as trace tag only if decision is to keep the trace.
                 // report only the original sampling mechanism, do not override.

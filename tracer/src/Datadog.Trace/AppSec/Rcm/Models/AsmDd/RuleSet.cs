@@ -66,37 +66,37 @@ internal sealed class RuleSet
     /// <param name="dictionary">dictionary</param>
     public void AddToDictionaryAtRoot(Dictionary<string, object> dictionary)
     {
-        if (RulesData != null)
+        if (RulesData is not null)
         {
             dictionary["rules_data"] = RulesData;
         }
 
-        if (Rules != null)
+        if (Rules is not null)
         {
             dictionary["rules"] = Rules;
         }
 
-        if (RulesCompat != null)
+        if (RulesCompat is not null)
         {
             dictionary["rules_compat"] = RulesCompat;
         }
 
-        if (Metadata != null)
+        if (Metadata is not null)
         {
             dictionary["metadata"] = Metadata;
         }
 
-        if (Version != null)
+        if (Version is not null)
         {
             dictionary["version"] = Version;
         }
 
-        if (Processors != null)
+        if (Processors is not null)
         {
             dictionary["processors"] = Processors;
         }
 
-        if (Scanners != null)
+        if (Scanners is not null)
         {
             dictionary["scanners"] = Scanners;
         }

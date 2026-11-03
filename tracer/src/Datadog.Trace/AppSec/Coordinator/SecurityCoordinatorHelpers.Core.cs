@@ -154,7 +154,7 @@ internal static class SecurityCoordinatorHelpers
 
     internal static void CheckPathParamsFromAction(this Security security, HttpContext context, Span span, IList<ParameterDescriptor>? actionPathParams, RouteValueDictionary routeValues)
     {
-        if (security.AppsecEnabled && actionPathParams != null)
+        if (security.AppsecEnabled && actionPathParams is not null)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)

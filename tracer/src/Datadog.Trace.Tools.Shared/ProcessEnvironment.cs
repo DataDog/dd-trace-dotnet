@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tools.Shared
             var modules = process.Modules
                 .OfType<ProcessModule>()
                 .Select(p => p.FileName)
-                .Where(p => p != null)
+                .Where(p => p is not null)
                 .ToArray()!;
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))

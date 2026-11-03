@@ -62,7 +62,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 var dueTasks = _scheduledExceptions.TakeWhile(e => e.DueTime <= now).ToList();
                 foreach (var task in dueTasks)
                 {
-                    if (task.Case != null)
+                    if (task.Case is not null)
                     {
                         casesToInstrument.Add(task.Case);
                         _scheduledExceptions.Remove(task);

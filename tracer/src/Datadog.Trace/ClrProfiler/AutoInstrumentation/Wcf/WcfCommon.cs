@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
                 if (requestProperties is not null
                  && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
-                 && httpRequestProperty?.GetType().FullName != null
+                 && httpRequestProperty?.GetType().FullName is not null
                  && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
@@ -253,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             var activeScope = tracer.InternalActiveScope;
 
             var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
-            if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
+            if (operationContext is not null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
             {
                 var requestContext = operationContextProxy.RequestContext;
 

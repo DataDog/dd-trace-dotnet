@@ -67,7 +67,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         public async Task StopAsync()
         {
-            if (_timer != null)
+            if (_timer is not null)
             {
                 await _timer.DisposeAsync().ConfigureAwait(false);
                 _timer = null;
@@ -92,7 +92,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         public void CollectObservableInstruments()
         {
-            if (_listener != null)
+            if (_listener is not null)
             {
                 try
                 {

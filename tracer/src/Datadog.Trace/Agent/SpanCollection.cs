@@ -101,7 +101,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
                 {
                     return str;
                 }
-                else if (value != null)
+                else if (value is not null)
                 {
                     // Not Span, not null, can only be Span[]
                     return Unsafe.As<Span[]>(value)[index];
@@ -305,7 +305,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
             }
 
             var values = _values;
-            if (values != null)
+            if (values is not null)
             {
                 if (index < _count)
                 {
@@ -319,7 +319,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
             }
 
             _index = -1; // sentinel value
-            return _current != null;
+            return _current is not null;
         }
 
         readonly void IEnumerator.Reset() => throw new NotSupportedException();

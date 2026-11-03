@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             foreach (var entry in entries)
             {
                 var duckEntry = entry.DuckCast<IPutEventsRequestEntry>();
-                if (duckEntry != null)
+                if (duckEntry is not null)
                 {
                     InjectHeadersIntoDetail(tracer, duckEntry, scope, context);
                 }
@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
             var startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             jsonBuilder.Append($"\"{StartTimeKey}\":\"").Append(startTime).Append('"');
-            if (eventBusName != null)
+            if (eventBusName is not null)
             {
                 jsonBuilder.Append($",\"{ResourceNameKey}\":\"");
                 JsonHelper.WriteEscapedJavaScriptString(jsonBuilder, eventBusName);

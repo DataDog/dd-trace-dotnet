@@ -40,7 +40,7 @@ internal sealed class AwsSqsHandlerCommon
             tags.QueueName = queueName;
         }
 
-        if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
+        if (scope?.Span.Context is not null && !string.IsNullOrEmpty(queueName))
         {
             if (sendType == SendType.SingleMessage)
             {
@@ -64,7 +64,7 @@ internal sealed class AwsSqsHandlerCommon
         }
 
         var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-        if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+        if (dataStreamsManager is not null && dataStreamsManager.IsEnabled)
         {
             var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
                 new SqsEdgeTagCacheKey(queueName, IsConsume: false),
@@ -92,7 +92,7 @@ internal sealed class AwsSqsHandlerCommon
         foreach (var e in requestProxy.Entries)
         {
             var entry = e.DuckCast<IContainsMessageAttributes>();
-            if (entry != null)
+            if (entry is not null)
             {
                 // this has no effect if DSM is disabled
                 scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
@@ -149,7 +149,7 @@ internal sealed class AwsSqsHandlerCommon
     internal static TResponse AfterReceive<TResponse>(TResponse response, Exception? exception, in CallTargetState state)
         where TResponse : IReceiveMessageResponse
     {
-        if (response.Instance != null && response.Messages is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
+        if (response.Instance is not null && response.Messages is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
         {
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
             if (dataStreamsManager is { IsEnabled: true })
@@ -166,7 +166,7 @@ internal sealed class AwsSqsHandlerCommon
                     }
 
                     var sentTime = 0;
-                    if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
+                    if (message.Attributes is not null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr is not null)
                     {
                         if (!int.TryParseInvariant(sentTimeStr, out sentTime))
                         {

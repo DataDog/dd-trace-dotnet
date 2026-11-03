@@ -24,7 +24,7 @@ internal static class SourceDictionaryConverter
     {
         var result = new Dictionary<string, object> { { "origin", SourceTypeUtils.GetString(source.Origin) } };
 
-        if (source.Name != null)
+        if (source.Name is not null)
         {
             result["name"] = source.Name;
         }
@@ -34,7 +34,7 @@ internal static class SourceDictionaryConverter
             result["redacted"] = true;
             TruncationUtils.InsertTruncatableValue(result, "pattern", source.RedactedValue, maxValueLength);
         }
-        else if (source.Value != null)
+        else if (source.Value is not null)
         {
             TruncationUtils.InsertTruncatableValue(result, "value", source.Value, maxValueLength);
         }

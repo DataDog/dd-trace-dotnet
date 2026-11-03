@@ -122,7 +122,7 @@ namespace Datadog.Trace.Util.Http
 
         internal static string GetUrl(string scheme, string host, int? port, string pathBase, string path, string queryString, QueryStringManager? queryStringManager = null)
         {
-            if (queryStringManager != null)
+            if (queryStringManager is not null)
             {
                 queryString = queryStringManager.TruncateAndObfuscate(queryString);
                 return StringUtil.Invariant($"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? ":" : string.Empty)}{port}{pathBase}{path}{queryString}");

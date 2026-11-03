@@ -57,12 +57,12 @@ internal sealed partial class AppSecRequestContext
                 span.Tags.SetMetric(Metrics.WafTimeouts, _wafTimeout);
             }
 
-            if (_wafError != null)
+            if (_wafError is not null)
             {
                 span.Tags.SetMetric(Metrics.WafError, _wafError);
             }
 
-            if (_wafRaspError != null)
+            if (_wafRaspError is not null)
             {
                 span.Tags.SetMetric(Metrics.RaspWafError, _wafRaspError);
             }

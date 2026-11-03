@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        if (baseHash != null)
+                        if (baseHash is not null)
                         {
                             // note: it's ok that we don't write the basehash in the span if "alreadyInjected" because we only need one span to get the tag values
                             tags.BaseHash = baseHash;

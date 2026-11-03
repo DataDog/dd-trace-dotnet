@@ -298,15 +298,15 @@ internal class CheckIisCommand : Command
             "CORECLR_PROFILER_PATH_64"
         };
 
-        if (pool != null)
+        if (pool is not null)
         {
             CheckEnvironmentVariables(pool.GetEnvironmentVariables(), relevantProfilerConfiguration, relevantProfilerPathConfiguration, pool.GetName());
         }
 
-        if (serverManager != null)
+        if (serverManager is not null)
         {
             var defaultEnvironmentVariables = serverManager.GetDefaultEnvironmentVariables();
-            if (defaultEnvironmentVariables != null)
+            if (defaultEnvironmentVariables is not null)
             {
                 CheckEnvironmentVariables(defaultEnvironmentVariables, relevantProfilerConfiguration, relevantProfilerPathConfiguration, "applicationPoolDefaults");
             }
@@ -350,7 +350,7 @@ internal class CheckIisCommand : Command
     {
         var path = commandResult.GetValueForOption(_configurationPathOption);
 
-        if (path != null && !File.Exists(path))
+        if (path is not null && !File.Exists(path))
         {
             commandResult.ErrorMessage = $"Cannot find the file {path}";
         }

@@ -259,7 +259,7 @@ namespace Datadog.Trace
 
             var span = StartSpan(operationName, tags: null, parent, serviceName: null, startTime: startTime);
 
-            if (serviceName != null)
+            if (serviceName is not null)
             {
                 // if specified, override the default service name (OpenTracing = manual)
                 span.SetService(serviceName, Configuration.Schema.ServiceNameMetadata.Manual);

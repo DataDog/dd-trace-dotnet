@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public virtual IEnumerable<ParticipatingFrame> GetAllFlattenedFrames()
         {
-            if (InnerFrame != null)
+            if (InnerFrame is not null)
             {
                 // Determine if we should skip the first method of the InnerException.
                 // When an exception is placed as InnerException and rethrown, it leads to duplications of the rethrowing frame.
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            if (Frames != null)
+            if (Frames is not null)
             {
                 foreach (var frame in Frames)
                 {

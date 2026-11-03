@@ -46,7 +46,7 @@ namespace Datadog.Trace.OpenTracing
         {
             _codecs.TryGetValue(format.ToString(), out ICodec codec);
 
-            if (codec != null)
+            if (codec is not null)
             {
                 return codec.Extract(carrier);
             }
@@ -58,7 +58,7 @@ namespace Datadog.Trace.OpenTracing
         {
             _codecs.TryGetValue(format.ToString(), out ICodec codec);
 
-            if (codec != null)
+            if (codec is not null)
             {
                 codec.Inject(spanContext, carrier);
             }

@@ -642,9 +642,9 @@ internal partial class ProbeExpressionParser<T>
 
     private bool TryGetRedactedDictionaryValue(Expression expression, out RedactedDictionaryValueExpression redactedDictionaryValue)
     {
-        while (expression != null)
+        while (expression is not null)
         {
-            if (_redactedDictionaryValues != null && _redactedDictionaryValues.TryGetValue(expression, out redactedDictionaryValue))
+            if (_redactedDictionaryValues is not null && _redactedDictionaryValues.TryGetValue(expression, out redactedDictionaryValue))
             {
                 return true;
             }

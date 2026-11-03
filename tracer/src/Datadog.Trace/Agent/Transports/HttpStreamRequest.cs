@@ -110,7 +110,7 @@ namespace Datadog.Trace.Agent.Transports
                 // Disposing the underlying pipe/socket interrupts pending reads and writes,
                 // including on runtimes whose stream APIs do not support cancellation tokens.
                 using var registration = cancellation?.Token.Register(static state => ((Stream)state).Dispose(), bidirectionalStream) ?? default;
-                if (contentType != null)
+                if (contentType is not null)
                 {
                     _headers.Add("Content-Type", ContentTypeHelper.GetContentType(contentType, multipartBoundary));
                 }

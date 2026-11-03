@@ -269,7 +269,7 @@ namespace Datadog.Trace.Agent.Transports
                 return new ApiWebResponse(httpWebResponse);
             }
             catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response is not null)
             {
                 // Same race as above, and we don't want Abort() to happen after we return response to caller
                 registration.Dispose();

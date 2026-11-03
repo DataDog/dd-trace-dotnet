@@ -662,7 +662,7 @@ namespace Datadog.Trace.ClrProfiler
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
                 }
 
-                if (sw != null)
+                if (sw is not null)
                 {
                     if (isIast)
                     {

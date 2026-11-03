@@ -28,14 +28,14 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         public static void Start(TracerSettings settings)
         {
-            if (_instance != null)
+            if (_instance is not null)
             {
                 return;
             }
 
             lock (StartLock)
             {
-                if (_instance != null)
+                if (_instance is not null)
                 {
                     Log.Debug("MetricsRuntime already started");
                     return;

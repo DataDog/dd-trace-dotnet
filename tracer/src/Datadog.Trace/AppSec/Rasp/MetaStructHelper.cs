@@ -148,7 +148,7 @@ internal static class MetaStructHelper
             result["vulnerabilities"] = vulnerabilitiesList;
         }
 
-        if (vulnerabilityBatch.Sources != null)
+        if (vulnerabilityBatch.Sources is not null)
         {
             var sourcesList = new List<Dictionary<string, object>>(vulnerabilityBatch.Sources.Count);
             foreach (var source in vulnerabilityBatch.Sources)

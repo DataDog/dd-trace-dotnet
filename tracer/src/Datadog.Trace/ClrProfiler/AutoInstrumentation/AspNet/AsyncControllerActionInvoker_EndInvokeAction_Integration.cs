@@ -68,9 +68,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             // If httpcontext is null, the scopes will be null too
-            if (scope != null)
+            if (scope is not null)
             {
-                if (exception != null)
+                if (exception is not null)
                 {
                     scope.Span.SetException(exception);
                     proxyScope?.Span.SetException(exception);
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
 
-                    if (proxyScope?.Span != null)
+                    if (proxyScope?.Span is not null)
                     {
                         HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
                         proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     statusCode = httpContext.Response.StatusCode;
                 }
 
-                if (proxyScope?.Span != null)
+                if (proxyScope?.Span is not null)
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
                     proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);

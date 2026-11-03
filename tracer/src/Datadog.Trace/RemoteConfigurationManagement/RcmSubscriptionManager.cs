@@ -217,7 +217,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
             UpdateRootVersionFromResponseRoots(response.Roots);
 
-            if (response.Targets?.Signed != null)
+            if (response.Targets?.Signed is not null)
             {
                 await ProcessResponse(response).ConfigureAwait(false);
             }

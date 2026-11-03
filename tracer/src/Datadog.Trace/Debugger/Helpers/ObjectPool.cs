@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.Helpers
         public void Return(T? item)
         {
             item?.Reset();
-            if (item != null && _objects.Count < _maxSize)
+            if (item is not null && _objects.Count < _maxSize)
             {
                 _objects.Add(item);
             }

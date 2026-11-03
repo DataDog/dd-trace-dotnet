@@ -205,7 +205,7 @@ internal static class DatadogLoggingFactory
         }
 
         // try creating the directory if it doesn't exist
-        if (logDirectory != null && (Directory.Exists(logDirectory) || TryCreateLogDirectory(logDirectory)))
+        if (logDirectory is not null && (Directory.Exists(logDirectory) || TryCreateLogDirectory(logDirectory)))
         {
             return logDirectory;
         }

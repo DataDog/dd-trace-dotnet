@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             var scope = AspNetWebApi2Integration.CreateScope(boxedControllerContext, out _);
 
-            if (scope != null)
+            if (scope is not null)
             {
                 SharedItems.PushScope(HttpContext.Current, AspNetWebApi2Integration.HttpContextKey, scope);
                 return new CallTargetState(scope, boxedControllerContext);
@@ -124,13 +124,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // some fields aren't set till after execution, so populate anything missing
             AspNetWebApi2Integration.UpdateWebApiSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags);
 
-            if (exception != null)
+            if (exception is not null)
             {
                 scope.Span.SetException(exception);
 
                 // We don't have access to the final status code at this point
                 // Ask the HttpContext to call us back to that we can get it
-                if (httpContext != null)
+                if (httpContext is not null)
                 {
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
                     // so we store the real finish time

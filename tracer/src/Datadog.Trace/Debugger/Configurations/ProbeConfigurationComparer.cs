@@ -28,12 +28,12 @@ namespace Datadog.Trace.Debugger.Configurations
                    .ToList();
 
             var isFilteredListChanged =
-                (!currentConfiguration.ServiceConfiguration?.AllowList?.Equals(incomingConfiguration.ServiceConfiguration?.AllowList) ?? incomingConfiguration.ServiceConfiguration?.AllowList != null)
-             || (!currentConfiguration.ServiceConfiguration?.DenyList?.Equals(incomingConfiguration.ServiceConfiguration?.DenyList) ?? incomingConfiguration.ServiceConfiguration?.DenyList != null);
+                (!currentConfiguration.ServiceConfiguration?.AllowList?.Equals(incomingConfiguration.ServiceConfiguration?.AllowList) ?? incomingConfiguration.ServiceConfiguration?.AllowList is not null)
+             || (!currentConfiguration.ServiceConfiguration?.DenyList?.Equals(incomingConfiguration.ServiceConfiguration?.DenyList) ?? incomingConfiguration.ServiceConfiguration?.DenyList is not null);
 
             HasProbeRelatedChanges = AddedDefinitions.Count > 0 || isFilteredListChanged;
             HasRateLimitChanged =
-                (!currentConfiguration.ServiceConfiguration?.Sampling?.Equals(incomingConfiguration.ServiceConfiguration?.Sampling) ?? incomingConfiguration.ServiceConfiguration?.Sampling != null);
+                (!currentConfiguration.ServiceConfiguration?.Sampling?.Equals(incomingConfiguration.ServiceConfiguration?.Sampling) ?? incomingConfiguration.ServiceConfiguration?.Sampling is not null);
         }
 
         public IReadOnlyList<ProbeDefinition> AddedDefinitions { get; }

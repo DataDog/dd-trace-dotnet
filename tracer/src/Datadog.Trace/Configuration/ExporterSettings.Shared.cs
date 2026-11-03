@@ -146,7 +146,7 @@ namespace Datadog.Trace.Configuration
 #endif
             }
 
-            if ((agentPort != null && agentPort != 0) || agentHost != null)
+            if ((agentPort is not null && agentPort != 0) || agentHost is not null)
             {
                 // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
                 // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict

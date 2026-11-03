@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                 }
 
 #if !NETCOREAPP2_1_OR_GREATER
-                if (attributesToRemove != null)
+                if (attributesToRemove is not null)
                 {
                     foreach (var attribute in attributesToRemove)
                     {

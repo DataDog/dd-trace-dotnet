@@ -250,7 +250,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // libName or runtimeIds being null means platform is not supported
             // no point attempting to load the library
             IntPtr libraryHandle;
-            if (libName != null && runtimeIds != null)
+            if (libName is not null && runtimeIds is not null)
             {
                 var paths = LibraryLocationHelper.GetDatadogNativeFolders(ddDotnetTracerHome, traceNativeEnginePath, fd, runtimeIds);
                 if (!LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))

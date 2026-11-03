@@ -13,7 +13,7 @@ namespace Datadog.Trace.DogStatsd
     {
         public static void Exception(this IDogStatsd statsd, Exception exception, string source, string message, string[] tags = null)
         {
-            if (statsd != null)
+            if (statsd is not null)
             {
                 string[] exceptionTags =
                 {
@@ -31,7 +31,7 @@ namespace Datadog.Trace.DogStatsd
 
         public static void Warning(this IDogStatsd statsd, string source, string message, string[] tags = null)
         {
-            if (statsd != null)
+            if (statsd is not null)
             {
                 string[] warningTags =
                 {

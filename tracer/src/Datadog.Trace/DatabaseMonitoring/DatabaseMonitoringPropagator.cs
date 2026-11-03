@@ -73,13 +73,13 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
             else
             {
-                if (span.Tags.GetTag(Tags.PeerServiceRemappedFrom) != null)
+                if (span.Tags.GetTag(Tags.PeerServiceRemappedFrom) is not null)
                 {
                     ddprs = span.Tags.GetTag(Tags.PeerService);
                 }
             }
 
-            if (ddprs != null)
+            if (ddprs is not null)
             {
                 propagatorStringBuilder.Append(',').Append(SqlCommentPeerService).Append("='").Append(Uri.EscapeDataString(ddprs)).Append('\'');
             }
@@ -146,7 +146,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 */
 
                 // check to see if we have any Return/InputOutput/Output parameters
-                if (command.Parameters != null)
+                if (command.Parameters is not null)
                 {
                     foreach (DbParameter? param in command.Parameters)
                     {
@@ -225,7 +225,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                 // Build parameter list for EXEC statement
                 var paramList = new StringBuilder();
-                if (command.Parameters != null)
+                if (command.Parameters is not null)
                 {
                     foreach (DbParameter? param in command.Parameters)
                     {

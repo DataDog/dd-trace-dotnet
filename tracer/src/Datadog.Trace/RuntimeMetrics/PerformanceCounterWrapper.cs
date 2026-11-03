@@ -37,7 +37,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             var counter = _counter;
 
-            if (counter != null)
+            if (counter is not null)
             {
                 try
                 {

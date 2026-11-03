@@ -34,7 +34,7 @@ public sealed class SessionExtensionsAspect
     {
         try
         {
-            if (value != null)
+            if (value is not null)
             {
                 IastModule.OnTrustBoundaryViolation(value);
             }

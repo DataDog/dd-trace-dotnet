@@ -47,7 +47,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TTarget : IAmqpConsumer, IDuckType
     {
-        if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs) || exception != null)
+        if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs) || exception is not null)
         {
             return returnValue;
         }
@@ -69,7 +69,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         var spanLinks = linksEnabled ? ExtractSpanLinksFromMessages(tracer, eventsList) : null;
         var scope = CreateAndConfigureSpan(tracer, spanLinks, messageCount, consumerInstance, eventsList);
 
-        if (scope != null && eventsList.Count > 0)
+        if (scope is not null && eventsList.Count > 0)
         {
             ReinjectContextIntoMessages(tracer, scope, eventsList);
         }
@@ -86,10 +86,10 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
             foreach (var eventObj in eventsList)
             {
                 if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true &&
-                    eventData.Properties != null)
+                    eventData.Properties is not null)
                 {
                     var extractedContext = AzureMessagingCommon.ExtractContext(eventData.Properties);
-                    if (extractedContext.SpanContext != null)
+                    if (extractedContext.SpanContext is not null)
                     {
                         extractedContexts.Add(extractedContext.SpanContext);
                     }
@@ -159,7 +159,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
             foreach (var eventObj in eventsList)
             {
                 if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true &&
-                    eventData.Properties != null)
+                    eventData.Properties is not null)
                 {
                     AzureMessagingCommon.InjectContext(eventData.Properties, scope);
                 }

@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tools.Runner
                 // Make dd-dotnet executable
                 var ddDotnet = Utils.GetDdDotnetPath(applicationContext);
 
-                if (ddDotnet != null && File.Exists(ddDotnet))
+                if (ddDotnet is not null && File.Exists(ddDotnet))
                 {
                     // Make sure the dd-dotnet binary is executable
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("chmod", $"+x {ddDotnet}") { UseShellExecute = false })!.WaitForExit();

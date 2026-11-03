@@ -559,7 +559,7 @@ namespace Datadog.Trace.Debugger
                 var directoryPathSeparator = _directoryPathSeparator ?? Path.DirectorySeparatorChar;
                 var reversePath = directoryPathSeparator == '\\' ? pathQuery.ReversedBackslashPath : pathQuery.ReversedForwardSlashPath;
                 var match = _trie.GetStringStartingWith(reversePath);
-                if (match != null)
+                if (match is not null)
                 {
                     return GetReversePath(match, directoryPathSeparator, trimTrailingSeparators: false);
                 }

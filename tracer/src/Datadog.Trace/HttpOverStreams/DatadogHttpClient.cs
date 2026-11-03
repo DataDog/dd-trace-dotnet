@@ -58,7 +58,7 @@ namespace Datadog.Trace.HttpOverStreams
                 await writer.FlushAsync().ConfigureAwait(false);
             }
 
-            if (request.Content != null)
+            if (request.Content is not null)
             {
                 await request.Content.CopyToAsync(requestStream).ConfigureAwait(false);
             }

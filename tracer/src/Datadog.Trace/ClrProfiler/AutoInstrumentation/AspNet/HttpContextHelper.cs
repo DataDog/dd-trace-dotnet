@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
         {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
+            if (httpContext is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
             {
                 var headerTags = Tracer.Instance.CurrentTraceSettings.Settings.HeaderTags;
                 if (!headerTags.IsNullOrEmpty())

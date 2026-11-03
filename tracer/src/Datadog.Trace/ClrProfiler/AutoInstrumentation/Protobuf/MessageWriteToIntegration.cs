@@ -44,7 +44,7 @@ public sealed class MessageWriteToIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         where TTarget : IMessageProxy
     {
-        if (instance.Instance != null)
+        if (instance.Instance is not null)
         {
             SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "serialization");
         }

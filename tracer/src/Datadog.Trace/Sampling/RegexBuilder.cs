@@ -74,7 +74,7 @@ internal static class RegexBuilder
             {
                 var regex = Build(pattern.Value, format, timeout);
 
-                if (regex != null)
+                if (regex is not null)
                 {
                     regexList.Add(new KeyValuePair<string, Regex?>(pattern.Key, regex));
                 }

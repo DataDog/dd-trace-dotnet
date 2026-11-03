@@ -75,7 +75,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private static CaptureLimitInfo ToCaptureLimitInfo(Capture? capture)
         {
-            return capture != null
+            return capture is not null
                 ? new CaptureLimitInfo(
                     MaxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
                     MaxCollectionSize: capture.Value.MaxCollectionSize <= 0 ? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy : capture.Value.MaxCollectionSize,
@@ -482,7 +482,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 shouldStopCapture = true;
             }
 
-            if (evaluationResult.Decorations != null)
+            if (evaluationResult.Decorations is not null)
             {
                 SetSpanDecoration(state, in probeInfo, snapshotCreator, ref shouldStopCapture, evaluationResult);
             }
@@ -504,7 +504,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            if (evaluationResult.Condition != null && // i.e. not a metric, span probe, or span decoration
+            if (evaluationResult.Condition is not null && // i.e. not a metric, span probe, or span decoration
                 (evaluationResult.Condition is false ||
                 !SamplePayload(state, sampler, snapshotCreator.TraceContext)))
             {
@@ -576,7 +576,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 {
                     targetSpan.SetTag(evaluationErrorTag, string.Join(';', decoration.Errors));
                 }
-                else if (targetSpan.GetTag(evaluationErrorTag) != null)
+                else if (targetSpan.GetTag(evaluationErrorTag) is not null)
                 {
                     targetSpan.SetTag(evaluationErrorTag, null);
                 }
@@ -921,7 +921,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             internal static ProbeProcessorState Create(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
             {
-                var location = probe.Where.MethodName != null
+                var location = probe.Where.MethodName is not null
                                    ? ProbeLocation.Method
                                    : ProbeLocation.Line;
 
@@ -1005,7 +1005,7 @@ namespace Datadog.Trace.Debugger.Expressions
             internal ProbeExpressionEvaluator GetOrCreateEvaluator()
             {
                 var evaluator = Volatile.Read(ref _evaluator);
-                if (evaluator != null)
+                if (evaluator is not null)
                 {
                     return evaluator;
                 }

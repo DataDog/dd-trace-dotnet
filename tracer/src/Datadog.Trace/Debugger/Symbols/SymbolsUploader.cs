@@ -142,7 +142,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
             finally
             {
-                if (buffer != null)
+                if (buffer is not null)
                 {
                     ArrayPool<char>.Shared.Return(buffer);
                 }

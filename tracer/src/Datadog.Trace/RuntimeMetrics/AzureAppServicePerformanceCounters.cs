@@ -60,17 +60,17 @@ namespace Datadog.Trace.RuntimeMetrics
             var gen1 = GC.CollectionCount(1);
             var gen2 = GC.CollectionCount(2);
 
-            if (_previousGen0Count != null)
+            if (_previousGen0Count is not null)
             {
                 statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
             }
 
-            if (_previousGen1Count != null)
+            if (_previousGen1Count is not null)
             {
                 statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
             }
 
-            if (_previousGen2Count != null)
+            if (_previousGen2Count is not null)
             {
                 statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
             }

@@ -13,7 +13,7 @@ internal static class LinkedListExtensions
     public static T? Poll<T>(this LinkedList<T>? list)
         where T : struct
    {
-        if (list != null && list.First != null)
+        if (list is not null && list.First is not null)
         {
             var res = list.First.Value;
             list.RemoveFirst();
@@ -26,7 +26,7 @@ internal static class LinkedListExtensions
     public static T? Peek<T>(this LinkedList<T>? list)
         where T : struct
     {
-        if (list != null && list.First != null)
+        if (list is not null && list.First is not null)
         {
             var res = list.First.Value;
             return res;

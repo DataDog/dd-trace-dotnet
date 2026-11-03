@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 string operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Kafka);
                 if (parent is not null &&
                     parent.OperationName == operationName &&
-                    parent.GetTag(Tags.InstrumentationName) != null)
+                    parent.GetTag(Tags.InstrumentationName) is not null)
                 {
                     return null;
                 }
@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var header = message.Headers[i];
                 size += Encoding.UTF8.GetByteCount(header.Key);
                 var value = header.GetValueBytes();
-                if (value != null)
+                if (value is not null)
                 {
                     size += value.Length;
                 }
@@ -194,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 string operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Kafka);
                 if (parent is not null &&
                     parent.OperationName == operationName &&
-                    parent.GetTag(Tags.InstrumentationName) != null)
+                    parent.GetTag(Tags.InstrumentationName) is not null)
                 {
                     return null;
                 }
@@ -330,7 +330,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
                     }
 
-                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
+                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext is not null)
                     {
                         // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
                         // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
@@ -403,7 +403,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
 
             var extractors = dataStreamsManager.GetExtractorsByType(extractorType);
-            if (extractors != null && message.Headers != null)
+            if (extractors is not null && message.Headers is not null)
             {
                 foreach (var extractor in extractors)
                 {

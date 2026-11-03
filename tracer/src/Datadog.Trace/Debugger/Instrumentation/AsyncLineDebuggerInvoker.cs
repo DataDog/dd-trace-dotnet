@@ -214,7 +214,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                            state.MethodMetadataInfo.AsyncMethodHoistedArguments.Length > 0 ||
-                                           state.KickoffInvocationTarget != null;
+                                           state.KickoffInvocationTarget is not null;
 
                 state.HasLocalsOrReturnValue = false;
                 var asyncCaptureInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, kickoffMethod: state.MethodMetadataInfo.KickoffMethod, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals);

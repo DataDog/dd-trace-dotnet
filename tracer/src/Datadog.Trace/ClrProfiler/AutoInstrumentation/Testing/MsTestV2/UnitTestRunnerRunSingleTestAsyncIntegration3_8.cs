@@ -88,7 +88,7 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
         {
             foreach (var unitTestResultObject in lstResults)
             {
-                if (unitTestResultObject != null &&
+                if (unitTestResultObject is not null &&
                     MsTestExecution.Current?.WasObserved(unitTestResultObject) != true &&
                     unitTestResultObject.TryDuckCast<TestResultStruct3_8>(out var unitTestResult) &&
                     methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethod))

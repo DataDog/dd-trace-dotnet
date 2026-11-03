@@ -68,7 +68,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
 
         public override TReturn? ExecuteCallback(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         {
-            if (exception != null || returnValue == null)
+            if (exception is not null || returnValue == null)
             {
                 try
                 {
@@ -165,7 +165,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             // *
             // If the original task throws an exception we rethrow it here.
             // *
-            if (exception != null)
+            if (exception is not null)
             {
                 ExceptionDispatchInfo.Capture(exception).Throw();
             }
@@ -257,7 +257,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             // *
             // If the original task throws an exception we rethrow it here.
             // *
-            if (exception != null)
+            if (exception is not null)
             {
                 ExceptionDispatchInfo.Capture(exception).Throw();
             }

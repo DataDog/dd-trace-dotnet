@@ -248,7 +248,7 @@ internal static class GitCommandHelper
                 if (headerMatch.Success)
                 {
                     // Add the current file to the result and start a new one
-                    if (currentFile != null)
+                    if (currentFile is not null)
                     {
                         currentFile.ExecutedBitmap = ToFileBitmap(modifiedLines);
                         fileChanges.Add(currentFile);
@@ -284,7 +284,7 @@ internal static class GitCommandHelper
             }
 
             // Add the last file to the result (if any)
-            if (currentFile != null)
+            if (currentFile is not null)
             {
                 currentFile.ExecutedBitmap = ToFileBitmap(modifiedLines);
                 fileChanges.Add(currentFile);

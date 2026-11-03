@@ -667,7 +667,7 @@ namespace Datadog.Trace.Agent
             // Active buffer is full, swap them
             buffer = SwapBuffers();
 
-            if (buffer != null)
+            if (buffer is not null)
             {
                 // One buffer is full, request an eager flush
                 WakeFlushLoop();
@@ -773,7 +773,7 @@ namespace Datadog.Trace.Agent
                 {
                     while (_pendingTraces.TryDequeue(out var item))
                     {
-                        if (item.Callback != null)
+                        if (item.Callback is not null)
                         {
                             // Found a watermark
                             item.Callback();

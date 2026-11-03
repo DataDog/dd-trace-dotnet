@@ -198,7 +198,7 @@ internal sealed class StatsdManager : IStatsdManager
         lock (_lock)
         {
             previous = _current;
-            if (ensureCreated && previous != null && !forceRecreate)
+            if (ensureCreated && previous is not null && !forceRecreate)
             {
                 previous = null;
                 return;

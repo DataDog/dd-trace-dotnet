@@ -800,7 +800,7 @@ namespace Datadog.Trace
             {
                 try
                 {
-                    return Process != null && !Process.HasExited;
+                    return Process is not null && !Process.HasExited;
                 }
                 catch (Exception ex)
                 {

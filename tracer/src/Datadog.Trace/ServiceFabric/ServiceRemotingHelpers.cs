@@ -103,7 +103,7 @@ namespace Datadog.Trace.ServiceFabric
 
             string serviceFabricServiceName = PlatformHelpers.ServiceFabric.ServiceName;
 
-            if (eventArgs != null)
+            if (eventArgs is not null)
             {
                 methodName = eventArgs.MethodName ??
                              messageHeader?.MethodName ??
@@ -125,7 +125,7 @@ namespace Datadog.Trace.ServiceFabric
             tags.RemotingServiceName = remotingServiceName;
             tags.RemotingMethodName = methodName;
 
-            if (messageHeader != null)
+            if (messageHeader is not null)
             {
                 tags.RemotingMethodId = messageHeader.MethodId.ToString(CultureInfo.InvariantCulture);
                 tags.RemotingInterfaceId = messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture);
@@ -165,7 +165,7 @@ namespace Datadog.Trace.ServiceFabric
                     var eventArgs = e?.DuckAs<IServiceRemotingFailedResponseEventArgs>();
                     var exception = eventArgs?.Error;
 
-                    if (exception != null)
+                    if (exception is not null)
                     {
                         scope.Span?.SetException(exception);
                     }

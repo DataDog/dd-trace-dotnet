@@ -39,7 +39,7 @@ internal sealed class Baggage : IDictionary<string, string?>
     /// <param name="items">The baggage items.</param>
     public Baggage(IEnumerable<KeyValuePair<string, string?>>? items)
     {
-        if (items != null!)
+        if (items is not null)
         {
             _items = [..items];
         }

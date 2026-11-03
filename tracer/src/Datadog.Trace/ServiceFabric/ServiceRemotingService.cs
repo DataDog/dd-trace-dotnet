@@ -61,7 +61,7 @@ namespace Datadog.Trace.ServiceFabric
             try
             {
                 // extract propagation context from message headers for distributed tracing
-                if (messageHeaders != null)
+                if (messageHeaders is not null)
                 {
                     extractedContext = tracer.TracerManager.SpanContextPropagator
                                                             .Extract(messageHeaders, default(ServiceRemotingRequestMessageHeaderGetter))

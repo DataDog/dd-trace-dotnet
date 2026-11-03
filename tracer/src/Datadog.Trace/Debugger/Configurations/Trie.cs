@@ -69,13 +69,13 @@ namespace Datadog.Trace.Debugger.Configurations
         // <returns>True if there is any word in the trie that starts with the given prefix </returns>
         public bool ContainsPrefix(string prefix)
         {
-            return SearchNode(prefix, prefixMode: false) != null;
+            return SearchNode(prefix, prefixMode: false) is not null;
         }
 
         // <returns>True if str matches one of the prefixes stored into the trie </returns>
         public bool HasMatchingPrefix(string str)
         {
-            return SearchNode(str, prefixMode: true) != null;
+            return SearchNode(str, prefixMode: true) is not null;
         }
 
         // <returns>true is there is no string inserted into the Trie, otherwise false </returns>

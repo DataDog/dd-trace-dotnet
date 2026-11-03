@@ -108,7 +108,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsReEnter(ref AsyncDebuggerState state)
         {
-            return state.LogStates != null;
+            return state.LogStates is not null;
         }
 
         // We have two scenarios:
@@ -188,7 +188,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
                                        asyncState.HasArguments ||
-                                       asyncState.KickoffInvocationTarget != null;
+                                       asyncState.KickoffInvocationTarget is not null;
 
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             var capture = new CaptureInfo<object>(asyncState.MethodMetadataIndex, method: asyncState.MethodMetadataInfo.Method, value: asyncState.KickoffInvocationTarget, type: asyncState.MethodMetadataInfo.KickoffInvocationTargetType, methodState: MethodState.EntryAsync, hasLocalOrArgument: hasArgumentsOrLocals, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.This, localsCount: asyncState.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: asyncState.MethodMetadataInfo.ParameterNames.Length);
@@ -320,7 +320,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             var probeData = asyncState.ProbeData;
 
-            if (exception != null)
+            if (exception is not null)
             {
                 var captureInfo = new CaptureInfo<Exception>(asyncState.MethodMetadataIndex, value: exception, methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Exception, localsCount: asyncState.MethodMetadataInfo.LocalVariableNames.Length, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData))
@@ -328,7 +328,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     asyncState.IsActive = false;
                 }
             }
-            else if (returnValue != null)
+            else if (returnValue is not null)
             {
                 var captureInfo = new CaptureInfo<TReturn>(asyncState.MethodMetadataIndex, value: returnValue, name: "@return", methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, localsCount: asyncState.MethodMetadataInfo.LocalVariableNames.Length, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData))

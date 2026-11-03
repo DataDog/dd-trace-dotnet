@@ -208,7 +208,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             internal Type? RuntimeType { get; }
 
-            internal bool IsSupported => _getCount != null;
+            internal bool IsSupported => _getCount is not null;
 
             internal bool IsDictionary { get; }
 

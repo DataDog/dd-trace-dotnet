@@ -79,7 +79,7 @@ public static class UnitTestRunnerRunSingleTestIntegration3_8
         {
             foreach (var unitTestResultObject in lstResults)
             {
-                if (unitTestResultObject != null &&
+                if (unitTestResultObject is not null &&
                     unitTestResultObject.TryDuckCast<TestResultStruct3_8>(out var unitTestResult) &&
                     methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethod))
                 {

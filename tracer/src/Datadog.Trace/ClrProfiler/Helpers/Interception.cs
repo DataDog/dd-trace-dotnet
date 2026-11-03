@@ -40,13 +40,13 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 
             for (ushort i = 0; i < (genericTypes?.Length ?? 0); i++)
             {
-                Debug.Assert(genericTypes != null, nameof(genericTypes) + " != null");
+                Debug.Assert(genericTypes is not null, nameof(genericTypes) + " != null");
                 key = string.Concat(key, $"_g{genericTypes[i].AssemblyQualifiedName}");
             }
 
             for (ushort i = 0; i < (parameterTypes?.Length ?? 0); i++)
             {
-                Debug.Assert(parameterTypes != null, nameof(parameterTypes) + " != null");
+                Debug.Assert(parameterTypes is not null, nameof(parameterTypes) + " != null");
                 key = string.Concat(key, $"_p{parameterTypes[i].AssemblyQualifiedName}");
             }
 

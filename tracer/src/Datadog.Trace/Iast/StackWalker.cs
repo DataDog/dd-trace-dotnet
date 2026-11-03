@@ -101,7 +101,7 @@ internal static class StackWalker
             }
 
             var assembly = declaringType?.Assembly.GetName().Name;
-            if (assembly != null && !MustSkipAssembly(assembly))
+            if (assembly is not null && !MustSkipAssembly(assembly))
             {
                 identityFrame ??= frame;
                 if (hasDebugInfo)

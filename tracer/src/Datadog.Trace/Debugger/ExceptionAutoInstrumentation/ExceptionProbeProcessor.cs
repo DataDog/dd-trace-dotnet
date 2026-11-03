@@ -61,7 +61,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            return _enterSequenceHash != null;
+            return _enterSequenceHash is not null;
         }
 
         private bool EnsureLeaveHashComputed()
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            return _leaveSequenceHash != null;
+            return _leaveSequenceHash is not null;
         }
 
         private int? ComputeSequenceHash(ExceptionReplayProbe[] probes, bool reverseOrder = false)
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             foreach (var status in statuses)
             {
                 var probe = instrumentedProbes.FirstOrDefault(p => p.ProbeId == status.ProbeId);
-                if (probe != null && status.Status is Status.INSTALLED or Status.INSTRUMENTED or Status.ERROR)
+                if (probe is not null && status.Status is Status.INSTALLED or Status.INSTRUMENTED or Status.ERROR)
                 {
                     probe.ProbeStatus = status.Status;
                     probe.ErrorMessage = status.ErrorMessage;

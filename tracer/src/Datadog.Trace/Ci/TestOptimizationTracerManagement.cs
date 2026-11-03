@@ -48,7 +48,7 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
                         }
                     }
                 }
-                else if (getDiscoveryServiceFunc != null)
+                else if (getDiscoveryServiceFunc is not null)
                 {
                     DiscoveryService = getDiscoveryServiceFunc(settings);
                     EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(DiscoveryService);

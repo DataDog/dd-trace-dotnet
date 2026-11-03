@@ -81,14 +81,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             // Prefer Datadog's trace context for accurate correlation with DD spans
             // Fallback to Activity if Datadog tracing is not active
             var ddSpan = Tracer.Instance.ActiveScope?.Span as Span;
-            if (ddSpan != null)
+            if (ddSpan is not null)
             {
                 var flags = ddSpan.Context.SamplingPriority is { } samplingPriority && SamplingPriorityValues.IsKeep(samplingPriority) ? 1 : 0;
                 return (ddSpan.TraceId128, ddSpan.SpanId, flags);
             }
 
             var activity = System.Diagnostics.Activity.Current;
-            if (activity != null && activity.IdFormat == System.Diagnostics.ActivityIdFormat.W3C)
+            if (activity is not null && activity.IdFormat == System.Diagnostics.ActivityIdFormat.W3C)
             {
                 if (HexString.TryParseTraceId(activity.TraceId.ToHexString(), out var activityTraceId) &&
                     HexString.TryParseUInt64(activity.SpanId.ToHexString(), out var activitySpanId))

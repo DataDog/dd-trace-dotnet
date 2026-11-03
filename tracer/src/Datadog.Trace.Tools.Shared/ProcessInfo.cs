@@ -107,7 +107,7 @@ public class ProcessInfo
                 var key = setting.Attribute("key")?.Value;
                 var value = setting.Attribute("value")?.Value;
 
-                if (key != null)
+                if (key is not null)
                 {
                     settings[key] = value ?? string.Empty;
                 }

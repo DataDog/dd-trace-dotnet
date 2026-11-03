@@ -44,7 +44,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
         {
             foreach (var unitTestResultObject in lstResults)
             {
-                if (unitTestResultObject != null &&
+                if (unitTestResultObject is not null &&
                     unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
                     methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethod))
                 {

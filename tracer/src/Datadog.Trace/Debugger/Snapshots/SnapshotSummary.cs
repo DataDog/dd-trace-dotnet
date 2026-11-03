@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Snapshots
               .Append(FormatCapturedValues(GetArguments(snapshot)) ?? string.Empty)
               .Append(')');
             var returnValue = GetReturnValue(snapshot);
-            if (returnValue != null)
+            if (returnValue is not null)
             {
                 sb.Append(": ").Append(returnValue);
             }
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static string FormatMethod(StackInfo stackFrame)
         {
-            if (stackFrame.Function != null)
+            if (stackFrame.Function is not null)
             {
                 var classAndMethod = GetClassAndMethod(stackFrame.Function);
                 if (classAndMethod.Count == 2)
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static string FormatMethod(ProbeLocation probeLocation)
         {
-            if (probeLocation.Type != null && probeLocation.Method != null)
+            if (probeLocation.Type is not null && probeLocation.Method is not null)
             {
                 // parse out the class name
                 var fqn = probeLocation.Type;
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return className + "." + probeLocation.Method;
             }
 
-            if (probeLocation.Method != null)
+            if (probeLocation.Method is not null)
             {
                 return probeLocation.Method;
             }

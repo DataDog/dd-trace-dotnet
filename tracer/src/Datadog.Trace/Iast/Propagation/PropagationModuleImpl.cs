@@ -81,7 +81,7 @@ internal static class PropagationModuleImpl
             }
 
             var newRanges = Ranges.ForRemove(beginIndex, endIndex, taintedSelf.Ranges);
-            if (newRanges != null && newRanges.Length > 0)
+            if (newRanges is not null && newRanges.Length > 0)
             {
                 taintedObjects.Taint(result, newRanges);
             }
@@ -400,7 +400,7 @@ internal static class PropagationModuleImpl
             }
 
             var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
-            if (newRanges != null && newRanges.Length > 0)
+            if (newRanges is not null && newRanges.Length > 0)
             {
                 taintedObjects.Taint(result, newRanges);
             }

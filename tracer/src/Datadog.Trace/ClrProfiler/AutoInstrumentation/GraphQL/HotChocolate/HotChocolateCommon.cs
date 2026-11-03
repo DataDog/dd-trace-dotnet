@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     builder.AppendLine($"{Tab}{{");
 
                     var message = executionError.Message;
-                    if (message != null)
+                    if (message is not null)
                     {
                         builder.Append($"{Tab + Tab}\"message\": \"")
                                .Append(message.Replace("\r", "\\r").Replace("\n", "\\n"))
@@ -161,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     }
 
                     var locations = executionError.Locations;
-                    if (locations != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
+                    if (locations is not null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
                         ConstructErrorLocationsMessage(builder, locations);
                     }
@@ -202,13 +202,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     var executionError = executionErrors[i];
 
                     var message = executionError.Message;
-                    if (message != null)
+                    if (message is not null)
                     {
                         eventAttributes.Add(new KeyValuePair<string, object>("message", message));
                     }
 
                     var locations = executionError.Locations;
-                    if (locations != null)
+                    if (locations is not null)
                     {
                         var joinedLocations = new List<string>();
                         foreach (var location in locations)
@@ -223,7 +223,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     }
 
                     var path = executionError.Path;
-                    if (path != null)
+                    if (path is not null)
                     {
                         var pathList = path.ToList();
                         if (pathList is { Count: > 0 })
@@ -239,13 +239,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     }
 
                     var code = executionError.Code;
-                    if (code != null)
+                    if (code is not null)
                     {
                         eventAttributes.Add(new KeyValuePair<string, object>("code", code));
                     }
 
                     var exception = executionError.Exception;
-                    if (exception != null)
+                    if (exception is not null)
                     {
                         eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", exception.StackTrace));
                     }

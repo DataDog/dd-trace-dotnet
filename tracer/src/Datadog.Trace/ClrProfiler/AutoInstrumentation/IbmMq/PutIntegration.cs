@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
             if (scope is not null)
             {
                 var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreams.IsEnabled && (instance).Instance != null && (msg).Instance != null)
+                if (dataStreams.IsEnabled && (instance).Instance is not null && (msg).Instance is not null)
                 {
                     var queueName = IbmMqHelper.SanitizeQueueName(instance.Name);
                     var edgeTags = dataStreams.GetOrCreateEdgeTags(

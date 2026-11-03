@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
                 var activeScope = tracer.InternalActiveScope;
-                if (activeScope?.Span?.Context is SpanContext && properties != null)
+                if (activeScope?.Span?.Context is SpanContext && properties is not null)
                 {
                     AzureMessagingCommon.InjectContext(properties, activeScope);
                 }

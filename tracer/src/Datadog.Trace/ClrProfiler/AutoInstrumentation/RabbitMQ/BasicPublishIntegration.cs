@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session?.Connection?.Endpoint?.HostName);
 
             // Tags is not null if span is not null, but keep analysis happy, as there's no attribute for that
-            if (scope != null && tags is not null)
+            if (scope is not null && tags is not null)
             {
                 var tracer = Tracer.Instance;
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
@@ -65,9 +65,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWithOrdinal("amq.gen-") ? "<generated>" : routingKey;
                 scope.Span.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-                tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";
+                tags.MessageSize = body.Instance is not null ? body.Length.ToString() : "0";
 
-                if (basicProperties.Instance != null)
+                if (basicProperties.Instance is not null)
                 {
                     if (basicProperties.IsDeliveryModePresent())
                     {
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                         scope.Span,
                         tags,
                         basicProperties.Headers,
-                        body.Instance != null ? body.Length : 0);
+                        body.Instance is not null ? body.Length : 0);
                 }
             }
 

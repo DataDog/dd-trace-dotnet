@@ -74,8 +74,8 @@ internal static class BodyParser
             JsonToken.StartObject => ReadObject(r, ref state, depth),
             JsonToken.StartArray => ReadArray(r, ref state, depth),
             JsonToken.String => ReadString(r, ref state),
-            JsonToken.Integer => r.Value != null ? Convert.ToDouble(r.Value, CultureInfo.InvariantCulture) : null,
-            JsonToken.Float => r.Value != null ? Convert.ToDouble(r.Value, CultureInfo.InvariantCulture) : null,
+            JsonToken.Integer => r.Value is not null ? Convert.ToDouble(r.Value, CultureInfo.InvariantCulture) : null,
+            JsonToken.Float => r.Value is not null ? Convert.ToDouble(r.Value, CultureInfo.InvariantCulture) : null,
             JsonToken.Boolean => r.Value,
             JsonToken.Null => null,
             _ => null
@@ -85,7 +85,7 @@ internal static class BodyParser
     private static string? ReadString(JsonTextReader r, ref State state)
     {
         string? val = r.Value?.ToString();
-        if (val != null && val.Length > MaxStringSize)
+        if (val is not null && val.Length > MaxStringSize)
         {
             state.StringTooLong = true;
             val = val.Substring(0, MaxStringSize);

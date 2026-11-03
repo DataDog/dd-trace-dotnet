@@ -699,7 +699,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     break;
                 case MethodState.ExitEndAsync:
                 case MethodState.ExitEnd:
-                    if (MethodScopeMembers?.Exception != null)
+                    if (MethodScopeMembers?.Exception is not null)
                     {
                         CaptureException(MethodScopeMembers.Exception);
                         CaptureLocal(MethodScopeMembers.Exception, "@exception", MethodScopeMembers.Exception.GetType());
@@ -869,7 +869,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     break;
                 }
 
-                if (kind != null && kind.Value != member.ElementType)
+                if (kind is not null && kind.Value != member.ElementType)
                 {
                     continue;
                 }
@@ -1091,7 +1091,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 JsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
 
                 var fileName = frame?.GetFileName();
-                if (fileName != null)
+                if (fileName is not null)
                 {
                     JsonWriter.WritePropertyName("fileName");
                     JsonWriter.WriteValue(fileName);

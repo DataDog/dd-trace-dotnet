@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler
         void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string> value)
         {
             // This is a performance optimization. See comment in GetDistributedTrace() about potential race condition
-            if (_child != null)
+            if (_child is not null)
             {
                 DistributedTrace.Value = value;
             }
@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="value">Shared distributed trace object instance</param>
         public void SetDistributedTrace(IReadOnlyDictionary<string, string> value)
         {
-            if (_child != null)
+            if (_child is not null)
             {
                 DistributedTrace.Value = value;
             }

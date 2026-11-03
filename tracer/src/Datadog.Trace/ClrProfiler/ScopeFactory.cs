@@ -35,10 +35,10 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (span.Tags is HttpTags httpTags)
                 {
-                    return httpTags.InstrumentationName != null;
+                    return httpTags.InstrumentationName is not null;
                 }
 
-                return span.GetTag(Tags.InstrumentationName) != null;
+                return span.GetTag(Tags.InstrumentationName) is not null;
             }
         }
 
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (GetActiveHttpScope(tracer) != null)
+                if (GetActiveHttpScope(tracer) is not null)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace

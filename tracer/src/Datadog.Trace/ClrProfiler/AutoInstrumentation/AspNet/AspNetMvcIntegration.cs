@@ -209,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             {
                                 var proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers.Value, extractedContext);
 
-                                if (proxyContext != null)
+                                if (proxyContext is not null)
                                 {
                                     SharedItems.PushScope(HttpContext.Current, HttpProxyContextKey, proxyContext.Value.Scope);
                                     // Update the context to use the proxy span's context

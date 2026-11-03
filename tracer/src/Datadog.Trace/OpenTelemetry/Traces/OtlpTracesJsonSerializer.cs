@@ -65,7 +65,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         // attributes (optional)
         int droppedAttributesCount = 0;
-        if (evt.Attributes != null && evt.Attributes.Count > 0)
+        if (evt.Attributes is not null && evt.Attributes.Count > 0)
         {
             writer.WritePropertyName("attributes");
             droppedAttributesCount = WriteKeyValueArrayWithLimit(writer, evt.Attributes, AttributePerEventCountLimit);
@@ -102,7 +102,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         // attributes (optional)
         int droppedAttributesCount = 0;
-        if (link.Attributes != null && link.Attributes.Count > 0)
+        if (link.Attributes is not null && link.Attributes.Count > 0)
         {
             writer.WritePropertyName("attributes");
             droppedAttributesCount = WriteKeyValueArrayWithLimit(writer, link.Attributes, AttributePerLinkCountLimit);
@@ -558,7 +558,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // events (optional)
         int eventCount = 0;
         int droppedEventCount = 0;
-        if (spanModel.Span.SpanEvents != null && spanModel.Span.SpanEvents.Count > 0)
+        if (spanModel.Span.SpanEvents is not null && spanModel.Span.SpanEvents.Count > 0)
         {
             writer.WritePropertyName("events");
             writer.WriteStartArray();
@@ -589,7 +589,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // links (optional)
         int linkCount = 0;
         int droppedLinkCount = 0;
-        if (spanModel.Span.SpanLinks != null && spanModel.Span.SpanLinks.Count > 0)
+        if (spanModel.Span.SpanLinks is not null && spanModel.Span.SpanLinks.Count > 0)
         {
             writer.WritePropertyName("links");
             writer.WriteStartArray();

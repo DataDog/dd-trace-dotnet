@@ -139,7 +139,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // serialize each span
             for (var i = 0; i < traceChunk.SpanCount; i++)
             {
-                if (maxSize != null && offset - originalOffset >= maxSize)
+                if (maxSize is not null && offset - originalOffset >= maxSize)
                 {
                     // We've already reached the maximum size, give up
                     return 0;
