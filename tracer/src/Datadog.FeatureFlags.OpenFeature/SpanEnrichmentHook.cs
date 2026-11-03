@@ -42,7 +42,8 @@ internal sealed class SpanEnrichmentHook : Hook
         {
             var metadata = details.FlagMetadata;
 
-            var serialId = metadata?.GetInt(FeatureFlagMetadataKeys.SplitSerialId) is { } parsed ? (long?)parsed : null;
+            // The metadata keeps the uint32 serial id's bits in an int; read them back as unsigned.
+            var serialId = metadata?.GetInt(FeatureFlagMetadataKeys.SplitSerialId) is { } parsed ? (long?)unchecked((uint)parsed) : null;
             var doLog = metadata?.GetBool(FeatureFlagMetadataKeys.DoLog) == true;
 
             var targetingKey = context.EvaluationContext?.TargetingKey;

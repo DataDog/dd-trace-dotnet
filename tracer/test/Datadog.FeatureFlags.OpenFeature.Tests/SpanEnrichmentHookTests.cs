@@ -19,12 +19,15 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
 public class SpanEnrichmentHookTests
 {
-    [Fact]
-    public async Task ReadsTheSerialIdAndDoLogFromTypedMetadata()
+    [Theory]
+    [InlineData("1001", 1001L)]
+    [InlineData("2147483648", 2147483648L)]
+    [InlineData("4294967295", 4294967295L)]
+    public async Task ReadsTheSerialIdAndDoLogFromTypedMetadata(string wireSerialId, long expectedSerialId)
     {
         var evaluation = new TestEvaluation(new Dictionary<string, string>
         {
-            [FeatureFlagMetadataKeys.SplitSerialId] = "1001",
+            [FeatureFlagMetadataKeys.SplitSerialId] = wireSerialId,
             [FeatureFlagMetadataKeys.DoLog] = "true",
         });
         long? serialId = null;
@@ -36,7 +39,7 @@ public class SpanEnrichmentHookTests
             doLog = log;
         });
 
-        serialId.Should().Be(1001);
+        serialId.Should().Be(expectedSerialId);
         doLog.Should().BeTrue();
     }
 
