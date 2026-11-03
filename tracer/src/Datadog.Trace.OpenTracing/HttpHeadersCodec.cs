@@ -3,14 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Globalization;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing
 {
     internal class HttpHeadersCodec : ICodec
     {
-        private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
         private static readonly SpanContextExtractor Extractor = new();
         private static readonly SpanContextInjector Injector = new();
 
@@ -55,8 +53,8 @@ namespace Datadog.Trace.OpenTracing
             else
             {
                 // any other OpenTracing.ISpanContext
-                map.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-                map.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
+                map.Set(HttpHeaderNames.TraceId, context.TraceId);
+                map.Set(HttpHeaderNames.ParentId, context.SpanId);
             }
         }
     }
