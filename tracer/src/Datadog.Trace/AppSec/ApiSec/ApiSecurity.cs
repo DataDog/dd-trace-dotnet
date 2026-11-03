@@ -8,7 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.AppSec;
 
@@ -37,6 +40,9 @@ internal sealed class ApiSecurity
     }
 
     public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues)
+        => ShouldAnalyzeSchema(lastWafCall, localRootSpan, args, statusCode, routeValues, TelemetryFactory.Metrics);
+
+    internal bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues, IMetricsTelemetryCollector metrics)
     {
         try
         {
@@ -47,9 +53,21 @@ internal sealed class ApiSecurity
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 var httpMethod = localRootSpan.GetHttpMethod();
                 statusCode ??= localRootSpan.GetHttpStatusCode();
-                if (httpRouteTag == null || httpMethod == null || statusCode == null)
+                if (httpMethod == null || statusCode == null)
                 {
                     Log.Debug("Unsupported groupkey for api security {Route}, {Method}, {Status}", httpRouteTag, httpMethod, statusCode);
+                    return false;
+                }
+
+                if (httpRouteTag == null)
+                {
+                    // a request that wasn't found or that was blocked has no route to miss
+                    if (statusCode != 404 && localRootSpan.GetTag(Tags.AppSecBlocked) != "true")
+                    {
+                        metrics.RecordCountApiSecMissingRoute(GetFramework(localRootSpan));
+                    }
+
+                    Log.Debug("No route for api security, {Method}, {Status}", httpMethod, statusCode);
                     return false;
                 }
 
@@ -122,7 +140,30 @@ internal sealed class ApiSecurity
     /// <returns> bool value </returns>
     public bool CanCollectEndpoints() => _endpointsCollectionEnabled;
 
+    /// <summary>
+    /// Records whether the WAF run of a request sampled by <see cref="ShouldAnalyzeSchema(bool, Span, IDictionary{string, object}, int?, IDictionary{string, object}?)"/> extracted a schema
+    /// </summary>
+    internal static void RecordSchemaTelemetry(IResult? result, Span localRootSpan, IMetricsTelemetryCollector metrics)
+    {
+        if (result?.ExtractSchemaDerivatives is { Count: > 0 })
+        {
+            metrics.RecordCountApiSecRequestSchema(GetFramework(localRootSpan));
+        }
+        else
+        {
+            metrics.RecordCountApiSecRequestNoSchema(GetFramework(localRootSpan));
+        }
+    }
+
     public int GetEndpointsCollectionMessageLimit() => _endpointsCollectionMessageLimit;
+
+    private static MetricTags.ApiSecFramework GetFramework(Span localRootSpan)
+        => localRootSpan.GetTag(Tags.InstrumentationName) switch
+        {
+            "aspnet_core" => MetricTags.ApiSecFramework.AspNetCore,
+            "aspnet" => MetricTags.ApiSecFramework.AspNet,
+            _ => MetricTags.ApiSecFramework.Unknown,
+        };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int CombineHashes(string httpRouteTag, string httpMethod, int? statusCode) => HashCode.Combine(httpRouteTag.GetHashCode(), httpMethod.GetHashCode(), statusCode?.GetHashCode());
