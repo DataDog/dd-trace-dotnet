@@ -336,7 +336,7 @@ internal class CheckIisCommand : Command
 
             foreach (var variable in foundVariables)
             {
-                Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value.ToString()));
+                Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value));
             }
 
             foreach (var profilerPath in foundPathVariables)
