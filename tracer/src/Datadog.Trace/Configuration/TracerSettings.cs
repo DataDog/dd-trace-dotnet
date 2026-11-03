@@ -442,11 +442,12 @@ namespace Datadog.Trace.Configuration
                 $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.W3CBaggage}");
 
             // Same otel config is used for both injection and extraction
-            var otelPropagation = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
-                            .GetAsClassResult(
-                                 validator: injectionValidator, // invalid individual values are rejected later
-                                 converter: otelConverter);
+            var otelPropagation = NormalizeOtelPropagators(
+                config.WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
+                      .GetAsClassResult(
+                           validator: styles => styles.Any(IsSupportedOtelPropagator),
+                           converter: otelConverter),
+                ErrorLog);
 
             PropagationStyleInject = config
                .WithKeys(ConfigurationKeys.PropagationStyleInject)
@@ -745,7 +746,9 @@ namespace Datadog.Trace.Configuration
 
             // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
-            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString();
+            // OpenTelemetry semantics mode makes OTLP the default traces exporter.
+            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()
+                                  ?? (OtelSemanticsEnabled ? "otlp" : null);
             var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
             OtelTracesSpanMetricsEnabled = explicitSpanMetrics
                 ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
@@ -1232,7 +1235,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
         /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
-        /// suppressing Datadog-specific attributes.
+        /// suppressing Datadog-specific attributes. It also makes OTLP the default traces exporter
+        /// when <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/> is not set.
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
@@ -1552,6 +1556,50 @@ namespace Datadog.Trace.Configuration
                 Log.Warning("Wrong setting '{PropagationInput}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service, dynamic_service or full", inputValue);
                 return null;
             }
+        }
+
+        private static ConfigurationBuilder.ClassConfigurationResultWithKey<string[]> NormalizeOtelPropagators(
+            in ConfigurationBuilder.ClassConfigurationResultWithKey<string[]> original,
+            OverrideErrorLog errorLog)
+        {
+            var result = original.ConfigurationResult;
+
+            // Normalize only the selected source; the converter runs once per source.
+            if (result is { IsValid: true, Result: { } styles })
+            {
+                var propagatorsBySupport = styles.ToLookup(IsSupportedOtelPropagator);
+                if (!propagatorsBySupport.Contains(false))
+                {
+                    return original;
+                }
+
+                errorLog.LogUnsupportedValues(original.Key, [..propagatorsBySupport[false]]);
+                result = ConfigurationResult<string[]>.Valid(
+                    [..propagatorsBySupport[true]],
+                    result.TelemetryOverride);
+            }
+            else if (result.IsPresent)
+            {
+                // Report once before sharing the result between injection and extraction.
+                errorLog.LogInvalidConfiguration(original.Key);
+                result = ConfigurationResult<string[]>.NotFound();
+            }
+            else
+            {
+                return original;
+            }
+
+            return new(original.Telemetry, original.Key, original.RecordValue, result);
+        }
+
+        private static bool IsSupportedOtelPropagator(string propagator)
+            => SpanContextPropagatorFactory.GetPropagator(propagator) is not null
+            || string.Equals(propagator, "none", StringComparison.OrdinalIgnoreCase);
+
+        private static ParsingResult<OtlpProtocol> UnsupportedOtlpProtocol(string inputValue)
+        {
+            Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
+            return ParsingResult<OtlpProtocol>.Failure();
         }
 
         private readonly struct DbmPropagationResult(DbmPropagationLevel level, bool forceInjectBaseHash = false)

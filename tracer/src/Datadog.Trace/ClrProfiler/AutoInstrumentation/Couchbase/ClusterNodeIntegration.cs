@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        MethodName = "ExecuteOp",
        ReturnTypeName = ClrNames.Task,
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
-       MinimumVersion = "3.1.3",
+       MinimumVersion = "3.1.2",
        MaximumVersion = CouchbaseCommon.MaxVersion3,
        IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        MethodName = "SendAsync",
        ReturnTypeName = ClrNames.Task,
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
-       MinimumVersion = "3.1.3",
+       MinimumVersion = "3.1.2",
        MaximumVersion = CouchbaseCommon.MaxVersion3,
        IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        ReturnTypeName = ClrNames.Task,
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
        MinimumVersion = "3.0.7",
-       MaximumVersion = "3.1.2",
+       MaximumVersion = "3.1.1",
        IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        ReturnTypeName = ClrNames.Task,
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
        MinimumVersion = "3.0.7",
-       MaximumVersion = "3.1.2",
+       MaximumVersion = "3.1.1",
        IntegrationName = CouchbaseCommon.IntegrationName)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
