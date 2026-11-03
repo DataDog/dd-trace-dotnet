@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -223,24 +224,21 @@ public class ExposureApiTests
     }
 
     [Fact]
-    public async Task SendExposureWithDatadogLoggingEnabledSendsNewExposuresOnly()
+    public void SendExposureWithDatadogLoggingEnabledSendsNewExposuresOnly()
     {
-        var local = new TestRequestFactory(new Uri("http://agent:8126/"), uri => new RecordingJsonApiRequest(uri));
+        // The send loop can flush the first exposure before the second call, so every batch is counted.
+        // The factory only uses the given callbacks for the first requests, one callback per request.
+        var payloads = new ConcurrentQueue<string>();
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"), Enumerable.Repeat<Func<Uri, TestApiRequest>>(uri => new CollectingJsonApiRequest(uri, payloads), 4).ToArray());
         using var transport = CreateLocalTransport(local);
-        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromMilliseconds(1), TimeSpan.FromSeconds(1));
+        var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(3));
 
         api.SendExposure(CreateExposure("flag")).Should().BeFalse();
         api.SendExposure(CreateExposure("flag")).Should().BeTrue();
+        api.Dispose();
 
-        // The factory records the request before the transport posts its payload, so wait for the payload.
-        var deadline = DateTime.UtcNow.AddSeconds(3);
-        while (local.RequestsSent.OfType<RecordingJsonApiRequest>().All(r => r.PayloadJson.Length == 0) && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(20));
-        }
-
-        var payload = JObject.Parse(local.RequestsSent.OfType<RecordingJsonApiRequest>().Single().PayloadJson);
-        payload["exposures"]!.Should().ContainSingle("a repeat is not sent");
+        payloads.Should().NotBeEmpty("the new exposure is sent");
+        payloads.Sum(json => JObject.Parse(json)["exposures"]!.Count()).Should().Be(1, "a repeat is not sent");
     }
 
     private static Mock<IDatadogLogger> CreateDebugLogger()
@@ -291,6 +289,15 @@ public class ExposureApiTests
             sendStarted.TrySetResult(true);
             await releaseSend.Task.ConfigureAwait(false);
             return await base.PostAsJsonAsync(payload, compression, settings).ConfigureAwait(false);
+        }
+    }
+
+    private sealed class CollectingJsonApiRequest(Uri endpoint, ConcurrentQueue<string> payloads) : RecordingJsonApiRequest(endpoint)
+    {
+        public override Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        {
+            payloads.Enqueue(JsonConvert.SerializeObject(payload, settings));
+            return base.PostAsJsonAsync(payload, compression, settings);
         }
     }
 
