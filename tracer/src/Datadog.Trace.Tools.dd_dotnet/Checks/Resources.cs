@@ -159,7 +159,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             sb.AppendLine("Detected versions:");
 
             // The ordering is not required but makes the output consistent for tests
-            foreach (var version in versions.OrderBy(v => v))
+            foreach (var version in versions.Order())
             {
                 sb.AppendLine($"{version}");
             }
