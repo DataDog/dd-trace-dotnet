@@ -379,6 +379,7 @@ public partial class FeatureFlagsEvaluatorTests
     [InlineData("\"features\":\"garbage\"")]
     [InlineData("\"features\":42")]
     [InlineData("\"features\":[\"junk\",{\"key\":\"k\",\"value\":{\"nested\":true},\"destinations\":[\"HOOK\"]}]")]
+    [InlineData("\"features\":[{\"key\":\"huge\",\"value\":123456789012345678901234567890,\"destinations\":[\"HOOK\"]},{\"key\":\"kept\",\"value\":\"v\",\"destinations\":[\"HOOK\"]}]")]
     public void MalformedFeaturesFieldNeverFailsTheFlag(string featuresJson)
     {
         var json = "{\"flags\":{\"features-flag\":{\"key\":\"features-flag\",\"enabled\":true,\"variationType\":\"STRING\",\"variations\":{\"on\":{\"key\":\"on\",\"value\":\"value\"}},\"allocations\":[{\"key\":\"alloc\",\"splits\":[{\"variationKey\":\"on\",\"shards\":[]," + featuresJson + "}]}]}}}";
@@ -390,6 +391,11 @@ public partial class FeatureFlagsEvaluatorTests
         result.Reason.Should().Be(EvaluationReason.Static);
         result.Value.Should().Be("value");
         result.Error.Should().BeNull();
+        if (featuresJson.Contains("\"kept\""))
+        {
+            result.FlagMetadata!.Should().ContainKey("__dd_feature.kept", "only the out-of-range feature is skipped");
+            result.FlagMetadata!.Keys.Should().NotContain("__dd_feature.huge");
+        }
     }
 
     [Fact]

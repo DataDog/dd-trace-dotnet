@@ -133,7 +133,9 @@ internal sealed class FeatureListJsonConverter : JsonConverter<List<Feature>?>
                 return (string?)reader.Value;
             case JsonToken.Integer:
             case JsonToken.Float:
-                return Convert.ToDouble(reader.Value, CultureInfo.InvariantCulture);
+                // An integer outside the long range arrives as a BigInteger, which is not IConvertible;
+                // skip that feature rather than fail the whole configuration.
+                return reader.Value is IConvertible number ? Convert.ToDouble(number, CultureInfo.InvariantCulture) : null;
             case JsonToken.Boolean:
                 return (bool)reader.Value!;
             default:
