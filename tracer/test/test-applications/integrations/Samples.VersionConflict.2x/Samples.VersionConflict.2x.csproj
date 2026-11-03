@@ -1,7 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <!-- Keep the default test on a version that predates ProcessHelpers.StartWithDoNotTrace. -->
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.48.0</ApiVersion>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="2.60.0" />
+    <PackageReference Include="Datadog.Trace" Version="$(ApiVersion)" />
   </ItemGroup>
 
   <!-- System.Net.Http is needed on net4x; on netcoreapp2.1+ it ships with the BCL. -->

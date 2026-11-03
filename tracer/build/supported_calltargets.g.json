@@ -7688,6 +7688,31 @@
   {
     "IntegrationName": "DatadogTraceVersionConflict",
     "AssemblyName": "Datadog.Trace",
+    "TargetTypeName": "Datadog.Trace.PlatformHelpers.ContainerMetadata",
+    "TargetMethodName": "TryGetInode",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.Int64&"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 46,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 48,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict.ContainerMetadataTryGetInodeIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceVersionConflict",
+    "AssemblyName": "Datadog.Trace",
     "TargetTypeName": "Datadog.Trace.Util.ProcessHelpers",
     "TargetMethodName": "StartWithDoNotTrace",
     "TargetReturnType": "System.Diagnostics.Process",

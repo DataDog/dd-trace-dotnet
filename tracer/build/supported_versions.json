@@ -592,7 +592,7 @@
   {
     "integrationName": "DatadogTraceVersionConflict",
     "assemblyName": "Datadog.Trace",
-    "minAssemblyVersionInclusive": "2.49.0",
+    "minAssemblyVersionInclusive": "2.46.0",
     "maxAssemblyVersionInclusive": "2.65535.65535",
     "packages": []
   },

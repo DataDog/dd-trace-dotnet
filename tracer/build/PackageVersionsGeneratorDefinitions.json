@@ -1,5 +1,18 @@
 [
   {
+    "IntegrationName": "VersionConflict2x",
+    "SampleProjectName": "Samples.VersionConflict.2x",
+    "NugetPackageSearchName": "Datadog.Trace",
+    "MinVersion": "2.46.0",
+    "MaxVersionExclusive": "2.61.0",
+    "SpecificVersions": [
+      "2.46.0",
+      "2.48.0",
+      "2.49.0",
+      "2.60.0"
+    ]
+  },
+  {
     "IntegrationName": "Hangfire",
     "SampleProjectName": "Samples.Hangfire",
     "NugetPackageSearchName": "Hangfire.Core",

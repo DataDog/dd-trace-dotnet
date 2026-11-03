@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -20,14 +21,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
         }
 
-        [SkippableFact]
-        public async Task SubmitTraces()
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.VersionConflict2x), MemberType = typeof(PackageVersions))]
+        public async Task SubmitTraces(string packageVersion)
         {
             // 1 manual span + 2 http spans
             const int expectedSpanCount = 3;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = await RunSampleAndWaitForExit(agent))
+            using (var processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
@@ -85,6 +87,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 httpSpans.Should().OnlyContain(
                     s => s.Tags[Tags.RuntimeId] == runtimeId,
                     "runtime id should be synchronized across versions of the tracer");
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.VersionConflict2x), MemberType = typeof(PackageVersions))]
+        public async Task DoesNotTraceInodeLookup(string packageVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_Process_ENABLED", "true");
+            var logDirectory = Path.Combine(LogDirectory, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(logDirectory);
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = await RunSampleAndWaitForExit(agent, arguments: "inode", packageVersion: packageVersion);
+            var spans = await agent.WaitForSpansAsync(2);
+
+            spans.Should().HaveCount(2);
+            var manualSpan = spans.Should().ContainSingle(s => s.Name == "Manual").Subject;
+            var commandSpan = spans.Should().ContainSingle(s => s.Name == "command_execution").Subject;
+            commandSpan.Resource.Should().Be(EnvironmentTools.IsWindows() ? "cmd.exe" : "/bin/echo");
+            commandSpan.ParentId.Should().Be(manualSpan.SpanId);
+            commandSpan.TraceId.Should().Be(manualSpan.TraceId);
+
+            var logFiles = Directory.GetFiles(logDirectory, "dotnet-tracer-managed-*.log");
+            logFiles.Should().NotBeEmpty();
+            foreach (var logFile in logFiles)
+            {
+                File.ReadAllText(logFile).Should().NotContain("Error creating or populating execute command scope.");
             }
         }
     }

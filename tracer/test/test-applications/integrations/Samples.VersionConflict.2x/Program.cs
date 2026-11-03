@@ -1,6 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +15,12 @@ namespace Samples.VersionConflict_2x
     {
         static async Task Main(string[] args)
         {
+            if (args.Length > 0 && args[0] == "inode")
+            {
+                CheckInodeLookup();
+                return;
+            }
+
             using var server = WebServer.Start(out var url);
             
             server.RequestHandler = context =>
@@ -55,6 +64,45 @@ namespace Samples.VersionConflict_2x
             {
                 Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id}");
                 Thread.Sleep(Timeout.Infinite);
+            }
+        }
+
+        private static void CheckInodeLookup()
+        {
+            // Register the old tracer with the automatic tracer before initializing Tracer.Instance.
+            // Process spans will then ask the old tracer for its sampling priority during initialization.
+            var tracerAssembly = typeof(Tracer).Assembly;
+            var distributedTracer = tracerAssembly.GetType("Datadog.Trace.ClrProfiler.DistributedTracer", throwOnError: true);
+            RuntimeHelpers.RunClassConstructor(distributedTracer.TypeHandle);
+
+            // Invoke the old tracer's inode lookup even when /proc/self/cgroup contains a container ID.
+            // This must not generate a process span or recursively initialize the manual tracer.
+            var metadata = tracerAssembly.GetType("Datadog.Trace.PlatformHelpers.ContainerMetadata", throwOnError: true);
+            var tryGetInode = metadata.GetMethod("TryGetInode", BindingFlags.Static | BindingFlags.NonPublic);
+            object[] arguments = ["/proc/self/ns/cgroup", 0L];
+            var success = (bool)tryGetInode.Invoke(null, arguments);
+            // BusyBox stat does not support --printf, and Windows may not have stat at all.
+            // Both the successful lookup and the failure path must preserve the return/out values.
+            if (success ? (long)arguments[1] <= 0 : (long)arguments[1] != 0)
+            {
+                throw new InvalidOperationException("The inode lookup returned inconsistent results.");
+            }
+
+            Console.WriteLine($"Inode lookup succeeded: {success}");
+
+            // A normal process on the same thread must still produce a span after the lookup completes.
+            using var scope = Tracer.Instance.StartActive("Manual");
+            var startInfo = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                ? new ProcessStartInfo("cmd.exe", "/c echo normal-process")
+                                : new ProcessStartInfo("/bin/echo", "normal-process");
+            startInfo.UseShellExecute = false;
+            startInfo.CreateNoWindow = true;
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            using var process = Process.Start(startInfo);
+            process.WaitForExit();
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException("The normal process failed.");
             }
         }
     }
