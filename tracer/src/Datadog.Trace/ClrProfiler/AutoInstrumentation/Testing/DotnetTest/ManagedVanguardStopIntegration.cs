@@ -249,7 +249,7 @@ public sealed class ManagedVanguardStopIntegration
         }
 
         normalizedPaths.Sort(CoverageReportPathComparer);
-        var payload = Encoding.UTF8.GetBytes($"{CodeCoverageReportSource.MicrosoftCodeCoverage}|v1|{sessionSpanId}|{string.Join('|', normalizedPaths)}");
+        var payload = Encoding.UTF8.GetBytes($"{nameof(CodeCoverageReportSource.MicrosoftCodeCoverage)}|v1|{sessionSpanId}|{string.Join('|', normalizedPaths)}");
 #if NET6_0_OR_GREATER
         var hash = SHA256.HashData(payload);
 #else
