@@ -785,7 +785,7 @@ internal static class InstanceOfHelper
                    string.Equals(_fullName, other._fullName, StringComparison.Ordinal);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is AssemblyIdentity other && Equals(other);
         }

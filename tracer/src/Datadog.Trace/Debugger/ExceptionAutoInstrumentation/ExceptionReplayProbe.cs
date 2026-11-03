@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
@@ -153,12 +154,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return hashCode.ToHashCode();
         }
 
-        public bool Equals(ExceptionReplayProbe? other)
+        public bool Equals([NotNullWhen(true)] ExceptionReplayProbe? other)
         {
             return other is not null && Method.Equals(other.Method);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ExceptionReplayProbe other && Equals(other);
         }

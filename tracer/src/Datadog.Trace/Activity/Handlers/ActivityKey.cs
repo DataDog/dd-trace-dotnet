@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Activity.Handlers;
 
@@ -34,7 +35,7 @@ internal readonly struct ActivityKey : IEquatable<ActivityKey>
         string.Equals(_traceId, other._traceId, StringComparison.Ordinal) &&
         string.Equals(_spanId, other._spanId, StringComparison.Ordinal);
 
-    public override bool Equals(object? obj) =>
+    public override bool Equals([NotNullWhen(true)] object? obj) =>
         obj is ActivityKey other && Equals(other);
 
     public override int GetHashCode()

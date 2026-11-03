@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Util;
@@ -179,7 +180,7 @@ internal sealed class GlobalCoverageCombinerAccumulator
 
         public bool Equals(NullableStringKey other) => string.Equals(Value, other.Value, StringComparison.Ordinal);
 
-        public override bool Equals(object? obj) => obj is NullableStringKey other && Equals(other);
+        public override bool Equals([NotNullWhen(true)] object? obj) => obj is NullableStringKey other && Equals(other);
 
         public override int GetHashCode() => Value is null ? 0 : StringComparer.Ordinal.GetHashCode(Value);
     }

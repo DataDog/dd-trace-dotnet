@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using Datadog.Trace.DuckTyping;
@@ -90,7 +91,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return true;
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is MetricStreamIdentity other && Equals(other);
         }
