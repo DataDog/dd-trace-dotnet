@@ -232,8 +232,9 @@ public class ExposureApiTests
         api.SendExposure(CreateExposure("flag")).Should().BeFalse();
         api.SendExposure(CreateExposure("flag")).Should().BeTrue();
 
+        // The factory records the request before the transport posts its payload, so wait for the payload.
         var deadline = DateTime.UtcNow.AddSeconds(3);
-        while (local.RequestsSent.Count == 0 && DateTime.UtcNow < deadline)
+        while (local.RequestsSent.OfType<RecordingJsonApiRequest>().All(r => r.PayloadJson.Length == 0) && DateTime.UtcNow < deadline)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(20));
         }
