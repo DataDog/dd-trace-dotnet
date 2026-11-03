@@ -13,4 +13,9 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Generates the ProjectInfo class Startup.AssemblyName reads. Analyzer-only. -->
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta3" PrivateAssets="all" />
+  </ItemGroup>
+
 </Project>

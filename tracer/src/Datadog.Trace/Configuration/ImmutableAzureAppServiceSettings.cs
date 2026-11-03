@@ -25,6 +25,11 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ImmutableAzureAppServiceSettings>();
 
         /// <summary>
+        /// Default for <see cref="AgentMaxRetryIntervalSeconds"/>: 5 minutes.
+        /// </summary>
+        public const int DefaultAgentMaxRetryIntervalSeconds = 300;
+
+        /// <summary>
         /// The http client paths we don't want to trace when running in AAS or Azure Functions.
         /// </summary>
         /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientExcludedUrlSubstrings"/>
@@ -92,6 +97,9 @@ namespace Datadog.Trace.Configuration
             DebugModeEnabled = config.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
             CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
             NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
+            AgentMaxRetryIntervalSeconds = config.WithKeys(ConfigurationKeys.AzureAppService.AasAgentMaxRetryIntervalSeconds)
+                                                 .AsInt32(DefaultAgentMaxRetryIntervalSeconds, x => x > 0)
+                                                 .Value;
         }
 
         public bool DebugModeEnabled { get; }
@@ -99,6 +107,11 @@ namespace Datadog.Trace.Configuration
         public bool CustomTracingEnabled { get; }
 
         public bool NeedsDogStatsD { get; }
+
+        /// <summary>
+        /// Gets the longest wait, in seconds, between attempts to start or restart the agent processes.
+        /// </summary>
+        public int AgentMaxRetryIntervalSeconds { get; }
 
         public bool IsUnsafeToTrace { get; }
 

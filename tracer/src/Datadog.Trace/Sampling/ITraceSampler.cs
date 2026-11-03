@@ -19,7 +19,7 @@ namespace Datadog.Trace.Sampling
         /// <returns><c>true</c> if one of the registered rules depends on span resource names, <c>false</c> otherwise</returns>
         bool HasResourceBasedSamplingRule { get; }
 
-        void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates);
+        void SetDefaultSampleRates(IReadOnlyDictionary<string, double> sampleRates);
 
         SamplingDecision MakeSamplingDecision(Span span);
     }

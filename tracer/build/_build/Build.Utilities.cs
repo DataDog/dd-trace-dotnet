@@ -640,20 +640,27 @@ partial class Build
        .Description("Update the version number for the tracer")
        .Before(Clean, BuildTracerHome)
        .Before(Clean, BuildProfilerHome)
-       .Requires(() => Version)
        .Requires(() => NewVersion)
        .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            if (NewVersion == Version && IsPrerelease == NewIsPrerelease)
+            var source = new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease!.Value);
+
+            // The version number has to change: the samples are rewritten from the *pre-bump*
+            // version (they should track the release on nuget.org, not the one under development).
+            if (source.TracerVersion == new System.Version(Version))
             {
-                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version} and {IsPrerelease} == {NewIsPrerelease}");
+                throw new Exception(
+                    $"Cannot set versions: {NewVersion} is already the current version. Changing only " +
+                    "the prerelease flag is not supported - the version number has to change too.");
             }
 
-            // Samples need to use the latest version (i.e. the _current_ build version, before updating)
+            // Samples reference the version that is published on nuget.org, which is the one we are
+            // bumping *away* from, so they lag the source by one release.
             new SetAllVersions.Samples(TracerDirectory, Version, IsPrerelease).Run();
-            // Source needs to use the _actual_ version
-            new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
+
+            // version.props, which everything else derives from.
+            source.Run();
         });
 
     Target AnalyzePipelineCriticalPath => _ => _

@@ -12,7 +12,9 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 3.57.0)
+# DD_VERSION is set by build/cmake/DdVersion.cmake, which the root CMakeLists.txt includes,
+# so configure CMake from the repository root rather than from this directory
+project("Datadog.Tracer.Native" VERSION ${DD_VERSION})
 
 # ******************************************************
 # Environment detection

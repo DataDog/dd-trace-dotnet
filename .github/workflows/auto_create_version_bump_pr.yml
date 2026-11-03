@@ -61,6 +61,11 @@ jobs:
         run: .\tracer\build.ps1 CalculateNextVersion
         id: versions
 
+      # Must run before "Bump Version": CloseMilestone closes the milestone matching the version in
+      # version.props, which is the just-released version until the bump rewrites it.
+      - name: "Close previous milestone"
+        run: .\tracer\build.ps1 CloseMilestone
+
       - name: "Bump Version"
         run: .\tracer\build.ps1 UpdateVersion
         env:
@@ -82,11 +87,6 @@ jobs:
           title: "[Version Bump] ${{steps.versions.outputs.full_version}}"
           reviewers: "DataDog/apm-dotnet"
           body: "${{steps.changes.outputs.release_notes}}"
-
-      - name: "Close previous milestone"
-        run: .\tracer\build.ps1 CloseMilestone
-        env:
-          Version: ${{steps.versions.outputs.previous_version}}
 
       - name: Display output
         run: |

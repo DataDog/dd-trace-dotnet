@@ -504,8 +504,8 @@ partial class Build
         .Executes(() =>
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
-            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
+            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} {CppCheckVersionDefines} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.xml --xml --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
+            CppCheck.Value(arguments: $"--inconclusive --project={NativeTracerProject.Path} {CppCheckVersionDefines} --output-file={BuildDataDirectory}/{NativeTracerProject.Name}-cppcheck-{arch}.txt --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
         });
 
     Target CppCheckNativeSrc => _ => _
@@ -1136,8 +1136,25 @@ partial class Build
 
             // Add the dd-dotnet scripts
             CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
-            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyDdDotnetScript(BundleHomeDirectory);
         });
+
+    private void CopyDdDotnetScript(AbsolutePath destination)
+    {
+        const string placeholder = "@DD_VERSION@";
+
+        // Copy first and rewrite in place, so the destination directory and executable bit are handled for us
+        CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", destination, FileExistsPolicy.Overwrite);
+        var script = destination / "dd-dotnet.sh";
+        var original = File.ReadAllText(script);
+        if (!original.Contains(placeholder))
+        {
+            throw new InvalidOperationException($"Expected to find the {placeholder} placeholder in {script}");
+        }
+
+        // Always LF: this is a shell script that ships to Linux.
+        File.WriteAllText(script, original.Replace(placeholder, Version).Replace("\r\n", "\n"));
+    }
 
     Target CreateBenchmarkIntegrationHome => _ => _
         .Unlisted()
@@ -1198,12 +1215,18 @@ partial class Build
         .After(BuildDdDotnet)
         .Executes(() =>
         {
-            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
-            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            if (IsWin)
+            {
+                CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            }
+            else
+            {
+                CopyDdDotnetScript(MonitoringHomeDirectory);
+            }
 
             if (IsLinux)
             {
-                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
+                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / "dd-dotnet.sh");
             }
         });
 
@@ -1238,7 +1261,6 @@ partial class Build
         .After(BuildTracerHome, BuildManagedTracerHome, BuildNativeTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
-        .Requires(() => Version)
         .Executes(() =>
         {
             var tar = Tar.Value;

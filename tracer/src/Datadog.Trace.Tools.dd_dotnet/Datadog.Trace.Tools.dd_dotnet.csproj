@@ -54,7 +54,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="DeprecationMessages.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ExporterSettings.Shared.cs" Link="ExporterSettings.Shared.cs" />
@@ -77,6 +76,8 @@
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="PublishAotCompressed" Version="1.0.3" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
+    <!-- Generates the ProjectInfo class. Analyzer-only. -->
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta3" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
