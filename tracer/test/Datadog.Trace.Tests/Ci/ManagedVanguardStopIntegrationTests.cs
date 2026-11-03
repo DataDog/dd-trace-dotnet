@@ -127,6 +127,7 @@ public class ManagedVanguardStopIntegrationTests
             CoverageBackfillDataStore.Persist(TestOptimization.Instance, CoverageBackfillData.FromBackendCoverage(new Dictionary<string, string> { ["src/Calculator.cs"] = Convert.ToBase64String([0b_1000_0000]) }));
             session = TestSession.GetOrCreate("dotnet test", workingDirectory: workspacePath, framework: null, startDate: null, propagateEnvironmentVariables: true);
             session.EnableIpcServer().Should().BeTrue();
+            var coverageMessages = new CoverageIpcMessageWaiter(session);
             CoverageBackfillDataStore.RecordActualItrSkip(session.Tags.SessionId);
             var proxy = new ManagedVanguardProxy([reportPath]);
 
@@ -134,7 +135,7 @@ public class ManagedVanguardStopIntegrationTests
 
             CoverageBackfillDataStore.TryReadCoverageIpcResults(session.Tags.SessionId, out var persistedResults).Should().BeTrue();
             persistedResults.Should().ContainSingle().Which.Source.Should().Be(CodeCoverageReportSource.MicrosoftCodeCoverage);
-            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            coverageMessages.WaitForMessages(TimeSpan.FromSeconds(5));
             session.PublishCodeCoverage();
 
             session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(100);
