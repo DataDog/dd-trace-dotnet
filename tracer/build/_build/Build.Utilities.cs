@@ -641,10 +641,15 @@ partial class Build
        .Before(Clean, BuildTracerHome)
        .Before(Clean, BuildProfilerHome)
        .Requires(() => NewVersion)
-       .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            var newVersionSuffix = NewIsPrerelease!.Value ? "-prerelease" : string.Empty;
+            var trimmed = NewVersionSuffix?.Trim().TrimStart('-') ?? string.Empty;
+            var newVersionSuffix = trimmed.Length == 0 ? string.Empty : "-" + trimmed;
+            if (newVersionSuffix is not ("" or "-prerelease"))
+            {
+                throw new Exception($"UpdateVersion only accepts an empty suffix or 'prerelease', but NewVersionSuffix was '{NewVersionSuffix}'. Use SetDevVersionSuffix for a dev build.");
+            }
+
             var source = new SetAllVersions.Source(TracerDirectory, NewVersion, newVersionSuffix);
 
             // The version number has to change: the samples are rewritten from the *pre-bump*
