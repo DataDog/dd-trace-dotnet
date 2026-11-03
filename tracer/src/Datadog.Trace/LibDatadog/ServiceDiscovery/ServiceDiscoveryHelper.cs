@@ -1,4 +1,4 @@
-﻿// <copyright file="ServiceDiscoveryHelper.cs" company="Datadog">
+// <copyright file="ServiceDiscoveryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ internal static class ServiceDiscoveryHelper
     internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings, MutableSettings mutableSettings)
     {
         var framework = FrameworkDescription.Instance;
-        var platformIsSupported = framework.OSPlatform == OSPlatformName.Linux && Environment.Is64BitProcess;
+        var platformIsSupported = framework.OSPlatform == OSPlatformName.Linux;
         var deploymentIsSupported = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
         if (platformIsSupported && deploymentIsSupported.IsAvailable)
         {
