@@ -358,7 +358,8 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, null, null, "http://localhost:4317/")]
+        [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, null, null, "http://localhost:4318/v1/logs")]
+        [InlineData(null, ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://collector:4317", null, "http://collector:4317/v1/logs")]
         [InlineData("grpc", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector")]
         [InlineData("http/protobuf", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, null, null, "http://localhost:4318/v1/logs")]
         [InlineData("http/protobuf", ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, "http://base:4333/mycollector", null, "http://base:4333/mycollector/v1/logs")]
@@ -401,7 +402,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, "http/json", "HttpProtobuf", "OTLP protocol 'http/json' is not supported for logs*")]
         [InlineData("HTTP/JSON", "grpc", "HttpProtobuf", "OTLP protocol 'http/json' is not supported for logs*")]
         [InlineData("grpc", "http/json", "Grpc", null)]
-        [InlineData("http", null, "Grpc", "Unsupported OTLP protocol 'http' for logs*")]
+        [InlineData("http", null, "HttpProtobuf", "Unsupported OTLP protocol 'http' for logs*")]
         public void OtlpLogsProtocol(string logsProtocol, string generalProtocol, string expectedProtocol, string expectedWarning)
         {
             var source = new NameValueConfigurationSource(new()
@@ -447,18 +448,18 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, null, "grpc", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, null, "http/protobuf", ConfigurationOrigins.Default)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "http/json", "http/protobuf", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "http/json", null, "http/protobuf", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "", "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "invalid", "grpc", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "invalid", "http/protobuf", ConfigurationOrigins.Default)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "http/protobuf", "grpc", "http/protobuf", ConfigurationOrigins.Code)]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "invalid", "http/protobuf", "grpc", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, "invalid", "grpc", "http/protobuf", ConfigurationOrigins.Default)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, null, null, "http/protobuf", ConfigurationOrigins.Default)]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, null, "http/json", ConfigurationOrigins.Default)]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, null, "http/protobuf", ConfigurationOrigins.Default)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, null, "grpc", "grpc", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol, null, "grpc", "grpc", ConfigurationOrigins.Calculated)]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, "http/protobuf", "http/protobuf", ConfigurationOrigins.Calculated)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, null, "http/json", "http/json", ConfigurationOrigins.Calculated)]
         [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol, "http/protobuf", "http/protobuf", "http/protobuf", ConfigurationOrigins.Code)]
         public void OtlpProtocolTelemetry(string signalProtocolKey, string signalProtocol, string generalProtocol, string expectedProtocol, ConfigurationOrigins expectedOrigin)
         {
@@ -477,10 +478,10 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, null, "grpc", ConfigurationOrigins.Default, "http://localhost:4317/", ConfigurationOrigins.Default)]
-        [InlineData(null, null, "agent", "grpc", ConfigurationOrigins.Default, "http://agent:4317/", ConfigurationOrigins.Default)]
-        [InlineData("http/protobuf", null, null, "http/protobuf", ConfigurationOrigins.Code, "http://localhost:4318/", ConfigurationOrigins.Default)]
-        [InlineData("invalid", null, null, "grpc", ConfigurationOrigins.Default, "http://localhost:4317/", ConfigurationOrigins.Default)]
+        [InlineData(null, null, null, "http/protobuf", ConfigurationOrigins.Default, "http://localhost:4318/", ConfigurationOrigins.Default)]
+        [InlineData(null, null, "agent", "http/protobuf", ConfigurationOrigins.Default, "http://agent:4318/", ConfigurationOrigins.Default)]
+        [InlineData("grpc", null, null, "grpc", ConfigurationOrigins.Code, "http://localhost:4317/", ConfigurationOrigins.Default)]
+        [InlineData("invalid", null, null, "http/protobuf", ConfigurationOrigins.Default, "http://localhost:4318/", ConfigurationOrigins.Default)]
         [InlineData("http/json", "http://base:4333/mycollector", null, "http/json", ConfigurationOrigins.Code, "http://base:4333/mycollector", ConfigurationOrigins.Code)]
         public void OtlpGeneralTelemetry(string generalProtocol, string generalEndpoint, string agentHost, string expectedProtocol, ConfigurationOrigins expectedProtocolOrigin, string expectedEndpoint, ConfigurationOrigins expectedEndpointOrigin)
         {
