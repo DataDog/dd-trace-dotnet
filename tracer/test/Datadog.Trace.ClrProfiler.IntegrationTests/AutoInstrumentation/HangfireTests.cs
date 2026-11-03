@@ -66,6 +66,11 @@ public class HangfireTests : TracingIntegrationTest
         jobs[0].Error.Should().Be(0);
         jobs[0].TraceId.Should().Be(parents[0].TraceId);
         jobs[0].ParentId.Should().Be(parents[0].SpanId);
+        if (scenario == "custom-filter-combined")
+        {
+            // The span must cover PostPerformDelayFilter, which runs between the two Datadog filters.
+            jobs[0].Duration.Should().BeGreaterThanOrEqualTo(300_000_000); // ns
+        }
     }
 
     [SkippableFact]

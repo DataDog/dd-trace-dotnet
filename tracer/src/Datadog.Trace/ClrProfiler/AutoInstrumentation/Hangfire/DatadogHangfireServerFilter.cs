@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             var parentContext = propagationContext.SpanContext;
             Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(), performingContext, parentContext);
             performingContext.Items[HangfireConstants.DatadogScopeKey] = scope;
+            performingContext.Items[HangfireConstants.DatadogScopeOwnerKey] = this;
         }
 
         /// <summary>
@@ -51,8 +52,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
-            if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
+            // Only the instance that started the scope ends it, so filters between duplicates stay inside the span.
+            if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext)
+             && performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeOwnerKey, out var owner)
+             && ReferenceEquals(owner, this))
             {
+                performedContext.Items.Remove(HangfireConstants.DatadogScopeOwnerKey);
                 try
                 {
                     if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope))
