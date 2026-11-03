@@ -215,7 +215,7 @@ internal static class ReturnedHeadersAnalyzer
         }
         catch (Exception error)
         {
-            Log.Error(error, $"in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeXContentTypeOptionsVulnerability");
+            Log.Error(error, "in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeXContentTypeOptionsVulnerability");
         }
     }
 
@@ -247,7 +247,7 @@ internal static class ReturnedHeadersAnalyzer
         }
         catch (Exception error)
         {
-            Log.Error(error, $"in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeStrictTransportSecurity");
+            Log.Error(error, "in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeStrictTransportSecurity");
         }
     }
 
@@ -345,7 +345,7 @@ internal static class ReturnedHeadersAnalyzer
         }
         catch (Exception error)
         {
-            Log.Error(error, $"in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeUnvalidatedRedirect");
+            Log.Error(error, "in Datadog.Trace.Iast.ReturnedHeadersAnalyzer.AnalyzeUnvalidatedRedirect");
         }
     }
 }

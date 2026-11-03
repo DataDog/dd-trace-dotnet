@@ -54,7 +54,7 @@ internal static class GacInstaller
             if (File.Exists(nativeLoader))
             {
                 log.WriteError($"Error uninstalling files from the GAC - .NET Tracer file '{nativeLoader}' still exists on disk. " +
-                               $"It is not safe to remove files from the GAC.");
+                               "It is not safe to remove files from the GAC.");
                 return false;
             }
         }

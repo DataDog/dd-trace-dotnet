@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes);
 
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
-                $"SnsCachedMessageHeadersHelpers",
+                "SnsCachedMessageHeadersHelpers",
                 messageAttributeValueType,
                 parameterTypes: new Type[] { typeof(MemoryStream) },
                 typeof(DuckType).Module,

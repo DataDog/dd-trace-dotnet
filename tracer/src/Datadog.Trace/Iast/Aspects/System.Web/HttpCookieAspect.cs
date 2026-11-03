@@ -26,7 +26,7 @@ public sealed class HttpCookieAspect
     /// <summary> HttpCookie get of property value </summary>
     /// <param name="cookie"> The cookie </param>
     /// <returns> The value </returns>
-    [AspectMethodReplace($"System.Web.HttpCookie::get_Value()")]
+    [AspectMethodReplace("System.Web.HttpCookie::get_Value()")]
     public static string GetValue(HttpCookie cookie)
     {
         var value = cookie.Value;
