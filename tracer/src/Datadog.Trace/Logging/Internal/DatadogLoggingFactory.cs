@@ -226,7 +226,9 @@ internal static class DatadogLoggingFactory
         {
             var aasLogDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
 
-            // The site extension keeps each version's logs in their own folder, as the native components do
+            // With the Azure App Services site extension (DD_AZURE_APP_SERVICES=1),
+            // each extension version logs to its own subfolder, such as datadog\v3_57_0.
+            // The managed loader and the native components pick the same folder.
             var versionDirectory = usingAasSiteExtension
                                        ? ImmutableAzureAppServiceSettings.GetSiteExtensionVersionDirectory(new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.DotNetTracerHome).AsString())
                                        : null;

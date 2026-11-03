@@ -75,7 +75,7 @@ public class AgentProcessManagerTests
     [InlineData("/")]
     public void CreateMetadata_DefaultsToTheAgentFolderNextToTheTracerHome(string trailingSeparator)
     {
-        // The site extension ships ...\v3_57_0\Tracer and ...\v3_57_0\Agent side by side
+        // The site extension installs ...\v3_57_0\Tracer and ...\v3_57_0\Agent side by side
         var extensionDirectory = Path.Combine(Path.GetTempPath(), "SiteExtensions", "Datadog", "v3_57_0");
         var agentDirectory = Path.Combine(extensionDirectory, "Agent");
         var tracerHome = Path.Combine(extensionDirectory, "Tracer") + trailingSeparator;

@@ -39,8 +39,8 @@ struct has_deprecated_log_folder<T, decltype(T::logging_environment::deprecated_
 {
 };
 
-// The site extension's version folder, such as "v3_57_0" for the tracer home ...\v3_57_0\Tracer,
-// or empty when there is no tracer home.
+// Returns the name of the Azure App Services site extension's version folder, which holds its Tracer and Agent
+// folders: "v3_57_0" when DD_DOTNET_TRACER_HOME is ...\v3_57_0\Tracer. Empty when DD_DOTNET_TRACER_HOME isn't set.
 inline fs::path GetAasSiteExtensionVersionFolder()
 {
     fs::path tracer_home = GetEnvironmentValue(WStr("DD_DOTNET_TRACER_HOME"));
@@ -51,7 +51,7 @@ inline fs::path GetAasSiteExtensionVersionFolder()
 
     if (!tracer_home.has_filename())
     {
-        // trailing separator
+        // DD_DOTNET_TRACER_HOME ends with a separator, so drop the empty last component
         tracer_home = tracer_home.parent_path();
     }
 
@@ -71,7 +71,8 @@ inline fs::path GetDefaultLogDir()
 #else
         fs::path aas_log_dir = WStr("/home/LogFiles/datadog/");
 #endif
-        // DD_AZURE_APP_SERVICES means the site extension is in use, which keeps each version's logs in their own folder
+        // With the Azure App Services site extension (DD_AZURE_APP_SERVICES=1),
+        // each extension version logs to its own subfolder, such as datadog\v3_57_0
         const auto version_folder = GetAasSiteExtensionVersionFolder();
         return version_folder.empty() ? aas_log_dir : aas_log_dir / version_folder;
     }

@@ -73,8 +73,8 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Creates the trace agent's metadata. A path or arguments that aren't set default to the agent the site extension
-        /// ships next to the tracer home, with the same values the site extension sets.
+        /// Creates the trace agent's metadata. When the path or arguments aren't set, they default to the trace agent in the
+        /// Agent folder that the Azure App Services site extension installs next to the tracer home.
         /// </summary>
         [TestingAndPrivateOnly]
         internal static ProcessMetadata CreateTraceAgentMetadata(string tracerHome, string pipeName, string processPath, string processArguments)
@@ -91,7 +91,8 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Creates DogStatsD's metadata, with the same defaults as <see cref="CreateTraceAgentMetadata"/>.
+        /// Creates DogStatsD's metadata. When the path or arguments aren't set, they default to DogStatsD in the same Agent
+        /// folder as <see cref="CreateTraceAgentMetadata"/>.
         /// </summary>
         [TestingAndPrivateOnly]
         internal static ProcessMetadata CreateDogStatsDMetadata(string tracerHome, string pipeName, string processPath, string processArguments)
@@ -107,9 +108,9 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the Agent folder that the Azure App Services site extension ships next to the tracer home, such as
-        /// <c>...\v3_57_0\Agent</c> for the tracer home <c>...\v3_57_0\Tracer</c>, or null without a tracer home.
-        /// Only the site extension starts this class, so the folder is there whenever the tracer home is.
+        /// Gets the Agent folder that the Azure App Services site extension installs next to the tracer home:
+        /// <c>...\v3_57_0\Agent</c> for the tracer home <c>...\v3_57_0\Tracer</c>. Returns null without a tracer home.
+        /// The managed loader starts this class only when the site extension is in use, so this layout applies.
         /// </summary>
         private static string GetBundledAgentDirectory(string tracerHome)
         {

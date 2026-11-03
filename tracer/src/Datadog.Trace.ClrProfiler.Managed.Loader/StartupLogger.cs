@@ -184,8 +184,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         }
 
         /// <summary>
-        /// Gets the site extension's version folder, such as <c>v3_57_0</c> for the tracer home <c>...\v3_57_0\Tracer</c>,
-        /// or null without a tracer home.
+        /// Gets the name of the Azure App Services site extension's version folder, which holds its Tracer and Agent folders:
+        /// <c>v3_57_0</c> for the tracer home <c>...\v3_57_0\Tracer</c>. Returns null without a tracer home.
         /// </summary>
         private static string? GetAasSiteExtensionVersionFolder(string? tracerHome)
         {
@@ -210,7 +210,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // Azure App Services and Azure Functions
                 var aasLogDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
 
-                // The site extension keeps each version's logs in their own folder, as the native components do
+                // With the Azure App Services site extension (DD_AZURE_APP_SERVICES=1),
+                // each extension version logs to its own subfolder, such as datadog\v3_57_0.
+                // The native components pick the same folder (GetDefaultLogDir in shared/src/native-src/pal.h).
                 var versionFolder = usingAasSiteExtension ? GetAasSiteExtensionVersionFolder(envVars.GetEnvironmentVariable(Startup.TracerHomePathKey)) : null;
                 return string.IsNullOrEmpty(versionFolder) ? aasLogDirectory : Path.Combine(aasLogDirectory, versionFolder);
             }

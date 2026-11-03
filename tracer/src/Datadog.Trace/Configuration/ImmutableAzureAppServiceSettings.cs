@@ -244,9 +244,9 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
-        /// Gets the site extension's version folder, such as <c>...\v3_57_0</c> for the tracer home
-        /// <c>...\v3_57_0\Tracer</c>, or null without a tracer home. The site extension ships the
-        /// <c>Tracer</c> and <c>Agent</c> folders side by side in it.
+        /// Gets the Azure App Services site extension's version folder, the parent of the tracer home, which holds the
+        /// extension's <c>Tracer</c> and <c>Agent</c> folders: <c>...\v3_57_0</c> for the tracer home <c>...\v3_57_0\Tracer</c>.
+        /// Returns null without a tracer home.
         /// </summary>
         internal static string? GetSiteExtensionVersionDirectory(string? tracerHome)
         {
