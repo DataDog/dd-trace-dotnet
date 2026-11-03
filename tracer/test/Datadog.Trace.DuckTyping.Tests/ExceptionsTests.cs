@@ -728,7 +728,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void ProxyTypeDefinitionIsNull()
         {
-            Assert.Throws<DuckTypeProxyTypeDefinitionIsNull>(() =>
+            Assert.Throws<DuckTypeProxyTypeDefinitionIsNullException>(() =>
             {
                 DuckType.Create(null, new object());
             });
@@ -739,7 +739,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void TargetObjectInstanceIsNull()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNullException>(() =>
             {
                 DuckType.Create(typeof(ITargetObjectInstanceIsNull), null);
             });
@@ -901,7 +901,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             object target = new SourceObject();
 
-            Assert.Throws<DuckTypeDuckCopyStructDoesNotContainsAnyField>(() =>
+            Assert.Throws<DuckTypeDuckCopyStructDoesNotContainsAnyFieldException>(() =>
             {
                 target.DuckCast<SourceStructProxy>();
             });
