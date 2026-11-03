@@ -8,7 +8,9 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.BenchmarkDotNet;
 
-/// <inheritdoc />
+/// <summary>
+/// BenchmarkDotNet logger that watches the run output to close the test module and session when the run finishes
+/// </summary>
 internal class DatadogSessionLogger : ILogger
 {
     /// <summary>
