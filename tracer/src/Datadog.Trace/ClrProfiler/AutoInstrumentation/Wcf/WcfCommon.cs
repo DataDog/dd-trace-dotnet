@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         internal static Scope? CreateScope<TRequestMessage>(TRequestMessage requestMessage, bool useWebHttpResourceNames)
             where TRequestMessage : IMessage?
         {
-            if (requestMessage == null)
+            if (requestMessage is null)
             {
                 return null;
             }

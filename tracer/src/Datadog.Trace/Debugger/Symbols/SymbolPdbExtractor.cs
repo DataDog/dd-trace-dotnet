@@ -39,7 +39,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         // For async methods, the user-facing scope is the kickoff method, but the executable
         // sequence points often live on the generated MoveNext state machine method.
         using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(MetadataTokens.GetToken(methodHandle), true, out var count);
-        if (memory == null || count == 0)
+        if (memory is null || count == 0)
         {
             return true;
         }
@@ -448,7 +448,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
                                 bool contains = false;
                                 for (int j = 0; j < added.Length; j++)
                                 {
-                                    if (added[j] == null)
+                                    if (added[j] is null)
                                     {
                                         break;
                                     }
@@ -534,7 +534,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
 
     private bool IsArgument(Symbol[]? args, string name, string type)
     {
-        if (args == null)
+        if (args is null)
         {
             return false;
         }

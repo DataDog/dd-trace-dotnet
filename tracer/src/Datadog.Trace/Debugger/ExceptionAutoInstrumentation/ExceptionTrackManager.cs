@@ -110,11 +110,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            if (exception == null || !IsSupportedExceptionType(exception))
+            if (exception is null || !IsSupportedExceptionType(exception))
             {
                 Log.Information(exception, "Skipping the processing of the exception. Exception = {Exception}, Span = {Span}", exception?.ToString(), span.ToString());
 
-                var failureReason = exception == null ? ExceptionReplayDiagnosticTagNames.ExceptionObjectIsNull : ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType;
+                var failureReason = exception is null ? ExceptionReplayDiagnosticTagNames.ExceptionObjectIsNull : ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType;
                 SetDiagnosticTag(span, failureReason, 0);
                 return;
             }
@@ -250,7 +250,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             else if (trackedExceptionCase.IsInvalidated)
             {
-                if (rootSpan == null)
+                if (rootSpan is null)
                 {
                     _evaluateWithRootSpanCases.Add(normalizedExHash);
 
@@ -294,7 +294,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 var shouldCheckWhyThereAreNoFrames = false;
 
-                if (rootSpan == null)
+                if (rootSpan is null)
                 {
                     Log.Error("The RootSpan is null. Exception: {Exception}", exception.ToString());
                     shouldCheckWhyThereAreNoFrames = true;
@@ -307,7 +307,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
 
                 var resultCallStackTree = shouldCheckWhyThereAreNoFrames ? null : ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
-                if (resultCallStackTree == null || resultCallStackTree.Frames.Count == 0)
+                if (resultCallStackTree is null || resultCallStackTree.Frames.Count == 0)
                 {
                     Log.Warning("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
 
@@ -362,7 +362,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
                 else
                 {
-                    if (rootSpan == null)
+                    if (rootSpan is null)
                     {
                         Log.Error("The RootSpan is null in the branch of extracting snapshots. Should not happen. Exception: {Exception}", exception.ToString());
                         return;
@@ -734,14 +734,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                           GetAsyncFriendlyFrameMethods()
                              : stackTrace.GetFrames()?.GetAsyncFriendlyFrameMethods();
 
-            if (frames == null)
+            if (frames is null)
             {
                 yield break;
             }
 
             foreach (var frame in frames)
             {
-                if (frame == null)
+                if (frame is null)
                 {
                     continue;
                 }

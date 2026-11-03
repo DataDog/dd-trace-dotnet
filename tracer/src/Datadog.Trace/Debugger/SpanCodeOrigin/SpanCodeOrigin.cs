@@ -60,7 +60,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return;
             }
 
-            if (span == null)
+            if (span is null)
             {
                 Log.Debug("Can not add code origin for exit span when span is null");
                 return;
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForEntrySpan(Span? span, Type? type, MethodInfo? method)
         {
-            if (span == null ||
+            if (span is null ||
                 type == null ||
                 method == null)
             {
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             {
                 var methodName = method.Name;
                 var typeFullName = type.FullName;
-                if (typeFullName == null)
+                if (typeFullName is null)
                 {
                     return;
                 }
@@ -375,7 +375,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             var stackTrace = new StackTrace(fNeedFileInfo: true);
             var stackFrames = stackTrace.GetFrames();
 
-            if (stackFrames == null)
+            if (stackFrames is null)
             {
                 return 0;
             }

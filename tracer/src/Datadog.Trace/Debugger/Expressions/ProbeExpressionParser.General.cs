@@ -131,7 +131,7 @@ internal partial class ProbeExpressionParser<T>
             _ => null
         };
 
-        return convertMethodName == null
+        return convertMethodName is null
                    ? null
                    : Expression.Call(
                        Expression.Convert(finalExpr, typeof(IConvertible)),

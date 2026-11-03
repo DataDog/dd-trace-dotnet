@@ -41,7 +41,7 @@ namespace DatadogDebugger.Util
             {
                 _state = Parse(this, c, index++);
 
-                if (_state == null)
+                if (_state is null)
                 {
                     break;
                 }
@@ -94,7 +94,7 @@ namespace DatadogDebugger.Util
                 }
 
                 Node parent = leaf.Parent;
-                if (parent == null)
+                if (parent is null)
                 {
                     break;
                 }
@@ -215,7 +215,7 @@ namespace DatadogDebugger.Util
         private State NotCapturedAction()
         {
             var lastNode = _stack.Peek();
-            if (lastNode == null)
+            if (lastNode is null)
             {
                 throw new InvalidOperationException("Stack is empty");
             }

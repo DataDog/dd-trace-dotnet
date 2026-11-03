@@ -77,7 +77,7 @@ namespace Datadog.Trace.Headers.Ip
                 if (!string.IsNullOrEmpty(value))
                 {
                     extractedCustomIp = IpExtractor.RealIpFromValue(value, isSecureConnection, DefaultHeaderComponentParser);
-                    if (extractedCustomIp == null)
+                    if (extractedCustomIp is null)
                     {
                         Log.Debug("A custom header for ip with value {Value} was configured but no correct ip could be extracted", value);
                     }

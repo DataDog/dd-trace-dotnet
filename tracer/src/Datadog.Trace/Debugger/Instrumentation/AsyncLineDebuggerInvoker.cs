@@ -138,7 +138,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (instance == null)
+                if (instance is null)
                 {
                     // Should not happen, but placing it here for a safeguard.
                     // We may load `instance` (aka `this`) as null when we deal with complex stack-allocated values types that are generic (either open/close generics).
@@ -154,7 +154,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                     var stateMachineType = instance.GetType();
                     var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
-                    if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
+                    if (kickoffInfo.KickoffParentObject is null && kickoffInfo.KickoffMethod.IsStatic == false)
                     {
                         Log.Warning(nameof(BeginLine) + ": hoisted 'this' was not found. {KickoffParentType}.{KickoffMethod}", kickoffInfo.KickoffParentType.Name, kickoffInfo.KickoffMethod.Name);
                     }

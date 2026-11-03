@@ -175,12 +175,12 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             var value = counter.GetValue(_instanceName);
 
-            if (value == null)
+            if (value is null)
             {
                 return;
             }
 
-            if (lastValue == null)
+            if (lastValue is null)
             {
                 lastValue = value;
                 return;

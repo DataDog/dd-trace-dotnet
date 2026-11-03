@@ -33,7 +33,7 @@ namespace Datadog.Trace.Pdb
         private List<SymbolScope>? GetAllScopes(int methodToken, bool searchMoveNext)
         {
             var method = GetSymbolMethodDnlib(methodToken, searchMoveNext);
-            if (method == null)
+            if (method is null)
             {
                 return null;
             }
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Pdb
             void RetrieveAllNestedScopes(SymbolScope? scope, List<SymbolScope> scopes)
             {
                 // Recursively extract all nested scopes in method
-                if (scope == null)
+                if (scope is null)
                 {
                     return;
                 }
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Pdb
         private SymbolMethod? GetSymbolMethodDnlib(int methodToken, bool searchMoveNext)
         {
             var mdMethod = GetMethodDefDnlib(methodToken);
-            if (mdMethod == null)
+            if (mdMethod is null)
             {
                 return null;
             }
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Pdb
             var moveNextDebugInfo = stateMachineInnerTypeTypeDefOrRefSig?.TypeDefOrRef?.ResolveTypeDef()?.FindMethod("MoveNext")?.CustomDebugInfos.OfType<PdbAsyncMethodCustomDebugInfo>().FirstOrDefault();
             var breakpointMethod = moveNextDebugInfo?.StepInfos.FirstOrDefault();
 
-            if (breakpointMethod?.BreakpointMethod == null)
+            if (breakpointMethod?.BreakpointMethod is null)
             {
                 return null;
             }
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Pdb
 
             var methodLocals = method.Body.Variables;
             var allMethodScopes = GetAllScopes(method.MDToken.ToInt32(), searchMoveNext);
-            if (allMethodScopes == null)
+            if (allMethodScopes is null)
             {
                 return null;
             }
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Pdb
                         break;
                     }
 
-                    if (local == null)
+                    if (local is null)
                     {
                         continue;
                     }
@@ -240,14 +240,14 @@ namespace Datadog.Trace.Pdb
         private string? GetSourceLinkJsonDocumentDnlib()
         {
             var sourceLink = _dnlibModule?.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
-            return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
+            return sourceLink is null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
         private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int methodToken, bool searchMoveNext, out int count)
         {
             count = 0;
             var symbolMethod = GetSymbolMethodDnlib(methodToken, searchMoveNext);
-            if (symbolMethod == null)
+            if (symbolMethod is null)
             {
                 return null;
             }
@@ -283,7 +283,7 @@ namespace Datadog.Trace.Pdb
         private DatadogSequencePoint? GetMethodSourceLocationDnlib(int methodToken, bool searchMoveNext)
         {
             var symbolMethod = GetSymbolMethodDnlib(methodToken, searchMoveNext);
-            if (symbolMethod == null)
+            if (symbolMethod is null)
             {
                 return null;
             }

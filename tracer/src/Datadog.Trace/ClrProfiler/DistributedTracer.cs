@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 var parent = GetDistributedTracer();
 
-                if (parent == null)
+                if (parent is null)
                 {
                     Log.Information("Building automatic tracer");
                     Instance = new AutomaticTracer();

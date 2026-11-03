@@ -94,7 +94,7 @@ internal static class ProbeConfigurationUtils
     private static T[] MergeProbes<T>(T[]? lowerPriority, T[] higherPriority)
         where T : ProbeDefinition
     {
-        if (lowerPriority == null || lowerPriority.Length == 0)
+        if (lowerPriority is null || lowerPriority.Length == 0)
         {
             return higherPriority;
         }

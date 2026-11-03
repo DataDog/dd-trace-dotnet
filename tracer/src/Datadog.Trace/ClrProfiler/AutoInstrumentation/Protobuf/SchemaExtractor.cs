@@ -42,7 +42,7 @@ internal static class SchemaExtractor
         }
 
         var activeSpan = (tracer.ActiveScope as Scope)?.Span;
-        if (activeSpan == null || descriptor == null)
+        if (activeSpan is null || descriptor is null)
         {
             return;
         }

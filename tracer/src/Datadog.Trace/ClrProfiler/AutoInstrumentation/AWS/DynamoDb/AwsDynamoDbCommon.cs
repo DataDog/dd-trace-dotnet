@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
         public static void TagTableNameAndResourceName(string? tableName, AwsDynamoDbTags? tags, Scope? scope)
         {
-            if (scope == null || tags == null || tableName == null)
+            if (scope is null || tags is null || tableName is null)
             {
                 return;
             }

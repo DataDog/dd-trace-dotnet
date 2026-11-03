@@ -28,7 +28,7 @@ internal static class SamplingRuleHelper
     {
         timedOut = false;
 
-        if (span == null!)
+        if (span is null)
         {
             return false;
         }

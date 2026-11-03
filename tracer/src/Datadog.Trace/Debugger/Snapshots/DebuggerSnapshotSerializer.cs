@@ -187,7 +187,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             jsonWriter.WritePropertyName("type");
             jsonWriter.WriteValue(type.Name);
 
-            if (source == null)
+            if (source is null)
             {
                 jsonWriter.WritePropertyName("isNull");
                 jsonWriter.WriteValue("true");
@@ -222,7 +222,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             HashSet<object> collectionsBeingSerialized,
             ref uint incompleteReasons)
         {
-            if (Redaction.IsSafeToCallToString(type) || source == null)
+            if (Redaction.IsSafeToCallToString(type) || source is null)
             {
                 return;
             }
@@ -423,7 +423,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         break;
                     }
 
-                    if (current == null)
+                    if (current is null)
                     {
                         // skipping null element
                         continue;

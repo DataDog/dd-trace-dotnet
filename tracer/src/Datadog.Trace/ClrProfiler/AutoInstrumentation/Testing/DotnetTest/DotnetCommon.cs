@@ -2334,7 +2334,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         internal static void InjectCodeCoverageCollectorToDotnetTest(ref IEnumerable<string>? msbuildArgs)
         {
-            if (msbuildArgs == null)
+            if (msbuildArgs is null)
             {
                 return;
             }
@@ -2523,7 +2523,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         internal static void InjectCodeCoverageCollectorToVsConsoleTest(ref string[]? args)
         {
-            if (args == null)
+            if (args is null)
             {
                 return;
             }

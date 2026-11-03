@@ -372,7 +372,7 @@ internal partial class ProbeExpressionParser<T>
                             if (readerValue == It)
                             {
                                 // current item in iterator
-                                if (itParameter == null)
+                                if (itParameter is null)
                                 {
                                     AddError(readerValue, "current item in iterator is null");
                                     return Expression.Parameter(UndefinedValueType, Expressions.UndefinedValue.Instance.ToString());
@@ -383,7 +383,7 @@ internal partial class ProbeExpressionParser<T>
 
                             if (readerValue == Key)
                             {
-                                if (itParameter == null)
+                                if (itParameter is null)
                                 {
                                     AddError(readerValue, "current item in iterator is null");
                                     return UndefinedValue();
@@ -400,7 +400,7 @@ internal partial class ProbeExpressionParser<T>
 
                             if (readerValue == Value)
                             {
-                                if (itParameter == null)
+                                if (itParameter is null)
                                 {
                                     AddError(readerValue, "current item in iterator is null");
                                     return UndefinedValue();
@@ -575,7 +575,7 @@ internal partial class ProbeExpressionParser<T>
         var @this = methodScopeMembers.InvocationTarget;
         var thisType = thisTypeOverride;
 
-        if (StringUtil.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
+        if (StringUtil.IsNullOrEmpty(expressionJson) || argsOrLocals is null || thisType is null)
         {
             var ex = new ArgumentException("Method has been called with an invalid argument");
             Log.Error(

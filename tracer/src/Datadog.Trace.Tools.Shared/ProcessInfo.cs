@@ -69,14 +69,14 @@ public class ProcessInfo
 
     public IReadOnlyDictionary<string, string>? LoadApplicationConfig()
     {
-        if (MainModule == null)
+        if (MainModule is null)
         {
             return null;
         }
 
         var folder = Path.GetDirectoryName(MainModule);
 
-        if (folder == null)
+        if (folder is null)
         {
             return null;
         }
@@ -95,7 +95,7 @@ public class ProcessInfo
 
             var appSettings = document.Element("configuration")?.Element("appSettings");
 
-            if (appSettings == null)
+            if (appSettings is null)
             {
                 return null;
             }

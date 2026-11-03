@@ -37,7 +37,7 @@ namespace Datadog.Trace.Pdb
         private static void RetrieveAllNestedScopes(SymbolScope scope, List<SymbolScope> result)
         {
             // Recursively extract all nested scopes in method
-            if (scope == null)
+            if (scope is null)
             {
                 return;
             }

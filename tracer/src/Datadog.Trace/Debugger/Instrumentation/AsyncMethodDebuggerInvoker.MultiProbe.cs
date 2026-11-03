@@ -36,7 +36,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             // This can happen if we operate in optimized code and the original async method was inside a generic class
             // or in case the original async method was generic, in which case the state machine is a generic value type
             // See more here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L70
-            if (instance == null)
+            if (instance is null)
             {
                 isReEntryToMoveNext.LogStates = AsyncMethodDebuggerState.CreateInvalidatedDebuggerStates();
                 return;

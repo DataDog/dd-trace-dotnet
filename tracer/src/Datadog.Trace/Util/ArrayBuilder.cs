@@ -33,7 +33,7 @@ namespace Datadog.Trace.Util
 
         private void GrowIfNeeded()
         {
-            if (_array == null)
+            if (_array is null)
             {
                 _array = new T[DefaultInitialCapacity];
                 return;

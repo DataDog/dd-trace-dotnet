@@ -248,7 +248,7 @@ namespace Datadog.Trace.Tagging
         {
             var metrics = Volatile.Read(ref _metrics);
 
-            if (metrics == null)
+            if (metrics is null)
             {
                 var newMetrics = new List<KeyValuePair<string, double>>();
                 metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, null) ?? newMetrics;
@@ -260,7 +260,7 @@ namespace Datadog.Trace.Tagging
                 {
                     if (metrics[i].Key == key)
                     {
-                        if (value == null)
+                        if (value is null)
                         {
                             metrics.RemoveAt(i);
                         }
@@ -320,7 +320,7 @@ namespace Datadog.Trace.Tagging
             {
                 var metastruct = Volatile.Read(ref _metaStruct);
 
-                if (metastruct == null)
+                if (metastruct is null)
                 {
                     var newMetastruct = new List<KeyValuePair<string, byte[]>>();
                     metastruct = Interlocked.CompareExchange(ref _metaStruct, newMetastruct, null) ?? newMetastruct;
@@ -332,7 +332,7 @@ namespace Datadog.Trace.Tagging
                     {
                         if (metastruct[i].Key == key)
                         {
-                            if (value == null)
+                            if (value is null)
                             {
                                 metastruct.RemoveAt(i);
                             }

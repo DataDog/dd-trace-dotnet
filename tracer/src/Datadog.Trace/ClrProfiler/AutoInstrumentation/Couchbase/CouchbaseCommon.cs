@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         {
             var tracer = Tracer.Instance;
             var perTraceSettings = tracer.CurrentTraceSettings;
-            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || tOperation is null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         {
             var tracer = Tracer.Instance;
             var perTraceSettings = tracer.CurrentTraceSettings;
-            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || tOperation is null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static TOperationResult CommonOnMethodEnd<TOperationResult>(TOperationResult tResult, Exception exception, in CallTargetState state)
         {
-            if (state.Scope == null || tResult == null)
+            if (state.Scope is null || tResult is null)
             {
                 state.Scope?.DisposeWithException(exception);
                 return tResult;

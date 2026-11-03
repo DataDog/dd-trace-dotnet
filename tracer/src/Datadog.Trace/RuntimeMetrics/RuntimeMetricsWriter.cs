@@ -373,7 +373,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private void FirstChanceException(object sender, FirstChanceExceptionEventArgs e)
         {
-            if (e == null)
+            if (e is null)
             {
                 // All hope is lost, stand back and watch the world burn
                 return;

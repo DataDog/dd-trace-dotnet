@@ -37,6 +37,6 @@ internal static class LinkedListExtensions
 
     public static bool IsEmpty<T>(this LinkedList<T>? list)
     {
-        return list == null || list.Count == 0;
+        return list is null || list.Count == 0;
     }
 }

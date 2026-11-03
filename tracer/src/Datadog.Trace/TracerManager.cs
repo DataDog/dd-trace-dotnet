@@ -527,7 +527,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Tracer.RuntimeId);
 
                     writer.WritePropertyName("agent_reachable");
-                    writer.WriteValue(agentError == null);
+                    writer.WriteValue(agentError is null);
 
                     writer.WritePropertyName("agent_error");
                     writer.WriteValue(agentError ?? string.Empty);

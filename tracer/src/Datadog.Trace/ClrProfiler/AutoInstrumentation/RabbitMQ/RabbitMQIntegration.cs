@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
         internal static long GetHeadersSize(IDictionary<string, object>? headers)
         {
-            if (headers == null)
+            if (headers is null)
             {
                 return 0;
             }
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
+            if (dataStreamsManager is null || headers is null || !dataStreamsManager.IsEnabled)
             {
                 return;
             }
@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize, long messageTimestamp)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
+            if (dataStreamsManager is null || headers is null || !dataStreamsManager.IsEnabled)
             {
                 return;
             }

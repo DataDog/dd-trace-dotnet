@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         /// <param name="spanContext">The span context to store</param>
         public static void AddSpanContext(object? batchInstance, SpanContext? spanContext)
         {
-            if (batchInstance == null || spanContext == null)
+            if (batchInstance is null || spanContext is null)
             {
                 return;
             }
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         /// <returns>Collection of span links, or null if none found</returns>
         public static IEnumerable<SpanLink>? ExtractSpanContexts(object? batchInstance)
         {
-            if (batchInstance == null)
+            if (batchInstance is null)
             {
                 return null;
             }

@@ -342,7 +342,7 @@ namespace Datadog.Trace.AppSec
                     }
                 }
 
-                if (blockingAction.ContentType == null)
+                if (blockingAction.ContentType is null)
                 {
                     SetJsonResponseContent();
                 }
@@ -454,7 +454,7 @@ namespace Datadog.Trace.AppSec
 
             _blockedJsonTemplateCache = GetFileTemplate(_settings.BlockedJsonTemplatePath);
 
-            if (_blockedJsonTemplateCache == null)
+            if (_blockedJsonTemplateCache is null)
             {
                 _blockedJsonTemplateCache = SecurityConstants.BlockedJsonTemplate;
             }
@@ -471,7 +471,7 @@ namespace Datadog.Trace.AppSec
 
             _blockedHtmlTemplateCache = GetFileTemplate(_settings.BlockedHtmlTemplatePath);
 
-            if (_blockedHtmlTemplateCache == null)
+            if (_blockedHtmlTemplateCache is null)
             {
                 _blockedHtmlTemplateCache = SecurityConstants.BlockedHtmlTemplate;
             }
@@ -556,7 +556,7 @@ namespace Datadog.Trace.AppSec
         private void InitWafAndInstrumentations()
         {
             // initialization of WafLibraryInvoker
-            if (_libraryInitializationResult == null)
+            if (_libraryInitializationResult is null)
             {
                 _libraryInitializationResult = WafLibraryInvoker.Initialize(ddDotnetTracerHome: _settings.DdDotnetTracerHome, traceNativeEnginePath: _settings.InternalTraceNativeEnginePath);
                 if (!_libraryInitializationResult.Success)

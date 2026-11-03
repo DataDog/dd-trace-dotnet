@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var logDirectory = config.WithKeys(ConfigurationKeys.LogDirectory).AsString();
 
-            if (logDirectory == null)
+            if (logDirectory is null)
             {
                 // ProfilerLogPath is deprecated but still supported. For now, we bypass the WithKeys analyzer, but later we want to pull deprecations differently as part of centralized file
 #pragma warning disable DD0008, 618

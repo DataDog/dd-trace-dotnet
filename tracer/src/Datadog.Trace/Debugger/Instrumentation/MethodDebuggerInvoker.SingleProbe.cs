@@ -344,7 +344,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return false;
                 }
 
-                if (localNamesFromPdb[index] == null)
+                if (localNamesFromPdb[index] is null)
                 {
                     // If the local does not appear in the PDB, then it is a compiler generated local and we shouldn't capture it.
                     return false;

@@ -62,7 +62,7 @@ namespace Datadog.Trace
         {
             var current = Active;
 
-            if (current == null || current != scope)
+            if (current is null || current != scope)
             {
                 // This is not the current scope for this context, bail out
                 return;
@@ -88,7 +88,7 @@ namespace Datadog.Trace
 
         private void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
         {
-            if (obj.CurrentValue == null)
+            if (obj.CurrentValue is null)
             {
                 Profiler.Instance.ContextTracker.Reset();
                 _otelThreadContextPublisher.Reset();

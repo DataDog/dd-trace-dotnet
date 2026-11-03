@@ -62,14 +62,14 @@ internal static class ProbeConfigurationFileLoader
             foreach (var jToken in jArray)
             {
                 var jObject = jToken as JObject;
-                if (jObject == null)
+                if (jObject is null)
                 {
                     Log.Warning("Invalid probe entry in file, skipping");
                     continue;
                 }
 
                 var typeToken = jObject["type"];
-                if (typeToken == null)
+                if (typeToken is null)
                 {
                     Log.Warning("Probe entry missing 'type' field, skipping");
                     continue;

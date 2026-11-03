@@ -80,7 +80,7 @@ namespace Datadog.Trace
                 Log.Error(e, "Error getting framework version from [AssemblyInformationalVersion]");
             }
 
-            if (productVersion == null)
+            if (productVersion is null)
             {
                 try
                 {

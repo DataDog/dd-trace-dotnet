@@ -92,7 +92,7 @@ namespace Datadog.Trace.Configuration
         {
             JToken? token = GetToken(key);
 
-            return token == null
+            return token is null
                        ? default
                        : token.Value<T>();
         }
@@ -273,7 +273,7 @@ namespace Datadog.Trace.Configuration
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue)
         {
             var token = GetToken(key);
-            if (token == null)
+            if (token is null)
             {
                 return ConfigurationResult<IDictionary<string, string>>.NotFound();
             }
@@ -335,7 +335,7 @@ namespace Datadog.Trace.Configuration
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
         {
             var token = GetToken(key);
-            if (token == null)
+            if (token is null)
             {
                 return ConfigurationResult<IDictionary<string, string>>.NotFound();
             }

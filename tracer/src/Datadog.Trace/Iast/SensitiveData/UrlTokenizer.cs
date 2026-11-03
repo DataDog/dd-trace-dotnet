@@ -39,7 +39,7 @@ internal sealed class UrlTokenizer : ITokenizer
             if (match is not null && match.Success)
             {
                 var group = match.Groups["AUTHORITY"];
-                if (group == null || !group.Success)
+                if (group is null || !group.Success)
                 {
                     group = match.Groups["QUERY"];
                 }

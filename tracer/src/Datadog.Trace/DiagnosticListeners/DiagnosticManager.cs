@@ -27,7 +27,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public DiagnosticManager(IEnumerable<DiagnosticObserver> diagnosticSubscribers)
         {
-            if (diagnosticSubscribers == null)
+            if (diagnosticSubscribers is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(diagnosticSubscribers));
             }
@@ -41,7 +41,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public void Start()
         {
-            if (_allListenersSubscription == null)
+            if (_allListenersSubscription is null)
             {
                 Log.Debug("Starting DiagnosticListener.AllListeners subscription");
 #if NETFRAMEWORK

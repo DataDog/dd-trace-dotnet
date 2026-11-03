@@ -126,7 +126,7 @@ namespace Datadog.Trace.Debugger.Upload
 
         public async Task<bool> SendBatchAsync<TState>(Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
-            if (writeSymbols == null)
+            if (writeSymbols is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(writeSymbols));
             }

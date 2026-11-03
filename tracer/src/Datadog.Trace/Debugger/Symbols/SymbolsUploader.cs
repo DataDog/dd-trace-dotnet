@@ -255,7 +255,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private async Task UploadAssemblySymbols(Assembly assembly)
         {
             using var symbolsExtractor = SymbolExtractor.Create(assembly);
-            if (symbolsExtractor == null)
+            if (symbolsExtractor is null)
             {
                 return;
             }

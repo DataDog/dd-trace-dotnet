@@ -537,7 +537,7 @@ namespace Datadog.Trace.Configuration
 
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                                    .AsBool() == null;
+                                                    .AsBool() is null;
 
             DataStreamsTransactionExtractors = config
                                                   .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)

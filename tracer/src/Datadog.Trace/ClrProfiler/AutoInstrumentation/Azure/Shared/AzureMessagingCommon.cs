@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         /// </summary>
         public static void InjectContext(IDictionary<string, object>? properties, Scope? scope)
         {
-            if (properties == null || scope?.Span?.Context == null)
+            if (properties is null || scope?.Span?.Context is null)
             {
                 return;
             }
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         /// </summary>
         public static PropagationContext ExtractContext(IDictionary<string, object>? properties)
         {
-            if (properties == null)
+            if (properties is null)
             {
                 return default;
             }

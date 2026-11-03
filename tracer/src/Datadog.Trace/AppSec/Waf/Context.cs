@@ -162,7 +162,7 @@ internal sealed class Context : IContext
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            var parameters = addressData == null ? string.Empty : Encoder.FormatArgs(addressData);
+            var parameters = addressData is null ? string.Empty : Encoder.FormatArgs(addressData);
             Log.Debug(
                 "DDAS-0010-00: Executing AppSec In-App WAF with {Kind} parameters: {Parameters}",
                 ephemeral ? "ephemeral" : "persistent",

@@ -217,7 +217,7 @@ internal static class OtelProcessContextAnnouncer
         var payloadSize = *(uint*)(header + PayloadSizeOffset);
         var payload = *(byte**)(header + PayloadOffset);
 
-        if (payload == null || payloadSize == 0)
+        if (payload is null || payloadSize == 0)
         {
             failure = "the process context has no payload";
             return false;

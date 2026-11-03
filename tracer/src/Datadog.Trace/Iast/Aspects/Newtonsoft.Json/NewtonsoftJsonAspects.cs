@@ -144,7 +144,7 @@ public sealed class NewtonsoftJsonAspects
 
     private static void RecursiveJTokenStringTaint(object? token, TaintedObjects? taintedObjects)
     {
-        if (token == null || taintedObjects == null)
+        if (token is null || taintedObjects is null)
         {
             return;
         }
@@ -172,7 +172,7 @@ public sealed class NewtonsoftJsonAspects
 
     private static void RecursiveJArrayStringTaint(IEnumerable? array, TaintedObjects? taintedObjects)
     {
-        if (array == null || taintedObjects == null)
+        if (array is null || taintedObjects is null)
         {
             return;
         }
@@ -185,14 +185,14 @@ public sealed class NewtonsoftJsonAspects
 
     private static void RecursiveJObjectStringTaint(IJObject? obj, TaintedObjects? taintedObjects)
     {
-        if (obj == null || taintedObjects == null)
+        if (obj is null || taintedObjects is null)
         {
             return;
         }
 
         foreach (var value in obj.Properties())
         {
-            if (value == null)
+            if (value is null)
             {
                 continue;
             }
@@ -204,7 +204,7 @@ public sealed class NewtonsoftJsonAspects
 
     private static void RecursiveJValueStringTaint(IJValue? value, TaintedObjects? taintedObjects)
     {
-        if (value == null || taintedObjects == null)
+        if (value is null || taintedObjects is null)
         {
             return;
         }

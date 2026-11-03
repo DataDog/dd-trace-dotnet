@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void DisposeWithException(this Scope? scope, Exception? exception)
         {
-            if (scope == null)
+            if (scope is null)
             {
                 return;
             }

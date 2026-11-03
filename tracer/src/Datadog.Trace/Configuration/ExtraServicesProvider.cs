@@ -27,7 +27,7 @@ internal sealed class ExtraServicesProvider
     {
         // Several threads entering simultaneously can cause MaxExtraService to be exceeded.
         // As long as the list doesn't grow much beyond MaxExtraService we don't care.
-        if (serviceName == null! ||
+        if (serviceName is null ||
             _serviceCount >= MaxExtraServices ||
             _extraServices.ContainsKey(serviceName))
         {

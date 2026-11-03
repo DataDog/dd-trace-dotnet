@@ -90,7 +90,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private static CaptureExpressionDefinition[]? CreateCaptureExpressions(CaptureExpression[]? captureExpressions)
         {
-            if (captureExpressions == null || captureExpressions.Length == 0)
+            if (captureExpressions is null || captureExpressions.Length == 0)
             {
                 return null;
             }
@@ -521,7 +521,7 @@ namespace Datadog.Trace.Debugger.Expressions
         private void SetSpanDecoration(ProbeProcessorState state, in ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
             var decorations = evaluationResult.Decorations;
-            if (decorations == null)
+            if (decorations is null)
             {
                 return;
             }
@@ -546,7 +546,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 var probeIdTag = $"{DynamicPrefix}{tagName}.probe_id";
                 ISpan? targetSpan = null;
 
-                if (probeInfo.TargetSpan == null)
+                if (probeInfo.TargetSpan is null)
                 {
                     Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span is null", tagName, probeInfo.ProbeId);
                 }
@@ -564,7 +564,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         break;
                 }
 
-                if (targetSpan == null)
+                if (targetSpan is null)
                 {
                     Log.Warning("We can't set the {Tag} tag. Probe ID: {ProbeId}, because the chosen span {Span} is not available", tagName, probeInfo.ProbeId, probeInfo.TargetSpan);
                     continue;
@@ -883,7 +883,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 CaptureExpressions = captureExpressions;
                 MaxEvaluationTimeInMilliseconds = maxEvaluationTimeInMilliseconds;
                 HasCondition = condition.HasValue;
-                IsMetricCountWithoutExpression = probeInfo.ProbeType == ProbeType.Metric && (metric?.Json == null) && probeInfo.MetricKind == MetricKind.COUNT;
+                IsMetricCountWithoutExpression = probeInfo.ProbeType == ProbeType.Metric && (metric?.Json is null) && probeInfo.MetricKind == MetricKind.COUNT;
                 ShouldCaptureExpressions = !probeInfo.IsFullSnapshot && captureExpressions is { Length: > 0 };
                 ShouldCoordinateSampling = probeInfo.IsFullSnapshot || ShouldCaptureExpressions;
                 ShouldEvaluateExpressions =
@@ -1029,11 +1029,11 @@ namespace Datadog.Trace.Debugger.Expressions
 
             internal void LogEvaluationState(MethodScopeMembers methodScopeMembers)
             {
-                if (Templates == null
+                if (Templates is null
                  && Condition == null
                  && Metric == null
-                 && SpanDecorations == null
-                 && CaptureExpressions == null)
+                 && SpanDecorations is null
+                 && CaptureExpressions is null)
                 {
                     return;
                 }

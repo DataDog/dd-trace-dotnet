@@ -116,7 +116,7 @@ namespace Datadog.Trace.Util
 
         public void Insert(int index, string? s)
         {
-            if (s == null)
+            if (s is null)
             {
                 return;
             }
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string? s)
         {
-            if (s == null)
+            if (s is null)
             {
                 return;
             }

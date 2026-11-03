@@ -37,7 +37,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
         protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction, bool startBackgroundLoop, IDatadogLogger? log = null)
         {
-            if (sinkOptions == null)
+            if (sinkOptions is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(sinkOptions));
             }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         /// <exception cref="ArgumentNullException">The event is null.</exception>
         public void EnqueueLog(T logEvent)
         {
-            if (logEvent == null)
+            if (logEvent is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(logEvent));
             }

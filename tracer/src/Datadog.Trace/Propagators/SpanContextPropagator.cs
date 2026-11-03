@@ -74,8 +74,8 @@ namespace Datadog.Trace.Propagators
         /// <typeparam name="TCarrier">Type of header collection.</typeparam>
         public void Inject<TCarrier>(PropagationContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
-            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (setter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
+            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (setter is null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
             Inject(context, carrier, new ActionSetter<TCarrier>(setter));
         }
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Propagators
         internal void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
             if (context.SpanContext is null && context.Baggage is null)
             {
@@ -131,8 +131,8 @@ namespace Datadog.Trace.Propagators
         /// <returns>A new <see cref="PropagationContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
         public PropagationContext Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
-            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (getter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
+            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
             return Extract(carrier, new FuncGetter<TCarrier>(getter));
         }
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // handle extracted trace context (PropagationContext.SpanContext)
-                if (cumulativeSpanContext == null)
+                if (cumulativeSpanContext is null)
                 {
                     cumulativeSpanContext = currentExtractedContext.SpanContext;
                     initialExtractorDisplayName = extractor.DisplayName;

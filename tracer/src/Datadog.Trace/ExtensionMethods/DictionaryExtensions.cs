@@ -23,7 +23,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
             }
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
             }
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         public static TValue GetValueOrDefault<TValue>(this IDictionary dictionary, object key)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
             }
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         public static bool TryGetValue<TValue>(this IDictionary dictionary, object key, out TValue value)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
             }

@@ -93,7 +93,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
     /// </summary>
     internal static Dictionary<string, string?>? ConvertToLocalTags(List<RuleConfigJsonModel.TagJsonModel>? remoteTags)
     {
-        if (remoteTags == null)
+        if (remoteTags is null)
         {
             return null;
         }

@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var namespaceName = declaringType.Namespace;
 
-            if (namespaceName == null)
+            if (namespaceName is null)
             {
                 return false;
             }

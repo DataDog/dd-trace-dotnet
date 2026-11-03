@@ -199,6 +199,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
 
-        private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
+        private static string EscapeOrNotSet(string? str) => str is null ? "not set" : $"'{str}'";
     }
 }

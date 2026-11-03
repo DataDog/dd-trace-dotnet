@@ -20,8 +20,8 @@ namespace Datadog.Trace
     {
         internal static void Inject<TCarrier>(Tracer tracer, TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
         {
-            if (messageType is not null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
-            else if (messageType == null && target is not null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+            if (messageType is not null && target is null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
+            else if (messageType is null && target is not null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
             if (context is not SpanContext spanContext)
             {

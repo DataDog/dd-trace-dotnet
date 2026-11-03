@@ -68,7 +68,7 @@ internal static class IastUtils
 
     public static int IdentityHashCode(object item)
     {
-        if (item == null)
+        if (item is null)
         {
             return 0;
         }
@@ -91,7 +91,7 @@ internal static class IastUtils
 
     internal static unsafe int GetStaticHashCode(this string? target)
     {
-        if (target == null)
+        if (target is null)
         {
             return -1;
         }

@@ -209,7 +209,7 @@ namespace Datadog.Trace
         public void AddSpan(Span span)
         {
             // first span added is the local root span
-            if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
+            if (Interlocked.CompareExchange(ref _rootSpan, span, null) is null)
             {
                 span.MarkSpanForExceptionReplay();
             }

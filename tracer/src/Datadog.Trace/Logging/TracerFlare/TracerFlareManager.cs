@@ -58,7 +58,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
 
     public void Start()
     {
-        if (Interlocked.Exchange(ref _subscription, new Subscription(RcmProductReceived, RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested)) == null)
+        if (Interlocked.Exchange(ref _subscription, new Subscription(RcmProductReceived, RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested)) is null)
         {
             _discoveryService.SubscribeToChanges(HandleConfigUpdate);
             // Don't need to set any capabilities for tracer flare

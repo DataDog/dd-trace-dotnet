@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                     foreach (var o in response.Records)
                     {
                         var record = o.DuckCast<IRecord>();
-                        if (record == null)
+                        if (record is null)
                         {
                             continue; // should not happen
                         }

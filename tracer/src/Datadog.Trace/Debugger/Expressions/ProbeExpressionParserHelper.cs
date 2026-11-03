@@ -42,7 +42,7 @@ internal static class ProbeExpressionParserHelper
             }
             else
             {
-                method = methodIdentifier.Parameters == null ?
+                method = methodIdentifier.Parameters is null ?
                              methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) :
                              methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
             }
@@ -153,7 +153,7 @@ internal static class ProbeExpressionParserHelper
                 return true;
             }
 
-            if (left == null || right == null || left.Length != right.Length)
+            if (left is null || right is null || left.Length != right.Length)
             {
                 return false;
             }
@@ -171,7 +171,7 @@ internal static class ProbeExpressionParserHelper
 
         private static int GetTypesHashCode(Type[] types)
         {
-            if (types == null)
+            if (types is null)
             {
                 return 0;
             }

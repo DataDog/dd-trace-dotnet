@@ -205,7 +205,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool IsSupportedDictionary(object? o)
         {
-            if (o == null)
+            if (o is null)
             {
                 return false;
             }
@@ -225,7 +225,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool IsSupportedCollection(object? o)
         {
-            if (o == null)
+            if (o is null)
             {
                 return false;
             }

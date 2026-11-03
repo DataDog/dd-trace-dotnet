@@ -31,7 +31,7 @@ public sealed class MongoDatabaseAspect
     {
         try
         {
-            if (command == null || !Iast.Instance.Settings.Enabled)
+            if (command is null || !Iast.Instance.Settings.Enabled)
             {
                 return command;
             }

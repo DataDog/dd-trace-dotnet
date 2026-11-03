@@ -159,7 +159,7 @@ internal static class FeatureFlagsSdk
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
     {
-        if (context == null)
+        if (context is null)
         {
             return null;
         }

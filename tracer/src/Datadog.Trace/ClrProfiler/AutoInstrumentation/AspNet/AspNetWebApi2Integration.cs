@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 HttpHeadersCollection? headersCollection = null;
                 tags = new AspNetTags();
 
-                if (request is not null && tracer.InternalActiveScope == null)
+                if (request is not null && tracer.InternalActiveScope is null)
                 {
                     try
                     {

@@ -132,7 +132,7 @@ internal struct Variant
     {
         VarEnum vt = (VarEnum)(((int)this.VariantType) & ~((int)VarEnum.VT_BYREF));
 
-        if (value == null)
+        if (value is null)
         {
             if (vt == VarEnum.VT_DISPATCH || vt == VarEnum.VT_UNKNOWN || vt == VarEnum.VT_BSTR)
             {
@@ -659,7 +659,7 @@ internal struct Variant
             Debug.Assert(IsEmpty);
             VariantType = VarEnum.VT_UNKNOWN;
 
-            if (value == null)
+            if (value is null)
             {
                 _typeUnion._unionTypes._unknown = IntPtr.Zero;
             }
@@ -690,7 +690,7 @@ internal struct Variant
         {
             Debug.Assert(IsEmpty);
             VariantType = VarEnum.VT_DISPATCH;
-            if (value == null)
+            if (value is null)
             {
                 _typeUnion._unionTypes._dispatch = IntPtr.Zero;
             }

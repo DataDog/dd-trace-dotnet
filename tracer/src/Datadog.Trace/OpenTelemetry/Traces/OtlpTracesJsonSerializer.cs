@@ -305,7 +305,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     {
         writer.WriteStartObject();
 
-        if (value == null)
+        if (value is null)
         {
             // Empty AnyValue
             writer.WriteEndObject();

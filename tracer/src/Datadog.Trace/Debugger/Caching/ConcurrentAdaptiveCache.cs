@@ -151,7 +151,7 @@ namespace Datadog.Trace.Debugger.Caching
         {
             ThrowIfInvalid();
 
-            if (keys == null || keys.Length == 0)
+            if (keys is null || keys.Length == 0)
             {
                 throw NullKeyException.Instance;
             }
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Debugger.Caching
         {
             ThrowIfInvalid();
 
-            if (items == null)
+            if (items is null)
             {
                 throw NullKeyException.Instance;
             }

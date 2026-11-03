@@ -449,7 +449,7 @@ internal static class ExceptionRedactor
             type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
         MethodInfo[]? methods = GetDeclaredMethods(parentType);
-        if (methods == null)
+        if (methods is null)
         {
             return false;
         }
@@ -457,7 +457,7 @@ internal static class ExceptionRedactor
         foreach (MethodInfo candidateMethod in methods)
         {
             StateMachineAttribute[]? attributes = (StateMachineAttribute[])Attribute.GetCustomAttributes(candidateMethod, typeof(StateMachineAttribute), inherit: false);
-            if (attributes == null)
+            if (attributes is null)
             {
                 continue;
             }

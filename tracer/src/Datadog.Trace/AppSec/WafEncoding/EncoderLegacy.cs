@@ -251,7 +251,7 @@ internal sealed class EncoderLegacy : IEncoder
         foreach (var o in objEnumerator)
         {
             var slot = wafLibraryInvoker.ObjectInsert(dest);
-            if (slot == null)
+            if (slot is null)
             {
                 Log.Warning("EncodeList: couldn't insert an element in the WAF array, the list will be incomplete");
                 break;
@@ -304,7 +304,7 @@ internal sealed class EncoderLegacy : IEncoder
             {
                 var keyBytes = ToUtf8(name, out var keyLength);
                 var slot = wafLibraryInvoker.ObjectInsertKey(dest, keyBytes, keyLength);
-                if (slot == null)
+                if (slot is null)
                 {
                     Log.Warning("EncodeDictionary: couldn't insert a key in the WAF map, the map will be incomplete");
                     break;

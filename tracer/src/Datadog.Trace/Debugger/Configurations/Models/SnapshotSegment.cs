@@ -18,7 +18,7 @@ internal sealed record SnapshotSegment
     public SnapshotSegment(string dsl, string json, string str)
     {
         Dsl = dsl;
-        Json = json == null ? null : JsonHelper.ParseJObject(json);
+        Json = json is null ? null : JsonHelper.ParseJObject(json);
         Str = str;
     }
 

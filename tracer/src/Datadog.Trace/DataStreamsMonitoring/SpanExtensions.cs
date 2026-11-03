@@ -49,7 +49,7 @@ internal static class SpanExtensions
     /// <param name="parent">The parent context, if it was read from a message header for instance</param>
     internal static void SetDataStreamsCheckpoint(this Span span, DataStreamsManager? manager, CheckpointKind checkpointKind, EdgeTags edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent = null)
     {
-        if (manager == null)
+        if (manager is null)
         {
             return;
         }

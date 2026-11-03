@@ -187,7 +187,7 @@ namespace Datadog.Trace.Debugger.Helpers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static object GetAsyncKickoffThisObject<TTarget>(TTarget stateMachine)
         {
-            if (stateMachine == null)
+            if (stateMachine is null)
             {
                 // State machine is null in case is a nested struct inside a generic parent.
                 // This can happen if we operate in optimized code and the original async method was inside a generic class

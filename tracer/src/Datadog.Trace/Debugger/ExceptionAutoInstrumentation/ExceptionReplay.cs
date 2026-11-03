@@ -141,7 +141,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            if (_snapshotSink == null)
+            if (_snapshotSink is null)
             {
                 Log.Debug("The sink of the Exception Replay is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
                 return;

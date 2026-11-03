@@ -66,7 +66,7 @@ namespace Datadog.Trace.ServiceFabric
             requestEventArgs = null;
             messageHeaders = null;
 
-            if (eventArgs == null)
+            if (eventArgs is null)
             {
                 Log.Warning("Unexpected null EventArgs.");
                 return;
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ServiceFabric
                 return;
             }
 
-            if (messageHeaders == null)
+            if (messageHeaders is null)
             {
                 Log.Warning("Cannot access request headers.");
             }
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ServiceFabric
                              "unknown_method";
 
                 serviceUrl = eventArgs.ServiceUri?.AbsoluteUri;
-                resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
+                resourceName = serviceUrl is null ? methodName : $"{serviceUrl}/{methodName}";
                 remotingServiceName = serviceUrl?.StartsWithOrdinal("fabric:/") == true ? serviceUrl.Substring(8) : null;
             }
 
@@ -146,7 +146,7 @@ namespace Datadog.Trace.ServiceFabric
             {
                 var scope = Tracer.Instance.InternalActiveScope;
 
-                if (scope == null)
+                if (scope is null)
                 {
                     Log.Warning("Expected an active scope, but there is none.");
                     return;

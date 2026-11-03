@@ -132,7 +132,7 @@ namespace Datadog.Trace.Sampling
         /// <inheritdoc/>
         public bool IsMatch(Span span)
         {
-            if (span == null!)
+            if (span is null)
             {
                 return false;
             }

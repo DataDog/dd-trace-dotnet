@@ -134,7 +134,7 @@ internal sealed class Baggage : IDictionary<string, string?>
 
     private List<KeyValuePair<string, string?>> EnsureListInitialized()
     {
-        if (_items == null)
+        if (_items is null)
         {
             Interlocked.CompareExchange(ref _items, [], null);
         }
@@ -262,7 +262,7 @@ internal sealed class Baggage : IDictionary<string, string?>
     /// <returns><c>true</c> if the object was removed successfully; otherwise, <c>false</c>.</returns>
     public bool Remove(string name)
     {
-        if (name == null!)
+        if (name is null)
         {
             ThrowHelper.ThrowArgumentNullException(nameof(name));
         }
@@ -307,7 +307,7 @@ internal sealed class Baggage : IDictionary<string, string?>
 
     void ICollection<KeyValuePair<string, string?>>.CopyTo(KeyValuePair<string, string?>[] array, int arrayIndex)
     {
-        if (array == null!)
+        if (array is null)
         {
             ThrowHelper.ThrowArgumentNullException(nameof(array));
         }
@@ -349,7 +349,7 @@ internal sealed class Baggage : IDictionary<string, string?>
     /// <returns>Returns the baggage item value, or <c>null</c> if not found.</returns>
     public string? GetValueOrDefault(string name)
     {
-        if (name == null!)
+        if (name is null)
         {
             ThrowHelper.ThrowArgumentNullException(nameof(name));
         }
@@ -397,7 +397,7 @@ internal sealed class Baggage : IDictionary<string, string?>
     /// </summary>
     public void MergeInto(Baggage destination)
     {
-        if (destination == null!)
+        if (destination is null)
         {
             ThrowHelper.ThrowArgumentNullException(nameof(destination));
         }

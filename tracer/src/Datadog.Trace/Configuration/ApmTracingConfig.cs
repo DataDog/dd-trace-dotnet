@@ -58,7 +58,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public bool Matches(string? serviceName, string? environment)
         {
-            if (ServiceTarget == null)
+            if (ServiceTarget is null)
             {
                 return true; // Org-level config matches everything
             }

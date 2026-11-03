@@ -98,7 +98,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             {
                 using var stream = GetRulesStream(rulesFilePath);
 
-                if (stream == null)
+                if (stream is null)
                 {
                     return null;
                 }

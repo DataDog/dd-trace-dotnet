@@ -34,7 +34,7 @@ internal class CheckAgentCommand : Command
 
         var url = _urlArgument.GetValue(context);
 
-        if (url == null)
+        if (url is null)
         {
             // Try to autodetect the agent settings
             settings = new ExporterSettings(new EnvironmentConfigurationSource());

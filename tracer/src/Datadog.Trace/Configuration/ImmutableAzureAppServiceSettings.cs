@@ -148,24 +148,24 @@ namespace Datadog.Trace.Configuration
         private static bool ShouldSkipClientSpanWithinFunctions(Scope? scope)
         {
             // Ignore isolated client spans within azure functions
-            return scope == null;
+            return scope is null;
         }
 
         private static string? CompileResourceId(string? subscriptionId, string? siteName, string? resourceGroup)
         {
-            if (subscriptionId == null)
+            if (subscriptionId is null)
             {
                 Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", PlatformKeys.AzureAppService.WebsiteOwnerNameKey);
                 return null;
             }
 
-            if (siteName == null)
+            if (siteName is null)
             {
                 Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", PlatformKeys.AzureAppService.SiteNameKey);
                 return null;
             }
 
-            if (resourceGroup == null)
+            if (resourceGroup is null)
             {
                 Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", PlatformKeys.AzureAppService.ResourceGroupKey);
                 return null;

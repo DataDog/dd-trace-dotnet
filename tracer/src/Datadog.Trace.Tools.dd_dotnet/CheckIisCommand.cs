@@ -62,12 +62,12 @@ internal class CheckIisCommand : Command
     {
         using var serverManager = IisManager.Create(applicationHostConfigurationPath);
 
-        if (serverManager == null)
+        if (serverManager is null)
         {
             return 1;
         }
 
-        if (siteAndApplicationName == null)
+        if (siteAndApplicationName is null)
         {
             AnsiConsole.WriteLine(IisApplicationNotProvided());
 
@@ -86,7 +86,7 @@ internal class CheckIisCommand : Command
 
         using var application = serverManager.GetApplication(siteName, applicationName);
 
-        if (application == null)
+        if (application is null)
         {
             Utils.WriteError(CouldNotFindIisApplication(siteName, applicationName));
 
@@ -187,7 +187,7 @@ internal class CheckIisCommand : Command
 
                 var aspnetCorePid = dotnetPid ?? fallbackPid;
 
-                if (aspnetCorePid == null)
+                if (aspnetCorePid is null)
                 {
                     Utils.WriteError(AspNetCoreProcessNotFound);
                     return 1;

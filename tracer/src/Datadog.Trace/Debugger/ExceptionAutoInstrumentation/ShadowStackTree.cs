@@ -78,7 +78,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var parent = currentActiveNode!.RecordFunctionExit(exception);
 
-            if (parent == null && exception is not null)
+            if (parent is null && exception is not null)
             {
                 _trackedStackFrameRootNode = currentActiveNode;
             }
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             var tree = new ExceptionStackTreeRecord();
 
-            if (_trackedStackFrameRootNode == null && _trackedStackFrameActiveNode.Value == null)
+            if (_trackedStackFrameRootNode is null && _trackedStackFrameActiveNode.Value is null)
             {
                 Log.Warning($"{nameof(ShadowStackTree)}: returning an empty tree.");
                 return tree;
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var rootNode = _trackedStackFrameRootNode ?? _trackedStackFrameActiveNode.Value;
 
-            if (rootNode == null)
+            if (rootNode is null)
             {
                 return tree;
             }
@@ -143,7 +143,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     tree.Add(level, trackedStackFrame);
                 }
 
-                if (trackedStackFrame.ChildNodes == null || !trackedStackFrame.ChildNodes.Any())
+                if (trackedStackFrame.ChildNodes is null || !trackedStackFrame.ChildNodes.Any())
                 {
                     break;
                 }
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool ContainsReport(Exception exceptionPath)
         {
-            if (_trackedStackFrameRootNode == null && _trackedStackFrameActiveNode.Value == null)
+            if (_trackedStackFrameRootNode is null && _trackedStackFrameActiveNode.Value is null)
             {
                 return false;
             }

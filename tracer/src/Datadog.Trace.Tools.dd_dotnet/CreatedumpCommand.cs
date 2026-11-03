@@ -227,7 +227,7 @@ internal class CreatedumpCommand : Command
         // Note: the debug output won't be visible on Windows.
         // That's because crashtracking runs in a background process (WerFault.exe).
         // If that becomes a concern, it's worth considering using OutputDebugString instead.
-        if (_debugOutputEnabled == null)
+        if (_debugOutputEnabled is null)
         {
             var value = Environment.GetEnvironmentVariable(EnvironmentLogToConsole);
             if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1")
@@ -255,7 +255,7 @@ internal class CreatedumpCommand : Command
 
             *numberOfFrames = 0;
 
-            if (_runtime == null)
+            if (_runtime is null)
             {
                 AddError("ClrRuntime is not initialized");
                 return 2;
@@ -263,7 +263,7 @@ internal class CreatedumpCommand : Command
 
             var thread = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == threadId);
 
-            if (thread == null)
+            if (thread is null)
             {
                 return 4;
             }
@@ -562,7 +562,7 @@ internal class CreatedumpCommand : Command
 
     private static bool ShouldRedactFrame(string? assemblyName)
     {
-        if (assemblyName == null)
+        if (assemblyName is null)
         {
             return false;
         }
@@ -805,7 +805,7 @@ internal class CreatedumpCommand : Command
             }
         }
 
-        if (crashThread == null)
+        if (crashThread is null)
         {
             var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException is not null);
 

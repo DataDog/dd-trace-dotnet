@@ -46,7 +46,7 @@ internal static class SourceLinkInformationExtractor
             }
 
             var sourceLinkJsonDocument = pdbReader.GetSourceLinkJsonDocument();
-            if (sourceLinkJsonDocument == null)
+            if (sourceLinkJsonDocument is null)
             {
                 Log.Information("PDB file {PdbFullPath} does not contain SourceLink information", pdbReader.PdbFullPath);
                 return false;

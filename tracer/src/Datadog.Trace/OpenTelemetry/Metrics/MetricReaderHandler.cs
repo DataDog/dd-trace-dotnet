@@ -65,7 +65,7 @@ internal sealed class MetricReaderHandler
         }
 
         var instrumentType = GetInstrumentType(instrument.GetType().FullName);
-        if (instrumentType == null)
+        if (instrumentType is null)
         {
             Log.Debug("Skipping unsupported instrument: {InstrumentName} of type: {InstrumentType}", instrument.Name, instrument.GetType().FullName);
             return;

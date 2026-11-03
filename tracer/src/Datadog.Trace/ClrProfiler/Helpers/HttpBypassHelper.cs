@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool UriContainsAnyOf(Uri? requestUri, string[]? substrings)
         {
-            if (requestUri == null || substrings == null || substrings.Length == 0)
+            if (requestUri == null || substrings is null || substrings.Length == 0)
             {
                 // fast path which covers the most common case:
                 // DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS is not set so substrings is an empty array

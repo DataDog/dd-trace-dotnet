@@ -20,7 +20,7 @@ namespace Datadog.Trace.Debugger.Helpers
 
         public void Dispose()
         {
-            if (_items == null)
+            if (_items is null)
             {
                 return;
             }

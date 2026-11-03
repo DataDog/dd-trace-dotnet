@@ -688,7 +688,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (TryGetRedactedDictionaryValue(right, out var rightRedactedDictionaryValue))
         {
-            shouldRedact = shouldRedact == null
+            shouldRedact = shouldRedact is null
                                ? rightRedactedDictionaryValue.ShouldRedactExpression
                                : Expression.OrElse(shouldRedact, rightRedactedDictionaryValue.ShouldRedactExpression);
         }
@@ -710,7 +710,7 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression RedactDictionaryOperationWithGuard(Expression shouldRedact, Expression operation)
     {
-        if (shouldRedact == null)
+        if (shouldRedact is null)
         {
             return operation;
         }

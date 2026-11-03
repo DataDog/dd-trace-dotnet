@@ -68,14 +68,14 @@ internal static class PropagationModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
             var taintedSelf = PropagationModuleImpl.GetTainted(taintedObjects, target);
-            if (taintedSelf == null)
+            if (taintedSelf is null)
             {
                 return result;
             }
@@ -111,7 +111,7 @@ internal static class PropagationModuleImpl
         }
 
         var iastContext = IastModule.GetIastContext();
-        if (iastContext == null)
+        if (iastContext is null)
         {
             taintedObjects = null;
             return true;
@@ -284,7 +284,7 @@ internal static class PropagationModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return results;
             }
@@ -328,7 +328,7 @@ internal static class PropagationModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return result;
             }
@@ -336,7 +336,7 @@ internal static class PropagationModuleImpl
             var taintedObjects = iastContext.GetTaintedObjects();
             var taintedSelf = taintedObjects.Get(input);
 
-            if (taintedSelf == null)
+            if (taintedSelf is null)
             {
                 return result;
             }
@@ -362,7 +362,7 @@ internal static class PropagationModuleImpl
 
     public static TaintedObject? GetTainted(TaintedObjects taintedObjects, object? value)
     {
-        return value == null ? null : taintedObjects.Get(value);
+        return value is null ? null : taintedObjects.Get(value);
     }
 
     /// <summary> Taints a string.substring operation </summary>
@@ -381,14 +381,14 @@ internal static class PropagationModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return;
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
             var selfTainted = taintedObjects.Get(self);
-            if (selfTainted == null)
+            if (selfTainted is null)
             {
                 return;
             }
@@ -426,7 +426,7 @@ internal static class PropagationModuleImpl
                 var tainted = IastModule.GetIastContext()?.GetTaintedObjects()?.Get(result);
                 var ranges = tainted?.Ranges;
 
-                if (ranges == null)
+                if (ranges is null)
                 {
                     return;
                 }

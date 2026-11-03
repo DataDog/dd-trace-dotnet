@@ -292,7 +292,7 @@ internal sealed class DataStreamsManager
         try
         {
             var previousContext = parentPathway;
-            if (previousContext == null && checkpointKind == CheckpointKind.Produce)
+            if (previousContext is null && checkpointKind == CheckpointKind.Produce)
             {
                 // We only enter here on produce: when we consume, the only thing that matters is the parent we'd have read from the inbound message, not what happened before.
                 // We want to use the context from the previous consume (but we'll give priority to the parent passed in param if set).
@@ -304,7 +304,7 @@ internal sealed class DataStreamsManager
             // This allows tracking edge / pathway latency for pipelines starting with a queue (no producer instrumented upstream)
             // by relying on the message timestamp.
             // ReSharper disable once ArrangeRedundantParentheses
-            var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
+            var edgeStartNs = previousContext is null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
             // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...

@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         public static void InjectHeadersIntoMessage(Tracer tracer, IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // add distributed tracing headers to the message
-            if (carrier.MessageAttributes == null)
+            if (carrier.MessageAttributes is null)
             {
                 carrier.MessageAttributes = messageHeadersHelper.CreateMessageAttributes();
             }

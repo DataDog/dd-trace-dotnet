@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             where TPutEventsRequest : IPutEventsRequest, IDuckType
         {
             var entries = request.Entries.Value;
-            if (entries == null)
+            if (entries is null)
             {
                 return;
             }

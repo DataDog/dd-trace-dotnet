@@ -26,8 +26,8 @@ namespace Datadog.Trace
 
         internal static SpanContext? Extract<TCarrier>(Tracer tracer, TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
         {
-            if (messageType is not null && source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
-            else if (messageType == null && source is not null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+            if (messageType is not null && source is null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
+            else if (messageType is null && source is not null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
             var context = tracer.TracerManager.SpanContextPropagator.Extract(carrier, getter);
 

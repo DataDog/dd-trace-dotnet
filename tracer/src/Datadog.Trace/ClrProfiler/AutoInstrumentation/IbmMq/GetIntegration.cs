@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                 {
                     var scope = IbmMqHelper.CreateConsumerScope(Tracer.Instance, state.StartTime, instance, msg);
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                    if (dataStreams.IsEnabled && exception == null && scope is not null)
+                    if (dataStreams.IsEnabled && exception is null && scope is not null)
                     {
                         var adapter = IbmMqHelper.GetHeadersAdapter(msg);
                         PathwayContext? pathwayContext = null;

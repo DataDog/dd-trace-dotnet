@@ -110,7 +110,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         return true;
                     case MethodState.ExitStart:
                     case MethodState.ExitStartAsync:
-                        if (snapshotCreator.TrackedStackFrameNode == null)
+                        if (snapshotCreator.TrackedStackFrameNode is null)
                         {
                             throw new InvalidOperationException("Encountered invalid state of snapshotCreator in ExitState/ExitStateAsync. `snapshotCreator.TrackedStackFrameNode` should not be null.");
                         }
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             return false;
                         }
 
-                        if (info.MemberKind != ScopeMemberKind.Exception || info.Value == null)
+                        if (info.MemberKind != ScopeMemberKind.Exception || info.Value is null)
                         {
                             shadowStack.Leave(snapshotCreator.TrackedStackFrameNode);
                             return false;
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         break;
                     case MethodState.ExitEnd:
                     case MethodState.ExitEndAsync:
-                        if (snapshotCreator.TrackedStackFrameNode == null)
+                        if (snapshotCreator.TrackedStackFrameNode is null)
                         {
                             throw new InvalidOperationException("Encountered invalid state of snapshotCreator in ExitEnd/ExitEndAsync. `snapshotCreator.TrackedStackFrameNode` should not be null.");
                         }
@@ -218,7 +218,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         return true;
                     case MethodState.LogLocal:
                     case MethodState.LogArg:
-                        if (snapshotCreator.TrackedStackFrameNode == null)
+                        if (snapshotCreator.TrackedStackFrameNode is null)
                         {
                             throw new InvalidOperationException("Encountered invalid state of snapshotCreator in LogLocal/LogArg. `snapshotCreator.TrackedStackFrameNode` should not be null.");
                         }
@@ -244,7 +244,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             var snapshotCreator = (ExceptionSnapshotCreator)inSnapshotCreator;
 
-            if (snapshotCreator.TrackedStackFrameNode == null)
+            if (snapshotCreator.TrackedStackFrameNode is null)
             {
                 return;
             }

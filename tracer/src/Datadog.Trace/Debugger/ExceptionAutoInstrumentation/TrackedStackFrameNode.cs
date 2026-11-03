@@ -76,7 +76,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             get
             {
-                if (_snapshotId == null)
+                if (_snapshotId is null)
                 {
                     _ = Snapshot;
                 }
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             var members = Members;
 
-            if (members == null)
+            if (members is null)
             {
                 members = new MethodScopeMembers(new MethodScopeMembersParameters(0, 0));
             }
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal void AddScopeMember<T>(string name, Type type, T value, ScopeMemberKind memberKind)
         {
-            if (Members == null)
+            if (Members is null)
             {
                 Members = new MethodScopeMembers(new MethodScopeMembersParameters(0, 0));
             }
@@ -198,7 +198,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 yield return e;
 
-                if (e == null)
+                if (e is null)
                 {
                     continue;
                 }
@@ -245,7 +245,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public TrackedStackFrameNode? RecordFunctionExit(Exception? ex)
         {
-            if (ex == null)
+            if (ex is null)
             {
                 return RecordFunctionExit();
             }
@@ -253,7 +253,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             LeavingException = ex;
             ClearNonRelevantChildNodes();
 
-            if (_parent == null)
+            if (_parent is null)
             {
                 return null;
             }
@@ -305,7 +305,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         protected void ClearNonRelevantChildNodes()
         {
             // ReSharper disable once InconsistentlySynchronizedField
-            if (ActiveChildNodes == null || _childNodesAlreadyCleansed)
+            if (ActiveChildNodes is null || _childNodesAlreadyCleansed)
             {
                 return;
             }
@@ -326,7 +326,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 for (var i = ActiveChildNodes.Count - 1; i >= 0; i--)
                 {
                     var frame = ActiveChildNodes[i];
-                    if (frame.LeavingException == null || !HasChildException(frame.LeavingException))
+                    if (frame.LeavingException is null || !HasChildException(frame.LeavingException))
                     {
                         ActiveChildNodes.RemoveAt(i);
                         frame.Dispose();

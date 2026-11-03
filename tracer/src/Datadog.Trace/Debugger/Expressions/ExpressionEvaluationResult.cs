@@ -38,12 +38,12 @@ internal ref struct ExpressionEvaluationResult
 
     internal readonly bool IsNull()
     {
-        return Template == null
-            && Condition == null
-            && Metric == null
-            && (Decorations == null || Decorations.Length == 0)
+        return Template is null
+            && Condition is null
+            && Metric is null
+            && (Decorations is null || Decorations.Length == 0)
             && CaptureExpressionCount == 0
-            && Errors == null;
+            && Errors is null;
     }
 
     internal struct DecorationResult

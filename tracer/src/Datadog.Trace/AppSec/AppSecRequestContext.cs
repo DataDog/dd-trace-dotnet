@@ -85,7 +85,7 @@ internal sealed partial class AppSecRequestContext
 
         var code = (int)result.ReturnCode;
         int? existingValue = isRasp ? _wafRaspError : _wafError;
-        if (code < 0 && (existingValue == null || existingValue < code))
+        if (code < 0 && (existingValue is null || existingValue < code))
         {
             if (isRasp)
             {

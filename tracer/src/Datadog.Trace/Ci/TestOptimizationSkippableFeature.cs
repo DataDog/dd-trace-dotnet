@@ -43,7 +43,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         _testOptimization = testOptimization;
         _testOptimizationClient = testOptimizationClient;
-        if (settings.TestsSkippingEnabled == null && clientSettingsResponse.TestsSkipping.HasValue)
+        if (settings.TestsSkippingEnabled is null && clientSettingsResponse.TestsSkipping.HasValue)
         {
             Log.Information("TestOptimizationSkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);
             settings.SetTestsSkippingEnabled(clientSettingsResponse.TestsSkipping.Value);

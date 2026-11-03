@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
 
         public unsafe int ReadMemory(UniPtr address, byte[] buffer, int offset, int count, bool throwOnError)
         {
-            if (buffer == null)
+            if (buffer is null)
             {
                 throw new ArgumentNullException(nameof(buffer));
             }

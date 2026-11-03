@@ -24,7 +24,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
         public static WebHeadersCollection Wrap(this WebHeaderCollection headers)
         {
-            if (headers == null)
+            if (headers is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(headers));
             }

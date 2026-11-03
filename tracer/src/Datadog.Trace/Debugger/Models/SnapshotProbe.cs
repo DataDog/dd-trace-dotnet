@@ -190,7 +190,7 @@ namespace Datadog.Trace.Debugger.Models
             return token.Children<JProperty>().Select(c =>
             {
                 var jsonObject = c.Children().FirstOrDefault();
-                if (jsonObject == null)
+                if (jsonObject is null)
                 {
                     return default;
                 }

@@ -21,13 +21,13 @@ internal static class StringBuilderModuleImpl
         try
         {
             IastModule.OnExecutedPropagationTelemetry();
-            if (appendValue == null)
+            if (appendValue is null)
             {
                 return builder;
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return builder;
             }
@@ -35,7 +35,7 @@ internal static class StringBuilderModuleImpl
             var taintedObjects = iastContext.GetTaintedObjects();
             var paramTainted = taintedObjects.Get(appendValue);
 
-            if (paramTainted == null)
+            if (paramTainted is null)
             {
                 return builder;
             }
@@ -52,14 +52,14 @@ internal static class StringBuilderModuleImpl
                 paramRanges = Ranges.ForSubstring(startIndex, count, paramTainted.Ranges);
             }
 
-            if (paramRanges == null)
+            if (paramRanges is null)
             {
                 return builder;
             }
 
             var builderTainted = taintedObjects.Get(builder);
 
-            if (builderTainted == null)
+            if (builderTainted is null)
             {
                 var ranges = new Range[paramRanges.Length];
                 Ranges.CopyShift(paramRanges, ranges, 0, initialBuilderLength);
@@ -83,7 +83,7 @@ internal static class StringBuilderModuleImpl
         try
         {
             IastModule.OnExecutedPropagationTelemetry();
-            if (result == null || string.IsNullOrEmpty(originalString))
+            if (result is null || string.IsNullOrEmpty(originalString))
             {
                 return result;
             }
@@ -125,7 +125,7 @@ internal static class StringBuilderModuleImpl
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return target;
             }
@@ -134,7 +134,7 @@ internal static class StringBuilderModuleImpl
             var taintedTarget = PropagationModuleImpl.GetTainted(taintedObjects, target);
             var taintedValue = PropagationModuleImpl.GetTainted(taintedObjects, valueToInsert);
 
-            if (taintedValue == null && taintedTarget == null)
+            if (taintedValue is null && taintedTarget is null)
             {
                 return target;
             }
@@ -184,7 +184,7 @@ internal static class StringBuilderModuleImpl
         try
         {
             IastModule.OnExecutedPropagationTelemetry();
-            if (target == null || target.Length == 0)
+            if (target is null || target.Length == 0)
             {
                 return;
             }

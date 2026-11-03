@@ -251,7 +251,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void AddScopeMember<T>(string name, Type type, T value, ScopeMemberKind memberKind)
         {
-            if (_omitCaptureData || MethodScopeMembers == null)
+            if (_omitCaptureData || MethodScopeMembers is null)
             {
                 return;
             }
@@ -553,7 +553,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureInstance<TInstance>(TInstance instance, Type type)
         {
-            if (instance == null)
+            if (instance is null)
             {
                 return;
             }
@@ -611,7 +611,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             var captureExpressions = evaluationResult.CaptureExpressions;
             var captureExpressionCount = evaluationResult.CaptureExpressionCount;
-            if (captureExpressions == null || captureExpressionCount == 0)
+            if (captureExpressions is null || captureExpressionCount == 0)
             {
                 return;
             }
@@ -993,7 +993,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal DebuggerSnapshotCreator AddEvaluationErrors()
         {
-            if (_errors == null || _errors.Count == 0)
+            if (_errors is null || _errors.Count == 0)
             {
                 return this;
             }

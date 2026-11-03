@@ -163,7 +163,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return null;
                 }
 
-                if (tracer.InternalActiveScope == null)
+                if (tracer.InternalActiveScope is null)
                 {
                     var tags = new AzureFunctionsTags(isContainerApps)
                     {
@@ -238,7 +238,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope, triggerType, startTime, azureInfo);
 
-            if (scope == null && aspNetCoreScope == null)
+            if (scope is null && aspNetCoreScope is null)
             {
                 return CallTargetState.GetDefault();
             }
@@ -624,7 +624,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             try
             {
                 var bindingsFeature = FunctionBindingsCommon.GetBindingsFeature(context);
-                if (bindingsFeature == null)
+                if (bindingsFeature is null)
                 {
                     return default;
                 }

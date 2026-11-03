@@ -76,7 +76,7 @@ internal readonly partial struct SecurityCoordinator
                 typeof(SecurityCoordinator).Module,
                 true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
-            if (il == null)
+            if (il is null)
             {
                 return null;
             }
@@ -128,7 +128,7 @@ internal readonly partial struct SecurityCoordinator
                 typeof(SecurityCoordinator).Module,
                 true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
-            if (il == null)
+            if (il is null)
             {
                 return null;
             }

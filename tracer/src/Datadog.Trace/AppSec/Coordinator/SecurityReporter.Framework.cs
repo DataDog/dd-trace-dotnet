@@ -20,7 +20,7 @@ internal partial class SecurityReporter
 
     static SecurityReporter()
     {
-        if (UsingIntegratedPipeline == null)
+        if (UsingIntegratedPipeline is null)
         {
             try
             {

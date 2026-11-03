@@ -491,7 +491,7 @@ namespace Datadog.Trace
             }
             else
             {
-                if (TraceId128.Upper > 0 && PropagatedTags == null)
+                if (TraceId128.Upper > 0 && PropagatedTags is null)
                 {
                     // we need to add the "_dd.p.tid" propagated tag, so create a new collection if we don't have one
                     PropagatedTags = new TraceTagCollection();

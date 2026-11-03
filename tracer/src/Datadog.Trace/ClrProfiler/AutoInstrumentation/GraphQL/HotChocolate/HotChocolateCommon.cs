@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             var scope = tracer.InternalActiveScope;
             var span = scope?.Span;
-            if (span == null || span.OperationName != ExecuteOperationName)
+            if (span is null || span.OperationName != ExecuteOperationName)
             {
                 // not in a Hotchocolate execution span
                 return;
@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         [TestingAndPrivateOnly]
         internal static string ConstructErrorMessage(List<IError> executionErrors)
         {
-            if (executionErrors == null)
+            if (executionErrors is null)
             {
                 return string.Empty;
             }
@@ -313,7 +313,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
         internal static List<IError> GetList(System.Collections.IEnumerable errors)
         {
-            if (errors == null) { return null; }
+            if (errors is null) { return null; }
             List<IError> res = new List<IError>();
             foreach (var error in errors)
             {

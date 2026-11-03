@@ -255,14 +255,14 @@ internal static class CiUtils
 
             // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
             if (testOptimizationSettings.IntelligentTestRunnerEnabled
-             && (testOptimizationSettings.CodeCoverageEnabled == null ||
-                 testOptimizationSettings.TestsSkippingEnabled == null ||
-                 testOptimizationSettings.KnownTestsEnabled == null ||
-                 testOptimizationSettings.EarlyFlakeDetectionEnabled == null ||
-                 testOptimizationSettings.FlakyRetryEnabled == null ||
-                 testOptimizationSettings.DynamicInstrumentationEnabled == null ||
-                 testOptimizationSettings.ImpactedTestsDetectionEnabled == null ||
-                 testOptimizationSettings.TestManagementEnabled == null))
+             && (testOptimizationSettings.CodeCoverageEnabled is null ||
+                 testOptimizationSettings.TestsSkippingEnabled is null ||
+                 testOptimizationSettings.KnownTestsEnabled is null ||
+                 testOptimizationSettings.EarlyFlakeDetectionEnabled is null ||
+                 testOptimizationSettings.FlakyRetryEnabled is null ||
+                 testOptimizationSettings.DynamicInstrumentationEnabled is null ||
+                 testOptimizationSettings.ImpactedTestsDetectionEnabled is null ||
+                 testOptimizationSettings.TestManagementEnabled is null))
             {
                 try
                 {

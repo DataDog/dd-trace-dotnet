@@ -64,7 +64,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         public static Task ForceFlushAsync()
         {
-            if (_instance == null)
+            if (_instance is null)
             {
                 return Task.CompletedTask;
             }
@@ -74,7 +74,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         public static async Task StopAsync()
         {
-            if (_instance == null)
+            if (_instance is null)
             {
                 return;
             }
