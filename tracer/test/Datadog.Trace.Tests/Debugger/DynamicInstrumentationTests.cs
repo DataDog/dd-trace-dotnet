@@ -999,15 +999,16 @@ public class DynamicInstrumentationTests
             GetFileProbes(debugger).Should().NotBeNull();
         }
 
-        [Fact]
-        public async Task DisposeAsync_WaitsForSnapshotLogAndDiagnosticUploads()
+        [Theory]
+        [InlineData("snapshots")]
+        [InlineData("logs")]
+        [InlineData("diagnostics")]
+        public async Task DisposeAsync_WaitsForSnapshotLogAndDiagnosticUploads(string pendingUploader)
         {
-            var snapshots = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var logs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var diagnostics = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var snapshotUploader = new SnapshotUploaderMock { Completion = snapshots.Task };
-            var logUploader = new LogUploaderMock { Completion = logs.Task };
-            var diagnosticsUploader = new UploaderMock { Completion = diagnostics.Task };
+            var pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var snapshotUploader = new SnapshotUploaderMock { Completion = pendingUploader == "snapshots" ? pending.Task : Task.CompletedTask };
+            var logUploader = new LogUploaderMock { Completion = pendingUploader == "logs" ? pending.Task : Task.CompletedTask };
+            var diagnosticsUploader = new UploaderMock { Completion = pendingUploader == "diagnostics" ? pending.Task : Task.CompletedTask };
             var settings = DebuggerSettings.FromSource(
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" } }),
                 NullConfigurationTelemetry.Instance);
@@ -1025,10 +1026,7 @@ public class DynamicInstrumentationTests
             snapshotUploader.DisposeCallCount.Should().Be(1);
             logUploader.DisposeCallCount.Should().Be(1);
             diagnosticsUploader.DisposeCallCount.Should().Be(1);
-            snapshots.TrySetResult(true);
-            logs.TrySetResult(true);
-            shutdown.IsCompleted.Should().BeFalse();
-            diagnostics.TrySetResult(true);
+            pending.TrySetResult(true);
             await shutdown;
         }
 
