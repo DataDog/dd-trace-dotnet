@@ -4342,6 +4342,103 @@ stages:
         testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: bundle_artifacts_tests
+  dependsOn: [dotnet_tool, package_windows, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [windows, linux]
+
+  - job: windows
+    timeoutInMinutes: 30
+    pool:
+      name: $(windowsX64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/restore-working-directory.yml
+
+    # The tests look for the Datadog.Trace.Bundle package and its Datadog.Trace dependency under $(artifacts)/nuget
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: nuget-packages
+        path: $(artifacts)/nuget
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: bundle-nuget-package
+        path: $(artifacts)/nuget/bundle
+
+    - script: tracer\build.cmd BuildAndRunBundleArtifactTests
+      displayName: Build and Test bundle
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - template: steps/make-artifacts-uploadable.yml
+    - publish: artifacts/build_data
+      displayName: Uploading bundle_artifacts_tests logs
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: artifacts/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+  # Linux publishes use '/' path separators, which the publish filtering targets must handle
+  - job: linux
+    timeoutInMinutes: 30
+    pool:
+      name: $(linuxX64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-x64-working-directory
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: nuget-packages
+        path: $(artifacts)/nuget
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: bundle-nuget-package
+        path: $(artifacts)/nuget/bundle
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildAndRunBundleArtifactTests"
+
+    - template: steps/make-artifacts-uploadable.yml
+    - publish: artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: artifacts/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: store_ssi_artifacts
   dependsOn: [package_linux, package_arm64, merge_commit_id]
   variables:
