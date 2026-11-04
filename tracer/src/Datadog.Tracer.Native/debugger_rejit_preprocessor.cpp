@@ -112,6 +112,11 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
                 continue;
             }
 
+            if (DeclineUnsupportedRuntimeAsyncMethod(metadataImport, functionInfo, lineProbe->probeId))
+            {
+                continue;
+            }
+
             auto moduleHandler = GetOrAddModule(moduleInfo.id);
             if (moduleHandler == nullptr)
             {
@@ -396,6 +401,11 @@ void DebuggerRejitPreprocessor::EnqueueNewMethod(const std::shared_ptr<MethodPro
         return;
     }
 
+    if (DeclineUnsupportedRuntimeAsyncMethod(metadataImport, newFunctionInfo, definition->probeId))
+    {
+        return;
+    }
+
     RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, newMethodDef, newFunctionInfo, moduleHandler);
 
     Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
@@ -527,6 +537,24 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::PickMe
     }
 
     return TransformKickOffToMoveNext(metadataImport, metadataEmit, moveNextMethod, nestedAsyncClassOrStruct);
+}
+
+// Fails the probe here rather than in the rewriter, so no ReJIT is requested for a method that would only be declined.
+bool DebuggerRejitPreprocessor::DeclineUnsupportedRuntimeAsyncMethod(const ComPtr<IMetaDataImport2>& metadataImport,
+                                                                     const FunctionInfo& functionInfo,
+                                                                     const shared::WSTRING& probeId) const
+{
+    const auto* reason = DebuggerMethodRewriter::GetRuntimeAsyncDeclineReason(functionInfo, metadataImport,
+                                                                              m_corProfiler->runtime_information_);
+    if (reason == nullptr)
+    {
+        return false;
+    }
+
+    Logger::Warn("    * Skipping ReJIT of runtime-async method ", functionInfo.type.name, ".", functionInfo.name,
+                 "(): ", *reason, " ProbeId: ", probeId);
+    ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probeId, *reason);
+    return true;
 }
 
 bool DebuggerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const std::shared_ptr<MethodProbeDefinition>& methodProbe)

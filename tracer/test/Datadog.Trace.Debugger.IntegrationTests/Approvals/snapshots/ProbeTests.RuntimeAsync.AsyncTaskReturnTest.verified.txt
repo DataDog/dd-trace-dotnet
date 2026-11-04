@@ -1,0 +1,77 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "Foo"
+              },
+              "this": {
+                "type": "AsyncTaskReturnTest"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "Foo"
+              },
+              "this": {
+                "type": "AsyncTaskReturnTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "RoomStatus",
+                "value": "Maintenance"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes.runtimeasync"
+  }
+]

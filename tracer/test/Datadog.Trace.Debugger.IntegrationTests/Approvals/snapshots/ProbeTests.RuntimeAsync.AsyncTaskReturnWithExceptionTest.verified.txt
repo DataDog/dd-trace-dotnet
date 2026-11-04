@@ -1,0 +1,109 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "RunAsync"
+              },
+              "this": {
+                "type": "AsyncTaskReturnWithExceptionTest"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "RunAsync"
+              },
+              "this": {
+                "type": "AsyncTaskReturnWithExceptionTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233079"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Sequence contains no matching element"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.RuntimeAsync"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "InvalidOperationException"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
+              }
+            },
+            "throwable": {
+              "message": "Sequence contains no matching element",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest.First",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.InvalidOperationException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes.runtimeasync"
+  }
+]

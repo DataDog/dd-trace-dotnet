@@ -69,8 +69,12 @@ const WSTRING invalid_probe_probe_byreflike_return_not_supported =
     WStr("Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.");
 const WSTRING invalid_probe_type_is_by_ref_like =
     WStr("Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.");
-const WSTRING invalid_probe_runtime_async_not_supported =
-    WStr("Dynamic Instrumentation of .NET 11 runtime-async methods is not yet supported.");
+const WSTRING invalid_probe_runtime_async_requires_net11 =
+    WStr("Dynamic Instrumentation of runtime-async methods requires .NET 11 or later.");
+const WSTRING invalid_probe_runtime_async_unsupported_return_type =
+    WStr("Dynamic Instrumentation of runtime-async methods with this return type is not supported.");
+const WSTRING invalid_probe_runtime_async_value_type_not_supported =
+    WStr("Dynamic Instrumentation of runtime-async instance methods on a struct is not yet supported.");
 const WSTRING non_supported_compiled_bytecode =
     WStr("Compiled code with `tail` call is not yet supported (F#).");
 const WSTRING type_contains_invalid_symbol = 

@@ -1,0 +1,97 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "RunAsync"
+              },
+              "this": {
+                "type": "AsyncThrowException"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "caller": {
+                "type": "String",
+                "value": "RunAsync"
+              },
+              "this": {
+                "type": "AsyncThrowException"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233079"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Exception from RunAsync.Method"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.RuntimeAsync"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "InvalidOperationException"
+              }
+            },
+            "throwable": {
+              "message": "Exception from RunAsync.Method",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.SmokeTests.AsyncThrowException.Method",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.InvalidOperationException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncThrowException"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncThrowException",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes.runtimeasync"
+  }
+]

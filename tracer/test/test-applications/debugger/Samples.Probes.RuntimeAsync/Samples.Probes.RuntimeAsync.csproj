@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Samples.Probes, with the Samples.Probes.TestRuns sources compiled as .NET 11 runtime-async methods instead of state machines -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net11.0</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Samples.Probes\Program.cs" Link="Program.cs" />
+    <Compile Include="..\Samples.Probes\SimpleHttpListener.cs" Link="SimpleHttpListener.cs" />
+    <Compile Include="..\dependency-libs\Samples.Probes.TestRuns\**\*.cs"
+             Exclude="..\dependency-libs\Samples.Probes.TestRuns\bin\**;..\dependency-libs\Samples.Probes.TestRuns\obj\**"
+             LinkBase="TestRuns" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\Samples.Probes.External\Samples.Probes.External.csproj" />
+    <ProjectReference Include="..\dependency-libs\Samples.Probes.Unreferenced.External\Samples.Probes.Unreferenced.External.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+  </ItemGroup>
+
+</Project>

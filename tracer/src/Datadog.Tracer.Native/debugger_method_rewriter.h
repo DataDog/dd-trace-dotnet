@@ -145,6 +145,13 @@ public:
                                bool& isAsyncMethod) const;
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata,
                                      const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
+    // Returns the probe error for a .NET 11 runtime-async method that can't be instrumented, or nullptr if it can
+    // (or isn't runtime-async). The caller's method signature must already be parsed. When the method can be
+    // instrumented, a non-null effectiveReturnType receives the type its body leaves on the stack at `ret`.
+    static const WSTRING* GetRuntimeAsyncDeclineReason(const FunctionInfo& caller,
+                                                       const ComPtr<IMetaDataImport2>& metadataImport,
+                                                       const RuntimeInformation& runtimeInformation,
+                                                       TypeSignature* effectiveReturnType = nullptr);
     static void MarkAllProbesAsInstrumented(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
                                      SpanProbeOnMethodDefinitions& spanOnMethodProbes);
     static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,

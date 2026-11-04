@@ -68,6 +68,10 @@ protected:
     static std::tuple<HRESULT, mdMethodDef, FunctionInfo> TransformKickOffToMoveNext(const ComPtr<IMetaDataImport2>& metadataImport,
                                                                                      const ComPtr<IMetaDataEmit2>& metadataEmit,
                                                                                      mdMethodDef moveNextMethod, mdTypeDef nestedAsyncClassOrStruct);
+
+private:
+    bool DeclineUnsupportedRuntimeAsyncMethod(const ComPtr<IMetaDataImport2>& metadataImport,
+                                              const FunctionInfo& functionInfo, const shared::WSTRING& probeId) const;
 };
 
 } // namespace debugger

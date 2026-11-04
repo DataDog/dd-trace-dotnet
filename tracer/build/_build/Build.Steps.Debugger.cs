@@ -25,6 +25,8 @@ partial class Build
 
     Project DebuggerSamples => SamplesSolution.GetProject(Projects.DebuggerSamples);
 
+    Project DebuggerRuntimeAsyncSamples => SamplesSolution.GetProject(Projects.DebuggerRuntimeAsyncSamples);
+
     Project ExceptionReplaySamples => SamplesSolution.GetProject(Projects.ExceptionReplaySamples);
 
     Project DebuggerSamplesTestRuns => SamplesSolution.GetProject(Projects.DebuggerSamplesTestRuns);
@@ -80,6 +82,12 @@ partial class Build
             // Samples are not in the build-stage Restore (which is scoped to Build.g.sln); restore on demand.
             DotnetBuild(DebuggerSamples, framework: Framework, noRestore: false);
 
+            var buildRuntimeAsyncSamples = DebuggerRuntimeAsyncSamples.TryGetTargetFrameworks().Contains(Framework);
+            if (buildRuntimeAsyncSamples)
+            {
+                DotnetBuild(DebuggerRuntimeAsyncSamples, framework: Framework, noRestore: false);
+            }
+
             if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
             {
                 DotnetBuild(ExceptionReplaySamples, framework: Framework, noRestore: false);
@@ -94,6 +102,15 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetNoWarnDotNetCore3()
                     .SetProject(DebuggerSamples));
+
+                if (buildRuntimeAsyncSamples)
+                {
+                    DotNetPublish(x => x
+                                      .SetFramework(Framework)
+                                      .SetConfiguration(BuildConfiguration)
+                                      .SetNoWarnDotNetCore3()
+                                      .SetProject(DebuggerRuntimeAsyncSamples));
+                }
 
                 if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
                 {

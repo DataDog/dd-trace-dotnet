@@ -31,6 +31,7 @@ namespace debugger
 {
 class DebuggerMethodRewriter;
 class DebuggerProbesInstrumentationRequester;
+class DebuggerRejitPreprocessor;
 }
 
 namespace iast
@@ -252,6 +253,7 @@ public:
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
+    friend class debugger::DebuggerRejitPreprocessor;
     friend class TracerMethodRewriter;
     friend class MethodRewriter;
     friend class fault_tolerant::FaultTolerantMethodDuplicator;

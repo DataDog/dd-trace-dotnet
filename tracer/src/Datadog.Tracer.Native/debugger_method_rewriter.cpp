@@ -2221,6 +2221,44 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
     return S_OK;
 }
 
+const WSTRING* DebuggerMethodRewriter::GetRuntimeAsyncDeclineReason(const FunctionInfo& caller,
+                                                                    const ComPtr<IMetaDataImport2>& metadataImport,
+                                                                    const RuntimeInformation& runtimeInformation,
+                                                                    TypeSignature* effectiveReturnType)
+{
+    if (!trace::IsMiAsync(caller.method_impl_flags))
+    {
+        return nullptr;
+    }
+
+    // ReJIT only publishes the async variant of a runtime-async method from .NET 11 on.
+    if (!runtimeInformation.is_core() || runtimeInformation.major_version < 11)
+    {
+        return &invalid_probe_runtime_async_requires_net11;
+    }
+
+    TypeSignature effective{};
+    if (!trace::TryGetRuntimeAsyncEffectiveReturnType(caller.method_signature.GetReturnValue(), metadataImport,
+                                                      effective))
+    {
+        return &invalid_probe_runtime_async_unsupported_return_type;
+    }
+
+    // A by-ref `this` is not preserved across a suspension, so reading it after an await throws.
+    const bool isStatic = !(caller.method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+    if (caller.type.valueType && !isStatic)
+    {
+        return &invalid_probe_runtime_async_value_type_not_supported;
+    }
+
+    if (effectiveReturnType != nullptr)
+    {
+        *effectiveReturnType = effective;
+    }
+
+    return nullptr;
+}
+
 HRESULT DebuggerMethodRewriter::IsAsyncMethodProbe(const ComPtr<IMetaDataImport2>& metadataImport,
                                                    const FunctionInfo* caller, bool& isAsyncMethod) const
 {
@@ -2344,6 +2382,14 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     DebuggerTokens* debuggerTokens = module_metadata.GetDebuggerTokens();
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
+
+    // A .NET 11 runtime-async method does not return its declared Task from the method body: at `ret`
+    // the stack holds the unwrapped value, or nothing for a non-generic Task/ValueTask. Everything
+    // below that keys off the return type must use that effective type, so it replaces retFuncArg here.
+    const bool isRuntimeAsync = trace::IsMiAsync(caller->method_impl_flags);
+    const WSTRING* runtimeAsyncDeclineReason = GetRuntimeAsyncDeclineReason(
+        *caller, module_metadata.metadata_import, m_corProfiler->runtime_information_, &retFuncArg);
+
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
@@ -2371,18 +2417,12 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         return E_NOTIMPL;
     }
 
-    // .NET 11 runtime-async methods do not return their declared Task from the method body: at `ret`
-    // the stack holds the unwrapped value (or nothing, for a non-generic Task/ValueTask). The return
-    // handling below derives everything from the declared return type, so rewriting one of these
-    // emits a `stloc` against the wrong type - or against an empty stack - and the JIT raises
-    // InvalidProgramException when the method is first called. Probes can target arbitrary customer
-    // code, so fail the probe rather than the process until this is properly supported.
-    if (trace::IsMiAsync(caller->method_impl_flags))
+    if (runtimeAsyncDeclineReason != nullptr)
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Placing probes on a .NET 11 runtime-async method "
-                     "(MethodImplAttributes.Async) is not supported. token=",
-                     function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_runtime_async_not_supported);
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Can't place probes on a runtime-async method: ",
+                     *runtimeAsyncDeclineReason, " token=", function_token, " caller_name=", caller->type.name, ".",
+                     caller->name, "() Signature=", caller->method_signature.str());
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, *runtimeAsyncDeclineReason);
         return E_NOTIMPL;
     }
 
@@ -2449,7 +2489,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     if (trace::Logger::IsDebugEnabled())
     {
         Logger::Debug("*** DebuggerMethodRewriter::Rewrite() Start: ", caller->type.name, ".", caller->name,
-                      "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
+                      "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", IsRuntimeAsync=", isRuntimeAsync,
+                      ", Arguments=", numArgs, "]");
     }
 
     // *** Create the rewriter wrapper helper
@@ -2493,7 +2534,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
     else
     {
-        methodReturnType = caller->method_signature.GetReturnValue();
+        methodReturnType = retFuncArg;
     }
 
     if (!isAsyncMethod)

@@ -22,6 +22,7 @@
       "tracer\\test\\Datadog.Tracer.Native.Tests\\Datadog.Tracer.Native.Tests.vcxproj",
       "tracer\\test\\test-applications\\debugger\\Samples.Debugger.AspNetCore5\\Samples.Debugger.AspNetCore5.csproj",
       "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
+      "tracer\\test\\test-applications\\debugger\\Samples.Probes.RuntimeAsync\\Samples.Probes.RuntimeAsync.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.External\\Samples.Probes.External.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\Samples.Probes.TestRuns.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.Unreferenced.External\\Samples.Probes.Unreferenced.External.csproj"
