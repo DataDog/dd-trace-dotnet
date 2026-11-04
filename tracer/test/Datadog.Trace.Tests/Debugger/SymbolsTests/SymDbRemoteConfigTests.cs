@@ -215,7 +215,7 @@ public class SymDbRemoteConfigTests
 
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/symDb/config");
         var malformedContent = Encoding.UTF8.GetBytes("{not valid json");
-        var malformed = new RemoteConfiguration(path, malformedContent, malformedContent.Length, new Dictionary<string, string>(), version: 1);
+        var malformed = new RemoteConfiguration(path, malformedContent, 1);
 
         var result = await subscriptionManager.Update(new Dictionary<string, List<RemoteConfiguration>>
         {
@@ -234,7 +234,7 @@ public class SymDbRemoteConfigTests
     {
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/symDb/config");
         var malformedContent = Encoding.UTF8.GetBytes("{not valid json");
-        var malformed = new RemoteConfiguration(path, malformedContent, malformedContent.Length, new Dictionary<string, string>(), version: 1);
+        var malformed = new RemoteConfiguration(path, malformedContent, 1);
 
         var configsByProduct = new Dictionary<string, List<RemoteConfiguration>>
         {
@@ -251,7 +251,7 @@ public class SymDbRemoteConfigTests
     {
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/{id}/config");
         var content = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(payload));
-        return new RemoteConfiguration(path, content, content.Length, new Dictionary<string, string>(), version: 1);
+        return new RemoteConfiguration(path, content, 1);
     }
 
     private static Dictionary<string, List<RemoteConfiguration>> CreateConfigsByProduct(bool uploadSymbols)
@@ -294,9 +294,10 @@ public class SymDbRemoteConfigTests
         {
         }
 
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
+        public bool Poll(Func<string, RcmClientTracer, RemoteConfigEndpoint, IRemoteConfigClient> clientFactory, RcmClientTracer tracer, RemoteConfigEndpoint endpoint, string[]? extraServices) => true;
+
+        public void Cancel()
         {
-            return Task.CompletedTask;
         }
 
         public Task<ApplyDetails[]> Update(Dictionary<string, List<RemoteConfiguration>> configsByProduct)

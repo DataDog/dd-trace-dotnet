@@ -19,7 +19,7 @@ namespace Datadog.Trace.TestHelpers
     {
         internal static bool Matches(this GetRcmRequest request, GetRcmResponse response)
         {
-            var requestBackendClientState = request.Client.State.BackendClientState;
+            var requestBackendClientState = Encoding.UTF8.GetString(request.Client.State.BackendClientState ?? []);
             var responseBackendClientstate = response.Targets.Signed.Custom.OpaqueBackendState;
             return requestBackendClientState == responseBackendClientstate;
         }

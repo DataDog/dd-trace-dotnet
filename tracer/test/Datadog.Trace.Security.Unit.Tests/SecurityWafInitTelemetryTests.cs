@@ -112,7 +112,7 @@ public class SecurityWafInitTelemetryTests : WafLibraryRequiredTest
     private static ApplyDetails[] EnableFromRcm(AppSecSecurity security)
     {
         var content = Encoding.UTF8.GetBytes("""{"asm": {"enabled": true}}""");
-        var config = new RemoteConfiguration(RemoteConfigurationPath.FromPath("datadog/2/ASM_FEATURES/asm_features_activation/config"), content, content.Length, new Dictionary<string, string>(), 1);
+        var config = new RemoteConfiguration(RemoteConfigurationPath.FromPath("datadog/2/ASM_FEATURES/asm_features_activation/config"), content, 1);
         var configs = new Dictionary<string, List<RemoteConfiguration>> { [RcmProducts.AsmFeatures] = [config] };
         var method = typeof(AppSecSecurity).GetMethod("UpdateFromRcm", BindingFlags.NonPublic | BindingFlags.Instance)!;
         return (ApplyDetails[])method.Invoke(security, [configs, null])!;

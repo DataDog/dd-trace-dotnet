@@ -254,7 +254,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
     }
 
     [TestingAndPrivateOnly]
-    internal async Task<ApplyDetails> TrySendDebugLogs(string configPath, byte[] configContents, string configId, string fileLogDirectory)
+    internal async Task<ApplyDetails> TrySendDebugLogs(string configPath, RemoteConfigurationContent configContents, string configId, string fileLogDirectory)
     {
         try
         {
@@ -362,7 +362,8 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                 return true;
             }
 
-            var json = JsonHelper.ParseJObject(remoteConfig.Contents, EncodingHelpers.Utf8NoBom);
+            using var stream = remoteConfig.Contents.OpenStream();
+            var json = JsonHelper.ParseJObject(stream, EncodingHelpers.Utf8NoBom);
 
             var logLevel = json["config"]?["log_level"]?.Value<string>();
 
@@ -414,11 +415,11 @@ internal sealed class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private JObject? TryDeserialize(byte[] contents)
+    private JObject? TryDeserialize(RemoteConfigurationContent contents)
     {
         try
         {
-            using var stream = new MemoryStream(contents);
+            using var stream = contents.OpenStream();
             using var streamReader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
             return JObject.Load(jsonReader);

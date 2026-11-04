@@ -39,7 +39,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var request0 = await agent.SetupRcmAndWait(Output, Enumerable.Empty<(object Config, string ProductName, string Id)>(), timeoutInMilliseconds: RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request0.Should().NotBeNull();
-            request0.Client.ClientTracer.ExtraServices.Should().BeNull();
+            request0.Client.ClientTracer.ExtraServices.Should().BeNullOrEmpty();
 
             var spans1 = await SendRequestsAsync(agent, 2, "/createextraservice/?serviceName=extraVegetables");
 

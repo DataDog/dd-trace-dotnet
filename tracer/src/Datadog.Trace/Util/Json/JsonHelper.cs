@@ -60,7 +60,12 @@ internal static class JsonHelper
         // A new overload, equivalent to calling Encoding.Utf8.GetBytes() and
         // passing that to Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject.Parse()
         using var stream = new MemoryStream(json);
-        using var streamReader = new StreamReader(stream, encoding);
+        return ParseJObject(stream, encoding);
+    }
+
+    public static JObject ParseJObject(Stream json, Encoding encoding)
+    {
+        using var streamReader = new StreamReader(json, encoding);
         using var reader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
         var o = JObject.Load(reader);
         while (reader.Read())

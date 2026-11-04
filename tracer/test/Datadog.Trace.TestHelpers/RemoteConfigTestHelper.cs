@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -119,15 +120,22 @@ namespace Datadog.Trace.TestHelpers
 
                 clientConfigs.Add(path);
 
-                targetFiles.Add(new RcmFile { Path = path, Raw = Encoding.UTF8.GetBytes(configuration.Config) });
-                var guid = Guid.NewGuid().ToString();
-                targets.Add(path, new Target { Hashes = new Dictionary<string, string> { { "guid", guid } } });
+                var raw = Encoding.UTF8.GetBytes(configuration.Config);
+                targetFiles.Add(new RcmFile { Path = path, Raw = raw });
+                // The client verifies the hash of each file, and ignores files whose hash didn't change
+                targets.Add(path, new Target { Hashes = new Dictionary<string, string> { { "sha256", Sha256Hex(raw) } }, Length = raw.Length, Custom = new TargetCustom { V = 1 } });
             }
 
             var root = new TufRoot { Signed = new Signed { Targets = targets, Custom = new TargetsCustom { OpaqueBackendState = Guid.NewGuid().ToString() } } };
 
             var response = new GetRcmResponse { ClientConfigs = clientConfigs, TargetFiles = targetFiles, Targets = root };
             return response;
+        }
+
+        private static string Sha256Hex(byte[] bytes)
+        {
+            using var sha256 = SHA256.Create();
+            return string.Concat(sha256.ComputeHash(bytes).Select(b => b.ToString("x2")));
         }
     }
 }

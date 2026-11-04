@@ -27,7 +27,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         [JsonProperty("error")]
         public string? Error { get; set; }
 
+        // libdatadog sends the bytes as JSON array
         [JsonProperty("backend_client_state")]
-        public string? BackendClientState { get; set; }
+        public byte[]? BackendClientState { get; set; }
     }
 }

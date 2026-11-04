@@ -64,7 +64,7 @@ public class RaspRcmTests : SettingsTestsBase
     private static Dictionary<string, List<RemoteConfiguration>> CreateRemoteConfigValues(string rules)
     {
         var content = Encoding.UTF8.GetBytes(rules);
-        RemoteConfiguration config = new RemoteConfiguration(RemoteConfigurationPath.FromPath("employee/john/doe/smith"), content, content.Length, new Dictionary<string, string>(), 33);
+        RemoteConfiguration config = new RemoteConfiguration(RemoteConfigurationPath.FromPath("employee/john/doe/smith"), content, 33);
         var dic = new Dictionary<string, List<RemoteConfiguration>>
         {
             ["ASM_DD"] = [config]
