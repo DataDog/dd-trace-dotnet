@@ -579,6 +579,7 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationStarted(AppDomainID appDomainId)
     {
+        m_runtimeIdStore.OnAppDomainCreationStarted(appDomainId);
         RunInAllProfilers(AppDomainCreationStarted(appDomainId));
     }
 
