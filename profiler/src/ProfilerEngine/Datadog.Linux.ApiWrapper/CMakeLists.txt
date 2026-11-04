@@ -2,7 +2,9 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Linux.ApiWrapper" VERSION 3.56.0)
+# DD_VERSION is set by build/cmake/DdVersion.cmake, which the root CMakeLists.txt includes,
+# so configure CMake from the repository root rather than from this directory
+project("Datadog.Linux.ApiWrapper" VERSION ${DD_VERSION})
 
 # ******************************************************
 # Compiler options

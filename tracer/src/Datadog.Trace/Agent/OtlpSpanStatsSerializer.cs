@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -325,7 +326,7 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("value");
             writer.WriteStartObject();
             writer.WritePropertyName("intValue");
-            writer.WriteValue(value.ToString());
+            writer.WriteValue(value.ToString(CultureInfo.InvariantCulture));
             writer.WriteEndObject();
             writer.WriteEndObject();
         }

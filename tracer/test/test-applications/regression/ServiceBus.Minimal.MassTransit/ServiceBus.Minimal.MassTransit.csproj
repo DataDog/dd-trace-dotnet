@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RequiresDockerDependency>All</RequiresDockerDependency>
     <ExtensionsVersions>3.1.15</ExtensionsVersions>
-    <ExtensionsVersions Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net11.0'))">11.0.0-rc.1.26425.128</ExtensionsVersions>
+    <ExtensionsVersions Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net11.0'))">11.0.0-rc.2.26504.105</ExtensionsVersions>
   </PropertyGroup>
 
   <ItemGroup>

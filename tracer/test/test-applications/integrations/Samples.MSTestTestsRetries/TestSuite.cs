@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Samples.MSTestTestsRetries;
 
 [TestClass]
+[DoNotParallelize]
 public class TestSuite
 {
     private static int _retryCount;

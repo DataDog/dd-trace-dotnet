@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Desktop CLR keys NGen inline records by the XOR of the first 24 bytes of the module name and the method RID.
+       The test relies on this assembly name XORing to 0x07, the same as mscorlib. -->
+  <PropertyGroup>
+    <TargetFrameworks>net48</TargetFrameworks>
+  </PropertyGroup>
+</Project>

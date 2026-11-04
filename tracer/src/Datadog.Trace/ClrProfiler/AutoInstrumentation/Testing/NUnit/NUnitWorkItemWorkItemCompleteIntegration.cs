@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     MethodName = "WorkItemComplete",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "3.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "5.*.*",
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -46,6 +46,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
         WriteDebugInfo(instance);
         var item = instance.Test;
         var result = instance.Result;
+        NUnitIntegration.BlockDependentsOfHiddenFailures(item, result);
 
         NUnitIntegration.GetExceptionAndMessage(result, out var exceptionType, out var resultMessage);
         switch (item.TestType)

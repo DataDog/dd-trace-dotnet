@@ -236,6 +236,10 @@ internal sealed class TestOptimization : ITestOptimization
             return;
         }
 
+        // Agent discovery can initialize the tracer. Register first so test sessions close before its writer.
+        LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+        cd.Debug("Added shutdown task");
+
         if (_enablement.InferredEnabled)
         {
             PropagateCiVisibilityEnvironmentVariable();
@@ -265,9 +269,6 @@ internal sealed class TestOptimization : ITestOptimization
         {
             Log.Information("TestOptimization: EVP Proxy was enabled with mode: {Mode}", TracerManagement.EventPlatformProxySupport);
         }
-
-        LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
-        cd.Debug("Added shutdown task");
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);

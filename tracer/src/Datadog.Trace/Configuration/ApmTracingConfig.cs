@@ -89,7 +89,7 @@ namespace Datadog.Trace.Configuration
                 higherPriority.ClusterTarget);
         }
 
-        private static LibConfig MergeLibConfigs(LibConfig higher, LibConfig lower)
+        internal static LibConfig MergeLibConfigs(LibConfig higher, LibConfig lower)
         {
             return new LibConfig
             {

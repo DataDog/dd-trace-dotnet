@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             // Keep tag ordering aligned with the Go implementation for cross-runtime parity.
             var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
                 new EventBridgeEdgeTagCacheKey(busName, detailType ?? string.Empty),
-                static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
+                static k => new EdgeTags(["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]));
 
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes, timeInQueueMs: 0);
             return scope.Span.Context.PathwayContext;

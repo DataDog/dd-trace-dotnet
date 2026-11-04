@@ -26,6 +26,9 @@ internal static class MsTestIntegration
 {
     internal const string IntegrationName = nameof(Configuration.IntegrationId.MsTestV2);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
+#if NETFRAMEWORK
+    private const string TotalTestCasesKey = "Datadog.Trace.MSTest.TotalTestCases";
+#endif
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
     internal static readonly ThreadLocal<MethodInfoCacheItem?> IsTestMethodRunnableThreadLocal = new();
@@ -139,7 +142,8 @@ internal static class MsTestIntegration
         Common.SetKnownTestsFeatureTags(test);
 
         // Early flake detection flags
-        Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
+        var totalTestCases = GetTotalTestCases();
+        Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref totalTestCases);
 
         // Flaky retry
         Common.SetFlakyRetryTags(test, isRetry);
@@ -441,4 +445,28 @@ internal static class MsTestIntegration
     {
         Interlocked.Add(ref _totalTestCases, count);
     }
+
+    internal static long GetTotalTestCases()
+    {
+#if NETFRAMEWORK
+        // MSTest discovers tests in the caller's AppDomain, then executes them in a fresh one.
+        // Restore the unfiltered count copied when that execution host was created.
+        if (Interlocked.Read(ref _totalTestCases) == 0 && AppDomain.CurrentDomain.GetData(TotalTestCasesKey) is long count)
+        {
+            Interlocked.CompareExchange(ref _totalTestCases, count, 0);
+        }
+#endif
+        return Interlocked.Read(ref _totalTestCases);
+    }
+
+#if NETFRAMEWORK
+    internal static void CopyTotalTestCasesTo(AppDomain executionDomain)
+    {
+        var count = GetTotalTestCases();
+        if (count > 0)
+        {
+            executionDomain.SetData(TotalTestCasesKey, count);
+        }
+    }
+#endif
 }

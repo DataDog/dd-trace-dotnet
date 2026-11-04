@@ -849,7 +849,7 @@ bool Dataflow::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 void Dataflow::RemoveModule(ModuleID moduleId)
 {
 }
-void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
+void Dataflow::AddNGenInlinerModule(ModuleID moduleId, std::vector<trace::RejitRequest>& rejitRequests)
 {
 }
 

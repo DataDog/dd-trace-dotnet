@@ -10,6 +10,8 @@ The tooling is split into three projects:
 | `Datadog.AutoInstrumentation.Generator` | Avalonia GUI for interactive browsing and generation |
 | `Datadog.AutoInstrumentation.Generator.Cli` | CLI tool for scriptable/automated generation |
 
+All three live under `tracer/tools/Datadog.AutoInstrumentation/` and are built via the standalone `Datadog.AutoInstrumentation.slnx` solution in that folder (they are not part of `Datadog.Trace.sln`).
+
 - [GUI Tool](#gui-tool)
   - [Running the GUI](#running-the-gui)
   - [GUI Workflow](#gui-workflow)
@@ -46,7 +48,7 @@ The GUI provides an interactive tree view for browsing assemblies and a live cod
 ./tracer/build.sh RunInstrumentationGenerator      # Linux/macOS
 
 # Via dotnet directly
-dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator/ --framework net11.0
+dotnet run --project tracer/tools/Datadog.AutoInstrumentation/Datadog.AutoInstrumentation.Generator/ --framework net11.0
 ```
 
 #### GUI Workflow
@@ -65,12 +67,12 @@ The CLI exposes the same generation logic as a command-line tool, suitable for s
 
 ```bash
 # Via dotnet run
-dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- \
+dotnet run --project tracer/tools/Datadog.AutoInstrumentation/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- \
   generate <assembly-path> --type <type> --method <method> [options]
 
 # Or install as a global tool
-dotnet pack tracer/src/Datadog.AutoInstrumentation.Generator.Cli/
-dotnet tool install --global --add-source ./tracer/src/Datadog.AutoInstrumentation.Generator.Cli/bin/Debug dd-autoinstrumentation
+dotnet pack tracer/tools/Datadog.AutoInstrumentation/Datadog.AutoInstrumentation.Generator.Cli/
+dotnet tool install --global --add-source ./tracer/tools/Datadog.AutoInstrumentation/Datadog.AutoInstrumentation.Generator.Cli/bin/Debug dd-autoinstrumentation
 dd-autoinstrumentation generate <assembly-path> --type <type> --method <method> [options]
 ```
 

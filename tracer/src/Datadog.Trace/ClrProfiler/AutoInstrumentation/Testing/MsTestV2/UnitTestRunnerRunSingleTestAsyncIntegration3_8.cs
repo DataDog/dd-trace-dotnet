@@ -89,6 +89,7 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
             foreach (var unitTestResultObject in lstResults)
             {
                 if (unitTestResultObject != null &&
+                    MsTestExecution.Current?.WasObserved(unitTestResultObject) != true &&
                     unitTestResultObject.TryDuckCast<TestResultStruct3_8>(out var unitTestResult) &&
                     methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethod))
                 {
@@ -141,13 +142,15 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
                                 Common.Log.Warning("Parent class cannot be duck casted to ClassInfoInitializationExceptionStruct.");
                             }
 
-                            // We need to check if the test is failing because a Class cleanup error
+                            // Cleanup may already have reported this error and closed the suite.
+                            // Keep the fallback for runs where the suite is still open.
                             if (testMethodInfo.Parent?.Instance.TryDuckCast<ClassInfoCleanupExceptionsStruct>(out var classInfoCleanupExceptionsStruct) == true)
                             {
                                 if (classInfoCleanupExceptionsStruct.ClassCleanupException is { } classCleanupException &&
-                                    MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(testMethodInfo.Parent) is { } suite)
+                                    MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(testMethodInfo.Parent) is { IsClosed: false } suite)
                                 {
                                     suite.SetErrorInfo(classCleanupException);
+                                    suite.Tags.Status = TestTags.StatusFail;
                                 }
                             }
                             else
@@ -197,15 +200,6 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
     ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"],
     MinimumVersion = "4.3.3",
     MaximumVersion = "4.3.*",
-    IntegrationName = MsTestIntegration.IntegrationName)]
-[InstrumentMethod(
-    AssemblyNames = ["MSTestAdapter.PlatformServices"],
-    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
-    MethodName = "RunSingleTestAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
-    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.IAdapterMessageLogger"],
-    MinimumVersion = "4.4.0",
-    MaximumVersion = "4.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

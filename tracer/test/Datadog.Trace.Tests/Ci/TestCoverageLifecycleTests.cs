@@ -15,6 +15,8 @@ using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -28,6 +30,293 @@ namespace Datadog.Trace.Tests.Ci;
 [Collection(nameof(CoverageGlobalStateTestCollection))]
 public class TestCoverageLifecycleTests : SettingsTestsBase
 {
+    [Theory]
+    [InlineData("3.8")]
+    [InlineData("3.9")]
+    [InlineData("3.10")]
+    [InlineData("3.11")]
+    public void CleanupCallbacksRecordReturnedErrorsWithoutTheRunner(string version)
+    {
+        using var harness = new TestHarness();
+        var state = new CallTargetState(null, harness.Suite);
+        var exception = new Mock<Exception>();
+        exception.SetupGet(error => error.Message).Returns("Class cleanup failed.");
+
+        // ForceCleanup can call the cleanup method without RunSingleTest. The hook must
+        // record the returned exception itself and ignore subsequent calls for this suite.
+        for (var invocation = 0; invocation < 2; invocation++)
+        {
+            switch (version)
+            {
+                case "3.8":
+                case "3.10":
+                    TestClassInfoRunClassCleanupIntegration.OnMethodEnd<object, Exception>(null!, exception.Object, null, state);
+                    break;
+                case "3.9":
+                    TestClassInfoExecuteClassCleanupIntegrationV3_9.OnMethodEnd<object, Exception>(null!, exception.Object, null, state);
+                    break;
+                default:
+                    TestClassInfoExecuteClassCleanupAsyncIntegration.OnAsyncMethodEnd<object, Exception>(null!, exception.Object, null, state);
+                    break;
+            }
+
+            harness.Suite.IsClosed.Should().BeTrue();
+            harness.Suite.Tags.Status.Should().Be("fail");
+            harness.Module.Tags.Status.Should().Be("fail");
+            harness.Suite.Tags.GetTag(Tags.ErrorMsg).Should().Be("Class cleanup failed.");
+        }
+
+        exception.VerifyGet(error => error.Message, Times.Once);
+    }
+
+    [Fact]
+    public void CompletedExecutionRemainsOpenUntilClose()
+    {
+        var handler = new CountingCoverageEventHandler();
+        using var harness = new TestHarness(handler);
+        var previousScope = Tracer.Instance.InternalActiveScope;
+        var test = harness.Suite.CreateTest("native-retry-attempt");
+        var duration = TimeSpan.FromMilliseconds(12);
+
+        test.UnsafeFinishExecution(TestStatus.Fail, duration, skipReason: null);
+
+        test.IsClosed.Should().BeFalse();
+        Test.ActiveTests.Should().Contain(test);
+        handler.FinishedCount.Should().Be(1);
+        handler.Container.Should().BeNull();
+        Tracer.Instance.InternalActiveScope!.Span.Should().BeSameAs(test.GetInternalSpan());
+        test.GetInternalSpan().IsFinished.Should().BeFalse();
+        test.GetTags().FinalStatus = "fail";
+        test.Close(TestStatus.Fail);
+        test.IsClosed.Should().BeTrue();
+        Tracer.Instance.InternalActiveScope.Should().BeSameAs(previousScope);
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
+        test.GetInternalSpan().Duration.Should().Be(duration);
+        handler.FinishedCount.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CompletionCallbacksRunOnceBeforeTheSpanIsClosed(bool finishExecutionEarly)
+    {
+        var handler = new CountingCoverageEventHandler();
+        using var harness = new TestHarness(handler);
+        var test = harness.Suite.CreateTest("completion-callbacks");
+        var callbackCount = 0;
+        var callbackObservedFinishedSpan = false;
+        string? callbackStatus = null;
+        test.AddOnExecutionCompletedAction(
+            t =>
+            {
+                callbackCount++;
+                callbackObservedFinishedSpan |= t.GetInternalSpan().IsFinished;
+                callbackStatus = t.GetTags().Status;
+            });
+
+        if (finishExecutionEarly)
+        {
+            test.UnsafeFinishExecution(TestStatus.Fail, TimeSpan.FromMilliseconds(12), null);
+            test.UnsafeFinishExecution(TestStatus.Pass, TimeSpan.FromSeconds(10), null);
+            callbackCount.Should().Be(1);
+            test.IsClosed.Should().BeFalse();
+        }
+
+        test.Close(TestStatus.Fail);
+        test.Close(TestStatus.Fail);
+
+        callbackCount.Should().Be(1);
+        callbackObservedFinishedSpan.Should().BeFalse();
+        callbackStatus.Should().Be("fail");
+        handler.FinishedCount.Should().Be(1);
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
+        Test.ActiveTests.Should().NotContain(test);
+    }
+
+    [Fact]
+    public void ShutdownClosePreservesTheCompletedAttemptsDurationAndOutcome()
+    {
+        using var harness = new TestHarness(new CountingCoverageEventHandler());
+        var test = harness.Suite.CreateTest("completed-before-shutdown");
+        var duration = TimeSpan.FromMilliseconds(12);
+        test.UnsafeFinishExecution(TestStatus.Fail, duration, null);
+
+        test.Close(TestStatus.Skip, null, "Test is being closed due to test session shutdown.");
+
+        test.GetInternalSpan().Duration.Should().Be(duration);
+        test.GetTags().Status.Should().Be("fail");
+        test.GetTags().SkipReason.Should().BeNull();
+        test.IsClosed.Should().BeTrue();
+        Test.ActiveTests.Should().NotContain(test);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FinalTagsAreAssignedOnlyWhileTheTestRemainsOpen(bool shutdownClosedFirst)
+    {
+        using var harness = new TestHarness(new CountingCoverageEventHandler());
+        var test = harness.Suite.CreateTest("final-tags-and-shutdown");
+        test.UnsafeFinishExecution(TestStatus.Fail, TimeSpan.FromMilliseconds(12), null);
+        if (shutdownClosedFirst)
+        {
+            test.Close(TestStatus.Skip);
+        }
+
+        var assignedTags = false;
+        var spanWasFinished = false;
+        test.Close(
+            TestStatus.Fail,
+            duration: null,
+            skipReason: null,
+            beforeClose: t =>
+            {
+                assignedTags = true;
+                spanWasFinished = t.GetInternalSpan().IsFinished;
+                t.GetTags().FinalStatus = "fail";
+            });
+
+        assignedTags.Should().Be(!shutdownClosedFirst);
+        spanWasFinished.Should().BeFalse();
+        test.GetTags().FinalStatus.Should().Be(shutdownClosedFirst ? null : "fail");
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
+        test.GetInternalSpan().Duration.Should().Be(TimeSpan.FromMilliseconds(12));
+    }
+
+    [Fact]
+    public void ClosingAPreviousAttemptDoesNotClearTheCurrentTestOrItsCoverage()
+    {
+        var handler = new CountingCoverageEventHandler();
+        using var harness = new TestHarness(handler);
+        var previousScope = Tracer.Instance.InternalActiveScope;
+        var first = harness.Suite.CreateTest("first-attempt");
+        first.UnsafeFinishExecution(TestStatus.Fail, TimeSpan.FromMilliseconds(12), null);
+        ((IScopeRawAccess)Tracer.Instance.TracerManager.ScopeManager).Active = previousScope;
+        var second = harness.Suite.CreateTest("second-attempt");
+        var secondCoverage = handler.Container;
+
+        first.Close(TestStatus.Fail);
+
+        Test.Current.Should().BeSameAs(second);
+        Tracer.Instance.InternalActiveScope!.Span.Should().BeSameAs(second.GetInternalSpan());
+        handler.Container.Should().BeSameAs(secondCoverage);
+        handler.FinishedCount.Should().Be(1);
+        second.Close(TestStatus.Pass);
+        handler.FinishedCount.Should().Be(2);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReentrantCloseWaitsForTheRemainingCallbacks(bool finishExecutionEarly)
+    {
+        using var harness = new TestHarness(new CountingCoverageEventHandler());
+        var test = harness.Suite.CreateTest("reentrant-close");
+        var secondCallbackRanBeforeClose = false;
+        test.AddOnExecutionCompletedAction(t => t.Close(TestStatus.Pass));
+        test.AddOnExecutionCompletedAction(t => secondCallbackRanBeforeClose = !t.GetInternalSpan().IsFinished);
+
+        if (finishExecutionEarly)
+        {
+            test.UnsafeFinishExecution(TestStatus.Pass, TimeSpan.FromMilliseconds(12), null);
+        }
+        else
+        {
+            test.Close(TestStatus.Pass);
+        }
+
+        secondCallbackRanBeforeClose.Should().BeTrue();
+        test.IsClosed.Should().BeTrue();
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
+    }
+
+    [Fact]
+    public void AThrowingCallbackDoesNotPreventOtherCallbacksOrClose()
+    {
+        using var harness = new TestHarness(new CountingCoverageEventHandler());
+        var test = harness.Suite.CreateTest("throwing-callback");
+        var secondCallbackCount = 0;
+        test.AddOnExecutionCompletedAction(_ => throw new InvalidOperationException("Injected callback failure."));
+        test.AddOnExecutionCompletedAction(_ => secondCallbackCount++);
+
+        test.UnsafeFinishExecution(TestStatus.Pass, TimeSpan.FromMilliseconds(12), null);
+        test.Close(TestStatus.Pass);
+
+        secondCallbackCount.Should().Be(1);
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
+        Test.ActiveTests.Should().NotContain(test);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ConcurrentCloseWaitsForExecutionAndFinalTags(bool assignFinalTagsOnClose)
+    {
+        var handler = new CountingCoverageEventHandler();
+        using var harness = new TestHarness(handler);
+        var test = harness.Suite.CreateTest("concurrent-execution-completion");
+        using var callbackEntered = new ManualResetEventSlim();
+        using var releaseCallback = new ManualResetEventSlim();
+        using var closeStarted = new ManualResetEventSlim();
+        var callbackCount = 0;
+        var callbackObservedFinishedSpan = false;
+        Action<Test> callback =
+            t =>
+            {
+                callbackCount++;
+                callbackEntered.Set();
+                releaseCallback.Wait(TimeSpan.FromSeconds(10));
+                callbackObservedFinishedSpan = t.GetInternalSpan().IsFinished;
+                t.GetTags().FinalStatus = "fail";
+            };
+        if (assignFinalTagsOnClose)
+        {
+            test.UnsafeFinishExecution(TestStatus.Fail, TimeSpan.FromMilliseconds(12), null);
+        }
+        else
+        {
+            test.AddOnExecutionCompletedAction(callback);
+        }
+
+        var finish = Task.Run(
+            () =>
+            {
+                if (assignFinalTagsOnClose)
+                {
+                    test.Close(TestStatus.Fail, null, null, beforeClose: callback);
+                }
+                else
+                {
+                    test.UnsafeFinishExecution(TestStatus.Fail, TimeSpan.FromMilliseconds(12), null);
+                }
+            });
+        Task close = Task.CompletedTask;
+        try
+        {
+            callbackEntered.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            close = Task.Run(
+                () =>
+                {
+                    closeStarted.Set();
+                    test.Close(TestStatus.Skip);
+                });
+            closeStarted.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            (await Task.WhenAny(close, Task.Delay(100))).Should().NotBeSameAs(close, "the callback has not finished assigning the test data");
+        }
+        finally
+        {
+            releaseCallback.Set();
+            await Task.WhenAll(finish, close);
+        }
+
+        callbackCount.Should().Be(1);
+        callbackObservedFinishedSpan.Should().BeFalse();
+        handler.FinishedCount.Should().Be(1);
+        test.GetTags().FinalStatus.Should().Be("fail");
+        test.GetInternalSpan().Duration.Should().Be(TimeSpan.FromMilliseconds(12));
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
+    }
+
     [Fact]
     public void ConstructorFailureAfterCoverageStartAbortsCoverageContext()
     {
@@ -61,7 +350,27 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
 
         action.Should().Throw<InvalidOperationException>().WithMessage("Injected coverage-end failure.");
         test.IsClosed.Should().BeTrue();
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
         handler.Container.Should().BeNull();
+    }
+
+    [Fact]
+    public void EarlyCoverageFailureStillRunsCallbacksAndAllowsLaterClose()
+    {
+        using var harness = new TestHarness(new ThrowingCoverageEventHandler());
+        var test = harness.Suite.CreateTest("early-coverage-failure");
+        var callbackCount = 0;
+        test.AddOnExecutionCompletedAction(_ => callbackCount++);
+
+        var finish = () => test.UnsafeFinishExecution(TestStatus.Fail, TimeSpan.FromMilliseconds(12), null);
+
+        finish.Should().Throw<InvalidOperationException>();
+        callbackCount.Should().Be(1);
+        test.IsClosed.Should().BeFalse();
+        Test.ActiveTests.Should().Contain(test);
+        test.Close(TestStatus.Fail);
+        callbackCount.Should().Be(1);
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
     }
 
     [Fact]

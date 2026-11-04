@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -21,9 +23,88 @@ namespace Datadog.Trace.Tests
 {
     extern alias DatadogTraceManual;
 
+    [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
     public class LambdaCommonTests
     {
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new();
+
+        [Theory]
+        [InlineData(ConfigurationKeys.TraceEnabled)]
+        [InlineData("DD_TRACE_AWSLAMBDA_ENABLED")]
+        public async Task TestOnDelegateBeginSkipsStartInvocationWhenIntegrationDisabled(string disabledKey)
+        {
+            var settings = TracerSettings.Create(new() { { disabledKey, false } });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            // Without the enabled check this would call start-invocation on the (absent) extension and throw
+            var arg = new object();
+            new HandlerWrapperSetHandlerIntegration.Async1Callbacks().OnDelegateBegin(sender: null, ref arg).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(null)] // enabled now, but disabled when the invocation started
+        [InlineData(ConfigurationKeys.TraceEnabled)]
+        [InlineData("DD_TRACE_AWSLAMBDA_ENABLED")]
+        public async Task TestOnDelegateEndAsyncFlushesWithoutEndInvocationWhenStartWasSkipped(string disabledKey)
+        {
+            var settings = disabledKey is null ? new TracerSettings() : TracerSettings.Create(new() { { disabledKey, false } });
+            var agentWriter = new Mock<IAgentWriter>();
+            agentWriter.Setup(w => w.FlushTracesAsync()).Returns(Task.CompletedTask);
+            await using var tracer = TracerHelper.Create(settings, agentWriter.Object);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            var originalOut = Console.Out;
+            var output = new StringWriter();
+            Console.SetOut(output);
+            string result;
+            try
+            {
+                // state is null when OnDelegateBegin skipped the invocation
+                result = await new HandlerWrapperSetHandlerIntegration.Async1Callbacks().OnDelegateEndAsync(sender: null, "response", exception: null, state: null);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            result.Should().Be("response");
+            agentWriter.Verify(w => w.FlushTracesAsync(), Times.Once);
+            // The end-invocation path logs (and fails, with no extension); the skipped path writes nothing
+            output.ToString().Should().BeEmpty();
+        }
+
+        [Fact]
+        [Trait("Category", "ArmUnsupported")]
+        public async Task TestEndInvocationAsyncFinishesScopeWhenTraceDisabledAfterStart()
+        {
+            await using var enabledTracer = TracerHelper.CreateWithFakeAgent();
+            var disabledSettings = TracerSettings.Create(new() { { ConfigurationKeys.TraceEnabled, false } });
+            await using var disabledTracer = TracerHelper.CreateWithFakeAgent(disabledSettings);
+
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" } }.Wrap();
+            var scope = LambdaCommon.CreatePlaceholderScope(enabledTracer, headers);
+            scope.Should().NotBeNull();
+
+            var exception = new InvalidOperationException("boom");
+            var stateObject = new CallTargetState(scope, "example-aws-request-id");
+            var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
+            var responseStream = new Mock<Stream>(MockBehavior.Loose);
+            response.Setup(c => c.StatusCode).Returns(HttpStatusCode.OK);
+
+            var httpRequest = new Mock<WebRequest>();
+            httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
+            httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(stateObject, true)).Returns(httpRequest.Object);
+
+            Tracer.UnsafeSetTracerInstance(disabledTracer);
+
+            await LambdaCommon.EndInvocationAsync("{}", exception, stateObject, _lambdaRequestMock.Object);
+            _lambdaRequestMock.Verify(lr => lr.GetEndInvocationRequest(stateObject, true), Times.Once);
+            scope.Span.IsFinished.Should().BeTrue();
+            scope.Span.Error.Should().BeTrue();
+        }
 
         [Fact]
         public async Task TestCreatePlaceholderScopeSuccessWithTraceIdOnly()

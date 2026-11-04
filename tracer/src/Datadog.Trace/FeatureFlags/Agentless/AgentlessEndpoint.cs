@@ -78,28 +78,12 @@ internal sealed class AgentlessEndpoint
         var configured = baseUrl?.Trim();
         if (StringUtil.IsNullOrEmpty(configured))
         {
-            var trimmedSite = site?.Trim();
-            if (StringUtil.IsNullOrEmpty(trimmedSite))
+            if (!TryNormalizeSite(site, out var normalizedSite, out error))
             {
-                error = "No Datadog site is configured";
                 return false;
             }
 
-            // The site is concatenated into a host, so every character that can change what a URL means
-            // has to be rejected before that happens. "@" is the dangerous one: it would make the rest of
-            // the value the real host, and the API key would be sent there. "/", "?" and "#" would start a
-            // path, query or fragment, and ":" a port or a scheme. Uri.TryCreate accepts several of these,
-            // so it cannot be relied on to catch them. The other tracers reject the same set.
-            foreach (var character in trimmedSite)
-            {
-                if (char.IsWhiteSpace(character) || character is '/' or '?' or '#' or '@' or ':')
-                {
-                    error = "The configured Datadog site is not valid";
-                    return false;
-                }
-            }
-
-            var managedHost = ManagedHostPrefix + StringUtil.ToLowerInvariant(trimmedSite);
+            var managedHost = ManagedHostPrefix + normalizedSite;
 
             if (!Uri.TryCreate($"https://{managedHost}{DefaultPath}", UriKind.Absolute, out var managedUri))
             {
@@ -145,6 +129,105 @@ internal sealed class AgentlessEndpoint
     }
 
     /// <summary>
+    /// Validates and normalizes a Datadog site before it is appended to a managed hostname.
+    /// Configuration and event delivery use this same method so credentials cannot be routed by
+    /// two subtly different parsers.
+    /// </summary>
+    internal static bool TryNormalizeSite(string? site, out string normalizedSite, out string? error)
+    {
+        normalizedSite = string.Empty;
+        error = null;
+
+        var trimmedSite = site?.Trim();
+        if (StringUtil.IsNullOrEmpty(trimmedSite))
+        {
+            error = "No Datadog site is configured";
+            return false;
+        }
+
+        // The complete managed host must remain below the DNS limit once either the configuration
+        // or event-intake prefix is applied.
+        if (trimmedSite.Length > 230)
+        {
+            error = "The configured Datadog site is not valid";
+            return false;
+        }
+
+        // Accept only DNS label characters before concatenating the site into a managed host.
+        // Uri parsing alone accepts delimiters such as '@' that can redirect the API key to a
+        // different host, as well as '/', '?', '#', and ':' that change the URL's meaning.
+        var labelLength = 0;
+        var previousWasHyphen = false;
+        foreach (var character in trimmedSite)
+        {
+            if (character == '.')
+            {
+                if (labelLength == 0 || previousWasHyphen)
+                {
+                    error = "The configured Datadog site is not valid";
+                    return false;
+                }
+
+                labelLength = 0;
+                previousWasHyphen = false;
+                continue;
+            }
+
+            if (character is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9')
+            {
+                labelLength++;
+                previousWasHyphen = false;
+            }
+            else if (character == '-' && labelLength > 0)
+            {
+                labelLength++;
+                previousWasHyphen = true;
+            }
+            else
+            {
+                error = "The configured Datadog site is not valid";
+                return false;
+            }
+
+            if (labelLength > 63)
+            {
+                error = "The configured Datadog site is not valid";
+                return false;
+            }
+        }
+
+        if (labelLength == 0 || previousWasHyphen)
+        {
+            error = "The configured Datadog site is not valid";
+            return false;
+        }
+
+        normalizedSite = StringUtil.ToLowerInvariant(trimmedSite);
+        return true;
+    }
+
+    /// <summary>
+    /// Returns the environment that <see cref="BuildRequestUri"/> sends as <c>dd_env</c>, or
+    /// <c>null</c> when none is sent: a configured base URL never carries one, and a value that
+    /// normalizes to nothing is treated as no environment at all.
+    /// </summary>
+    /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
+    /// <returns>The normalized environment, or <c>null</c>.</returns>
+    public string? RequestEnvironment(string? env)
+    {
+        if (!IsManaged)
+        {
+            return null;
+        }
+
+        // Normalized the same way the tracer normalizes it before tagging spans, so that flag
+        // targeting and span tags agree on what the environment is. It also bounds the value at 200
+        // characters, which keeps a misconfigured environment from producing an unusable URL.
+        var normalized = TraceUtil.NormalizeTag(env);
+        return StringUtil.IsNullOrEmpty(normalized) ? null : normalized;
+    }
+
+    /// <summary>
     /// Returns the URI to request configuration for <paramref name="env"/>. The environment is
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
@@ -158,17 +241,8 @@ internal sealed class AgentlessEndpoint
     /// <returns>The URI to request.</returns>
     public Uri BuildRequestUri(string? env)
     {
-        if (!IsManaged)
-        {
-            return Uri;
-        }
-
-        // Normalized the same way the tracer normalizes it before tagging spans, so that flag
-        // targeting and span tags agree on what the environment is. It also bounds the value at 200
-        // characters, which keeps a misconfigured environment from producing an unusable URL.
-        // A value that normalizes to nothing is treated as no environment at all.
-        var normalized = TraceUtil.NormalizeTag(env);
-        if (StringUtil.IsNullOrEmpty(normalized))
+        var normalized = RequestEnvironment(env);
+        if (normalized is null)
         {
             return Uri;
         }

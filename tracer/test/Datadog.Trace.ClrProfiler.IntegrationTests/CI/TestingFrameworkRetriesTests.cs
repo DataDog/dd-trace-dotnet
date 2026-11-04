@@ -121,6 +121,9 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
     public virtual Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
         => FlakyRetriesWithArguments(packageVersion, arguments: null);
 
+    public virtual Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+        => DynamicFlakyRetriesWithArguments(packageVersion, arguments: null);
+
     public virtual Task FlakyRetriesWithExceptionReplay(string packageVersion)
         => FlakyRetriesWithExceptionReplayCore(packageVersion);
 
@@ -141,7 +144,15 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         }
     }
 
-    protected async Task<List<MockCIVisibilityTest>> FlakyRetriesWithArguments(string packageVersion, string arguments)
+    // The sample tests take under 5s, so the first bucket gives AlwaysFails four retries instead of the flat three.
+    protected Task<List<MockCIVisibilityTest>> DynamicFlakyRetriesWithArguments(string packageVersion, string arguments)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets, "4,1,1,1,1");
+        return FlakyRetriesWithArguments(packageVersion, arguments, retryCount: 3, alwaysFailsRetryCount: 4);
+    }
+
+    protected async Task<List<MockCIVisibilityTest>> FlakyRetriesWithArguments(string packageVersion, string arguments, int retryCount = 5, int? alwaysFailsRetryCount = null)
     {
         EnvironmentHelper.EnableDefaultTransport();
         var tests = new List<MockCIVisibilityTest>();
@@ -160,7 +171,6 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         Output.WriteLine("RunId: {0}", runId);
         try
         {
-            var retryCount = 5;
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryCount, retryCount.ToString());
 
@@ -212,9 +222,9 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
             testSuites.Should().HaveCount(ExpectedTestSuiteCount);
 
-            // AlwaysFails => 1 + 5 retries
+            // AlwaysFails => 1 + every retry
             var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
-            alwaysFailsTests.Should().HaveCount(1 + retryCount);
+            alwaysFailsTests.Should().HaveCount(1 + (alwaysFailsRetryCount ?? retryCount));
             alwaysFailsTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
 
             // AlwaysPasses => 1
@@ -222,7 +232,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             alwaysPassesTests.Should().HaveCount(1);
             alwaysPassesTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
 
-            // TrueAtLastRetry => 1 + 5 retries
+            // TrueAtLastRetry => passes on retry number DD_CIVISIBILITY_FLAKY_RETRY_COUNT
             var trueAtLastRetryTests = tests.Where(t => t.Resource == TrueAtLastRetry).ToList();
             trueAtLastRetryTests.Should().HaveCount(1 + retryCount);
             trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);

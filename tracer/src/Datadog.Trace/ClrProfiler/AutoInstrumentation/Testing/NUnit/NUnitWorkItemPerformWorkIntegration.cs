@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     MethodName = "PerformWork",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "3.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "5.*.*",
     IntegrationName = NUnitIntegration.IntegrationName,
     CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
@@ -53,7 +53,7 @@ public static class NUnitWorkItemPerformWorkIntegration
         {
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
                 var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
-                var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+                var frameworkVersion = NUnitIntegration.GetFrameworkVersion(item.Type.Assembly);
                 TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
                 var newModule = TestModule.Create(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
                 newModule.EnableIpcClient();
@@ -84,8 +84,10 @@ public static class NUnitWorkItemPerformWorkIntegration
                     }
                 }
 
+                // Inspect the NUnit 5 dependency graph only for tests ITR would otherwise skip.
                 if (CanApplyItrSkip(item, testManagementProperties) &&
-                    NUnitIntegration.ShouldSkip(item, out _, out _, out var skippableTest))
+                    NUnitIntegration.ShouldSkip(item, out _, out _, out var skippableTest) &&
+                    !NUnitIntegration.HasDependencies(item))
                 {
                     var testMethod = item.Method?.MethodInfo;
                     Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);

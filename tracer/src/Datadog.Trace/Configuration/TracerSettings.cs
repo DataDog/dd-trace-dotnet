@@ -225,64 +225,6 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs)
                             .AsInt32(defaultValue: 7_500);
 
-            var defaultAgentHost = config
-                .WithKeys(ConfigurationKeys.AgentHost)
-                .AsString(defaultValue: "localhost");
-
-            OtlpGeneralProtocol = config
-                                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
-                                .GetAs(
-                                    defaultValue: new(OtlpProtocol.Grpc, "grpc"),
-                                    converter: x => x switch
-                                    {
-                                        not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
-                                        not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
-                                        _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
-                                    },
-                                    validator: null);
-
-            var otlpGeneralProtocolName = OtlpGeneralProtocol switch
-            {
-                OtlpProtocol.Grpc => "grpc",
-                OtlpProtocol.HttpProtobuf => "http/protobuf",
-                _ => "grpc",
-            };
-
-            OtlpMetricsProtocol = config
-                                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol)
-                                 .GetAs(
-                                      defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
-                                      converter: x => x switch
-                                      {
-                                          not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
-                                          not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
-                                          not null when string.Equals(x, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
-                                          _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
-                                      },
-                                      validator: null);
-
-            var defaultUri = $"http://{defaultAgentHost}:{(!OtlpGeneralProtocol.Equals(OtlpProtocol.Grpc) ? 4318 : 4317)}/";
-
-            OtlpEndpoint = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
-                .GetAs(
-                    defaultValue: new DefaultResult<Uri>(result: new Uri(defaultUri), telemetryValue: defaultUri),
-                    validator: null,
-                    converter: uriString => new Uri(uriString));
-
-            OtlpMetricsEndpoint = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint)
-                .GetAs(
-                    defaultValue: new DefaultResult<Uri>(
-                        result: OtlpMetricsProtocol switch
-                        {
-                            OtlpProtocol.Grpc => OtlpEndpoint,
-                            _ => new Uri(OtlpEndpoint, "/v1/metrics")
-                        },
-                        telemetryValue: $"{OtlpEndpoint}{(!OtlpMetricsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/metrics" : string.Empty)}"),
-                    validator: null,
-                    converter: uriString => new Uri(uriString));
-
             OtlpMetricsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
@@ -300,38 +242,12 @@ namespace Datadog.Trace.Configuration
                                    },
                                    validator: null);
 
-            OtlpLogsProtocol = config
-                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol)
-                             .GetAs(
-                                  defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
-                                  converter: x => x switch
-                                  {
-                                      not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
-                                      not null when string.Equals(x, "http/json", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpJson,
-                                      not null when string.Equals(x, "http/protobuf", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.HttpProtobuf,
-                                      _ => UnsupportedOtlpProtocol(inputValue: x ?? "null"),
-                                  },
-                                  validator: null);
-
-            OtlpLogsEndpoint = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint)
-                .GetAs(
-                    defaultValue: new DefaultResult<Uri>(
-                        result: OtlpLogsProtocol switch
-                        {
-                            OtlpProtocol.Grpc => OtlpEndpoint,
-                            _ => new Uri(OtlpEndpoint, "/v1/logs")
-                        },
-                        telemetryValue: $"{OtlpEndpoint}{(!OtlpLogsProtocol.Equals(OtlpProtocol.Grpc) ? "v1/logs" : string.Empty)}"),
-                    validator: null,
-                    converter: uriString => new Uri(uriString));
-
             OtlpLogsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                             .AsRedactedDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => Uri.UnescapeDataString(kvp.Value?.Trim() ?? string.Empty));
 
             OtlpLogsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs)
@@ -472,6 +388,10 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
 
+            AzureEventGridBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureEventGridBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
             AgentFeaturePollingEnabled = config
                                         .WithKeys(ConfigurationKeys.AgentFeaturePollingEnabled)
                                         .AsBool(defaultValue: true);
@@ -492,11 +412,9 @@ namespace Datadog.Trace.Configuration
                                       .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
                                       .AsBool(defaultValue: false);
 
-            var obfuscationRegexResult = config
-                                        .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                        .AsStringResult();
-            ObfuscationQueryStringRegex = obfuscationRegexResult.WithDefault(new DefaultResult<string>(TracerSettingsConstants.DefaultObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex));
-            ObfuscationQueryStringRegexWasConfigured = obfuscationRegexResult.ConfigurationResult.IsPresent;
+            ObfuscationQueryStringRegex = config
+                                         .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
+                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -524,11 +442,12 @@ namespace Datadog.Trace.Configuration
                 $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.W3CBaggage}");
 
             // Same otel config is used for both injection and extraction
-            var otelPropagation = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
-                            .GetAsClassResult(
-                                 validator: injectionValidator, // invalid individual values are rejected later
-                                 converter: otelConverter);
+            var otelPropagation = NormalizeOtelPropagators(
+                config.WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
+                      .GetAsClassResult(
+                           validator: styles => styles.Any(IsSupportedOtelPropagator),
+                           converter: otelConverter),
+                ErrorLog);
 
             PropagationStyleInject = config
                .WithKeys(ConfigurationKeys.PropagationStyleInject)
@@ -827,7 +746,9 @@ namespace Datadog.Trace.Configuration
 
             // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
-            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString();
+            // OpenTelemetry semantics mode makes OTLP the default traces exporter.
+            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()
+                                  ?? (OtelSemanticsEnabled ? "otlp" : null);
             var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
             OtelTracesSpanMetricsEnabled = explicitSpanMetrics
                 ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
@@ -996,25 +917,6 @@ namespace Datadog.Trace.Configuration
         internal bool OtelMetricsExporterEnabled { get; }
 
         /// <summary>
-        /// Gets the OTLP protocol for metrics export with fallback behavior.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
-        internal OtlpProtocol OtlpMetricsProtocol { get; }
-
-        /// <summary>
-        /// Gets the OTLP endpoint URL for metrics export fallbacks on <see cref="OtlpEndpoint"/>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint"/>
-        internal Uri OtlpMetricsEndpoint { get; }
-
-        /// <summary>
-        /// Gets the OTLP base endpoint URL for otlp export.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
-        internal Uri OtlpEndpoint { get; }
-
-        /// <summary>
         /// Gets the OpenTelemetry metric export interval (in milliseconds) between export attempts.
         /// Default is 10000ms (10s) for Datadog - deviates from OTel spec default of 60000ms (60s).
         /// </summary>
@@ -1070,19 +972,6 @@ namespace Datadog.Trace.Configuration
 #endif
 
         /// <summary>
-        /// Gets the OTLP protocol for logs export with fallback behavior.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol"/>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
-        internal OtlpProtocol OtlpLogsProtocol { get; }
-
-        /// <summary>
-        /// Gets the OTLP endpoint URL for logs export fallbacks on <see cref="OtlpEndpoint"/>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint"/>
-        internal Uri OtlpLogsEndpoint { get; }
-
-        /// <summary>
         /// Gets the OTLP headers for logs export with fallback behavior.
         /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
         /// </summary>
@@ -1097,12 +986,6 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
         internal int OtlpLogsTimeoutMs { get; }
-
-       /// <summary>
-        /// Gets the non siganl specific OTLP protocol.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
-        internal OtlpProtocol OtlpGeneralProtocol { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.
@@ -1197,6 +1080,12 @@ namespace Datadog.Trace.Configuration
         public bool AzureEventHubsBatchLinksEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether span links should be created for Azure Event Grid batch operations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureEventGridBatchLinksEnabled"/>
+        public bool AzureEventGridBatchLinksEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the agent discovery service is enabled.
         /// When disabled, the tracer will not query the agent for available endpoints.
         /// This is useful in environments where the discovery endpoint is not available (e.g., Azure Functions with Rust agent).
@@ -1235,11 +1124,6 @@ namespace Datadog.Trace.Configuration
         /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the query string obfuscation regex was explicitly configured, including an empty value.
-        /// </summary>
-        internal bool ObfuscationQueryStringRegexWasConfigured { get; }
 
         /// <summary>
         /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
@@ -1351,7 +1235,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
         /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
-        /// suppressing Datadog-specific attributes.
+        /// suppressing Datadog-specific attributes. It also makes OTLP the default traces exporter
+        /// when <see cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/> is not set.
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
@@ -1672,6 +1557,44 @@ namespace Datadog.Trace.Configuration
                 return null;
             }
         }
+
+        private static ConfigurationBuilder.ClassConfigurationResultWithKey<string[]> NormalizeOtelPropagators(
+            in ConfigurationBuilder.ClassConfigurationResultWithKey<string[]> original,
+            OverrideErrorLog errorLog)
+        {
+            var result = original.ConfigurationResult;
+
+            // Normalize only the selected source; the converter runs once per source.
+            if (result is { IsValid: true, Result: { } styles })
+            {
+                var propagatorsBySupport = styles.ToLookup(IsSupportedOtelPropagator);
+                if (!propagatorsBySupport.Contains(false))
+                {
+                    return original;
+                }
+
+                errorLog.LogUnsupportedValues(original.Key, [..propagatorsBySupport[false]]);
+                result = ConfigurationResult<string[]>.Valid(
+                    [..propagatorsBySupport[true]],
+                    result.TelemetryOverride);
+            }
+            else if (result.IsPresent)
+            {
+                // Report once before sharing the result between injection and extraction.
+                errorLog.LogInvalidConfiguration(original.Key);
+                result = ConfigurationResult<string[]>.NotFound();
+            }
+            else
+            {
+                return original;
+            }
+
+            return new(original.Telemetry, original.Key, original.RecordValue, result);
+        }
+
+        private static bool IsSupportedOtelPropagator(string propagator)
+            => SpanContextPropagatorFactory.GetPropagator(propagator) is not null
+            || string.Equals(propagator, "none", StringComparison.OrdinalIgnoreCase);
 
         private static ParsingResult<OtlpProtocol> UnsupportedOtlpProtocol(string inputValue)
         {

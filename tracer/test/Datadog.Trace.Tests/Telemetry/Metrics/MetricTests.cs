@@ -57,11 +57,13 @@ public class MetricTests
         { "known_tests.response_bytes", ["rs_compressed"] },
         { "test_management_tests.response_bytes", ["rs_compressed"] },
         { "impacted_tests_detection.response_bytes", ["rs_compressed"] },
+        { "dynamic_atr_retries.enabled", ["has_custom_buckets"] },
         { "rasp.rule.eval", ["rule_variant"] },
         { "rasp.rule.match", ["rule_variant"] },
         { "rasp.rule.skipped", ["rule_variant"] },
         { "rasp.timeout", ["rule_variant"] },
         { "rasp.error", ["rule_variant"] },
+        { "waf.config_errors", ["config_key", "scope"] }, // match other tracers by omitting config_key and scope
         // Both dimensions are independently optional: a span can be cardinality-collapsed, oversized-truncated, or both.
         { "stats_collapsed_spans", ["collapsed", "oversized"] },
     };
@@ -80,8 +82,8 @@ public class MetricTests
     public void OnlyAllowedMetricsAreSubmitted()
     {
         // Only metrics defined in the following json documents should be submitted
-        // https://github.com/DataDog/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/common_metrics.json
-        // https://github.com/DataDog/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/dotnet_metrics.json
+        // https://github.com/ddoghq/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/common_metrics.json
+        // https://github.com/ddoghq/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/dotnet_metrics.json
         //
         // These are duplicated in this repo. When adding new metrics, add them into the embedded json files here, then
         // after merging, update the source JSON file in dd-go

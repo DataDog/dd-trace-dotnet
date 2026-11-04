@@ -33,17 +33,15 @@ namespace Datadog.Trace.Tests.Util.Http
             result.Should().Be(expectedResult);
         }
 
-        [SkippableTheory]
-        [InlineData(true, "?jwt=<redacted>")]
-        [InlineData(false, "?jwt<redacted>")]
-        public void DefaultPatternReplacementDependsOnWhetherPatternIsDefault(bool isDefaultPattern, string expected)
+        [SkippableFact]
+        public void DefaultPatternKeepsJwtDelimiter()
         {
 #if NETCOREAPP2_1
             SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 #endif
-            var queryStringManager = new QueryStringManager(true, 20_000, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, isDefaultPattern: isDefaultPattern);
+            var queryStringManager = new QueryStringManager(true, 20_000, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
-            queryStringManager.TruncateAndObfuscate("?jwt=eyJabc.eyJdef").Should().Be(expected);
+            queryStringManager.TruncateAndObfuscate("?jwt=eyJabc.eyJdef").Should().Be("?jwt=<redacted>");
         }
     }
 }

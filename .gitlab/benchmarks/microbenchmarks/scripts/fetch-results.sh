@@ -30,11 +30,8 @@ ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 mkdir -p "$ARTIFACTS_DIR"
 
 # Prepare baseline results for analysis by renaming to baseline.* format.
-# Handles two input formats:
-#   1. candidate.Trace.Foo.json (from new master runs with in-instance renaming)
-#   2. Benchmarks.Trace.Foo-report-full-compressed.json (legacy raw BenchmarkDotNet output)
-#
-# TODO: Remove legacy format handling once _latest is populated by a post-merge master run.
+# Only import candidate.*.json files. Legacy Benchmarks.* reports can remain in
+# _latest from older runs and must not be attributed to the current baseline.
 prepare_baseline_results() {
     local BASELINE_DIR=$1
 
@@ -45,22 +42,11 @@ prepare_baseline_results() {
 
     echo "Preparing baseline results..."
 
-    # Handle new format: candidate.*.json -> baseline.*.json
+    # candidate.*.json -> baseline.*.json
     for file in "$BASELINE_DIR"/candidate.*.json; do
         [ -e "$file" ] || continue
         filename=$(basename "$file")
         newname="${filename/candidate./baseline.}"
-        echo "  $filename -> $newname"
-        mv "$file" "$ARTIFACTS_DIR/$newname"
-    done
-
-    # Handle legacy format: Benchmarks.Trace.Foo-report-full-compressed.json -> baseline.Trace.Foo.json
-    for file in "$BASELINE_DIR"/Benchmarks.*-report-full-compressed.json; do
-        [ -e "$file" ] || continue
-        filename=$(basename "$file")
-        # Remove 'Benchmarks.' prefix and '-report-full-compressed.json' suffix
-        middle_part=$(echo "$filename" | sed 's/^Benchmarks\.//' | sed 's/-report-full-compressed\.json$//')
-        newname="baseline.$middle_part.json"
         echo "  $filename -> $newname"
         mv "$file" "$ARTIFACTS_DIR/$newname"
     done
@@ -70,27 +56,6 @@ prepare_baseline_results() {
 bp-infra setup --region "$AWS_REGION" --os "windows"
 export AWS_PROFILE=ephemeral-infra-ci
 
-# Prepare candidate results for analysis.
-# Normally, bp-runner renames files to candidate.*.json format inside the instance.
-# However, in BP_INFRA_TEST mode, _latest files are used as mock candidates and may be
-# in legacy format (Benchmarks.Trace.Foo-report-full-compressed.json).
-#
-# TODO: Remove legacy format handling once _latest is populated by a post-merge master run.
-prepare_candidate_results() {
-    echo "Preparing candidate results..."
-
-    # Handle legacy format: Benchmarks.Trace.Foo-report-full-compressed.json -> candidate.Trace.Foo.json
-    for file in "$ARTIFACTS_DIR"/Benchmarks.*-report-full-compressed.json; do
-        [ -e "$file" ] || continue
-        filename=$(basename "$file")
-        # Remove 'Benchmarks.' prefix and '-report-full-compressed.json' suffix
-        middle_part=$(echo "$filename" | sed 's/^Benchmarks\.//' | sed 's/-report-full-compressed\.json$//')
-        newname="candidate.$middle_part.json"
-        echo "  $filename -> $newname"
-        mv "$file" "$ARTIFACTS_DIR/$newname"
-    done
-}
-
 # Download candidate results (already in candidate.*.json format from instance)
 S3_PREFIX="$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID/reports"
 echo "=== Downloading candidate results ==="
@@ -99,9 +64,6 @@ aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX" "$ARTIFACTS_DIR/" \
     --region "$AWS_REGION" \
     --profile "$AWS_PROFILE" \
     --recursive || echo "WARNING: No candidate results found in S3"
-
-# Handle legacy format for candidate files (BP_INFRA_TEST mode)
-prepare_candidate_results
 
 # Download baseline results from _latest (master)
 BASELINE_PREFIX="$CI_PROJECT_NAME/_latest"

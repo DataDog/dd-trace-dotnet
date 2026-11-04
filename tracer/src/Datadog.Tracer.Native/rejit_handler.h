@@ -114,7 +114,6 @@ public:
     FunctionInfo* GetFunctionInfo();
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
-    bool RequestRejitForInlinersInModule(ModuleID moduleId);
     bool GetRejitRequestsForInlinersInModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests);
     MethodRewriter* GetMethodRewriter();
 
@@ -158,7 +157,10 @@ public:
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
     std::vector<RejitHandlerModuleMethod*> TakeNewMethods();
 
-    void RequestRejitForInlinersInModule(ModuleID moduleId);
+    // newMethods must belong to this module.
+    void GetRejitRequestsForInlinersInModules(const std::vector<ModuleID>& inlinerModules,
+                                              const std::vector<RejitHandlerModuleMethod*>& newMethods,
+                                              std::vector<RejitRequest>& rejitRequests);
     void RemoveProcessedInlinerModule(ModuleID moduleId);
 };
 

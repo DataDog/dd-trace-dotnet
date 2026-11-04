@@ -110,6 +110,12 @@ public sealed class TestSuite
     internal TestSuiteSpanTags Tags => (TestSuiteSpanTags)_span.Tags;
 
     /// <summary>
+    /// Gets a value indicating whether closing has started. Framework callbacks can report the same cleanup
+    /// failure again after closing the suite; those callbacks must leave its final tags alone.
+    /// </summary>
+    internal bool IsClosed => Volatile.Read(ref _finished) != 0;
+
+    /// <summary>
     /// Sets a string tag into the test
     /// </summary>
     /// <param name="key">Key of the tag</param>

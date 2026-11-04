@@ -42,7 +42,7 @@ public:
     virtual RejitHandlerModule* GetOrAddModule(ModuleID moduleId) = 0;
     virtual bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) = 0;
     virtual void RemoveModule(ModuleID moduleId) = 0;
-    virtual void AddNGenInlinerModule(ModuleID moduleId) = 0;
+    virtual void AddNGenInlinerModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests) = 0;
 
     virtual HRESULT RejitMethod(FunctionControlWrapper& functionControl) = 0;
 };
@@ -57,6 +57,7 @@ class RejitPreprocessor : public Rejitter
 protected:
     CorProfiler* m_corProfiler;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
+    const bool m_isDesktopClr;
 
     void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                             ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
@@ -113,7 +114,7 @@ public:
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId) override;
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
     void RemoveModule(ModuleID moduleId) override;
-    void AddNGenInlinerModule(ModuleID moduleId) override;
+    void AddNGenInlinerModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests) override;
     HRESULT RejitMethod(FunctionControlWrapper& functionControl) override;
 
     void EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,

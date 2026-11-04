@@ -92,6 +92,21 @@ internal static class TestTags
     public const string SkipReason = "test.skip_reason";
 
     /// <summary>
+    /// Skip reason value for a test session that ran no tests
+    /// </summary>
+    public const string SkipReasonNoTestsExecuted = "No tests were executed";
+
+    /// <summary>
+    /// Reason why a test session ran no tests
+    /// </summary>
+    public const string SessionEmptyReason = "test.session.empty_reason";
+
+    /// <summary>
+    /// Session empty reason value when the test runner executed no tests
+    /// </summary>
+    public const string SessionEmptyReasonZeroTests = "zero_tests";
+
+    /// <summary>
     /// Test output message
     /// </summary>
     public const string Message = "test.message";

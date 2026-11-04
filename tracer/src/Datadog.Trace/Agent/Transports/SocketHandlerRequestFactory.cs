@@ -1,4 +1,4 @@
-﻿// <copyright file="SocketHandlerRequestFactory.cs" company="Datadog">
+// <copyright file="SocketHandlerRequestFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Agent.Transports
     {
         private readonly IStreamFactory _streamFactory;
 
-        public SocketHandlerRequestFactory(IStreamFactory streamFactory, KeyValuePair<string, string>[] defaultHeaders, Uri baseEndpoint, TimeSpan? timeout = null)
+        public SocketHandlerRequestFactory(IStreamFactory streamFactory, KeyValuePair<string, string>[] defaultHeaders, Uri baseEndpoint, TimeSpan? timeout = null, bool allowAutoRedirect = true)
             : base(
                 // HttpClient requires a "valid" host header, and will only accept http:// or https:// schemes
                 // The host part of the endpoint is irrelevant, as we're using the UDS socket/named pipe
@@ -25,6 +25,7 @@ namespace Datadog.Trace.Agent.Transports
                 timeout: timeout,
                 handler: new SocketsHttpHandler
                 {
+                    AllowAutoRedirect = allowAutoRedirect,
                     ConnectCallback = async (_, token) => await streamFactory.GetBidirectionalStreamAsync(token).ConfigureAwait(false)
                 })
         {

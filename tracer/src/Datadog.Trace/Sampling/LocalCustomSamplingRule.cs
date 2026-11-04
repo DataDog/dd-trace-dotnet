@@ -18,7 +18,7 @@ internal sealed class LocalCustomSamplingRule : CustomSamplingRule
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LocalCustomSamplingRule>();
 
     public LocalCustomSamplingRule(
-        float rate,
+        double rate,
         string patternFormat,
         string? serviceNamePattern,
         string? operationNamePattern,
@@ -83,7 +83,7 @@ internal sealed class LocalCustomSamplingRule : CustomSamplingRule
     {
         [JsonRequired]
         [JsonProperty(PropertyName = "sample_rate")]
-        public float SampleRate { get; set; }
+        public double SampleRate { get; set; }
 
         [JsonProperty(PropertyName = "name")]
         public string? OperationName { get; set; }

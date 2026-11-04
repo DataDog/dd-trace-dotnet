@@ -189,7 +189,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 // If it's the first execution then let's calculate the total executions
                 if (isFirstExecution)
                 {
-                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, () => Common.GetNumberOfExecutionsForDuration(TraceClock.Instance.UtcNow - testRunnerState.StartTime));
+                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, TraceClock.Instance.UtcNow - testRunnerState.StartTime);
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)

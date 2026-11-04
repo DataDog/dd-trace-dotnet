@@ -2,6 +2,12 @@
 FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim AS base
 ARG DOTNETSDK_VERSION
 
+# buster is EOL, so no fixed ca-certificates package will ship: drop the distrusted eMudhra roots
+# "emSign ECC Root CA - G3" / "AAA Certificate Services" (IR-62343) from the system trust store.
+RUN sed -i -e 's|^mozilla/emSign_ECC_Root_CA_-_G3.crt|!&|' -e 's|^mozilla/Comodo_AAA_Services_root.crt|!&|' /etc/ca-certificates.conf \
+    && rm -f /usr/share/ca-certificates/mozilla/emSign_ECC_Root_CA_-_G3.crt /usr/share/ca-certificates/mozilla/Comodo_AAA_Services_root.crt \
+    && update-ca-certificates -f
+
 # Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile
 # and https://github.com/dotnet/dotnet-docker/blob/1eab4cad6e2d42308bd93d3f0cc1f7511ac75882/src/sdk/5.0/buster-slim/amd64/Dockerfile
 ENV \
@@ -29,9 +35,12 @@ ENV \
     # Replace the old buster repositories with archived versions so that we can see pull
     # It would be better to update the base image, but that would mean a new glibc version,
     # which would break some users. We will likely need to do this at some point.
+    # archive.debian.org's CDN returns 404 for a number of arm64 packages, so prefer the
+    # ftp.de.debian.org copy of the archive, falling back to archive.debian.org if a file is missing
     # Add nfpm source
 RUN sed -i '/buster\/updates/d; /buster-updates/d' /etc/apt/sources.list \
-    && sed -i 's|http://[^ ]*debian\.org[^ ]*|http://archive.debian.org/debian|g' /etc/apt/sources.list \
+    && printf 'http://ftp.de.debian.org/debian-archive/debian\nhttp://archive.debian.org/debian\n' > /etc/apt/mirrors.txt \
+    && sed -i 's|http://[^ ]*debian\.org[^ ]*|mirror+file:/etc/apt/mirrors.txt|g' /etc/apt/sources.list \
     && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
     && echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
     && apt-get update \
@@ -79,6 +88,27 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
 # Trigger first run experience by running arbitrary cmd
     && dotnet help
+
+# The .NET SDK ships its own NuGet signing trust bundles (sdk/*/trustedroots/*.pem) that still contain the
+# distrusted eMudhra / AAA Certificate Services roots (IR-62343): strip those certificates from them.
+RUN for f in /usr/share/dotnet/sdk/*/trustedroots/*.pem; do \
+        d=$(mktemp -d) \
+        && awk -v d="$d" '/-----BEGIN CERTIFICATE-----/ { n++; out = sprintf("%s/%05d.pem", d, n); incert = 1 } incert { print > out } /-----END CERTIFICATE-----/ { incert = 0; close(out) }' "$f" \
+        && : > "$f" \
+        && for c in "$d"/*.pem; do \
+            openssl x509 -noout -subject -in "$c" | grep -qE 'CN ?= ?(emSign ECC Root CA - G3|emSign Root CS CA - G3|AAA Certificate Services)' || cat "$c" >> "$f"; \
+        done \
+        && rm -rf "$d" || exit 1; \
+    done
+
+# buster's libnss3 compiles the distrusted roots into libnssckbi.so and no fixed NSS will ship for buster:
+# point NSS at p11-kit's trust module so it reads the patched system store above instead.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends p11-kit-modules \
+    && trust_module=$(find /usr/lib -name p11-kit-trust.so | head -n 1) \
+    && test -n "$trust_module" \
+    && find / -xdev -name 'libnssckbi.so*' -exec ln -sf "$trust_module" {} \; \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV \
     DOTNET_ROOT=/usr/share/dotnet \

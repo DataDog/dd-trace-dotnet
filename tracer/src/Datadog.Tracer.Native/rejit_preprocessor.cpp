@@ -1,4 +1,5 @@
 #include "rejit_preprocessor.h"
+#include "clr_helpers.h"
 #include "debugger_members.h"
 #include "fault_tolerant_tracker.h"
 #include "function_control_wrapper.h"
@@ -6,6 +7,8 @@
 #include "logger.h"
 #include "rejit_handler.h"
 #include "stats.h"
+
+#include <algorithm>
 
 namespace trace
 {
@@ -30,7 +33,8 @@ RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corPro
                                                              RejitterPriority priority) :
     Rejitter(rejit_handler, priority),
     m_corProfiler(corProfiler),
-    m_rejit_handler(std::move(rejit_handler))
+    m_rejit_handler(std::move(rejit_handler)),
+    m_isDesktopClr(GetRuntimeInformation(m_rejit_handler->GetCorProfilerInfo()).is_desktop())
 {
 }
 
@@ -108,7 +112,8 @@ void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
 }
 
 template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID moduleId)
+void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID moduleId,
+                                                                     std::vector<RejitRequest>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -121,40 +126,35 @@ void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID mo
     std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
 
-    bool alreadyAdded = false;
-    for (const auto& moduleInliner : m_ngenInlinersModules)
+    if (std::find(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId) == m_ngenInlinersModules.end())
     {
-        if (moduleInliner == moduleId)
-        {
-            alreadyAdded = true;
-        }
-
-        for (const auto& mod : m_modules)
-        {
-            mod.second->RequestRejitForInlinersInModule(moduleInliner);
-        }
+        m_ngenInlinersModules.push_back(moduleId);
     }
 
-    // If the module is not in the inliners list we added and request rejit for it.
-    if (!alreadyAdded)
+    for (const auto& mod : m_modules)
     {
-        // Add the new module inliner
-        m_ngenInlinersModules.push_back(moduleId);
-
-        for (const auto& mod : m_modules)
-        {
-            mod.second->RequestRejitForInlinersInModule(moduleId);
-        }
+        // GetNGenInlinerRejitRequestsForNewMethods leaves Desktop CLR's new methods to this replay.
+        const auto newMethods =
+            m_isDesktopClr ? mod.second->TakeNewMethods() : std::vector<RejitHandlerModuleMethod*>();
+        mod.second->GetRejitRequestsForInlinersInModules(m_ngenInlinersModules, newMethods, rejitRequests);
     }
 }
 
-// The AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so it never
-// sees methods created afterwards. Their inliners are added to the caller's batch instead, so a method and its
-// precompiled callers are rejitted together.
+// On CoreCLR, the AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so
+// it never sees methods created afterwards. Add their inliners to the caller's batch so a method and its
+// precompiled callers are rejitted together. On Desktop CLR, the replay checks them instead.
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNewMethods(
     ModuleID moduleId, std::vector<RejitRequest>& rejitRequests)
 {
+    if (m_isDesktopClr)
+    {
+        // Desktop CLR's NGen dependency lookup uses the current AppDomain. The native ReJIT worker has none,
+        // even after InitializeCurrentThread, and can crash in Module::FindDomainFile. AddNGenInlinerModule takes
+        // the new methods in ModuleLoadFinished/JITCachedFunctionSearchStarted instead.
+        return;
+    }
+
     RejitHandlerModule* moduleHandler = nullptr;
     {
         std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
@@ -173,7 +173,8 @@ void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNe
         return;
     }
 
-    // RemoveModule erases an unloading ModuleID under this lock, so it has to be held across the CLR calls.
+    // AddNGenInlinerModule and RemoveModule change the NGen module list under this lock, so it has to be held while
+    // iterating it. RemoveModule erases an unloading ModuleID, so it also has to be held across the CLR calls.
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
     for (const auto method : newMethods)
     {

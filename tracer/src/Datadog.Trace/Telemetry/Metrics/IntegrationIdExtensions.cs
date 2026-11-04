@@ -70,6 +70,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.AwsKinesis => MetricTags.IntegrationName.AwsKinesis,
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
             IntegrationId.AzureEventHubs => MetricTags.IntegrationName.AzureEventHubs,
+            IntegrationId.AzureEventGrid => MetricTags.IntegrationName.AzureEventGrid,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,
             IntegrationId.AwsDynamoDb => MetricTags.IntegrationName.AwsDynamoDb,
             IntegrationId.IbmMq => MetricTags.IntegrationName.IbmMq,

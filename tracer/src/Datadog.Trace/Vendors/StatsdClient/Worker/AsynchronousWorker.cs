@@ -25,6 +25,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
 
         private volatile bool _requestFlush = false;
         private AutoResetEvent _flushEvent = new AutoResetEvent(false);
+        private readonly ManualResetEventSlim _wakeEvent = new ManualResetEventSlim(false);
 
         public AsynchronousWorker(
             IAsynchronousWorkerHandler<T> handler,
@@ -65,6 +66,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
         public void Flush()
         {
             var remainingWaitCount = maxWaitDurationInFlush.TotalMilliseconds / MinWaitDuration.TotalMilliseconds;
+            _wakeEvent.Set();
             while (_queue.QueueCurrentSize > 0 && remainingWaitCount > 0)
             {
                 _waiter.Wait(MinWaitDuration);
@@ -72,6 +74,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
             }
 
             _requestFlush = true;
+            _wakeEvent.Set();
             _flushEvent.WaitOne(maxWaitDurationInFlush);
         }
 
@@ -81,10 +84,12 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
             {
                 Flush();
                 _terminate = true;
+                _wakeEvent.Set();
                 try
                 {
                     await Task.WhenAll(_workers).ConfigureAwait(false);
                     _flushEvent.Dispose();
+                    _wakeEvent.Dispose();
                 }
                 catch (Exception e)
                 {
@@ -124,7 +129,10 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
 
                         if (_handler.OnIdle())
                         {
-                            _waiter.Wait(waitDuration);
+                            if (_wakeEvent.Wait(waitDuration))
+                            {
+                                _wakeEvent.Reset();
+                            }
                             waitDuration = waitDuration + waitDuration;
                             if (waitDuration > MaxWaitDuration)
                             {

@@ -97,13 +97,15 @@ public static class UnitTestRunnerRunSingleTestIntegration
                                 Common.Log.Warning("Parent class cannot be duck casted to ClassInfoInitializationExceptionStruct.");
                             }
 
-                            // We need to check if the test is failing because a Class cleanup error
+                            // Cleanup may already have reported this error and closed the suite.
+                            // Keep the fallback for runs where the suite is still open.
                             if (testMethodInfo.Parent?.Instance.TryDuckCast<ClassInfoCleanupExceptionsStruct>(out var classInfoCleanupExceptionsStruct) == true)
                             {
                                 if (classInfoCleanupExceptionsStruct.ClassCleanupException is { } classCleanupException &&
-                                    MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(testMethodInfo.Parent) is { } suite)
+                                    MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(testMethodInfo.Parent) is { IsClosed: false } suite)
                                 {
                                     suite.SetErrorInfo(classCleanupException);
+                                    suite.Tags.Status = TestTags.StatusFail;
                                 }
                             }
                             else
