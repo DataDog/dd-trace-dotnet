@@ -272,6 +272,20 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
+        [Fact]
+        public async Task ThrowingContinuationKeepsOriginalResultTest()
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationThatThrows, TaskContinuationGeneratorTests, Task<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            var cTask = tcg.SetContinuation(this, tcs.Task, null, in state);
+            tcs.SetResult("ReturnValue");
+
+            // An integration failing must not change what the instrumented method returns
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue", rValue);
+        }
+
         internal class CustomException : Exception
         {
             public CustomException(string message)
@@ -339,6 +353,14 @@ namespace Datadog.Trace.Tests.CallTarget
             public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
             {
                 return returnValue + "[Modified]";
+            }
+        }
+
+        internal class IntegrationThatThrows
+        {
+            public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
+            {
+                throw new CustomException("Integration Exception");
             }
         }
     }

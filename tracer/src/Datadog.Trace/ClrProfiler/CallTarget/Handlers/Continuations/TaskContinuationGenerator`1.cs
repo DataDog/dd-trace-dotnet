@@ -97,7 +97,6 @@ internal sealed class TaskContinuationGenerator<TIntegration, TTarget, TReturn, 
 
             TResult? taskResult = default;
             Exception? exception = null;
-            TResult? continuationResult = default;
 
             if (previousTask.Status == TaskStatus.RanToCompletion)
             {
@@ -120,6 +119,8 @@ internal sealed class TaskContinuationGenerator<TIntegration, TTarget, TReturn, 
                 }
             }
 
+            // If the continuation throws, the caller still gets the original result
+            TResult? continuationResult = taskResult;
             try
             {
                 // *
@@ -193,7 +194,8 @@ internal sealed class TaskContinuationGenerator<TIntegration, TTarget, TReturn, 
                 }
             }
 
-            TResult? continuationResult = default;
+            // If the continuation throws, the caller still gets the original result
+            TResult? continuationResult = taskResult;
             try
             {
                 // *
