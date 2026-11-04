@@ -79,8 +79,8 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             {
                 // ok all good, just run synchronously
                 var unwrappedResult = previousValueTask.Result;
-                _continuation(instance, unwrappedResult, exception, in state);
-                return ValueTaskActivator<TReturn, TResult?>.CreateInstance(unwrappedResult);
+                var continuationResult = _continuation(instance, unwrappedResult, exception, in state);
+                return ValueTaskActivator<TReturn, TResult?>.CreateInstance(continuationResult);
             }
 
             // uh oh, need to extract the task, await it, run the continuation

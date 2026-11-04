@@ -276,6 +276,17 @@ namespace Datadog.Trace.Tests.CallTarget
         }
 
         [Fact]
+        public async Task SuccessGenericKnownTypeAlreadyCompletedTest()
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationWithKnownType, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, new ValueTask<string>("ReturnValue"), null, in state);
+
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue[Modified]", rValue);
+        }
+
+        [Fact]
         public async Task ThrowingContinuationKeepsOriginalResultTest()
         {
             var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
