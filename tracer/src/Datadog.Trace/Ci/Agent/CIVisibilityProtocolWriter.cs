@@ -7,6 +7,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -85,6 +87,10 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         // Concurrency Level is a simple algorithm where we select a number between 1 and 4 depending on the number of Logical Processor Count
         // To scale the number of senders with a hard limit.
         var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 4);
+
+        // Must run before the flush tasks start, so the first gzip compression happens on a single thread.
+        WarmUpGzip();
+
         _buffersArray = new Buffers[concurrencyLevel];
         for (var i = 0; i < _buffersArray.Length; i++)
         {
@@ -165,6 +171,23 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         foreach (var span in trace)
         {
             WriteEvent(CIVisibilityEventsFactory.FromSpan(span));
+        }
+    }
+
+    private static void WarmUpGzip()
+    {
+        // The zlib-intel compressor shipped with .NET Core 3.x, .NET 5 and .NET 7 on Windows marks its CPU feature
+        // detection as done before publishing the flags. If several threads create their first compressor at the
+        // same time, one can compute a wrong CRC and produce a gzip payload that the intake rejects. Compressing
+        // once here, before any concurrent flush, completes that detection on a single thread.
+        try
+        {
+            using var gzipStream = new GZipStream(Stream.Null, CompressionLevel.Fastest);
+            gzipStream.WriteByte(0);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "CIVisibilityProtocolWriter: Error warming up gzip compression");
         }
     }
 
