@@ -24,7 +24,7 @@ public class FeatureFlagCapabilitiesTests
         var uri = new Uri("https://example.test/ufc?token=preserved");
         FeatureFlagCapabilities.AddToUri(uri, capabilities)
                                .Should()
-                               .Be(supported ? new Uri(uri + "&dependent-flags-variant-key=v1") : uri);
+                               .Be(supported ? new Uri(uri + "&cap_dependent-flags-variant-key=v1") : uri);
         FeatureFlagCapabilities.RemoteConfigMask(capabilities).Should().Be(new BigInteger((1UL << 46) | (supported ? 1UL << 50 : 0)));
     }
 
@@ -41,8 +41,8 @@ public class FeatureFlagCapabilitiesTests
     [Fact]
     public void ReplacesConfiguredDependentFlagsParameter()
         => FeatureFlagCapabilities.AddToUri(
-                                      new Uri("https://example.test/ufc?dependent-flags-variant-key=old&token=preserved"),
+                                      new Uri("https://example.test/ufc?cap_dependent-flags-variant-key=old&token=preserved"),
                                       [FeatureFlagCapabilities.DependentFlagVariantKeyV1])
                                   .Should()
-                                  .Be(new Uri("https://example.test/ufc?token=preserved&dependent-flags-variant-key=v1"));
+                                  .Be(new Uri("https://example.test/ufc?token=preserved&cap_dependent-flags-variant-key=v1"));
 }

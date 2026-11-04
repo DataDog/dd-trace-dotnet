@@ -16,8 +16,8 @@ namespace Datadog.Trace.FeatureFlags;
 internal static class FeatureFlagCapabilities
 {
     internal const string DependentFlagVariantKeyV1 = "dependent-flag-variant-key-v1";
-    private const string DependentFlagsVariantKeyQueryName = "dependent-flags-variant-key";
-    private const string DependentFlagsVariantKeyQuery = "dependent-flags-variant-key=v1";
+    private const string DependentFlagsVariantKeyQueryName = "cap_dependent-flags-variant-key";
+    private const string DependentFlagsVariantKeyQuery = "cap_dependent-flags-variant-key=v1";
 
     internal static Uri AddToUri(Uri uri, IReadOnlyCollection<string> capabilities)
     {
