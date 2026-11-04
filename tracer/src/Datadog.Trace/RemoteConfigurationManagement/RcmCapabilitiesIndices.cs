@@ -103,6 +103,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger FfeFlagConfigurationRules = Create(46);
 
+        public static readonly BigInteger FfeFlagDependentFlagVariantKeyV1 = Create(50);
+
         private static BigInteger Create(int index) => new(1UL << index);
     }
 }
