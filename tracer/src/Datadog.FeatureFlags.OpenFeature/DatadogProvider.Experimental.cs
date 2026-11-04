@@ -118,6 +118,7 @@ public sealed partial class DatadogProvider
         }
 
         var details = ToDetails(resolution);
+        var originalMetadata = resolution.FlagMetadata;
         Exception? error = resolution.ErrorType == ErrorType.None ? null : new FeatureProviderException(resolution.ErrorType, resolution.ErrorMessage);
         if (error is null)
         {
@@ -167,6 +168,14 @@ public sealed partial class DatadogProvider
             }
         }
 
+        foreach (var hook in hooks)
+        {
+            if (hook is ExposureCommitHook exposureCommitHook)
+            {
+                exposureCommitHook.Complete(originalMetadata, resolution.ErrorType == ErrorType.None);
+            }
+        }
+
         return resolution;
     }
 
@@ -188,7 +197,7 @@ public sealed partial class DatadogProvider
     private ResolutionDetails<T> ResolveSync<T>(string flagKey, Trace.FeatureFlags.ValueType valueType, FlagValueType flagValueType, T defaultValue, EvaluationContext? context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var resolution = FeatureFlagsSdk.Resolve(flagKey, valueType, defaultValue, context, _evaluate, _evpHook);
+        var resolution = FeatureFlagsSdk.Resolve(flagKey, valueType, defaultValue, context, _evaluate, _evpHook, _exposureCommitHook);
         return _providerHooks.Count == 0
             ? resolution
             : RunProviderHooks(_providerHooks, new HookContext<T>(flagKey, defaultValue, flagValueType, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);

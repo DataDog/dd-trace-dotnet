@@ -420,6 +420,9 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
+            => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposures: false);
+
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposures)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
@@ -439,11 +442,61 @@ namespace Datadog.Trace.FeatureFlags
                 return notReady;
             }
 
-            var evaluation = evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
+            var collectDependencyEvaluations = Volatile.Read(ref _availableEvaluationWriter) is not null;
+            var trace = evaluator.EvaluateWithTrace(
+                flagKey,
+                resultType,
+                defaultValue,
+                new EvaluationContext(targetingKey, attributes),
+                collectDependencyEvaluations);
+            foreach (var dependency in trace.DependencyEvaluations)
+            {
+                try
+                {
+                    ReportDependencyEvaluation(dependency);
+                }
+                catch
+                {
+                    // Dependency evaluation telemetry is best effort and must not affect resolution.
+                }
+            }
+
+            var evaluation = trace.Details;
+            if (deferExposures && trace.DependencyExposures.Count > 0)
+            {
+                var exposures = trace.DependencyExposures;
+                var metadata = new ExposureCommitMetadata(evaluation.FlagMetadata, () => ReportExposures(exposures));
+                evaluation = new Evaluation(
+                    evaluation.FlagKey,
+                    evaluation.Value,
+                    evaluation.Reason,
+                    evaluation.Variant,
+                    evaluation.Error,
+                    metadata);
+            }
+            else
+            {
+                ReportExposures(trace.DependencyExposures);
+            }
 
             LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
 
             return evaluation;
+
+            void ReportExposures(IReadOnlyList<ExposureEvent> exposures)
+            {
+                foreach (var exposure in exposures)
+                {
+                    try
+                    {
+                        ReportExposure(in exposure);
+                    }
+                    catch
+                    {
+                        // Exposure delivery is best effort and must not affect resolution.
+                    }
+                }
+            }
         }
 
         [TestingAndPrivateOnly]
@@ -878,6 +931,30 @@ namespace Datadog.Trace.FeatureFlags
             {
                 _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
             }
+        }
+
+        private void ReportDependencyEvaluation(DependencyEvaluation dependency)
+        {
+            var writer = Volatile.Read(ref _availableEvaluationWriter);
+            if (writer is null)
+            {
+                return;
+            }
+
+            var evaluation = dependency.Evaluation;
+            var consent = evaluation.FlagMetadata?.TryGetValue(FeatureFlagMetadataKeys.ObserveFullEvaluationData, out var value) == true
+                       && value == "true";
+            var attributes = consent ? dependency.ContextAttributes : null;
+            writer.TryEnqueue(
+                new FlagEvalEvent(
+                    evaluation.FlagKey,
+                    evaluation.Variant,
+                    FeatureFlagsEvaluator.AllocationKey(evaluation),
+                    dependency.TargetingKey,
+                    new DateTimeOffset(dependency.EvaluationTime).ToUnixTimeMilliseconds(),
+                    attributes,
+                    FeatureFlagsEvaluator.ErrorCode(evaluation),
+                    consent));
         }
 
         // Created on first use because most applications never evaluate a flag, and under the lock

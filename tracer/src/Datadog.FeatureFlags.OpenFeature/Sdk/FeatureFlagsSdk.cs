@@ -100,14 +100,16 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, ExposureCommitHook? exposureCommitHook = null)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
         var evaluation = evaluate is null
                              ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
+        var exposureCommit = GetExposureCommit(evaluation?.FlagMetadata);
         var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
+        exposureCommitHook?.Capture(resolution.FlagMetadata, exposureCommit);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
         return resolution;
     }
@@ -155,7 +157,7 @@ internal static class FeatureFlagsSdk
             evaluation.FlagKey,
             value,
             errorType,
-            ReasonToLowerSnakeCase(evaluation.Reason),
+            ToOpenFeatureReason(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata, evalTimeMs));
@@ -178,19 +180,17 @@ internal static class FeatureFlagsSdk
         };
     }
 
-    // Converts EvaluationReason enum to lower_snake_case string for OpenFeature Reason field.
-    // Uses cached strings to avoid allocation.
-    private static string ReasonToLowerSnakeCase(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
+    private static string ToOpenFeatureReason(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
     {
-        Datadog.Trace.FeatureFlags.EvaluationReason.Static => "static",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Default => "default",
-        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "targeting_match",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Split => "split",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "disabled",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => "unknown",
-        Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
-        _ => "unknown"
+        Datadog.Trace.FeatureFlags.EvaluationReason.Static => Reason.Static,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Default => Reason.Default,
+        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => Reason.TargetingMatch,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Split => Reason.Split,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => Reason.Disabled,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => Reason.Cached,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => Reason.Unknown,
+        Datadog.Trace.FeatureFlags.EvaluationReason.Error => Reason.Error,
+        _ => Reason.Unknown
     };
 
     private static ImmutableMetadata? ToMetadata(IDictionary<string, string>? metadata, long? evalTimeMs)
@@ -216,6 +216,25 @@ internal static class FeatureFlagsSdk
         }
 
         return new ImmutableMetadata(dic);
+    }
+
+    private static Action? GetExposureCommit(IDictionary<string, string>? metadata)
+    {
+        try
+        {
+            var type = metadata?.GetType();
+            if (type?.FullName != "Datadog.Trace.FeatureFlags.ExposureCommitMetadata" ||
+                type.Assembly.GetName().Name != "Datadog.Trace")
+            {
+                return null;
+            }
+
+            return type.GetProperty("ExposureCommit")?.GetValue(metadata) as Action;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public static Value JsonToValue(object? obj)

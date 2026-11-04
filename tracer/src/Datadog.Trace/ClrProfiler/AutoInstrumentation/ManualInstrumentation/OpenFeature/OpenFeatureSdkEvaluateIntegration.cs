@@ -49,8 +49,21 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         // via the manual API or an older OpenFeature package), start delivery on first evaluation.
         flags?.Activate();
 
-        var res = flags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey, parameters.Attributes);
+        var res = flags?.Evaluate(
+            parameters.FlagKey,
+            parameters.TargetType,
+            parameters.DefaultValue,
+            parameters.TargetingKey,
+            parameters.Attributes,
+            SupportsDeferredExposures<TReturn>.Value);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
+    }
+
+    private static class SupportsDeferredExposures<TReturn>
+    {
+        // Older SDKs have no commit hook, so they retain immediate delivery. Inspecting the SDK
+        // assembly keeps both tracer-first and SDK-first upgrades compatible without shared state.
+        public static readonly bool Value = typeof(TReturn).Assembly.GetType("Datadog.FeatureFlags.OpenFeature.ExposureCommitHook", throwOnError: false) is not null;
     }
 
     private sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes)

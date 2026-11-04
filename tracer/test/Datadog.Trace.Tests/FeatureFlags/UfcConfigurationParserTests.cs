@@ -135,6 +135,64 @@ public class UfcConfigurationParserTests
     }
 
     [Fact]
+    public void ParsesOptionalEvaluatorParamsAndFlagEvaluationCondition()
+    {
+        var body = """
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "evaluatorParams": {},
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": { "key": "prerequisite" }, "operator": "ONE_OF", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParams.Should().NotBeNull();
+        configuration.EvaluatorParams!.MaxDependencyDepth.Should().BeNull();
+        var condition = configuration.Flags!["root"].Allocations![0].Rules![0].Conditions![0];
+        condition.Attribute.Should().BeNull();
+        condition.FlagEvaluation!.Key.Should().Be("prerequisite");
+    }
+
+    [Fact]
+    public void PreservesExplicitNullMaximumDependencyDepth()
+    {
+        var body = ValidEnvelope.Replace("\"flags\": {}", "\"evaluatorParams\": { \"maxDependencyDepth\": null }, \"flags\": {}");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParams.Should().NotBeNull();
+        configuration.EvaluatorParams!.MaxDependencyDepthPresent.Should().BeTrue();
+        configuration.EvaluatorParams.MaxDependencyDepth.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("{ \"key\": 123 }")]
+    [InlineData("{ \"key\": \"dependency\", \"extra\": true }")]
+    public void RejectsMalformedFlagEvaluationDescriptor(string descriptor)
+    {
+        var body = $$"""
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": {{descriptor}}, "operator": "ONE_OF", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags.Should().NotContainKey("root");
+    }
+
+    [Fact]
     public void AcceptsANumericEnvironmentName()
     {
         // The attributes are deserialized straight from the reader, so a scalar of the wrong type is
