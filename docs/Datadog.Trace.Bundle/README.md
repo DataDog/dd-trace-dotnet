@@ -88,6 +88,41 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
+## Reducing the published size
+
+By default, `dotnet publish` copies the files for every supported platform and runtime into the `datadog` folder. To publish only the files your application needs, set the `DatadogPlatforms` MSBuild property to the platform(s) the application runs on:
+
+```xml
+<PropertyGroup>
+  <DatadogPlatforms>linux-x64</DatadogPlatforms>
+</PropertyGroup>
+```
+
+| Property | Description |
+|----------|-------------|
+| `DatadogPlatforms` | **Required.** One or more of `win-x64`, `win-x86`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `osx-x64`, `osx-arm64`, separated by `;`. Use the `linux-musl-*` values for Alpine Linux. |
+| `DatadogRuntimes` | Optional. One or more target frameworks for the runtime(s) the application runs on, for example `net48` or `net6.0;net8.0`, separated by `;`. Defaults to the target framework being published. |
+
+Nothing is inferred from the runtime identifier or target framework. If a platform or runtime is missing from these properties, automatic instrumentation will not work there. In particular, if the application can roll forward to a newer .NET version than it targets (for example, by setting `RollForward`), include that version in `DatadogRuntimes`.
+
+You can also set the properties on the command line. MSBuild treats `;` as a separator on the command line, so either quote the value or escape the `;` as `%3B`:
+
+```bash
+dotnet publish -c Release '-p:DatadogPlatforms="linux-x64;linux-arm64"'
+dotnet publish -c Release -p:DatadogPlatforms=linux-x64%3Blinux-arm64
+```
+
+This only applies to `dotnet publish` of SDK-style projects. If you don't set `DatadogPlatforms`, all files are published. The following errors and warnings may be reported:
+
+| Code | Meaning |
+|------|---------|
+| `DDBUNDLE001` | Error: `DatadogPlatforms` requires MSBuild 16.7 or later (.NET SDK 3.1.400 or later). |
+| `DDBUNDLE002` | Error: `DatadogPlatforms` contains an unsupported value. |
+| `DDBUNDLE003` | Error: `DatadogRuntimes` contains an invalid value. Use a .NET Framework target framework, such as `net48`, or a .NET Core target framework for .NET Core 2.1 or later, such as `net8.0`. |
+| `DDBUNDLE010` | Warning: the application is published for a `RuntimeIdentifier` that is not included in `DatadogPlatforms`. |
+| `DDBUNDLE011` | Warning: `DatadogRuntimes` includes .NET Framework, but `DatadogPlatforms` does not include a Windows platform. |
+| `DDBUNDLE012` | Warning: a .NET Framework application's `PlatformTarget` (`x86` or `x64`) is not included in `DatadogPlatforms`. |
+
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
