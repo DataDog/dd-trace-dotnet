@@ -16,6 +16,7 @@ namespace Datadog.Trace.FeatureFlags;
 internal static class FeatureFlagCapabilities
 {
     internal const string DependentFlagVariantKeyV1 = "dependent-flag-variant-key-v1";
+    private const string DependentFlagsVariantKeyQueryName = "dependent-flags-variant-key";
     private const string DependentFlagsVariantKeyQuery = "dependent-flags-variant-key=v1";
 
     internal static Uri AddToUri(Uri uri, IReadOnlyCollection<string> capabilities)
@@ -26,9 +27,12 @@ internal static class FeatureFlagCapabilities
         }
 
         var builder = new UriBuilder(uri);
-        builder.Query = builder.Query.Length == 0
-                            ? DependentFlagsVariantKeyQuery
-                            : builder.Query.Substring(1) + "&" + DependentFlagsVariantKeyQuery;
+        var query = builder.Query.Length == 0 ? new List<string>() : builder.Query.Substring(1).Split('&').ToList();
+        query.RemoveAll(
+            item => item.Equals(DependentFlagsVariantKeyQueryName, StringComparison.Ordinal)
+                 || item.StartsWith(DependentFlagsVariantKeyQueryName + "=", StringComparison.Ordinal));
+        query.Add(DependentFlagsVariantKeyQuery);
+        builder.Query = string.Join("&", query);
         return builder.Uri;
     }
 

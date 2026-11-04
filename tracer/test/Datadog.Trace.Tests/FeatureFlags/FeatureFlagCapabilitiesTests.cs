@@ -37,4 +37,12 @@ public class FeatureFlagCapabilitiesTests
                                .Be(new Uri("https://example.test/ufc"));
         FeatureFlagCapabilities.RemoteConfigMask(FeatureFlagsEvaluator.GetCapabilities()).Should().Be(new BigInteger(1UL << 46));
     }
+
+    [Fact]
+    public void ReplacesConfiguredDependentFlagsParameter()
+        => FeatureFlagCapabilities.AddToUri(
+                                      new Uri("https://example.test/ufc?dependent-flags-variant-key=old&token=preserved"),
+                                      [FeatureFlagCapabilities.DependentFlagVariantKeyV1])
+                                  .Should()
+                                  .Be(new Uri("https://example.test/ufc?token=preserved&dependent-flags-variant-key=v1"));
 }
