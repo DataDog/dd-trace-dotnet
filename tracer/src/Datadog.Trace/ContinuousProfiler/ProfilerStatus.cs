@@ -26,7 +26,7 @@ namespace Datadog.Trace.ContinuousProfiler
             {
                 ProfilerState.Enabled => "enabled",
                 ProfilerState.Auto => "auto",
-                _ => "disabled"
+                _ => "disabled",
             };
 
             Log.Information("Continuous Profiler mode = {ProfilerState}", state);

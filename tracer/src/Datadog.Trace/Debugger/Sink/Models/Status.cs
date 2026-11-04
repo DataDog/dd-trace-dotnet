@@ -16,6 +16,6 @@ namespace Datadog.Trace.Debugger.Sink.Models
         EMITTING,
         BLOCKED,
         ERROR,
-        INSTRUMENTED
+        INSTRUMENTED,
     }
 }

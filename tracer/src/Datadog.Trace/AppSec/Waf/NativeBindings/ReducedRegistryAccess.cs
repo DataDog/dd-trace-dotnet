@@ -93,7 +93,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             /// <summary>
             /// If pvData is not NULL, set the contents of the buffer to zeroes on failure. (0x20000000)
             /// </summary>
-            RrfZeroonfailure = 536870912
+            RrfZeroonfailure = 536870912,
         }
 
         /// <summary>

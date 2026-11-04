@@ -51,7 +51,7 @@ internal static class EnvironmentVariableProviderExtensions
                    {
                        '1' or 'T' or 't' or 'Y' or 'y' => true,
                        '0' or 'F' or 'f' or 'N' or 'n' => false,
-                       _ => null
+                       _ => null,
                    };
         }
 

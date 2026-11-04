@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Symbols.Model
         Field,
         StaticField,
         Arg,
-        Local
+        Local,
     }
 
     internal enum ScopeType
@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.Symbols.Model
         Class,
         Method,
         Closure,
-        Local
+        Local,
     }
 
     internal sealed record Root

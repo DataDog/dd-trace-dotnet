@@ -182,7 +182,7 @@ namespace Datadog.Trace.Configuration
             //    use / instead of \, i.e. @$"npipe:////./pipe/{TracesPipeName}"
             // 2. AgentUri is exposed publicly, so we can't change it without potentially breaking behaviour
             TracesTransportType.WindowsNamedPipe => $@"\\.\pipe\{TracesPipeName}",
-            _ => AgentUri.ToString()
+            _ => AgentUri.ToString(),
         };
 
         /// <summary>

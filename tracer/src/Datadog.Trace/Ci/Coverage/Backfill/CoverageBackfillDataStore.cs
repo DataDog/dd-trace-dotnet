@@ -44,7 +44,7 @@ internal static class CoverageBackfillDataStore
     {
         Missing,
         Invalid,
-        Loaded
+        Loaded,
     }
 
     /// <summary>

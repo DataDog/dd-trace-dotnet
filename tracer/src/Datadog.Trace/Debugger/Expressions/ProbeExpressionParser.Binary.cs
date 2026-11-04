@@ -123,7 +123,7 @@ internal sealed partial class ProbeExpressionParser<T>
                 "<" => Expression.LessThan(left, right),
                 "<=" => Expression.LessThanOrEqual(left, right),
                 "==" or "!=" => EqualExpression(),
-                _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
+                _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand)),
             };
             return RedactDictionaryBinaryOperation(left, right, comparison);
         }
@@ -242,7 +242,7 @@ internal sealed partial class ProbeExpressionParser<T>
             ">=" => Expression.GreaterThanOrEqual(compareOrdinal, zeroConstant),
             "<" => Expression.LessThan(compareOrdinal, zeroConstant),
             "<=" => Expression.LessThanOrEqual(compareOrdinal, zeroConstant),
-            _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
+            _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand)),
         };
 
         System.Reflection.MethodInfo CompareOrdinalMethod() => ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), "CompareOrdinal", new[] { typeof(string), typeof(string) });

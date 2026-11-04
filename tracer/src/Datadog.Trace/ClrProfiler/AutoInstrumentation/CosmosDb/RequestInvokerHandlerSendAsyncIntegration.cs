@@ -87,7 +87,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
                     {
                         0 => "gateway",
                         1 => "direct",
-                        _ => "other"
+                        _ => "other",
                     };
                 }
             }

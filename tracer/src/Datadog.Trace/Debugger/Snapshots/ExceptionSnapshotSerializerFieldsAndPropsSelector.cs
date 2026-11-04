@@ -20,7 +20,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             nameof(Exception.InnerException),
             nameof(Exception.HResult),
             nameof(Exception.HelpLink),
-            nameof(Exception.Source)
+            nameof(Exception.Source),
         };
 
         internal override bool IsApplicable(Type type)

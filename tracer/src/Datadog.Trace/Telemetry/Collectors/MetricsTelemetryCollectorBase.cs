@@ -151,7 +151,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
                             type: metricType)
                         {
                             Namespace = metric.NameSpace,
-                            Tags = GetTags(metric.NameSpace, metricValues.Tags)
+                            Tags = GetTags(metric.NameSpace, metricValues.Tags),
                         });
                 }
 

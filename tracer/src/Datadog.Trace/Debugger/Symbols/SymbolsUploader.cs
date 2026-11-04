@@ -271,7 +271,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 Env = _environment,
                 Language = "dotnet",
                 Version = _serviceVersion,
-                Scopes = [assemblyScope]
+                Scopes = [assemblyScope],
             };
 
             await UploadClasses(root, symbolsExtractor.GetClassSymbols()).ConfigureAwait(false);

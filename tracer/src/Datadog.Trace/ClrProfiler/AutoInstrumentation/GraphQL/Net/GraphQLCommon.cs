@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         {
             nameof(OperationTypeProxy.Query),
             nameof(OperationTypeProxy.Mutation),
-            nameof(OperationTypeProxy.Subscription)
+            nameof(OperationTypeProxy.Subscription),
         };
 
         internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)

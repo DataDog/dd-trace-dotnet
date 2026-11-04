@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Models
         /// <summary>
         /// The probe could not be resolved due to an error.
         /// </summary>
-        Error
+        Error,
     }
 
     internal enum LineProbeResolveReason
@@ -33,13 +33,13 @@ namespace Datadog.Trace.Debugger.Models
         MissingPdb,
         InvalidLineNumber,
         MissingSequencePoint,
-        UnexpectedException
+        UnexpectedException,
     }
 
     internal enum LineProbePathMatchType
     {
         ExactSuffixMatch,
-        FallbackTrailingSuffixMatch
+        FallbackTrailingSuffixMatch,
     }
 
     internal enum LineProbeFallbackFailureReason
@@ -47,12 +47,12 @@ namespace Datadog.Trace.Debugger.Models
         None,
         NoSameFileNameCandidates,
         NoQualifiedSuffixMatch,
-        AmbiguousQualifiedMatches
+        AmbiguousQualifiedMatches,
     }
 
     internal enum LineProbeDiagnosticLevel
     {
         Minimal,
-        Full
+        Full,
     }
 }

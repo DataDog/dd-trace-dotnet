@@ -9,5 +9,5 @@ internal enum EventPlatformProxySupport
 {
     None,
     V2,
-    V4
+    V4,
 }

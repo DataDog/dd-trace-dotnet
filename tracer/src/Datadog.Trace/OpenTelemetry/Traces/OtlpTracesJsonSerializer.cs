@@ -393,7 +393,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             StatusCode.Unset => "STATUS_CODE_UNSET",
             StatusCode.Ok => "STATUS_CODE_OK",
             StatusCode.Error => "STATUS_CODE_ERROR",
-            _ => "STATUS_CODE_UNSET"
+            _ => "STATUS_CODE_UNSET",
         };
     }
 
@@ -704,7 +704,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         using var streamWriter = new StreamWriter(memoryStream, EncodingHelpers.Utf8NoBom, bufferSize: 4096, leaveOpen: true);
         using var jsonWriter = new JsonTextWriter(streamWriter)
         {
-            CloseOutput = false
+            CloseOutput = false,
         };
 
         // Open a new ResourceSpans when this chunk's resource differs from the current one (see OtlpResourceSpansGroups).

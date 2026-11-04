@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.Sink.Models
                 {
                     Type = exception.GetType().Name,
                     Message = exception.Message,
-                    StackTrace = exception.StackTrace
+                    StackTrace = exception.StackTrace,
                 };
             }
 

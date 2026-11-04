@@ -30,7 +30,7 @@ internal enum ProtobufDotnetFieldType
     SFixed64,
     SInt32,
     SInt64,
-    Enum
+    Enum,
 }
 
 /// <summary>
@@ -57,7 +57,7 @@ internal enum ProtobufDotnetProtoType
     Sfixed64 = 16,
     Sint32 = 17,
     Sint64 = 18,
-    Unknown = 999 // this one I added myself, to avoid using exceptions
+    Unknown = 999, // this one I added myself, to avoid using exceptions
 }
 
 /// <summary> Just a class to host the extension method. Must match the name of the file. </summary>
@@ -89,7 +89,7 @@ internal static class ProtobufTypes
             ProtobufDotnetFieldType.SFixed64 => ProtobufDotnetProtoType.Sfixed64,
             ProtobufDotnetFieldType.SInt32 => ProtobufDotnetProtoType.Sint32,
             ProtobufDotnetFieldType.SInt64 => ProtobufDotnetProtoType.Sint64,
-            _ => ProtobufDotnetProtoType.Unknown
+            _ => ProtobufDotnetProtoType.Unknown,
         };
     }
 }

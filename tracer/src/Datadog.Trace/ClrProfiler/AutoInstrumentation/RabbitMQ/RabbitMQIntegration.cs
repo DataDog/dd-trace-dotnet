@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Amqp),
                 SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Amqp),
-                _ => RabbitMQConstants.AmqpCommand
+                _ => RabbitMQConstants.AmqpCommand,
             };
         }
 

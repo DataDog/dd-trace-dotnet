@@ -33,7 +33,7 @@ internal static class ExternalCoverageXmlBackfill
         Auto,
         Cobertura,
         OpenCover,
-        Microsoft
+        Microsoft,
     }
 
     private enum MicrosoftCoverageStatus
@@ -41,14 +41,14 @@ internal static class ExternalCoverageXmlBackfill
         Unknown,
         NotCovered,
         PartiallyCovered,
-        Covered
+        Covered,
     }
 
     private enum MicrosoftCoverageValueKind
     {
         GenericAttribute,
         MicrosoftCoveredAttribute,
-        CoverageXmlElement
+        CoverageXmlElement,
     }
 
     /// <summary>
@@ -2639,7 +2639,7 @@ internal static class ExternalCoverageXmlBackfill
         xmlDoc = new XmlDocument
         {
             PreserveWhitespace = true,
-            XmlResolver = null
+            XmlResolver = null,
         };
 
         try
@@ -2647,7 +2647,7 @@ internal static class ExternalCoverageXmlBackfill
             var settings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
+                XmlResolver = null,
             };
 
             using var reader = XmlReader.Create(filePath, settings);

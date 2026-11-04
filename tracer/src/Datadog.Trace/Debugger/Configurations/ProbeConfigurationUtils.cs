@@ -22,7 +22,7 @@ internal static class ProbeConfigurationUtils
             LogProbes = MergeProbes(lowerPriority?.LogProbes, higherPriority?.LogProbes ?? []),
             MetricProbes = MergeProbes(lowerPriority?.MetricProbes, higherPriority?.MetricProbes ?? []),
             SpanProbes = MergeProbes(lowerPriority?.SpanProbes, higherPriority?.SpanProbes ?? []),
-            SpanDecorationProbes = MergeProbes(lowerPriority?.SpanDecorationProbes, higherPriority?.SpanDecorationProbes ?? [])
+            SpanDecorationProbes = MergeProbes(lowerPriority?.SpanDecorationProbes, higherPriority?.SpanDecorationProbes ?? []),
         };
     }
 
@@ -39,7 +39,7 @@ internal static class ProbeConfigurationUtils
             LogProbes = RemoveProbes(configuration.LogProbes, removedProbeIds),
             MetricProbes = RemoveProbes(configuration.MetricProbes, removedProbeIds),
             SpanProbes = RemoveProbes(configuration.SpanProbes, removedProbeIds),
-            SpanDecorationProbes = RemoveProbes(configuration.SpanDecorationProbes, removedProbeIds)
+            SpanDecorationProbes = RemoveProbes(configuration.SpanDecorationProbes, removedProbeIds),
         };
     }
 

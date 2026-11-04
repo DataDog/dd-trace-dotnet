@@ -158,7 +158,7 @@ internal sealed class TelemetryDataAggregator
         {
             Appsec = newValues.Appsec ?? previous.Appsec,
             Profiler = newValues.Profiler ?? previous.Profiler,
-            DynamicInstrumentation = newValues.DynamicInstrumentation ?? previous.DynamicInstrumentation
+            DynamicInstrumentation = newValues.DynamicInstrumentation ?? previous.DynamicInstrumentation,
         };
     }
 

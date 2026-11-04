@@ -50,7 +50,7 @@ namespace Datadog.Trace.Debugger.Models
                 Format("loadedAssemblies", LoadedAssemblyCount > 0 ? LoadedAssemblyCount : null),
                 Format("symbolicatedAssemblies", SymbolicatedAssemblyCount > 0 ? SymbolicatedAssemblyCount : null),
                 Format("sameFileNameMatches", SameFileNameMatchCount > 0 ? SameFileNameMatchCount : null),
-                SameFileNameExamples is { Length: > 0 } ? $"sameFileNameExamples={sameFileNameExamples}" : null
+                SameFileNameExamples is { Length: > 0 } ? $"sameFileNameExamples={sameFileNameExamples}" : null,
             };
 
             return string.Join("; ", values.Where(static v => !string.IsNullOrEmpty(v)));

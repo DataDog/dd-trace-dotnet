@@ -492,7 +492,7 @@ namespace Datadog.Trace
                 Trace.Tags.Version => Context.TraceContext?.ServiceVersion,
                 Trace.Tags.Origin => Context.TraceContext?.Origin,
                 Trace.Tags.TraceId => Context.RawTraceId,
-                _ => Tags.GetTag(key)
+                _ => Tags.GetTag(key),
             };
         }
 

@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         HostCall,
 
         /// <summary>Indicates a function executed because of a request from a dashboard user.</summary>
-        Dashboard
+        Dashboard,
     }
 }
 #endif

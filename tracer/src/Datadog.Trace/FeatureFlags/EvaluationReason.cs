@@ -40,5 +40,5 @@ public enum EvaluationReason
     Unknown,
 
     /// <summary> Error </summary>
-    Error
+    Error,
 }

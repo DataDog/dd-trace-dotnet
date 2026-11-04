@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         TriggerType = triggerType,
                         ShortName = functionName,
                         FullName = instanceParam.FunctionDescriptor.FullName,
-                        BindingSource = bindingSourceType.FullName
+                        BindingSource = bindingSourceType.FullName,
                     };
 
                     // This is the root scope

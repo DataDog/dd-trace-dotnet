@@ -100,7 +100,7 @@ internal class CreatedumpCommand : Command
             { "--errno", true },
             { "--address", true },
             // Datadog-specific argument. Will be discarded by createdump.
-            { "--dd-native-exception-code", true }
+            { "--dd-native-exception-code", true },
         };
 
         const string pidRegex = "[0-9]+";
@@ -459,7 +459,7 @@ internal class CreatedumpCommand : Command
                         6 => "ILL_PRVREG",
                         7 => "ILL_COPROC",
                         8 => "ILL_BADSTK",
-                        _ => "UNKNOWN"
+                        _ => "UNKNOWN",
                     },
 
                     7 => code switch
@@ -469,7 +469,7 @@ internal class CreatedumpCommand : Command
                         3 => "BUS_OBJERR",
                         4 => "BUS_MCEERR_AR",
                         5 => "BUS_MCEERR_AO",
-                        _ => "UNKNOWN"
+                        _ => "UNKNOWN",
                     },
 
                     8 => code switch
@@ -482,7 +482,7 @@ internal class CreatedumpCommand : Command
                         6 => "FPE_FLTRES",
                         7 => "FPE_FLTINV",
                         8 => "FPE_FLTSUB",
-                        _ => "UNKNOWN"
+                        _ => "UNKNOWN",
                     },
 
                     11 => code switch
@@ -491,7 +491,7 @@ internal class CreatedumpCommand : Command
                         2 => "SEGV_ACCERR",
                         3 => "SEGV_BNDERR",
                         4 => "SEGV_PKUERR",
-                        _ => "UNKNOWN"
+                        _ => "UNKNOWN",
                     },
 
                     5 => code switch
@@ -500,7 +500,7 @@ internal class CreatedumpCommand : Command
                         2 => "TRAP_TRACE",
                         3 => "TRAP_BRANCH",
                         4 => "TRAP_HWBKPT",
-                        _ => "UNKNOWN"
+                        _ => "UNKNOWN",
                     },
 
                     17 => code switch
@@ -511,7 +511,7 @@ internal class CreatedumpCommand : Command
                         4 => "CLD_TRAPPED",
                         5 => "CLD_STOPPED",
                         6 => "CLD_CONTINUED",
-                        _ => "UNKNOWN"
+                        _ => "UNKNOWN",
                     },
 
                     29 => code switch
@@ -522,11 +522,11 @@ internal class CreatedumpCommand : Command
                         4 => "POLL_ERR",
                         5 => "POLL_PRI",
                         6 => "POLL_HUP",
-                        _ => "UNKNOWN"
+                        _ => "UNKNOWN",
                     },
 
-                    _ => "UNKNOWN"
-                }
+                    _ => "UNKNOWN",
+                },
             };
         }
 
@@ -867,7 +867,7 @@ internal class CreatedumpCommand : Command
                 "System.InvalidProgramException",
                 "System.MissingFieldException",
                 "System.MissingMemberException",
-                "System.BadImageFormatException"
+                "System.BadImageFormatException",
             };
 
             if (exceptionType.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase) || suspiciousExceptionTypes.Contains(exceptionType))
@@ -1049,7 +1049,7 @@ internal class CreatedumpCommand : Command
             ClrFlavor.Core => ".NET Core",
             ClrFlavor.Desktop => ".NET Framework",
             ClrFlavor.NativeAOT => "NativeAOT",
-            ClrFlavor f => f.ToString()
+            ClrFlavor f => f.ToString(),
         };
 
         var version = string.Empty;

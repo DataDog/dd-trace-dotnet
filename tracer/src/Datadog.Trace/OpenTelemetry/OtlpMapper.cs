@@ -295,7 +295,7 @@ internal static class OtlpMapper
                     SamplingMechanism.LocalTraceSamplingRule
                         or SamplingMechanism.RemoteAdaptiveSamplingRule
                         or SamplingMechanism.RemoteUserSamplingRule => Trace.Metrics.SamplingRuleDecision, // "_dd.rule_psr"
-                    _ => null
+                    _ => null,
                 };
 
                 if (samplingRateTagName is not null)

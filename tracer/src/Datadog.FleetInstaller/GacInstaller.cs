@@ -103,7 +103,7 @@ internal static class GacInstaller
                         cbSize = (uint)sizeof(Fusion.FUSION_INSTALL_REFERENCE),
                         dwFlags = Fusion.FusionInstallReferenceFlags.None,
                         guidScheme = Fusion.FUSION_INSTALL_REFERENCE.FUSION_REFCOUNT_FILEPATH_GUID,
-                        szIdentifier = associatedFilepathPtr
+                        szIdentifier = associatedFilepathPtr,
                     };
                     retValue = ppAsmCache.InstallAssembly(0U, assemblyToGacPath, &fusionInstallReference);
                 }
@@ -213,7 +213,7 @@ internal static class GacInstaller
                             cbSize = (uint)Marshal.SizeOf<Fusion.FUSION_INSTALL_REFERENCE>(),
                             dwFlags = Fusion.FusionInstallReferenceFlags.None,
                             guidScheme = Fusion.FUSION_INSTALL_REFERENCE.FUSION_REFCOUNT_FILEPATH_GUID,
-                            szIdentifier = associatedFilepathPtr
+                            szIdentifier = associatedFilepathPtr,
                         };
                         retValue = ppAsmCache.UninstallAssembly(0U, gacName, &fusionInstallReference, &disposition);
                     }

@@ -20,6 +20,6 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Interface calltarget integration
         /// </summary>
-        Interface = 2
+        Interface = 2,
     }
 }

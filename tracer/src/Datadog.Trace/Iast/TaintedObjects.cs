@@ -55,7 +55,7 @@ namespace Datadog.Trace.Iast
                     > 1 when !char.IsDigit(arg[1]) => false, // Not a number
                     > 2 when !char.IsDigit(arg[2]) => false, // Not a number
                     > 2 when arg[0] - '0' >= 3 => false, // Bigger than 299
-                    _ => true
+                    _ => true,
                 };
             }
 

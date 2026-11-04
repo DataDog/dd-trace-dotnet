@@ -32,7 +32,7 @@ internal sealed class ExposureApi : IDisposable
         ContractResolver = new DefaultContractResolver
         {
             NamingStrategy = new SnakeCaseNamingStrategy(),
-        }
+        },
     };
 
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -80,7 +80,7 @@ internal sealed class ExposureApi : IDisposable
             {
                 { "service", settings.DefaultServiceName },
                 { "env", settings.Environment ?? "unknown" },
-                { "version", settings.ServiceVersion ?? "unknown" }
+                { "version", settings.ServiceVersion ?? "unknown" },
             };
             Interlocked.Exchange(ref _context!, context);
         }

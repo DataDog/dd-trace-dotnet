@@ -26,6 +26,6 @@ namespace Datadog.Trace.Agent
         /// Unix Domain Socket strategy.
         /// Transport used primarily for kubernetes
         /// </summary>
-        UnixDomainSocket
+        UnixDomainSocket,
     }
 }

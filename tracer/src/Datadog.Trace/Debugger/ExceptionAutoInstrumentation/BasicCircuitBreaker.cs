@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// <summary>
         /// The circuit breaker is closed, continue doing your work.
         /// </summary>
-        Closed
+        Closed,
     }
 
     internal sealed class BasicCircuitBreaker : IDisposable

@@ -33,5 +33,5 @@ public enum ValueType
     Boolean,
 
     /// <summary> Json value </summary>
-    Json
+    Json,
 }

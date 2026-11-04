@@ -35,7 +35,7 @@ internal static class SourceTypeUtils
         SourceType.RequestUri => "http_request_uri",
         SourceType.GrpcRequestBody => "grpc_request_body",
         SourceType.SqlRowValue => "sql_row_value",
-        _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined in GetAsTag")
+        _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined in GetAsTag"),
     };
 
     internal static string GetString(SourceType value)
@@ -55,7 +55,7 @@ internal static class SourceTypeUtils
             SourceType.RequestUri => "http.request.uri",
             SourceType.GrpcRequestBody => "grpc.request.body",
             SourceType.SqlRowValue => "sql.row.value",
-            _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined")
+            _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined"),
         };
 
     internal static SourceType FromString(string? value)
@@ -75,6 +75,6 @@ internal static class SourceTypeUtils
             "http.request.uri" => SourceType.RequestUri,
             "grpc.request.body" => SourceType.GrpcRequestBody,
             "sql.row.value" => SourceType.SqlRowValue,
-            _ => throw new Exception($"SourceTypeName VALUE for text {value ?? "NULL"} not defined")
+            _ => throw new Exception($"SourceTypeName VALUE for text {value ?? "NULL"} not defined"),
         };
 }

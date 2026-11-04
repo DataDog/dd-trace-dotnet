@@ -35,5 +35,5 @@ internal enum FailureSite
     /// <summary>
     /// Failure of a child test
     /// </summary>
-    Child
+    Child,
 }

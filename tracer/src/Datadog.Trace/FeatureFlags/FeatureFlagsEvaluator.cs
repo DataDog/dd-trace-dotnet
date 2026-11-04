@@ -94,7 +94,7 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "PROVIDER_NOT_READY",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                         });
                 }
 
@@ -110,7 +110,7 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "FLAG_NOT_FOUND",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                         });
                 }
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "PARSE_ERROR",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                         });
                 }
 
@@ -136,7 +136,7 @@ namespace Datadog.Trace.FeatureFlags
                         EvaluationReason.Disabled,
                         metadata: new Dictionary<string, string>
                         {
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                         });
                 }
 
@@ -150,7 +150,7 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "TYPE_MISMATCH",
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                         });
                 }
 
@@ -162,7 +162,7 @@ namespace Datadog.Trace.FeatureFlags
                         EvaluationReason.Default,
                         metadata: new Dictionary<string, string>
                         {
-                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                         });
                 }
 
@@ -239,7 +239,7 @@ namespace Datadog.Trace.FeatureFlags
                     EvaluationReason.Default,
                     metadata: new Dictionary<string, string>
                     {
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                     });
             }
             catch (FormatException ex)
@@ -253,7 +253,7 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         ["errorCode"] = "PARSE_ERROR",
                         ["message"] = ex.Message,
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                     });
             }
             catch (MissingTargetingKeyException)
@@ -266,7 +266,7 @@ namespace Datadog.Trace.FeatureFlags
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "TARGETING_KEY_MISSING",
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                     });
             }
             catch (Exception ex)
@@ -280,7 +280,7 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         ["errorCode"] = "GENERAL",
                         ["message"] = ex.Message,
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                     });
             }
         }
@@ -589,7 +589,7 @@ namespace Datadog.Trace.FeatureFlags
                 JTokenType.String => token.ToString(),
                 JTokenType.Boolean => (bool)token,
                 JTokenType.Null => null,
-                _ => ConvertObject(null)
+                _ => ConvertObject(null),
             };
 
             static Dictionary<string, object?> ConvertObject(JObject? obj)
@@ -923,7 +923,7 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         ["errorCode"] = "PARSE_ERROR",
                         ["message"] = error,
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
                     });
             }
         }

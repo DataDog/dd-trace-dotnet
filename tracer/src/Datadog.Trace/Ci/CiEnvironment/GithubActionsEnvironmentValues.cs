@@ -256,7 +256,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                 PlatformKeys.Ci.GitHub.ServerUrl,
                 PlatformKeys.Ci.GitHub.Repository,
                 PlatformKeys.Ci.GitHub.RunId,
-                PlatformKeys.Ci.GitHub.RunAttempt
+                PlatformKeys.Ci.GitHub.RunAttempt,
             ],
             static kvp =>
             {

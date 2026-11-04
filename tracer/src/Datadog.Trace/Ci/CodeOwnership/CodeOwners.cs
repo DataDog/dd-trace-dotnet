@@ -152,14 +152,14 @@ namespace Datadog.Trace.Ci.CodeOwnership
 #pragma warning restore SA1201
         {
             GitHub,
-            GitLab
+            GitLab,
         }
 
         private enum CharacterClassParseResult
         {
             NotAClass,
             Success,
-            Invalid
+            Invalid,
         }
 
         private readonly struct GlobPathSegment

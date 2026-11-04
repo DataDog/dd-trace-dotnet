@@ -11,5 +11,5 @@ internal enum AsmCacheFlags
     ASM_CACHE_GAC = 0x02,
     ASM_CACHE_DOWNLOAD = 0x04,
     ASM_CACHE_ROOT = 0x08,
-    ASM_CACHE_ROOT_EX = 0x80
+    ASM_CACHE_ROOT_EX = 0x80,
 }

@@ -51,7 +51,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             _protocolTag = _protocol switch
             {
                 Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.Protocol.Grpc,
-                _ => Telemetry.Metrics.MetricTags.Protocol.Http
+                _ => Telemetry.Metrics.MetricTags.Protocol.Http,
             };
 
             _encodingTag = _protocol switch
@@ -59,7 +59,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 Configuration.OtlpProtocol.Grpc => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf,
                 Configuration.OtlpProtocol.HttpProtobuf => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf,
                 Configuration.OtlpProtocol.HttpJson => Telemetry.Metrics.MetricTags.MetricEncoding.Json,
-                _ => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf
+                _ => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf,
             };
 
             _serializer = new OtlpMetricsSerializer(settings);
@@ -72,7 +72,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     Endpoint = _endpoint,
                     TimeoutMilliseconds = _timeoutMs,
                     Protocol = (OtlpExportProtocol)_protocol,
-                    AppendSignalPathToEndpoint = true
+                    AppendSignalPathToEndpoint = true,
                 };
 
                 foreach (var kvp in _headers)
@@ -167,7 +167,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                         var udsEndpoint = new UnixDomainSocketEndPoint(socketPath);
                         await socket.ConnectAsync(udsEndpoint, cancellationToken).ConfigureAwait(false);
                         return new NetworkStream(socket, ownsSocket: true);
-                    }
+                    },
                 };
 
                 var unixClient = new HttpClient(handler);
@@ -178,7 +178,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             // Standard TCP/IP endpoint
             var tcpHandler = new SocketsHttpHandler
             {
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
             };
 
             var tcpClient = new HttpClient(tcpHandler);
@@ -200,7 +200,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     Configuration.OtlpProtocol.HttpJson =>
                         SendHttpJsonRequest(_serializer.SerializeMetrics(metrics, startPosition: 0)),
                     _ =>
-                        SendHttpProtobufRequest(_serializer.SerializeMetrics(metrics, startPosition: 0))
+                        SendHttpProtobufRequest(_serializer.SerializeMetrics(metrics, startPosition: 0)),
                 };
 
                 return await task.ConfigureAwait(false);
@@ -227,7 +227,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
                 var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
                 {
-                    Content = content
+                    Content = content,
                 };
 
                 foreach (var header in headers)
@@ -256,7 +256,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
                             var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
                             {
-                                Content = content
+                                Content = content,
                             };
 
                             foreach (var header in headers)

@@ -89,7 +89,7 @@ internal readonly ref struct SpanCharSplitter
             {
                 StartIndex = _nextStartIndex,
                 Length = length,
-                Source = _source
+                Source = _source,
             };
 
             _nextStartIndex += Current.Length + 1;

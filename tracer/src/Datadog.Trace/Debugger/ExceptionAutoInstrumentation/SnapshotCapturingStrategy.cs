@@ -10,5 +10,5 @@ internal enum SnapshotCapturingStrategy
 {
     None,
     FullSnapshot,
-    LightweightSnapshot
+    LightweightSnapshot,
 }

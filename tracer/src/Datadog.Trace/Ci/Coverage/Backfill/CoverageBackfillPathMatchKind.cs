@@ -15,5 +15,5 @@ internal enum CoverageBackfillPathMatchKind
     None,
     ExactOrdinal,
     CaseInsensitiveExact,
-    Suffix
+    Suffix,
 }

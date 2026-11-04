@@ -48,7 +48,7 @@ namespace Datadog.Trace.Ci
             var fingerprintParameters = new TestParameters
             {
                 Metadata = new Dictionary<string, object?> { [FingerprintFormatMetadataKey] = FingerprintFormat },
-                Arguments = new Dictionary<string, object?> { [FingerprintArgumentKey] = ComputeFingerprint(json) }
+                Arguments = new Dictionary<string, object?> { [FingerprintArgumentKey] = ComputeFingerprint(json) },
             };
             return JsonHelper.SerializeObject(fingerprintParameters);
         }

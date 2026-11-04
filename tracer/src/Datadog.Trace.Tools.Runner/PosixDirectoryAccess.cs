@@ -265,7 +265,7 @@ internal static class PosixDirectoryAccess
         {
             Architecture.X64 => Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64",
             Architecture.Arm64 => Utils.IsAlpine() ? "linux-musl-arm64" : "linux-arm64",
-            _ => null
+            _ => null,
         };
     }
 

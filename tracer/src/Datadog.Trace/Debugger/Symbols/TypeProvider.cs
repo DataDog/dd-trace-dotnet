@@ -243,7 +243,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 PrimitiveTypeCode.IntPtr => "System.IntPtr",
                 PrimitiveTypeCode.UIntPtr => "System.UIntPtr",
                 PrimitiveTypeCode.Object => "System.Object",
-                _ => string.Empty
+                _ => string.Empty,
             };
         }
 
@@ -271,7 +271,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 "System.IntPtr" => PrimitiveTypeCode.IntPtr,
                 "System.UIntPtr" => PrimitiveTypeCode.UIntPtr,
                 "System.Object" => PrimitiveTypeCode.Object,
-                _ => PrimitiveTypeCode.Object
+                _ => PrimitiveTypeCode.Object,
             };
         }
     }

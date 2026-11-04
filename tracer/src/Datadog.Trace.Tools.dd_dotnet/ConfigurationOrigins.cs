@@ -10,5 +10,5 @@ public enum ConfigurationOrigins
 {
     Default,
     AgentUri,
-    Calculated
+    Calculated,
 }

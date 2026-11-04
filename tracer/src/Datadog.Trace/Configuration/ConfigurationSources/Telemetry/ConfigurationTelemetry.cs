@@ -22,7 +22,7 @@ internal sealed partial class ConfigurationTelemetry : IConfigurationTelemetry
         Redacted,
         Bool,
         Int,
-        Double
+        Double,
     }
 
     public void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)

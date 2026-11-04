@@ -108,7 +108,7 @@ namespace Datadog.Trace.Configuration.Telemetry
                 ConfigurationTelemetry.ConfigurationTelemetryEntryType.Double => entry.DoubleValue,
                 ConfigurationTelemetry.ConfigurationTelemetryEntryType.Int => entry.IntValue,
                 ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted => "<redacted>",
-                _ => entry.StringValue
+                _ => entry.StringValue,
             };
         }
 

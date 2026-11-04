@@ -47,7 +47,7 @@ namespace Datadog.Trace.Agent
             Success = 0,
             Full = 1,
             Overflow = 2,
-            Locked = 3
+            Locked = 3,
         }
 
         public int TraceCount => Volatile.Read(ref _traceCount);

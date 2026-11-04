@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
             "Unknown11", "Semaphore", "Timer", "Profile", "WindowStation",
             "Desktop", "Section", "Key", "Port", "WaitablePort",
             "Unknown21", "Unknown22", "Unknown23", "Unknown24",
-            "IoCompletion", "File"
+            "IoCompletion", "File",
         };
 
         private static Dictionary<string, string>? _deviceMap;
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
         {
             STATUS_SUCCESS = 0x00000000,
             STATUS_BUFFER_OVERFLOW = unchecked((int)0x80000005L),
-            STATUS_INFO_LENGTH_MISMATCH = unchecked((int)0xC0000004L)
+            STATUS_INFO_LENGTH_MISMATCH = unchecked((int)0xC0000004L),
         }
 
         internal enum SYSTEM_INFORMATION_CLASS
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
             SystemInterruptInformation = 23,
             SystemExceptionInformation = 33,
             SystemRegistryQuotaInformation = 37,
-            SystemLookasideInformation = 45
+            SystemLookasideInformation = 45,
         }
 
         internal enum OBJECT_INFORMATION_CLASS
@@ -63,20 +63,20 @@ namespace Datadog.Trace.Tools.Shared.Windows
             ObjectNameInformation = 1,
             ObjectTypeInformation = 2,
             ObjectAllTypesInformation = 3,
-            ObjectHandleInformation = 4
+            ObjectHandleInformation = 4,
         }
 
         [Flags]
         internal enum ProcessAccessRights
         {
-            PROCESS_DUP_HANDLE = 0x00000040
+            PROCESS_DUP_HANDLE = 0x00000040,
         }
 
         [Flags]
         internal enum DuplicateHandleOptions
         {
             DUPLICATE_CLOSE_SOURCE = 0x1,
-            DUPLICATE_SAME_ACCESS = 0x2
+            DUPLICATE_SAME_ACCESS = 0x2,
         }
 
         private enum SystemHandleType
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
             // OB_TYPE_DEVICE,
             // OB_TYPE_DRIVER,
             OB_TYPE_IO_COMPLETION,
-            OB_TYPE_FILE
+            OB_TYPE_FILE,
         }
 
         public static IEnumerable<string> GetOpenFiles(int processId)

@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             Gen2ExitMargin = 1,
             ConsecutiveHighToEnter = 1,
             ConsecutiveLowToExit = 1,
-            RefreshInterval = TimeSpan.FromSeconds(1)
+            RefreshInterval = TimeSpan.FromSeconds(1),
         };
 
         // Enter high pressure at this fraction (0.0–1.0) of available memory in use. Machine-wide on .NET Framework.

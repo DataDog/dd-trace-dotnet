@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             {
                 SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.AwsStepFunctions),
                 SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsStepFunctions),
-                _ => "aws.stepfunctions.request"
+                _ => "aws.stepfunctions.request",
             };
         }
     }

@@ -39,7 +39,7 @@ internal static class Common
             TestRetryMode.EarlyFlakeDetection => TestTags.TestRetryReasonEfd,
             TestRetryMode.AutomaticTestRetry => TestTags.TestRetryReasonAtr,
             TestRetryMode.AttemptToFix => TestTags.TestRetryReasonAttemptToFix,
-            _ => null
+            _ => null,
         };
     }
 
@@ -99,7 +99,7 @@ internal static class Common
         var testParameters = new TestParameters
         {
             Metadata = new Dictionary<string, object?>(),
-            Arguments = new Dictionary<string, object?>()
+            Arguments = new Dictionary<string, object?>(),
         };
 
         if (metadataTestName is not null)

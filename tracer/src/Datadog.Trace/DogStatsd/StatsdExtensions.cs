@@ -36,7 +36,7 @@ namespace Datadog.Trace.DogStatsd
                 string[] warningTags =
                 {
                     $"source:{source}",
-                    $"message:{message}"
+                    $"message:{message}",
                 };
 
                 string[] allTags = warningTags.Concat(tags ?? Enumerable.Empty<string>()).ToArray();

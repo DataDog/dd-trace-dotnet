@@ -38,7 +38,7 @@ internal enum CoverletCoverageBackfillApplyResult
     /// <summary>
     /// Backend coverage was safely reconciled with the current Coverlet result.
     /// </summary>
-    Applied
+    Applied,
 }
 
 /// <summary>

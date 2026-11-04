@@ -420,7 +420,7 @@ namespace Datadog.Trace.Pdb
                         EndColumn = sp.EndColumn,
                         Offset = sp.Offset,
                         IsHidden = sp.IsHidden,
-                        URL = GetDocumentName(sp.Document)
+                        URL = GetDocumentName(sp.Document),
                     };
                     count++;
                 }
@@ -959,7 +959,7 @@ namespace Datadog.Trace.Pdb
                             Name = localName,
                             Type = localTypes[local.Index],
                             Index = local.Index,
-                            Line = sequencePointForScope.StartLine
+                            Line = sequencePointForScope.StartLine,
                         });
                     }
 
@@ -1005,7 +1005,7 @@ namespace Datadog.Trace.Pdb
                             Name = constantName,
                             Type = constantType,
                             Index = -1,
-                            Line = sequencePointForScope == default ? UnknownLocalLine : sequencePointForScope.StartLine
+                            Line = sequencePointForScope == default ? UnknownLocalLine : sequencePointForScope.StartLine,
                         });
                     }
 

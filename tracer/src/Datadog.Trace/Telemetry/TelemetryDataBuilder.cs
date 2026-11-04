@@ -38,8 +38,8 @@ internal sealed class TelemetryDataBuilder
                 {
                     Configuration = input.Configuration,
                     Products = input.Products,
-                    InstallSignature = GetInstallSignature()
-                })
+                    InstallSignature = GetInstallSignature(),
+                }),
             };
         }
         else
@@ -51,7 +51,7 @@ internal sealed class TelemetryDataBuilder
                 {
                     new(
                         TelemetryRequestTypes.AppClientConfigurationChanged,
-                        new AppClientConfigurationChangedPayload(configuration))
+                        new AppClientConfigurationChangedPayload(configuration)),
                 };
             }
 
@@ -170,7 +170,7 @@ internal sealed class TelemetryDataBuilder
             {
                 Configuration = configuration,
                 Dependencies = dependencies,
-                Integrations = integrations
+                Integrations = integrations,
             },
             namingSchemeVersion);
 
@@ -189,7 +189,7 @@ internal sealed class TelemetryDataBuilder
         {
             InstallId = installId,
             InstallType = installType,
-            InstallTime = installTime
+            InstallTime = installTime,
         };
     }
 

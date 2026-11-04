@@ -43,7 +43,7 @@ internal class GacGetCommand : CommandWithExamples
                 AssemblyInfoFlags.None => "None",
                 AssemblyInfoFlags.ASSEMBLYINFO_FLAG_INSTALLED => "Installed",
                 AssemblyInfoFlags.ASSEMBLYINFO_FLAG_PAYLOADRESIDENT => "Payload resident",
-                _ => string.Empty
+                _ => string.Empty,
             };
 
             AnsiConsole.WriteLine("Assembly Found!");

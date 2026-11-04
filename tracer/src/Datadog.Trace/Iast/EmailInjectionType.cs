@@ -11,5 +11,5 @@ internal enum EmailInjectionType
 {
     AmazonSimpleEmail,
     MailKit,
-    SystemNetMail
+    SystemNetMail,
 }

@@ -51,13 +51,13 @@ namespace Datadog.Trace.Configuration.Schema
         public enum Protocol
         {
             Http,
-            Grpc
+            Grpc,
         }
 
         public enum Component
         {
             Http, // http-client
-            Grpc // grpc-client
+            Grpc, // grpc-client
         }
 
         public string GetOperationNameForProtocol(Protocol protocol) => _protocols[(int)protocol];

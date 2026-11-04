@@ -60,7 +60,7 @@ internal static class IastUtils
                 short s => s,
                 int i => i,
                 long l => (int)l ^ (int)(l >> 32),
-                _ => element?.GetHashCode() ?? 0
+                _ => element?.GetHashCode() ?? 0,
             };
 
         return hash;

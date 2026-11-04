@@ -376,7 +376,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     "COR_PROFILER_PATH",
                     "CORECLR_PROFILER_PATH",
                     "COR_PROFILER_PATH_64",
-                    "CORECLR_PROFILER_PATH_64"
+                    "CORECLR_PROFILER_PATH_64",
                 };
 
                 bool foundKey = false;
@@ -642,7 +642,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 "/datadog/linux-musl-arm64/Datadog.Trace.ClrProfiler.Native.so",
                 "/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
                 "\\datadog\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
-                "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"
+                "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
             };
 
             foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)

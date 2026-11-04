@@ -12,6 +12,6 @@ namespace Datadog.Trace.Activity.DuckTypes
         None = 0,
         PropagationData = 1,
         AllData = 2,
-        AllDataAndRecorded = 3
+        AllDataAndRecorded = 3,
     }
 }

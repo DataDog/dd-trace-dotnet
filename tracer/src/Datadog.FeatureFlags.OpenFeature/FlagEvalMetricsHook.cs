@@ -88,7 +88,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
             ErrorType.InvalidContext => "invalid_context",
             ErrorType.ProviderFatal => "provider_fatal",
             ErrorType.General => "general",
-            _ => "general"
+            _ => "general",
         };
     }
 }

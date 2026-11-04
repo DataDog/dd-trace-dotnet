@@ -11,5 +11,5 @@ internal enum TelemetryLogLevel
 {
     ERROR,
     WARN,
-    DEBUG
+    DEBUG,
 }

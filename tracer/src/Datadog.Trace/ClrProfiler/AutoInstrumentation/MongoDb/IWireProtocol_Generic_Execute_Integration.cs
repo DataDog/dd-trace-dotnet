@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
             "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
             "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
-            "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1"
+            "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
         })]
 #pragma warning restore SA1118
 // ReSharper disable once InconsistentNaming

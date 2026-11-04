@@ -227,7 +227,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         {
                             IsNativeRetry = execution is { HasNativeRetry: true, IsNativeRetry: true },
                             SelectedRetryMode = testIsAtf ? TestRetryMode.AttemptToFix : testIsEfd ? TestRetryMode.EarlyFlakeDetection : TestRetryMode.None,
-                            AttemptToFixFailed = testIsAtf && hasInitialFailure
+                            AttemptToFixFailed = testIsAtf && hasInitialFailure,
                         };
                         resultStatus = HandleTestResult(test, testMethod, testResult, exception, retryState, execution);
                         allowRetries = allowRetries || resultStatus != TestStatus.Skip;
@@ -681,7 +681,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             UnitTestOutcome.Error or UnitTestOutcome.Failed or UnitTestOutcome.Timeout => TestStatus.Fail,
             UnitTestOutcome.Inconclusive or UnitTestOutcome.NotRunnable => TestStatus.Skip,
             UnitTestOutcome.Passed => TestStatus.Pass,
-            _ => Unknown(outcome)
+            _ => Unknown(outcome),
         };
 
         static TestStatus Unknown(UnitTestOutcome outcome)

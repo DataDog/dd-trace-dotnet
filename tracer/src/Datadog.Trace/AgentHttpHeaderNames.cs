@@ -113,7 +113,7 @@ namespace Datadog.Trace
             new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
             new(LanguageInterpreter, FrameworkDescription.Instance.Name),
             new(LanguageVersion, FrameworkDescription.Instance.ProductVersion),
-            new(ComputedTopLevelSpan, "1")
+            new(ComputedTopLevelSpan, "1"),
         };
 
         /// <summary>

@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 NLogVersion.NLog50 => AddDatadogTargetNLog50(loggingConfiguration, _targetProxy),
                 NLogVersion.NLog45 => AddDatadogTargetNLog45(loggingConfiguration, _targetProxy),
                 NLogVersion.NLog43To45 => AddDatadogTargetNLog43To45(loggingConfiguration, _targetProxy),
-                _ => AddDatadogTargetNLogPre43(loggingConfiguration, _targetProxy)
+                _ => AddDatadogTargetNLogPre43(loggingConfiguration, _targetProxy),
             };
         }
 

@@ -64,7 +64,7 @@ public sealed class SpanExtensionsSetUserIntegration
                     PropagateId = propagateId,
                     SessionId = sessionId,
                     Role = role,
-                    Scope = scope
+                    Scope = scope,
                 });
         }
 

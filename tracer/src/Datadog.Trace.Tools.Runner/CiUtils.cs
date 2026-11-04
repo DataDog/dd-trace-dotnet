@@ -52,7 +52,7 @@ internal static class CiUtils
         "X_B3_TRACEID",
         "X_B3_SPANID",
         "X_B3_SAMPLED",
-        "X_B3_FLAGS"
+        "X_B3_FLAGS",
     ];
 
     private static readonly string[] RunScopedBackfillEnvironmentVariables =
@@ -63,7 +63,7 @@ internal static class CiUtils
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillPath,
-        Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder
+        Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
     ];
 
     public static async Task<InitResults> InitializeCiCommandsAsync(

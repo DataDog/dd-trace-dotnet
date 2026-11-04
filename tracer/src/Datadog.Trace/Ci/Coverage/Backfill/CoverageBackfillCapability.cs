@@ -63,7 +63,7 @@ internal static class CoverageBackfillCapability
         "-testlist",
         "-trait",
         "-trait-",
-        "-where"
+        "-where",
     ];
 
     /// <summary>

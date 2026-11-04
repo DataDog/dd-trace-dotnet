@@ -41,7 +41,7 @@ internal sealed class EvidenceRedactor
             { VulnerabilityTypeUtils.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
             { VulnerabilityTypeUtils.NoSqlMongoDbInjection, new JsonTokenizer(_timeout) },
             { VulnerabilityTypeUtils.Xss, new TaintedRangeBasedTokenizer() },
-            { VulnerabilityTypeUtils.EmailHtmlInjection, new TaintedRangeBasedTokenizer() }
+            { VulnerabilityTypeUtils.EmailHtmlInjection, new TaintedRangeBasedTokenizer() },
         };
     }
 

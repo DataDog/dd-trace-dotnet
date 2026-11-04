@@ -141,7 +141,7 @@ internal readonly partial struct SecurityCoordinator
         {
             { AddressesConstants.RequestMethod, request.Method },
             { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetHttpClientIp() ?? _localRootSpan.GetNetworkClientIp() }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetHttpClientIp() ?? _localRootSpan.GetNetworkClientIp() },
         };
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);

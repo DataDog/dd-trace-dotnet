@@ -27,7 +27,7 @@ internal partial class ProbeExpressionParser<T>
     {
         Any,
         All,
-        Filter
+        Filter,
     }
 
     private static bool ShouldRedactDictionaryKey(object key)
@@ -38,7 +38,7 @@ internal partial class ProbeExpressionParser<T>
             string stringKey => stringKey,
             null => null,
             _ when Redaction.IsSafeToCallToString(type) => key.ToString(),
-            _ => null
+            _ => null,
         };
 
         return Redaction.Instance.ShouldRedact(name, type, out _);
@@ -131,7 +131,7 @@ internal partial class ProbeExpressionParser<T>
                 PredicateOperation.Any => EnumerableAnyExpression(source, itParameter, predicateExpression),
                 PredicateOperation.All => EnumerableAllExpression(source, itParameter, predicateExpression),
                 PredicateOperation.Filter => EnumerableFilterExpression(source, itParameter, predicateExpression),
-                _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unsupported predicate operation")
+                _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unsupported predicate operation"),
             };
         }
         catch (Exception e)
@@ -361,7 +361,7 @@ internal partial class ProbeExpressionParser<T>
         {
             enumerable,
             enumerator,
-            itParameter
+            itParameter,
         };
 
         return Expression.Block(

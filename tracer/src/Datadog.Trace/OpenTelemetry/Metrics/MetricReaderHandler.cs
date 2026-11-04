@@ -198,10 +198,10 @@ internal sealed class MetricReaderHandler
                     OtlpTemporalityPreference.LowMemory => kind is InstrumentType.ObservableCounter
                         ? AggregationTemporality.Cumulative
                         : AggregationTemporality.Delta,
-                    _ => AggregationTemporality.Delta
+                    _ => AggregationTemporality.Delta,
                 },
 
-            _ => AggregationTemporality.Delta
+            _ => AggregationTemporality.Delta,
         };
     }
 

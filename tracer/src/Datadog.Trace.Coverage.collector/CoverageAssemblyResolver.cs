@@ -256,7 +256,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         => new()
         {
             InMemory = true,
-            AssemblyResolver = this
+            AssemblyResolver = this,
         };
 
     private void InvalidateTracerCache()
@@ -308,7 +308,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         string[] frameworkPaths =
         [
             Path.Combine(rootPath, "Framework"),
-            Path.Combine(rootPath, "Framework64")
+            Path.Combine(rootPath, "Framework64"),
         ];
 
         var folder = GetSubFolderForVersion();

@@ -18,5 +18,5 @@ internal enum CheckpointKind
     /// <summary>
     /// Checkpoint for consume operation
     /// </summary>
-    Consume
+    Consume,
 }

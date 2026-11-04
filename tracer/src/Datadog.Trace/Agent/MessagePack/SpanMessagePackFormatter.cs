@@ -893,7 +893,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         SamplingMechanism.LocalTraceSamplingRule => RuleSamplingRateNameBytes,     // "_dd.rule_psr"
                         SamplingMechanism.RemoteAdaptiveSamplingRule => RuleSamplingRateNameBytes, // "_dd.rule_psr"
                         SamplingMechanism.RemoteUserSamplingRule => RuleSamplingRateNameBytes,     // "_dd.rule_psr"
-                        _ => default
+                        _ => default,
                     };
 
                     if (!samplingRateTagName.IsEmpty)

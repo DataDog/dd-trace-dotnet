@@ -64,7 +64,7 @@ internal sealed record ConfigurationState
         {
             { RcmProducts.AsmDd, new AsmDdProduct() },
             { RcmProducts.Asm, new AsmGenericProduct(() => AsmConfigs) },
-            { RcmProducts.AsmData, new AsmGenericProduct(() => AsmDataConfigs) }
+            { RcmProducts.AsmData, new AsmGenericProduct(() => AsmDataConfigs) },
         };
 
         _rulesPath = settings.Rules;

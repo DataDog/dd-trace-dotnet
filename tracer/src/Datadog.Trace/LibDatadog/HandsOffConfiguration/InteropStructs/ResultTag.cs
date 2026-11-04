@@ -17,5 +17,5 @@ namespace Datadog.Trace.LibDatadog.HandsOffConfiguration.InteropStructs;
 internal enum ResultTag
 {
     Ok = 0, // DDOG_RESULT_VEC_LIBRARY_CONFIG_OK_VEC_LIBRARY_CONFIG
-    Err = 1 // DDOG_RESULT_VEC_LIBRARY_CONFIG_ERR_VEC_LIBRARY_CONFIG
+    Err = 1, // DDOG_RESULT_VEC_LIBRARY_CONFIG_ERR_VEC_LIBRARY_CONFIG
 }

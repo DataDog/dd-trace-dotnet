@@ -29,7 +29,7 @@ namespace Datadog.Trace.DuckTyping
         /// Both members will be checked for, the first matching member will be used.
         /// Property members are checked for first.
         /// </summary>
-        PropertyOrField
+        PropertyOrField,
     }
 
     /// <summary>

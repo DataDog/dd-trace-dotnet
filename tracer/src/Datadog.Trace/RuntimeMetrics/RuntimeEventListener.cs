@@ -58,7 +58,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 ["request-queue-length"] = MetricsNames.AspNetCoreRequestQueueLength,
                 ["current-connections"] = MetricsNames.AspNetCoreCurrentConnections,
                 ["connection-queue-length"] = MetricsNames.AspNetCoreConnectionQueueLength,
-                ["total-connections"] = MetricsNames.AspNetCoreTotalConnections
+                ["total-connections"] = MetricsNames.AspNetCoreTotalConnections,
             };
         }
 
@@ -177,7 +177,7 @@ namespace Datadog.Trace.RuntimeMetrics
             {
                 var settings = new Dictionary<string, string>
                 {
-                    ["EventCounterIntervalSec"] = _delayInSeconds
+                    ["EventCounterIntervalSec"] = _delayInSeconds,
                 };
 
                 EnableEvents(eventSource, EventLevel.Critical, EventKeywords.All, settings);

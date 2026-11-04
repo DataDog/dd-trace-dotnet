@@ -69,19 +69,19 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     {
                         fileCoverage = new FileCoverage
                         {
-                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false),
                         };
 
                         fileDictionary = new Dictionary<string, FileCoverage>
                         {
-                            [moduleFile.Path] = fileCoverage
+                            [moduleFile.Path] = fileCoverage,
                         };
                     }
                     else if (!fileDictionary.TryGetValue(moduleFile.Path, out fileCoverage))
                     {
                         fileCoverage = new FileCoverage
                         {
-                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false),
                         };
 
                         fileDictionary[moduleFile.Path] = fileCoverage;
@@ -112,7 +112,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
             var testCoverage = new TestCoverage
             {
-                Files = fileDictionary.Values.ToList()
+                Files = fileDictionary.Values.ToList(),
             };
 
             if (Log.IsEnabled(LogEventLevel.Debug))

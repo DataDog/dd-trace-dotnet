@@ -116,7 +116,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
                 "tracing_service_mapping" => ReadServiceMapping(token),
                 "tracing_header_tags" => ReadHeaderTags(token),
                 "tracing_tags" => ReadGlobalTags(token),
-                _ => base.ConvertToDictionary(mappedKey, token)
+                _ => base.ConvertToDictionary(mappedKey, token),
             };
         }
     }

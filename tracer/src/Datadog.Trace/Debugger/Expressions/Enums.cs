@@ -10,7 +10,7 @@ internal enum ProbeType
     Log = 0,
     Snapshot = 1,
     Metric = 2,
-    SpanDecoration = 3
+    SpanDecoration = 3,
 }
 
 internal enum ProbeLocation
@@ -23,7 +23,7 @@ internal enum ProbeProcessorResult
 {
     Continue,
     ContinueWithoutCapturing,
-    Stop
+    Stop,
 }
 
 internal enum MethodState
@@ -68,7 +68,7 @@ internal enum CaptureBehaviour
     /// <summary>
     /// Stop capture completely if a condition has evaluated to false or unpredicted error occurred
     /// </summary>
-    Stop
+    Stop,
 }
 
 internal static class Enums

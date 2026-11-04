@@ -25,7 +25,7 @@ internal static class TelemetryHelper
             CommonTags.TestingFrameworkNameNUnit => MetricTags.CIVisibilityTestFramework.NUnit,
             CommonTags.TestingFrameworkNameMsTestV2 => MetricTags.CIVisibilityTestFramework.MSTest,
             CommonTags.TestingFrameworkNameBenchmarkDotNet => MetricTags.CIVisibilityTestFramework.BenchmarkDotNet,
-            _ => MetricTags.CIVisibilityTestFramework.Unknown
+            _ => MetricTags.CIVisibilityTestFramework.Unknown,
         };
     }
 

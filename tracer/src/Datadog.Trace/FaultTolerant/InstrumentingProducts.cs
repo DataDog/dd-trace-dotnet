@@ -32,6 +32,6 @@ namespace Datadog.Trace.FaultTolerant
         /// The ASM instrumentation.
         /// </summary>
         // ReSharper disable once InconsistentNaming
-        ASM = 4
+        ASM = 4,
     }
 }

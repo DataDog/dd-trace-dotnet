@@ -84,7 +84,7 @@ internal static class DiagnosticResultUtils
     {
         DDWAF_OBJ_TYPE.DDWAF_OBJ_SMALL_STRING => value.SmallStringSize > 0,
         DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING or DDWAF_OBJ_TYPE.DDWAF_OBJ_LITERAL_STRING => value.Pointer != IntPtr.Zero && value.StringLength > 0,
-        _ => false
+        _ => false,
     };
 
     internal static ReportedDiagnostics ExtractReportedDiagnostics(in DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)

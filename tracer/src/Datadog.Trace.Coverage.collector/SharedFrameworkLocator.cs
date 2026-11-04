@@ -238,7 +238,7 @@ internal static class SharedFrameworkLocator
                             {
                                 Path = path,
                                 Parsed = RuntimeVersion.TryParse(Path.GetFileName(path), out var version),
-                                Version = version
+                                Version = version,
                             })
                             .Where(candidate => candidate.Parsed &&
                                                 candidate.Version.Major == requestedVersion.Major &&

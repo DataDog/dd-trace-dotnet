@@ -66,7 +66,7 @@ internal sealed class FlagEvalMetrics : IDisposable
         [
             new(TagFlagKey, flagKey),
             new(TagVariant, variant ?? string.Empty),
-            new(TagReason, reason)
+            new(TagReason, reason),
         ]);
 
         if (!string.IsNullOrEmpty(errorType))

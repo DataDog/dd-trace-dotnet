@@ -139,7 +139,7 @@ namespace Datadog.Trace.Debugger.Configurations
                 LogProbes = Filter(configuration.LogProbes),
                 MetricProbes = Filter(configuration.MetricProbes),
                 SpanProbes = Filter(configuration.SpanProbes),
-                SpanDecorationProbes = Filter(configuration.SpanDecorationProbes)
+                SpanDecorationProbes = Filter(configuration.SpanDecorationProbes),
             };
 
             T[] Filter<T>(T[] probes)

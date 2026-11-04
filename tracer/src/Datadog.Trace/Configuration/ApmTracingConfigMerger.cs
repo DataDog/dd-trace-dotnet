@@ -136,7 +136,7 @@ namespace Datadog.Trace.Configuration
                 SpanSamplingRules: not null,
                 DynamicInstrumentationEnabled: not null,
                 ExceptionReplayEnabled: not null,
-                CodeOriginEnabled: not null
+                CodeOriginEnabled: not null,
             };
         }
 

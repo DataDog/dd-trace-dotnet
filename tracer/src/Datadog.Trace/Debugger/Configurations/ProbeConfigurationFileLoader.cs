@@ -154,7 +154,7 @@ internal static class ProbeConfigurationFileLoader
                 LogProbes = ToArrayOrEmpty(logs),
                 MetricProbes = ToArrayOrEmpty(metrics),
                 SpanProbes = ToArrayOrEmpty(spans),
-                SpanDecorationProbes = ToArrayOrEmpty(spanDecorations)
+                SpanDecorationProbes = ToArrayOrEmpty(spanDecorations),
             };
         }
         catch (Exception ex)

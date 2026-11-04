@@ -471,7 +471,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
                                     Name = fieldName,
                                     Type = type,
                                     SymbolType = SymbolType.Local,
-                                    Line = local.Line
+                                    Line = local.Line,
                                 };
                                 addedIndex++;
                                 localIndex++;
@@ -486,7 +486,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
                         Name = local.Name,
                         Type = local.Type,
                         SymbolType = SymbolType.Local,
-                        Line = local.Line
+                        Line = local.Line,
                     };
                     localIndex++;
                 }

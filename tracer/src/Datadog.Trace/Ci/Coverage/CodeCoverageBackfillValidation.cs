@@ -77,7 +77,7 @@ internal sealed class CodeCoverageBackfillValidation
             RequiredBackendPathsWithCoverage = new HashSet<string>(StringComparer.Ordinal),
             RequiredBackendLinesByBackendPath = new Dictionary<string, int[]>(StringComparer.Ordinal),
             RepresentedBackendLinesByBackendPath = new Dictionary<string, int[]>(StringComparer.Ordinal),
-            LocalCandidateByBackendPath = new Dictionary<string, string>(StringComparer.Ordinal)
+            LocalCandidateByBackendPath = new Dictionary<string, string>(StringComparer.Ordinal),
         };
 
         if (requiredBackendLinesByBackendPath is not null)
@@ -144,7 +144,7 @@ internal sealed class CodeCoverageBackfillValidation
             RequiredBackendLinesByBackendPath = new Dictionary<string, int[]>(StringComparer.Ordinal),
             RepresentedBackendLinesByBackendPath = new Dictionary<string, int[]>(StringComparer.Ordinal),
             LocalCandidateByBackendPath = new Dictionary<string, string>(StringComparer.Ordinal),
-            UnsafePathMatch = first.UnsafePathMatch || second.UnsafePathMatch
+            UnsafePathMatch = first.UnsafePathMatch || second.UnsafePathMatch,
         };
 
         AddLocalCandidates(merged.LocalCandidateByBackendPath, merged, first.LocalCandidateByBackendPath);

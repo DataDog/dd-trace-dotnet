@@ -200,7 +200,7 @@ namespace Datadog.Trace.Telemetry
             {
                 >= 'a' and <= 'z' => true,
                 >= '0' and <= '5' => true,
-                _ => false
+                _ => false,
             };
         }
 

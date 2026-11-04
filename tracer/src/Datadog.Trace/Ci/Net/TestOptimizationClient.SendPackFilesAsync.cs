@@ -73,7 +73,7 @@ internal sealed partial class TestOptimizationClient
                                             _packFileUrl,
                                             [
                                                 new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                new MultipartFormItem("packfile", "application/octet-stream", null, new ArraySegment<byte>(packFileContent))
+                                                new MultipartFormItem("packfile", "application/octet-stream", null, new ArraySegment<byte>(packFileContent)),
                                             ])
                                        .ConfigureAwait(false);
                 if (queryResponse is not null)

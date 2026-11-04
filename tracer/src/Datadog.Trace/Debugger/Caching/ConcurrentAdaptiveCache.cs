@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Caching
     internal enum CacheState
     {
         Valid,
-        Error
+        Error,
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Debugger.Caching
         /// <summary>
         /// Least Frequently Used
         /// </summary>
-        Lfu
+        Lfu,
     }
 
     internal sealed class ConcurrentAdaptiveCache<TKey, TValue> : IDisposable

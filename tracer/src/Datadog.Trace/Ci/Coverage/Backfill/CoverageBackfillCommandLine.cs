@@ -71,7 +71,7 @@ internal readonly struct CoverageBackfillCommandLine
         "--log-file", "-l",
         "--log-level", "-ll",
         "--session-id", "-id",
-        "--timeout", "-t"
+        "--timeout", "-t",
     ];
 
     private static readonly string[] DotnetCoverageCollectFlagOptions =
@@ -79,7 +79,7 @@ internal readonly struct CoverageBackfillCommandLine
         "--server-mode", "-sv",
         "--background", "-b",
         "--disable-console-output", "-dco",
-        "--nologo"
+        "--nologo",
     ];
 
     private static readonly string[] DotnetExecValueOptions = ["--depsfile", "--runtimeconfig", "--additionalprobingpath", "--fx-version", "--roll-forward"];
@@ -95,7 +95,7 @@ internal readonly struct CoverageBackfillCommandLine
         "--arch", "-a",
         "--os",
         "--artifacts-path",
-        "--environment", "-e"
+        "--environment", "-e",
     ];
 
     private static readonly string[] DotnetTestValueOptions =
@@ -116,7 +116,7 @@ internal readonly struct CoverageBackfillCommandLine
         "--artifacts-path",
         "--blame-hang-timeout",
         "--blame-hang-dump-type",
-        "--blame-crash-dump-type"
+        "--blame-crash-dump-type",
     ];
 
     private static readonly string[] DotnetTestConfigurationOptions = ["--configuration", "-c"];
@@ -133,7 +133,7 @@ internal readonly struct CoverageBackfillCommandLine
         "--no-cache",
         "--self-contained", "--sc",
         "--no-self-contained",
-        "--disable-build-servers"
+        "--disable-build-servers",
     ];
 
     private static readonly string[] MsBuildPropertyInlinePrefixes = ["/p:", "-p:", "/p=", "-p=", "/property:", "-property:", "--property:", "/property=", "-property=", "--property="];
@@ -152,7 +152,7 @@ internal readonly struct CoverageBackfillCommandLine
         "nunit3-console",
         "xunit.console",
         "xunit.console.x86",
-        "xunit.console.x64"
+        "xunit.console.x64",
     ];
 
     private static readonly StringComparison PathComparison = FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -171,7 +171,7 @@ internal readonly struct CoverageBackfillCommandLine
     {
         False,
         True,
-        Unknown
+        Unknown,
     }
 
     private static List<string> SplitCommandLine(string? commandLine, bool preserveQuotedResponseFileLiterals)
@@ -1981,11 +1981,11 @@ internal readonly struct CoverageBackfillCommandLine
             var readerSettings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
+                XmlResolver = null,
             };
             var xmlDocument = new XmlDocument
             {
-                XmlResolver = null
+                XmlResolver = null,
             };
             using var thisFileProperties = ApplyMsBuildThisFileProperties(filePath, properties);
             using (var reader = XmlReader.Create(filePath, readerSettings))
@@ -4310,11 +4310,11 @@ internal readonly struct CoverageBackfillCommandLine
             var settings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
+                XmlResolver = null,
             };
             var xmlDocument = new XmlDocument
             {
-                XmlResolver = null
+                XmlResolver = null,
             };
             using var reader = XmlReader.Create(runSettingsPath, settings);
             xmlDocument.Load(reader);
@@ -4359,11 +4359,11 @@ internal readonly struct CoverageBackfillCommandLine
             var settings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
+                XmlResolver = null,
             };
             var xmlDocument = new XmlDocument
             {
-                XmlResolver = null
+                XmlResolver = null,
             };
             using var reader = XmlReader.Create(runSettingsPath, settings);
             xmlDocument.Load(reader);
@@ -4427,11 +4427,11 @@ internal readonly struct CoverageBackfillCommandLine
             var readerSettings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
+                XmlResolver = null,
             };
             var xmlDocument = new XmlDocument
             {
-                XmlResolver = null
+                XmlResolver = null,
             };
             using var reader = XmlReader.Create(runSettingsPath, readerSettings);
             xmlDocument.Load(reader);
@@ -4463,11 +4463,11 @@ internal readonly struct CoverageBackfillCommandLine
             var readerSettings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
+                XmlResolver = null,
             };
             var xmlDocument = new XmlDocument
             {
-                XmlResolver = null
+                XmlResolver = null,
             };
             using var reader = XmlReader.Create(runSettingsPath, readerSettings);
             xmlDocument.Load(reader);
@@ -5500,11 +5500,11 @@ internal readonly struct CoverageBackfillCommandLine
         var readerSettings = new XmlReaderSettings
         {
             DtdProcessing = DtdProcessing.Prohibit,
-            XmlResolver = null
+            XmlResolver = null,
         };
         var xmlDocument = new XmlDocument
         {
-            XmlResolver = null
+            XmlResolver = null,
         };
         using var reader = XmlReader.Create(solutionFilePath, readerSettings);
         xmlDocument.Load(reader);

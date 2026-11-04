@@ -55,7 +55,7 @@ namespace Datadog.Trace
                 0 => "0",
                 -1 => "-1",
                 null => null,
-                { } value => value.ToString(CultureInfo.InvariantCulture)
+                { } value => value.ToString(CultureInfo.InvariantCulture),
             };
         }
 

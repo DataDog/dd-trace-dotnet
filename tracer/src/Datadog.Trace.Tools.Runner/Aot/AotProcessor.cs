@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     {
                         type = "reference",
                         serviceable = false,
-                        sha512 = string.Empty
+                        sha512 = string.Empty,
                     }));
 
                     var targets = (JObject)json["targets"];
@@ -571,7 +571,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     TryEnd = beginMethodCatchFirstInstruction,
                     HandlerStart = beginMethodCatchFirstInstruction,
                     HandlerEnd = beginMethodCatchLeaveInstruction.Next,
-                    CatchType = exceptionTypeReference
+                    CatchType = exceptionTypeReference,
                 };
                 methodBody.ExceptionHandlers.Add(beginMethodExClause);
 
@@ -664,7 +664,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     TryEnd = endMethodCatchFirstInstruction,
                     HandlerStart = endMethodCatchFirstInstruction,
                     HandlerEnd = endMethodCatchLeaveInstruction.Next,
-                    CatchType = exceptionTypeReference
+                    CatchType = exceptionTypeReference,
                 };
                 methodBody.ExceptionHandlers.Add(endMethodExClause);
 
@@ -704,7 +704,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     TryEnd = startExceptionCatch,
                     HandlerStart = startExceptionCatch,
                     HandlerEnd = rethrowInstruction.Next,
-                    CatchType = exceptionTypeReference
+                    CatchType = exceptionTypeReference,
                 };
                 methodBody.ExceptionHandlers.Add(exClause);
 
@@ -713,7 +713,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     TryStart = firstInstruction,
                     TryEnd = rethrowInstruction.Next,
                     HandlerStart = rethrowInstruction.Next,
-                    HandlerEnd = endFinallyInstruction.Next
+                    HandlerEnd = endFinallyInstruction.Next,
                 };
                 methodBody.ExceptionHandlers.Add(finallyClause);
 

@@ -50,7 +50,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
             TestCase = invokerInstance.TestCase,
             TestClass = invokerInstance.TestClass,
             TestMethod = invokerInstance.TestMethod,
-            TestMethodArguments = invokerInstance.TestMethodArguments
+            TestMethodArguments = invokerInstance.TestMethodArguments,
         };
 
         return new CallTargetState(

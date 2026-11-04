@@ -235,7 +235,7 @@ namespace Datadog.Trace.Tools.Runner
             {
                 CommandResult commandResult => commandResult.Token,
                 OptionResult optionResult => optionResult.Token ?? CreateImplicitToken(optionResult.Option),
-                _ => throw new ArgumentOutOfRangeException(nameof(symbolResult))
+                _ => throw new ArgumentOutOfRangeException(nameof(symbolResult)),
             };
 
             Token CreateImplicitToken(Option option)

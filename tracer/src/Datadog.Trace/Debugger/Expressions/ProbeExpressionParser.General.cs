@@ -128,7 +128,7 @@ internal partial class ProbeExpressionParser<T>
             { } t when t == typeof(float) => nameof(IConvertible.ToSingle),
             { } t when t == typeof(double) => nameof(IConvertible.ToDouble),
             { } t when t == typeof(decimal) => nameof(IConvertible.ToDecimal),
-            _ => null
+            _ => null,
         };
 
         return convertMethodName is null

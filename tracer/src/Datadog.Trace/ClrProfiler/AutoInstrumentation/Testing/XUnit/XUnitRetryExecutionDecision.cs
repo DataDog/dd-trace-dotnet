@@ -13,5 +13,5 @@ internal enum XUnitRetryExecutionDecision
     SuccessfulExecution,
     NotRun,
     RetryBudgetExhausted,
-    AttemptToFixFailed
+    AttemptToFixFailed,
 }

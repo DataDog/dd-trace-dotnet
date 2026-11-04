@@ -80,7 +80,7 @@ namespace Datadog.Trace.Ci
                 [
                     new Trace.Processors.NormalizerTraceProcessor(),
                     new Trace.Processors.TruncatorTraceProcessor(),
-                    new Processors.OriginTagTraceProcessor(partialFlushEnabled, true)
+                    new Processors.OriginTagTraceProcessor(partialFlushEnabled, true),
                 ];
             }
 
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Ci
                 new Trace.Processors.NormalizerTraceProcessor(),
                 new Trace.Processors.TruncatorTraceProcessor(),
                 new Processors.TestSuiteVisibilityProcessor(),
-                new Processors.OriginTagTraceProcessor(partialFlushEnabled, false)
+                new Processors.OriginTagTraceProcessor(partialFlushEnabled, false),
             ];
         }
 

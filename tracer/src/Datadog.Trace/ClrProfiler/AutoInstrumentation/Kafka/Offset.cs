@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 RdKafkaOffsetEnd => $"End [{RdKafkaOffsetEnd}]",
                 RdKafkaOffsetStored => $"Stored [{RdKafkaOffsetStored}]",
                 RdKafkaOffsetInvalid => $"Unset [{RdKafkaOffsetInvalid}]",
-                _ => Value.ToString()
+                _ => Value.ToString(),
             };
         }
     }

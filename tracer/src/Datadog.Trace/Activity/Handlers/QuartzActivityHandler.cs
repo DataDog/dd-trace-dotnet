@@ -64,7 +64,7 @@ namespace Datadog.Trace.Activity.Handlers
             ActivityKey key = activity switch
             {
                 IW3CActivity { TraceId: not null, SpanId: not null } w3cActivity => new(w3cActivity.TraceId, w3cActivity.SpanId),
-                _ => new(activity.Id)
+                _ => new(activity.Id),
             };
 
             if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope.Span is Span span)

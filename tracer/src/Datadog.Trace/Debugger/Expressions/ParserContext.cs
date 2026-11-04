@@ -10,5 +10,5 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal enum ParserContext
 {
     Default,
-    CaptureExpression
+    CaptureExpression,
 }

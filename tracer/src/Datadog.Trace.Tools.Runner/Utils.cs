@@ -66,7 +66,7 @@ namespace Datadog.Trace.Tools.Runner
                 (Platform.Linux, Architecture.Arm64, false) => Path.Combine(tracerHome, "linux-arm64", "dd-dotnet"),
                 (Platform.Linux, Architecture.Arm64, true) => Path.Combine(tracerHome, "linux-musl-arm64", "dd-dotnet"),
                 var other => throw new NotSupportedException(
-                    $"Unsupported platform/architecture combination: ({other.platform}{(other.musl ? " musl" : string.Empty)}/{other.arch})")
+                    $"Unsupported platform/architecture combination: ({other.platform}{(other.musl ? " musl" : string.Empty)}/{other.arch})"),
             };
 
             return ddDotnet;

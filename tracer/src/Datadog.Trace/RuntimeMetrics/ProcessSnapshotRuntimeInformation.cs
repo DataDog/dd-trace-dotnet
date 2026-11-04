@@ -24,7 +24,7 @@ internal static class ProcessSnapshotRuntimeInformation
         PSS_PROCESS_FLAGS_WOW64 = 0x00000002,
         PSS_PROCESS_FLAGS_RESERVED_03 = 0x00000004,
         PSS_PROCESS_FLAGS_RESERVED_04 = 0x00000008,
-        PSS_PROCESS_FLAGS_FROZEN = 0x00000010
+        PSS_PROCESS_FLAGS_FROZEN = 0x00000010,
     }
 
     private enum PSS_QUERY_INFORMATION_CLASS
@@ -36,7 +36,7 @@ internal static class ProcessSnapshotRuntimeInformation
         PSS_QUERY_HANDLE_INFORMATION = 4,
         PSS_QUERY_THREAD_INFORMATION = 5,
         PSS_QUERY_HANDLE_TRACE_INFORMATION = 6,
-        PSS_QUERY_PERFORMANCE_COUNTERS = 7
+        PSS_QUERY_PERFORMANCE_COUNTERS = 7,
     }
 
     private enum PSS_WALK_INFORMATION_CLASS
@@ -45,7 +45,7 @@ internal static class ProcessSnapshotRuntimeInformation
         PSS_WALK_VA_SPACE = 1,
         PSS_WALK_HANDLES = 2,
         PSS_WALK_THREADS = 3,
-        PSS_WALK_THREAD_NAME = 4
+        PSS_WALK_THREAD_NAME = 4,
     }
 
     [Flags]
@@ -70,13 +70,13 @@ internal static class ProcessSnapshotRuntimeInformation
         PSS_CREATE_FORCE_BREAKAWAY = 0x10000000,
         PSS_CREATE_USE_VM_ALLOCATIONS = 0x20000000,
         PSS_CREATE_MEASURE_PERFORMANCE = 0x40000000,
-        PSS_CREATE_RELEASE_SECTION = 0x80000000
+        PSS_CREATE_RELEASE_SECTION = 0x80000000,
     }
 
     private enum PSS_THREAD_FLAGS : int
     {
         PSS_THREAD_FLAGS_NONE = 0,
-        PSS_THREAD_FLAGS_TERMINATED = 1
+        PSS_THREAD_FLAGS_TERMINATED = 1,
     }
 
     // The value of the current process handle on Windows is hardcoded to -1

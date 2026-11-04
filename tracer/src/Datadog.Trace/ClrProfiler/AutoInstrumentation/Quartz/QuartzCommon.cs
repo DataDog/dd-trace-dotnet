@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
                 _ when operationName.Contains("Execute") => "execute " + jobName,
                 _ when operationName.Contains("Veto") => "veto " + jobName,
                 "Quartz.JobStore.ScheduleJob" => "schedule " + jobName,
-                _ => operationName
+                _ => operationName,
             };
         }
 
@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             {
                 string name when name.Contains("Execute") => ActivityKind.Internal,
                 string name when name.Contains("Veto") => ActivityKind.Internal,
-                _ => activity.Kind
+                _ => activity.Kind,
             };
         }
 

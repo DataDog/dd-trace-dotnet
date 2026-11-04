@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         None,
         Identifier,
-        Type
+        Type,
     }
 
     internal sealed class Redaction
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(HashSet<>),
             typeof(SortedSet<>),
             typeof(ConcurrentBag<>),
-            typeof(BlockingCollection<>)
+            typeof(BlockingCollection<>),
         ];
 
         private static readonly Type[] AllowedDictionaryTypes =
@@ -58,14 +58,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(SortedList<,>),
             typeof(SortedDictionary<,>),
             typeof(ConcurrentDictionary<,>),
-            typeof(Hashtable)
+            typeof(Hashtable),
         ];
 
         private static readonly string[] AllowedSpecialCasedCollectionTypeNames = []; // "RangeIterator"
 
         private static readonly Type[] DeniedTypes =
         [
-            typeof(SecureString)
+            typeof(SecureString),
         ];
 
         internal static readonly Type[] AllowedTypesSafeToCallToString =
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(Guid),
             typeof(Version),
             typeof(StackTrace),
-            typeof(StringBuilder)
+            typeof(StringBuilder),
         ];
 
         private static Redaction _instnace = new();
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 "xforwardedfor",
                 "xrealip",
                 "xsrf",
-                "xsrftoken"
+                "xsrftoken",
             ];
             _redactedTypesCache = new(evictionPolicyKind: EvictionPolicy.Lfu);
             _redactedKeywordsCache = new(evictionPolicyKind: EvictionPolicy.Lfu);

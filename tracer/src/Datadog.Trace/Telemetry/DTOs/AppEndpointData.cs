@@ -21,7 +21,7 @@ internal sealed class AppEndpointData
         "OPTIONS",
         "TRACE",
         "CONNECT",
-        "*"
+        "*",
     ];
 
     public AppEndpointData(string method, string path)

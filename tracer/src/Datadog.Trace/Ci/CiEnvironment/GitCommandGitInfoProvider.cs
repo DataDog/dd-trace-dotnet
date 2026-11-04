@@ -27,7 +27,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
         using var cd = CodeDurationRef.Create();
         var localGitInfo = new GitInfo
         {
-            SourceRoot = gitDirectory.Name == ".git" ? gitDirectory.Parent?.FullName : gitDirectory.FullName
+            SourceRoot = gitDirectory.Name == ".git" ? gitDirectory.Parent?.FullName : gitDirectory.FullName,
         };
 
         gitInfo = localGitInfo;

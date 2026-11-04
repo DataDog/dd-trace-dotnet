@@ -155,7 +155,7 @@ namespace Datadog.Trace.Configuration
                     {
                         not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
                         not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
-                        _ => ParsingResult<bool>.Failure()
+                        _ => ParsingResult<bool>.Failure(),
                     });
 
             var runtimeMetricsEnabledResult = config
@@ -273,7 +273,7 @@ namespace Datadog.Trace.Configuration
                     {
                         not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
                         not null when string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: true),
-                        _ => ParsingResult<bool>.Failure()
+                        _ => ParsingResult<bool>.Failure(),
                     });
 
             // Per OpenTelemetry spec, OTEL_LOGS_EXPORTER defaults to "otlp" if not set
@@ -281,7 +281,7 @@ namespace Datadog.Trace.Configuration
             {
                 { IsPresent: true, IsValid: true, Result: true } => true,
                 { IsPresent: true, IsValid: true, Result: false } => false,
-                _ => true // Default to otlp per spec
+                _ => true, // Default to otlp per spec
             };
 
             if (otelLogsExporterResult.ConfigurationResult is { IsPresent: true, IsValid: false })
@@ -811,7 +811,7 @@ namespace Datadog.Trace.Configuration
                 "dotnet_msi" => "env_var",
                 "windows_fleet_installer" => "ssi", // windows SSI on IIS
                 _ when !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)) => "ssi", // "normal" ssi
-                _ => "manual" // everything else
+                _ => "manual", // everything else
             };
 
             telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
