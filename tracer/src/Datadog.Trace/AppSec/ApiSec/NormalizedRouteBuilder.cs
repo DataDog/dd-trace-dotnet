@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Text;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.ApiSec;
@@ -43,6 +44,7 @@ internal struct NormalizedRouteBuilder
     /// Creates an enabled builder.
     /// </summary>
     /// <param name="pathBase">The mount prefix of the route, for example the ASP.NET Core PathBase</param>
+    [TestingAndPrivateOnly]
     public static NormalizedRouteBuilder Create(string? pathBase)
     {
         var sb = StringBuilderCache.Acquire();
@@ -179,6 +181,7 @@ internal struct NormalizedRouteBuilder
     /// </summary>
     /// <param name="template">The route template, as declared</param>
     /// <returns>The normalized route, or null when the builder is disabled or there is no template</returns>
+    [TestingAndPrivateOnly]
     public readonly string? Complete(string? template)
     {
         if (_sb is null)

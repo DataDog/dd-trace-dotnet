@@ -214,6 +214,28 @@ public class NormalizedRouteTests
     }
 
     [Fact]
+    public void NormalizedRoute_IsBuiltWithoutTheResourceName()
+    {
+        var routePattern = RoutePatternFactory.Parse("users/{id}").DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var routeTemplate = TemplateParser.Parse("users/{id}");
+        var values = ParseRouteValues("id=1");
+
+        var fromPattern = NormalizedRouteBuilder.Create(pathBase: null);
+        AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, values, null, null, null, expandRouteParameters: false, ref fromPattern, returnResourceName: false).Should().BeEmpty();
+        fromPattern.Complete(routePattern.RawText).Should().Be("/users/{id}");
+
+        var fromTemplate = NormalizedRouteBuilder.Create(pathBase: null);
+        AspNetCoreResourceNameHelper.SimplifyRouteTemplate(routeTemplate, values, null, null, null, expandRouteParameters: false, ref fromTemplate, returnResourceName: false).Should().BeEmpty();
+        fromTemplate.Complete(routeTemplate.TemplateText).Should().Be("/users/{id}");
+
+#if NET6_0_OR_GREATER
+        var fromSingleSpan = NormalizedRouteBuilder.Create(pathBase: null);
+        AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, values, expandRouteParameters: false, ref fromSingleSpan, returnResourceName: false).Should().BeEmpty();
+        fromSingleSpan.Complete(routePattern.RawText).Should().Be("/users/{id}");
+#endif
+    }
+
+    [Fact]
     public void DisabledBuilder_ReturnsNull()
     {
         var normalizedRoute = default(NormalizedRouteBuilder);

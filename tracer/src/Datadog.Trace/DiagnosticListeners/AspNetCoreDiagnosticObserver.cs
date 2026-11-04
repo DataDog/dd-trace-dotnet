@@ -385,7 +385,8 @@ namespace Datadog.Trace.DiagnosticListeners
                                                    controllerName: controllerName,
                                                    actionName: actionName,
                                                    expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled,
-                                                   ref apiSecurityRoute)
+                                                   ref apiSecurityRoute,
+                                                   returnResourceName: !otelSemanticsEnabled)
                                                : string.Empty;
 
                     if (otelSemanticsEnabled)
@@ -608,7 +609,8 @@ namespace Datadog.Trace.DiagnosticListeners
                                                controllerName: controllerName,
                                                actionName: actionName,
                                                _tracer.Settings.ExpandRouteTemplatesEnabled,
-                                               ref apiSecurityRoute)
+                                               ref apiSecurityRoute,
+                                               returnResourceName: !_tracer.Settings.OtelSemanticsEnabled)
                                            : string.Empty;
 
                 string resourceName;

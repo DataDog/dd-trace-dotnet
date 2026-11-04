@@ -41,7 +41,8 @@ internal static class AspNetCoreResourceNameHelper
         RoutePattern routePattern,
         RouteValueDictionary routeValueDictionary,
         bool expandRouteParameters,
-        ref NormalizedRouteBuilder normalizedRoute)
+        ref NormalizedRouteBuilder normalizedRoute,
+        bool returnResourceName = true)
     {
         var sb = routePattern.RawText?.Length < 512
                      ? new ValueStringBuilder(stackalloc char[512])
@@ -133,6 +134,13 @@ internal static class AspNetCoreResourceNameHelper
             normalizedRoute.EndSegment();
         }
 
+        // The OTel semantics don't use the simplified route, so don't allocate it when only the normalized route is needed
+        if (!returnResourceName)
+        {
+            sb.Dispose();
+            return string.Empty;
+        }
+
         // We never added anything, or we just added the first `/`, no need for explicit ToString()
         if (sb.Length <= 1)
         {
@@ -163,7 +171,8 @@ internal static class AspNetCoreResourceNameHelper
         string? controllerName,
         string? actionName,
         bool expandRouteParameters,
-        ref NormalizedRouteBuilder normalizedRoute)
+        ref NormalizedRouteBuilder normalizedRoute,
+        bool returnResourceName = true)
     {
         var maxSize = (routePattern.RawText?.Length ?? 0)
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName!.Length - 4, 0)) // "area".Length
@@ -279,6 +288,13 @@ internal static class AspNetCoreResourceNameHelper
             normalizedRoute.EndSegment();
         }
 
+        // The OTel semantics don't use the simplified route, so don't allocate it when only the normalized route is needed
+        if (!returnResourceName)
+        {
+            sb.Dispose();
+            return string.Empty;
+        }
+
         if (sb.Length <= 1)
         {
             sb.Dispose();
@@ -308,7 +324,8 @@ internal static class AspNetCoreResourceNameHelper
         string? controllerName,
         string? actionName,
         bool expandRouteParameters,
-        ref NormalizedRouteBuilder normalizedRoute)
+        ref NormalizedRouteBuilder normalizedRoute,
+        bool returnResourceName = true)
     {
         // note that this is not accurate if expandRouteParameters=true, but we don't have a good fallback for that
         var maxSize = (routePattern.TemplateText?.Length ?? 0)
@@ -429,6 +446,13 @@ internal static class AspNetCoreResourceNameHelper
             }
 
             normalizedRoute.EndSegment();
+        }
+
+        // The OTel semantics don't use the simplified route, so don't allocate it when only the normalized route is needed
+        if (!returnResourceName)
+        {
+            sb.Dispose();
+            return string.Empty;
         }
 
         // We never added anything, or we just added the first `/`, no need for explicit ToString()
