@@ -24,6 +24,10 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
+    private const int MaxContextContainerItems = 256;
+    private const int MaxContextDepth = 4;
+    private const int MaxContextNodes = 1_280;
+
     internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
 
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
@@ -121,17 +125,62 @@ internal static class FeatureFlagsSdk
             return null;
         }
 
-        return context.AsDictionary().Select(p => new KeyValuePair<string, object?>(p.Key, ToObject(p.Value))).ToDictionary(p => p.Key, p => p.Value);
+        var result = new Dictionary<string, object?>();
+        foreach (var pair in context.AsDictionary())
+        {
+            // Targeting must see every top-level attribute. Bound only recursive expansion of each
+            // nested value; a large structure must not consume the budget of a later scalar.
+            var remainingNodes = MaxContextNodes;
+            result[pair.Key] = ToObject(pair.Value, depth: 1, ref remainingNodes);
+        }
+
+        return result;
     }
 
-    private static object? ToObject(Value value) => value switch
+    private static object? ToObject(Value value, int depth, ref int remainingNodes)
     {
-        null => null,
-        { IsBoolean: true } => value.AsBoolean,
-        { IsString: true } => value.AsString,
-        { IsNumber: true } => value.AsDouble,
-        _ => value.AsObject,
-    };
+        if (remainingNodes-- <= 0 || depth > MaxContextDepth)
+        {
+            return null;
+        }
+
+        if (value is null) { return null; }
+        if (value.IsBoolean) { return value.AsBoolean; }
+        if (value.IsString) { return value.AsString; }
+        if (value.IsNumber) { return value.AsDouble; }
+        if (value.IsStructure) { return ConvertStructure(value.AsStructure!.AsDictionary(), depth, ref remainingNodes); }
+        if (value.IsList) { return ConvertList(value.AsList!, depth, ref remainingNodes); }
+        return null;
+    }
+
+    private static Dictionary<string, object?> ConvertStructure(IEnumerable<KeyValuePair<string, Value>> structure, int depth, ref int remainingNodes)
+    {
+        var result = new Dictionary<string, object?>();
+        var count = 0;
+        foreach (var pair in structure)
+        {
+            if (count++ >= MaxContextContainerItems || remainingNodes <= 0)
+            {
+                break;
+            }
+
+            result[pair.Key] = ToObject(pair.Value, depth + 1, ref remainingNodes);
+        }
+
+        return result;
+    }
+
+    private static object?[] ConvertList(IReadOnlyList<Value> list, int depth, ref int remainingNodes)
+    {
+        var count = Math.Min(list.Count, MaxContextContainerItems);
+        var result = new List<object?>(count);
+        for (var i = 0; i < count && remainingNodes > 0; i++)
+        {
+            result.Add(ToObject(list[i], depth + 1, ref remainingNodes));
+        }
+
+        return result.ToArray();
+    }
 
     internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs)
     {

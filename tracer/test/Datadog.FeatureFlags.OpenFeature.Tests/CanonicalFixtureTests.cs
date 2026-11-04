@@ -121,6 +121,89 @@ public class CanonicalFixtureTests
         }
     }
 
+    [Fact]
+    public async Task ProviderTargetingPreservesScalarsAfterLargeAndBudgetHeavyAttributes()
+    {
+        var flags = new TracerModel.FlagCollection
+        {
+            ["flag"] = new TracerModel.Flag
+            {
+                Key = "flag",
+                Enabled = true,
+                VariationType = TracerFlags.ValueType.String,
+                Variations = new Dictionary<string, TracerModel.Variant>
+                {
+                    ["matched"] = new("matched", "matched"),
+                    ["fallback"] = new("fallback", "fallback"),
+                },
+                Allocations =
+                [
+                    new TracerModel.Allocation
+                    {
+                        Key = "targeted",
+                        Rules =
+                        [
+                            new TracerModel.Rule(
+                            [
+                                new TracerModel.ConditionConfiguration
+                                {
+                                    Attribute = "match",
+                                    Operator = TracerModel.ConditionOperator.ONE_OF,
+                                    Value = new[] { "paid" },
+                                },
+                            ]),
+                        ],
+                        Splits = [new TracerModel.Split { VariationKey = "matched", Shards = [] }],
+                    },
+                    new TracerModel.Allocation
+                    {
+                        Key = "default",
+                        Splits = [new TracerModel.Split { VariationKey = "fallback", Shards = [] }],
+                    },
+                ],
+            },
+        };
+        var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, new TracerModel.ServerConfiguration { Flags = flags });
+        IDictionary<string, object?>? captured = null;
+        using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
+        {
+            captured = attributes;
+            return new EvaluationAdapter(evaluator.Evaluate(key, (TracerFlags.ValueType)type, fallback, new TracerFlags.EvaluationContext(targetingKey, attributes)));
+        });
+
+        foreach (var (context, expectedCount) in new[]
+                 {
+                     (CreateContext(includeBudgetHeavyNestedValue: false), 301),
+                     (CreateContext(includeBudgetHeavyNestedValue: true), 302),
+                 })
+        {
+            var resolution = await provider.ResolveStringValueAsync("flag", "caller-default", context);
+
+            Assert.Equal("matched", resolution.Value);
+            Assert.Equal("paid", captured!["match"]);
+            Assert.Equal(expectedCount, captured.Count);
+        }
+
+        static EvaluationContext CreateContext(bool includeBudgetHeavyNestedValue)
+        {
+            var builder = EvaluationContext.Builder();
+            for (var i = 0; i < 300; i++)
+            {
+                builder.Set("field" + i, i);
+            }
+
+            if (includeBudgetHeavyNestedValue)
+            {
+                var branches = Enumerable.Range(0, 256).ToDictionary(
+                    i => i.ToString(),
+                    _ => new Value(Enumerable.Repeat(new Value("item"), 256).ToList()));
+                builder.Set("nested", new Value(new Structure(branches)));
+            }
+
+            return builder.Set("match", "paid").Build();
+        }
+    }
+
     private static void AssertResolution<T>(JsonLinq.JObject testCase, ResolutionDetails<T> actual)
     {
         var expected = testCase["result"]!;

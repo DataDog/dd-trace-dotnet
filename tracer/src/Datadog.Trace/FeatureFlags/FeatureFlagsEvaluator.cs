@@ -13,6 +13,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
@@ -910,15 +911,18 @@ namespace Datadog.Trace.FeatureFlags
             private readonly DateTime _evaluationTime;
             private readonly string _consent;
             private readonly bool _collectDependencyEvaluations;
+            private readonly string _rootFlagKey;
             private readonly string? _targetingKey;
             private readonly bool _includeContext;
-            private readonly Dictionary<string, MemoizedDependency> _memo = new();
-            private readonly HashSet<string> _evaluated = [];
-            private readonly HashSet<string> _active;
-            private readonly List<DependencyFrame> _frames = [];
-            private readonly List<ExposureCandidate> _exposures = [];
-            private readonly List<DependencyEvaluation> _evaluations = [];
+            private HashSet<string>? _exposureKeys;
+            private List<ExposureCandidate>? _exposures;
+            private Dictionary<string, MemoizedDependency>? _memo;
+            private HashSet<string>? _evaluated;
+            private HashSet<string>? _active;
+            private List<DependencyFrame>? _frames;
+            private List<DependencyEvaluation>? _evaluations;
             private IReadOnlyDictionary<string, object?>? _contextAttributes;
+            private ContextOmissionReason _contextOmissions;
             private bool _contextSnapshotted;
             private int? _maxDepth;
 
@@ -937,34 +941,41 @@ namespace Datadog.Trace.FeatureFlags
                 _evaluationTime = evaluationTime;
                 _consent = consent;
                 _collectDependencyEvaluations = collectDependencyEvaluations;
+                _rootFlagKey = rootFlagKey;
                 _targetingKey = context?.TargetingKey;
                 _includeContext = collectDependencyEvaluations && consent == "true";
-                _active = new HashSet<string> { rootFlagKey };
             }
 
             public ExposureCheckpoint Checkpoint()
             {
-                var frame = _frames.Count == 0 ? null : _frames[_frames.Count - 1];
-                return new ExposureCheckpoint(_exposures.Count, frame?.ExposureTrace.Count);
+                var frame = _frames is not { Count: > 0 } ? null : _frames[_frames.Count - 1];
+                return new ExposureCheckpoint(_exposures?.Count ?? 0, frame?.ExposureTrace.Count);
             }
 
             public void Rollback(ExposureCheckpoint checkpoint)
             {
-                _exposures.RemoveRange(checkpoint.ExposureCount, _exposures.Count - checkpoint.ExposureCount);
-                if (checkpoint.FrameExposureCount is { } count && _frames.Count > 0)
+                if (_exposures is not null && _exposureKeys is not null)
+                {
+                    RemoveTail(_exposures, _exposureKeys, checkpoint.ExposureCount);
+                }
+
+                if (checkpoint.FrameExposureCount is { } count && _frames is { Count: > 0 })
                 {
                     var trace = _frames[_frames.Count - 1].ExposureTrace;
-                    trace.RemoveRange(count, trace.Count - count);
+                    RemoveTail(trace, _frames[_frames.Count - 1].ExposureKeys, count);
                 }
             }
 
             public string Resolve(string flagKey)
             {
-                var depth = _frames.Count + 1;
+                var memo = _memo ??= new Dictionary<string, MemoizedDependency>();
+                var active = _active ??= new HashSet<string> { _rootFlagKey };
+                var frames = _frames ??= [];
+                var depth = frames.Count + 1;
                 var maxDepth = _maxDepth ??= GetMaxDependencyDepth(_config);
                 if (depth > maxDepth)
                 {
-                    if (!_memo.ContainsKey(flagKey) && !_active.Contains(flagKey))
+                    if (!memo.ContainsKey(flagKey) && !active.Contains(flagKey))
                     {
                         EmitDepthError(flagKey);
                     }
@@ -972,12 +983,12 @@ namespace Datadog.Trace.FeatureFlags
                     throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded");
                 }
 
-                if (_active.Contains(flagKey))
+                if (active.Contains(flagKey))
                 {
                     throw new DependencyGraphException("GENERAL", "flag dependency cycle detected");
                 }
 
-                if (_memo.TryGetValue(flagKey, out var memoized))
+                if (memo.TryGetValue(flagKey, out var memoized))
                 {
                     if (depth + memoized.DescendantDepth > maxDepth)
                     {
@@ -1007,9 +1018,9 @@ namespace Datadog.Trace.FeatureFlags
 
                 var type = flag.VariationType.Value;
                 var defaultValue = DefaultValue(type);
-                _active.Add(flagKey);
+                active.Add(flagKey);
                 var frame = new DependencyFrame(depth);
-                _frames.Add(frame);
+                frames.Add(frame);
                 MemoizedDependency? resolved = null;
                 try
                 {
@@ -1026,7 +1037,7 @@ namespace Datadog.Trace.FeatureFlags
 
                     var trace = new List<ExposureCandidate>(frame.ExposureTrace);
                     var result = new MemoizedDependency(evaluation, frame.MaxReachedDepth - depth, trace);
-                    _memo.Add(flagKey, result);
+                    memo.Add(flagKey, result);
                     resolved = result;
                     EmitEvaluation(evaluation);
                     return evaluation.Variant;
@@ -1056,8 +1067,8 @@ namespace Datadog.Trace.FeatureFlags
                 }
                 finally
                 {
-                    _frames.RemoveAt(_frames.Count - 1);
-                    _active.Remove(flagKey);
+                    frames.RemoveAt(frames.Count - 1);
+                    active.Remove(flagKey);
                     if (resolved is not null)
                     {
                         RecordReachedDepth(depth + resolved.DescendantDepth);
@@ -1069,10 +1080,13 @@ namespace Datadog.Trace.FeatureFlags
             public void RecordExposure(string flagKey, Exposure.Model.ExposureEvent exposure)
             {
                 var candidate = new ExposureCandidate(flagKey, exposure);
-                AppendUnique(_exposures, candidate);
-                if (_frames.Count > 0)
+                _exposures ??= [];
+                _exposureKeys ??= [];
+                AppendUnique(_exposures, _exposureKeys, candidate);
+                if (_frames is { Count: > 0 })
                 {
-                    AppendUnique(_frames[_frames.Count - 1].ExposureTrace, candidate);
+                    var frame = _frames[_frames.Count - 1];
+                    AppendUnique(frame.ExposureTrace, frame.ExposureKeys, candidate);
                 }
             }
 
@@ -1080,8 +1094,8 @@ namespace Datadog.Trace.FeatureFlags
             {
                 var exposures = details.Reason == EvaluationReason.Error
                                     ? Array.Empty<Exposure.Model.ExposureEvent>()
-                                    : _exposures.Select(candidate => candidate.Exposure).ToArray();
-                return new EvaluationTrace(details, _evaluations.ToArray(), exposures);
+                                    : _exposures?.Select(candidate => candidate.Exposure).ToArray() ?? [];
+                return new EvaluationTrace(details, _evaluations?.ToArray() ?? [], exposures);
             }
 
             private static object DefaultValue(ValueType type) => type switch
@@ -1094,29 +1108,42 @@ namespace Datadog.Trace.FeatureFlags
                 _ => string.Empty,
             };
 
-            private static void AppendUnique(List<ExposureCandidate> target, ExposureCandidate candidate)
+            private static void AppendUnique(List<ExposureCandidate> target, HashSet<string> keys, ExposureCandidate candidate)
             {
-                if (!target.Any(existing => existing.FlagKey == candidate.FlagKey))
+                if (keys.Add(candidate.FlagKey))
                 {
                     target.Add(candidate);
                 }
+            }
+
+            private static void RemoveTail(List<ExposureCandidate> target, HashSet<string> keys, int count)
+            {
+                for (var i = target.Count - 1; i >= count; i--)
+                {
+                    keys.Remove(target[i].FlagKey);
+                }
+
+                target.RemoveRange(count, target.Count - count);
             }
 
             private void RecordExposureTrace(List<ExposureCandidate> trace)
             {
                 foreach (var candidate in trace)
                 {
-                    AppendUnique(_exposures, candidate);
-                    if (_frames.Count > 0)
+                    _exposures ??= [];
+                    _exposureKeys ??= [];
+                    AppendUnique(_exposures, _exposureKeys, candidate);
+                    if (_frames is { Count: > 0 })
                     {
-                        AppendUnique(_frames[_frames.Count - 1].ExposureTrace, candidate);
+                        var frame = _frames[_frames.Count - 1];
+                        AppendUnique(frame.ExposureTrace, frame.ExposureKeys, candidate);
                     }
                 }
             }
 
             private void RecordReachedDepth(int depth)
             {
-                if (_frames.Count > 0)
+                if (_frames is { Count: > 0 })
                 {
                     var frame = _frames[_frames.Count - 1];
                     frame.MaxReachedDepth = Math.Max(frame.MaxReachedDepth, depth);
@@ -1130,6 +1157,7 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
+                _evaluated ??= [];
                 if (!_evaluated.Add(evaluation.FlagKey))
                 {
                     return;
@@ -1137,11 +1165,12 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (!_contextSnapshotted)
                 {
-                    _contextAttributes = DependencyEvaluation.SnapshotContext(_context, _includeContext);
+                    _contextAttributes = DependencyEvaluation.SnapshotContext(_context, _includeContext, out _contextOmissions);
                     _contextSnapshotted = true;
                 }
 
-                _evaluations.Add(DependencyEvaluation.Snapshot(evaluation, _evaluationTime, _targetingKey, _contextAttributes));
+                _evaluations ??= [];
+                _evaluations.Add(DependencyEvaluation.Snapshot(evaluation, _evaluationTime, _targetingKey, _contextAttributes, _contextOmissions));
             }
 
             private void EmitDepthError(string flagKey)
@@ -1157,6 +1186,8 @@ namespace Datadog.Trace.FeatureFlags
                 public int MaxReachedDepth { get; set; } = maxReachedDepth;
 
                 public List<ExposureCandidate> ExposureTrace { get; } = [];
+
+                public HashSet<string> ExposureKeys { get; } = [];
             }
 
             private sealed class MemoizedDependency(Evaluation evaluation, int descendantDepth, List<ExposureCandidate> exposureTrace)

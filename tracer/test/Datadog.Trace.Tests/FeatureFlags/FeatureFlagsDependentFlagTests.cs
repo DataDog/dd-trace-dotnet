@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -255,6 +256,75 @@ public class FeatureFlagsDependentFlagTests
     }
 
     [Fact]
+    public void DependencyContextSkipsOversizedKeysBeforeSnapshottingValuesAndReportsOmissions()
+    {
+        var throwing = new ThrowingEnumerable();
+        var attributes = new Dictionary<string, object?>
+        {
+            [new string('x', 257)] = throwing,
+            ["valid"] = "retained",
+        };
+
+        var snapshot = DependencyEvaluation.SnapshotContext(
+            new EvaluationContext("subject", attributes),
+            includeContext: true,
+            out var snapshotOmissions);
+        var flattened = DependencyEvaluation.FlattenContext(snapshot, out var flattenOmissions);
+
+        throwing.Enumerated.Should().BeFalse();
+        snapshot.Should().BeEquivalentTo(new Dictionary<string, object?> { ["valid"] = "retained" });
+        flattened.Should().BeEquivalentTo(snapshot);
+        (snapshotOmissions | flattenOmissions).Should().HaveFlag(ContextOmissionReason.MaxKeyLength);
+    }
+
+    [Fact]
+    public void DependencyContextReportsSnapshotAndFlatteningLimits()
+    {
+        var throwingContext = new EvaluationContext(
+            "subject",
+            new Dictionary<string, object?> { ["throwing"] = new ThrowingEnumerable() });
+
+        DependencyEvaluation.SnapshotContext(throwingContext, includeContext: true, out var snapshotOmissions).Should().BeNull();
+        snapshotOmissions.Should().HaveFlag(ContextOmissionReason.SnapshotError);
+
+        var oversized = new Dictionary<string, object?>
+        {
+            ["items"] = Enumerable.Range(0, 300).Cast<object?>().ToArray(),
+        };
+        DependencyEvaluation.FlattenContext(oversized, out var flattenOmissions).Should().HaveCount(256);
+        flattenOmissions.Should().HaveFlag(ContextOmissionReason.MaxListElements);
+    }
+
+    [Fact]
+    public void DependencyContextDoesNotInvokeUnsupportedValuesAndReportsThem()
+    {
+        var arbitrary = new ThrowingToString();
+        var arbitraryKey = new ThrowingToString();
+        var attributes = new Dictionary<string, object?>
+        {
+            ["arbitrary"] = arbitrary,
+            ["token"] = new JConstructor("unsupported", 1),
+            ["dictionary"] = new Hashtable { [arbitraryKey] = "value" },
+        };
+
+        var snapshot = DependencyEvaluation.SnapshotContext(
+            new EvaluationContext("subject", attributes),
+            includeContext: true,
+            out var omissions);
+
+        arbitrary.Called.Should().BeFalse();
+        arbitraryKey.Called.Should().BeFalse();
+        snapshot.Should().BeEquivalentTo(new Dictionary<string, object?>
+        {
+            ["arbitrary"] = null,
+            ["token"] = null,
+            ["dictionary"] = new Dictionary<string, object?>(),
+        });
+        omissions.Should().HaveFlag(ContextOmissionReason.UnsupportedValue);
+        omissions.Should().NotHaveFlag(ContextOmissionReason.SnapshotError);
+    }
+
+    [Fact]
     public void ConditionSerializationPreservesTheSelectedSourcePresence()
     {
         var attribute = new ConditionConfiguration { Attribute = "plan", Operator = ConditionOperator.ONE_OF, Value = new[] { "paid" } };
@@ -489,6 +559,28 @@ public class FeatureFlagsDependentFlagTests
                 Visited++;
                 yield return i;
             }
+        }
+    }
+
+    private sealed class ThrowingEnumerable : IEnumerable
+    {
+        public bool Enumerated { get; private set; }
+
+        public IEnumerator GetEnumerator()
+        {
+            Enumerated = true;
+            throw new InvalidOperationException("must not enumerate");
+        }
+    }
+
+    private sealed class ThrowingToString
+    {
+        public bool Called { get; private set; }
+
+        public override string ToString()
+        {
+            Called = true;
+            throw new InvalidOperationException("must not stringify");
         }
     }
 }

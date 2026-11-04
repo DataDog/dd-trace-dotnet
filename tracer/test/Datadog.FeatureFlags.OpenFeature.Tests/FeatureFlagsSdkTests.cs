@@ -7,9 +7,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.FeatureFlags;
 using FluentAssertions;
 using OpenFeature.Constant;
+using OpenFeature.Model;
 using Xunit;
 
 namespace Datadog.FeatureFlags.OpenFeature.Tests;
@@ -131,6 +133,110 @@ public class FeatureFlagsSdkTests
 
         result.Value.Should().BeTrue();
         result.FlagMetadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void NestedContextValuesAreNormalizedBeforeTracerEvaluation()
+    {
+        IDictionary<string, object?>? captured = null;
+        var context = global::OpenFeature.Model.EvaluationContext.Builder()
+                                       .Set("user", new Value(new Structure(new Dictionary<string, Value>
+                                       {
+                                           ["country"] = new("US"),
+                                           ["tags"] = new(new List<Value> { new("paid"), new(false) }),
+                                       })))
+                                       .Build();
+
+        FeatureFlagsSdk.Resolve(
+            "flag",
+            Trace.FeatureFlags.ValueType.Boolean,
+            false,
+            context,
+            evaluate: (_, _, _, _, attributes) =>
+            {
+                captured = attributes;
+                return new TestEvaluation(null);
+            });
+
+        captured.Should().NotBeNull();
+        captured!["user"].Should().BeEquivalentTo(new Dictionary<string, object?>
+        {
+            ["country"] = "US",
+            ["tags"] = new object?[] { "paid", false },
+        });
+    }
+
+    [Fact]
+    public void NestedContextNormalizationBoundsDepthContainersAndNodes()
+    {
+        var deep = new Value("leaf");
+        for (var i = 0; i < 10; i++)
+        {
+            deep = new Value(new Structure(new Dictionary<string, Value> { ["child"] = deep }));
+        }
+
+        var wide = new Value(Enumerable.Repeat(new Value("item"), 300).ToList());
+        var branches = new Dictionary<string, Value>();
+        for (var i = 0; i < 256; i++)
+        {
+            branches[i.ToString()] = new Value(Enumerable.Repeat(new Value("item"), 256).ToList());
+        }
+
+        var capturedDeep = Capture(deep);
+        var capturedWide = Capture(wide);
+        var capturedBranches = Capture(new Value(new Structure(branches)));
+
+        MaximumDepth(capturedDeep["value"]).Should().BeLessOrEqualTo(5, "the root attribute is depth one");
+        ((object?[])capturedWide["value"]!).Should().HaveCountLessOrEqualTo(256);
+        CountNodes(capturedBranches).Should().BeLessOrEqualTo(1_281, "the root dictionary is not an OpenFeature Value node");
+
+        static IDictionary<string, object?> Capture(Value value)
+        {
+            IDictionary<string, object?>? captured = null;
+            var context = global::OpenFeature.Model.EvaluationContext.Builder().Set("value", value).Build();
+            FeatureFlagsSdk.Resolve(
+                "flag",
+                Trace.FeatureFlags.ValueType.Boolean,
+                false,
+                context,
+                evaluate: (_, _, _, _, attributes) =>
+                {
+                    captured = attributes;
+                    return new TestEvaluation(null);
+                });
+
+            return captured!;
+        }
+
+        static int CountNodes(object? value)
+        {
+            if (value is IDictionary<string, object?> dictionary)
+            {
+                return 1 + dictionary.Values.Sum(CountNodes);
+            }
+
+            if (value is object?[] array)
+            {
+                return 1 + array.Sum(CountNodes);
+            }
+
+            return 1;
+        }
+
+        static int MaximumDepth(object? value)
+        {
+            if (value is IDictionary<string, object?> dictionary && dictionary.Count > 0)
+            {
+                return 1 + dictionary.Values.Max(MaximumDepth);
+            }
+
+            if (value is object?[] array && array.Length > 0)
+            {
+                return 1 + array.Max(MaximumDepth);
+            }
+
+            return 1;
+        }
     }
 
     private sealed class TestEvaluation(IDictionary<string, string>? metadata, string? error = null, EvaluationReason? reason = null) : IEvaluation

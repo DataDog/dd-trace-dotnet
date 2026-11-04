@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags;
@@ -17,7 +18,8 @@ internal sealed class DependencyEvaluation(
     Evaluation evaluation,
     DateTime evaluationTime,
     string? targetingKey,
-    IReadOnlyDictionary<string, object?>? contextAttributes)
+    IReadOnlyDictionary<string, object?>? contextAttributes,
+    ContextOmissionReason contextOmissions)
 {
     private const int MaxContextKeyLength = 256;
 
@@ -29,11 +31,14 @@ internal sealed class DependencyEvaluation(
 
     public IReadOnlyDictionary<string, object?>? ContextAttributes { get; } = contextAttributes;
 
+    public ContextOmissionReason ContextOmissions { get; } = contextOmissions;
+
     public static DependencyEvaluation Snapshot(
         Evaluation evaluation,
         DateTime evaluationTime,
         string? targetingKey,
-        IReadOnlyDictionary<string, object?>? contextAttributes)
+        IReadOnlyDictionary<string, object?>? contextAttributes,
+        ContextOmissionReason contextOmissions)
     {
         try
         {
@@ -45,7 +50,7 @@ internal sealed class DependencyEvaluation(
                 evaluation.Variant,
                 evaluation.Error,
                 metadata);
-            return new DependencyEvaluation(detached, evaluationTime, targetingKey, contextAttributes);
+            return new DependencyEvaluation(detached, evaluationTime, targetingKey, contextAttributes, contextOmissions);
         }
         catch
         {
@@ -62,7 +67,7 @@ internal sealed class DependencyEvaluation(
                 evaluation.Variant,
                 evaluation.Error,
                 metadata);
-            return new DependencyEvaluation(detached, evaluationTime, targetingKey, null);
+            return new DependencyEvaluation(detached, evaluationTime, targetingKey, null, contextOmissions | ContextOmissionReason.SnapshotError);
 
             void CopyMetadata(string key)
             {
@@ -83,7 +88,11 @@ internal sealed class DependencyEvaluation(
     }
 
     public static IReadOnlyDictionary<string, object?>? SnapshotContext(EvaluationContext? context, bool includeContext)
+        => SnapshotContext(context, includeContext, out _);
+
+    public static IReadOnlyDictionary<string, object?>? SnapshotContext(EvaluationContext? context, bool includeContext, out ContextOmissionReason omissions)
     {
+        omissions = ContextOmissionReason.None;
         if (!includeContext || context is null)
         {
             return null;
@@ -93,28 +102,49 @@ internal sealed class DependencyEvaluation(
         {
             var remainingNodes = 1_280;
             var attributes = new Dictionary<string, object?>();
+            var count = 0;
             foreach (var pair in context.Attributes)
             {
-                if (remainingNodes <= 0)
+                if (count++ >= 256)
                 {
+                    omissions |= ContextOmissionReason.MaxContextFields;
                     break;
                 }
 
-                attributes[pair.Key] = Detach(pair.Value, 0, ref remainingNodes);
+                if (remainingNodes <= 0)
+                {
+                    omissions |= ContextOmissionReason.MaxVisitedNodes;
+                    break;
+                }
+
+                if (pair.Key.Length > MaxContextKeyLength)
+                {
+                    omissions |= ContextOmissionReason.MaxKeyLength;
+                    remainingNodes--;
+                    continue;
+                }
+
+                attributes[pair.Key] = Detach(pair.Value, 0, ref remainingNodes, ref omissions);
             }
 
             return attributes;
         }
         catch
         {
+            omissions |= ContextOmissionReason.SnapshotError;
             return null;
         }
     }
 
     internal static IReadOnlyDictionary<string, object?>? FlattenContext(IReadOnlyDictionary<string, object?>? attributes)
+        => FlattenContext(attributes, out _);
+
+    internal static IReadOnlyDictionary<string, object?>? FlattenContext(IReadOnlyDictionary<string, object?>? attributes, out ContextOmissionReason omissions)
     {
+        var reasons = ContextOmissionReason.None;
         if (attributes is null)
         {
+            omissions = reasons;
             return null;
         }
 
@@ -126,9 +156,11 @@ internal sealed class DependencyEvaluation(
         }
         catch
         {
+            reasons |= ContextOmissionReason.SnapshotError;
             // The context was already detached, but telemetry construction must remain best effort.
         }
 
+        omissions = reasons;
         return flattened;
 
         void VisitDictionary(IEnumerable<KeyValuePair<string, object?>> dictionary, string prefix, int depth)
@@ -136,8 +168,21 @@ internal sealed class DependencyEvaluation(
             var count = 0;
             foreach (var pair in dictionary)
             {
-                if (count++ >= 256 || remainingNodes-- <= 0 || flattened.Count >= 256)
+                if (count++ >= 256)
                 {
+                    reasons |= depth == 0 ? ContextOmissionReason.MaxContextFields : ContextOmissionReason.MaxStructureProperties;
+                    break;
+                }
+
+                if (remainingNodes-- <= 0)
+                {
+                    reasons |= ContextOmissionReason.MaxVisitedNodes;
+                    break;
+                }
+
+                if (flattened.Count >= 256)
+                {
+                    reasons |= ContextOmissionReason.MaxContextFields;
                     break;
                 }
 
@@ -145,6 +190,7 @@ internal sealed class DependencyEvaluation(
                 if (pair.Key.Length > MaxContextKeyLength
                  || prefix.Length > MaxContextKeyLength - separatorLength - pair.Key.Length)
                 {
+                    reasons |= ContextOmissionReason.MaxKeyLength;
                     continue;
                 }
 
@@ -157,6 +203,7 @@ internal sealed class DependencyEvaluation(
         {
             if (depth > 4 || flattened.Count >= 256)
             {
+                reasons |= depth > 4 ? ContextOmissionReason.MaxSnapshotDepth : ContextOmissionReason.MaxContextFields;
                 return;
             }
 
@@ -166,12 +213,30 @@ internal sealed class DependencyEvaluation(
                     VisitDictionary(dictionary, key, depth);
                     break;
                 case object?[] array:
-                    var count = Math.Min(array.Length, 256);
-                    for (var i = 0; i < count && remainingNodes-- > 0 && flattened.Count < 256; i++)
+                    if (array.Length > 256)
                     {
+                        reasons |= ContextOmissionReason.MaxListElements;
+                    }
+
+                    var count = Math.Min(array.Length, 256);
+                    for (var i = 0; i < count; i++)
+                    {
+                        if (remainingNodes-- <= 0)
+                        {
+                            reasons |= ContextOmissionReason.MaxVisitedNodes;
+                            break;
+                        }
+
+                        if (flattened.Count >= 256)
+                        {
+                            reasons |= ContextOmissionReason.MaxContextFields;
+                            break;
+                        }
+
                         var index = i.ToString(CultureInfo.InvariantCulture);
                         if (key.Length > MaxContextKeyLength - 1 - index.Length)
                         {
+                            reasons |= ContextOmissionReason.MaxKeyLength;
                             continue;
                         }
 
@@ -186,51 +251,87 @@ internal sealed class DependencyEvaluation(
         }
     }
 
-    private static object? Detach(object? value, int depth, ref int remainingNodes)
+    private static object? Detach(object? value, int depth, ref int remainingNodes, ref ContextOmissionReason omissions)
     {
-        if (remainingNodes-- <= 0 || depth >= 32)
+        if (remainingNodes-- <= 0)
         {
+            omissions |= ContextOmissionReason.MaxVisitedNodes;
+            return null;
+        }
+
+        if (depth >= 32)
+        {
+            omissions |= ContextOmissionReason.MaxSnapshotDepth;
             return null;
         }
 
         return value switch
         {
             null or string or bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal or char or DateTime or DateTimeOffset or Guid => value,
-            JValue valueToken => Detach(valueToken.Value, depth + 1, ref remainingNodes),
-            JObject objectToken => DetachObject(objectToken, depth, ref remainingNodes),
-            JArray arrayToken => DetachArray(arrayToken, depth, ref remainingNodes),
-            JToken => null,
-            IDictionary<string, object?> dictionary => DetachDictionary(dictionary, depth, ref remainingNodes),
-            IDictionary dictionary => DetachDictionary(dictionary, depth, ref remainingNodes),
-            IEnumerable enumerable => DetachEnumerable(enumerable, depth, ref remainingNodes),
-            _ => Convert.ToString(value, CultureInfo.InvariantCulture),
+            JValue valueToken => Detach(valueToken.Value, depth + 1, ref remainingNodes, ref omissions),
+            JObject objectToken => DetachObject(objectToken, depth, ref remainingNodes, ref omissions),
+            JArray arrayToken => DetachArray(arrayToken, depth, ref remainingNodes, ref omissions),
+            JToken => Unsupported(ref omissions),
+            IDictionary<string, object?> dictionary => DetachDictionary(dictionary, depth, ref remainingNodes, ref omissions),
+            IDictionary dictionary => DetachDictionary(dictionary, depth, ref remainingNodes, ref omissions),
+            IEnumerable enumerable => DetachEnumerable(enumerable, depth, ref remainingNodes, ref omissions),
+            _ => Unsupported(ref omissions),
         };
+    }
+
+    private static object? Unsupported(ref ContextOmissionReason omissions)
+    {
+        omissions |= ContextOmissionReason.UnsupportedValue;
+        return null;
     }
 
     private static Dictionary<string, object?> DetachDictionary(
         IEnumerable<KeyValuePair<string, object?>> dictionary,
         int depth,
-        ref int remainingNodes)
+        ref int remainingNodes,
+        ref ContextOmissionReason omissions)
     {
         var detached = new Dictionary<string, object?>();
+        var count = 0;
         foreach (var pair in dictionary)
         {
-            if (remainingNodes <= 0)
+            if (count++ >= 256)
             {
+                omissions |= ContextOmissionReason.MaxStructureProperties;
                 break;
             }
 
-            detached[pair.Key] = Detach(pair.Value, depth + 1, ref remainingNodes);
+            if (remainingNodes <= 0)
+            {
+                omissions |= ContextOmissionReason.MaxVisitedNodes;
+                break;
+            }
+
+            if (pair.Key.Length > MaxContextKeyLength)
+            {
+                omissions |= ContextOmissionReason.MaxKeyLength;
+                remainingNodes--;
+                continue;
+            }
+
+            detached[pair.Key] = Detach(pair.Value, depth + 1, ref remainingNodes, ref omissions);
         }
 
         return detached;
     }
 
-    private static Dictionary<string, object?> DetachDictionary(IDictionary dictionary, int depth, ref int remainingNodes)
+    private static Dictionary<string, object?> DetachDictionary(IDictionary dictionary, int depth, ref int remainingNodes, ref ContextOmissionReason omissions)
     {
         var detached = new Dictionary<string, object?>();
+        var count = 0;
         foreach (var item in dictionary)
         {
+            if (count++ >= 256)
+            {
+                omissions |= ContextOmissionReason.MaxStructureProperties;
+                break;
+            }
+
             if (item is not DictionaryEntry entry)
             {
                 continue;
@@ -238,58 +339,104 @@ internal sealed class DependencyEvaluation(
 
             if (remainingNodes <= 0)
             {
+                omissions |= ContextOmissionReason.MaxVisitedNodes;
                 break;
             }
 
-            detached[Convert.ToString(entry.Key) ?? string.Empty] = Detach(entry.Value, depth + 1, ref remainingNodes);
+            if (entry.Key is not string key)
+            {
+                omissions |= ContextOmissionReason.UnsupportedValue;
+                remainingNodes--;
+                continue;
+            }
+
+            if (key.Length > MaxContextKeyLength)
+            {
+                omissions |= ContextOmissionReason.MaxKeyLength;
+                remainingNodes--;
+                continue;
+            }
+
+            detached[key] = Detach(entry.Value, depth + 1, ref remainingNodes, ref omissions);
         }
 
         return detached;
     }
 
-    private static object?[] DetachEnumerable(IEnumerable enumerable, int depth, ref int remainingNodes)
+    private static object?[] DetachEnumerable(IEnumerable enumerable, int depth, ref int remainingNodes, ref ContextOmissionReason omissions)
     {
         var detached = new List<object?>();
+        var count = 0;
         foreach (var item in enumerable)
         {
-            if (remainingNodes <= 0)
+            if (count++ >= 256)
             {
+                omissions |= ContextOmissionReason.MaxListElements;
                 break;
             }
 
-            detached.Add(Detach(item, depth + 1, ref remainingNodes));
+            if (remainingNodes <= 0)
+            {
+                omissions |= ContextOmissionReason.MaxVisitedNodes;
+                break;
+            }
+
+            detached.Add(Detach(item, depth + 1, ref remainingNodes, ref omissions));
         }
 
         return detached.ToArray();
     }
 
-    private static Dictionary<string, object?> DetachObject(JObject value, int depth, ref int remainingNodes)
+    private static Dictionary<string, object?> DetachObject(JObject value, int depth, ref int remainingNodes, ref ContextOmissionReason omissions)
     {
         var detached = new Dictionary<string, object?>();
+        var count = 0;
         foreach (var property in value.Properties())
         {
-            if (remainingNodes <= 0)
+            if (count++ >= 256)
             {
+                omissions |= ContextOmissionReason.MaxStructureProperties;
                 break;
             }
 
-            detached[property.Name] = Detach(property.Value, depth + 1, ref remainingNodes);
+            if (remainingNodes <= 0)
+            {
+                omissions |= ContextOmissionReason.MaxVisitedNodes;
+                break;
+            }
+
+            if (property.Name.Length > MaxContextKeyLength)
+            {
+                omissions |= ContextOmissionReason.MaxKeyLength;
+                remainingNodes--;
+                continue;
+            }
+
+            detached[property.Name] = Detach(property.Value, depth + 1, ref remainingNodes, ref omissions);
         }
 
         return detached;
     }
 
-    private static object?[] DetachArray(JArray value, int depth, ref int remainingNodes)
+    private static object?[] DetachArray(JArray value, int depth, ref int remainingNodes, ref ContextOmissionReason omissions)
     {
         var detached = new List<object?>();
+        var count = 0;
         foreach (var item in value)
         {
-            if (remainingNodes <= 0)
+            if (count++ >= 256)
             {
+                omissions |= ContextOmissionReason.MaxListElements;
                 break;
             }
 
-            detached.Add(Detach(item, depth + 1, ref remainingNodes));
+            if (remainingNodes <= 0)
+            {
+                omissions |= ContextOmissionReason.MaxVisitedNodes;
+                break;
+            }
+
+            detached.Add(Detach(item, depth + 1, ref remainingNodes, ref omissions));
         }
 
         return detached.ToArray();
