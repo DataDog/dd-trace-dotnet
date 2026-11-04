@@ -52,11 +52,12 @@ public class ApiSecurityTelemetryTests
     }
 
     [Fact]
-    public async Task GivenARequestWithRoute_WhenSampling_ThenNoMissingRouteIsReported()
+    public async Task GivenARequestWithRoute_WhenSampling_ThenItIsSampledInsteadOfMissingTheRoute()
     {
         var metrics = await SampleAsync(route: "api/values", statusCode: 200);
 
-        metrics.Should().NotContain(m => m.Name == "api_security.missing_route");
+        metrics.Should().ContainSingle()
+               .Which.Should().BeEquivalentTo(("api_security.request.no_schema", new[] { "framework:aspnet_core" }));
     }
 
     [Fact]

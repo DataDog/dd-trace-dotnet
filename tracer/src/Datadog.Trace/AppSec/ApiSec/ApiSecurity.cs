@@ -10,6 +10,7 @@ using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -45,11 +46,13 @@ internal sealed class ApiSecurity
         Sample,
 
         /// <summary>
-        /// The request has no route, so it can't be sampled. It is reported once the last WAF run tells whether it was blocked.
+        /// The request has no route, so it can't be sampled. It is reported once the last WAF run tells whether the WAF
+        /// blocked it, which is the WAF's decision, as for the request_blocked tag of waf.requests.
         /// </summary>
         MissingRoute,
     }
 
+    [TestingOnly]
     public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues)
         => GetSamplingDecision(lastWafCall, localRootSpan, args, statusCode, routeValues) == SamplingDecision.Sample;
 
