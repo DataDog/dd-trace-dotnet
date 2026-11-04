@@ -24,6 +24,9 @@ public class MockHttpRequest
 
     public Stream Body { get; init; }
 
+    // Opt in from RequestReceived. Retain the existing read buffer before decoding, without another read or copy.
+    public RequestDiagnostics Diagnostics { get; set; }
+
     public static MockHttpRequest Create(HttpListenerRequest request)
     {
         var headers = new MockHeaders();
@@ -53,7 +56,7 @@ public class MockHttpRequest
         byte[] bytes = null;
         if (ContentLength is > 0)
         {
-            bytes = ReadBytes(ContentLength.Value, Body);
+            bytes = ReadBytes(ContentLength.Value, Body, Diagnostics);
             if (!isGzip)
             {
                 return bytes;
@@ -65,7 +68,18 @@ public class MockHttpRequest
         using MemoryStream ms = bytes is not null ? new(bytes) : new();
         if (bytes is null)
         {
-            Body.CopyTo(ms);
+            try
+            {
+                Body.CopyTo(ms);
+            }
+            finally
+            {
+                if (Diagnostics is { } diagnostics)
+                {
+                    diagnostics.Body = new ArraySegment<byte>(ms.GetBuffer(), 0, checked((int)ms.Length));
+                }
+            }
+
             ms.Position = 0;
         }
 
@@ -83,20 +97,31 @@ public class MockHttpRequest
 
         return finalStream.ToArray();
 
-        static byte[] ReadBytes(long length, Stream stream)
+        static byte[] ReadBytes(long length, Stream stream, RequestDiagnostics diagnostics)
         {
             var i = 0;
             var body = new byte[length];
 
-            while (i < length)
+            try
             {
-                var read = stream.Read(body, i, body.Length - i);
-
-                i += read;
-
-                if (read == 0)
+                while (i < length)
                 {
-                    break;
+                    var read = stream.Read(body, i, body.Length - i);
+
+                    i += read;
+
+                    if (read == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                if (diagnostics is not null)
+                {
+                    // A truncated body must not include the unread, zero-filled portion of the buffer.
+                    diagnostics.Body = new ArraySegment<byte>(body, 0, i);
                 }
             }
 
@@ -107,6 +132,20 @@ public class MockHttpRequest
 
             return body;
         }
+    }
+
+    public class RequestDiagnostics
+    {
+        public DateTimeOffset ReceivedAt { get; } = DateTimeOffset.UtcNow;
+
+        public ArraySegment<byte> Body { get; internal set; }
+
+        public string DecodedBodyInJson { get; internal set; }
+
+        public Exception Exception { get; internal set; }
+
+        // Populated by the TCP agent when it attempts to send a response; null if no response was attempted.
+        public int? ResponseStatusCode { get; internal set; }
     }
 
     public class MockHeaders : HttpHeaders

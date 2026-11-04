@@ -122,7 +122,7 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false, Action<ProcessResult> onProcessExit = null)
         {
             const int maxAttempts = 3;
             var attempt = 1;
@@ -132,6 +132,7 @@ namespace Datadog.Trace.TestHelpers
                 var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
                 using var processHelper = new ProcessHelper(process);
                 var result = WaitForProcessResultRaw(processHelper, dumpChildProcesses: true);
+                onProcessExit?.Invoke(result);
 
                 if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
                 {

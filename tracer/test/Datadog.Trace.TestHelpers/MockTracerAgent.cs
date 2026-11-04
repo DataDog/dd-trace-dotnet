@@ -930,12 +930,22 @@ namespace Datadog.Trace.TestHelpers
                         _ => Encoding.UTF8.GetString(body), // e.g. multipart form data, currently we don't do anything with this so meh
                     };
 
+                    if (request.Diagnostics is { } diagnostics)
+                    {
+                        diagnostics.DecodedBodyInJson = bodyAsJson;
+                    }
+
                     var evpProxyPayload = new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson);
                     EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(evpProxyPayload));
                     return evpProxyPayload.Response;
                 }
                 catch (Exception ex)
                 {
+                    if (request.Diagnostics is { } diagnostics)
+                    {
+                        diagnostics.Exception = ex;
+                    }
+
                     var message = ex.Message.ToLowerInvariant();
 
                     if (message.Contains("beyond the end of the stream"))
@@ -1248,6 +1258,7 @@ namespace Datadog.Trace.TestHelpers
                     try
                     {
                         var ctx = await _listener.GetContextAsync();
+                        MockHttpRequest request = null;
                         try
                         {
                             if (Version != null)
@@ -1258,7 +1269,7 @@ namespace Datadog.Trace.TestHelpers
                             // The state header is used to indicate if the agent config (i.e. the data at /info) has changed
                             ctx.Response.AddHeader("Datadog-Agent-State", Configuration?.GetHashCode().ToString() ?? "0");
 
-                            var request = MockHttpRequest.Create(ctx.Request);
+                            request = MockHttpRequest.Create(ctx.Request);
 
                             OnRequestReceived(request);
 
@@ -1280,6 +1291,11 @@ namespace Datadog.Trace.TestHelpers
 
                                 ctx.Response.ContentType = mockTracerResponse.ContentType;
                                 ctx.Response.ContentLength64 = buffer.LongLength;
+                                if (request.Diagnostics is { } diagnostics)
+                                {
+                                    diagnostics.ResponseStatusCode = ctx.Response.StatusCode;
+                                }
+
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                                 ctx.Response.Close();
                                 ConfigSent |= mockTracerResponse.IsConfigResponse;
@@ -1287,6 +1303,12 @@ namespace Datadog.Trace.TestHelpers
                         }
                         catch (Exception ex)
                         {
+                            if (request?.Diagnostics is { } diagnostics)
+                            {
+                                diagnostics.Exception = ex;
+                                diagnostics.ResponseStatusCode = 500;
+                            }
+
                             Output?.WriteLine($"[HandleHttpRequests]Error processing web request to {ctx.Request.Url}: {ex}");
                             ctx.Response.StatusCode = 500;
                             ctx.Response.Close();
