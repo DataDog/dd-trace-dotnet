@@ -11,22 +11,22 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.AppSec.ApiSec;
 
 /// <summary>
-/// Builds the "_dd.appsec.normalized_route" tag, as defined by RFC-1103 (API Security - Normalized HTTP Route):
-/// a sequence of slash-separated atomic elements, where each URL segment is either a static constant or a single
-/// dynamic parameter "{name}". Several parameters in the same segment are combined as "{a+b}".
+/// Builds the "_dd.appsec.normalized_route" tag, as defined by RFC-1103 (API Security - Normalized HTTP Route)
+/// and its OpenAPI compliance amendment RFC-1125: the effective route of the request as an OpenAPI path template.
+/// Each segment keeps its static text and its parameters, e.g. "/users/user-{id}" or "/photos/{id}.{format}".
 /// The default value is disabled, and ignores every call.
 /// </summary>
 internal struct NormalizedRouteBuilder
 {
     private readonly StringBuilder? _sb;
     private int _segmentStart;
-    private bool _hasParameter;
+    private string? _pendingSeparator;
 
     private NormalizedRouteBuilder(StringBuilder sb)
     {
         _sb = sb;
         _segmentStart = 0;
-        _hasParameter = false;
+        _pendingSeparator = null;
     }
 
     public readonly bool IsEnabled => _sb is not null;
@@ -79,61 +79,71 @@ internal struct NormalizedRouteBuilder
         }
 
         _segmentStart = _sb.Length;
-        _hasParameter = false;
+        _pendingSeparator = null;
         _sb.Append('/');
     }
 
     /// <summary>
-    /// Adds static text to the current segment. Static text next to a parameter is folded into the parameter (rule 5).
+    /// Adds static text to the current segment. The text is kept next to the parameters of the segment (RFC-1125).
     /// </summary>
     /// <param name="text">The static text</param>
     public void AddStaticText(string? text)
     {
-        if (_sb is null || _hasParameter || text is null)
+        if (_sb is null || text is null)
         {
             return;
         }
 
+        AppendPendingSeparator(_sb);
         AppendStaticConstant(_sb, text, 0, text.Length, preserveEscapes: false);
     }
 
     /// <summary>
-    /// Adds a dynamic parameter to the current segment. An optional parameter is resolved against the value
-    /// the framework matched for the request, and is left out when the request doesn't contain it.
+    /// Adds the separator that precedes an optional parameter, e.g. the "." in "{filename}.{ext?}".
+    /// The separator is kept only when the request contains the parameter that follows it.
+    /// </summary>
+    /// <param name="separator">The separator text</param>
+    public void AddSeparator(string? separator)
+    {
+        if (_sb is null || separator is null)
+        {
+            return;
+        }
+
+        AppendPendingSeparator(_sb);
+        _pendingSeparator = separator;
+    }
+
+    /// <summary>
+    /// Adds a dynamic parameter "{name}" to the current segment. An optional parameter is resolved against the value
+    /// the framework matched for the request, and is left out, with its separator, when the request doesn't contain it.
     /// </summary>
     /// <param name="name">The parameter name</param>
     /// <param name="value">The value matched for the request</param>
     /// <param name="isOptional">Whether the request may not contain the parameter, e.g. an optional or catch-all parameter</param>
     public void AddParameter(string name, object? value, bool isOptional)
     {
-        if (_sb is null || (isOptional && value is null or string { Length: 0 }))
+        if (_sb is null)
         {
             return;
         }
 
-        if (_hasParameter)
+        if (isOptional && value is null or string { Length: 0 })
         {
-            _sb.Append('+');
-        }
-        else
-        {
-            _sb.Length = _segmentStart + 1;
-            _sb.Append('{');
-            _hasParameter = true;
+            _pendingSeparator = null;
+            return;
         }
 
-        // Parameter names may contain any character except "/?#+{}", which are percent-encoded (rule 4)
+        AppendPendingSeparator(_sb);
+
+        // Parameter names only contain [a-zA-Z0-9_], any other character is replaced with "_" (RFC-1125)
+        _sb.Append('{');
         foreach (var c in name)
         {
-            if (c is '/' or '?' or '#' or '+' or '{' or '}')
-            {
-                AppendPercentEncoded(_sb, c);
-            }
-            else
-            {
-                _sb.Append(c);
-            }
+            _sb.Append(char.IsAsciiLetterOrDigit(c) ? c : '_');
         }
+
+        _sb.Append('}');
     }
 
     public void EndSegment()
@@ -143,11 +153,8 @@ internal struct NormalizedRouteBuilder
             return;
         }
 
-        if (_hasParameter)
-        {
-            _sb.Append('}');
-        }
-        else if (_sb.Length == _segmentStart + 1)
+        _pendingSeparator = null;
+        if (_sb.Length == _segmentStart + 1)
         {
             // Every element of the segment was optional and absent from the request
             _sb.Length = _segmentStart;
@@ -258,4 +265,13 @@ internal struct NormalizedRouteBuilder
 
     private static void AppendPercentEncoded(StringBuilder sb, int b)
         => sb.Append('%').Append(HexConverter.ToCharUpper(b >> 4)).Append(HexConverter.ToCharUpper(b));
+
+    private void AppendPendingSeparator(StringBuilder sb)
+    {
+        if (_pendingSeparator is not null)
+        {
+            AppendStaticConstant(sb, _pendingSeparator, 0, _pendingSeparator.Length, preserveEscapes: false);
+            _pendingSeparator = null;
+        }
+    }
 }

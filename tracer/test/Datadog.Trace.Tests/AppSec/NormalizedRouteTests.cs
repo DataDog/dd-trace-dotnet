@@ -40,13 +40,19 @@ public class NormalizedRouteTests
         // Trailing slash is kept only when declared
         { "api/{v}/", "v=1", "/api/{v}/" },
 
-        // Static text in a parameter segment is folded into the parameter
-        { "users/user-{id}", "id=1", "/users/{id}" },
-        { "users/u-{id}-x", "id=1", "/users/{id}" },
+        // Static text in a parameter segment is kept (RFC-1125)
+        { "users/user-{id}", "id=1", "/users/user-{id}" },
+        { "users/u-{id}-x", "id=1", "/users/u-{id}-x" },
+        { "users/admin-{id}", "id=1", "/users/admin-{id}" },
 
-        // Several parameters in a segment are combined
-        { "photos/{id}.{format}", "id=1&format=json", "/photos/{id+format}" },
-        { "files/{a}.{b}.{c}", "a=1&b=2&c=3", "/files/{a+b+c}" },
+        // Several parameters in a segment are kept, with the text between them (RFC-1125)
+        { "photos/{id}.{format}", "id=1&format=json", "/photos/{id}.{format}" },
+        { "files/{a}.{b}.{c}", "a=1&b=2&c=3", "/files/{a}.{b}.{c}" },
+
+        // Parameter names only contain [a-zA-Z0-9_], other characters are replaced with "_" (RFC-1125)
+        { "users/{user_id}", "user_id=1", "/users/{user_id}" },
+        { "users/{user-id}", "user-id=1", "/users/{user_id}" },
+        { "users/{café}", "café=1", "/users/{caf_}" },
 
         // Catch-all parameters
         { "files/{*path}", "path=a/b", "/files/{path}" },
@@ -56,17 +62,17 @@ public class NormalizedRouteTests
         // Optional parameters are resolved against the matched values, with the separator that precedes them
         { "users/{id?}", "id=1", "/users/{id}" },
         { "users/{id?}", string.Empty, "/users" },
-        { "posts/{id}.{format?}", "id=1&format=json", "/posts/{id+format}" },
+        { "posts/{id}.{format?}", "id=1&format=json", "/posts/{id}.{format}" },
         { "posts/{id}.{format?}", "id=1", "/posts/{id}" },
         { "{controller}.{format?}", "controller=Home", "/{controller}" },
-        { "{controller}.{format?}", "controller=Home&format=json", "/{controller+format}" },
+        { "{controller}.{format?}", "controller=Home&format=json", "/{controller}.{format}" },
 
         // The area, controller and action route values are parameters like any other (rule 4)
         { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index", "/{controller}/{action}" },
         { "{controller=Home}/{action=Index}/{id?}", "controller=Home&action=Index&id=5", "/{controller}/{action}/{id}" },
         { "{area:exists}/{controller}/{action}", "area=Admin&controller=Home&action=Index", "/{area}/{controller}/{action}" },
-        { "prefix-{controller}-{id}", "controller=Home&id=1", "/{controller+id}" },
-        { "{id}-{controller}", "controller=Home&id=1", "/{id+controller}" },
+        { "prefix-{controller}-{id}", "controller=Home&id=1", "/prefix-{controller}-{id}" },
+        { "{id}-{controller}", "controller=Home&id=1", "/{id}-{controller}" },
         { "slug/{controller:slugify}", "controller=TestHome", "/slug/{controller}" },
 
         // Static constants are case sensitive and percent-encoded outside [A-Za-z0-9.-~_]

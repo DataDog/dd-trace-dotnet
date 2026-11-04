@@ -64,7 +64,11 @@ internal static class AspNetCoreResourceNameHelper
                     sb.AppendAsLowerInvariant(contentPart.Content);
 
                     // A separator belongs to the optional parameter that follows it
-                    if (!contentPart.IsSeparator)
+                    if (contentPart.IsSeparator)
+                    {
+                        normalizedRoute.AddSeparator(contentPart.Content);
+                    }
+                    else
                     {
                         normalizedRoute.AddStaticText(contentPart.Content);
                     }
@@ -188,7 +192,11 @@ internal static class AspNetCoreResourceNameHelper
                     sb.AppendAsLowerInvariant(contentPart.Content);
 
                     // A separator belongs to the optional parameter that follows it
-                    if (!contentPart.IsSeparator)
+                    if (contentPart.IsSeparator)
+                    {
+                        normalizedRoute.AddSeparator(contentPart.Content);
+                    }
+                    else
                     {
                         normalizedRoute.AddStaticText(contentPart.Content);
                     }
@@ -342,7 +350,11 @@ internal static class AspNetCoreResourceNameHelper
                     sb.AppendAsLowerInvariant(part.Text);
 
                     // A separator belongs to the optional parameter that follows it
-                    if (!part.IsOptionalSeperator)
+                    if (part.IsOptionalSeperator)
+                    {
+                        normalizedRoute.AddSeparator(part.Text);
+                    }
+                    else
                     {
                         normalizedRoute.AddStaticText(part.Text);
                     }
