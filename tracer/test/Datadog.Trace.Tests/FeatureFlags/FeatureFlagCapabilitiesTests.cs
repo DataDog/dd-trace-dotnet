@@ -21,7 +21,10 @@ public class FeatureFlagCapabilitiesTests
     public void GatesBothTransports(string? capability, bool supported)
     {
         string[] capabilities = capability is null ? [] : [capability];
-        FeatureFlagCapabilities.HeaderValue(capabilities).Should().Be(supported ? "dependent-flag-variant-key-v1" : null);
+        var uri = new Uri("https://example.test/ufc?token=preserved");
+        FeatureFlagCapabilities.AddToUri(uri, capabilities)
+                               .Should()
+                               .Be(supported ? new Uri(uri + "&cap_dependent-flags-variant-key=v1") : uri);
         FeatureFlagCapabilities.RemoteConfigMask(capabilities).Should().Be(new BigInteger((1UL << 46) | (supported ? 1UL << 50 : 0)));
     }
 
@@ -29,7 +32,17 @@ public class FeatureFlagCapabilitiesTests
     public void CurrentEvaluatorDoesNotAdvertiseDependentFlags()
     {
         FeatureFlagsEvaluator.GetCapabilities().Should().BeEmpty();
-        FeatureFlagCapabilities.HeaderValue(FeatureFlagsEvaluator.GetCapabilities()).Should().BeNull();
+        FeatureFlagCapabilities.AddToUri(new Uri("https://example.test/ufc"), FeatureFlagsEvaluator.GetCapabilities())
+                               .Should()
+                               .Be(new Uri("https://example.test/ufc"));
         FeatureFlagCapabilities.RemoteConfigMask(FeatureFlagsEvaluator.GetCapabilities()).Should().Be(new BigInteger(1UL << 46));
     }
+
+    [Fact]
+    public void ReplacesConfiguredDependentFlagsParameter()
+        => FeatureFlagCapabilities.AddToUri(
+                                      new Uri("https://example.test/ufc?cap_dependent-flags-variant-key=old&token=preserved"),
+                                      [FeatureFlagCapabilities.DependentFlagVariantKeyV1])
+                                  .Should()
+                                  .Be(new Uri("https://example.test/ufc?token=preserved&cap_dependent-flags-variant-key=v1"));
 }
