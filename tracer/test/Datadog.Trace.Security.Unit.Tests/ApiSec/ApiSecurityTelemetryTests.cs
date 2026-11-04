@@ -44,10 +44,28 @@ public class ApiSecurityTelemetryTests
     [InlineData(null, 403, true, true, SamplingPriorityValues.AutoKeep)]
     [InlineData(null, 200, false, false, SamplingPriorityValues.AutoKeep)]
     [InlineData(null, 200, false, true, SamplingPriorityValues.AutoReject)]
-    [InlineData("api/values", 200, false, true, SamplingPriorityValues.AutoKeep)]
     public async Task GivenARequestThatHasNoRouteToMiss_WhenSampling_ThenNothingIsReported(string? route, int statusCode, bool blocked, bool lastWafCall, int samplingPriority)
     {
         var metrics = await SampleAsync(route, statusCode, blocked: blocked, lastWafCall: lastWafCall, samplingPriority: samplingPriority);
+
+        metrics.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GivenARequestWithRoute_WhenSampling_ThenNoMissingRouteIsReported()
+    {
+        var metrics = await SampleAsync(route: "api/values", statusCode: 200);
+
+        metrics.Should().NotContain(m => m.Name == "api_security.missing_route");
+    }
+
+    [Fact]
+    public async Task GivenARequestWithoutRoute_WhenTheLastWafRunBlocksIt_ThenNothingIsReported()
+    {
+        var result = new Mock<IResult>();
+        result.SetupGet(x => x.ShouldBlock).Returns(true);
+
+        var metrics = await SampleAsync(route: null, statusCode: 200, result: result.Object);
 
         metrics.Should().BeEmpty();
     }
@@ -74,7 +92,7 @@ public class ApiSecurityTelemetryTests
                .Which.Should().BeEquivalentTo(("api_security.request.no_schema", new[] { "framework:aspnet_core" }));
     }
 
-    private static async Task<List<(string Name, string[] Tags)>> SampleAsync(string? route, int statusCode, string? component = "aspnet_core", bool blocked = false, bool lastWafCall = true, int samplingPriority = SamplingPriorityValues.AutoKeep)
+    private static async Task<List<(string Name, string[] Tags)>> SampleAsync(string? route, int statusCode, string? component = "aspnet_core", bool blocked = false, bool lastWafCall = true, int samplingPriority = SamplingPriorityValues.AutoKeep, IResult? result = null)
     {
         var config = new Dictionary<string, object> { { ConfigurationKeys.AppSec.ApiSecurityEnabled, true } };
         await using var tracer = TracerHelper.Create(TracerSettings.Create(config));
@@ -88,7 +106,8 @@ public class ApiSecurityTelemetryTests
         }
 
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
-        apiSecurity.ShouldAnalyzeSchema(lastWafCall, span, new Dictionary<string, object>(), statusCode, routeValues: null, collector);
+        var decision = apiSecurity.GetSamplingDecision(lastWafCall, span, new Dictionary<string, object>(), statusCode, routeValues: null);
+        ApiSecurity.RecordSamplingTelemetry(decision, result, span, collector);
         return await GetMetricsAsync(collector);
     }
 
@@ -97,7 +116,7 @@ public class ApiSecurityTelemetryTests
         await using var tracer = TracerHelper.Create(new());
         var span = CreateSpan(tracer, SamplingPriorityValues.AutoKeep, "aspnet_core");
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
-        ApiSecurity.RecordSchemaTelemetry(result, span, collector);
+        ApiSecurity.RecordSamplingTelemetry(ApiSecurity.SamplingDecision.Sample, result, span, collector);
         return await GetMetricsAsync(collector);
     }
 
