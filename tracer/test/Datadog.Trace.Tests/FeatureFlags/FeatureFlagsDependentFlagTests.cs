@@ -5,11 +5,15 @@
 
 #nullable enable
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
@@ -183,6 +187,102 @@ public class FeatureFlagsDependentFlagTests
         }
 
         nested.Should().BeNull();
+    }
+
+    [Fact]
+    public void ContextNodeBudgetIncludesChildrenRejectedAtMaximumDepth()
+    {
+        var terminal = new CountingEnumerable(2_000);
+        object? value = terminal;
+        for (var depth = 0; depth < 31; depth++)
+        {
+            value = new object?[] { value };
+        }
+
+        DependencyEvaluation.SnapshotContext(
+            new EvaluationContext("subject", new Dictionary<string, object?> { ["deep"] = value }),
+            includeContext: true);
+
+        terminal.Visited.Should().BeLessOrEqualTo(1_280);
+    }
+
+    [Fact]
+    public void DependencyContextFlattensNestedFieldsForEvaluationTelemetry()
+    {
+        var snapshot = new Dictionary<string, object?>
+        {
+            ["user"] = new Dictionary<string, object?> { ["country"] = "US" },
+            ["tags"] = new object?[] { "paid", false },
+        };
+
+        var flattened = DependencyEvaluation.FlattenContext(snapshot);
+        var observation = new FlagEvalEvent("dependency", "on", null, "subject", 1, flattened, observeFullEvaluationData: true);
+        var aggregator = new FlagEvaluationAggregator(10, 10, 10);
+        aggregator.Add(observation);
+        var payload = FlagEvaluationPayload.Encode(
+            aggregator.Drain(),
+            new Dictionary<string, string>(),
+            flushTimeMs: 1,
+            payloadLimitBytes: 1_000_000).Payloads.Single();
+        var evaluationContext = JObject.Parse(Encoding.UTF8.GetString(payload))["flagEvaluations"]![0]!["context"]!["evaluation"]!;
+
+        observation.ContextAttrs.Should().BeEquivalentTo(new Dictionary<string, object?>
+        {
+            ["user.country"] = "US",
+            ["tags.0"] = "paid",
+            ["tags.1"] = false,
+        });
+        evaluationContext["user.country"]!.Value<string>().Should().Be("US");
+        evaluationContext["tags.0"]!.Value<string>().Should().Be("paid");
+        evaluationContext["tags.1"]!.Value<bool>().Should().BeFalse();
+    }
+
+    [Fact]
+    public void DependencyContextRejectsOversizedPathsBeforeTraversingChildren()
+    {
+        var oversizedKey = new string('x', 257);
+        var snapshot = new Dictionary<string, object?>
+        {
+            [oversizedKey] = Enumerable.Range(0, 256).Cast<object?>().ToArray(),
+            [new string('y', 255)] = new object?[] { "too-long" },
+            ["valid"] = "retained",
+        };
+
+        DependencyEvaluation.FlattenContext(snapshot).Should().BeEquivalentTo(new Dictionary<string, object?>
+        {
+            ["valid"] = "retained",
+        });
+    }
+
+    [Fact]
+    public void ConditionSerializationPreservesTheSelectedSourcePresence()
+    {
+        var attribute = new ConditionConfiguration { Attribute = "plan", Operator = ConditionOperator.ONE_OF, Value = new[] { "paid" } };
+        var dependency = Dependency("prerequisite", "on");
+
+        var attributeJson = JObject.Parse(JsonConvert.SerializeObject(attribute));
+        var dependencyJson = JObject.Parse(JsonConvert.SerializeObject(dependency));
+
+        attributeJson.Should().ContainKey(nameof(ConditionConfiguration.Attribute));
+        attributeJson.Should().NotContainKey(nameof(ConditionConfiguration.FlagEvaluation));
+        dependencyJson.Should().ContainKey(nameof(ConditionConfiguration.FlagEvaluation));
+        dependencyJson.Should().NotContainKey(nameof(ConditionConfiguration.Attribute));
+        JsonConvert.DeserializeObject<ConditionConfiguration>(attributeJson.ToString())!.FlagEvaluationPresent.Should().BeFalse();
+        JsonConvert.DeserializeObject<ConditionConfiguration>(dependencyJson.ToString())!.AttributePresent.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ConditionSerializationRetainsExplicitNullForValidation()
+    {
+        var condition = new ConditionConfiguration { Attribute = null, Operator = ConditionOperator.ONE_OF, Value = new[] { "paid" } };
+
+        var json = JObject.Parse(JsonConvert.SerializeObject(condition));
+        var roundTrip = JsonConvert.DeserializeObject<ConditionConfiguration>(json.ToString())!;
+
+        json.Should().ContainKey(nameof(ConditionConfiguration.Attribute));
+        json[nameof(ConditionConfiguration.Attribute)]!.Type.Should().Be(JTokenType.Null);
+        roundTrip.AttributePresent.Should().BeTrue();
+        roundTrip.FlagEvaluationPresent.Should().BeFalse();
     }
 
     [Fact]
@@ -377,4 +477,18 @@ public class FeatureFlagsDependentFlagTests
 
     private static ConditionConfiguration Attribute(string key, string value)
         => new() { Attribute = key, Operator = ConditionOperator.ONE_OF, Value = new[] { value } };
+
+    private sealed class CountingEnumerable(int count) : IEnumerable
+    {
+        public int Visited { get; private set; }
+
+        public IEnumerator GetEnumerator()
+        {
+            for (var i = 0; i < count; i++)
+            {
+                Visited++;
+                yield return i;
+            }
+        }
+    }
 }

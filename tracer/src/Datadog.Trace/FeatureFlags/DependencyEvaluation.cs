@@ -19,6 +19,8 @@ internal sealed class DependencyEvaluation(
     string? targetingKey,
     IReadOnlyDictionary<string, object?>? contextAttributes)
 {
+    private const int MaxContextKeyLength = 256;
+
     public Evaluation Evaluation { get; } = evaluation;
 
     public DateTime EvaluationTime { get; } = evaluationTime;
@@ -109,9 +111,84 @@ internal sealed class DependencyEvaluation(
         }
     }
 
+    internal static IReadOnlyDictionary<string, object?>? FlattenContext(IReadOnlyDictionary<string, object?>? attributes)
+    {
+        if (attributes is null)
+        {
+            return null;
+        }
+
+        var flattened = new Dictionary<string, object?>();
+        var remainingNodes = 1_280;
+        try
+        {
+            VisitDictionary(attributes, string.Empty, 0);
+        }
+        catch
+        {
+            // The context was already detached, but telemetry construction must remain best effort.
+        }
+
+        return flattened;
+
+        void VisitDictionary(IEnumerable<KeyValuePair<string, object?>> dictionary, string prefix, int depth)
+        {
+            var count = 0;
+            foreach (var pair in dictionary)
+            {
+                if (count++ >= 256 || remainingNodes-- <= 0 || flattened.Count >= 256)
+                {
+                    break;
+                }
+
+                var separatorLength = prefix.Length == 0 ? 0 : 1;
+                if (pair.Key.Length > MaxContextKeyLength
+                 || prefix.Length > MaxContextKeyLength - separatorLength - pair.Key.Length)
+                {
+                    continue;
+                }
+
+                var key = prefix.Length == 0 ? pair.Key : prefix + "." + pair.Key;
+                VisitValue(key, pair.Value, depth + 1);
+            }
+        }
+
+        void VisitValue(string key, object? value, int depth)
+        {
+            if (depth > 4 || flattened.Count >= 256)
+            {
+                return;
+            }
+
+            switch (value)
+            {
+                case IReadOnlyDictionary<string, object?> dictionary:
+                    VisitDictionary(dictionary, key, depth);
+                    break;
+                case object?[] array:
+                    var count = Math.Min(array.Length, 256);
+                    for (var i = 0; i < count && remainingNodes-- > 0 && flattened.Count < 256; i++)
+                    {
+                        var index = i.ToString(CultureInfo.InvariantCulture);
+                        if (key.Length > MaxContextKeyLength - 1 - index.Length)
+                        {
+                            continue;
+                        }
+
+                        VisitValue(key + "." + index, array[i], depth + 1);
+                    }
+
+                    break;
+                default:
+                    flattened[key] = value;
+                    break;
+            }
+        }
+    }
+
     private static object? Detach(object? value, int depth, ref int remainingNodes)
     {
-        if (depth >= 32 || remainingNodes-- <= 0)
+        if (remainingNodes-- <= 0 || depth >= 32)
         {
             return null;
         }

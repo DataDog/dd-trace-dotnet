@@ -944,7 +944,7 @@ namespace Datadog.Trace.FeatureFlags
             var evaluation = dependency.Evaluation;
             var consent = evaluation.FlagMetadata?.TryGetValue(FeatureFlagMetadataKeys.ObserveFullEvaluationData, out var value) == true
                        && value == "true";
-            var attributes = consent ? dependency.ContextAttributes : null;
+            var attributes = consent ? DependencyEvaluation.FlattenContext(dependency.ContextAttributes) : null;
             writer.TryEnqueue(
                 new FlagEvalEvent(
                     evaluation.FlagKey,

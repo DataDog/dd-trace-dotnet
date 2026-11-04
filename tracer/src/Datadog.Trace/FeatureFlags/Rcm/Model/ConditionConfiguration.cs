@@ -46,6 +46,10 @@ internal sealed class ConditionConfiguration
 
     public object? Value { get; set; }
 
+    public bool ShouldSerializeAttribute() => AttributePresent;
+
+    public bool ShouldSerializeFlagEvaluation() => FlagEvaluationPresent;
+
     internal bool MatchesRegex(object attributeValue)
     {
         if (_regex == null)
