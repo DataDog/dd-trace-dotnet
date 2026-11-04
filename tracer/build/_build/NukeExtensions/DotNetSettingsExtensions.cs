@@ -48,6 +48,21 @@ internal static partial class DotNetSettingsExtensions
     public static DotNetTestSettings SetIsDebugRun(this DotNetTestSettings settings, bool isDebugRun)
         => settings.When(isDebugRun, c => c.SetProcessEnvironmentVariable("DD_TRACE_DEBUG", "1"));
 
+    // Read by tracer/test/test-applications/Directory.Build.targets to compile net11.0+ samples with runtime-async
+    private const string IsRuntimeAsyncRunProperty = "IsRuntimeAsyncRun";
+
+    public static DotNetBuildSettings SetIsRuntimeAsyncRun(this DotNetBuildSettings settings, bool isRuntimeAsyncRun)
+        => settings.When(isRuntimeAsyncRun, c => c.SetProperty(IsRuntimeAsyncRunProperty, "true"));
+
+    public static DotNetPublishSettings SetIsRuntimeAsyncRun(this DotNetPublishSettings settings, bool isRuntimeAsyncRun)
+        => settings.When(isRuntimeAsyncRun, c => c.SetProperty(IsRuntimeAsyncRunProperty, "true"));
+
+    public static DotNetMSBuildSettings SetIsRuntimeAsyncRun(this DotNetMSBuildSettings settings, bool isRuntimeAsyncRun)
+        => settings.When(isRuntimeAsyncRun, c => c.SetProperty(IsRuntimeAsyncRunProperty, "true"));
+
+    public static MSBuildSettings SetIsRuntimeAsyncRun(this MSBuildSettings settings, bool isRuntimeAsyncRun)
+        => settings.When(isRuntimeAsyncRun, c => c.SetProperty(IsRuntimeAsyncRunProperty, "true"));
+
     private static string GetTargetPlatform(MSBuildTargetPlatform platform) =>
         platform == MSBuildTargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
 

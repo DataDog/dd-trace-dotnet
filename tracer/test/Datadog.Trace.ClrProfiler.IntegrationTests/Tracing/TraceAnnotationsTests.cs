@@ -9,6 +9,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+#if NET11_0_OR_GREATER
+using System.IO;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+#endif
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -33,6 +38,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("TraceAnnotations.VersionMismatch.AfterFeature", enableTelemetry: false, output)
         {
         }
+
+        // The old Datadog.Trace package referenced by this sample can't instrument runtime-async methods
+        protected override bool SupportsRuntimeAsync => false;
     }
 
     // The .NET 8 runtime is more aggressive in optimising structs
@@ -73,11 +81,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _enableTelemetry = enableTelemetry;
         }
 
+        protected virtual bool SupportsRuntimeAsync => true;
+
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [SkippableFact]
         public async Task SubmitTraces()
         {
+            if (!SupportsRuntimeAsync && IsRootMethodRuntimeAsync())
+            {
+                // The root span is never created, so the spans don't share a parent, and the snapshot doesn't match
+                throw new SkipException("The sample's root method was compiled with runtime-async, which the referenced Datadog.Trace version can't instrument");
+            }
+
             const int expectedSpanCount = 68;
             var ddTraceMethodsString = string.Empty;
 
@@ -213,6 +229,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await telemetry.AssertIntegrationAsync(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);
                 telemetry.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Is the sample's root method (ProgramHelpers.RunTestsAsync) compiled with runtime-async?
+        /// This is the case in the "Daily Runtime Async Run" scheduled build
+        /// </summary>
+        private bool IsRootMethodRuntimeAsync()
+        {
+#if NET11_0_OR_GREATER
+            const int asyncMethodImplAttribute = 0x2000; // MethodImplAttributes.Async
+
+            using var stream = File.OpenRead(EnvironmentHelper.GetSampleApplicationPath());
+            using var peReader = new PEReader(stream);
+            var reader = peReader.GetMetadataReader();
+
+            foreach (var handle in reader.MethodDefinitions)
+            {
+                var method = reader.GetMethodDefinition(handle);
+                if (reader.StringComparer.Equals(method.Name, "RunTestsAsync")
+                 && reader.StringComparer.Equals(reader.GetTypeDefinition(method.GetDeclaringType()).Name, "ProgramHelpers"))
+                {
+                    return ((int)method.ImplAttributes & asyncMethodImplAttribute) != 0;
+                }
+            }
+#endif
+            return false;
         }
     }
 }

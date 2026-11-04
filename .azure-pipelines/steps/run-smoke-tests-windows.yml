@@ -10,8 +10,13 @@ jobs:
 - template: update-github-status-jobs.yml
   parameters:
     jobs: [test]
+    # The test job is skipped when there are no scenarios to run
+    allowSkipped: true
 
 - job: test
+  # Skip when there are no scenarios to run, e.g. in the runtime-async run, which only runs net11.0+ scenarios.
+  # GenerateVariables fails if a smoke test matrix is unexpectedly empty in any other run
+  condition: and(succeeded(), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.${{ parameters.matrixVariable }}'], '{}'))
   timeoutInMinutes: 45
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]

@@ -32,12 +32,13 @@ public static partial class SmokeTestRunner
         AbsolutePath artifactsDir,
         AbsolutePath buildDataDir,
         string toolVersion,
-        string dotnetSdkVersion)
+        string dotnetSdkVersion,
+        bool isRuntimeAsyncRun)
     {
         var scenario = SmokeTestScenarios.GetScenario(category, scenarioName);
 
         var imageDigests = new SmokeTestImageDigests(tracerDir);
-        var builder = new Builder(imageDigests);
+        var builder = new Builder(imageDigests, isRuntimeAsyncRun);
         var imageTags = await builder.BuildImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
 
         // Ensure output directories exist

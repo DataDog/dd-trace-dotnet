@@ -24,7 +24,8 @@ partial class Build
                 ArtifactsDirectory,
                 BuildDataDirectory,
                 Version,
-                GetDotnetSdkImageTag(RootDirectory));
+                GetDotnetSdkImageTag(RootDirectory),
+                IsRuntimeAsyncRun());
         });
 
     Target UpdateSmokeTestImageDigests => _ => _

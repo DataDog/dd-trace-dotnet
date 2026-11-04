@@ -11,6 +11,7 @@ USER ContainerAdministrator
 WORKDIR /src
 COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
+ARG IsRuntimeAsyncRun
 ARG PUBLISH_FRAMEWORK
 ARG TOOL_VERSION
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \

@@ -24,6 +24,7 @@ WORKDIR /src
 COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
 ARG TOOL_VERSION
+ARG IsRuntimeAsyncRun
 ARG PUBLISH_FRAMEWORK
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
     && dotnet nuget add source /src/artifacts \

@@ -21,10 +21,12 @@ public static partial class SmokeTestRunner
         const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
         const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
         readonly SmokeTestImageDigests ImageDigests;
+        readonly bool IsRuntimeAsyncRun;
 
-        public Builder(SmokeTestImageDigests imageDigests)
+        public Builder(SmokeTestImageDigests imageDigests, bool isRuntimeAsyncRun)
         {
             ImageDigests = imageDigests;
+            IsRuntimeAsyncRun = isRuntimeAsyncRun;
         }
 
         /// <summary>
@@ -71,7 +73,7 @@ public static partial class SmokeTestRunner
                     ["INSTALL_CMD"] = scenario.InstallCommand,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
 
                 return new[] {scenario.DockerTag};
             }
@@ -88,7 +90,7 @@ public static partial class SmokeTestRunner
                 };
 
                 // Build the "manual" env-var-based entrypoint image
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir, target: "installer-final");
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir, target: "installer-final");
 
                 // Build the dd-dotnet entrypoint image (reuses cached layers through installer-base)
                 var ddDotnetTarget = scenario.IsArm64
@@ -96,7 +98,7 @@ public static partial class SmokeTestRunner
                     : "dd-dotnet-final-linux-x64";
 
                 var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, ddDotnetTag, buildArgs, artifactsDir, target: ddDotnetTarget);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, ddDotnetTag, buildArgs, artifactsDir, target: ddDotnetTarget);
 
                 return new[] {scenario.DockerTag, ddDotnetTag};
             }
@@ -116,7 +118,7 @@ public static partial class SmokeTestRunner
                     ["NUGET_PACKAGE"] = scenario.NuGetPackageName,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
                 return new[] {scenario.DockerTag};
             }
 
@@ -134,7 +136,7 @@ public static partial class SmokeTestRunner
                     ["INSTALL_CMD"] = installCmd,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
                 return new[] {scenario.DockerTag};
             }
 
@@ -158,7 +160,7 @@ public static partial class SmokeTestRunner
                     ["TOOL_VERSION"] = toolVersion,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
                 return new[] {scenario.DockerTag};
             }
 
@@ -174,7 +176,7 @@ public static partial class SmokeTestRunner
                     ["INSTALL_CMD"] = scenario.InstallCommand,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
                 return new[] {scenario.DockerTag};
             }
 
@@ -198,7 +200,7 @@ public static partial class SmokeTestRunner
                     ["RUNTIME_IDENTIFIER"] = scenario.RuntimeId,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
 
                 return new[] {scenario.DockerTag};
             }
@@ -220,7 +222,7 @@ public static partial class SmokeTestRunner
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
 
                 // Build the dd-dotnet variant (always uses no 32-bit)
                 const string ddDotnetDockerfilePath = "build/_build/docker/smoke.windows.dd-dotnet.dockerfile";
@@ -233,7 +235,7 @@ public static partial class SmokeTestRunner
                     ["CHANNEL_32_BIT"] = "",
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
 
                 return new[] {scenario.DockerTag, ddDotnetTag};
             }
@@ -259,7 +261,7 @@ public static partial class SmokeTestRunner
                     ["NUGET_PACKAGE"] = scenario.NuGetPackageName,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
 
                 if (!scenario.IncludeDdDotnetScenario)
                 {
@@ -279,7 +281,7 @@ public static partial class SmokeTestRunner
                     ["NUGET_PACKAGE"] = scenario.NuGetPackageName,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
 
                 return new[] {scenario.DockerTag, ddDotnetTag};
             }
@@ -303,7 +305,7 @@ public static partial class SmokeTestRunner
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
                 return new[] {scenario.DockerTag};
             }
 
@@ -324,7 +326,7 @@ public static partial class SmokeTestRunner
                     ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
                 return new[] {scenario.DockerTag};
             }
 
@@ -350,8 +352,24 @@ public static partial class SmokeTestRunner
                     ["INSTALL_COMMAND"] = scenario.FleetInstallerCommand,
                 };
 
-                await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+                await BuildSampleImageAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
                 return new[] {scenario.DockerTag};
+            }
+
+            Task BuildSampleImageAsync(
+                AbsolutePath contextDir,
+                string dockerfilePath,
+                string tag,
+                Dictionary<string, string> buildArgs,
+                AbsolutePath artifactsDir,
+                string target = null)
+            {
+                if (IsRuntimeAsyncRun)
+                {
+                    buildArgs["IsRuntimeAsyncRun"] = "true";
+                }
+
+                return DockerService.BuildImageFromDockerfileAsync(contextDir, dockerfilePath, tag, buildArgs, artifactsDir, target);
             }
         }
 
