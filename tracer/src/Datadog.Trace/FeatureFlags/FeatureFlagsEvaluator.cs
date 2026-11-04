@@ -866,10 +866,13 @@ namespace Datadog.Trace.FeatureFlags
             {
                 // The single deduplication verdict for this evaluation: the same call that records
                 // the subject and sends the exposure returns whether the subject was already
-                // exposed. A failed evaluation never gets here, so it records nothing.
-                metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = DispatchExposure(flagKey, evaluation, evalTime, context, split, exposureFeatures)
-                                                                       ? "true"
-                                                                       : "false";
+                // exposed. A failed evaluation never gets here, so it records nothing. Nothing
+                // recorded (for example after shutdown) means no verdict at all.
+                var recorded = DispatchExposure(flagKey, evaluation, evalTime, context, split, exposureFeatures);
+                if (recorded != Exposure.ExposureRecordResult.NotRecorded)
+                {
+                    metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = recorded == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
+                }
             }
             else
             {
@@ -894,7 +897,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private bool DispatchExposure(
+        private Exposure.ExposureRecordResult DispatchExposure(
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
@@ -908,7 +911,7 @@ namespace Datadog.Trace.FeatureFlags
             if (allocationKey == null || variantKey == null)
             {
                 Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
-                return false;
+                return Exposure.ExposureRecordResult.NotRecorded;
             }
 
             var evt = new Exposure.Model.ExposureEvent(
@@ -920,7 +923,7 @@ namespace Datadog.Trace.FeatureFlags
                 split.SerialId,
                 features);
 
-            return _onExposureEvent?.Invoke(in evt) ?? false;
+            return _onExposureEvent?.Invoke(in evt) ?? Exposure.ExposureRecordResult.NotRecorded;
         }
 
         private record struct FlattenEntry(string Key, object? Value, int Level)
@@ -932,7 +935,7 @@ namespace Datadog.Trace.FeatureFlags
         }
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
-        internal delegate bool ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
+        internal delegate Exposure.ExposureRecordResult ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
 #pragma warning restore SA1201 // Elements should appear in the correct order
     }
 }

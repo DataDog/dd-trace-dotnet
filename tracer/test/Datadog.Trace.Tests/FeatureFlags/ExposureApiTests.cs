@@ -155,7 +155,7 @@ public class ExposureApiTests
         var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromMilliseconds(1), TimeSpan.FromSeconds(1));
 
         api.Dispose();
-        api.SendExposure(CreateExposure("after-dispose"));
+        api.SendExposure(CreateExposure("after-dispose")).Should().Be(ExposureRecordResult.NotRecorded, "nothing reaches the cache once reporting has stopped");
         await Task.Delay(TimeSpan.FromMilliseconds(20));
 
         local.RequestsSent.Should().BeEmpty();
@@ -192,16 +192,16 @@ public class ExposureApiTests
         using var transport = CreateLocalTransport(local);
         using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromMilliseconds(10));
 
-        api.SendExposure(CreateExposure("flag")).Should().BeFalse("the first exposure of a subject is new");
-        api.SendExposure(CreateExposure("flag")).Should().BeTrue("the same exposure again is a cache hit");
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New, "the first exposure of a subject is new");
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.Repeat, "the same exposure again is a cache hit");
 
-        api.SendExposure(CreateExposure("flag", variant: "variant-b")).Should().BeFalse("a changed variant is a new exposure");
-        api.SendExposure(CreateExposure("flag")).Should().BeFalse("switching back to an earlier variant is also a change");
+        api.SendExposure(CreateExposure("flag", variant: "variant-b")).Should().Be(ExposureRecordResult.New, "a changed variant is a new exposure");
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New, "switching back to an earlier variant is also a change");
 
-        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().BeFalse("a changed serial id is a new exposure");
-        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().BeTrue("the new serial id repeats as a cache hit");
+        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().Be(ExposureRecordResult.New, "a changed serial id is a new exposure");
+        api.SendExposure(CreateExposure("flag", serialId: 42)).Should().Be(ExposureRecordResult.Repeat, "the new serial id repeats as a cache hit");
 
-        api.SendExposure(CreateExposure("other-flag")).Should().BeFalse("another flag is a new exposure");
+        api.SendExposure(CreateExposure("other-flag")).Should().Be(ExposureRecordResult.New, "another flag is a new exposure");
     }
 
     [Fact]
@@ -216,8 +216,8 @@ public class ExposureApiTests
             }));
         using var api = new ExposureApi(settings, transport, TimeSpan.FromMilliseconds(1), TimeSpan.FromSeconds(1));
 
-        api.SendExposure(CreateExposure("flag")).Should().BeFalse();
-        api.SendExposure(CreateExposure("flag")).Should().BeTrue("the cache still records with logging off");
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New);
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.Repeat, "the cache still records with logging off");
 
         await Task.Delay(TimeSpan.FromMilliseconds(50));
         local.RequestsSent.Should().BeEmpty("no exposure reaches Datadog with the setting off");
@@ -233,8 +233,8 @@ public class ExposureApiTests
         using var transport = CreateLocalTransport(local);
         var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(3));
 
-        api.SendExposure(CreateExposure("flag")).Should().BeFalse();
-        api.SendExposure(CreateExposure("flag")).Should().BeTrue();
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.New);
+        api.SendExposure(CreateExposure("flag")).Should().Be(ExposureRecordResult.Repeat);
         api.Dispose();
 
         payloads.Should().NotBeEmpty("the new exposure is sent");

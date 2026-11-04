@@ -186,7 +186,7 @@ internal sealed class ExposureApi : IDisposable
     /// new and Datadog logging is enabled; the cache records either way, so customers recording
     /// exposures themselves see the same verdicts with logging off.
     /// </summary>
-    public bool SendExposure(in ExposureEvent exposure)
+    public ExposureRecordResult SendExposure(in ExposureEvent exposure)
     {
         bool stopped;
         var isNew = false;
@@ -244,7 +244,7 @@ internal sealed class ExposureApi : IDisposable
                 exposure.Subject.Id);
         }
 
-        return !stopped && !isNew;
+        return stopped ? ExposureRecordResult.NotRecorded : isNew ? ExposureRecordResult.New : ExposureRecordResult.Repeat;
     }
 
     private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)

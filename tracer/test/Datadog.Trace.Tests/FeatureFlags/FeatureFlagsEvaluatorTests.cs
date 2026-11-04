@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -519,15 +520,16 @@ public partial class FeatureFlagsEvaluatorTests
     {
         var flags = new FlagCollection { ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag() };
 
-        foreach (var reportedCacheHit in new[] { false, true })
+        foreach (var (reported, stamp) in new[] { (ExposureRecordResult.New, "false"), (ExposureRecordResult.Repeat, "true"), (ExposureRecordResult.NotRecorded, null) })
         {
             var evaluator = new FeatureFlagsEvaluator(
-                (in Trace.FeatureFlags.Exposure.Model.ExposureEvent _) => reportedCacheHit,
+                (in Trace.FeatureFlags.Exposure.Model.ExposureEvent _) => reported,
                 new ServerConfiguration { Flags = flags });
 
             var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
 
-            result.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be(reportedCacheHit ? "true" : "false");
+            result.FlagMetadata!.TryGetValue(FeatureFlagMetadataKeys.ExposureCacheHit, out var actual);
+            actual.Should().Be(stamp, $"the reporter said {reported}; nothing recorded means no verdict");
         }
     }
 
@@ -835,7 +837,7 @@ public partial class FeatureFlagsEvaluatorTests
         return (in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) =>
         {
             events.Add(e);
-            return false;
+            return ExposureRecordResult.New;
         };
     }
 
