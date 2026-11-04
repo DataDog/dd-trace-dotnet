@@ -22,7 +22,7 @@ namespace Datadog.Trace.Pdb.SourceLink
             new BitBucketSourceLinkUrlParser(),
             new BitBucketServerSourceLinkUrlParser(),
             new AzureDevOpsSourceLinkUrlParser(),
-            new GitLabSourceLinkUrlParser()
+            new GitLabSourceLinkUrlParser(),
         };
 
         public static CompositeSourceLinkUrlParser Instance { get; } = new();

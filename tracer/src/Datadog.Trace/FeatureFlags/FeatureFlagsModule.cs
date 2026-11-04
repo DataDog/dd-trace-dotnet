@@ -440,7 +440,7 @@ namespace Datadog.Trace.FeatureFlags
                     error: "PROVIDER_NOT_READY",
                     metadata: new Dictionary<string, string>
                     {
-                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false",
                     });
 
                 LogEvaluation(notReady, resultType, defaultValue, targetingKey, attributes, configuration: null);

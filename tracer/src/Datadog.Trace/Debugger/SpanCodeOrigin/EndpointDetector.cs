@@ -40,7 +40,7 @@ internal static class EndpointDetector
         SystemWebController,
         PageModel,
         SignalRHub,
-        CompilerGenerated
+        CompilerGenerated,
     }
 
     private enum KnownNameSet
@@ -49,7 +49,7 @@ internal static class EndpointDetector
         ActionAttribute,
         SystemWebControllerNonActionAttribute,
         NoHandlerAttribute,
-        CompilerGeneratedAttribute
+        CompilerGeneratedAttribute,
     }
 
     private enum KnownBaseTypeSet
@@ -58,7 +58,7 @@ internal static class EndpointDetector
         AspNetFrameworkController,
         WebApiCompatController,
         PageModel,
-        SignalRHub
+        SignalRHub,
     }
 
     internal interface IEndpointMethodTokenConsumer

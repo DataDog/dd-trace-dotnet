@@ -8,5 +8,5 @@ namespace Datadog.Trace.Coverage.Collector;
 internal enum CoverageMode
 {
     LineExecution,
-    LineCallCount
+    LineCallCount,
 }

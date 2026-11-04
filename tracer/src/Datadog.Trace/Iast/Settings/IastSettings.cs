@@ -89,7 +89,7 @@ internal sealed class IastSettings
                     "debug" => IastMetricsVerbosityLevel.Debug,
                     "mandatory" => IastMetricsVerbosityLevel.Mandatory,
                     "information" => IastMetricsVerbosityLevel.Information,
-                    _ => ParsingResult<IastMetricsVerbosityLevel>.Failure()
+                    _ => ParsingResult<IastMetricsVerbosityLevel>.Failure(),
                 },
                 validator: null);
 

@@ -46,7 +46,7 @@ public class ProcessInfo
         Unknown = 0,
         NetFx = 1,
         NetCore = 2,
-        Mixed = NetFx | NetCore
+        Mixed = NetFx | NetCore,
     }
 
     public string Name { get; }

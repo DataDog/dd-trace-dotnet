@@ -325,7 +325,7 @@ internal static class NUnitIntegration
             FailureSite.Test => "TestException",
             FailureSite.SetUp => "SetUpException",
             FailureSite.TearDown => "TearDownException",
-            _ => string.Empty
+            _ => string.Empty,
         };
 
         resultMessage = result.Message ?? string.Empty;

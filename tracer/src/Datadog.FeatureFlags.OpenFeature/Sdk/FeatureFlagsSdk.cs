@@ -277,7 +277,7 @@ internal static class FeatureFlagsSdk
         Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
         Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => "unknown",
         Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
-        _ => "unknown"
+        _ => "unknown",
     };
 
     private static ImmutableMetadata? ToMetadata(IDictionary<string, string>? metadata, long? evalTimeMs, bool deferredExposure)
@@ -448,7 +448,7 @@ internal static class FeatureFlagsSdk
         double doubleVal => new Value(doubleVal),
         string strVal => new Value(strVal),
         bool boolVal => new Value(boolVal),
-        _ => new Value()
+        _ => new Value(),
     };
 
     private static Value ConvertStructure(Dictionary<string, object?> structure)

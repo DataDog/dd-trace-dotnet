@@ -34,7 +34,7 @@ internal static class RaspModule
     {
         Irrelevant = 0,
         Success = 1,
-        Failure = 2
+        Failure = 2,
     }
 
     /// <summary>
@@ -215,7 +215,7 @@ internal static class RaspModule
             IntegrationId.Oracle => "oracle",
             IntegrationId.Sqlite => "sqlite",
             IntegrationId.NHibernate => "nhibernate",
-            _ => "generic"
+            _ => "generic",
         };
     }
 

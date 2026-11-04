@@ -190,7 +190,7 @@ namespace Datadog.Trace.Pdb
                         {
                             Name = localSymbol.Name,
                             Type = local.Type?.FullName ?? Unknown,
-                            Line = sequencePointForScope.StartLine
+                            Line = sequencePointForScope.StartLine,
                         });
                 }
 
@@ -233,7 +233,7 @@ namespace Datadog.Trace.Pdb
                 PortablePdbReader portablePdbReader => portablePdbReader.GetContainingMethod(filePath, line, column, out byteCodeOffset)?.Token,
                 PdbReader managedPdbReader => managedPdbReader.GetContainingMethod(filePath, line, column, out byteCodeOffset)?.Token,
                 SymbolReaderImpl symUnmanagedReader => symUnmanagedReader.GetContainingMethod(filePath, line, column, out byteCodeOffset)?.Token,
-                _ => throw new ArgumentOutOfRangeException(nameof(filePath), $"Reader type {DnlibPdbReader!.GetType().FullName} is not supported")
+                _ => throw new ArgumentOutOfRangeException(nameof(filePath), $"Reader type {DnlibPdbReader!.GetType().FullName} is not supported"),
             };
         }
 
@@ -272,7 +272,7 @@ namespace Datadog.Trace.Pdb
                         EndColumn = sp.EndColumn,
                         Offset = sp.Offset,
                         IsHidden = sp.IsHidden(),
-                        URL = sp.Document.URL
+                        URL = sp.Document.URL,
                     };
                 count++;
             }

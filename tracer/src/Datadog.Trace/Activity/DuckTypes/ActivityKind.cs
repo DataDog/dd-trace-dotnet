@@ -13,6 +13,6 @@ namespace Datadog.Trace.Activity.DuckTypes
         Server = 1,
         Client = 2,
         Producer = 3,
-        Consumer = 4
+        Consumer = 4,
     }
 }

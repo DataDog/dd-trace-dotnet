@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         private static readonly CoverletCollectorXmlReportDescriptor[] CoverletCollectorXmlReports =
         [
             new("coverage.cobertura.xml", CoverletCollectorXmlReportFormat.Cobertura, publishPriority: 0),
-            new("coverage.opencover.xml", CoverletCollectorXmlReportFormat.OpenCover, publishPriority: 1)
+            new("coverage.opencover.xml", CoverletCollectorXmlReportFormat.OpenCover, publishPriority: 1),
         ];
 
         private static readonly TimeSpan CoverletCollectorXmlReportTimestampTolerance = TimeSpan.FromSeconds(1);
@@ -76,21 +76,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         private enum CoverletCollectorXmlReportFormat
         {
             Cobertura,
-            OpenCover
+            OpenCover,
         }
 
         private enum CoverageBackfillAvailability
         {
             NotRequired,
             Available,
-            Unavailable
+            Unavailable,
         }
 
         internal enum CoverletCollectorXmlProcessingResult
         {
             NotApplicable,
             Processed,
-            FailedClosed
+            FailedClosed,
         }
 
         internal static bool DotnetTestIntegrationEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
@@ -1888,11 +1888,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             var settings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
+                XmlResolver = null,
             };
             var xmlDocument = new XmlDocument
             {
-                XmlResolver = null
+                XmlResolver = null,
             };
             using var reader = XmlReader.Create(solutionFilePath, settings);
             xmlDocument.Load(reader);

@@ -751,7 +751,7 @@ public sealed class Test
                 {
                     TestTags.TestRetryReasonEfd => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
                     TestTags.TestRetryReasonAtr => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
-                    _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
+                    _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
                 };
 
                 var quarantinedOrDisabled = tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :

@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 new LazySnapshotSerializerFieldsAndPropsSelector(),
                 new ExceptionSnapshotSerializerFieldsAndPropsSelector(),
                 new TaskSnapshotSerializerFieldsAndPropsSelector(),
-                new OldStyleTupleSnapshotSerializerFieldsAndPropsSelector()
+                new OldStyleTupleSnapshotSerializerFieldsAndPropsSelector(),
             };
 
         protected SnapshotSerializerFieldsAndPropsSelector()

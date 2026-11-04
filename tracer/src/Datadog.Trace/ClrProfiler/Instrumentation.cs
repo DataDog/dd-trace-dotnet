@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     ProfilerState.Auto => NativeInterop.ProfilingEnabled.Auto,
                     ProfilerState.Enabled => NativeInterop.ProfilingEnabled.Enabled,
-                    _ => NativeInterop.ProfilingEnabled.Disabled
+                    _ => NativeInterop.ProfilingEnabled.Disabled,
                 },
 
                 TracingEnabled = mutableSettings.TraceEnabled,
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler
                 RuntimeId = RuntimeId.Get(),
                 Environment = mutableSettings.Environment,
                 ServiceName = mutableSettings.DefaultServiceName,
-                Version = mutableSettings.ServiceVersion
+                Version = mutableSettings.ServiceVersion,
             };
 
             if (tracerSettings.PropagateProcessTags)

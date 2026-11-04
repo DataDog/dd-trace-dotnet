@@ -66,7 +66,7 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
         ExpectChunkTerminator,
         // For "simplicity" we don't support trailers currently
         // ConsumeTrailers,
-        Done
+        Done,
     }
 
     // This is not called by our production code, so we're yolo-ing it

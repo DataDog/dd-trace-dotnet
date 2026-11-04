@@ -344,7 +344,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 Budget = Volatile.Read(ref _samplesBudget),
                 Probability = _probability,
                 TotalAverage = _totalCountRunningAverage,
-                SampleInterval = Volatile.Read(ref _intervalGate)?.SampleInterval ?? 0
+                SampleInterval = Volatile.Read(ref _intervalGate)?.SampleInterval ?? 0,
             };
         }
 

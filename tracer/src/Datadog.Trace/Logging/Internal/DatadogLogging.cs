@@ -94,7 +94,7 @@ namespace Datadog.Trace.Logging
               {
                 "dotnet-tracer-*.log",
                 "dotnet-native-loader-*.log",
-                "DD-DotNet-Profiler-Native-*.log"
+                "DD-DotNet-Profiler-Native-*.log",
               };
 
             try

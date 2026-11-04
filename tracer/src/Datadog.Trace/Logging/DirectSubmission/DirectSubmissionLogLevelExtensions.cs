@@ -43,7 +43,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 "ERROR" => DirectSubmissionLogLevel.Error,
                 "CRITICAL" => DirectSubmissionLogLevel.Fatal,
                 "FATAL" => DirectSubmissionLogLevel.Fatal,
-                _ => null
+                _ => null,
             };
     }
 }

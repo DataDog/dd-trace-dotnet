@@ -11,7 +11,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
     internal enum TargetSpan
     {
         Active,
-        Root
+        Root,
     }
 
     internal sealed class SpanDecorationProbe : ProbeDefinition, IEquatable<SpanDecorationProbe>

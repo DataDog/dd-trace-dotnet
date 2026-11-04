@@ -41,7 +41,7 @@ internal sealed class ApplicationTelemetryCollector
             OsVersion = osDescription,
             KernelName = host.KernelName,
             KernelRelease = host.KernelRelease,
-            KernelVersion = host.KernelVersion
+            KernelVersion = host.KernelVersion,
         };
     }
 

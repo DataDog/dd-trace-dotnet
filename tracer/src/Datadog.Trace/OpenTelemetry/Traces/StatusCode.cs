@@ -29,5 +29,5 @@ internal enum StatusCode
     /// <summary>
     /// The Span contains an error.
     /// </summary>
-    Error = 2
+    Error = 2,
 }

@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             timeout,
             redactedIdent,
             redactedType,
-            typeInitializer
+            typeInitializer,
         }
     }
 }

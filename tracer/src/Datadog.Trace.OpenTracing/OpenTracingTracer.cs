@@ -23,7 +23,7 @@ namespace Datadog.Trace.OpenTracing
             _codecs = new Dictionary<string, ICodec>
             {
                 { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() },
-                { BuiltinFormats.TextMap.ToString(), new HttpHeadersCodec() } // the HttpHeadersCodec can support an unconstrained ITextMap
+                { BuiltinFormats.TextMap.ToString(), new HttpHeadersCodec() }, // the HttpHeadersCodec can support an unconstrained ITextMap
             };
         }
 

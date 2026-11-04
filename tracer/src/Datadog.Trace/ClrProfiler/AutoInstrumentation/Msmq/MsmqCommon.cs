@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             {
                 SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Msmq),
                 SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Msmq),
-                _ => MsmqConstants.MsmqCommand
+                _ => MsmqConstants.MsmqCommand,
             };
         }
     }

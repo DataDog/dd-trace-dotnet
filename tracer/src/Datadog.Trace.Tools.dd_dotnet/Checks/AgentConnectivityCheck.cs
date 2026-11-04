@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                                 var endpoint = new UnixDomainSocketEndPoint(settings.TracesUnixDomainSocketPath!);
                                 await socket.ConnectAsync(endpoint, token).ConfigureAwait(false);
                                 return new NetworkStream(socket, ownsSocket: false);
-                            }
+                            },
                         };
 
                         return new HttpClient(handler);
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                                 var pipeStream = new NamedPipeClientStream(".", settings.TracesPipeName!, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
                                 await pipeStream.ConnectAsync(500, token).ConfigureAwait(false);
                                 return pipeStream;
-                            }
+                            },
                         };
 
                         return new HttpClient(handler);

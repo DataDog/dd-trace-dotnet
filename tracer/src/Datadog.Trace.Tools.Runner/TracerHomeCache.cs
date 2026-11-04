@@ -47,7 +47,7 @@ internal static class TracerHomeCache
         /// <summary>
         /// The directory must be owned by the current user, LocalSystem, or Builtin Administrators on Windows.
         /// </summary>
-        TrustedWindowsOwner
+        TrustedWindowsOwner,
     }
 
     /// <summary>

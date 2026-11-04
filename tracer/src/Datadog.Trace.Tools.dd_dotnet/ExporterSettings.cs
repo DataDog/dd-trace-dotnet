@@ -72,7 +72,7 @@ public partial class ExporterSettings
 
     internal enum TelemetryErrorCode
     {
-        PotentiallyInvalidUdsPath
+        PotentiallyInvalidUdsPath,
     }
 
     internal Uri AgentUri { get; }

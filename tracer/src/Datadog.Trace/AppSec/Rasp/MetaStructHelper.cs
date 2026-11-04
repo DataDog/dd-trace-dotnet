@@ -21,7 +21,7 @@ internal static class MetaStructHelper
         {
             { "language", language },
             { "id", id },
-            { "frames", frames }
+            { "frames", frames },
         };
 
         if (type is { Length: > 0 })
@@ -41,7 +41,7 @@ internal static class MetaStructHelper
     {
         var dict = new Dictionary<string, object>(7)
         {
-            { "id", id }
+            { "id", id },
         };
 
         if (text is { Length: > 0 })

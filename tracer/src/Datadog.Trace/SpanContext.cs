@@ -467,7 +467,7 @@ namespace Datadog.Trace
                 SpanContext sc => sc.TraceId128,
 
                 // otherwise use the 64-bit trace id from ISpanContext
-                _ => (TraceId)context.TraceId
+                _ => (TraceId)context.TraceId,
             };
         }
 

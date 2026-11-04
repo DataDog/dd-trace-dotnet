@@ -29,7 +29,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 {
                     TypeCode.Byte or TypeCode.SByte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Double or TypeCode.Single or TypeCode.Decimal => true,
                     TypeCode.Empty or TypeCode.Object or TypeCode.DBNull or TypeCode.Boolean or TypeCode.Char or TypeCode.DateTime or TypeCode.String => false,
-                    _ => false
+                    _ => false,
                 };
             }
         }

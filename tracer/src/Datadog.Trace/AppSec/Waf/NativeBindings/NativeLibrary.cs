@@ -39,7 +39,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             FROM_STRING = 0x00000400,
             FROM_SYSTEM = 0x00001000,
             IGNORE_INSERTS = 0x00000200,
-            MAX_WIDTH_MASK = 0x000000FF
+            MAX_WIDTH_MASK = 0x000000FF,
         }
 
         internal static bool TryLoad(string libraryPath, out IntPtr handle)

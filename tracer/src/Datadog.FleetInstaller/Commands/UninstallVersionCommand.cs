@@ -21,7 +21,7 @@ internal sealed class UninstallVersionCommand : CommandBase
     private readonly Option<string> _versionedPathOption = new("--home-path", static () => null!)
     {
         Description = "Path to the tracer-home-directory",
-        IsRequired = true
+        IsRequired = true,
     };
 
     public UninstallVersionCommand()

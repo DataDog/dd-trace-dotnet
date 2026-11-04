@@ -106,7 +106,7 @@ namespace Datadog.Trace.Configuration
                 SpanSamplingRules = higher.SpanSamplingRules ?? lower.SpanSamplingRules,
                 DynamicInstrumentationEnabled = higher.DynamicInstrumentationEnabled ?? lower.DynamicInstrumentationEnabled,
                 ExceptionReplayEnabled = higher.ExceptionReplayEnabled ?? lower.ExceptionReplayEnabled,
-                CodeOriginEnabled = higher.CodeOriginEnabled ?? lower.CodeOriginEnabled
+                CodeOriginEnabled = higher.CodeOriginEnabled ?? lower.CodeOriginEnabled,
             };
         }
     }

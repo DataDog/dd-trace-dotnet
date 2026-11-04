@@ -31,7 +31,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             {
                 CircuitStatus.HalfBroken => CircuitStatus.Closed,
                 CircuitStatus.Broken => CircuitStatus.HalfBroken,
-                _ => _state
+                _ => _state,
             };
 
             return _state;

@@ -931,14 +931,14 @@ namespace Datadog.Trace.Debugger.Expressions
                     LogProbe { CaptureSnapshot: false } => ProbeType.Log,
                     MetricProbe => ProbeType.Metric,
                     SpanDecorationProbe => ProbeType.SpanDecoration,
-                    _ => throw new ArgumentOutOfRangeException(nameof(probe), probe, "Unsupported probe type")
+                    _ => throw new ArgumentOutOfRangeException(nameof(probe), probe, "Unsupported probe type"),
                 };
 
                 var evaluateAt = location switch
                 {
                     ProbeLocation.Method => probe.EvaluateAt,
                     ProbeLocation.Line => EvaluateAt.Entry,
-                    _ => throw new ArgumentOutOfRangeException(nameof(location), location, "Unsupported probe location")
+                    _ => throw new ArgumentOutOfRangeException(nameof(location), location, "Unsupported probe location"),
                 };
 
                 var templates = default(DebuggerExpression?[]?);

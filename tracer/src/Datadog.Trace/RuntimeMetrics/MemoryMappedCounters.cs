@@ -86,7 +86,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             IPC_FLAG_USES_FLAGS = 0x1,
             IPC_FLAG_INITIALIZED = 0x2,
-            IPC_FLAG_X86 = 0x4
+            IPC_FLAG_X86 = 0x4,
         }
 
         private static bool IsInitialized(in IpcControlBlock controlBlock)

@@ -183,7 +183,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
 
         public enum MEMORY_INFORMATION_CLASS
         {
-            MemoryBasicInformation
+            MemoryBasicInformation,
         }
 
         [DllImport("ntdll.dll")]

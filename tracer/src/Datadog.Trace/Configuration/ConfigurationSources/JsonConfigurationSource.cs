@@ -258,8 +258,8 @@ namespace Datadog.Trace.Configuration
                 {
                     JTokenType.Null or JTokenType.None or JTokenType.Undefined => null, // handle null-like values
                     JTokenType.String => token.Value<string>(), // return the underlying string value
-                    _ => JsonHelper.TokenToString(token, Formatting.None) // serialize back into json
-                }
+                    _ => JsonHelper.TokenToString(token, Formatting.None), // serialize back into json
+                },
             };
         }
 

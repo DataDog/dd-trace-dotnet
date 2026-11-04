@@ -51,7 +51,7 @@ namespace Datadog.Trace.AppSec
             typeof(long),
             typeof(bool),
             typeof(byte),
-            typeof(ulong)
+            typeof(ulong),
         ];
 
         internal static object? Extract(object? body)

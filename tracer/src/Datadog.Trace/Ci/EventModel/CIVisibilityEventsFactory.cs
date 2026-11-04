@@ -19,7 +19,7 @@ internal static class CIVisibilityEventsFactory
             SpanTypes.TestSuite when span.Tags is TestSuiteSpanTags => new TestSuiteEvent(span),
             SpanTypes.TestModule when span.Tags is TestModuleSpanTags => new TestModuleEvent(span),
             SpanTypes.TestSession => new TestSessionEvent(span),
-            _ => new SpanEvent(span)
+            _ => new SpanEvent(span),
         };
     }
 

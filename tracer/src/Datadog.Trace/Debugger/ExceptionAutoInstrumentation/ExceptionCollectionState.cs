@@ -19,6 +19,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         Collecting,
         Finalizing,
         Invalidated,
-        None
+        None,
     }
 }

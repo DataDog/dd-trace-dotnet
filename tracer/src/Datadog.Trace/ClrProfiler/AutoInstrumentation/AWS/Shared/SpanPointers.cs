@@ -44,7 +44,7 @@ internal static class SpanPointers
             new("ptr.kind", S3PtrKind),
             new("ptr.dir", DownDirection),
             new("ptr.hash", hash),
-            new("link.kind", LinkKind)
+            new("link.kind", LinkKind),
         };
 
         var spanLink = new SpanLink(SpanContext.Zero, spanLinkAttributes);
@@ -79,7 +79,7 @@ internal static class SpanPointers
             new("ptr.kind", DynamoDbPtrKind),
             new("ptr.dir", DownDirection),
             new("ptr.hash", hash),
-            new("link.kind", LinkKind)
+            new("link.kind", LinkKind),
         };
 
         var spanLink = new SpanLink(SpanContext.Zero, spanLinkAttributes);

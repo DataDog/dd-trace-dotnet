@@ -78,7 +78,7 @@ internal static class BodyParser
             JsonToken.Float => r.Value is not null ? Convert.ToDouble(r.Value, CultureInfo.InvariantCulture) : null,
             JsonToken.Boolean => r.Value,
             JsonToken.Null => null,
-            _ => null
+            _ => null,
         };
     }
 

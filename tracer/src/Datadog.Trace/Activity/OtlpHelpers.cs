@@ -165,7 +165,7 @@ namespace Datadog.Trace.Activity
                     ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
                     ActivityStatusCode.Ok => "STATUS_CODE_OK",
                     ActivityStatusCode.Error => "STATUS_CODE_ERROR",
-                    _ => "STATUS_CODE_UNSET"
+                    _ => "STATUS_CODE_UNSET",
                 };
             }
             else
@@ -290,7 +290,7 @@ namespace Datadog.Trace.Activity
                     true when traceState.SamplingPriority is not null && SamplingPriorityValues.IsKeep(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
                     true => SamplingPriorityValues.AutoKeep,
                     false when traceState.SamplingPriority is not null && SamplingPriorityValues.IsDrop(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
-                    false => SamplingPriorityValues.AutoReject
+                    false => SamplingPriorityValues.AutoReject,
                 };
 
                 if (traceParentSample && SamplingPriorityValues.IsDrop(samplingPriority))

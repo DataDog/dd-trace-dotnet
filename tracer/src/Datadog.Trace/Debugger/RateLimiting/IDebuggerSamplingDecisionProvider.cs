@@ -12,7 +12,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         Undecided,
         Keep,
         DropGlobal,
-        DropProbe
+        DropProbe,
     }
 
     internal interface IDebuggerSamplingDecisionProvider

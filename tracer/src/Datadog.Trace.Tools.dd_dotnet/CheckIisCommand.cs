@@ -285,7 +285,7 @@ internal class CheckIisCommand : Command
             { "COR_ENABLE_PROFILING", "1" },
             { "CORECLR_ENABLE_PROFILING", "1" },
             { "COR_PROFILER", Utils.Profilerid },
-            { "CORECLR_PROFILER", Utils.Profilerid }
+            { "CORECLR_PROFILER", Utils.Profilerid },
         };
 
         var relevantProfilerPathConfiguration = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -295,7 +295,7 @@ internal class CheckIisCommand : Command
             "COR_PROFILER_PATH_64",
             "CORECLR_PROFILER_PATH",
             "CORECLR_PROFILER_PATH_32",
-            "CORECLR_PROFILER_PATH_64"
+            "CORECLR_PROFILER_PATH_64",
         };
 
         if (pool is not null)

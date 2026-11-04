@@ -39,6 +39,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// <summary>
         /// An exception that was caught by user code.
         /// </summary>
-        ExceptionCaught
+        ExceptionCaught,
     }
 }

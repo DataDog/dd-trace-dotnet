@@ -47,6 +47,6 @@ internal enum InstrumentType
     /// <summary>
     /// Asynchronous Gauge instrument - non-additive, last value, callback-based
     /// </summary>
-    ObservableGauge = 6
+    ObservableGauge = 6,
 }
 #endif

@@ -46,8 +46,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                     Attributes = attributes,
                     TraceId = traceId,
                     SpanId = spanId,
-                    Flags = flags
-                }
+                    Flags = flags,
+                },
             };
         }
 

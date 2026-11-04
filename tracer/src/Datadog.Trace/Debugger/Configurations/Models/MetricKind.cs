@@ -9,6 +9,6 @@ namespace Datadog.Trace.Debugger.Configurations.Models
     {
         COUNT,
         GAUGE,
-        HISTOGRAM
+        HISTOGRAM,
     }
 }

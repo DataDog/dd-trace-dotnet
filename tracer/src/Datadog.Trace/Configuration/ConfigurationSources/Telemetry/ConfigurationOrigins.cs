@@ -75,5 +75,5 @@ public enum ConfigurationOrigins
     /// Set when it comes from configurations defined in a fleet-managed file
     /// </summary>
     [Description("fleet_stable_config")]
-    FleetStableConfig
+    FleetStableConfig,
 }

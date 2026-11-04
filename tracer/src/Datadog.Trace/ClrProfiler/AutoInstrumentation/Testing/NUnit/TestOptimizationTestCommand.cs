@@ -327,7 +327,7 @@ internal sealed class TestOptimizationTestCommand
             IsARetry = true,
             BehaviorType = typeof(TBehavior),
             InitialExecutionPassed = initialPassed,
-            InitialExecutionFailed = initialFailed
+            InitialExecutionFailed = initialFailed,
         };
         while (remainingRetries-- > 0)
         {

@@ -42,7 +42,7 @@ internal static class AdministratorHelper
             {
                 Verb = "runas",
                 UseShellExecute = true,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             foreach (var arg in commandLineArguments.Skip(1))

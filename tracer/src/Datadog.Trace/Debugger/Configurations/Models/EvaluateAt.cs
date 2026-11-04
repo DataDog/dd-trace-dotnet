@@ -18,5 +18,5 @@ internal enum EvaluateAt
     /// <summary>
     /// Exit of the method
     /// </summary>
-    Exit
+    Exit,
 }

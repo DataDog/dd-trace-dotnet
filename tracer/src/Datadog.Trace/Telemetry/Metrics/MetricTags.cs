@@ -423,7 +423,7 @@ internal static class MetricTags
         [Description("integration_name:protobuf")] Protobuf,
         [Description("integration_name:hangfire")] Hangfire,
         [Description("integration_name:quartz")] Quartz,
-        [Description("integration_name:serverlesscompat")] ServerlessCompat
+        [Description("integration_name:serverlesscompat")] ServerlessCompat,
     }
 
     public enum InstrumentationError
@@ -465,13 +465,13 @@ internal static class MetricTags
     public enum WafStatus
     {
         [Description("waf_version;event_rules_version;success:true")] Success,
-        [Description("waf_version;event_rules_version;success:false")] Error
+        [Description("waf_version;event_rules_version;success:false")] Error,
     }
 
     public enum WafConfigAction
     {
         [Description("waf_version;event_rules_version;action:init")] Init,
-        [Description("waf_version;event_rules_version;action:update")] Update
+        [Description("waf_version;event_rules_version;action:update")] Update,
     }
 
     public enum UserEventSdk
@@ -801,7 +801,7 @@ internal static class MetricTags
         [Description("command:merge_base")] MergeBase,
         [Description("command:rev_list")] RevList,
         [Description("command:ls_remote")] LsRemote,
-        [Description("command:fetch")] Fetch
+        [Description("command:fetch")] Fetch,
     }
 
     public enum CIVisibilityExitCodes

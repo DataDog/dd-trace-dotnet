@@ -76,5 +76,5 @@ internal enum Hresult : int
     /// <summary>
     /// The given assembly name or codebase was invalid.
     /// </summary>
-    E_INVALIDASSEMBLY = unchecked((int)0x80131047)
+    E_INVALIDASSEMBLY = unchecked((int)0x80131047),
 }

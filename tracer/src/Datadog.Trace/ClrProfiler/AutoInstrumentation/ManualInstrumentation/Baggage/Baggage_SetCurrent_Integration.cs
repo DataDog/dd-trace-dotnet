@@ -34,7 +34,7 @@ public sealed class Baggage_SetCurrent_Integration
         {
             Trace.Baggage b => b,
             null => new Trace.Baggage(),
-            _ => new Trace.Baggage(value)
+            _ => new Trace.Baggage(value),
         };
 
         return CallTargetState.GetDefault();

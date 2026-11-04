@@ -92,7 +92,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
             // if not we try to use the tag (checkout over a tag)
             { Tag: { Length: > 0 } tag } => tag,
             // if is still empty we assume the customer just used a detached HEAD
-            _ => "auto:git-detached-head"
+            _ => "auto:git-detached-head",
         };
     }
 

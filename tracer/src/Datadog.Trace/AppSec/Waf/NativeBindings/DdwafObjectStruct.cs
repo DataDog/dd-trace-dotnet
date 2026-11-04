@@ -133,7 +133,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_FLOAT => DoubleValue,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => DecodeArray<object>(),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => DecodeMap(),
-                _ => null
+                _ => null,
             };
 
             return res;

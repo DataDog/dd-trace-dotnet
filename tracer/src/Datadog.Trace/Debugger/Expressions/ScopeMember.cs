@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Expressions
         Return,
         Exception,
         Duration,
-        None
+        None,
     }
 
     internal readonly struct ScopeMember

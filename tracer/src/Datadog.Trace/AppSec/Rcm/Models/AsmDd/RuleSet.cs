@@ -55,7 +55,7 @@ internal sealed class RuleSet
             Scanners = result["scanners"],
             Actions = result["actions"],
             Exclusions = result["exclusions"],
-            CustomRules = result["custom_rules"]
+            CustomRules = result["custom_rules"],
         };
         return ruleset;
     }

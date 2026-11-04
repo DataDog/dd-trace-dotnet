@@ -97,5 +97,5 @@ internal enum JTokenTypeProxy
     /// <summary>
     /// A TimeSpan value.
     /// </summary>
-    TimeSpan = 17
+    TimeSpan = 17,
 }

@@ -53,7 +53,7 @@ internal sealed class SqlInjectionTokenizer : ITokenizer
             { IntegrationId.Oracle, _oracleDialectRegex },
             { IntegrationId.Npgsql, _postgresqlDialectRegex },
             { IntegrationId.MySql, _mySqlDialectRegex },
-            { IntegrationId.Sqlite, _mySqlDialectRegex }
+            { IntegrationId.Sqlite, _mySqlDialectRegex },
         };
     }
 

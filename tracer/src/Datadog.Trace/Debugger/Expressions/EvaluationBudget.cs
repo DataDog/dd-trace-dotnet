@@ -35,7 +35,7 @@ internal struct EvaluationBudget
         Uninitialized,
         Running,
         Paused,
-        TimedOut
+        TimedOut,
     }
 
     internal readonly bool IsInitialized => _state != EvaluationBudgetState.Uninitialized;

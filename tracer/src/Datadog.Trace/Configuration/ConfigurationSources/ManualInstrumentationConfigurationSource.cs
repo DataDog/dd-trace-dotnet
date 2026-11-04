@@ -80,7 +80,7 @@ internal sealed class ManualInstrumentationConfigurationSource : ManualInstrumen
         _ when key.EndsWith("_ANALYTICS_SAMPLE_RATE", StringComparison.Ordinal) => PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Set,
         _ when key.StartsWith("DD_TRACE_", StringComparison.Ordinal) && key.EndsWith("_ANALYTICS_SAMPLE_RATE", StringComparison.Ordinal)
             => PublicApiUsage.IntegrationSettings_Enabled_Set, // this could definitely be too broad, but about the best we can reasonably do
-        _ => null
+        _ => null,
     };
 
     private static object RemapResult(string key, object value) => key switch

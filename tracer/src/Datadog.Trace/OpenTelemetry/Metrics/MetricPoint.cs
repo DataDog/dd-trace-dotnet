@@ -217,7 +217,7 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 SnapshotSum = sumForSnapshot,
                 SnapshotGaugeValue = _runningDoubleValue,
                 SnapshotMin = _runningMin,
-                SnapshotMax = _runningMax
+                SnapshotMax = _runningMax,
             };
 
             if (_runningBucketCounts.Length > 0)

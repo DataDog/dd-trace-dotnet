@@ -51,7 +51,7 @@ namespace Datadog.Trace.Debugger.Symbols
             { 0x0003, "internal" },
             { 0x0004, "protected" },
             { 0x0005, "protected internal" },
-            { 0x0006, "public" }
+            { 0x0006, "public" },
         };
 
         protected Dictionary<int, string> MethodAttributes { get; } = new()
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Debugger.Symbols
             { 0x0010, "static" },
             { 0x0020, "final" },
             { 0x0040, "virtual" },
-            { 0x0060, "final virtual" }
+            { 0x0060, "final virtual" },
         };
 
         protected Dictionary<int, string> FieldAttributes { get; } = new()
@@ -222,7 +222,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         StartLine = linesAndSource.StartLine,
                         EndLine = linesAndSource.EndLine,
                         SourceFile = linesAndSource.Path,
-                        LanguageSpecifics = classLanguageSpecifics
+                        LanguageSpecifics = classLanguageSpecifics,
                     };
                     return true;
                 }
@@ -248,7 +248,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     StartLine = linesAndSource.StartLine,
                     EndLine = linesAndSource.EndLine,
                     SourceFile = linesAndSource.Path,
-                    LanguageSpecifics = classLanguageSpecifics
+                    LanguageSpecifics = classLanguageSpecifics,
                 };
             }
             catch (Exception e)
@@ -389,7 +389,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 AccessModifiers = accessModifiers > 0 ? new[] { accessModifiers.ToString() } : null,
                 Interfaces = interfaceNames,
                 SuperClasses = baseClassNames,
-                IsPdbExist = DatadogMetadataReader.IsPdbExist
+                IsPdbExist = DatadogMetadataReader.IsPdbExist,
             };
             return classLanguageSpecifics;
         }
@@ -444,7 +444,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     Type = fieldTypeName,
                     SymbolType = ((fieldDef.Attributes & System.Reflection.FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
                     Line = UnknownFieldAndArgLine,
-                    LanguageSpecifics = ls
+                    LanguageSpecifics = ls,
                 };
                 index++;
             }
@@ -609,7 +609,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask, CultureInfo.InvariantCulture)] } : null,
                 Annotations = methodAttributes > 0 && isAsyncMethod ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes, CultureInfo.InvariantCulture)], "async" } :
                               methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes, CultureInfo.InvariantCulture)] } :
-                              isAsyncMethod ? new[] { "async" } : null
+                              isAsyncMethod ? new[] { "async" } : null,
             };
 
             methodScope = new Model.Scope
@@ -622,7 +622,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 Scopes = closureScopes,
                 SourceFile = null,
                 StartLine = UnknownMethodStartLine,
-                EndLine = UnknownMethodEndLine
+                EndLine = UnknownMethodEndLine,
             };
 
             return true;
@@ -788,7 +788,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     Name = parameterName,
                     SymbolType = SymbolType.Arg,
                     Line = UnknownFieldAndArgLine,
-                    Type = typesIndex < methodParameterTypes.Length ? methodParameterTypes[typesIndex] : "Unknown"
+                    Type = typesIndex < methodParameterTypes.Length ? methodParameterTypes[typesIndex] : "Unknown",
                 };
                 index++;
                 typesIndex++;

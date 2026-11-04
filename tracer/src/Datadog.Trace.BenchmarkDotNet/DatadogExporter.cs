@@ -142,7 +142,7 @@ internal class DatadogExporter : IExporter
                                     OsVersion = osInfo.Version,
                                     RuntimeVersion = hostEnvironmentInfo.RuntimeVersion,
                                     ChronometerFrequencyHertz = hostEnvironmentInfo.ChronometerFrequency.Hertz,
-                                    ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds
+                                    ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds,
                                 },
                                 new BenchmarkJobInfo { Description = description, Platform = benchmarkCase.Job?.Environment?.Platform.ToString(), RuntimeName = benchmarkCase.Job?.Environment?.Runtime?.Name, RuntimeMoniker = benchmarkCase.Job?.Environment?.Runtime?.MsBuildMoniker });
 

@@ -16,7 +16,7 @@ namespace DatadogDebugger.Util
         Object,
         String,
         NotCaptured,
-        Escape
+        Escape,
     }
 
     internal sealed class SnapshotPruner

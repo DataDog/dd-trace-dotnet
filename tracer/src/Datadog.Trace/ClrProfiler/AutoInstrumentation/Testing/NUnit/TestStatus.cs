@@ -34,6 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <summary>
         /// The test failed
         /// </summary>
-        Failed
+        Failed,
     }
 }

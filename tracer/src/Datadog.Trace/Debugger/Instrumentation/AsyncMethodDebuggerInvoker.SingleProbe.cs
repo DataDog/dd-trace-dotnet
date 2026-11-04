@@ -183,7 +183,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
                 StartTime = DateTimeOffset.UtcNow,
                 MethodMetadataIndex = methodMetadataIndex,
-                MoveNextInvocationTarget = instance
+                MoveNextInvocationTarget = instance,
             };
 
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||

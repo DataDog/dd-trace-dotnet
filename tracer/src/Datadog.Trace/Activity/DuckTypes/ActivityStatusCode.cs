@@ -11,6 +11,6 @@ namespace Datadog.Trace.Activity.DuckTypes
     {
         Unset = 0,
         Ok = 1,
-        Error = 2
+        Error = 2,
     }
 }

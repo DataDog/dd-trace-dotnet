@@ -20,5 +20,5 @@ internal enum SourceType : byte
     MatrixParameter = 10,
     RequestUri = 11,
     GrpcRequestBody = 12,
-    SqlRowValue = 13
+    SqlRowValue = 13,
 }

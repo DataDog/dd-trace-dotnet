@@ -61,7 +61,7 @@ internal sealed class ProductsTelemetryCollector
                 {
                     Appsec = appsec,
                     Profiler = profiler,
-                    DynamicInstrumentation = dynamicInstrumentation
+                    DynamicInstrumentation = dynamicInstrumentation,
                 };
             }
 
@@ -92,7 +92,7 @@ internal sealed class ProductsTelemetryCollector
                 {
                     Appsec = appsec,
                     Profiler = profiler,
-                    DynamicInstrumentation = dynamicInstrumentation
+                    DynamicInstrumentation = dynamicInstrumentation,
                 };
             }
 

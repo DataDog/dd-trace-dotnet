@@ -36,7 +36,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
             MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
             MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
-            MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep)
+            MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep),
         ];
     }
 

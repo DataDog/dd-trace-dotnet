@@ -71,7 +71,7 @@ internal sealed class OtlpExporter : IOtlpExporter
                 Endpoint = endpoint,
                 TimeoutMilliseconds = _timeoutMs,
                 Protocol = (OtlpExportProtocol)_protocol,
-                AppendSignalPathToEndpoint = true
+                AppendSignalPathToEndpoint = true,
             };
 
             foreach (var kvp in _headers)
@@ -89,7 +89,7 @@ internal sealed class OtlpExporter : IOtlpExporter
                 Endpoint = endpoint,
                 TimeoutMilliseconds = _timeoutMs,
                 Protocol = (OtlpExportProtocol)_protocol,
-                AppendSignalPathToEndpoint = false // HTTP endpoint already includes /v1/logs
+                AppendSignalPathToEndpoint = false, // HTTP endpoint already includes /v1/logs
             };
 
             foreach (var kvp in _headers)
@@ -163,7 +163,7 @@ internal sealed class OtlpExporter : IOtlpExporter
 #if NET6_0_OR_GREATER
         var tcpHandler = new SocketsHttpHandler
         {
-            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
         };
 
         var httpClient = new HttpClient(tcpHandler)
@@ -231,7 +231,7 @@ internal sealed class OtlpExporter : IOtlpExporter
             {
                 OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(buffer, contentLength).ConfigureAwait(false),
                 OtlpProtocol.Grpc => await SendGrpcRequest(buffer, contentLength).ConfigureAwait(false),
-                _ => await SendHttpProtobufRequest(buffer, contentLength).ConfigureAwait(false)
+                _ => await SendHttpProtobufRequest(buffer, contentLength).ConfigureAwait(false),
             };
         }
         catch (Exception ex)

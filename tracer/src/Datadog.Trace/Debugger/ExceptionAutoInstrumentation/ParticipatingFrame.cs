@@ -14,7 +14,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     internal enum ParticipatingFrameState
     {
         Default,
-        Blacklist
+        Blacklist,
     }
 
     internal readonly struct ParticipatingFrame : IEquatable<ParticipatingFrame>

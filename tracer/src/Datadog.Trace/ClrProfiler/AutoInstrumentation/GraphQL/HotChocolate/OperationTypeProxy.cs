@@ -15,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     {
         Query,
         Mutation,
-        Subscription
+        Subscription,
     }
 }

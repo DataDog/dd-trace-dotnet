@@ -25,6 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <summary>
         /// A transaction type used for single internal transactions.
         /// </summary>
-        Single = 3
+        Single = 3,
     }
 }

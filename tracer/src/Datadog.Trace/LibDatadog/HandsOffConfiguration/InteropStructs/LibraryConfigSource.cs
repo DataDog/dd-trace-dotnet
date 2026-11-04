@@ -9,5 +9,5 @@ namespace Datadog.Trace.LibDatadog.HandsOffConfiguration.InteropStructs;
 internal enum LibraryConfigSource
 {
     LocalStableConfig = 0,
-    FleetStableConfig = 1
+    FleetStableConfig = 1,
 }

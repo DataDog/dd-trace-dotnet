@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                         "dd_span_id",
                         _tracer.DistributedSpanContext is { } context && LogContext.TryGetSpanId(context, out var spanId) ? spanId : "0"),
 
-                    _ => throw new ArgumentOutOfRangeException(nameof(index))
+                    _ => throw new ArgumentOutOfRangeException(nameof(index)),
                 };
             }
         }

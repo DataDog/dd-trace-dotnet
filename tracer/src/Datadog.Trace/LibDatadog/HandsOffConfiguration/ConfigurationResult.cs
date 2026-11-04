@@ -14,7 +14,7 @@ internal enum Result
     LibDatadogCallError,
     LibDatadogUnavailable,
     Success,
-    ApplicationMonitoringConfigFileDisabled
+    ApplicationMonitoringConfigFileDisabled,
 }
 
 internal readonly struct ConfigurationResult(ConfigurationSuccessResult? configurationSuccessResult, string? errorMessage, Result result, Exception? exception = null)

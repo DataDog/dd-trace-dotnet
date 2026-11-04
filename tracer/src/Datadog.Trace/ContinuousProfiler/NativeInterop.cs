@@ -15,7 +15,7 @@ namespace Datadog.Trace.ContinuousProfiler
         {
             Disabled = 0,
             Enabled = 1,
-            Auto = 2
+            Auto = 2,
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

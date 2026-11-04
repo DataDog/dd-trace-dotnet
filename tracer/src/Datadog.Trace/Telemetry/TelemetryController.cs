@@ -372,7 +372,7 @@ internal sealed class TelemetryController : ITelemetryController
         {
             SetTransportManager,
             SetFlushInterval,
-            SetTracerStarted
+            SetTracerStarted,
         }
 
         public ItemType Type { get; }

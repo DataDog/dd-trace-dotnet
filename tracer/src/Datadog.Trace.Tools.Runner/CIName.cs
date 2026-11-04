@@ -17,5 +17,5 @@ internal enum CIName
     Bitbucket,
     GithubActions,
     Teamcity,
-    Buildkite
+    Buildkite,
 }

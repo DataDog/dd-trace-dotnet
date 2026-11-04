@@ -26,7 +26,7 @@ namespace Datadog.Trace.Agent.Transports
                 handler: new SocketsHttpHandler
                 {
                     AllowAutoRedirect = allowAutoRedirect,
-                    ConnectCallback = async (_, token) => await streamFactory.GetBidirectionalStreamAsync(token).ConfigureAwait(false)
+                    ConnectCallback = async (_, token) => await streamFactory.GetBidirectionalStreamAsync(token).ConfigureAwait(false),
                 })
         {
             _streamFactory = streamFactory;

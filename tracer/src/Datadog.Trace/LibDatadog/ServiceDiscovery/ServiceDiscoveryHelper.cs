@@ -20,7 +20,7 @@ internal static class ServiceDiscoveryHelper
         Success,
         Skipped,
         Error,
-        Exception
+        Exception,
     }
 
     internal static StoreMetadataResult StoreTracerMetadata(TracerSettings tracerSettings, MutableSettings mutableSettings)

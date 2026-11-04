@@ -67,14 +67,14 @@ namespace Datadog.Trace
             ReadyToStart,
             Faulted,
             Healthy,
-            Unhealthy
+            Unhealthy,
         }
 
         internal enum KeepAliveAction
         {
             None,
             Start,
-            Restart
+            Restart,
         }
 
         /// <summary>
@@ -379,7 +379,7 @@ namespace Datadog.Trace
 
                                     var startInfo = new ProcessStartInfo
                                     {
-                                        FileName = path, UseShellExecute = false // Force consistency in behavior between Framework and Core
+                                        FileName = path, UseShellExecute = false, // Force consistency in behavior between Framework and Core
                                     };
 
                                     if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))

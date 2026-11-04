@@ -26,6 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <summary>
         /// A subscription operation.
         /// </summary>
-        Subscription
+        Subscription,
     }
 }

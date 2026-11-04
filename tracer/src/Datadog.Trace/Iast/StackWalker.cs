@@ -24,7 +24,7 @@ internal static class StackWalker
         "Datadog.Trace.Debugger.Helpers.StringExtensions",
         "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument",
         "System.Security.IdentityHelper",
-        "Npgsql.Internal.NpgsqlConnector"
+        "Npgsql.Internal.NpgsqlConnector",
     };
 
     private static readonly string[] AssemblyNamesToSkip =
@@ -46,7 +46,7 @@ internal static class StackWalker
         "System",
         "System.",
         "xunit.",
-        "Azure."
+        "Azure.",
     };
 
     private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();

@@ -23,7 +23,7 @@ internal static class SerializationHelpers
         ContractResolver = new DefaultContractResolver
         {
             NamingStrategy = new SnakeCaseNamingStrategy(),
-        }
+        },
     };
 
     public static async Task WriteAsJson<T>(Stream requestStream, T payload, JsonSerializerSettings serializationSettings, MultipartCompression compression)
@@ -38,7 +38,7 @@ internal static class SerializationHelpers
         using var jsonWriter = new JsonTextWriter(streamWriter)
         {
             ArrayPool = JsonArrayPool.Shared,
-            CloseOutput = false
+            CloseOutput = false,
         };
         var serializer = JsonSerializer.Create(serializationSettings);
         serializer.Serialize(jsonWriter, payload);

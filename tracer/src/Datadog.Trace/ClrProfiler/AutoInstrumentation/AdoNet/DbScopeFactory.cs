@@ -203,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                             StringUtil.ToLowerInvariant(namespaceName),
                         _ when commandTypeName.EndsWithOrdinal(commandSuffix) =>
                             StringUtil.ToLowerInvariant(commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length)),
-                        _ => StringUtil.ToLowerInvariant(commandTypeName)
+                        _ => StringUtil.ToLowerInvariant(commandTypeName),
                     };
                     return true;
             }

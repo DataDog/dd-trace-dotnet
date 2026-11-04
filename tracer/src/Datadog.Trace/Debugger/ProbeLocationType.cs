@@ -11,6 +11,6 @@ namespace Datadog.Trace.Debugger
     {
         Line,
         Method,
-        Unrecognized
+        Unrecognized,
     }
 }

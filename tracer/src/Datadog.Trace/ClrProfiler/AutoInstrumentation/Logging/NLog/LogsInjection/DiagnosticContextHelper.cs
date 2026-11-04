@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, mutableSettings.ServiceVersion ?? string.Empty),
                     new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, mutableSettings.Environment ?? string.Empty),
                     new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId),
-                    new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId)
+                    new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId),
                 ];
             }
 
@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             [
                 new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, mutableSettings.DefaultServiceName),
                 new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, mutableSettings.ServiceVersion ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, mutableSettings.Environment ?? string.Empty)
+                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, mutableSettings.Environment ?? string.Empty),
             ];
         }
 

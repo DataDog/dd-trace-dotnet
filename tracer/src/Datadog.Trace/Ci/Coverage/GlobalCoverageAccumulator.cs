@@ -74,7 +74,7 @@ internal sealed class GlobalCoverageAccumulator
                     {
                         ExecutableBitmap = fileMetadata.Bitmap,
                         // A snapshot outlives the merge lock, so it must not expose mutable accumulator storage.
-                        ExecutedBitmap = pair.Value.ExecutedBitmaps[i] is { } bitmap ? (byte[])bitmap.Clone() : null
+                        ExecutedBitmap = pair.Value.ExecutedBitmaps[i] is { } bitmap ? (byte[])bitmap.Clone() : null,
                     });
             }
 

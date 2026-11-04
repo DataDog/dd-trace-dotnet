@@ -10,5 +10,5 @@ namespace Datadog.Trace.Activity.DuckTypes;
 internal enum ActivityTraceFlags
 {
     None = 0,
-    Recorded = 1
+    Recorded = 1,
 }

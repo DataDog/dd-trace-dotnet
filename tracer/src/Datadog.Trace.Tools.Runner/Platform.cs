@@ -10,6 +10,6 @@ namespace Datadog.Trace.Tools.Runner
         Unknown,
         Windows,
         Linux,
-        MacOS
+        MacOS,
     }
 }

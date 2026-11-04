@@ -27,5 +27,5 @@ internal enum ConditionOperator
     SEMVER_LT,
     SEMVER_LTE,
     SEMVER_GT,
-    SEMVER_GTE
+    SEMVER_GTE,
 }

@@ -46,11 +46,11 @@ public static class XUnitTestRunnerV3Integration
                 Traits = context.Test.Traits.ToDictionary(
                     static k => k.Key,
                     static v => v.Value as List<string> ?? v.Value?.ToList()),
-                UniqueID = context.Test.TestCase.UniqueID
+                UniqueID = context.Test.TestCase.UniqueID,
             },
             TestClass = context.Test.TestCase.TestClass.Class,
             TestMethod = context.TestMethod,
-            TestMethodArguments = context.TestMethodArguments!
+            TestMethodArguments = context.TestMethodArguments!,
         };
 
         var state = Tuple.Create(

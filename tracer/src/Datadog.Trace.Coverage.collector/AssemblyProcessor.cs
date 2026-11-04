@@ -207,7 +207,7 @@ namespace Datadog.Trace.Coverage.Collector
                 // differs depends on the target runtime. (netstandard, .NET 5.0 or .NET 4.6.2)
                 using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget), new ReaderParameters
                 {
-                    InMemory = true
+                    InMemory = true,
                 });
 
                 var isDirty = false;
@@ -256,8 +256,8 @@ namespace Datadog.Trace.Coverage.Collector
                     HasThis = false,
                     Parameters =
                     {
-                        new ParameterDefinition(module.TypeSystem.Int32) { Name = "fileIndex" }
-                    }
+                        new ParameterDefinition(module.TypeSystem.Int32) { Name = "fileIndex" },
+                    },
                 };
 
                 // GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
@@ -661,8 +661,8 @@ namespace Datadog.Trace.Coverage.Collector
                         new ParameterDefinition(module.TypeSystem.String),
                         new ParameterDefinition(module.TypeSystem.Int32),
                         new ParameterDefinition(module.TypeSystem.Int32),
-                        new ParameterDefinition(new ArrayType(module.TypeSystem.Byte))
-                    }
+                        new ParameterDefinition(new ArrayType(module.TypeSystem.Byte)),
+                    },
                 };
 
                 var fileOffset = 0;
@@ -737,7 +737,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var coveredAssemblyAttributeTypeReference = module.ImportReference(datadogTracerAssembly.MainModule.GetType(typeof(CoveredAssemblyAttribute).FullName));
                     assemblyDefinition.CustomAttributes.Add(new CustomAttribute(new MethodReference(".ctor", module.TypeSystem.Void, coveredAssemblyAttributeTypeReference)
                     {
-                        HasThis = true
+                        HasThis = true,
                     }));
 
                     _logger.Debug($"Saving assembly: {_assemblyFilePath}");
@@ -814,7 +814,7 @@ namespace Datadog.Trace.Coverage.Collector
                 assemblyDefinition.Write(stagedAssemblyPath, new WriterParameters
                 {
                     WriteSymbols = true,
-                    StrongNameKeyBlob = strongNameKeyBlob
+                    StrongNameKeyBlob = strongNameKeyBlob,
                 });
 
                 ValidateStagedAssemblyAndSymbols(stagedAssemblyPath);
@@ -1145,7 +1145,7 @@ namespace Datadog.Trace.Coverage.Collector
                 ParameterDefinition pDefOp => Instruction.Create(instruction.OpCode, pDefOp),
                 TypeReference tRefOp => Instruction.Create(instruction.OpCode, tRefOp),
                 float sOp => Instruction.Create(instruction.OpCode, sOp),
-                _ => throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned.")
+                _ => throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned."),
             };
         }
 

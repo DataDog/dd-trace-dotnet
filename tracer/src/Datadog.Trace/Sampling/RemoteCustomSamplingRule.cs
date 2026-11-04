@@ -40,7 +40,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
         {
             SamplingRuleProvenance.RemoteCustomer => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
             SamplingRuleProvenance.RemoteDynamic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
-            _ => Datadog.Trace.Sampling.SamplingMechanism.Default
+            _ => Datadog.Trace.Sampling.SamplingMechanism.Default,
         };
     }
 

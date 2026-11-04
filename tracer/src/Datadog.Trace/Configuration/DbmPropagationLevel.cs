@@ -17,6 +17,6 @@ namespace Datadog.Trace.Configuration
         Service,
 
         /// <summary>Both service details and span traceparent should be injected</summary>
-        Full
+        Full,
     }
 }

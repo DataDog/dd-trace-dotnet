@@ -70,7 +70,7 @@ public sealed class TypeCacheGetTestMethodInfoIntegrationV3_9
         var cacheItem = new MethodInfoCacheItem
         {
             TestMethod = testMethod,
-            TestContext = testContext
+            TestContext = testContext,
         };
 
         return new CallTargetState(null, cacheItem);

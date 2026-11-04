@@ -432,7 +432,7 @@ namespace Datadog.Trace.Agent
                             _frontBuffer.MaxBufferSize,
                             droppedTracesBufferFull,
                             droppedTracesBufferFullAndLocked,
-                            droppedTracesBuffersLocked
+                            droppedTracesBuffersLocked,
                         ]);
                 }
 

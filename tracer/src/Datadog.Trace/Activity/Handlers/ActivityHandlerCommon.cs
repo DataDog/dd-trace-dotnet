@@ -193,7 +193,7 @@ namespace Datadog.Trace.Activity.Handlers
                             activity.RootId,
                             activity.OperationName!,
                             activity.StartTimeUtc,
-                            activity.Duration
+                            activity.Duration,
                         });
                 }
 

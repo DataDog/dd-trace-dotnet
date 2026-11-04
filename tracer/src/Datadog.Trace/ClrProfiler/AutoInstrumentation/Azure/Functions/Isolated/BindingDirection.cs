@@ -11,6 +11,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 internal enum BindingDirection
 {
     In,
-    Out
+    Out,
 }
 #endif

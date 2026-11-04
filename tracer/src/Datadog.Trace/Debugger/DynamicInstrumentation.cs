@@ -551,7 +551,7 @@ namespace Datadog.Trace.Debugger
                     result.Reason,
                     result.Message,
                     diagnostics?.ProbeFile,
-                    diagnostics?.ProbeLine
+                    diagnostics?.ProbeLine,
                 ]);
 
             if (!Log.IsEnabled(LogEventLevel.Debug) || diagnostics == null)
@@ -582,7 +582,7 @@ namespace Datadog.Trace.Debugger
                     diagnostics.LoadedAssemblyCount,
                     diagnostics.SymbolicatedAssemblyCount,
                     diagnostics.SameFileNameMatchCount,
-                    JoinLogValues(diagnostics.SameFileNameExamples)
+                    JoinLogValues(diagnostics.SameFileNameExamples),
                 ]);
         }
 
@@ -617,7 +617,7 @@ namespace Datadog.Trace.Debugger
                     diagnostics?.LoadedAssemblyCount,
                     diagnostics?.SymbolicatedAssemblyCount,
                     diagnostics?.SameFileNameMatchCount,
-                    JoinLogValues(diagnostics?.SameFileNameExamples)
+                    JoinLogValues(diagnostics?.SameFileNameExamples),
                 ]);
         }
 
@@ -804,7 +804,7 @@ namespace Datadog.Trace.Debugger
                 LogProbes = logs.ToArray(),
                 MetricProbes = metrics.ToArray(),
                 SpanProbes = spans.ToArray(),
-                SpanDecorationProbes = spanDecoration.ToArray()
+                SpanDecorationProbes = spanDecoration.ToArray(),
             };
 
             try

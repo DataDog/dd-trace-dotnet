@@ -24,5 +24,5 @@ public enum TestStatus
     /// <summary>
     /// Skip test status
     /// </summary>
-    Skip
+    Skip,
 }

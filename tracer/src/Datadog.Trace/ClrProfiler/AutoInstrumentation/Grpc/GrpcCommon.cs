@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
                 14 => "Unavailable",
                 15 => "DataLoss",
                 16 => "Unauthenticated",
-                _ => "Unknown"
+                _ => "Unknown",
             };
     }
 }

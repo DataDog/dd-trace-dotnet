@@ -482,7 +482,7 @@ internal readonly partial struct SecurityCoordinator
         var dict = new Dictionary<string, object>(capacity: 6)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetHttpClientIp() ?? _localRootSpan.GetNetworkClientIp() }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetHttpClientIp() ?? _localRootSpan.GetNetworkClientIp() },
         };
 
         var url = RequestDataHelper.GetUrl(request);

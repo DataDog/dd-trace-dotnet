@@ -12,5 +12,5 @@ internal enum TestRetryMode
     None,
     EarlyFlakeDetection,
     AutomaticTestRetry,
-    AttemptToFix
+    AttemptToFix,
 }

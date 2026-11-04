@@ -91,6 +91,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         GetCollectionsManifest = 0xBA,
         GetCidByName = 0xbb,
         GetSidByName = 0xBC,
-        GetMeta = 0xa0
+        GetMeta = 0xa0,
     }
 }

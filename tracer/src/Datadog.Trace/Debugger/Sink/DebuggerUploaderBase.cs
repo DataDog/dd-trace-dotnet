@@ -100,7 +100,7 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
         {
             <= FreeCapacityLowerThreshold => Math.Max(currentInterval - StepSize, MinFlushInterval),
             >= FreeCapacityUpperThreshold => Math.Min(currentInterval + StepSize, MaxFlushInterval),
-            _ => currentInterval
+            _ => currentInterval,
         };
 
         if (newInterval != currentInterval)
