@@ -89,7 +89,7 @@ var queue = new BlockingCollection<ExposureRecord>(10_000);
 
 OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
 {
-    if (!e.ShouldSend)
+    if (!evaluation.ShouldSend)
     {
         return;
     }
