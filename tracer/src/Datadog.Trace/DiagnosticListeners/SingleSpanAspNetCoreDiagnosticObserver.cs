@@ -267,7 +267,8 @@ namespace Datadog.Trace.DiagnosticListeners
                                                    routePattern,
                                                    routeValues,
                                                    _tracer.Settings.ExpandRouteTemplatesEnabled,
-                                                   ref apiSecurityRoute)
+                                                   ref apiSecurityRoute,
+                                                   returnResourceName: !_tracer.Settings.OtelSemanticsEnabled)
                                                : string.Empty;
 
                     string? normalizedRoute;
