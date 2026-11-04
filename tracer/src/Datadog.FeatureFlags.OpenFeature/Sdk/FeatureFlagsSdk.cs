@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -126,57 +127,85 @@ internal static class FeatureFlagsSdk
         }
 
         var result = new Dictionary<string, object?>();
+        var omissionReasons = ContextOmissionReason.None;
         foreach (var pair in context.AsDictionary())
         {
             // Targeting must see every top-level attribute. Bound only recursive expansion of each
             // nested value; a large structure must not consume the budget of a later scalar.
             var remainingNodes = MaxContextNodes;
-            result[pair.Key] = ToObject(pair.Value, depth: 1, ref remainingNodes);
+            result[pair.Key] = ToObject(pair.Value, depth: 1, ref remainingNodes, ref omissionReasons);
         }
 
-        return result;
+        return new ContextAttributes(result, omissionReasons);
     }
 
-    private static object? ToObject(Value value, int depth, ref int remainingNodes)
+    private static object? ToObject(Value value, int depth, ref int remainingNodes, ref ContextOmissionReason omissionReasons)
     {
-        if (remainingNodes-- <= 0 || depth > MaxContextDepth)
+        if (remainingNodes-- <= 0)
         {
+            omissionReasons |= ContextOmissionReason.MaxVisitedNodes;
+            return null;
+        }
+
+        if (depth > MaxContextDepth)
+        {
+            omissionReasons |= ContextOmissionReason.MaxSnapshotDepth;
             return null;
         }
 
         if (value is null) { return null; }
+        if (value.IsNull) { return null; }
         if (value.IsBoolean) { return value.AsBoolean; }
         if (value.IsString) { return value.AsString; }
         if (value.IsNumber) { return value.AsDouble; }
-        if (value.IsStructure) { return ConvertStructure(value.AsStructure!.AsDictionary(), depth, ref remainingNodes); }
-        if (value.IsList) { return ConvertList(value.AsList!, depth, ref remainingNodes); }
+        if (value.AsDateTime is { } dateTime) { return dateTime; }
+        if (value.IsStructure) { return ConvertStructure(value.AsStructure!.AsDictionary(), depth, ref remainingNodes, ref omissionReasons); }
+        if (value.IsList) { return ConvertList(value.AsList!, depth, ref remainingNodes, ref omissionReasons); }
+        omissionReasons |= ContextOmissionReason.UnsupportedValue;
         return null;
     }
 
-    private static Dictionary<string, object?> ConvertStructure(IEnumerable<KeyValuePair<string, Value>> structure, int depth, ref int remainingNodes)
+    private static Dictionary<string, object?> ConvertStructure(IEnumerable<KeyValuePair<string, Value>> structure, int depth, ref int remainingNodes, ref ContextOmissionReason omissionReasons)
     {
         var result = new Dictionary<string, object?>();
         var count = 0;
         foreach (var pair in structure)
         {
-            if (count++ >= MaxContextContainerItems || remainingNodes <= 0)
+            if (count++ >= MaxContextContainerItems)
             {
+                omissionReasons |= ContextOmissionReason.MaxStructureProperties;
                 break;
             }
 
-            result[pair.Key] = ToObject(pair.Value, depth + 1, ref remainingNodes);
+            if (remainingNodes <= 0)
+            {
+                omissionReasons |= ContextOmissionReason.MaxVisitedNodes;
+                break;
+            }
+
+            result[pair.Key] = ToObject(pair.Value, depth + 1, ref remainingNodes, ref omissionReasons);
         }
 
         return result;
     }
 
-    private static object?[] ConvertList(IReadOnlyList<Value> list, int depth, ref int remainingNodes)
+    private static object?[] ConvertList(IReadOnlyList<Value> list, int depth, ref int remainingNodes, ref ContextOmissionReason omissionReasons)
     {
+        if (list.Count > MaxContextContainerItems)
+        {
+            omissionReasons |= ContextOmissionReason.MaxListElements;
+        }
+
         var count = Math.Min(list.Count, MaxContextContainerItems);
         var result = new List<object?>(count);
         for (var i = 0; i < count && remainingNodes > 0; i++)
         {
-            result.Add(ToObject(list[i], depth + 1, ref remainingNodes));
+            result.Add(ToObject(list[i], depth + 1, ref remainingNodes, ref omissionReasons));
+        }
+
+        if (result.Count < count)
+        {
+            omissionReasons |= ContextOmissionReason.MaxVisitedNodes;
         }
 
         return result.ToArray();
@@ -325,5 +354,12 @@ internal static class FeatureFlagsSdk
     private static Value ConvertArray(object?[] array)
     {
         return new Value(array.Select(ConvertObject).ToList());
+    }
+
+    internal sealed class ContextAttributes(Dictionary<string, object?> attributes, ContextOmissionReason omissionReasons) : Dictionary<string, object?>(attributes)
+    {
+        // Read by the tracer integration through duck typing. Keeping this on the dictionary avoids
+        // changing the instrumented Evaluate signature and preserves compatibility with older tracers.
+        public int ContextOmissionReasons { get; } = (int)omissionReasons;
     }
 }

@@ -5,10 +5,13 @@
 
 #nullable enable
 
+extern alias Tracer;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using FluentAssertions;
 using OpenFeature.Constant;
 using OpenFeature.Model;
@@ -139,7 +142,9 @@ public class FeatureFlagsSdkTests
     public void NestedContextValuesAreNormalizedBeforeTracerEvaluation()
     {
         IDictionary<string, object?>? captured = null;
+        var createdAt = new DateTime(2026, 11, 4, 1, 2, 3, DateTimeKind.Utc);
         var context = global::OpenFeature.Model.EvaluationContext.Builder()
+                                       .Set("createdAt", new Value(createdAt))
                                        .Set("user", new Value(new Structure(new Dictionary<string, Value>
                                        {
                                            ["country"] = new("US"),
@@ -159,6 +164,7 @@ public class FeatureFlagsSdkTests
             });
 
         captured.Should().NotBeNull();
+        captured!["createdAt"].Should().Be(createdAt);
         captured!["user"].Should().BeEquivalentTo(new Dictionary<string, object?>
         {
             ["country"] = "US",
@@ -189,6 +195,9 @@ public class FeatureFlagsSdkTests
         MaximumDepth(capturedDeep["value"]).Should().BeLessOrEqualTo(5, "the root attribute is depth one");
         ((object?[])capturedWide["value"]!).Should().HaveCountLessOrEqualTo(256);
         CountNodes(capturedBranches).Should().BeLessOrEqualTo(1_281, "the root dictionary is not an OpenFeature Value node");
+        OmissionReasons(capturedDeep).Should().HaveFlag(ContextOmissionReason.MaxSnapshotDepth);
+        OmissionReasons(capturedWide).Should().HaveFlag(ContextOmissionReason.MaxListElements);
+        OmissionReasons(capturedBranches).Should().HaveFlag(ContextOmissionReason.MaxVisitedNodes);
 
         static IDictionary<string, object?> Capture(Value value)
         {
@@ -206,6 +215,14 @@ public class FeatureFlagsSdkTests
                 });
 
             return captured!;
+        }
+
+        static ContextOmissionReason OmissionReasons(IDictionary<string, object?> attributes)
+        {
+            var sdkReasons = ((FeatureFlagsSdk.ContextAttributes)attributes).ContextOmissionReasons;
+            var tracerReasons = Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration.GetContextOmissionReasons(attributes);
+            tracerReasons.Should().Be(sdkReasons, "the profiler bridge must preserve SDK normalization omissions");
+            return (ContextOmissionReason)sdkReasons;
         }
 
         static int CountNodes(object? value)

@@ -162,6 +162,24 @@ public class FeatureFlagsDependentFlagTests
     }
 
     [Fact]
+    public void DependencyTelemetryPreservesSdkOmissionsAndDoesNotCountRootTargetingKey()
+    {
+        var attributes = Enumerable.Range(0, 256).ToDictionary(i => "field" + i, i => (object?)i);
+        attributes["targetingKey"] = "subject";
+        var config = Configuration(
+            StaticFlag("prerequisite", "on"),
+            DependentFlag("root", Allocation("root", [Dependency("prerequisite", "on")], "on")));
+        config.ObserveFullEvaluationData = true;
+
+        var context = new EvaluationContext("subject", attributes, ContextOmissionReason.MaxListElements);
+        var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", context);
+        var dependency = trace.DependencyEvaluations.Should().ContainSingle().Subject;
+
+        dependency.ContextAttributes.Should().HaveCount(256).And.NotContainKey("targetingKey");
+        dependency.ContextOmissions.Should().Be(ContextOmissionReason.MaxListElements);
+    }
+
+    [Fact]
     public void ReturnedBatchBoundsJsonTokenContextSnapshots()
     {
         var wide = new JArray(Enumerable.Range(0, 2_000).Select(value => new JValue(value)));

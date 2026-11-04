@@ -100,14 +100,28 @@ internal sealed class DependencyEvaluation(
 
         try
         {
+            omissions = context.ContextOmissions;
             var remainingNodes = 1_280;
             var attributes = new Dictionary<string, object?>();
-            var count = 0;
+            const string targetingKey = "targetingKey";
+            var attributeCount = context.Attributes.Count - (context.Attributes.ContainsKey(targetingKey) ? 1 : 0);
+            if (attributeCount > 256)
+            {
+                omissions |= ContextOmissionReason.MaxContextFields;
+            }
+
+            var remainingAttributes = Math.Min(attributeCount, 256);
             foreach (var pair in context.Attributes)
             {
-                if (count++ >= 256)
+                // OpenFeature exposes the root targeting key in AsDictionary(), but dependency
+                // telemetry reports it separately and it must not consume the attribute budget.
+                if (pair.Key == targetingKey)
                 {
-                    omissions |= ContextOmissionReason.MaxContextFields;
+                    continue;
+                }
+
+                if (remainingAttributes-- <= 0)
+                {
                     break;
                 }
 

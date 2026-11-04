@@ -422,7 +422,7 @@ namespace Datadog.Trace.FeatureFlags
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
             => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposures: false);
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposures)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposures, int contextOmissionReasons = 0)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
@@ -447,7 +447,7 @@ namespace Datadog.Trace.FeatureFlags
                 flagKey,
                 resultType,
                 defaultValue,
-                new EvaluationContext(targetingKey, attributes),
+                new EvaluationContext(targetingKey, attributes, (ContextOmissionReason)contextOmissionReasons),
                 collectDependencyEvaluations);
             foreach (var dependency in trace.DependencyEvaluations)
             {

@@ -29,9 +29,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class OpenFeatureSdkEvaluateIntegration
 {
+    private interface IContextAttributesWithOmissions
+    {
+        int ContextOmissionReasons { get; }
+    }
+
     internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
-        return new CallTargetState(null, new State(flagKey, targetType, defaultValue, targetingKey, attributes));
+        return new CallTargetState(null, new State(flagKey, targetType, defaultValue, targetingKey, attributes, GetContextOmissionReasons(attributes)));
+    }
+
+    internal static int GetContextOmissionReasons(IDictionary<string, object?>? attributes)
+    {
+        try
+        {
+            if (attributes is not null && attributes.TryDuckCast<IContextAttributesWithOmissions>(out var contextAttributes))
+            {
+                return contextAttributes.ContextOmissionReasons;
+            }
+        }
+        catch
+        {
+            // Context omission telemetry is best effort and must not affect flag resolution.
+        }
+
+        return 0;
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
@@ -55,7 +77,8 @@ public sealed class OpenFeatureSdkEvaluateIntegration
             parameters.DefaultValue,
             parameters.TargetingKey,
             parameters.Attributes,
-            SupportsDeferredExposures<TReturn>.Value);
+            SupportsDeferredExposures<TReturn>.Value,
+            parameters.ContextOmissionReasons);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
@@ -66,7 +89,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         public static readonly bool Value = typeof(TReturn).Assembly.GetType("Datadog.FeatureFlags.OpenFeature.ExposureCommitHook", throwOnError: false) is not null;
     }
 
-    private sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes)
+    private sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes, int ContextOmissionReasons)
     {
     }
 }
