@@ -184,6 +184,8 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "Void2ReadOnlyRefStructMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructTwoParametersVoidIntegration).FullName));
 
             definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidMixedMethod", new[] { "_", "_", "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructFourParametersVoidIntegration).FullName));
+
+            AddRuntimeAsyncDefinitions(definitionsList);
             
             definitionsId = Guid.NewGuid().ToString("N");
             definitions = definitionsList.ToArray();
@@ -377,6 +379,11 @@ namespace CallTargetNativeTest
                     InstrumentationExceptions();
                     break;
                 }
+                case "runtimeasync":
+                {
+                    RuntimeAsync();
+                    break;
+                }
                 case "all":
                     {
                         Argument0();
@@ -461,10 +468,12 @@ namespace CallTargetNativeTest
                         CallSite();
                         // .
                         WithRefStructArguments();
+                        // .
+                        RuntimeAsync();
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/withrefstruct/abstract/interface/remove/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/withrefstruct/abstract/interface/remove/runtimeasync/all as an argument.");
                     return;
             }
 

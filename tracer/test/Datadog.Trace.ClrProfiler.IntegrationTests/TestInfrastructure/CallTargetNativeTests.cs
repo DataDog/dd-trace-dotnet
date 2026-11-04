@@ -351,6 +351,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task AsyncMethods()
+        {
+            // The same async targets compile to state machines in the default build and to runtime-async methods in
+            // the runtime-async build, and integrations should not be able to tell the difference.
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunCallTargetSample(agent, "runtimeasync");
+            processResult.ExitCode.Should().Be(0);
+
+            // Skipping the body of a state-machine target returns a null task, so only the runtime-async build runs
+            // the two skip-method-body calls.
+            var skipMethodBodyCalls = IsRuntimeAsyncBuild ? 2 : 0;
+
+            // When OnAsyncMethodEnd throws on a state-machine target, the exception is logged and OnMethodEnd still runs.
+            // On a runtime-async target the exception escapes the epilog before OnMethodEnd, so the four
+            // RuntimeAsyncThrowOnAsyncEnd calls skip it.
+            var skippedByThrowOnAsyncEnd = IsRuntimeAsyncBuild ? 4 : 0;
+
+            var output = processResult.StandardOutput;
+            Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(64 + skipMethodBodyCalls);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(53 + skipMethodBodyCalls - skippedByThrowOnAsyncEnd);
+            Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(60 + skipMethodBodyCalls);
+            Regex.Matches(output, "Exception thrown\\.").Count.Should().Be(9);
+
+            VerifyInstrumentation(processResult.Process);
+        }
+
         private async Task<ProcessResult> RunCallTargetSample(MockTracerAgent agent, string arguments)
         {
             var processResult = await RunSampleAndWaitForExit(agent, arguments: arguments);
