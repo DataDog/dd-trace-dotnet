@@ -192,7 +192,7 @@ namespace Datadog.Trace.ServiceFabric
                 _ => string.Empty,
             };
 #if NET6_0_OR_GREATER
-            return string.Create(null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}{suffix}");
+            return string.Create(provider: null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}{suffix}");
 #else
             return $"{SpanNamePrefix}.{spanKind}{suffix}";
 #endif

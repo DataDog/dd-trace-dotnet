@@ -126,7 +126,7 @@ internal sealed class TelemetryController : ITelemetryController
 
     public void Start()
     {
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetTracerStarted, null));
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetTracerStarted, state: null));
         _scheduler.SetTracerInitialized();
     }
 

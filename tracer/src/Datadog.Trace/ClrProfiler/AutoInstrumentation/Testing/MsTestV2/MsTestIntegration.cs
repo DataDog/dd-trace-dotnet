@@ -188,7 +188,7 @@ internal static class MsTestIntegration
         Dictionary<string, List<string>?>? testProperties = null;
         try
         {
-            var testAttributes = methodInfo.GetCustomAttributes(true);
+            var testAttributes = methodInfo.GetCustomAttributes(inherit: true);
 
             foreach (var tattr in testAttributes)
             {
@@ -225,7 +225,7 @@ internal static class MsTestIntegration
                 }
             }
 
-            var classCategories = methodInfo.DeclaringType?.GetCustomAttributes(true);
+            var classCategories = methodInfo.DeclaringType?.GetCustomAttributes(inherit: true);
             if (classCategories is not null)
             {
                 foreach (var tattr in classCategories)

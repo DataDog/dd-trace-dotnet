@@ -267,7 +267,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         public int AsInt32(int defaultValue) => AsInt32(defaultValue, validator: null).Value;
 
-        public int? AsInt32(Func<int, bool> validator) => AsInt32(null, validator);
+        public int? AsInt32(Func<int, bool> validator) => AsInt32(defaultValue: null, validator);
 
         [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator)
@@ -303,7 +303,7 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
         public double AsDouble(double defaultValue) => AsDouble(defaultValue, validator: null).Value;
 
-        public double? AsDouble(Func<double, bool> validator) => AsDouble(null, validator);
+        public double? AsDouble(Func<double, bool> validator) => AsDouble(defaultValue: null, validator);
 
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public double? AsDouble(double? defaultValue, Func<double, bool>? validator)

@@ -39,6 +39,6 @@ internal sealed class FilterExpression : Expression
     public override Expression Reduce()
     {
         var genericWhere = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.Where), [typeof(IEnumerable<>), typeof(Func<,>)], [IteratorType]);
-        return Expression.Call(null, genericWhere, Source, Predicate);
+        return Expression.Call(instance: null, genericWhere, Source, Predicate);
     }
 }

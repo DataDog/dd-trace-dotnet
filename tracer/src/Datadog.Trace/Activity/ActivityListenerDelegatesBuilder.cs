@@ -23,7 +23,7 @@ namespace Datadog.Trace.Activity
                 typeof(void),
                 new[] { activityType },
                 typeof(ActivityListener).Module,
-                true);
+                skipVisibility: true);
 
             var activityProxyType = typeof(IActivity5);
             if (activityType.Assembly.GetName().Version?.Major >= 6)
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Activity
             var il = dynMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Newobj, proxyTypeCtor);
-            il.EmitCall(OpCodes.Call, method, null);
+            il.EmitCall(OpCodes.Call, method, optionalParameterTypes: null);
             il.Emit(OpCodes.Ret);
 
             return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(activityType));
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Activity
                 typeof(void),
                 new[] { activityType },
                 typeof(ActivityListener).Module,
-                true);
+                skipVisibility: true);
 
             var activityProxyType = typeof(IActivity5);
             if (activityType.Assembly.GetName().Version?.Major >= 6)
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Activity
             var il = dynMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Newobj, proxyTypeCtor);
-            il.EmitCall(OpCodes.Call, method, null);
+            il.EmitCall(OpCodes.Call, method, optionalParameterTypes: null);
             il.Emit(OpCodes.Ret);
 
             return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(activityType));
@@ -91,10 +91,10 @@ namespace Datadog.Trace.Activity
                 activitySamplingResultType,
                 new[] { activityCreationOptionsType.MakeGenericType(activityContextType).MakeByRefType() },
                 typeof(ActivityListener).Module,
-                true);
+                skipVisibility: true);
 
             var il = dynMethod.GetILGenerator();
-            il.EmitCall(OpCodes.Call, onSampleMethodInfo, null);
+            il.EmitCall(OpCodes.Call, onSampleMethodInfo, optionalParameterTypes: null);
             il.Emit(OpCodes.Ret);
 
             return dynMethod.CreateDelegate(sampleActivityType.MakeGenericType(activityContextType));
@@ -107,10 +107,10 @@ namespace Datadog.Trace.Activity
                 activitySamplingResultType,
                 new[] { activityCreationOptionsType.MakeGenericType(typeof(string)).MakeByRefType() },
                 typeof(ActivityListener).Module,
-                true);
+                skipVisibility: true);
 
             var il = dynMethod.GetILGenerator();
-            il.EmitCall(OpCodes.Call, onSampleUsingParentIdMethodInfo, null);
+            il.EmitCall(OpCodes.Call, onSampleUsingParentIdMethodInfo, optionalParameterTypes: null);
             il.Emit(OpCodes.Ret);
 
             return dynMethod.CreateDelegate(sampleActivityType.MakeGenericType(typeof(string)));
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Activity
                 typeof(bool),
                 new[] { activitySourceType },
                 typeof(ActivityListener).Module,
-                true);
+                skipVisibility: true);
 
             var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivitySource), activitySourceType);
             var proxyType = proxyResult.ProxyType;
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Activity
             var il = dynMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Newobj, proxyTypeCtor);
-            il.EmitCall(OpCodes.Call, method, null);
+            il.EmitCall(OpCodes.Call, method, optionalParameterTypes: null);
             il.Emit(OpCodes.Ret);
 
             return dynMethod.CreateDelegate(typeof(Func<,>).MakeGenericType(activitySourceType, typeof(bool)));

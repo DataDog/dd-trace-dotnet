@@ -143,7 +143,7 @@ namespace Datadog.Trace.Pdb
                     // callback) that is only released when the provider is disposed. Transfer ownership to the
                     // DatadogMetadataReader so Dispose() releases the handle.
                     var pdbReader = pdbReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                    var portableResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider, pdbReader, pdbPath ?? assembly.Location, null, null);
+                    var portableResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider, pdbReader, pdbPath ?? assembly.Location, dnlibPdbReader: null, dnlibModule: null);
                     peReader = null;
                     pdbReaderProvider = null;
                     return portableResult;
@@ -154,25 +154,25 @@ namespace Datadog.Trace.Pdb
                 if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
                 {
                     Logger.Debug("No standalone PDB file was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
-                    var noPdbResult = new DatadogMetadataReader(peReader, metadataReader, null, null, null, null, null);
+                    var noPdbResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider: null, pdbReader: null, pdbFullPath: null, dnlibPdbReader: null, dnlibModule: null);
                     peReader = null;
                     return noPdbResult;
                 }
 
                 dnlibModule = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
-                var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
+                var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, mapAsImage: false);
                 dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, dnlibModule.Metadata, pdbStream);
                 if (dnlibReader is null)
                 {
                     Logger.Debug("A standalone PDB file was found for {Assembly} but a dnlib PDB reader could not be created. AssemblyLocation={AssemblyLocation}, PdbPath={PdbPath}", assembly.FullName, assembly.Location, pdbFullPath);
-                    var noDnlibReaderResult = new DatadogMetadataReader(peReader, metadataReader, null, null, null, null, null);
+                    var noDnlibReaderResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider: null, pdbReader: null, pdbFullPath: null, dnlibPdbReader: null, dnlibModule: null);
                     peReader = null; // ownership transferred; dnlibModule will be disposed in finally
                     return noDnlibReaderResult;
                 }
 
                 dnlibReader.Initialize(dnlibModule);
                 dnlibModule.LoadPdb(dnlibReader);
-                var dnlibResult = new DatadogMetadataReader(peReader, metadataReader, null, null, pdbFullPath, dnlibReader, dnlibModule);
+                var dnlibResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider: null, pdbReader: null, pdbFullPath, dnlibReader, dnlibModule);
                 peReader = null;
                 dnlibModule = null;
                 dnlibReader = null;
@@ -291,7 +291,7 @@ namespace Datadog.Trace.Pdb
 
             try
             {
-                localTypes = new SignatureDecoder<string, int>(new TypeProvider(false), metadataReader, 0).DecodeLocalSignature(ref blobReader);
+                localTypes = new SignatureDecoder<string, int>(new TypeProvider(includeResScope: false), metadataReader, 0).DecodeLocalSignature(ref blobReader);
                 return true;
             }
             catch (BadImageFormatException)
@@ -723,7 +723,7 @@ namespace Datadog.Trace.Pdb
                 var moveNext = GetMoveNextMethod(methodDefHandle, method);
                 if (!moveNext.IsNil)
                 {
-                    return GetLocalVariableNames(MetadataTokens.GetToken(moveNext), false);
+                    return GetLocalVariableNames(MetadataTokens.GetToken(moveNext), searchMoveNext: false);
                 }
             }
 
@@ -983,7 +983,7 @@ namespace Datadog.Trace.Pdb
                             continue;
                         }
 
-                        var signatureDecoder = new SignatureDecoder<string, int>(new TypeProvider(false), PdbReader, 0);
+                        var signatureDecoder = new SignatureDecoder<string, int>(new TypeProvider(includeResScope: false), PdbReader, 0);
                         var blobReader = PdbReader.GetBlobReader(constant.Signature);
                         var constantType = signatureDecoder.DecodeType(ref blobReader);
 
@@ -1016,7 +1016,7 @@ namespace Datadog.Trace.Pdb
                 if (localScopes.Count == 0 && searchMoveNext)
                 {
                     var moveNext = GetMoveNextMethod(methodDefHandle, method);
-                    return GetLocalSymbols(MetadataTokens.GetToken(moveNext), sequencePoints, false);
+                    return GetLocalSymbols(MetadataTokens.GetToken(moveNext), sequencePoints, searchMoveNext: false);
                 }
             }
 
@@ -1039,7 +1039,7 @@ namespace Datadog.Trace.Pdb
 
         internal bool HasSequencePoints(int methodToken)
         {
-            return GetMethodSequencePoints(methodToken, false)?.Length > 0;
+            return GetMethodSequencePoints(methodToken, searchMoveNext: false)?.Length > 0;
         }
 
         public void Dispose()

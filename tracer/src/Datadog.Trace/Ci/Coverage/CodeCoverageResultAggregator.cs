@@ -516,7 +516,7 @@ internal sealed class CodeCoverageResultAggregator
             var otherHasCounts = other.HasCounts();
             if (hasCounts && otherHasCounts)
             {
-                return new Entry(Source, other.Percentage, backfilled, null, null, diagnostic, backfillValidated, backfillNotApplicable, backfillValidation, countAggregationAmbiguous: true);
+                return new Entry(Source, other.Percentage, backfilled, executableLines: null, coveredLines: null, diagnostic, backfillValidated, backfillNotApplicable, backfillValidation, countAggregationAmbiguous: true);
             }
 
             if (otherHasCounts)

@@ -47,18 +47,18 @@ internal static class GlobalConfigurationSource
         var configurationSource = new CompositeConfigurationSource();
         var environmentSource = new EnvironmentConfigurationSource();
         var configBuilder = new ConfigurationBuilder(environmentSource, TelemetryFactory.Config);
-        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled).AsBool(true);
+        var applicationMonitoringConfigFileEnabled = configBuilder.WithKeys(ConfigurationKeys.ApplicationMonitoringConfigFileEnabled).AsBool(defaultValue: true);
         if (applicationMonitoringConfigFileEnabled)
         {
             var configsResult = ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
             if (configsResult is { ConfigurationSuccessResult: { } configsValue })
             {
                 // fleet managed hands-off config
-                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, false));
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, localFile: false));
                 // env vars
                 configurationSource.Add(environmentSource);
                 // local managed hands-off config
-                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, true));
+                configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesLocal, localFile: true));
             }
             else
             {
@@ -83,7 +83,7 @@ internal static class GlobalConfigurationSource
 #endif
 
         // datadog.json
-        if (TryLoadJsonConfigurationFile(configurationSource, null, out var jsonConfigurationSource))
+        if (TryLoadJsonConfigurationFile(configurationSource, baseDirectory: null, out var jsonConfigurationSource))
         {
             configurationSource.Add(jsonConfigurationSource);
         }

@@ -99,7 +99,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
             {
                 if (Path.GetExtension(file).ToLowerInvariant() != ".dll")
                 {
-                    File.Copy(file, Path.Combine(outputFolder, Path.GetFileName(file)), true);
+                    File.Copy(file, Path.Combine(outputFolder, Path.GetFileName(file)), overwrite: true);
                 }
                 else if (TryProcessAssembly(file, Path.Combine(outputFolder, Path.GetFileName(file))))
                 {
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
             if (processed > 0)
             {
                 var tracerAssembly = typeof(Datadog.Trace.Tracer).Assembly.Location;
-                File.Copy(tracerAssembly, Path.Combine(outputFolder, Path.GetFileName(Path.GetFileName(tracerAssembly))), true);
+                File.Copy(tracerAssembly, Path.Combine(outputFolder, Path.GetFileName(Path.GetFileName(tracerAssembly))), overwrite: true);
 
                 AnsiConsole.WriteLine("Patching deps.json file");
 
@@ -286,7 +286,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
             {
                 if (!processed)
                 {
-                    File.Copy(inputPath, outputPath, true);
+                    File.Copy(inputPath, outputPath, overwrite: true);
                 }
             }
 
@@ -333,7 +333,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     if (parameters)
                     {
                         var methodDefinition = mDefinition;
-                        var integrationType = TracerAssembly.GetType(Marshal.PtrToStringUni(definition.IntegrationType), false);
+                        var integrationType = TracerAssembly.GetType(Marshal.PtrToStringUni(definition.IntegrationType), throwOnError: false);
                         if (integrationType is not null)
                         {
                             lstDefinitionsDefs.Add(new DefinitionItem(assemblyDefinition, typeDefinition, methodDefinition, integrationType, definition));

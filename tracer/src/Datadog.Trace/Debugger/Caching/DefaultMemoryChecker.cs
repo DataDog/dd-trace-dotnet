@@ -45,7 +45,7 @@ internal sealed class DefaultMemoryChecker : IMemoryChecker
     {
 #if NETCOREAPP3_1_OR_GREATER
 
-        long totalMemory = GC.GetTotalMemory(false);
+        long totalMemory = GC.GetTotalMemory(forceFullCollection: false);
         long totalAvailableMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
 
         // Check if we're using more than 75% of available memory.

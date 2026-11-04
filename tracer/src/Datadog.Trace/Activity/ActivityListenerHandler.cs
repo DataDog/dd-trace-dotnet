@@ -64,7 +64,7 @@ namespace Datadog.Trace.Activity
                         }
                     }
                 }
-                else if (handler.ShouldListenTo(sName, null))
+                else if (handler.ShouldListenTo(sName, version: null))
                 {
                     if (handler is DisableActivityHandler)
                     {

@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Helpers
     {
         internal static bool IsModuleDebugCompiled(Assembly assembly)
         {
-            var debuggableAttribute = assembly.GetCustomAttributes(typeof(DebuggableAttribute), false).FirstOrDefault() as DebuggableAttribute;
+            var debuggableAttribute = assembly.GetCustomAttributes(typeof(DebuggableAttribute), inherit: false).FirstOrDefault() as DebuggableAttribute;
             return debuggableAttribute is not null &&
                    (debuggableAttribute.IsJITOptimizerDisabled || debuggableAttribute.IsJITTrackingEnabled);
         }

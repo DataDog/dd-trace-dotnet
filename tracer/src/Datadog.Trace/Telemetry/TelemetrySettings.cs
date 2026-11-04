@@ -150,12 +150,12 @@ namespace Datadog.Trace.Telemetry
                                            .AsInt32(defaultValue: 86400, static rawInterval => rawInterval is > 0 and <= 604800)
                                            .Value;
 
-            var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
+            var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(defaultValue: true);
 
             var telemetryCompressionMethod = config.WithKeys(ConfigurationKeys.Telemetry.TelemetryCompressionMethod).AsString("gzip");
 
             // For testing purposes only
-            var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
+            var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(defaultValue: false);
 
             bool metricsEnabled;
             if (isServerless)

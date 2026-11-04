@@ -35,7 +35,7 @@ public sealed class TestCommandctorIntegration
         }
 
         DotnetCommon.InjectCodeCoverageCollectorToDotnetTest(ref msbuildArgs);
-        DotnetCommon.WriteDebugInfoForDotnetTest(msbuildArgs, null, null, noRestore, msbuildPath);
+        DotnetCommon.WriteDebugInfoForDotnetTest(msbuildArgs, userDefinedArguments: null, trailingArguments: null, noRestore, msbuildPath);
         return CallTargetState.GetDefault();
     }
 }

@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         private readonly object _locker = new();
 
         public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method)
-            : this(parameterNames, localVariableNames, null, null, type, method, null, null)
+            : this(parameterNames, localVariableNames, asyncMethodHoistedLocals: null, asyncMethodHoistedArguments: null, type, method, kickoffType: null, kickoffMethod: null)
         {
         }
 

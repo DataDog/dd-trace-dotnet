@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                      typeof(object),
                      new Type[] { typeof(object), typeof(object) },
                      typeof(TracerProviderBuilderIntegration).Module,
-                     true);
+                     skipVisibility: true);
             ILGenerator ilWriter = dynMethod.GetILGenerator();
             ilWriter.Emit(OpCodes.Ldarg_0);
             ilWriter.Emit(OpCodes.Castclass, builderType); // Cast to OpenTelemetry.Trace.TracerProviderBuilder
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             ilWriter.Emit(OpCodes.Ldarg_1);
             ilWriter.Emit(OpCodes.Castclass, baseProcessorOfActivityType); // Cast to OpenTelemetry.BaseProcessor<System.Diagnostics.Activity>
 
-            ilWriter.EmitCall(OpCodes.Call, targetAddProcessorMethod, null);
+            ilWriter.EmitCall(OpCodes.Call, targetAddProcessorMethod, optionalParameterTypes: null);
             ilWriter.Emit(OpCodes.Ret);
 
             return (Func<object, object, object>)dynMethod.CreateDelegate(typeof(Func<object, object, object>));
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             var onStartMethodIl = onStartMethod.GetILGenerator();
             onStartMethodIl.Emit(OpCodes.Ldarg_0);
             onStartMethodIl.Emit(OpCodes.Ldarg_1);
-            onStartMethodIl.EmitCall(OpCodes.Call, onStartHelperMethodInfo, null);
+            onStartMethodIl.EmitCall(OpCodes.Call, onStartHelperMethodInfo, optionalParameterTypes: null);
             onStartMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo()?.AsType();

@@ -397,7 +397,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
     }
 
     protected void SetVariablesIfNotEmpty(Dictionary<string, string?> dictionary, params string[] keys)
-        => SetVariablesIfNotEmpty(dictionary, keys, null);
+        => SetVariablesIfNotEmpty(dictionary, keys, filter: null);
 
     protected void SetVariablesIfNotEmpty(Dictionary<string, string?>? dictionary, string[]? keys, Func<KeyValuePair<string, string?>, string?>? filter)
     {

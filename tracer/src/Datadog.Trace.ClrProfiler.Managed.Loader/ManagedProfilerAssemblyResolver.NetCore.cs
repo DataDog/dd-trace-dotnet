@@ -43,7 +43,7 @@ internal static class ManagedProfilerAssemblyResolver
         var assemblies = new List<CachedAssembly>();
         foreach (var file in Directory.EnumerateFiles(directory, "*.dll", SearchOption.TopDirectoryOnly))
         {
-            assemblies.Add(new CachedAssembly(file, null));
+            assemblies.Add(new CachedAssembly(file, assembly: null));
         }
 
         _assemblies = [..assemblies];

@@ -29,6 +29,6 @@ internal class CoverageMergerCommand : CommandWithExamples
         var inputFolder = _inputFolderArgument.GetValue(context);
         var outputFile = _outputFolderArgument.GetValue(context);
 
-        context.ExitCode = CoverageUtils.TryCombineAndGetTotalCoverage(inputFolder, outputFile, true) ? 0 : 1;
+        context.ExitCode = CoverageUtils.TryCombineAndGetTotalCoverage(inputFolder, outputFile, useStdOut: true) ? 0 : 1;
     }
 }

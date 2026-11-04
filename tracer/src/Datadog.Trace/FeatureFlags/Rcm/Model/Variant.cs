@@ -13,7 +13,7 @@ namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 internal sealed class Variant(string? key, string? value)
 {
     public Variant()
-        : this(null, null)
+        : this(key: null, value: null)
     {
     }
 

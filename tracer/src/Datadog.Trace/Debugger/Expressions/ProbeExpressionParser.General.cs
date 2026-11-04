@@ -310,7 +310,7 @@ internal partial class ProbeExpressionParser<T>
         Type declaringType;
         try
         {
-            getMethod = property.GetGetMethod(true);
+            getMethod = property.GetGetMethod(nonPublic: true);
             declaringType = property.DeclaringType;
         }
         catch (Exception)
@@ -387,7 +387,7 @@ internal partial class ProbeExpressionParser<T>
                 return false;
             }
 
-            memberExpression = Expression.Field(null, field);
+            memberExpression = Expression.Field(expression: null, field);
             return true;
         }
 
@@ -419,7 +419,7 @@ internal partial class ProbeExpressionParser<T>
             [value.Type, typeof(string), typeof(EvaluationBudget).MakeByRefType()],
             [value.Type]);
         var isInstanceOfExpression = Expression.Call(
-            null,
+            instance: null,
             instanceOfMethod,
             value,
             Expression.Constant(typeName),
@@ -589,7 +589,7 @@ internal partial class ProbeExpressionParser<T>
             case ScopeMemberKind.Exception:
                 return parameters[3];
             default:
-                throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, message: null);
         }
     }
 

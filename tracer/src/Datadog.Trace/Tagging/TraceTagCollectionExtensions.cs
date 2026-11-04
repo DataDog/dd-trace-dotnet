@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
             var result = TraceSources.None;
 
             if (string.IsNullOrEmpty(traceSources) ||
-                !int.TryParse(traceSources, System.Globalization.NumberStyles.HexNumber, null, out var hexValue))
+                !int.TryParse(traceSources, System.Globalization.NumberStyles.HexNumber, provider: null, out var hexValue))
             {
                 return result;
             }

@@ -29,6 +29,6 @@ public sealed class OpenFeatureSdkIsAvailableIntegration
 {
     internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(bool returnValue, Exception? exception, in CallTargetState state)
     {
-        return new CallTargetReturn<bool>(true);
+        return new CallTargetReturn<bool>(returnValue: true);
     }
 }

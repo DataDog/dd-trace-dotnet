@@ -102,7 +102,7 @@ public static class CoverageReporter<TMeta>
         }
 
 #pragma warning disable MA0173 // Use LazyInitializer.EnsureInitialize - the value is already computed above, so a factory would need a capturing closure allocated on every call
-        return Interlocked.CompareExchange(ref _globalModuleValue, module, null) ?? module;
+        return Interlocked.CompareExchange(ref _globalModuleValue, module, comparand: null) ?? module;
 #pragma warning restore MA0173
     }
 

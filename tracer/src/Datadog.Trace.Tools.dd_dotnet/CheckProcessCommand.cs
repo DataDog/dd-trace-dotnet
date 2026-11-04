@@ -70,7 +70,7 @@ internal class CheckProcessCommand : Command
             return;
         }
 
-        var configurationSource = process.ExtractConfigurationSource(null, null);
+        var configurationSource = process.ExtractConfigurationSource(baseDirectory: null, appSettings: null);
         foundIssue = !await AgentConnectivityCheck.RunAsync(configurationSource).ConfigureAwait(false);
 
         if (foundIssue)

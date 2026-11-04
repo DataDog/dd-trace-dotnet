@@ -154,7 +154,7 @@ internal partial class ProbeExpressionParser<T>
                                                   : -1;
             try
             {
-                source = ParseTree(reader, parameters, null);
+                source = ParseTree(reader, parameters, itParameter: null);
             }
             finally
             {
@@ -227,7 +227,7 @@ internal partial class ProbeExpressionParser<T>
         var source = FlattenFilterChain(filterExpression, out var predicate);
 
         return Expression.Call(
-            null,
+            instance: null,
             helperMethod,
             PredicateSource(source, filterExpression.IteratorType),
             PredicateArgument(predicate, filterExpression.IteratorType),
@@ -574,7 +574,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var castMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.Cast), [typeof(IEnumerable)], [typeof(DictionaryEntry)]);
-        return Expression.Call(null, castMethod, source);
+        return Expression.Call(instance: null, castMethod, source);
     }
 
     private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out Expression propertyExpression)
@@ -635,7 +635,7 @@ internal partial class ProbeExpressionParser<T>
     private void TrackRedactedDictionaryExpression(Expression expression, Expression keyExpression)
     {
         var shouldRedactKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
-        var shouldRedactCall = Expression.Call(null, shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
+        var shouldRedactCall = Expression.Call(instance: null, shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
         (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
            .Add(expression, new RedactedDictionaryValueExpression(shouldRedactCall, expression));
     }

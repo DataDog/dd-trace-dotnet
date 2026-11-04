@@ -283,7 +283,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
                         // but for now, we just fast-path the no-path base case
                         rootSpan.ResourceName = !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
-                                                    ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
+                                                    ? string.Create(provider: null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
                                                     : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
                     }
 

@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tools.Runner
             var name = _nameArgument.GetValue(context);
 
             // Initialize and configure CI Visibility for this command
-            var initResults = await CiUtils.InitializeCiCommandsAsync(_applicationContext, context, _commonTracerSettings, null, string.Empty, [], includeRunScopedBackfillEnvironment: false, reducePathLength: true).ConfigureAwait(false);
+            var initResults = await CiUtils.InitializeCiCommandsAsync(_applicationContext, context, _commonTracerSettings, apiKeyOption: null, string.Empty, [], includeRunScopedBackfillEnvironment: false, reducePathLength: true).ConfigureAwait(false);
             if (!initResults.Success)
             {
                 return;

@@ -36,7 +36,7 @@ public sealed class OpenFeatureSdkCanEnqueueEVPIntegration
         catch (Exception)
         {
             OpenFeatureSdkRecordEVPHookErrorIntegration.RecordError();
-            return new CallTargetReturn<bool>(false);
+            return new CallTargetReturn<bool>(returnValue: false);
         }
     }
 }

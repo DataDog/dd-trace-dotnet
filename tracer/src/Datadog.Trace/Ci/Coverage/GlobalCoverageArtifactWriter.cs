@@ -17,7 +17,7 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageArtifactWriter
 {
-    private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false, true);
+    private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     private readonly GlobalCoverageArtifactLimits _limits;
     private readonly GlobalCoverageInputReader _validator;
@@ -83,14 +83,14 @@ internal sealed class GlobalCoverageArtifactWriter
                        fileStream,
                        _limits.MaximumSerializedBytes,
                        "The global coverage serialized-byte limit was exceeded."))
-            using (var streamWriter = new StreamWriter(boundedStream, Utf8WithoutBom, 16 * 1024, true))
+            using (var streamWriter = new StreamWriter(boundedStream, Utf8WithoutBom, 16 * 1024, leaveOpen: true))
             using (var jsonWriter = new JsonTextWriter(streamWriter) { ArrayPool = JsonArrayPool.Shared })
             {
                 JsonSerializer.Create().Serialize(jsonWriter, model);
                 jsonWriter.Flush();
                 streamWriter.Flush();
                 boundedStream.Flush();
-                fileStream.Flush(true);
+                fileStream.Flush(flushToDisk: true);
             }
 
             return new GlobalCoverageStagedArtifact(temporaryPath, fullDestinationPath, replaceExisting);

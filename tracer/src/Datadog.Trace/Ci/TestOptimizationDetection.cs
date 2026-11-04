@@ -35,10 +35,10 @@ internal static class TestOptimizationDetection
                 log.Information("TestOptimization: CI Visibility Disabled by Configuration");
             }
 
-            return new Enablement(enabled, false);
+            return new Enablement(enabled, InferredEnabled: false);
         }
 
-        return new Enablement(null, InferredAvailable(log));
+        return new Enablement(ExplicitEnabled: null, InferredAvailable(log));
     }
 
     private static bool InferredAvailable(IDatadogLogger log)

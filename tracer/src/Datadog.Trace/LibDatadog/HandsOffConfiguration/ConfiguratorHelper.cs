@@ -17,7 +17,7 @@ internal struct ConfiguratorHelper
     {
         if (isLibdatadogAvailable is false)
         {
-            return new ConfigurationResult(null, "Skipping hands-off configuration because LibDatadog is not available", Result.LibDatadogUnavailable);
+            return new ConfigurationResult(configurationSuccessResult: null, "Skipping hands-off configuration because LibDatadog is not available", Result.LibDatadogUnavailable);
         }
 
         if (isLibdatadogAvailable is null)
@@ -25,7 +25,7 @@ internal struct ConfiguratorHelper
             var isLibdatadogAvailableEval = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
             if (!isLibdatadogAvailableEval.IsAvailable)
             {
-                return new ConfigurationResult(null, "Skipping hands-off configuration: as LibDatadog is not available", Result.LibDatadogUnavailable, isLibdatadogAvailableEval.Exception);
+                return new ConfigurationResult(configurationSuccessResult: null, "Skipping hands-off configuration: as LibDatadog is not available", Result.LibDatadogUnavailable, isLibdatadogAvailableEval.Exception);
             }
         }
 
@@ -61,7 +61,7 @@ internal struct ConfiguratorHelper
             {
                 var resultError = result.Error;
                 var error = resultError.Message.ToUtf8String();
-                return new ConfigurationResult(null, error, Result.LibDatadogCallError);
+                return new ConfigurationResult(configurationSuccessResult: null, error, Result.LibDatadogCallError);
             }
 
             var libraryConfigs = result.Ok;
@@ -88,11 +88,11 @@ internal struct ConfiguratorHelper
                 }
             }
 
-            return new ConfigurationResult(new ConfigurationSuccessResult(configEntriesLocal, configEntriesRemote), null, Result.Success);
+            return new ConfigurationResult(new ConfigurationSuccessResult(configEntriesLocal, configEntriesRemote), errorMessage: null, Result.Success);
         }
         catch (Exception ex)
         {
-            return new ConfigurationResult(null, "Failed to get hands-off configuration.", Result.LibDatadogCallError, ex);
+            return new ConfigurationResult(configurationSuccessResult: null, "Failed to get hands-off configuration.", Result.LibDatadogCallError, ex);
         }
         finally
         {

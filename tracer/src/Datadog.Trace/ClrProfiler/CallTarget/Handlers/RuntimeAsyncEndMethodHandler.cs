@@ -134,7 +134,7 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
             // allowed to skip OnMethodEnd, unless it is a CallTargetBubbleUpException (e.g. an AppSec block)
             try
             {
-                OnAsyncMethodEnd(instance, null, exception, in state);
+                OnAsyncMethodEnd(instance, returnValue: null, exception, in state);
             }
             catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
             {

@@ -140,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var now = scope.Span.Context.TraceContext.Clock.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, now));
 
-                    scope.SetFinishOnClose(false);
+                    scope.SetFinishOnClose(finishOnClose: false);
                     scope.Dispose();
                 }
                 else

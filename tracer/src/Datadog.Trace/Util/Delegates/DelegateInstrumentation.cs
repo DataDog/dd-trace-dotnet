@@ -215,7 +215,7 @@ internal static class DelegateInstrumentation
                     typeof(Wrapper<TCallbacks>),
                     new[] { typeof(object), typeof(Delegate), typeof(TCallbacks) },
                     typeof(ActivatorHelper).Module,
-                    true);
+                    skipVisibility: true);
 
                 var il = createHeadersMethod.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_1);

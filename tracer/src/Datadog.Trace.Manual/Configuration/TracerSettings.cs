@@ -85,24 +85,24 @@ public sealed class TracerSettings
         // The values set here represent the defaults when there's no auto-instrumentation
         // We don't care too much if they get out of sync because that's not supported anyway
         _agentUri = TryGetValue<Uri>(initialValues, TracerSettingKeyConstants.AgentUriKey) ?? new OverrideValue<Uri>(new Uri("http://127.0.0.1:8126"));
-        _analyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
-        _customSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
+        _analyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, defaultValue: false);
+        _customSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, defaultValue: null);
         _disabledIntegrationNames = GetAsHashSet(initialValues, TracerSettingKeyConstants.DisabledIntegrationNamesKey);
-        _diagnosticSourceEnabled = GetValue(initialValues, TracerSettingKeyConstants.DiagnosticSourceEnabledKey, false).Value;
-        _environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
-        _globalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
+        _diagnosticSourceEnabled = GetValue(initialValues, TracerSettingKeyConstants.DiagnosticSourceEnabledKey, defaultValue: false).Value;
+        _environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, defaultValue: null);
+        _globalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, defaultValue: null);
         _globalTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.GlobalTagsKey);
         _grpcTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.GrpcTags);
         _headerTags = GetAsDictionary(initialValues, TracerSettingKeyConstants.HeaderTags);
-        _kafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
-        _logsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
+        _kafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, defaultValue: true);
+        _logsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, defaultValue: false);
         _maxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
-        _serviceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
-        _serviceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
-        _startupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
-        _statsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, true);
-        _traceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
-        _tracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+        _serviceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, defaultValue: null);
+        _serviceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, defaultValue: null);
+        _startupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, defaultValue: true);
+        _statsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, defaultValue: true);
+        _traceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, defaultValue: true);
+        _tracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, defaultValue: false);
         _isFromDefaultSources = isFromDefaultSources;
 
         // This is just a bunch of indirection to not change the public API for now

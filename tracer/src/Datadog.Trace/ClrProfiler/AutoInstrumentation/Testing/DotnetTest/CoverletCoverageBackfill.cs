@@ -578,7 +578,7 @@ internal static class CoverletCoverageBackfill
             return false;
         }
 
-        var sourceRootRelativePath = ciEnvironmentValues.MakeRelativePathFromSourceRoot(sourcePath, false);
+        var sourceRootRelativePath = ciEnvironmentValues.MakeRelativePathFromSourceRoot(sourcePath, useOSSeparator: false);
         if (IsPathRootedCrossPlatform(sourcePath))
         {
             if (StringUtil.IsNullOrWhiteSpace(ciEnvironmentValues.SourceRoot) ||

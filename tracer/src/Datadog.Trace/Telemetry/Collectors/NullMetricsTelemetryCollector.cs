@@ -19,7 +19,7 @@ internal sealed partial class NullMetricsTelemetryCollector : IMetricsTelemetryC
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    public MetricResults GetMetrics() => new(null, null);
+    public MetricResults GetMetrics() => new(metrics: null, distributions: null);
 
     public void SetWafAndRulesVersion(string wafVersion, string? eventRulesVersion)
     {

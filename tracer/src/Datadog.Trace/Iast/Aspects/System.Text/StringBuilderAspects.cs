@@ -1193,7 +1193,7 @@ public sealed class StringBuilderAspects
         var result = target!.AppendJoin(separator, values!);
         try
         {
-            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
+            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, firstInput: null, values);
         }
         catch (Exception ex)
         {
@@ -1214,7 +1214,7 @@ public sealed class StringBuilderAspects
         var result = target!.AppendJoin(separator, values!);
         try
         {
-            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
+            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, firstInput: null, values);
         }
         catch (Exception ex)
         {
@@ -1236,7 +1236,7 @@ public sealed class StringBuilderAspects
         var result = AppendJoinAndMaterialize(target, separator, values, out var materializedValues);
         try
         {
-            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(result, null, materializedValues);
+            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(result, firstInput: null, materializedValues);
         }
         catch (Exception ex)
         {

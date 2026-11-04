@@ -27,7 +27,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             Enabled = erEnabledResult.WithDefault(false);
             CanBeEnabled = erEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
-            CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);
+            CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(defaultValue: false);
 
             var maximumFramesToCapture = config
                                         .WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureMaxFrames)
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                        .AsInt32(DefaultMaxExceptionAnalysisLimit, static x => x > 0)
                                        .Value;
 
-            AgentlessEnabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled).AsBool(false);
+            AgentlessEnabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled).AsBool(defaultValue: false);
             AgentlessUrlOverride = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayAgentlessUrl).AsString();
             AgentlessApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
             AgentlessSite = config.WithKeys(ConfigurationKeys.Site).AsString(DefaultSite, static site => !string.IsNullOrEmpty(site)) ?? DefaultSite;

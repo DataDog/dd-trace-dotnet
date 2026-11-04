@@ -51,7 +51,7 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
         AuthorName = authorArray?[0].Trim();
         AuthorEmail = authorArray?[1].Trim();
 
-        var authorDate = GetDateTimeOffsetVariableIfIsNotEmpty(PlatformKeys.Ci.GitLab.CommitTimestamp, null);
+        var authorDate = GetDateTimeOffsetVariableIfIsNotEmpty(PlatformKeys.Ci.GitLab.CommitTimestamp, defaultValue: null);
         if (authorDate is not null)
         {
             AuthorDate = authorDate;

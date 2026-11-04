@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
                         int offset = sizeof(int);
                         int size = Marshal.SizeOf<SYSTEM_HANDLE_ENTRY>();
 
-                        using var processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId);
+                        using var processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, bInheritHandle: true, processId);
 
                         for (int i = 0; i < handleCount; i++)
                         {
@@ -219,7 +219,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
         {
             var currentProcess = NativeMethods.GetCurrentProcess();
 
-            return NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out duplicatedHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS);
+            return NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out duplicatedHandle, 0, bInheritHandle: false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS);
         }
 
         private static bool GetFileNameFromHandle(IntPtr handle, [NotNullWhen(true)] out string? fileName)
@@ -456,7 +456,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
         internal sealed class SafeObjectHandle : SafeHandleZeroOrMinusOneIsInvalid
         {
             private SafeObjectHandle()
-                : base(true)
+                : base(ownsHandle: true)
             {
             }
 
@@ -475,7 +475,7 @@ namespace Datadog.Trace.Tools.Shared.Windows
         internal sealed class SafeProcessHandle : SafeHandleZeroOrMinusOneIsInvalid
         {
             private SafeProcessHandle()
-                : base(true)
+                : base(ownsHandle: true)
             {
             }
 

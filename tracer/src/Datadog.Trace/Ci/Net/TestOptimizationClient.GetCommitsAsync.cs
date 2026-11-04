@@ -31,7 +31,7 @@ internal sealed partial class TestOptimizationClient
         if (localCommits.Length == 0)
         {
             Log.Debug("TestOptimizationClient: Local commits not found. (since 1 month ago)");
-            return new SearchCommitResponse(null, null, false);
+            return new SearchCommitResponse(localCommits: null, remoteCommits: null, isOk: false);
         }
 
         Log.Debug<int>("TestOptimizationClient: Local commits = {Count}. Searching commits...", localCommits.Length);
@@ -40,7 +40,7 @@ internal sealed partial class TestOptimizationClient
         var commitRequests = new Data<object>[localCommits.Length];
         for (var i = 0; i < localCommits.Length; i++)
         {
-            commitRequests[i] = new Data<object>(localCommits[i], CommitType, null);
+            commitRequests[i] = new Data<object>(localCommits[i], CommitType, attributes: null);
         }
 
         var jsonQuery = JsonHelper.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, _repositoryUrl), SerializerSettings);
@@ -61,13 +61,13 @@ internal sealed partial class TestOptimizationClient
         Log.Debug("TestOptimizationClient: Commits.JSON RS = {Json}", queryResponse);
         if (string.IsNullOrEmpty(queryResponse))
         {
-            return new SearchCommitResponse(localCommits, null, false);
+            return new SearchCommitResponse(localCommits, remoteCommits: null, isOk: false);
         }
 
         var deserializedResult = JsonHelper.DeserializeObject<DataArrayEnvelope<Data<object>>>(queryResponse);
         if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
         {
-            return new SearchCommitResponse(localCommits, null, true);
+            return new SearchCommitResponse(localCommits, remoteCommits: null, isOk: true);
         }
 
         var stringArray = new string[deserializedResult.Data.Length];
@@ -85,7 +85,7 @@ internal sealed partial class TestOptimizationClient
             }
         }
 
-        return new SearchCommitResponse(localCommits, stringArray, true);
+        return new SearchCommitResponse(localCommits, stringArray, isOk: true);
     }
 
     private readonly struct SearchCommitsCallbacks : ICallbacks

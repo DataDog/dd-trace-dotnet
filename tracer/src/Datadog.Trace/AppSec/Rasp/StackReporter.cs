@@ -24,14 +24,14 @@ internal static class StackReporter
             return null;
         }
 
-        var frames = GetFrames(maxStackTraceDepth, topPercent, stackFrames ?? new StackTrace(true).GetFrames());
+        var frames = GetFrames(maxStackTraceDepth, topPercent, stackFrames ?? new StackTrace(fNeedFileInfo: true).GetFrames());
 
         if (frames is null || frames.Count == 0)
         {
             return null;
         }
 
-        return MetaStructHelper.StackTraceInfoToDictionary(null, _language, id, null, frames);
+        return MetaStructHelper.StackTraceInfoToDictionary(type: null, _language, id, message: null, frames);
     }
 
     private static List<Dictionary<string, object>> GetFrames(int maxStackTraceDepth, int topPercent, StackFrame?[] frames)
@@ -50,7 +50,7 @@ internal static class StackReporter
                 var fileNameValid = !string.IsNullOrEmpty(fileName);
                 allValidFrames.Add(MetaStructHelper.StackFrameToDictionary(
                     (uint)counter,
-                    null,
+                    text: null,
                     fileName,
                     (uint?)(fileNameValid ? frame?.GetFileLineNumber() : null),
                     (uint?)(fileNameValid ? frame?.GetFileColumnNumber() : null),

@@ -844,7 +844,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         CaptureBeginLine(ref captureInfo);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);
+                        throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, message: null);
                 }
 
                 CaptureScopeMembers(MethodScopeMembers?.Members);
@@ -969,7 +969,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        null);
+                        probeFilePath: null);
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
@@ -1070,7 +1070,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return this;
             }
 
-            var stackFrames = (new StackTrace(true).GetFrames() ?? Array.Empty<StackFrame>())
+            var stackFrames = (new StackTrace(fNeedFileInfo: true).GetFrames() ?? Array.Empty<StackFrame>())
                              .SkipWhile(static frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWithOrdinal("Datadog") == true).ToArray();
 
             JsonWriter.WritePropertyName("stack");

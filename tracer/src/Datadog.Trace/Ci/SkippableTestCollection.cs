@@ -346,7 +346,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
                 TestParameters? parameters = null;
                 if (!StringUtil.IsNullOrWhiteSpace(candidate.RawParameters) && !candidate.TryGetParameters(out parameters))
                 {
-                    _entries[i] = new Entry(null, -2);
+                    _entries[i] = new Entry(parameters: null, -2);
                     continue;
                 }
 
@@ -457,7 +457,7 @@ internal readonly struct SkippableTestCollection : IReadOnlyList<SkippableTest>
 
         private void FindArguments(int hash, ref Query query, bool filterByModule, string? moduleName, ref int first)
         {
-            Find(new MatchKey(hash, null, Fingerprint: false), ref query, filterByModule, moduleName, ref first);
+            Find(new MatchKey(hash, Metadata: null, Fingerprint: false), ref query, filterByModule, moduleName, ref first);
             if (first != 0 && query.MetadataTestName is { } metadata)
             {
                 Find(new MatchKey(hash, metadata, Fingerprint: false), ref query, filterByModule, moduleName, ref first);

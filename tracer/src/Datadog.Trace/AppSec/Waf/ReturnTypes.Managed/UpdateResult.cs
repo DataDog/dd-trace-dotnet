@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
             if (diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL && diagObject.Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID)
             {
-                ReportedDiagnostics = DiagnosticResultUtils.ExtractReportedDiagnostics(in diagObject, false);
+                ReportedDiagnostics = DiagnosticResultUtils.ExtractReportedDiagnostics(in diagObject, noRuleDiagnoticsIsError: false);
 
                 if (ReportedDiagnostics.Rules.Errors is { Count: > 0 })
                 {

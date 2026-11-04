@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
             {
                 if (returnValue is HttpWebResponse response)
                 {
-                    state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
                     HttpSemanticConventions.SetHttpClientResponseValues(state.Scope.Span, response.ProtocolVersion);
                     state.Scope.Dispose();
                 }
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
                     state.Scope.Span.SetException(exception, markAsError: false);
 
-                    state.Scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    state.Scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
                     HttpSemanticConventions.SetHttpClientResponseValues(state.Scope.Span, exceptionResponse.ProtocolVersion);
                     state.Scope.Dispose();
                 }

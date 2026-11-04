@@ -38,10 +38,10 @@ public static class DatadogExtensions
         switch (enableProfiler)
         {
             case true:
-                cfg = cfg.WithOption(ConfigOptions.KeepBenchmarkFiles, true);
+                cfg = cfg.WithOption(ConfigOptions.KeepBenchmarkFiles, value: true);
                 break;
             case false:
-                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Profiler.ProfilingEnabled, null);
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Profiler.ProfilingEnabled, value: null);
                 break;
         }
 

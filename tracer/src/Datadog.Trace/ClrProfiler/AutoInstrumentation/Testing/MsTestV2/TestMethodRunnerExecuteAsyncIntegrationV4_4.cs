@@ -39,7 +39,7 @@ public static class TestMethodRunnerExecuteAsyncIntegrationV4_4
         }
 
         execution.StartNativeAttempt();
-        return new CallTargetState(null, execution);
+        return new CallTargetState(scope: null, execution);
     }
 
     /// <summary>

@@ -40,7 +40,7 @@ internal static class SymbolsExtensions
     internal static string FullName(this TypeSpecificationHandle typeSpecHandle, MetadataReader metadataReader)
     {
         var typeSpec = metadataReader.GetTypeSpecification(typeSpecHandle);
-        return typeSpec.DecodeSignature(new TypeProvider(false), 0);
+        return typeSpec.DecodeSignature(new TypeProvider(includeResScope: false), 0);
     }
 
     internal static string FullName(this EntityHandle handle, MetadataReader metadataReader)
@@ -59,7 +59,7 @@ internal static class SymbolsExtensions
 
             case { Kind: HandleKind.TypeReference }:
                 {
-                    return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
+                    return ((TypeReferenceHandle)handle).FullName(metadataReader, includeResolutionScope: false);
                 }
 
             case { Kind: HandleKind.TypeSpecification }:

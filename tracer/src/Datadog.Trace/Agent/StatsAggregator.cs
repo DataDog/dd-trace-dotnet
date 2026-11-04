@@ -206,7 +206,7 @@ namespace Datadog.Trace.Agent
         public Task DisposeAsync()
         {
             _discoveryService?.RemoveSubscription(HandleConfigUpdate);
-            _statsd.SetRequired(StatsdConsumer.StatsAggregator, false);
+            _statsd.SetRequired(StatsdConsumer.StatsAggregator, enabled: false);
             _processExit.TrySetResult(true);
             _settingSubscription.Dispose();
             return _flushTask;

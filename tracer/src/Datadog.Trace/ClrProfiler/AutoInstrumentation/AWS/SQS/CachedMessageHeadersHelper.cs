@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 messageAttributeValueType,
                 parameterTypes: new Type[] { typeof(string) },
                 typeof(DuckType).Module,
-                true);
+                skipVisibility: true);
 
             ILGenerator messageAttributeIL = createMessageAttributeValueMethod.GetILGenerator();
             messageAttributeIL.Emit(OpCodes.Newobj, messageAttributeValueCtor);

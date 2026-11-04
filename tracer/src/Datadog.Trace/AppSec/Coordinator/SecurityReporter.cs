@@ -304,7 +304,7 @@ internal sealed partial class SecurityReporter
 
             if (written)
             {
-                Security.Instance?.SetTraceSamplingPriority(_span, false); // Avoid downstream propagation in Standalone mode
+                Security.Instance?.SetTraceSamplingPriority(_span, setSource: false); // Avoid downstream propagation in Standalone mode
             }
         }
     }

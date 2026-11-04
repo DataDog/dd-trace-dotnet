@@ -54,7 +54,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
         };
 
         return new CallTargetState(
-            null,
+            scope: null,
             XUnitIntegration.CreateTest(
                 ref runnerInstance,
                 testCaseMetadata: ((invokerInstance.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(invokerInstance.TestCase.UniqueID)));

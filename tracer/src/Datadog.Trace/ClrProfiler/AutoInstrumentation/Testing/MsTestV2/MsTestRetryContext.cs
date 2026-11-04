@@ -56,7 +56,7 @@ internal sealed class MsTestRetryContext : IDisposable
         // The copy is only needed while Run starts the retry; the async method captures its own context.
         using (var context = _executionContext.CreateCopy())
         {
-            ExecutionContext.Run(context, _ => task = RunWithTestContextAsync(retry), null);
+            ExecutionContext.Run(context, _ => task = RunWithTestContextAsync(retry), state: null);
         }
 
         return task!;

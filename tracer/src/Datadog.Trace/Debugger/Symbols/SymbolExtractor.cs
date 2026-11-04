@@ -212,7 +212,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 var allScopes = nestedClassesScopeIndex == 0 ? null : new Model.Scope[nestedClassesScopeIndex];
                 if (allScopes is null)
                 {
-                    linesAndSource = GetClassSourceLocationInfo(null);
+                    linesAndSource = GetClassSourceLocationInfo(allScopes: null);
                     classScope = new Model.Scope
                     {
                         Name = typeName,
@@ -270,7 +270,7 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 if (scopes is not null)
                 {
-                    ArrayPool<Model.Scope>.Shared.Return(scopes, true);
+                    ArrayPool<Model.Scope>.Shared.Return(scopes, clearArray: true);
                 }
             }
 
@@ -406,7 +406,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var fieldTypeName = fieldDef.DecodeSignature(new TypeProvider(false), 0);
+                var fieldTypeName = fieldDef.DecodeSignature(new TypeProvider(includeResScope: false), 0);
                 if (string.IsNullOrEmpty(fieldTypeName))
                 {
                     continue;
@@ -605,7 +605,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var isAsyncMethod = DatadogMetadataReader.IsAsyncMethod(method.GetCustomAttributes());
             var methodLanguageSpecifics = new LanguageSpecifics
             {
-                ReturnType = method.DecodeSignature(new TypeProvider(false), 0).ReturnType,
+                ReturnType = method.DecodeSignature(new TypeProvider(includeResScope: false), 0).ReturnType,
                 AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask, CultureInfo.InvariantCulture)] } : null,
                 Annotations = methodAttributes > 0 && isAsyncMethod ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes, CultureInfo.InvariantCulture)], "async" } :
                               methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes, CultureInfo.InvariantCulture)] } :
@@ -755,7 +755,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var argsSymbol = method.IsStaticMethod() ? new Symbol[parameters.Count] : new Symbol[parameters.Count + 1]; // 'this'
             int index = 0;
-            var methodParameterTypes = method.DecodeSignature(new TypeProvider(false), 0).ParameterTypes;
+            var methodParameterTypes = method.DecodeSignature(new TypeProvider(includeResScope: false), 0).ParameterTypes;
             var typesIndex = 0;
             if (!method.IsStaticMethod())
             {

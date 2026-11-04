@@ -1823,7 +1823,7 @@ internal static class ExternalCoverageXmlBackfill
         backendBitmap = [];
         rejectedUnsafeMatch = false;
 
-        var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
+        var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, useOSSeparator: false);
         if (IsSafeRelativePathCandidate(sourceRootRelativePath, sourcePath) &&
             TryGetBackendCoverage(backfillData, [sourceRootRelativePath], pathMatchTracker, validationState, allowExactMatch: true, allowSuffixMatch: false, normalizedLocalCandidate: null, out backendKey, out backendBitmap, out rejectedUnsafeMatch))
         {
@@ -2159,7 +2159,7 @@ internal static class ExternalCoverageXmlBackfill
             return ContainsRelativeDotDirectoryPathSegment(path);
         }
 
-        var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(path, false);
+        var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(path, useOSSeparator: false);
         return !IsSafeRelativePathCandidate(sourceRootRelativePath, path);
     }
 
@@ -2230,7 +2230,7 @@ internal static class ExternalCoverageXmlBackfill
     private static IEnumerable<string> GetRawPathCandidates(string sourcePath, string reportPath)
     {
         yield return sourcePath;
-        yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
+        yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, useOSSeparator: false);
 
         if (!IsPathRootedCrossPlatform(sourcePath))
         {
@@ -2239,7 +2239,7 @@ internal static class ExternalCoverageXmlBackfill
             {
                 var reportRelativePath = Path.Combine(reportDirectory!, sourcePath);
                 yield return reportRelativePath;
-                yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(reportRelativePath, false);
+                yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(reportRelativePath, useOSSeparator: false);
             }
         }
     }
@@ -2459,7 +2459,7 @@ internal static class ExternalCoverageXmlBackfill
     {
         if (IsPathRootedCrossPlatform(sourcePath))
         {
-            var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
+            var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, useOSSeparator: false);
             if (IsSafeRelativePathCandidate(sourceRootRelativePath, sourcePath))
             {
                 return sourceRootRelativePath;
@@ -2471,7 +2471,7 @@ internal static class ExternalCoverageXmlBackfill
             if (!StringUtil.IsNullOrWhiteSpace(reportDirectory))
             {
                 var reportRelativePath = Path.Combine(reportDirectory!, sourcePath);
-                var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(reportRelativePath, false);
+                var sourceRootRelativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(reportRelativePath, useOSSeparator: false);
                 return IsSafeRelativePathCandidate(sourceRootRelativePath, reportRelativePath) ? sourceRootRelativePath : reportRelativePath;
             }
         }

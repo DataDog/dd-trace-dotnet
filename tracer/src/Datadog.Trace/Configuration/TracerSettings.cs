@@ -41,7 +41,7 @@ namespace Datadog.Trace.Configuration
 
         [TestingOnly]
         internal TracerSettings()
-            : this(null, new ConfigurationTelemetry(), new OverrideErrorLog())
+            : this(source: null, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
         }
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Configuration
 
             PropagateProcessTags = config
                                        .WithKeys(ConfigurationKeys.PropagateProcessTags)
-                                       .AsBool(true);
+                                       .AsBool(defaultValue: true);
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Configuration
             // We don't want/need to record this value, so explicitly use null telemetry
             IsRunningInCiVisibility = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
                                      .WithKeys(ConfigurationKeys.CIVisibility.IsRunningInCiVisMode)
-                                     .AsBool(false);
+                                     .AsBool(defaultValue: false);
 
             LambdaMetadata = LambdaMetadata.Create();
 
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Configuration
 
             var otelExporterResult = otelMetricsExporter
                .AsBoolResult(
-                    null,
+                    validator: null,
                     static value => value switch
                     {
                         not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
@@ -268,7 +268,7 @@ namespace Datadog.Trace.Configuration
 
             var otelLogsExporterResult = otelLogsExporter
                .AsBoolResult(
-                    null,
+                    validator: null,
                     static value => value switch
                     {
                         not null when string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) => ParsingResult<bool>.Success(result: false),
@@ -475,7 +475,7 @@ namespace Datadog.Trace.Configuration
 
             PropagationExtractFirstOnly = config
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
-                                         .AsBool(false);
+                                         .AsBool(defaultValue: false);
 
             PropagationBehaviorExtract = config
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
@@ -523,7 +523,7 @@ namespace Datadog.Trace.Configuration
 
             IpHeaderEnabled = config
                              .WithKeys(ConfigurationKeys.IpHeaderEnabled)
-                             .AsBool(false);
+                             .AsBool(defaultValue: false);
 
             // DSM is now enabled by default in non-serverless environments
             IsDataStreamsMonitoringEnabled = config
@@ -552,11 +552,11 @@ namespace Datadog.Trace.Configuration
 
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
-                                  .AsBool(false);
+                                  .AsBool(defaultValue: false);
 
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(false); // default is false, but user config can be overridden below
+                                     .AsBool(defaultValue: false); // default is false, but user config can be overridden below
 
             if (StatsComputationEnabled && !ApmTracingEnabled)
             {
@@ -685,7 +685,7 @@ namespace Datadog.Trace.Configuration
 
             DbmInjectSqlBasehash = config
                 .WithKeys(ConfigurationKeys.DbmInjectSqlBasehash)
-                .AsBool(false);
+                .AsBool(defaultValue: false);
 
             if (dbmPropagationMode.ForceInjectBaseHash && !DbmInjectSqlBasehash)
             {
@@ -694,24 +694,24 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigurationKeys.DbmInjectSqlBasehash, true, ConfigurationOrigins.Calculated);
             }
 
-            RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
+            RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(defaultValue: true);
 
             TraceId128BitGenerationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled)
-                                            .AsBool(true);
+                                            .AsBool(defaultValue: true);
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(TraceId128BitGenerationEnabled);
 
             CommandsCollectionEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
-                                       .AsBool(false);
+                                       .AsBool(defaultValue: false);
 
             BypassHttpRequestUrlCachingEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled)
-                                                       .AsBool(false);
+                                                       .AsBool(defaultValue: false);
 
             InjectContextIntoStoredProceduresEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled)
-                                                       .AsBool(false);
+                                                       .AsBool(defaultValue: false);
 
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
             var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();
@@ -725,7 +725,7 @@ namespace Datadog.Trace.Configuration
             }
 
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
-                                                       .AsBool(false);
+                                                       .AsBool(defaultValue: false);
 
             if (source is CompositeConfigurationSource compositeSource)
             {
@@ -831,7 +831,7 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
 
-            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
+            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(defaultValue: false);
             PartialFlushMinSpans = config
                                   .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
                                   .AsInt32(500, static value => value > 0).Value;

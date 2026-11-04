@@ -30,9 +30,9 @@ namespace Datadog.Trace.Ci.Configuration
         public TestOptimizationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var config = new ConfigurationBuilder(source, telemetry);
-            Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
+            Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(defaultValue: false);
             Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
-            Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
+            Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(defaultValue: false);
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
             AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Ci.Configuration
             ProxyNoProxy = proxyNoProxy.Split(Separators.Space, StringSplitOptions.RemoveEmptyEntries);
 
             // Intelligent Test Runner
-            IntelligentTestRunnerEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled).AsBool(true);
+            IntelligentTestRunnerEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled).AsBool(defaultValue: true);
 
             // Tests skipping
             TestsSkippingEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestsSkippingEnabled).AsBool();
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Ci.Configuration
             CodeCoverageEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverage).AsBool();
             CodeCoverageSnkFilePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile).AsString();
             CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString();
-            CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(true);
+            CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(defaultValue: true);
             CodeCoverageMode = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageMode).AsString();
 
             // Git upload
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Ci.Configuration
             ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsString();
 
             // Check if Datadog.Trace should be installed in the GAC
-            InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
+            InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(defaultValue: true);
 
             // Known tests feature
             KnownTestsEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.KnownTestsEnabled).AsBool();
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Ci.Configuration
             }
 
             // Dynamic Instrumentation
-            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled).AsBool(false);
+            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled).AsBool(defaultValue: false);
 
             // RUM flush milliseconds
             RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Ci.Configuration
             TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: static val => val >= 1) ?? 1_000;
 
             // Retry counts that depend on the duration of the first execution
-            DynamicFlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled).AsBool(false);
+            DynamicFlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryEnabled).AsBool(defaultValue: false);
             DynamicFlakyRetryCounts = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicFlakyRetryBuckets).GetAsClass<int[]>(validator: null, converter: ParseDynamicFlakyRetryCounts);
 
             // Test Impact Analysis enablement

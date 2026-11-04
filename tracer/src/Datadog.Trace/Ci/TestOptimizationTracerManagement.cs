@@ -205,7 +205,7 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
                 }
 
                 Log.Information("TestOptimizationTracerManagement: Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
-                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
+                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, BypassOnLocal: true, _settings.ProxyNoProxy, credential), credential);
             }
         }
 

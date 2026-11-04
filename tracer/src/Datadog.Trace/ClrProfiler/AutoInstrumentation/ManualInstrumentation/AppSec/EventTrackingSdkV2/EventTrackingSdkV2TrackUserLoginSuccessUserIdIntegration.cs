@@ -39,7 +39,7 @@ public sealed class EventTrackingSdkV2TrackUserLoginSuccessUserIdIntegration
         }
         else
         {
-            Datadog.Trace.AppSec.EventTrackingSdkV2.TrackUserLoginSuccess<IUserDetails?>(userLogin, null, metadata, Trace.Tracer.Instance);
+            Datadog.Trace.AppSec.EventTrackingSdkV2.TrackUserLoginSuccess<IUserDetails?>(userLogin, userDetails: null, metadata, Trace.Tracer.Instance);
         }
 
         return CallTargetState.GetDefault();

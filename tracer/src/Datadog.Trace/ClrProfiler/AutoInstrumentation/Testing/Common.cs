@@ -132,7 +132,7 @@ internal static class Common
         var currentContext = SynchronizationContext.Current;
         try
         {
-            SynchronizationContext.SetSynchronizationContext(null);
+            SynchronizationContext.SetSynchronizationContext(syncContext: null);
             var skippableFeature = TestOptimization.Instance.SkippableFeature;
             if (skippableFeature is null)
             {

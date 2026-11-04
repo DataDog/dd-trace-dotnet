@@ -678,16 +678,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public ExceptionRelatedFrames GetAllExceptionRelatedStackFrames(Exception exception)
         {
-            return CreateExceptionPath(exception, true);
+            return CreateExceptionPath(exception, isTopFrame: true);
 
             ExceptionRelatedFrames CreateExceptionPath(Exception e, bool isTopFrame)
             {
-                var frames = GetParticipatingFrames(new StackTrace(e, false), isTopFrame, ParticipatingFrameState.Default);
+                var frames = GetParticipatingFrames(new StackTrace(e, fNeedFileInfo: false), isTopFrame, ParticipatingFrameState.Default);
 
                 ExceptionRelatedFrames? innerFrame = null;
 
                 // the first inner exception in the inner exceptions list of the aggregate exception is similar to the inner exception`
-                innerFrame = e.InnerException is not null ? CreateExceptionPath(e.InnerException, false) : null;
+                innerFrame = e.InnerException is not null ? CreateExceptionPath(e.InnerException, isTopFrame: false) : null;
 
                 return new ExceptionRelatedFrames(e, frames.ToArray(), innerFrame);
             }

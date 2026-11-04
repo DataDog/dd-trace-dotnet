@@ -49,7 +49,7 @@ public static class EventTrackingSdkV2
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessSdkSource, Tags.AppSec.EventsUsers.True);
 
-        PopulateTags(userDetails, metadata, setTag, true);
+        PopulateTags(userDetails, metadata, setTag, loginSuccess: true);
 
         RunSecurityChecksAndReport(internalSpan, userLogin: userLogin, userId: userDetails?.Id, loginSuccess: true);
     }
@@ -81,7 +81,7 @@ public static class EventTrackingSdkV2
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, exists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, userLogin);
 
-        PopulateTags(userDetails, metadata, setTag, false);
+        PopulateTags(userDetails, metadata, setTag, loginSuccess: false);
 
         RunSecurityChecksAndReport(internalSpan, userLogin: userLogin, loginSuccess: false);
     }

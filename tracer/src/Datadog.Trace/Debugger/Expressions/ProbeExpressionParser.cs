@@ -97,7 +97,7 @@ internal partial class ProbeExpressionParser<T>
                         }
 
                     default:
-                        return ParseTree(reader, parameters, itParameter, false);
+                        return ParseTree(reader, parameters, itParameter, shouldAdvanceReader: false);
                 }
         }
 
@@ -109,7 +109,7 @@ internal partial class ProbeExpressionParser<T>
         _arrayStack++;
         reader.Read();
         var right = ParseTree(reader, parameters, itParameter);
-        var left = Combine(null, right, combiner);
+        var left = Combine(leftOperand: null, right, combiner);
 
         while (reader.Read())
         {
@@ -134,7 +134,7 @@ internal partial class ProbeExpressionParser<T>
                 break;
             }
 
-            right = ParseTree(reader, parameters, itParameter, false);
+            right = ParseTree(reader, parameters, itParameter, shouldAdvanceReader: false);
             left = Combine(left, right, combiner);
         }
 

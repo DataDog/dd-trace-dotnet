@@ -45,17 +45,17 @@ namespace Datadog.Trace.Configuration
             {
                 _subscriptionManager.SubscribeToChanges(_subscription!);
 
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);                          // 15
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);                      // 14
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);                       // 13
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);                          // 12
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);                      // 19
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);                         // 29
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnabledDynamicInstrumentation, true);       // 38
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableExceptionReplay, true);               // 39
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableCodeOrigin, true);                    // 40
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableLiveDebugging, true);                 // 41
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, true);                         // 45
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, available: true);                          // 15
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, available: true);                      // 14
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, available: true);                       // 13
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, available: true);                          // 12
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, available: true);                      // 19
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, available: true);                         // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnabledDynamicInstrumentation, available: true);       // 38
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableExceptionReplay, available: true);               // 39
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableCodeOrigin, available: true);                    // 40
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingEnableLiveDebugging, available: true);                 // 41
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingMulticonfig, available: true);                         // 45
             }
         }
 

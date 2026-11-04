@@ -37,7 +37,7 @@ public sealed class DeleteObjectsIntegration
         }
 
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
-        AwsS3Common.SetTags(tags, request.BucketName, null);  // there is no key in a DeleteObjectsRequest
+        AwsS3Common.SetTags(tags, request.BucketName, objectKey: null);  // there is no key in a DeleteObjectsRequest
 
         return new CallTargetState(scope);
     }

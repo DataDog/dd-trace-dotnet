@@ -45,7 +45,7 @@ public sealed class SymmetricAlgorithmIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
-        return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance, false));
+        return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance, autoCloseScopeWhenSingleSpan: false));
     }
 
     /// <summary>

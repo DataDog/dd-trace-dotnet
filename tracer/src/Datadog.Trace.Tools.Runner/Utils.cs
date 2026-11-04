@@ -423,7 +423,7 @@ namespace Datadog.Trace.Tools.Runner
             var discoveryService = DiscoveryService.CreateUnmanaged(
                 settings.Manager.InitialExporterSettings,
                 ContainerMetadata.Instance,
-                new ServiceRemappingHash(null),
+                new ServiceRemappingHash(serializedProcessTags: null),
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
@@ -967,7 +967,7 @@ namespace Datadog.Trace.Tools.Runner
 
         public record CIVisibilityOptions(bool EnableGacInstallation, bool EnableVsTestConsoleConfigModification, bool ReducePathLength)
         {
-            public static CIVisibilityOptions None { get; } = new(false, false, false);
+            public static CIVisibilityOptions None { get; } = new(EnableGacInstallation: false, EnableVsTestConsoleConfigModification: false, ReducePathLength: false);
         }
     }
 }

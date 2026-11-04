@@ -37,7 +37,7 @@ public sealed class ListObjectsV2Integration
         }
 
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
-        AwsS3Common.SetTags(tags, request.BucketName, null); // there is no key in a ListObjectsV2Request
+        AwsS3Common.SetTags(tags, request.BucketName, objectKey: null); // there is no key in a ListObjectsV2Request
 
         return new CallTargetState(scope);
     }

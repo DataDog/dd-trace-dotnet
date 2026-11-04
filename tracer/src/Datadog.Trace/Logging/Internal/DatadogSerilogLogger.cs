@@ -33,7 +33,7 @@ namespace Datadog.Trace.Logging
             FileLoggingConfiguration = fileLoggingConfiguration;
         }
 
-        public static DatadogSerilogLogger NullLogger { get; } = new(SilentLogger.Instance, new NullLogRateLimiter(), null);
+        public static DatadogSerilogLogger NullLogger { get; } = new(SilentLogger.Instance, new NullLogRateLimiter(), fileLoggingConfiguration: null);
 
         public FileLoggingConfiguration? FileLoggingConfiguration { get; }
 

@@ -146,7 +146,7 @@ namespace Datadog.Trace.Propagators
             var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "01" : "00";
 
 #if NET6_0_OR_GREATER
-            return string.Create(null, stackalloc char[128], $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}");
+            return string.Create(provider: null, stackalloc char[128], $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}");
 #else
             return $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}";
 #endif

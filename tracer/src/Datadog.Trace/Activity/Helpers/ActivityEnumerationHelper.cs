@@ -75,7 +75,7 @@ internal static class ActivityEnumerationHelper
             var forEach = TagObjectsEnumerator.BuildAllocationFreeForEachDelegate(runtimeType);
 
             Volatile.Write(ref _tagObjectsType, runtimeType);
-            return Interlocked.CompareExchange(ref _tagObjectsEnumerator, forEach, null) ?? forEach;
+            return Interlocked.CompareExchange(ref _tagObjectsEnumerator, forEach, comparand: null) ?? forEach;
         }
 
         static void EnumerateWithAllocation(ref OtelTagsEnumerationState state, TagObjectsEnumerator.ForEachDelegate forEachDelegate, IEnumerable<KeyValuePair<string, object?>> values, Type expected, Type runtimeType)
@@ -123,7 +123,7 @@ internal static class ActivityEnumerationHelper
             var forEach = TagsEnumerator.BuildAllocationFreeForEachDelegate(runtimeType);
 
             Volatile.Write(ref _tagsType, runtimeType);
-            return Interlocked.CompareExchange(ref _tagsEnumerator, forEach, null) ?? forEach;
+            return Interlocked.CompareExchange(ref _tagsEnumerator, forEach, comparand: null) ?? forEach;
         }
 
         static void EnumerateWithAllocation(ref OtelTagsEnumerationState state, TagsEnumerator.ForEachDelegate forEachDelegate, IEnumerable<KeyValuePair<string, string?>> values, Type expected, Type runtimeType)

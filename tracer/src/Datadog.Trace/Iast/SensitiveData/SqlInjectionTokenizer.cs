@@ -108,7 +108,7 @@ internal sealed class SqlInjectionTokenizer : ITokenizer
                 }
             }
 
-            res.Add(new Range(start, end - start, null));
+            res.Add(new Range(start, end - start, source: null));
         }
 
         return res;

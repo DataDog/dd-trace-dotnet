@@ -36,7 +36,7 @@ public static class XUnitTestRunnerBaseRunV3_4XIntegration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, context);
+        return new CallTargetState(scope: null, context);
     }
 
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)

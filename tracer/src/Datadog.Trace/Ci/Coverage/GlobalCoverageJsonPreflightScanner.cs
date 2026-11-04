@@ -81,7 +81,7 @@ internal sealed class GlobalCoverageJsonPreflightScanner
 
     public void Scan(Stream stream)
     {
-        _reader = new StreamReader(stream, new UTF8Encoding(false, true), true, _limits.ScannerBufferCharacters, true);
+        _reader = new StreamReader(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true), detectEncodingFromByteOrderMarks: true, _limits.ScannerBufferCharacters, leaveOpen: true);
         _readOffset = 0;
         _readCount = 0;
         _depth = 0;

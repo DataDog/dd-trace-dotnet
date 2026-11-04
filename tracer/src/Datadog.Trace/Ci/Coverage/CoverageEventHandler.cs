@@ -130,7 +130,7 @@ internal abstract class CoverageEventHandler
                 }
                 else
                 {
-                    context.DisposeWhenExecutionContextsAreInactive(null, _recordContextDisposed);
+                    context.DisposeWhenExecutionContextsAreInactive(onBeforeDisposed: null, _recordContextDisposed);
                 }
             }
             finally
@@ -164,7 +164,7 @@ internal abstract class CoverageEventHandler
 
             _contextDiagnostics.RecordClosed();
             MarkGlobalCoverageIncomplete(reason);
-            context.DisposeWhenExecutionContextsAreInactive(null, _recordContextDisposed, handle.Admission);
+            context.DisposeWhenExecutionContextsAreInactive(onBeforeDisposed: null, _recordContextDisposed, handle.Admission);
         }
         catch
         {

@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tagging
             if (tags is null)
             {
                 var newTags = new List<KeyValuePair<string, string>>(DefaultCapacity);
-                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+                tags = Interlocked.CompareExchange(ref _tags, newTags, comparand: null) ?? newTags;
             }
 
             return tags;
@@ -251,7 +251,7 @@ namespace Datadog.Trace.Tagging
             if (metrics is null)
             {
                 var newMetrics = new List<KeyValuePair<string, double>>();
-                metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, null) ?? newMetrics;
+                metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, comparand: null) ?? newMetrics;
             }
 
             lock (metrics)
@@ -323,7 +323,7 @@ namespace Datadog.Trace.Tagging
                 if (metastruct is null)
                 {
                     var newMetastruct = new List<KeyValuePair<string, byte[]>>();
-                    metastruct = Interlocked.CompareExchange(ref _metaStruct, newMetastruct, null) ?? newMetastruct;
+                    metastruct = Interlocked.CompareExchange(ref _metaStruct, newMetastruct, comparand: null) ?? newMetastruct;
                 }
 
                 lock (metastruct)

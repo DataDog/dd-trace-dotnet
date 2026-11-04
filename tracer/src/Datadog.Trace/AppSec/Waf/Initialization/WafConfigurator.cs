@@ -148,7 +148,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             if (wafBuilderHandle == IntPtr.Zero)
             {
                 // Update logs and reports the failure for us, there is nothing to release
-                return Update(IntPtr.Zero, configurationState, encoder, ref diagnostics, rulesFile, false);
+                return Update(IntPtr.Zero, configurationState, encoder, ref diagnostics, rulesFile, updating: false);
             }
 
             try
@@ -157,7 +157,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 // configuration of the builder like any other, and it persists across builds
                 ApplyObfuscatorConfig(wafBuilderHandle, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
 
-                return Update(wafBuilderHandle, configurationState, encoder, ref diagnostics, rulesFile, false);
+                return Update(wafBuilderHandle, configurationState, encoder, ref diagnostics, rulesFile, updating: false);
             }
             catch (Exception ex)
             {
@@ -315,8 +315,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                     void DumpStatsMessages(ref WafStats stats)
                     {
-                        DumpMessages(stats.Errors, true);
-                        DumpMessages(stats.Warnings, false);
+                        DumpMessages(stats.Errors, isError: true);
+                        DumpMessages(stats.Warnings, isError: false);
                     }
 
                     void DumpMessages(IReadOnlyDictionary<string, object>? messages, bool isError)

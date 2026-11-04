@@ -111,7 +111,7 @@ namespace Datadog.Trace.AppSec
 
                 if (requestBody is not null)
                 {
-                    iastRequestContext!.AddRequestBody(null, requestBody);
+                    iastRequestContext!.AddRequestBody(body: null, requestBody);
                 }
             }
         }

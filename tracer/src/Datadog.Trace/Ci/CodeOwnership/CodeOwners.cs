@@ -181,7 +181,7 @@ namespace Datadog.Trace.Ci.CodeOwnership
             /// Creates a globstar that consumes zero or more path segments, or at least one when required.
             /// </summary>
             public static GlobPathSegment GlobStar(bool requiresSegment)
-                => new(null, requiresSegment);
+                => new(segment: null, requiresSegment);
 
             /// <summary>
             /// Wraps a normal compiled segment pattern.

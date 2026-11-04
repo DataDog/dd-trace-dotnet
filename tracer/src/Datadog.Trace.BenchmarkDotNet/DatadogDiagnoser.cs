@@ -46,7 +46,7 @@ public class DatadogDiagnoser : IDiagnoser
     /// Initializes a new instance of the <see cref="DatadogDiagnoser"/> class.
     /// </summary>
     public DatadogDiagnoser()
-        : this(false)
+        : this(enableProfiler: false)
     {
     }
 
@@ -373,17 +373,17 @@ public class DatadogDiagnoser : IDiagnoser
 
         if (!File.Exists(_profiler64Path))
         {
-            throw new FileNotFoundException(null, _profiler64Path);
+            throw new FileNotFoundException(message: null, _profiler64Path);
         }
 
         if (_profiler32Path is not null && !File.Exists(_profiler32Path))
         {
-            throw new FileNotFoundException(null, _profiler32Path);
+            throw new FileNotFoundException(message: null, _profiler32Path);
         }
 
         if (!File.Exists(_loaderConfig))
         {
-            throw new FileNotFoundException(null, _loaderConfig);
+            throw new FileNotFoundException(message: null, _loaderConfig);
         }
     }
 

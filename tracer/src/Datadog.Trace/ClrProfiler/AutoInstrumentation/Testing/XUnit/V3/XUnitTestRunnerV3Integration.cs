@@ -58,7 +58,7 @@ public static class XUnitTestRunnerV3Integration
                 ref runnerInstance,
                 testCaseMetadata: ((context.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(context.Test.TestCase.UniqueID)),
             (object)context);
-        return new CallTargetState(null, state);
+        return new CallTargetState(scope: null, state);
     }
 
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)

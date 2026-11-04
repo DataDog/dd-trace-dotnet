@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int index)
         {
-            return new CallTargetState(null, index);
+            return new CallTargetState(scope: null, index);
         }
 
         /// <summary>

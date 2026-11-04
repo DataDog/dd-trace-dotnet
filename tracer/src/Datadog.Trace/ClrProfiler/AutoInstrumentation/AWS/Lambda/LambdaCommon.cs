@@ -110,7 +110,7 @@ internal abstract class LambdaCommon
         }
         catch (Exception ex)
         {
-            Log("Could not send payload to the extension", ex, false);
+            Log("Could not send payload to the extension", ex, debug: false);
         }
     }
 
@@ -132,7 +132,7 @@ internal abstract class LambdaCommon
         }
         catch (Exception ex)
         {
-            Log("Could not flush to the extension", ex, false);
+            Log("Could not flush to the extension", ex, debug: false);
         }
     }
 

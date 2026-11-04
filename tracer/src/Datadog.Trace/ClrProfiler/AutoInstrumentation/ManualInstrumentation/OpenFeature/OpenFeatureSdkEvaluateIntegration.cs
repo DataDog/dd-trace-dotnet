@@ -31,7 +31,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
-        return new CallTargetState(null, new State(flagKey, targetType, defaultValue, targetingKey, attributes));
+        return new CallTargetState(scope: null, new State(flagKey, targetType, defaultValue, targetingKey, attributes));
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)

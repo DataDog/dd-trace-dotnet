@@ -32,7 +32,7 @@ internal sealed class ExecutedTelemetryHelper
         // Initialize the tags
         for (int i = 0; i < _executedSinkTags.Length; i++)
         {
-            _executedSinkTags[i] = $"{BasicExecutedTag}.executed.sink.{GetTag((IastVulnerabilityType)i, false)}";
+            _executedSinkTags[i] = $"{BasicExecutedTag}.executed.sink.{GetTag((IastVulnerabilityType)i, raiseException: false)}";
         }
 
         for (int i = 0; i < _executedSourceTags.Length; i++)
@@ -42,7 +42,7 @@ internal sealed class ExecutedTelemetryHelper
 
         for (int i = 0; i < _supressedVulnerabilityTags.Length; i++)
         {
-            _supressedVulnerabilityTags[i] = $"{BasicExecutedTag}.suppressed.vulnerabilities.{GetTag((IastVulnerabilityType)i, false)}";
+            _supressedVulnerabilityTags[i] = $"{BasicExecutedTag}.suppressed.vulnerabilities.{GetTag((IastVulnerabilityType)i, raiseException: false)}";
         }
     }
 

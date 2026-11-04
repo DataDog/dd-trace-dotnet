@@ -203,7 +203,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 
         public override async Task DisposeAsync()
         {
-            await DisposeAsync(true).ConfigureAwait(false);
+            await DisposeAsync(finalFlush: true).ConfigureAwait(false);
             _api.Dispose();
         }
 

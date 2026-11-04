@@ -131,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 return false;
             }
 
-            var logLevelStaticsProxy = proxyResult.CreateInstance<LogLevelStaticsProxy>(null);
+            var logLevelStaticsProxy = proxyResult.CreateInstance<LogLevelStaticsProxy>(instance: null);
 
             // we should already have checked that we haven't added our target
             // and we know this is a List<LoggingRule>
@@ -423,7 +423,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             target.SetBaseProxy(targetProxy);
             // theoretically this should be called per logging configuration
             // but we don't need to so hack in the call here
-            targetProxy.Initialize(null);
+            targetProxy.Initialize(configuration: null);
             return reverseProxy;
         }
 
@@ -441,7 +441,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             target.SetBaseProxy(targetProxy);
             // theoretically this should be called per logging configuration
             // but we don't need to so hack in the call here
-            targetProxy.Initialize(null);
+            targetProxy.Initialize(configuration: null);
             return reverseProxy;
         }
 
@@ -462,7 +462,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var targetProxy = reverseProxy.DuckCast<ITargetProxy>();
             // theoretically this should be called per logging configuration
             // but we don't need to so hack in the call here
-            targetProxy.Initialize(null);
+            targetProxy.Initialize(configuration: null);
 
             return reverseProxy;
         }

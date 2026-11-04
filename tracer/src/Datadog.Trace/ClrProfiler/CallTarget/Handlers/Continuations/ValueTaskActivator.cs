@@ -47,7 +47,7 @@ internal static class ValueTaskActivator<TValueTask>
             returnType: valueTaskType,
             parameterTypes: [typeof(Task)],
             typeof(DuckType).Module,
-            true);
+            skipVisibility: true);
 
         var il = createValueTaskMethod.GetILGenerator();
         il.Emit(OpCodes.Ldarg_0);

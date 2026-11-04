@@ -20,7 +20,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// <summary>Experimental synchronous resolution methods for the Datadog provider.</summary>
 public sealed partial class DatadogProvider
 {
-    private static readonly ClientMetadata DirectClientMetadata = new(null, null);
+    private static readonly ClientMetadata DirectClientMetadata = new(name: null, version: null);
 
     /// <summary>Synchronously resolves a flag as bool. Experimental Datadog extension.</summary>
     /// <remarks>

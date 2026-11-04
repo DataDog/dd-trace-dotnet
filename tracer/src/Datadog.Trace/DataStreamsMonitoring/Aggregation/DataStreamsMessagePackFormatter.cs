@@ -156,7 +156,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             {
                 var currentTs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
                 var bucketStartTime = currentTs - (currentTs % bucketDurationNs);
-                bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 0, 0, true);
+                bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 0, 0, hasTransactions: true);
 
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, TransactionsBytes);
                 bytesWritten += MessagePackBinary.WriteBytes(stream, transactionData);
@@ -167,7 +167,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             foreach (var backlogBucket in backlogsBuckets)
             {
-                bytesWritten += WriteBucketsHeader(stream, backlogBucket.BucketStartTimeNs, bucketDurationNs, 0, backlogBucket.Bucket.Values.Count, false);
+                bytesWritten += WriteBucketsHeader(stream, backlogBucket.BucketStartTimeNs, bucketDurationNs, 0, backlogBucket.Bucket.Values.Count, hasTransactions: false);
 
                 foreach (var point in backlogBucket.Bucket.Values)
                 {
@@ -188,7 +188,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             foreach (var statsBucket in statsBuckets)
             {
-                bytesWritten += WriteBucketsHeader(stream, statsBucket.BucketStartTimeNs, bucketDurationNs, statsBucket.Bucket.Values.Count, 0, false);
+                bytesWritten += WriteBucketsHeader(stream, statsBucket.BucketStartTimeNs, bucketDurationNs, statsBucket.Bucket.Values.Count, 0, hasTransactions: false);
 
                 ReadOnlySpan<byte> timestampTypeBytes = statsBucket.TimestampType == TimestampType.Current
                                              ? CurrentTimestampTypeBytes

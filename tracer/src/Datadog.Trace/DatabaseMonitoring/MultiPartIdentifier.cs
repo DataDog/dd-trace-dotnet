@@ -31,7 +31,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         internal static string[] ParseMultipartIdentifier(string name, string leftQuote, string rightQuote, string property, bool ThrowOnEmptyMultipartName)
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
         {
-            return ParseMultipartIdentifier(name, leftQuote, rightQuote, '.', MaxParts, true, property, ThrowOnEmptyMultipartName);
+            return ParseMultipartIdentifier(name, leftQuote, rightQuote, '.', MaxParts, removequotes: true, property, ThrowOnEmptyMultipartName);
         }
 
 #pragma warning disable SA1201 // Elements should appear in the correct order

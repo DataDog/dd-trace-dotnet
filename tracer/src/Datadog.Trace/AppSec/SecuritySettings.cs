@@ -51,13 +51,13 @@ namespace Datadog.Trace.AppSec
             // RFC-1113: read only to report the value verbatim in configuration telemetry (empty with origin=default when unset)
             config.WithKeys(ConfigurationKeys.AppSec.AgenticOnboarding).AsString(string.Empty);
 
-            ApmTracingEnabled = config.WithKeys(ConfigurationKeys.ApmTracingEnabled).AsBool(true);
+            ApmTracingEnabled = config.WithKeys(ConfigurationKeys.ApmTracingEnabled).AsBool(defaultValue: true);
 
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
             var extraHeaders = config.WithKeys(ConfigurationKeys.AppSec.ExtraHeaders).AsString();
             ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders!.Split(',') : Array.Empty<string>();
-            KeepTraces = config.WithKeys(ConfigurationKeys.AppSec.KeepTraces).AsBool(true);
+            KeepTraces = config.WithKeys(ConfigurationKeys.AppSec.KeepTraces).AsBool(defaultValue: true);
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
             TraceRateLimit = config.WithKeys(ConfigurationKeys.AppSec.TraceRateLimit).AsInt32(100);
@@ -129,14 +129,14 @@ namespace Datadog.Trace.AppSec
             }
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled)
-                                       .AsBool(true);
+                                       .AsBool(defaultValue: true);
 
             ApiSecuritySampleDelay = config.WithKeys(ConfigurationKeys.AppSec.ApiSecuritySampleDelay)
                                            .AsDouble(30.0, static val => val >= 0.0)
                                            .Value;
 
             ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
-                                                         .AsBool(true);
+                                                         .AsBool(defaultValue: true);
 
             ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
                                                               .AsInt32(300, static val => val >= 0)
@@ -144,17 +144,17 @@ namespace Datadog.Trace.AppSec
 
             ApiSecurityParseResponseBody = config
                                           .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
-                                          .AsBool(true);
+                                          .AsBool(defaultValue: true);
 
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
-                                     .AsBool(false);
+                                     .AsBool(defaultValue: false);
 
             // For now, RASP is enabled by default.
             RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
-                                .AsBool(true) && AppsecEnabled;
+                                .AsBool(defaultValue: true) && AppsecEnabled;
 
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
-                                      .AsBool(true);
+                                      .AsBool(defaultValue: true);
 
             MaxStackTraces = config
                             .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)

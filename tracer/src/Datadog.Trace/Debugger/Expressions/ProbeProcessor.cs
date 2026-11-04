@@ -136,7 +136,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     DebuggerGuardrailMetrics.RecordEventsSkipped(probeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
                     return false;
                 default:
-                    ThrowHelper.ThrowArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
+                    ThrowHelper.ThrowArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, message: null);
                     return false;
             }
         }
@@ -578,7 +578,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 }
                 else if (targetSpan.GetTag(evaluationErrorTag) is not null)
                 {
-                    targetSpan.SetTag(evaluationErrorTag, null);
+                    targetSpan.SetTag(evaluationErrorTag, value: null);
                 }
 
                 attachedTags = true;
@@ -1011,7 +1011,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 }
 
                 var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions, MaxEvaluationTimeInMilliseconds);
-                var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, null);
+                var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, comparand: null);
                 return previousEvaluator ?? newEvaluator;
             }
 

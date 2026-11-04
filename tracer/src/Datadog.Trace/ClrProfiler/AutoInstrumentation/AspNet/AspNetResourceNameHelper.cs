@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         continue;
                     }
 
-                    ReplaceValue(sb, kvp.Key, null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
+                    ReplaceValue(sb, kvp.Key, value: null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
                 }
             }
 

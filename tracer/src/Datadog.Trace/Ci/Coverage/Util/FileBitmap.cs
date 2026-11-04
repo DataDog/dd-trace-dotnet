@@ -106,7 +106,7 @@ internal readonly unsafe ref struct FileBitmap
     /// <param name="fileBitmapB">The second operand.</param>
     /// <returns>The result of the bitwise OR operation.</returns>
     public static FileBitmap operator |(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
-        => Or(fileBitmapA, fileBitmapB, false);
+        => Or(fileBitmapA, fileBitmapB, reuseBufferFromBitmapA: false);
 
     /// <summary>
     /// Performs a bitwise AND operation on two <see cref="FileBitmap"/> instances.
@@ -115,7 +115,7 @@ internal readonly unsafe ref struct FileBitmap
     /// <param name="fileBitmapB">The second operand.</param>
     /// <returns>The result of the bitwise AND operation.</returns>
     public static FileBitmap operator &(FileBitmap fileBitmapA, FileBitmap fileBitmapB)
-        => And(fileBitmapA, fileBitmapB, false);
+        => And(fileBitmapA, fileBitmapB, reuseBufferFromBitmapA: false);
 
     /// <summary>
     /// Performs a bitwise NOT operation on a <see cref="FileBitmap"/> instance.
@@ -123,7 +123,7 @@ internal readonly unsafe ref struct FileBitmap
     /// <param name="fileBitmap">The operand.</param>
     /// <returns>The result of the bitwise NOT operation.</returns>
     public static FileBitmap operator ~(FileBitmap fileBitmap)
-        => Not(fileBitmap, false);
+        => Not(fileBitmap, reuseBufferFromBitmap: false);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FileBitmap"/> struct with a specified line count.

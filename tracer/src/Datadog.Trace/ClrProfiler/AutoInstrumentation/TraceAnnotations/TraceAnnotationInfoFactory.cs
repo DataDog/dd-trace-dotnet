@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
             else
             {
                 string defaultResourceName = method.DeclaringType is null ? method.Name : method.DeclaringType.Name + "." + method.Name;
-                var attributes = method.GetCustomAttributes(true);
+                var attributes = method.GetCustomAttributes(inherit: true);
                 foreach (var attr in attributes)
                 {
                     if (attr.GetType() is Type attrType && attrType.FullName == TraceAttributeFullName)

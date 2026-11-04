@@ -17,17 +17,17 @@ internal static partial class IastModule
 {
     public static string? OnXssEscape(string? text, string? encoded)
     {
-        return (string?)OnEscape(text, encoded, SecureMarks.Xss, true, IntegrationId.Xss);
+        return (string?)OnEscape(text, encoded, SecureMarks.Xss, ensureDifferentInstance: true, IntegrationId.Xss);
     }
 
     public static string? OnSsrfEscape(string? text, string? encoded)
     {
-        return (string?)OnEscape(text, encoded, SecureMarks.Ssrf, true, IntegrationId.Ssrf);
+        return (string?)OnEscape(text, encoded, SecureMarks.Ssrf, ensureDifferentInstance: true, IntegrationId.Ssrf);
     }
 
     public static object? OnCustomEscape(object? text, SecureMarks marks)
     {
-        return OnEscape(text, text, marks, false);
+        return OnEscape(text, text, marks, ensureDifferentInstance: false);
     }
 
     private static object? OnEscape(object? textObj, object? encodedObj, SecureMarks secureMarks, bool ensureDifferentInstance, params IntegrationId[] integrations)

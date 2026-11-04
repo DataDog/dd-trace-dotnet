@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     new KeyValuePair<string, string>("DD-API-KEY", settings.AgentlessApiKey),
                     new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet"),
                 ]);
-            return new ExceptionReplayTransportInfo(apiFactory, null, relativePath, isAgentless: true);
+            return new ExceptionReplayTransportInfo(apiFactory, discoveryService: null, relativePath, isAgentless: true);
         }
 
         private static ExceptionReplayTransportInfo CreateAgentTransport(TracerSettings tracerSettings, IDiscoveryService discoveryService)

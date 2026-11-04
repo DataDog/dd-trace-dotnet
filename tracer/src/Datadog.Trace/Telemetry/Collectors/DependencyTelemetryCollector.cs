@@ -70,7 +70,7 @@ namespace Datadog.Trace.Telemetry
                 Hash = moduleVersionId,
             };
 
-            if (_assemblies.TryAdd(key, false))
+            if (_assemblies.TryAdd(key, value: false))
             {
                 SetHasChanges();
             }

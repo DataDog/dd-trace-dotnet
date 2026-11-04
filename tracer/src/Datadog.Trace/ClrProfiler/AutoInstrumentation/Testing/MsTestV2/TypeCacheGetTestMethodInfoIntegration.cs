@@ -73,7 +73,7 @@ public sealed class TypeCacheGetTestMethodInfoIntegrationV3_9
             TestContext = testContext,
         };
 
-        return new CallTargetState(null, cacheItem);
+        return new CallTargetState(scope: null, cacheItem);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)

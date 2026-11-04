@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             return CreateSenderSpanInternal(
                 entityPath,
                 networkDestinationName,
-                null,
+                networkDestinationPort: null,
                 operationName,
                 messages,
                 messageCount,
@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
-                return new CallTargetState(null);
+                return new CallTargetState(scope: null);
             }
 
             var tags = perTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);

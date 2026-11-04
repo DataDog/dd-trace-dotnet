@@ -73,7 +73,7 @@ internal static class GlobalEnvVariableHelper
             foreach (var envVar in envVars.Keys)
             {
                 log.WriteInfo($"Removing global environment variable {envVar}");
-                Environment.SetEnvironmentVariable(envVar, null, EnvironmentVariableTarget.Machine);
+                Environment.SetEnvironmentVariable(envVar, value: null, EnvironmentVariableTarget.Machine);
             }
 
             log.WriteInfo("All global environment variables removed");

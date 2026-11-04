@@ -33,8 +33,8 @@ internal static class WindowsDirectoryAccess
         security.SetOwner(currentUser);
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
         AddDirectoryFullControl(security, currentUser);
-        AddDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null));
-        AddDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
+        AddDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, domainSid: null));
+        AddDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, domainSid: null));
 
         FileSystemAclExtensions.Create(new DirectoryInfo(path), security);
     }

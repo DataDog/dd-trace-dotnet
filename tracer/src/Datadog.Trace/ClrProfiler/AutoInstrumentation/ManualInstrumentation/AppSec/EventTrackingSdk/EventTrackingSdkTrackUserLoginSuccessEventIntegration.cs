@@ -33,7 +33,7 @@ public sealed class EventTrackingSdkTrackUserLoginSuccessEventIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string userId)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent);
-        Datadog.Trace.AppSec.EventTrackingSdk.TrackUserLoginSuccessEvent(userId, null, Datadog.Trace.Tracer.Instance);
+        Datadog.Trace.AppSec.EventTrackingSdk.TrackUserLoginSuccessEvent(userId, metadata: null, Datadog.Trace.Tracer.Instance);
         return CallTargetState.GetDefault();
     }
 }

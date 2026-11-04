@@ -62,7 +62,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 using var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
-                return pdbReader?.GetLocalVariableNames(method.MetadataToken, methodBody.LocalVariables.Count, true);
+                return pdbReader?.GetLocalVariableNames(method.MetadataToken, methodBody.LocalVariables.Count, searchMoveNext: true);
             }
             catch (Exception e)
             {

@@ -48,8 +48,8 @@ internal sealed class IastSettings
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
         WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
-        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(false);
-        DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(true);
+        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(defaultValue: false);
+        DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(defaultValue: true);
         RequestSampling = config
                          .WithKeys(ConfigurationKeys.Iast.RequestSampling)
                          .AsInt32(RequestSamplingDefault, static x => x is > 0 and <= 100)
@@ -68,7 +68,7 @@ internal sealed class IastSettings
                                    .Value;
         RedactionEnabled = config
                            .WithKeys(ConfigurationKeys.Iast.RedactionEnabled)
-                           .AsBool(true);
+                           .AsBool(defaultValue: true);
         RedactionKeysRegex = config
                              .WithKeys(ConfigurationKeys.Iast.RedactionKeysRegex)
                              .AsString(DefaultRedactionKeysRegex);

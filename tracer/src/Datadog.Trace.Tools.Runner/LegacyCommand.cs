@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tools.Runner
             if (setEnvironmentVariables)
             {
                 AnsiConsole.WriteLine("Setting up the environment variables.");
-                CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables, null);
+                CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables, ci: null);
             }
             else if (!string.IsNullOrEmpty(crankImportFile))
             {

@@ -27,7 +27,7 @@ internal sealed class TruncatedTextWriter : TextWriter
     }
 
     // Based on StringWriter implementation
-    public override Encoding Encoding => _encoding ??= new UnicodeEncoding(false, false);
+    public override Encoding Encoding => _encoding ??= new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
 
     /// <summary>
     /// Writes a string to the current string.

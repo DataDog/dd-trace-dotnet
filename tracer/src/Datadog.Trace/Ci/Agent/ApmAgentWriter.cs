@@ -46,7 +46,7 @@ internal sealed class ApmAgentWriter : IEventWriter
     [TestingOnly]
     internal ApmAgentWriter(IApi api, IStatsdManager statsdManager, int maxBufferSize = DefaultMaxBufferSize)
     {
-        _agentWriter = new AgentWriter(api, null, statsdManager, maxBufferSize: maxBufferSize);
+        _agentWriter = new AgentWriter(api, statsAggregator: null, statsdManager, maxBufferSize: maxBufferSize);
     }
 
     public void WriteEvent(IEvent @event)

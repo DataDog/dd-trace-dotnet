@@ -22,26 +22,26 @@ public sealed class ImmutableTracerSettings
     /// </summary>
     internal ImmutableTracerSettings(IDictionary<string, object?> initialValues)
     {
-        AgentUri = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, null) ?? new Uri("http://127.0.0.1:8126");
-        CustomSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
-        Environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
-        GlobalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
-        GlobalTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GlobalTagsKey, null) ?? new ConcurrentDictionary<string, string>();
-        GrpcTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, null) ?? new ConcurrentDictionary<string, string>();
-        HeaderTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, null) ?? new ConcurrentDictionary<string, string>();
-        KafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
-        LogsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
+        AgentUri = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, defaultValue: null) ?? new Uri("http://127.0.0.1:8126");
+        CustomSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, defaultValue: null);
+        Environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, defaultValue: null);
+        GlobalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, defaultValue: null);
+        GlobalTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GlobalTagsKey, defaultValue: null) ?? new ConcurrentDictionary<string, string>();
+        GrpcTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, defaultValue: null) ?? new ConcurrentDictionary<string, string>();
+        HeaderTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, defaultValue: null) ?? new ConcurrentDictionary<string, string>();
+        KafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, defaultValue: true);
+        LogsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, defaultValue: false);
         MaxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
-        ServiceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
-        ServiceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
-        StartupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
-        StatsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, false);
-        TraceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
-        TracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+        ServiceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, defaultValue: null);
+        ServiceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, defaultValue: null);
+        StartupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, defaultValue: true);
+        StatsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, defaultValue: false);
+        TraceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, defaultValue: true);
+        TracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, defaultValue: false);
 
 #pragma warning disable CS0618 // Type or member is obsolete
         Exporter = new ImmutableExporterSettings(this);
-        AnalyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
+        AnalyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, defaultValue: false);
 #pragma warning restore CS0618 // Type or member is obsolete
 
         Integrations = IntegrationSettingsHelper.ParseImmutableFromAutomatic(initialValues);

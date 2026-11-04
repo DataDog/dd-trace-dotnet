@@ -91,7 +91,7 @@ namespace Datadog.Trace.AppSec
             catch (Exception ex)
             {
                 _settings ??= new(source: null, telemetry);
-                _configurationState ??= new ConfigurationState(_settings, telemetry, true);
+                _configurationState ??= new ConfigurationState(_settings, telemetry, wafIsNull: true);
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
             finally
@@ -107,7 +107,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get => LazyInitializer.EnsureInitialized(ref _instance!, ref _globalInstanceInitialized, ref _globalInstanceLock, static () => new Security(null, null, null));
+            get => LazyInitializer.EnsureInitialized(ref _instance!, ref _globalInstanceInitialized, ref _globalInstanceLock, static () => new Security(settings: null, waf: null, downstreamSampler: null));
 
             set
             {
@@ -216,7 +216,7 @@ namespace Datadog.Trace.AppSec
                     if (_configurationState.IncomingUpdateState.ShouldDisableAppsec)
                     {
                         // disable ASM scenario
-                        DisposeWafAndInstrumentations(true);
+                        DisposeWafAndInstrumentations(fromRemoteConfig: true);
                     } // enable ASM scenario taking into account rcm changes for other products/data
                     else if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
                     {
@@ -545,7 +545,7 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTraceTaggingRules, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmTraceTaggingRules));
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, available: true);
         }
 
         private bool WafSupportsCapability(BigInteger capability)

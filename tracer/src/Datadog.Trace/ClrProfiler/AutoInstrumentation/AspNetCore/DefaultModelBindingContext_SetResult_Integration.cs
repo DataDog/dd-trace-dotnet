@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             if (security.AppsecEnabled)
             {
-                bodyExtracted = security.CheckBody(context.HttpContext, span, context.Result.Model, false);
+                bodyExtracted = security.CheckBody(context.HttpContext, span, context.Result.Model, response: false);
             }
 
             if (iast.Settings.Enabled)

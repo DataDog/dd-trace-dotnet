@@ -53,7 +53,7 @@ internal sealed partial class TestOptimizationClient
                     _commitSha,
                     KnownTestsType,
                     new KnownTestsQuery(_serviceName, _environment, _repositoryUrl, configurations, new PageInfoRequest(pageState))),
-                null);
+                repositoryUrl: null);
 
             var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
             Log.Debug("TestOptimizationClient: KnownTests.JSON RQ (page {PageNumber}) = {Json}", pageNumber, jsonQuery);

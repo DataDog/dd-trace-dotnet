@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 // the process name is not guaranteed so we need to check the stack trace
                 // to see if we are getting called from the Coverlet.MSbuild.Tasks namespace
                 // because we don't need any symbols this should be fast enough.
-                if (new StackTrace(3, false).GetFrames() is { } frames)
+                if (new StackTrace(3, fNeedFileInfo: false).GetFrames() is { } frames)
                 {
                     foreach (var stackFrame in frames)
                     {
@@ -151,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         internal static TestSession? CreateSession()
         {
-            SetInjectedSessionCoverletXmlFallbackEnabled(false);
+            SetInjectedSessionCoverletXmlFallbackEnabled(enabled: false);
 
             // We create test session if not DataCollector
             if (IsDataCollectorDomain)
@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 // Session found in the environment variables
                 // let's capture current Coverlet XML attachments for stale-attachment filtering and bail out.
                 CaptureCoverletCollectorXmlReportBaseline(GetInjectedSessionCoverageBackfillCommandLine(), GetInjectedSessionCoverageBackfillWorkingDirectory());
-                SetInjectedSessionCoverletXmlFallbackEnabled(true);
+                SetInjectedSessionCoverletXmlFallbackEnabled(enabled: true);
                 return null;
             }
 
@@ -199,7 +199,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
                 CaptureCoverletCollectorXmlReportBaseline(GetCoverageBackfillCommandLine(commandLine), workingDirectory);
 
-                var session = TestSession.GetOrCreate(commandLine, workingDirectory, null, null, true);
+                var session = TestSession.GetOrCreate(commandLine, workingDirectory, framework: null, startDate: null, propagateEnvironmentVariables: true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimization.SkippableFeature?.Enabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, testOptimizationSettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
@@ -298,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 session.SetErrorInfo(exception);
 
                 // The exit code is 0 when the runner throws, so the session can't be reported as empty.
-                session.RecordExecutedTests(null);
+                session.RecordExecutedTests(executedTests: null);
             }
 
             var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);

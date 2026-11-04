@@ -230,7 +230,7 @@ internal static class StringBuilderModuleImpl
     {
         if (result is not null && firstInput is not null)
         {
-            FullTaintIfAnyTaintedAux(result, result.Length, firstInput, null);
+            FullTaintIfAnyTaintedAux(result, result.Length, firstInput, otherInputs: null);
         }
     }
 

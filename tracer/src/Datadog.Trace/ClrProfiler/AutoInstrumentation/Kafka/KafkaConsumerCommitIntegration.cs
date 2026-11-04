@@ -29,7 +29,7 @@ public sealed class KafkaConsumerCommitIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object offsets)
     {
-        return new CallTargetState(null, offsets);
+        return new CallTargetState(scope: null, offsets);
     }
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)

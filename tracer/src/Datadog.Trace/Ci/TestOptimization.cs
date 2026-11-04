@@ -255,7 +255,7 @@ internal sealed class TestOptimization : ITestOptimization
             getDiscoveryServiceFunc: static s => DiscoveryService.CreateUnmanaged(
                 s.TracerSettings.Manager.InitialExporterSettings,
                 ContainerMetadata.Instance,
-                new ServiceRemappingHash(null),
+                new ServiceRemappingHash(serializedProcessTags: null),
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,
@@ -496,7 +496,7 @@ internal sealed class TestOptimization : ITestOptimization
                         Log.Debug("TestOptimization: Removing cache folder: {Folder}", cacheFolder);
                         if (Directory.Exists(cacheFolder))
                         {
-                            Directory.Delete(cacheFolder, true);
+                            Directory.Delete(cacheFolder, recursive: true);
                         }
                     }
                     catch (Exception exInner)
@@ -528,7 +528,7 @@ internal sealed class TestOptimization : ITestOptimization
                 test.SetErrorInfo(exception);
             }
 
-            test.Close(TestStatus.Skip, null, "Test is being closed due to test session shutdown.");
+            test.Close(TestStatus.Skip, duration: null, "Test is being closed due to test session shutdown.");
         }
 
         foreach (var testSuite in TestSuite.ActiveTestSuites)

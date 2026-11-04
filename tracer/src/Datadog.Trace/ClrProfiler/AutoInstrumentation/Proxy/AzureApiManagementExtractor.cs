@@ -39,7 +39,7 @@ internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
-            data = new InferredProxyData(InferredProxySpanHelper.AzureProxyHeaderValue, startTime, domainName, httpMethod, path, null, region);
+            data = new InferredProxyData(InferredProxySpanHelper.AzureProxyHeaderValue, startTime, domainName, httpMethod, path, stage: null, region);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {

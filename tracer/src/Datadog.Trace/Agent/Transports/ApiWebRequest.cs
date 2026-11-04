@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent.Transports
             => SendAsync(method: "GET", contentType: null, contentEncoding: null, state: this, writeBody: null, new CancellationTokenSource(_request.Timeout));
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
-            => PostAsync(bytes, contentType, null);
+            => PostAsync(bytes, contentType, contentEncoding: null);
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string? contentEncoding)
             => SendAsync(
@@ -228,7 +228,7 @@ namespace Datadog.Trace.Agent.Transports
                             _ = writeBodyTask.ContinueWith(
                                 static t => _ = t.Exception,
                                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
-                            ThrowCancelledException(_request, cts.Token, null);
+                            ThrowCancelledException(_request, cts.Token, innerException: null);
                         }
                         else
                         {
@@ -249,7 +249,7 @@ namespace Datadog.Trace.Agent.Transports
                     // task exception; if it eventually succeeds _despite_ Abort(), dispose the orphaned
                     // response instead of leaking the underlying connection.
                     _ = getResponseTask.ContinueWith(static t => ObserveOrphanedResponse(t), TaskContinuationOptions.ExecuteSynchronously);
-                    ThrowCancelledException(_request, cts.Token, null);
+                    ThrowCancelledException(_request, cts.Token, innerException: null);
                     httpWebResponse = default; // Not reachable, but easiest way to keep the compiler happy
                 }
                 else
@@ -263,7 +263,7 @@ namespace Datadog.Trace.Agent.Transports
                 if (cts.IsCancellationRequested)
                 {
                     httpWebResponse.Dispose();
-                    ThrowCancelledException(_request, cts.Token, null);
+                    ThrowCancelledException(_request, cts.Token, innerException: null);
                 }
 
                 return new ApiWebResponse(httpWebResponse);

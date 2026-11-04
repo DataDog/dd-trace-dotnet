@@ -73,7 +73,7 @@ public static class SignInManagerPasswordSignInUserIntegration
             var userExists = (state.State as IDuckType)?.Instance is not null;
             if (state.State is not IIdentityUser user)
             {
-                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(false, false);
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId: false, foundLogin: false);
                 return returnValue;
             }
 

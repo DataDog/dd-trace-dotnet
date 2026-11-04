@@ -67,7 +67,7 @@ internal sealed class FlagEvaluationAggregator
         }
         else if (_degraded.Count < _degradedCap)
         {
-            _degraded.Add(dimensions, new EvaluationEntry(observation.EvalTimeMs, consent, null, features));
+            _degraded.Add(dimensions, new EvaluationEntry(observation.EvalTimeMs, consent, contextAttrs: null, features));
         }
         else
         {

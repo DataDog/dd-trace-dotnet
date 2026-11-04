@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         public async Task<IApiResponse> GetAsync()
-            => (await SendAsync(WebRequestMethods.Http.Get, null, null, null, chunkedEncoding: false).ConfigureAwait(false)).Item1;
+            => (await SendAsync(WebRequestMethods.Http.Get, contentType: null, content: null, contentEncoding: null, chunkedEncoding: false).ConfigureAwait(false)).Item1;
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
             => PostAsync(bytes, contentType, contentEncoding: null);

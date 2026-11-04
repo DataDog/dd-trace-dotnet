@@ -89,7 +89,7 @@ internal sealed class TaskContinuationGenerator<TIntegration, TTarget, TReturn> 
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                     // *
-                    _continuation(instance, default, null, in state);
+                    _continuation(instance, default, exception: null, in state);
                 }
                 catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
                 {
@@ -133,7 +133,7 @@ internal sealed class TaskContinuationGenerator<TIntegration, TTarget, TReturn> 
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
-                _continuation(target, null, exception, in state);
+                _continuation(target, returnValue: null, exception, in state);
             }
             catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
             {
@@ -199,7 +199,7 @@ internal sealed class TaskContinuationGenerator<TIntegration, TTarget, TReturn> 
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
-                await _asyncContinuation(target, null, exception, in state).ConfigureAwait(_preserveContext);
+                await _asyncContinuation(target, returnValue: null, exception, in state).ConfigureAwait(_preserveContext);
             }
             catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
             {

@@ -82,7 +82,7 @@ internal sealed class FixedSizeArrayPool<T>
         Array.Clear(value, 0, value.Length);
 #endif
 
-        if (Interlocked.CompareExchange(ref _fastPath, value, null) is not null)
+        if (Interlocked.CompareExchange(ref _fastPath, value, comparand: null) is not null)
         {
             // Bound the number of retained arrays in the stack to avoid unbounded growth.
             if (Interlocked.Increment(ref _stackCount) <= MaxStackRetained)

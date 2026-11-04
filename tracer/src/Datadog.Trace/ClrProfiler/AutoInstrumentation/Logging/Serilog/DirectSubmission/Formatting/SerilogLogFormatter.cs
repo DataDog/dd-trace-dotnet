@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
                 // This is likely an edge case, so we just write the value as a string and then embed that in the JSON
                 var sb = StringBuilderCache.Acquire();
                 var stringWriter = new StringWriter(sb);
-                propertyValue.Render(stringWriter, null, null);
+                propertyValue.Render(stringWriter, format: null, formatProvider: null);
                 var stringValue = stringWriter.ToString();
                 StringBuilderCache.Release(sb);
                 LogFormatter.WriteValue(writer, stringValue);

@@ -19,8 +19,8 @@ namespace Datadog.Trace.Processors
     internal sealed class ObfuscatorTraceProcessor : ITraceProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ObfuscatorTraceProcessor>();
-        private static readonly BitArray NumericLiteralPrefix = new BitArray(256, false);
-        private static readonly BitArray Splitters = new BitArray(256, false);
+        private static readonly BitArray NumericLiteralPrefix = new BitArray(256, defaultValue: false);
+        private static readonly BitArray Splitters = new BitArray(256, defaultValue: false);
 
         static ObfuscatorTraceProcessor()
         {
@@ -41,14 +41,14 @@ namespace Datadog.Trace.Processors
 
             foreach (var c in splitterChars)
             {
-                Splitters.Set(c, true);
+                Splitters.Set(c, value: true);
             }
 
             for (var i = 0; i < 256; ++i)
             {
                 if (char.IsWhiteSpace(Convert.ToChar(i)))
                 {
-                    Splitters.Set(i, true);
+                    Splitters.Set(i, value: true);
                 }
             }
         }

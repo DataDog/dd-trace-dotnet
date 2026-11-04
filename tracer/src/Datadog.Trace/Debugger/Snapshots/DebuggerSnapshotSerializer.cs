@@ -52,7 +52,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             using var cts = CreateCancellationTimeout();
             var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
-            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
+            WriteFields(source: null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
         private static bool SerializeInternal(
@@ -689,7 +689,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                                 return false;
                             }
 
-                            var getMethod = property.GetGetMethod(true);
+                            var getMethod = property.GetGetMethod(nonPublic: true);
                             if (getMethod == null || getMethod is System.Reflection.Emit.MethodBuilder)
                             {
                                 return false;

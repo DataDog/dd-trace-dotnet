@@ -48,7 +48,7 @@ internal sealed partial class TestOptimizationClient
 
         _packFileUrl ??= GetUriFromPath(PackFileUrlPath);
 
-        var jsonPushedSha = JsonHelper.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, null), _repositoryUrl), SerializerSettings);
+        var jsonPushedSha = JsonHelper.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, attributes: null), _repositoryUrl), SerializerSettings);
         Log.Debug("TestOptimizationClient: ObjPack.JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -72,8 +72,8 @@ internal sealed partial class TestOptimizationClient
                 var queryResponse = await SendRequestAsync<ObjectPackFilesCallbacks>(
                                             _packFileUrl,
                                             [
-                                                new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                new MultipartFormItem("packfile", "application/octet-stream", null, new ArraySegment<byte>(packFileContent)),
+                                                new MultipartFormItem("pushedSha", MimeTypes.Json, fileName: null, new ArraySegment<byte>(jsonPushedShaBytes)),
+                                                new MultipartFormItem("packfile", "application/octet-stream", fileName: null, new ArraySegment<byte>(packFileContent)),
                                             ])
                                        .ConfigureAwait(false);
                 if (queryResponse is not null)
@@ -106,7 +106,7 @@ internal sealed partial class TestOptimizationClient
         {
             try
             {
-                Directory.Delete(packFilesObject.TemporaryFolder, true);
+                Directory.Delete(packFilesObject.TemporaryFolder, recursive: true);
             }
             catch (Exception ex)
             {

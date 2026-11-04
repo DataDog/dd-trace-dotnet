@@ -231,7 +231,7 @@ internal static class FeatureFlagsSdk
                         default,
                         default,
                         "FeatureFlagsSdk is disabled",
-                        ToMetadata(null, evalTimeMs, false));
+                        ToMetadata(metadata: null, evalTimeMs, deferredExposure: false));
         }
 
         var errorType = ToErrorType(evaluation.Reason, evaluation.Error);

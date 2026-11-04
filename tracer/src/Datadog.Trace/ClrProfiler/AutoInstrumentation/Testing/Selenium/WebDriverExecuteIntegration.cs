@@ -79,7 +79,7 @@ public sealed class WebDriverExecuteIntegration
                 break;
         }
 
-        return new CallTargetState(null, new IntegrationState(driverCommandToExecute, parameters));
+        return new CallTargetState(scope: null, new IntegrationState(driverCommandToExecute, parameters));
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)

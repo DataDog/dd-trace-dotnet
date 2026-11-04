@@ -310,13 +310,13 @@ internal static class InstanceOfHelper
     {
         if (typeName.IndexOf(',') < 0)
         {
-            return new TypeNameInfo(typeName, null, mayContainAssemblyQualifiedGenericArguments: false);
+            return new TypeNameInfo(typeName, assemblyName: null, mayContainAssemblyQualifiedGenericArguments: false);
         }
 
         var assemblySeparatorIndex = GetAssemblySeparatorIndex(typeName);
         if (assemblySeparatorIndex < 0)
         {
-            return new TypeNameInfo(typeName, null, MayContainAssemblyQualifiedGenericArguments(typeName));
+            return new TypeNameInfo(typeName, assemblyName: null, MayContainAssemblyQualifiedGenericArguments(typeName));
         }
 
         var searchTypeName = typeName.Substring(0, assemblySeparatorIndex).Trim();

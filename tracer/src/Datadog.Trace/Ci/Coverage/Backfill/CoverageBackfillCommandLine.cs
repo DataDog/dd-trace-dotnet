@@ -4501,7 +4501,7 @@ internal readonly struct CoverageBackfillCommandLine
             return true;
         }
 
-        foreach (var baseDirectory in GetMsBuildProjectBaseDirectories(null))
+        foreach (var baseDirectory in GetMsBuildProjectBaseDirectories(baseDirectory: null))
         {
             if (TryResolvePath(left, baseDirectory, out var resolvedLeft) &&
                 TryResolvePath(right, out var resolvedRight) &&
@@ -4580,7 +4580,7 @@ internal readonly struct CoverageBackfillCommandLine
             yield break;
         }
 
-        var projectBaseDirectories = GetMsBuildProjectBaseDirectories(null);
+        var projectBaseDirectories = GetMsBuildProjectBaseDirectories(baseDirectory: null);
         if (projectBaseDirectories.Count == 0)
         {
             yield return commandLineOutputPath;
@@ -4624,7 +4624,7 @@ internal readonly struct CoverageBackfillCommandLine
             yield break;
         }
 
-        directories = GetMsBuildProjectBaseDirectories(null);
+        directories = GetMsBuildProjectBaseDirectories(baseDirectory: null);
         foreach (var directory in directories)
         {
             yield return directory;
@@ -4645,7 +4645,7 @@ internal readonly struct CoverageBackfillCommandLine
         {
             foreach (var ignored in GetActiveCoverletMsBuildProjectConfigurations(projectFilePath))
             {
-                TryAddProjectBaseDirectory(directories, projectFilePath, null);
+                TryAddProjectBaseDirectory(directories, projectFilePath, baseDirectory: null);
                 break;
             }
         }

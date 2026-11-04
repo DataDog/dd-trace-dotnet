@@ -63,7 +63,7 @@ internal sealed class EndpointsCollection
             var areaName = routePatternV3.RequiredValues.TryGetValue("area", out var area) ? area as string : null;
             var controllerName = routePatternV3.RequiredValues.TryGetValue("controller", out var controller) ? controller as string : null;
             var actionName = routePatternV3.RequiredValues.TryGetValue("action", out var action) ? action as string : null;
-            path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, routePatternV3.RequiredValues, areaName, controllerName, actionName, false);
+            path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, routePatternV3.RequiredValues, areaName, controllerName, actionName, expandRouteParameters: false);
         }
         else if (routeEndpoint.Metadata.TryDuckCast<IEndpointMetadataCollectionRouteValuesAddressMetadata>(out var endpointMetadataCollectionRouteValuesAddressMetadata)
               && endpointMetadataCollectionRouteValuesAddressMetadata.GetRouteValuesAddressMetadata() is { RequiredValues: { } address })
@@ -72,7 +72,7 @@ internal sealed class EndpointsCollection
             var areaName = address.TryGetValue("area", out var area) ? area as string : null;
             var controllerName = address.TryGetValue("controller", out var controller) ? controller as string : null;
             var actionName = address.TryGetValue("action", out var action) ? action as string : null;
-            path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, address, areaName, controllerName, actionName, false);
+            path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, address, areaName, controllerName, actionName, expandRouteParameters: false);
         }
         else
         {

@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
 
             if (context.TryDuckCast<ICreatingContextProxy>(out var creatingContext))
             {
-                PropagationContext contextToInject = new PropagationContext(scope.Span.Context, Baggage.Current, null);
+                PropagationContext contextToInject = new PropagationContext(scope.Span.Context, Baggage.Current, extractionSpanLinks: null);
                 var contextDetails = new Dictionary<string, string>();
                 Tracer.Instance.TracerManager.SpanContextPropagator.Inject(contextToInject, contextDetails, HangfireCommon.InjectSpanProperties);
                 creatingContext.SetJobParameter(HangfireConstants.DatadogContextKey, contextDetails);

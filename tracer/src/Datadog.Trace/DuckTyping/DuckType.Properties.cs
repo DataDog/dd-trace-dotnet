@@ -39,12 +39,12 @@ namespace Datadog.Trace.DuckTyping
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = typeof(object);
             Type[] proxyParameterTypes = Type.EmptyTypes;
-            Type[] targetParametersTypes = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, true).ToArray();
+            Type[] targetParametersTypes = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, originalTypes: true).ToArray();
 
             if (proxyMember is PropertyInfo proxyProperty)
             {
                 proxyMemberReturnType = proxyProperty.PropertyType;
-                proxyParameterTypes = GetPropertyGetParametersTypes(proxyTypeBuilder, proxyProperty, true).ToArray();
+                proxyParameterTypes = GetPropertyGetParametersTypes(proxyTypeBuilder, proxyProperty, originalTypes: true).ToArray();
                 if (proxyParameterTypes.Length != targetParametersTypes.Length)
                 {
                     return DuckTypePropertyArgumentsLengthException.Create(proxyProperty);
@@ -97,7 +97,7 @@ namespace Datadog.Trace.DuckTyping
                 if (NeedsDuckChaining(targetParamType, proxyParamType))
                 {
                     // Load the argument and cast it as Duck type
-                    il.WriteLoadArgument(pIndex, false);
+                    il.WriteLoadArgument(pIndex, isStatic: false);
                     il.Emit(OpCodes.Castclass, typeof(IDuckType));
 
                     // Call IDuckType.Instance property to get the actual value
@@ -106,7 +106,7 @@ namespace Datadog.Trace.DuckTyping
                 }
                 else
                 {
-                    il.WriteLoadArgument(pIndex, false);
+                    il.WriteLoadArgument(pIndex, isStatic: false);
                 }
 
                 // If the target parameter type is public or if it's by ref we have to actually use the original target type.
@@ -145,9 +145,9 @@ namespace Datadog.Trace.DuckTyping
                 returnType = UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) ? targetProperty.PropertyType : typeof(object);
 
                 // We create the dynamic method
-                Type[] targetParameters = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, originalTypes: false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, skipVisibility: true);
 
                 // Emit the dynamic method body
                 LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
@@ -159,7 +159,7 @@ namespace Datadog.Trace.DuckTyping
 
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                 {
-                    dynIL.WriteLoadArgument(idx, true);
+                    dynIL.WriteLoadArgument(idx, isStatic: true);
                     if (dynIL.WriteTypeConversion(dynParameters[idx], targetParameters[idx]) is { } conversionError)
                     {
                         return conversionError;
@@ -183,7 +183,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Dry run: We enable all checks done in the preview if branch
                 returnType = UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) ? targetProperty.PropertyType : typeof(object);
-                Type[] targetParameters = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, originalTypes: false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                 {
@@ -229,7 +229,7 @@ namespace Datadog.Trace.DuckTyping
             il.Flush();
             if (proxyMethod is not null)
             {
-                MethodBuilderGetToken.Invoke(proxyMethod, null);
+                MethodBuilderGetToken.Invoke(proxyMethod, parameters: null);
             }
 
             proxyMethodResult = proxyMethod;
@@ -256,12 +256,12 @@ namespace Datadog.Trace.DuckTyping
 
             string? proxyMemberName = null;
             Type[] proxyParameterTypes = Type.EmptyTypes;
-            Type[] targetParametersTypes = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, true).ToArray();
+            Type[] targetParametersTypes = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, originalTypes: true).ToArray();
 
             if (proxyMember is PropertyInfo proxyProperty)
             {
                 proxyMemberName = proxyProperty.Name;
-                proxyParameterTypes = GetPropertySetParametersTypes(proxyTypeBuilder, proxyProperty, true).ToArray();
+                proxyParameterTypes = GetPropertySetParametersTypes(proxyTypeBuilder, proxyProperty, originalTypes: true).ToArray();
                 if (proxyParameterTypes.Length != targetParametersTypes.Length)
                 {
                     return DuckTypePropertyArgumentsLengthException.Create(proxyProperty);
@@ -313,7 +313,7 @@ namespace Datadog.Trace.DuckTyping
                 if (needsDuckChaining(targetParamType, proxyParamType))
                 {
                     // Load the argument and cast it as Duck type
-                    il.WriteLoadArgument(pIndex, false);
+                    il.WriteLoadArgument(pIndex, isStatic: false);
                     if (isValueWithType)
                     {
                         il.Emit(OpCodes.Ldfld, originalProxyParamType.GetField("Value")!);
@@ -326,7 +326,7 @@ namespace Datadog.Trace.DuckTyping
                 }
                 else
                 {
-                    il.WriteLoadArgument(pIndex, false);
+                    il.WriteLoadArgument(pIndex, isStatic: false);
                     if (isValueWithType)
                     {
                         il.Emit(OpCodes.Ldfld, originalProxyParamType.GetField("Value")!);
@@ -367,9 +367,9 @@ namespace Datadog.Trace.DuckTyping
                 string dynMethodName = $"_setNonPublicProperty+{targetProperty.DeclaringType.Name}.{targetProperty.Name}";
 
                 // We create the dynamic method
-                Type[] targetParameters = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, originalTypes: false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, skipVisibility: true);
 
                 // Emit the dynamic method body
                 LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
@@ -381,7 +381,7 @@ namespace Datadog.Trace.DuckTyping
 
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                 {
-                    dynIL.WriteLoadArgument(idx, true);
+                    dynIL.WriteLoadArgument(idx, isStatic: true);
                     if (dynIL.WriteTypeConversion(dynParameters[idx], targetParameters[idx]) is { } conversionError)
                     {
                         return conversionError;
@@ -397,7 +397,7 @@ namespace Datadog.Trace.DuckTyping
             }
             else
             {
-                Type[] targetParameters = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, originalTypes: false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                 {
@@ -412,7 +412,7 @@ namespace Datadog.Trace.DuckTyping
             il.Flush();
             if (proxyMethod is not null)
             {
-                MethodBuilderGetToken.Invoke(proxyMethod, null);
+                MethodBuilderGetToken.Invoke(proxyMethod, parameters: null);
             }
 
             proxyMethodResult = proxyMethod;

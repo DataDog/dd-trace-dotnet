@@ -52,7 +52,7 @@ namespace Datadog.Trace.DuckTyping
 
                         if (!methodAlreadySelected)
                         {
-                            MethodInfo? prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(static p => p.ParameterType).ToArray(), null);
+                            MethodInfo? prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, binder: null, interfaceMethod.GetParameters().Select(static p => p.ParameterType).ToArray(), modifiers: null);
                             if (prevMethod == null || !Attribute.IsDefined(prevMethod, typeof(DuckIgnoreAttribute)))
                             {
                                 selectedMethods.Add(interfaceMethod);
@@ -73,7 +73,7 @@ namespace Datadog.Trace.DuckTyping
                     // You can still proxy those methods if they are defined in an interface, or if you add the DuckInclude attribute.
                     if (method.DeclaringType == typeof(object))
                     {
-                        bool include = Attribute.IsDefined(method, typeof(DuckIncludeAttribute), true);
+                        bool include = Attribute.IsDefined(method, typeof(DuckIncludeAttribute), inherit: true);
 
                         if (!include)
                         {
@@ -109,7 +109,7 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (var method in targetMethodsDefinitions)
             {
-                if (Attribute.IsDefined(method, typeof(DuckIncludeAttribute), true))
+                if (Attribute.IsDefined(method, typeof(DuckIncludeAttribute), inherit: true))
                 {
                     proxyMethodsDefinitions.Add(method);
                 }
@@ -118,13 +118,13 @@ namespace Datadog.Trace.DuckTyping
             foreach (MethodInfo proxyMethodDefinition in proxyMethodsDefinitions)
             {
                 // Ignore the method marked with `DuckIgnore` attribute
-                if (Attribute.IsDefined(proxyMethodDefinition, typeof(DuckIgnoreAttribute), true))
+                if (Attribute.IsDefined(proxyMethodDefinition, typeof(DuckIgnoreAttribute), inherit: true))
                 {
                     continue;
                 }
 
                 // Check if proxy method is a reverse method (shouldn't be called from here)
-                if (Attribute.IsDefined(proxyMethodDefinition, typeof(DuckReverseMethodAttribute), true))
+                if (Attribute.IsDefined(proxyMethodDefinition, typeof(DuckReverseMethodAttribute), inherit: true))
                 {
                     return DuckTypeIncorrectReverseMethodUsageException.Create(proxyMethodDefinition);
                 }
@@ -146,7 +146,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Check if target method is a reverse method (shouldn't be called from here)
-                if (Attribute.IsDefined(targetMethod, typeof(DuckReverseMethodAttribute), true))
+                if (Attribute.IsDefined(targetMethod, typeof(DuckReverseMethodAttribute), inherit: true))
                 {
                     return DuckTypeIncorrectReverseMethodUsageException.Create(targetMethod);
                 }
@@ -276,7 +276,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (proxyMethod is not null)
                 {
-                    MethodBuilderGetToken.Invoke(proxyMethod, null);
+                    MethodBuilderGetToken.Invoke(proxyMethod, parameters: null);
                 }
             }
 
@@ -296,7 +296,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 MethodInfo implementationMethod = immutableImplementationMethod;
                 // Ignore methods without a `DuckReverse` attribute
-                if (!Attribute.IsDefined(implementationMethod, typeof(DuckReverseMethodAttribute), true))
+                if (!Attribute.IsDefined(implementationMethod, typeof(DuckReverseMethodAttribute), inherit: true))
                 {
                     continue;
                 }
@@ -411,7 +411,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (proxyMethod is not null)
                 {
-                    MethodBuilderGetToken.Invoke(proxyMethod, null);
+                    MethodBuilderGetToken.Invoke(proxyMethod, parameters: null);
                 }
             }
 
@@ -434,7 +434,7 @@ namespace Datadog.Trace.DuckTyping
         {
             selectedMethod = null;
 
-            T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
+            T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(inherit: true) ?? new T();
             proxyMethodDuckAttribute.Name ??= proxyMethod.Name;
 
             // A non-generic proxy method can select a generic target method and provide every generic argument
@@ -469,7 +469,7 @@ namespace Datadog.Trace.DuckTyping
                 if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)
                 {
                     // all types were loaded
-                    targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
+                    targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, binder: null, parameterTypes, modifiers: null);
                     if (targetMethod is not null)
                     {
                         selectedMethod = targetMethod;
@@ -481,7 +481,7 @@ namespace Datadog.Trace.DuckTyping
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
 
             // First we try with the current proxy parameter types
-            targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
+            targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, binder: null, proxyMethodParametersTypes, modifiers: null);
             if (targetMethod is not null)
             {
                 selectedMethod = targetMethod;
@@ -922,7 +922,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 if (proxyMethod is null)
                 {
-                    return new LazyILGenerator(null);
+                    return new LazyILGenerator(generator: null);
                 }
 
                 ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
@@ -1042,7 +1042,7 @@ namespace Datadog.Trace.DuckTyping
                             }
                             else
                             {
-                                il.WriteLoadArgument(idx, false);
+                                il.WriteLoadArgument(idx, isStatic: false);
                             }
                         }
                         else if (outerParamType.IsByRef)
@@ -1070,7 +1070,7 @@ namespace Datadog.Trace.DuckTyping
                                 outputAndRefParameters.Add(new OutputAndRefParameterData(localIndex, innerParamType, idx, outerParamType));
 
                                 // Load the argument (ref)
-                                il.WriteLoadArgument(idx, false);
+                                il.WriteLoadArgument(idx, isStatic: false);
 
                                 // Load the value inside the ref
                                 if (outerParamTypeElementType.IsGenericParameter || outerParamTypeElementType.IsValueType)
@@ -1119,7 +1119,7 @@ namespace Datadog.Trace.DuckTyping
                             }
                             else
                             {
-                                il.WriteLoadArgument(idx, false);
+                                il.WriteLoadArgument(idx, isStatic: false);
                             }
                         }
                         else
@@ -1128,7 +1128,7 @@ namespace Datadog.Trace.DuckTyping
                             if (needsDuckChaining(innerParamType, outerParamType))
                             {
                                 // Load the argument
-                                il.WriteLoadArgument(idx, false);
+                                il.WriteLoadArgument(idx, isStatic: false);
 
                                 // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
                                 // If this is a reverse duck type, we need to create a duck type from the original instance
@@ -1136,7 +1136,7 @@ namespace Datadog.Trace.DuckTyping
                             }
                             else
                             {
-                                il.WriteLoadArgument(idx, false);
+                                il.WriteLoadArgument(idx, isStatic: false);
                             }
 
                             // If the target parameter type is public or if it's by ref we have to actually use the original target type.
@@ -1203,7 +1203,7 @@ namespace Datadog.Trace.DuckTyping
                 Type[] originalTargetParameters = targetMethod.GetParameters().Select(static p => p.ParameterType).ToArray();
                 Type[] targetParameters = targetMethod.IsStatic ? originalTargetParameters : (new[] { typeof(object) }).Concat(originalTargetParameters).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, skipVisibility: true);
 
                 // Emit the dynamic method body
                 LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
@@ -1215,7 +1215,7 @@ namespace Datadog.Trace.DuckTyping
 
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                 {
-                    dynIL.WriteLoadArgument(idx, true);
+                    dynIL.WriteLoadArgument(idx, isStatic: true);
 
                     if (dynIL.WriteSafeTypeConversion(dynParameters[idx], targetParameters[idx]) is { } argumentError)
                     {
@@ -1261,7 +1261,7 @@ namespace Datadog.Trace.DuckTyping
                     Type localType = outOrRefParameter.LocalType.GetElementType() ?? outOrRefParameter.LocalType;
 
                     // We load the argument to be set
-                    il.WriteLoadArgument(outOrRefParameter.ProxyArgumentIndex, false);
+                    il.WriteLoadArgument(outOrRefParameter.ProxyArgumentIndex, isStatic: false);
 
                     // We load the value from the local
                     il.WriteLoadLocal(outOrRefParameter.LocalIndex);

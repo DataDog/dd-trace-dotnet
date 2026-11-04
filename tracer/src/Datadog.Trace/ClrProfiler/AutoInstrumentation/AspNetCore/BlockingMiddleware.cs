@@ -120,7 +120,7 @@ internal sealed class BlockingMiddleware
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
                 // Use blockinfo here
-                var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
+                var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, redirectInfo: null);
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.AppsecEnabled)
                 {

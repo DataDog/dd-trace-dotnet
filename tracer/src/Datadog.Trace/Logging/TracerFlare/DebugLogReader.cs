@@ -75,7 +75,7 @@ internal static class DebugLogReader
             archive.IsStreamOwner = false; // Do not close the underlying stream when closing the archive
             archive.SetLevel(9); // Set to optimal compression
 #else
-            using var archive = new ZipArchive(monitoringStream, ZipArchiveMode.Create, true);
+            using var archive = new ZipArchive(monitoringStream, ZipArchiveMode.Create, leaveOpen: true);
 #endif
 
             // Only sending .log files to avoid the risk of sending files we don't want.

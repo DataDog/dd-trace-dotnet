@@ -62,28 +62,28 @@ public readonly record struct ConfigurationResult<T>
     /// </summary>
     /// <param name="result">The value to use</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<int> Valid(int result) => new(result, null, ConfigurationLoadResult.Valid);
+    public static ConfigurationResult<int> Valid(int result) => new(result, telemetryOverride: null, ConfigurationLoadResult.Valid);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
     /// </summary>
     /// <param name="result">The value to use</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<bool> Valid(bool result) => new(result, null, ConfigurationLoadResult.Valid);
+    public static ConfigurationResult<bool> Valid(bool result) => new(result, telemetryOverride: null, ConfigurationLoadResult.Valid);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
     /// </summary>
     /// <param name="result">The value to use</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<double> Valid(double result) => new(result, null, ConfigurationLoadResult.Valid);
+    public static ConfigurationResult<double> Valid(double result) => new(result, telemetryOverride: null, ConfigurationLoadResult.Valid);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
     /// </summary>
     /// <param name="result">The value to use</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<string> Valid(string result) => new(result, null, ConfigurationLoadResult.Valid);
+    public static ConfigurationResult<string> Valid(string result) => new(result, telemetryOverride: null, ConfigurationLoadResult.Valid);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
@@ -100,17 +100,17 @@ public readonly record struct ConfigurationResult<T>
     /// </summary>
     /// <param name="result">The value that failed validation</param>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> Invalid(T result) => new(result, null, ConfigurationLoadResult.ValidationFailure);
+    public static ConfigurationResult<T> Invalid(T result) => new(result, telemetryOverride: null, ConfigurationLoadResult.ValidationFailure);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.NotFound"/> value
     /// </summary>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> NotFound() => new(default, null, ConfigurationLoadResult.NotFound);
+    public static ConfigurationResult<T> NotFound() => new(default, telemetryOverride: null, ConfigurationLoadResult.NotFound);
 
     /// <summary>
     /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.ParsingError"/> value
     /// </summary>
     /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
-    public static ConfigurationResult<T> ParseFailure() => new(default, null, ConfigurationLoadResult.ParsingError);
+    public static ConfigurationResult<T> ParseFailure() => new(default, telemetryOverride: null, ConfigurationLoadResult.ParsingError);
 }

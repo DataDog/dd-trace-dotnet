@@ -46,11 +46,11 @@ namespace Datadog.Trace.Configuration
             DebugEnabled = builder
                                   .WithKeys(ConfigurationKeys.DebugEnabled)
                                   .AsBoolResult()
-                                  .OverrideWith(in otelConfig, overrideHandler, false);
+                                  .OverrideWith(in otelConfig, overrideHandler, defaultValue: false);
 
             DiagnosticSourceEnabled = builder
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
-                                     .AsBool(true);
+                                     .AsBool(defaultValue: true);
         }
 
         /// <summary>

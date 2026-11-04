@@ -188,7 +188,7 @@ public static class TestMethodRunnerExecuteTestIntegrationV4_3
     {
         var state = TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodBegin(instance, testMethod);
         var binding = MsTestExecution.BindTestMethod(testMethod.Instance);
-        return binding is null ? state : new CallTargetState(null, new ExecutionState(state, binding));
+        return binding is null ? state : new CallTargetState(scope: null, new ExecutionState(state, binding));
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)

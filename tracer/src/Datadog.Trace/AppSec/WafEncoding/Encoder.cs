@@ -523,7 +523,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     }
 
                     var entry = (DdwafObjectKvStruct*)itemData;
-                    entry->Key = GetStringObject(ref context, elementKey!, false);
+                    entry->Key = GetStringObject(ref context, elementKey!, applySafety: false);
                     entry->Value = Encode(ref context, remainingDepth, getValue(element));
                     itemData += KvStructSize;
                 }
@@ -561,7 +561,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 }
 
                 var entry = (DdwafObjectKvStruct*)itemData;
-                entry->Key = GetStringObject(ref context, elementKey!, false);
+                entry->Key = GetStringObject(ref context, elementKey!, applySafety: false);
                 entry->Value = Encode(ref context, remainingDepth, getValue(element!));
                 itemData += KvStructSize;
             }

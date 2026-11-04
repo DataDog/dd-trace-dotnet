@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public ExceptionCaseScheduler()
         {
-            _timer = new Timer(TimerCallback, null, Timeout.Infinite, Timeout.Infinite);
+            _timer = new Timer(TimerCallback, state: null, Timeout.Infinite, Timeout.Infinite);
         }
 
         public void Schedule(TrackedExceptionCase doneCase, TimeSpan delay)

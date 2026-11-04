@@ -473,7 +473,7 @@ internal static partial class IastModule
         OnExecutedSinkTelemetry(IastVulnerabilityType.StackTraceLeak);
         var evidence = $"{ex.Source},{ex.GetType().Name}";
         // We report the stack of the exception instead of the current stack
-        var stack = new StackTrace(ex, true);
+        var stack = new StackTrace(ex, fNeedFileInfo: true);
         return GetScope(evidence, integrationId, VulnerabilityTypeUtils.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
     }
 
@@ -586,7 +586,7 @@ internal static partial class IastModule
         var vulnerability = new Vulnerability(
             vulnerabilityType,
             hashId,
-            string.IsNullOrEmpty(evidenceValue) ? null : new Evidence(evidenceValue!, null),
+            string.IsNullOrEmpty(evidenceValue) ? null : new Evidence(evidenceValue!, ranges: null),
             integrationId);
 
         if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
@@ -864,7 +864,7 @@ internal static partial class IastModule
 
     internal static IastModuleResponse OnStrictTransportSecurityHeaderMissing(IntegrationId integrationId, string serviceName)
     {
-        return AddWebVulnerability(null, integrationId, VulnerabilityTypeUtils.HstsHeaderMissing, (VulnerabilityTypeUtils.HstsHeaderMissing + ":" + serviceName).GetStaticHashCode());
+        return AddWebVulnerability(evidenceValue: null, integrationId, VulnerabilityTypeUtils.HstsHeaderMissing, (VulnerabilityTypeUtils.HstsHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
 
     internal static void OnHeaderInjection(IntegrationId integrationId, string headerName, string headerValue)

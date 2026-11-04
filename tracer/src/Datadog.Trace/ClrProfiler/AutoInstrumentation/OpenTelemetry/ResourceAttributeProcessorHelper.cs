@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                                         span.SetTag(attribute.Key, resourceServiceName);
                                     }
 
-                                    span.SetService(resourceServiceName, null);
+                                    span.SetService(resourceServiceName, source: null);
                                 }
                                 else if (attribute.Key == "service.version")
                                 {
@@ -108,12 +108,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                      typeof(object),
                      new Type[] { typeof(object) },
                      typeof(ResourceAttributeProcessorHelper).Module,
-                     true);
+                     skipVisibility: true);
             ILGenerator ilWriter = dynMethod.GetILGenerator();
             ilWriter.Emit(OpCodes.Ldarg_0);
             ilWriter.Emit(OpCodes.Castclass, baseProviderType); // Cast to OpenTelemetry.BaseProvider
 
-            ilWriter.EmitCall(OpCodes.Call, targetGetResourceMethod, null);
+            ilWriter.EmitCall(OpCodes.Call, targetGetResourceMethod, optionalParameterTypes: null);
             ilWriter.Emit(OpCodes.Ret);
 
             return (Func<object, object>)dynMethod.CreateDelegate(typeof(Func<object, object>));
