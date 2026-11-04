@@ -555,8 +555,9 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             writePosition = WriteSpanStatus(bytes, writePosition, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
         }
 
-        // flags (field 16, fixed32) — only when sampling priority is known
-        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
+        // flags (field 16, fixed32) — only when sampling priority is known.
+        // Local spans carry the sampling decision on the trace chunk, not on their own context.
+        if ((spanModel.TraceChunk.SamplingPriority ?? spanModel.Span.Context.SamplingPriority) is int samplingPriority)
         {
             // Bit 0: trace flag for "sampled" (set when priority keeps the trace)
             uint flags = SamplingPriorityValues.IsKeep(samplingPriority) ? 1u : 0u;

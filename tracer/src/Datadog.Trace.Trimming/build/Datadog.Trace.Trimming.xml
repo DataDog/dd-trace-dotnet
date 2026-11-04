@@ -966,6 +966,7 @@
       <type fullname="System.SerializableAttribute" />
       <type fullname="System.Single" />
       <type fullname="System.Span`1" />
+      <type fullname="System.StackOverflowException" />
       <type fullname="System.String" />
       <type fullname="System.StringComparer" />
       <type fullname="System.StringComparison" />

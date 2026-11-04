@@ -133,6 +133,11 @@ namespace Datadog.Trace.IntegrationTests
                 allExpected.Add(AgentHttpHeaderNames.EntityId, entityId);
             }
 
+            if (ContainerMetadata.Instance.ExternalEnv is { } externalEnv)
+            {
+                allExpected.Add(AgentHttpHeaderNames.ExternalEnv, externalEnv);
+            }
+
             if (agentless)
             {
                 allExpected.Add(TelemetryConstants.ApiKeyHeader, apiKey);

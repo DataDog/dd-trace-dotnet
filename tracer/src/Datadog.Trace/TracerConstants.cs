@@ -11,9 +11,13 @@ namespace Datadog.Trace
     {
         public const string TelemetrySdkName = "datadog";
         public const string Language = "dotnet";
-        public const string AssemblyVersion = "3.57.0.0";
-        public const string ThreePartVersion = "3.57.0";
 
-        public static ReadOnlySpan<byte> AssemblyVersionBytes => "3.57.0.0"u8;
+        public const string AssemblyVersion = ProjectInfo.AssemblyVersion;
+
+        // Instrumentation.cs compares this against the native tracer's PROFILER_VERSION for an exact
+        // string match, so it must stay a bare numeric three-part version.
+        public const string ThreePartVersion = ProjectInfo.ThreePartVersion;
+
+        public static ReadOnlySpan<byte> AssemblyVersionBytes => ProjectInfo.AssemblyVersionBytes;
     }
 }

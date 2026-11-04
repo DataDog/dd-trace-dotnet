@@ -218,10 +218,9 @@ public class FlagEvaluationTransportTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentUri = new Uri($"http://127.0.0.1:{agent.Port}");
-        // Exercise both factory implementations; ApiWebRequestFactoryTests separately verifies
-        // the opt-in async deadline with HttpWebRequest.Timeout disabled.
+        // Exercise both factory implementations
         using var sender = useLegacyTransport
-                               ? CreateTransport(new ApiWebRequestFactory(agentUri, FeatureFlagsEvpHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5), enforceAsyncTimeout: true))
+                               ? CreateTransport(new ApiWebRequestFactory(agentUri, FeatureFlagsEvpHeaderHelper.Instance.DefaultHeaders, timeout: TimeSpan.FromSeconds(5)))
                                : CreateTransport(CreateSettings(agentUri.ToString()));
         await AssertStalledAgentSendTimesOut(agent, sender);
     }

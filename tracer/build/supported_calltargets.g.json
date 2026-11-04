@@ -4779,7 +4779,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4809,7 +4809,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegration",
     "IntegrationKind": 0,
@@ -4830,7 +4830,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4887,7 +4887,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegrationTer",
     "IntegrationKind": 0,
@@ -4907,7 +4907,7 @@
     "MinimumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 3
+      "Item3": 2
     },
     "MaximumVersion": {
       "Item1": 3,
@@ -4937,7 +4937,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegration",
     "IntegrationKind": 0,
@@ -4963,7 +4963,7 @@
     "MaximumVersion": {
       "Item1": 3,
       "Item2": 1,
-      "Item3": 2
+      "Item3": 1
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase.ClusterNodeIntegrationTer",
     "IntegrationKind": 0,
@@ -7883,6 +7883,31 @@
   },
   {
     "IntegrationName": "DotnetTest",
+    "AssemblyName": "vstest.console",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.RunTestsArgumentExecutor+TestRunRequestEventsRegistrar",
+    "TargetMethodName": "TestRunRequest_OnRunCompletion",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Object",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.TestRunCompleteEventArgs"
+    ],
+    "MinimumVersion": {
+      "Item1": 15,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 15,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestRunRequestOnRunCompletionIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DotnetTest",
     "AssemblyName": "vstest.console.arm64",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.CommandLine.Executor",
     "TargetMethodName": "Execute",
@@ -7926,6 +7951,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.ExecutorGetArgumentProcessorsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DotnetTest",
+    "AssemblyName": "vstest.console.arm64",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.RunTestsArgumentExecutor+TestRunRequestEventsRegistrar",
+    "TargetMethodName": "TestRunRequest_OnRunCompletion",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Object",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.TestRunCompleteEventArgs"
+    ],
+    "MinimumVersion": {
+      "Item1": 15,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 15,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestRunRequestOnRunCompletionIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

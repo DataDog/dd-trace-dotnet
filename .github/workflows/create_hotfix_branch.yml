@@ -70,7 +70,7 @@ jobs:
       - name: "Push hotfix branch"
         # commit-headless v3.4.0 still creates branches with --dry-run, so skip the action entirely.
         if: ${{ !inputs.dry_run }}
-        uses: DataDog/commit-headless@79367f840e221d63cb28a359de97833cdfde81dd # action/v3.4.0
+        uses: DataDog/commit-headless@d6afabfd690ea1dbdd7d368acbefd71304928699 # action/v3.4.1
         with:
           command: commit
           branch: hotfix/${{ steps.versions.outputs.full_version }}

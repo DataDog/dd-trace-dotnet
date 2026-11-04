@@ -113,6 +113,18 @@
                   }
                 },
                 {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
+                {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -154,7 +166,8 @@
                     "stringValue": "testhelper"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }
