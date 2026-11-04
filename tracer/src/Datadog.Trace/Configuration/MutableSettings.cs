@@ -974,10 +974,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         // Read OTEL_SDK_DISABLED from this snapshot's source rather than tracerSettings,
         // so that settings created without default sources ignore it.
-        if (TracerSettings.IsOtelSdkDisabled(config) && traceEnabledResult.ConfigurationResult is not { IsPresent: true })
+        if (TracerSettings.IsOtelSdkDisabled(config) && traceEnabledResult.ConfigurationResult is not { IsValid: true })
         {
             // OTEL_SDK_DISABLED=true maps to DD_TRACE_ENABLED=false and takes precedence over OTEL_TRACES_EXPORTER.
-            // As with OverrideWith, a DD_TRACE_ENABLED value overrides it.
+            // A valid DD_TRACE_ENABLED value overrides it, but an empty or invalid one doesn't.
             telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
             traceEnabled = false;
         }

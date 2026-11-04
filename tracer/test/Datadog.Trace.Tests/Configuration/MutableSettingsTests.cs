@@ -190,25 +190,21 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, null, false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, "none", false)]
-        // The composite source ignores an empty or invalid DD_TRACE_ENABLED, so it doesn't override OTEL_SDK_DISABLED
+        // Unlike with OTEL_TRACES_EXPORTER, an empty or invalid DD_TRACE_ENABLED doesn't override OTEL_SDK_DISABLED
         [InlineData("", null, false)]
         [InlineData("invalid", null, false)]
-        // A DD_TRACE_ENABLED value overrides it
+        [InlineData("invalid", "otlp", false)]
+        // A valid DD_TRACE_ENABLED value overrides it
         [InlineData("true", null, true)]
         [InlineData("1", "otlp", true)]
         [InlineData("false", null, false)]
         [InlineData("0", "otlp", false)]
         public async Task TraceEnabledWithOtelSdkDisabled(string value, string otelTracesExporter, bool areTracesEnabled)
         {
-            var settings = new NameValueCollection
-            {
-                { ConfigurationKeys.OpenTelemetry.SdkDisabled, "true" },
-                { ConfigurationKeys.TraceEnabled, value },
-                { ConfigurationKeys.OpenTelemetry.TracesExporter, otelTracesExporter },
-            };
-
-            // Use a composite source, as in production
-            var source = new CompositeConfigurationSource([new NameValueConfigurationSource(settings)]);
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.SdkDisabled, "true"),
+                (ConfigurationKeys.TraceEnabled, value),
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, otelTracesExporter));
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
 
             tracerSettings.Manager.InitialMutableSettings.TraceEnabled.Should().Be(areTracesEnabled);

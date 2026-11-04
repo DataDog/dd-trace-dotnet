@@ -734,7 +734,8 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void OtelSdkDisabled_ResolvesTheSameValueAcrossCompositeSources()
         {
-            // The composite source skips the invalid value in the first source and falls back to "true" in the second
+            // The composite source skips the invalid OTEL_SDK_DISABLED in the first source and falls back to "true" in the second.
+            // It keeps the invalid DD_TRACE_ENABLED, which doesn't override OTEL_SDK_DISABLED.
             var source = new CompositeConfigurationSource(
             [
                 CreateConfigurationSource(
