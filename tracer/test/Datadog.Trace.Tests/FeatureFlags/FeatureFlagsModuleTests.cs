@@ -13,6 +13,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -358,6 +359,21 @@ public class FeatureFlagsModuleTests
 
         rcmManager.HasAnySubscription.Should().BeTrue();
         rcmManager.ProductKeys.Should().Contain(RcmProducts.FfeFlags);
+    }
+
+    [Theory]
+    [InlineData("remote_config", true)]
+    [InlineData("agentless", false)]
+    public void Create_AdvertisesDependentFlagsOnlyForRemoteConfig(string source, bool advertises)
+    {
+        var rcmManager = new Mock<IRcmSubscriptionManager>();
+        var settings = CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, source));
+
+        using var module = CreateModule(settings, rcmManager.Object);
+
+        var times = advertises ? Times.Once() : Times.Never();
+        rcmManager.Verify(manager => manager.SetCapability(new BigInteger(1UL << 46), true), times);
+        rcmManager.Verify(manager => manager.SetCapability(new BigInteger(1UL << 50), true), times);
     }
 
     [Fact]
