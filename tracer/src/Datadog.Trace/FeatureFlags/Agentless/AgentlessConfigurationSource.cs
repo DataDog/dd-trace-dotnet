@@ -276,12 +276,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             new(HttpHeaderNames.TracingEnabled, "false"),
         };
 
-        var capabilities = FeatureFlagCapabilities.HeaderValue(FeatureFlagsEvaluator.GetCapabilities());
-        if (capabilities is not null)
-        {
-            headers.Add(new("X-DD-FEATURE-FLAGS-CAPABILITIES", capabilities));
-        }
-
         if (endpoint.IsManaged)
         {
             // A custom endpoint is left to report its own authentication failure rather than
@@ -599,7 +593,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     /// </summary>
     private sealed class RequestTarget(AgentlessEndpoint endpoint, string? environment)
     {
-        public Uri Uri { get; } = endpoint.BuildRequestUri(environment);
+        public Uri Uri { get; } = FeatureFlagCapabilities.AddToUri(endpoint.BuildRequestUri(environment), FeatureFlagsEvaluator.GetCapabilities());
 
         public string? Environment { get; } = endpoint.RequestEnvironment(environment);
     }
