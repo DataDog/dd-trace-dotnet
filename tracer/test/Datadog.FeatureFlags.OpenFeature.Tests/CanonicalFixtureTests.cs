@@ -134,6 +134,38 @@ public class CanonicalFixtureTests
         }
     }
 
+    [Theory]
+    [InlineData("2026-10-19", false)]
+    [InlineData("2026-10-19", true)]
+    [InlineData("2026-10-19T15:30:00", false)]
+    [InlineData("2026-10-19T15:30:00", true)]
+    public async Task ImmediateOptOutPreservesAllocationTimestampCompatibility(string timestamp, bool useAsync)
+    {
+        // These formats are accepted by allocation timestamps. Opt-out must not
+        // reject them with InvalidContext or keep the subject in the experiment.
+        var testCase = new JsonLinq.JObject
+        {
+            ["flag"] = "new-user-onboarding",
+            ["variationType"] = "STRING",
+            ["defaultValue"] = "default",
+            ["targetingKey"] = "19",
+            ["attributes"] = new JsonLinq.JObject
+            {
+                ["country"] = "UK",
+                ["dd_experimentation_opt_out_at"] = timestamp
+            },
+            ["result"] = new JsonLinq.JObject { ["value"] = "red", ["reason"] = "TARGETING_MATCH" },
+            ["capabilities"] = new JsonLinq.JObject
+            {
+                ["experimentationOptOutImmediate"] = new JsonLinq.JObject { ["value"] = "default", ["reason"] = "DEFAULT" }
+            }
+        };
+
+        var json = testCase.ToString(Json.Formatting.None);
+        await PublicProviderMethodsMatchCanonicalFixtures("Allocation timestamp compatibility", json, useAsync, immediate: false);
+        await PublicProviderMethodsMatchCanonicalFixtures("Allocation timestamp compatibility", json, useAsync, immediate: true);
+    }
+
     private static void AssertResolution<T>(JsonLinq.JObject testCase, ResolutionDetails<T> actual)
     {
         var expected = testCase["result"]!;
