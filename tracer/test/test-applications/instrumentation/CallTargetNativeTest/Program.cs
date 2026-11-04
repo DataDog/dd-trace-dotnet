@@ -25,8 +25,34 @@ namespace CallTargetNativeTest
 
         static void Main(string[] args)
         {
+            VerifyRuntimeAsyncCompilation();
             InjectCallTargetDefinitions();
             RunTests(args);
+        }
+
+        /// <summary>
+        /// On .NET 11+ this sample is built twice: by default, and with DD_RuntimeAsync=true, which enables runtime-async.
+        /// Verify that the sample was really built in the mode expected
+        /// </summary>
+        static void VerifyRuntimeAsyncCompilation()
+        {
+#if NET11_0_OR_GREATER
+            // MethodImplAttributes.Async: set on a runtime-async method instead of generating a state machine
+            const MethodImplAttributes runtimeAsyncFlag = (MethodImplAttributes)0x2000;
+#if RUNTIME_ASYNC_BUILD
+            const bool expected = true;
+#else
+            const bool expected = false;
+#endif
+            var method = typeof(With0ArgumentsTasks).GetMethod(nameof(With0ArgumentsTasks.ReturnTaskAsync));
+            var isRuntimeAsync = (method.MethodImplementationFlags & runtimeAsyncFlag) != 0;
+            if (isRuntimeAsync != expected)
+            {
+                throw new Exception($"Expected async methods to be compiled with runtime-async={expected}, but {method.DeclaringType}.{method.Name} has runtime-async={isRuntimeAsync}");
+            }
+
+            Console.WriteLine($"RuntimeAsyncCompiled: {isRuntimeAsync}");
+#endif
         }
 
         static void InjectCallTargetDefinitions()
