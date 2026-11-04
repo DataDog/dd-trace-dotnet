@@ -150,7 +150,7 @@ public class MsTestV2CleanupTests(ITestOutputHelper output) : TestingFrameworkEv
         finally
         {
             // Each invocation (including a failed flaky retry) has its own directory in the CI log artifact.
-            // Delay hashing and file writes until after the sample exits so capture does not warm up gzip.
+            // Delay hashing and file writes until after the sample exits.
             try
             {
                 using var receiver = Process.GetCurrentProcess();
