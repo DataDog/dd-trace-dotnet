@@ -43,10 +43,12 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
         _processExit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
+    protected abstract bool HasPendingEvents { get; }
+
     public async Task StartFlushingAsync()
     {
         var currentInterval = _initialFlushInterval;
-        while (!_processExit.Task.IsCompleted)
+        while (!_processExit.Task.IsCompleted || HasPendingEvents)
         {
             try
             {

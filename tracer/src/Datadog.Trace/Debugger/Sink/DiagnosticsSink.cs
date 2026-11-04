@@ -47,6 +47,17 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new Queue<TimedMessage>(QueueLimit);
         }
 
+        internal bool IsEmpty
+        {
+            get
+            {
+                lock (_locker)
+                {
+                    return _queue.Count == 0;
+                }
+            }
+        }
+
         public static DiagnosticsSink Create(Func<string> serviceNameProvider, DebuggerSettings settings)
         {
             return new DiagnosticsSink(serviceNameProvider, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));

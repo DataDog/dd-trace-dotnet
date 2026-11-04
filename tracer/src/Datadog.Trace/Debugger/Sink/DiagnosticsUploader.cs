@@ -26,6 +26,8 @@ namespace Datadog.Trace.Debugger.Sink
             _diagnosticsSink = diagnosticsSink;
         }
 
+        protected override bool HasPendingEvents => !_diagnosticsSink.IsEmpty;
+
         public static DiagnosticsUploader Create(DiagnosticsSink diagnosticsSink, IBatchUploader diagnosticsBatchUploader, DebuggerSettings settings)
         {
             return new DiagnosticsUploader(diagnosticsSink, diagnosticsBatchUploader, settings);
