@@ -2502,6 +2502,34 @@ partial class Build
            }
        });
 
+    Target BuildBundleArtifactTests => _ => _
+       .Description("Builds the Datadog.Trace.Bundle artifacts tests")
+       .After(CompileManagedTestHelpers)
+       .Executes(() =>
+        {
+            DotnetBuild(Solution.GetProject(Projects.BundleArtifactsTests));
+        });
+
+    Target RunBundleArtifactTests => _ => _
+       .Description("Runs the Datadog.Trace.Bundle artifacts tests, using the Datadog.Trace.Bundle and Datadog.Trace packages found in the nuget artifacts directory")
+       .After(BuildBundleArtifactTests)
+       .Executes(() =>
+        {
+            var isDebugRun = IsDebugRun();
+            var project = Solution.GetProject(Projects.BundleArtifactsTests);
+
+            DotNetTest(config => config
+                .SetProjectFile(project)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetIsDebugRun(isDebugRun)
+                .SetProcessEnvironmentVariable("NugetArtifactsDirectory", ArtifactsDirectory / "nuget")
+                .SetLogsDirectory(TestLogsDirectory)
+                .EnableTrxLogOutput(GetResultsDirectory(project))
+                .WithDatadogLogger());
+        });
+
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")
        .Unlisted()

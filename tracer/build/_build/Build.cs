@@ -370,6 +370,12 @@ partial class Build : NukeBuild
         .DependsOn(CopyDdDotnet)
         .DependsOn(RunDdDotnetArtifactTests);
 
+    Target BuildAndRunBundleArtifactTests => _ => _
+        .Description("Builds and runs the Datadog.Trace.Bundle artifacts tests")
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(BuildBundleArtifactTests)
+        .DependsOn(RunBundleArtifactTests);
+
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)
