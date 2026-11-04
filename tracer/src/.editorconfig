@@ -101,8 +101,8 @@ dotnet_diagnostic.MA0188.severity = none # Use System.TimeProvider instead of a 
 dotnet_diagnostic.MA0189.severity = none # Use InlineArray instead of fixed-size buffers
 
 # ---------------------------------------------------------------------------------------------------
-# Rules we want, but which currently have violations.
-# These are temporarily disabled, and will be fixed and enabled in subsequent PRs.
+# Rules we would like, but which still have violations.
+# Each was skipped or deferred when the other rules were enabled; the note on each line says why.
 # ---------------------------------------------------------------------------------------------------
 dotnet_diagnostic.MA0009.severity = none # Add regex evaluation timeout - skipped: most hits are fixed, linear patterns (git output, CI env, cgroup lines, request header parsing). Note: remote-config feature-flag patterns (ConditionConfiguration) run without a timeout and are worth revisiting separately
 dotnet_diagnostic.MA0012.severity = none # Do not raise reserved exception type - deferred (not mechanical): fixing means choosing a replacement exception type per site; ThrowHelper.ThrowNullReferenceException has many callers (incl. DuckTyping), plus direct NullReferenceException/IndexOutOfRangeException throws in Activity, IAST, the obfuscator and the debugger
