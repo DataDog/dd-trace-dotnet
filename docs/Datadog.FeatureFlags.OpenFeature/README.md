@@ -114,6 +114,8 @@ OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
 - `IsExposure` is true for every successful evaluation of an allocation that logs exposures,
   including repeats. `IsCacheHit` tells repeats apart.
 - An evaluation that fails, including one that an `after` hook fails, is not an exposure.
+- After the tracer shuts down, exposures are no longer recorded, so evaluations get no decision:
+  `ShouldSend` and `IsCacheHit` are false.
 - An exception from the callback does not affect the evaluation. The first one is logged at warn
   level, later ones at debug level; pass an `ILogger` to the hook to route them, otherwise they go
   to `System.Diagnostics.Trace`.

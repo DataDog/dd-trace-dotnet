@@ -93,6 +93,19 @@ public class DeferredExposureTests
     }
 
     [Fact]
+    public async Task CommitsAfterShutdownGiveNoVerdict()
+    {
+        var module = Module();
+        var first = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        var second = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        await module.DisposeAsync();
+
+        module.CommitExposure(first.FlagMetadata).Should().Be(ExposureCommitResult.NothingPending, "nothing can be recorded once exposure reporting has stopped");
+        module.CommitExposure(second.FlagMetadata).Should().Be(ExposureCommitResult.NothingPending);
+    }
+
+    [Fact]
     public void ImmediateAndDeferredEvaluationsShareOneCache()
     {
         using var module = Module();

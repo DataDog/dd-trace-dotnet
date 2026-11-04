@@ -896,7 +896,13 @@ namespace Datadog.Trace.FeatureFlags
                 return ExposureCommitResult.NothingPending;
             }
 
-            return ReportExposure(pending.Value) == ExposureRecordResult.Repeat ? ExposureCommitResult.Repeat : ExposureCommitResult.New;
+            return ReportExposure(pending.Value) switch
+            {
+                ExposureRecordResult.New => ExposureCommitResult.New,
+                ExposureRecordResult.Repeat => ExposureCommitResult.Repeat,
+                // Reporting has stopped, so nothing was recorded and there is no verdict to give.
+                _ => ExposureCommitResult.NothingPending,
+            };
         }
 
         private ExposureRecordResult ReportExposure(in ExposureEvent exposure)
