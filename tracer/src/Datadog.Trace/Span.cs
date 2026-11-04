@@ -36,7 +36,7 @@ namespace Datadog.Trace
         private int _isFinished;
 
         internal Span(SpanContext context, DateTimeOffset? start)
-            : this(context, start, null)
+            : this(context, start, tags: null)
         {
         }
 
@@ -325,7 +325,7 @@ namespace Datadog.Trace
                     if (string.IsNullOrEmpty(value))
                     {
                         // remove metric
-                        SetMetric(Trace.Tags.Analytics, null);
+                        SetMetric(Trace.Tags.Analytics, value: null);
                         return this;
                     }
 
@@ -362,7 +362,7 @@ namespace Datadog.Trace
                     if (string.IsNullOrEmpty(value))
                     {
                         // Remove metric if value is null
-                        SetMetric(Trace.Tags.Measured, null);
+                        SetMetric(Trace.Tags.Measured, value: null);
                         return this;
                     }
 

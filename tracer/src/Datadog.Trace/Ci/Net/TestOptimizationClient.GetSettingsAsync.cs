@@ -79,7 +79,7 @@ internal sealed partial class TestOptimizationClient
                 _commitSha,
                 SettingsType,
                 new SettingsQuery(_serviceName, _environment, _repositoryUrl, _branchName, _commitSha, GetTestConfigurations(skipFrameworkInfo))),
-            null);
+            repositoryUrl: null);
 
         var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
         Log.Debug("TestOptimizationClient: Settings.JSON RQ = {Json}", jsonQuery);

@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
                 returnType: scalarValueType,
                 parameterTypes: new Type[] { typeof(string) },
                 typeof(DuckType).Module,
-                true);
+                skipVisibility: true);
 
             ILGenerator createScalarValueIl = createLogEventPropertyMethod.GetILGenerator();
 

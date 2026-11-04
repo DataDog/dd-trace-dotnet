@@ -360,12 +360,12 @@ internal static class TracerHomeCache
         {
             if (entry.IsDirectory)
             {
-                entries.Add(new CacheIntegrityEntry(entry.RelativePath, true, 0, string.Empty));
+                entries.Add(new CacheIntegrityEntry(entry.RelativePath, IsDirectory: true, 0, string.Empty));
                 continue;
             }
 
             var fileInfo = new FileInfo(entry.FullPath);
-            entries.Add(new CacheIntegrityEntry(entry.RelativePath, false, fileInfo.Length, ComputeSha256(entry.FullPath)));
+            entries.Add(new CacheIntegrityEntry(entry.RelativePath, IsDirectory: false, fileInfo.Length, ComputeSha256(entry.FullPath)));
         }
 
         entries.Sort(static (left, right) => string.Compare(left.RelativePath, right.RelativePath, StringComparison.Ordinal));

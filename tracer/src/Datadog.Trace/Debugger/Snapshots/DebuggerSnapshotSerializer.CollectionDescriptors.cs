@@ -195,7 +195,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private readonly struct SupportedEnumerableDescriptor
         {
-            internal static readonly SupportedEnumerableDescriptor NotSupported = new(null, null, isDictionary: false);
+            internal static readonly SupportedEnumerableDescriptor NotSupported = new(runtimeType: null, getCount: null, isDictionary: false);
 
             private readonly Func<object, int>? _getCount;
 

@@ -94,13 +94,13 @@ internal sealed class FeatureFlagsSettings
 
         EvaluationEventsEnabled = config
                                  .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled)
-                                 .AsBool(true);
+                                 .AsBool(defaultValue: true);
 
         // Read once, like the other delivery settings: when false, exposures stop going to Datadog
         // but the exposure cache and customer exposure hooks keep working.
         ExposuresDatadogLoggingEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.ExposuresDatadogLoggingEnabled)
-                                       .AsBool(true);
+                                       .AsBool(defaultValue: true);
 
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)

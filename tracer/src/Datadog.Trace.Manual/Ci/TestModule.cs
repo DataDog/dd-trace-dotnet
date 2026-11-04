@@ -21,7 +21,7 @@ public static class TestModule
     /// <param name="name">Test module name</param>
     /// <returns>New test module instance</returns>
     public static ITestModule Create(string name)
-        => InternalCreate(name, null, null, null);
+        => InternalCreate(name, framework: null, frameworkVersion: null, startDate: null);
 
     /// <summary>
     /// Create a new Test Module
@@ -31,7 +31,7 @@ public static class TestModule
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <returns>New test module instance</returns>
     public static ITestModule Create(string name, string framework, string frameworkVersion)
-        => InternalCreate(name, framework, frameworkVersion, null);
+        => InternalCreate(name, framework, frameworkVersion, startDate: null);
 
     /// <summary>
     /// Create a new Test Module

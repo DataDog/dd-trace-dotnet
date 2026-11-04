@@ -150,7 +150,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         // Reset the previous attempt's outcome before the method body executes again.
         testCaseMetadata.PrepareForRetry();
 
-        return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus, testCaseMetadata));
+        return new CallTargetState(scope: null, new TestRunnerState(testRunnerInstance, retryMessageBus, testCaseMetadata));
     }
 
     /// <summary>

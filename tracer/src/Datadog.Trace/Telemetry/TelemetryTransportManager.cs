@@ -62,7 +62,7 @@ internal sealed class TelemetryTransportManager : IDisposable
         }
 
         // use agent if we know it's available, use agentless if we know it's not, and use agent as fallback
-        _currentTransport = GetNextTransport(null);
+        _currentTransport = GetNextTransport(currentTransport: null);
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {

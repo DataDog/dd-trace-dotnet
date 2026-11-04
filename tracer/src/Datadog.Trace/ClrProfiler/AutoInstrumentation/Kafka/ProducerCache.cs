@@ -50,7 +50,7 @@ internal static class ProducerCache
             var delegateType = typeof(Action<>).MakeGenericType(genericDeliveryReportType);
 
             return DelegateInstrumentation.Wrap(
-                null,
+                target: null,
                 delegateType,
                 new ProduceDeliveryCallbacks());
         }

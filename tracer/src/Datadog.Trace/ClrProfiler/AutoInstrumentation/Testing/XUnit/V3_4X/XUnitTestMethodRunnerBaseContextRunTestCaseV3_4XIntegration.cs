@@ -102,7 +102,7 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV3_4XIntegration
             testCaseMetadata.Skipped = true;
         }
 
-        return new CallTargetState(null, new TestRunnerState(retryMessageBus, testCaseMetadata, context, testCase));
+        return new CallTargetState(scope: null, new TestRunnerState(retryMessageBus, testCaseMetadata, context, testCase));
     }
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)

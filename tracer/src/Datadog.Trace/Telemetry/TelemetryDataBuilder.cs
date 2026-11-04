@@ -118,7 +118,7 @@ internal sealed class TelemetryDataBuilder
             data ??= new();
             data.Add(new(
                 TelemetryRequestTypes.AppEndpoints,
-                new AppEndpointsPayload(appEndpoints, true)));
+                new AppEndpointsPayload(appEndpoints, isFirst: true)));
         }
 
         if (sendAppClosing)

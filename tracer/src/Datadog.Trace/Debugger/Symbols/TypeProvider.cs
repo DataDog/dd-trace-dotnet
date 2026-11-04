@@ -187,7 +187,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return "[" + reader.GetString(assemblyReference.Name) + "]" + name;
 
                 case HandleKind.TypeReference:
-                    return ParseTypeReference(reader, (TypeReferenceHandle)scope, true) + "+" + name;
+                    return ParseTypeReference(reader, (TypeReferenceHandle)scope, includeResScope: true) + "+" + name;
 
                 default:
                     return name;

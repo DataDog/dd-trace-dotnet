@@ -32,7 +32,7 @@ public static class TestClassInfoExecuteClassCleanupIntegration
     {
         if (MsTestIntegration.IsEnabled && MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance) is { } suite)
         {
-            return new CallTargetState(null, suite);
+            return new CallTargetState(scope: null, suite);
         }
 
         return CallTargetState.GetDefault();

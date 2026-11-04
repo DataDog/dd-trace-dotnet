@@ -200,15 +200,15 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (fullName is not null)
             {
-                return Tuple.Create(fullName, true);
+                return Tuple.Create(fullName, item2: true);
             }
 
             if (instanceNames.Length == 1)
             {
-                return Tuple.Create(instanceNames[0], false);
+                return Tuple.Create(instanceNames[0], item2: false);
             }
 
-            return Tuple.Create(GetSimpleInstanceName(), false);
+            return Tuple.Create(GetSimpleInstanceName(), item2: false);
         }
 
         private string GetSimpleInstanceName()
@@ -224,7 +224,7 @@ namespace Datadog.Trace.RuntimeMetrics
             {
                 int instancePid;
 
-                using (var counter = new PerformanceCounter(MemoryCategoryName, "Process ID", name, true))
+                using (var counter = new PerformanceCounter(MemoryCategoryName, "Process ID", name, readOnly: true))
                 {
                     instancePid = (int)counter.NextValue();
                 }

@@ -68,7 +68,7 @@ public sealed class Test
                 startTime: startDate,
                 traceId: traceId,
                 spanId: spanId);
-            activatedScope = tracer.TracerManager.ScopeManager.Activate(span, true);
+            activatedScope = tracer.TracerManager.ScopeManager.Activate(span, finishOnClose: true);
             _scope = activatedScope;
 
             activatedScope.Span.Type = SpanTypes.Test;
@@ -483,7 +483,7 @@ public sealed class Test
     /// <param name="status">Test status</param>
     public void Close(TestStatus status)
     {
-        Close(status, null, null);
+        Close(status, duration: null, skipReason: null);
     }
 
     /// <summary>
@@ -493,7 +493,7 @@ public sealed class Test
     /// <param name="duration">Duration of the test suite</param>
     public void Close(TestStatus status, TimeSpan? duration)
     {
-        Close(status, duration, null);
+        Close(status, duration, skipReason: null);
     }
 
     /// <summary>

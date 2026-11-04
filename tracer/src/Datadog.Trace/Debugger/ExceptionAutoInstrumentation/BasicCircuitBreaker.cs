@@ -33,7 +33,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             _maxTimesToTripInTimeInterval = maxTimesToTripInTimeInterval;
             _resetInterval = resetInterval;
-            _timer = new Timer(OnTimerIntervalReached, null, Timeout.Infinite, (int)resetInterval.TotalMilliseconds);
+            _timer = new Timer(OnTimerIntervalReached, state: null, Timeout.Infinite, (int)resetInterval.TotalMilliseconds);
         }
 
         public CircuitBreakerState Trip()

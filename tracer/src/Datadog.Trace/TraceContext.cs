@@ -162,7 +162,7 @@ namespace Datadog.Trace
             if (_rootSpan is not { } rootSpan)
             {
                 var created = new AppSecRequestContext();
-                return Interlocked.CompareExchange(ref _appSecRequestContext, created, null) ?? created;
+                return Interlocked.CompareExchange(ref _appSecRequestContext, created, comparand: null) ?? created;
             }
 
             lock (rootSpan)
@@ -171,7 +171,7 @@ namespace Datadog.Trace
                                   ? AppSecRequestContext.CreateWithDisposedAdditiveContext()
                                   : new AppSecRequestContext();
 
-                return Interlocked.CompareExchange(ref _appSecRequestContext, created, null) ?? created;
+                return Interlocked.CompareExchange(ref _appSecRequestContext, created, comparand: null) ?? created;
             }
         }
 
@@ -198,7 +198,7 @@ namespace Datadog.Trace
             }
 
             var created = new DebuggerSamplingCoordinator();
-            return Interlocked.CompareExchange(ref _debuggerSamplingCoordinator, created, null) ?? created;
+            return Interlocked.CompareExchange(ref _debuggerSamplingCoordinator, created, comparand: null) ?? created;
         }
 
         internal void EnableIastInRequest()
@@ -209,7 +209,7 @@ namespace Datadog.Trace
         public void AddSpan(Span span)
         {
             // first span added is the local root span
-            if (Interlocked.CompareExchange(ref _rootSpan, span, null) is null)
+            if (Interlocked.CompareExchange(ref _rootSpan, span, comparand: null) is null)
             {
                 span.MarkSpanForExceptionReplay();
             }

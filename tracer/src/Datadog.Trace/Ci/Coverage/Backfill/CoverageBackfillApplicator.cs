@@ -174,7 +174,7 @@ internal static class CoverageBackfillApplicator
             return false;
         }
 
-        var relativePath = ciEnvironmentValues.MakeRelativePathFromSourceRoot(path, false);
+        var relativePath = ciEnvironmentValues.MakeRelativePathFromSourceRoot(path, useOSSeparator: false);
         if (IsPathRootedCrossPlatform(path))
         {
             if (StringUtil.IsNullOrWhiteSpace(ciEnvironmentValues.SourceRoot) ||

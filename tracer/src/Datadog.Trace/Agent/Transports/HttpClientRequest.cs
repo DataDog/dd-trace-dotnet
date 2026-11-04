@@ -50,7 +50,7 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
-            => PostAsync(bytes, contentType, null);
+            => PostAsync(bytes, contentType, contentEncoding: null);
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {

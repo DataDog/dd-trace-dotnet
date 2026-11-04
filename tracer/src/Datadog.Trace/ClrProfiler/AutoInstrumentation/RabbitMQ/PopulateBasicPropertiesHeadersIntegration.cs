@@ -36,7 +36,7 @@ public sealed class PopulateBasicPropertiesHeadersIntegration
 
     internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TActivity>(TTarget instance, TBasicProperties basicProperties, TActivity sendActivity, ulong publishSequenceNumber)
     {
-        return new CallTargetState(null, basicProperties);
+        return new CallTargetState(scope: null, basicProperties);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)

@@ -110,7 +110,7 @@ internal static class FileHelper
                 // Give write access to "Everyone"
                 var dSecurity = directoryInfo.GetAccessControl();
                 dSecurity.AddAccessRule(new FileSystemAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    new SecurityIdentifier(WellKnownSidType.WorldSid, domainSid: null),
                     FileSystemRights.Modify | FileSystemRights.Synchronize,
                     InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
                     PropagationFlags.NoPropagateInherit,

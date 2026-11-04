@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tagging
             if (tags is null)
             {
                 var newTags = new List<KeyValuePair<string, string>>(2);
-                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+                tags = Interlocked.CompareExchange(ref _tags, newTags, comparand: null) ?? newTags;
             }
 
             lock (tags)

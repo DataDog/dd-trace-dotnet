@@ -115,7 +115,7 @@ namespace Datadog.Trace.Debugger
             }
             finally
             {
-                ArrayPool<char>.Shared.Return(buffer, true);
+                ArrayPool<char>.Shared.Return(buffer, clearArray: true);
             }
         }
     }

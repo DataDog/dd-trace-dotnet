@@ -88,7 +88,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // We create the dynamic method
                 Type[] dynParameters = targetField.IsStatic ? Type.EmptyTypes : new[] { typeof(object) };
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, skipVisibility: true);
 
                 // Emit the dynamic method body
                 LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
@@ -157,7 +157,7 @@ namespace Datadog.Trace.DuckTyping
             il.Flush();
             if (proxyMethod is not null)
             {
-                MethodBuilderGetToken.Invoke(proxyMethod, null);
+                MethodBuilderGetToken.Invoke(proxyMethod, parameters: null);
             }
 
             proxyMethodResult = proxyMethod;
@@ -262,7 +262,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create dynamic method
                 Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, skipVisibility: true);
 
                 // Write the dynamic method body
                 LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
@@ -319,7 +319,7 @@ namespace Datadog.Trace.DuckTyping
             il.Flush();
             if (method is not null)
             {
-                MethodBuilderGetToken.Invoke(method, null);
+                MethodBuilderGetToken.Invoke(method, parameters: null);
             }
 
             proxyMethodResult = method;

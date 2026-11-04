@@ -45,7 +45,7 @@ internal sealed class ActivatorHelper
                 _type,
                 new[] { typeof(object) },
                 typeof(DuckType).Module,
-                true);
+                skipVisibility: true);
 
             var il = createHeadersMethod.GetILGenerator();
             il.Emit(OpCodes.Newobj, ctor);

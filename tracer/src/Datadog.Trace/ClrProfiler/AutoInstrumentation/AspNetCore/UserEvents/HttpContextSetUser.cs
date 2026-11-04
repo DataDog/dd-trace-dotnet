@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                     var result = secCoord.RunWafForUser(userSessionId: sessionFeatureProxy?.Session?.Id, userId: userId);
                     secCoord.BlockAndReport(result);
 
-                    UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, true);
+                    UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin: true);
                 }
             }
 

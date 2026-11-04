@@ -410,7 +410,7 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
-                            securityCoordinator.BlockAndReport(args, true, isInHttpTracingModule: true);
+                            securityCoordinator.BlockAndReport(args, lastWafCall: true, isInHttpTracingModule: true);
 
                             securityCoordinator.Reporter.AddResponseHeadersToSpan();
                         }

@@ -127,7 +127,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 XUnitIntegration.CreateTest(ref testRunnerData, testCaseMetadata);
             }
 
-            return new CallTargetState(null, new TestRunnerState(retryMessageBus, testCaseMetadata, context, testcase));
+            return new CallTargetState(scope: null, new TestRunnerState(retryMessageBus, testCaseMetadata, context, testcase));
         }
 
         return CallTargetState.GetDefault();

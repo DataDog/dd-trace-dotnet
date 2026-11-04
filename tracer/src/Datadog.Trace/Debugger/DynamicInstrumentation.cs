@@ -371,7 +371,7 @@ namespace Datadog.Trace.Debugger
                                 break;
                         }
 
-                        result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, null));
+                        result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, Error: null));
                     }
                     catch (Exception e)
                     {

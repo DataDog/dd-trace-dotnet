@@ -41,7 +41,7 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
 
-            data = new InferredProxyData(InferredProxySpanHelper.AwsProxyHeaderValue, startTime, domainName, httpMethod, path, stage, null);
+            data = new InferredProxyData(InferredProxySpanHelper.AwsProxyHeaderValue, startTime, domainName, httpMethod, path, stage, region: null);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {

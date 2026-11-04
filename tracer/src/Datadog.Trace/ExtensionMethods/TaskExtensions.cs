@@ -24,7 +24,7 @@ internal static class TaskExtensions
         try
         {
             // Set the synchronization context to null to avoid deadlocks.
-            SynchronizationContext.SetSynchronizationContext(null);
+            SynchronizationContext.SetSynchronizationContext(syncContext: null);
 
             // Wait synchronously for the task to complete.
             task.GetAwaiter().GetResult();
@@ -47,7 +47,7 @@ internal static class TaskExtensions
         try
         {
             // Set the synchronization context to null to avoid deadlocks.
-            SynchronizationContext.SetSynchronizationContext(null);
+            SynchronizationContext.SetSynchronizationContext(syncContext: null);
 
             // Wait synchronously for the task to complete.
             return task.GetAwaiter().GetResult();
@@ -66,7 +66,7 @@ internal static class TaskExtensions
         try
         {
             // Set the synchronization context to null to avoid deadlocks.
-            SynchronizationContext.SetSynchronizationContext(null);
+            SynchronizationContext.SetSynchronizationContext(syncContext: null);
 
             // Wait synchronously for the task to complete.
             AsyncUtil.RunSync(funcTask, cts.Token);

@@ -113,7 +113,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             BatchPeriod = TimeSpan.FromSeconds(seconds);
 
             AzureFunctionsHostEnabled = config.WithKeys(ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled)
-                                              .AsBool(false);
+                                              .AsBool(defaultValue: false);
 
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString() ?? string.Empty;
             bool[]? enabledIntegrations = null;

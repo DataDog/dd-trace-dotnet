@@ -44,7 +44,7 @@ internal static class ProbeExpressionParserHelper
             {
                 method = methodIdentifier.Parameters is null ?
                              methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) :
-                             methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
+                             methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, binder: null, methodIdentifier.Parameters, modifiers: null);
             }
 
             if (method == null)

@@ -134,7 +134,7 @@ namespace Datadog.Trace.RuntimeMetrics
                                   ? Task.Factory.StartNew(PushEventsLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                                   : Task.CompletedTask;
 #else
-            _timer = new Timer(_ => PushEvents(), null, delay, Timeout.InfiniteTimeSpan);
+            _timer = new Timer(_ => PushEvents(), state: null, delay, Timeout.InfiniteTimeSpan);
 #endif
         }
 
@@ -162,7 +162,7 @@ namespace Datadog.Trace.RuntimeMetrics
             // because the timer queues callbacks for execution by thread pool threads.
             // Using the Dispose(WaitHandle) method overload to waits until all callbacks have completed.
             // ManualResetEventSlim doesn't do well with Timer so need to use ManualResetEvent
-            using (var manualResetEvent = new ManualResetEvent(false))
+            using (var manualResetEvent = new ManualResetEvent(initialState: false))
             {
                 if (_timer.Dispose(manualResetEvent) && !manualResetEvent.WaitOne(5_000))
                 {

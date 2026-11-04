@@ -20,7 +20,7 @@ internal class Program
     internal static int Main(string[] args)
     {
         // Disable QUIC support. It requires reflection (and thus increases the final size of the binary)
-        AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http3Support", false);
+        AppContext.SetSwitch("System.Net.SocketsHttpHandler.Http3Support", isEnabled: false);
 
         IEnumerable<HelpSectionDelegate> GetLayout(HelpContext context)
         {

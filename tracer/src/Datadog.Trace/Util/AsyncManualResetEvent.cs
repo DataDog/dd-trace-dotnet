@@ -27,7 +27,7 @@ internal sealed class AsyncManualResetEvent
     }
 
     public AsyncManualResetEvent()
-        : this(false)
+        : this(set: false)
     {
     }
 
@@ -99,9 +99,9 @@ internal sealed class AsyncManualResetEvent
         {
             var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
 #if NETCOREAPP2_1_OR_GREATER
-            await using var reg = cancellationToken.Register(static state => ((TaskCompletionSource<object?>)state!).TrySetResult(true), tcs, false).ConfigureAwait(false);
+            await using var reg = cancellationToken.Register(static state => ((TaskCompletionSource<object?>)state!).TrySetResult(true), tcs, useSynchronizationContext: false).ConfigureAwait(false);
 #else
-            using var reg = cancellationToken.Register(static state => ((TaskCompletionSource<object?>)state!).TrySetResult(true), tcs, false);
+            using var reg = cancellationToken.Register(static state => ((TaskCompletionSource<object?>)state!).TrySetResult(true), tcs, useSynchronizationContext: false);
 #endif
             await (await Task.WhenAny(task, tcs.Task).ConfigureAwait(false)).ConfigureAwait(false);
 

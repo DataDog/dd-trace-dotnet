@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 endpoint = client.Endpoint;
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, null, databaseId, endpoint);
+            return CreateCosmosDbCallState(instance, queryDefinition, containerId: null, databaseId, endpoint);
         }
 
         public static CallTargetState CreateClientCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 endpoint = c.Endpoint;
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, null, null, endpoint);
+            return CreateCosmosDbCallState(instance, queryDefinition, containerId: null, databaseId: null, endpoint);
         }
 
         private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, Uri endpoint)
@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
-                    return new CallTargetState(null);
+                    return new CallTargetState(scope: null);
                 }
 
                 var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
@@ -143,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 Log.Error(ex, "Error creating or populating scope.");
             }
 
-            return new CallTargetState(null);
+            return new CallTargetState(scope: null);
         }
     }
 }

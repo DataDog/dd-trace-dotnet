@@ -115,7 +115,7 @@ internal static partial class StringUtil
         /// </summary>
         /// <returns>The value formatted using the invariant culture</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public string ToStringInvariant() => value.ToString(null, CultureInfo.InvariantCulture);
+        public string ToStringInvariant() => value.ToString(format: null, CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Formats the value using the specified format and the invariant culture,

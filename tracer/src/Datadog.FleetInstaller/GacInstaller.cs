@@ -90,7 +90,7 @@ internal static class GacInstaller
             var retValue = Fusion.CreateAssemblyCache(out var ppAsmCache, 0);
             if (retValue != HResult.Code.S_OK)
             {
-                log.WriteError($"Error installing assemblies to GAC. Error code {retValue.ToString(null, CultureInfo.InvariantCulture)} returned from CreateAssemblyCache.");
+                log.WriteError($"Error installing assemblies to GAC. Error code {retValue.ToString(format: null, CultureInfo.InvariantCulture)} returned from CreateAssemblyCache.");
                 return false;
             }
 
@@ -110,7 +110,7 @@ internal static class GacInstaller
 
                 if (retValue != HResult.Code.S_OK)
                 {
-                    log.WriteError($"Error installing assembly '{assemblyToGacPath}' to GAC. Error code {retValue.ToString(null, CultureInfo.InvariantCulture)} returned from CreateAssemblyCache.");
+                    log.WriteError($"Error installing assembly '{assemblyToGacPath}' to GAC. Error code {retValue.ToString(format: null, CultureInfo.InvariantCulture)} returned from CreateAssemblyCache.");
                     return false;
                 }
 
@@ -143,7 +143,7 @@ internal static class GacInstaller
             var retValue = Fusion.CreateAssemblyCache(out var ppAsmCache, 0);
             if (retValue != HResult.Code.S_OK)
             {
-                log.WriteError($"Error uninstalling assemblies from GAC. Error code {retValue.ToString(null, CultureInfo.InvariantCulture)} returned from CreateAssemblyCache.");
+                log.WriteError($"Error uninstalling assemblies from GAC. Error code {retValue.ToString(format: null, CultureInfo.InvariantCulture)} returned from CreateAssemblyCache.");
                 return false;
             }
 
@@ -165,14 +165,14 @@ internal static class GacInstaller
                 retValue = Fusion.CreateAssemblyNameObject(out var gacAssemblyName, simpleName, Fusion.CREATE_ASM_NAME_OBJ_FLAGS.NONE, IntPtr.Zero);
                 if (retValue != HResult.Code.S_OK || gacAssemblyName is null)
                 {
-                    log.WriteWarning($"Error creating IAssemblyName object for {simpleName}. Error code {retValue.ToString(null, CultureInfo.InvariantCulture)} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
+                    log.WriteWarning($"Error creating IAssemblyName object for {simpleName}. Error code {retValue.ToString(format: null, CultureInfo.InvariantCulture)} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
                 }
                 else
                 {
                     retValue = Fusion.CreateAssemblyEnum(out var enumerator, IntPtr.Zero, gacAssemblyName, Fusion.ASM_CACHE_FLAGS.ASM_CACHE_GAC, IntPtr.Zero);
                     if (retValue != HResult.Code.S_OK)
                     {
-                        log.WriteWarning($"Error enumerating assemblies from GAC. Error code {retValue.ToString(null, CultureInfo.InvariantCulture)} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
+                        log.WriteWarning($"Error enumerating assemblies from GAC. Error code {retValue.ToString(format: null, CultureInfo.InvariantCulture)} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
                     }
                     else
                     {
@@ -237,7 +237,7 @@ internal static class GacInstaller
                     else
                     {
                         log.WriteError(
-                            $"Error uninstalling assembly '{gacAssemblyPath}' with name '{gacName}' from GAC. Error code {retValue.ToString(null, CultureInfo.InvariantCulture)} returned from UninstallAssembly, with uninstall value {disposition}.");
+                            $"Error uninstalling assembly '{gacAssemblyPath}' with name '{gacName}' from GAC. Error code {retValue.ToString(format: null, CultureInfo.InvariantCulture)} returned from UninstallAssembly, with uninstall value {disposition}.");
                     }
                 }
 

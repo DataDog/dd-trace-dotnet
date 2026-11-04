@@ -48,7 +48,7 @@ internal sealed partial class ConfigurationTelemetry : IConfigurationTelemetry
         }
         else
         {
-            _entries.Enqueue(ConfigurationTelemetryEntry.String(key, null, origin, error));
+            _entries.Enqueue(ConfigurationTelemetryEntry.String(key, value: null, origin, error));
         }
     }
 
@@ -60,7 +60,7 @@ internal sealed partial class ConfigurationTelemetry : IConfigurationTelemetry
         }
         else
         {
-            _entries.Enqueue(ConfigurationTelemetryEntry.String(key, null, origin, error));
+            _entries.Enqueue(ConfigurationTelemetryEntry.String(key, value: null, origin, error));
         }
     }
 

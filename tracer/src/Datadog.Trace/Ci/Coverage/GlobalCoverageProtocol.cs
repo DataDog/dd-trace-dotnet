@@ -20,7 +20,7 @@ internal static class GlobalCoverageProtocol
     public const string PendingMarkerPattern = PendingMarkerPrefix + "*";
     public const string CoverageFilePattern = CoverageFilePrefix + "*" + JsonExtension;
 
-    private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false, true);
+    private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     public static string GetRunToken(string runId)
     {

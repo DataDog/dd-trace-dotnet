@@ -48,8 +48,8 @@ internal static class VulnerabilitiesModule
         IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList, Configuration.IntegrationId.Process);
         RaspModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList, startInfo.UseShellExecute);
 #else
-        IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, null, Configuration.IntegrationId.Process);
-        RaspModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, null, startInfo.UseShellExecute);
+        IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, argumentList: null, Configuration.IntegrationId.Process);
+        RaspModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, argumentList: null, startInfo.UseShellExecute);
 #endif
     }
 }

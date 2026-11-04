@@ -40,7 +40,7 @@ public sealed class UrlEncode2Integration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(string value, System.Text.Encoding encoding)
     {
-        return new CallTargetState(null, value);
+        return new CallTargetState(scope: null, value);
     }
 
     /// <summary>

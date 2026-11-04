@@ -43,7 +43,7 @@ internal static class FlagEvaluationPayload
 
         foreach (var pair in state.Degraded)
         {
-            Append(pair.Key, pair.Value, null, false, degraded: true);
+            Append(pair.Key, pair.Value, targetingKey: null, consent: false, degraded: true);
         }
 
         FinishBatch();
@@ -75,7 +75,7 @@ internal static class FlagEvaluationPayload
                 {
                     if (!degraded && !degradedForPayload)
                     {
-                        encoded = EncodeRow(dimensions, entry, null, false, degraded: true, flushTimeMs);
+                        encoded = EncodeRow(dimensions, entry, targetingKey: null, consent: false, degraded: true, flushTimeMs);
                         degradedForPayload = true;
                     }
 

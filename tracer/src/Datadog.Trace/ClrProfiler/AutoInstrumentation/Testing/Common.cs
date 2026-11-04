@@ -121,7 +121,7 @@ internal static class Common
         var currentContext = SynchronizationContext.Current;
         try
         {
-            SynchronizationContext.SetSynchronizationContext(null);
+            SynchronizationContext.SetSynchronizationContext(syncContext: null);
             moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
             var skippableTests = GetSkippableTestsFromSuiteAndNames(testSuite, testName, moduleName, metadataTestName);
             if (skippableTests.Count > 0)

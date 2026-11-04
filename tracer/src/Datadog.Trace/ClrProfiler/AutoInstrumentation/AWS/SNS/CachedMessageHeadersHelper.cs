@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 messageAttributeValueType,
                 parameterTypes: new Type[] { typeof(MemoryStream) },
                 typeof(DuckType).Module,
-                true);
+                skipVisibility: true);
 
             ILGenerator messageAttributeIL = createMessageAttributeValueMethod.GetILGenerator();
             messageAttributeIL.Emit(OpCodes.Newobj, messageAttributeValueCtor);

@@ -92,7 +92,7 @@ internal static class BsonSerializationHelper
         // Find the serializer and serializer
         var nominalType = obj.GetType();
         var serializer = helper.BsonSerializerLookupProxy.LookupSerializer(nominalType);
-        var rootContext = helper.BsonSerializationContextProxy.CreateRoot(customWriterProxy, null);
+        var rootContext = helper.BsonSerializationContextProxy.CreateRoot(customWriterProxy, configurator: null);
         var bsonSerializationArgs = helper.CreateBsonSerializationArgsFunc(nominalType);
         serializer.Serialize(rootContext, bsonSerializationArgs, obj);
 
@@ -137,7 +137,7 @@ internal static class BsonSerializationHelper
             // we don't have generic access to the MongoDB.Bson assembly (the types
             // we instrument and their args are in a different assembly) so this is
             // the best we can do.
-            var bsonSerializationArgsType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializationArgs, MongoDB.Bson", false);
+            var bsonSerializationArgsType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializationArgs, MongoDB.Bson", throwOnError: false);
             if (bsonSerializationArgsType is null)
             {
                 Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.Serialization.BsonSerializationArgs type");
@@ -217,7 +217,7 @@ internal static class BsonSerializationHelper
                 jsonWriterType,
                 parameterTypes: new[] { typeof(TextWriter), typeof(object) },
                 typeof(DuckType).Module,
-                true);
+                skipVisibility: true);
 
             ILGenerator createJsonWriterIl = createJsonWriterMethod.GetILGenerator();
             createJsonWriterIl.Emit(OpCodes.Ldarg_0);
@@ -236,7 +236,7 @@ internal static class BsonSerializationHelper
                 typeof(object), // boxed bsonSerializationArgsType
                 parameterTypes: new[] { typeof(Type) },
                 typeof(DuckType).Module,
-                true);
+                skipVisibility: true);
 
             ILGenerator bsonWriterIl = createBsonSerializationArgs.GetILGenerator();
             bsonWriterIl.Emit(OpCodes.Ldarg_0);

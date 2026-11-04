@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows
 
             var registryKey = Registry.LocalMachine.OpenSubKey(key);
 
-            return registryKey?.GetValue(null)?.ToString();
+            return registryKey?.GetValue(name: null)?.ToString();
         }
 
         public string[] GetLocalMachineKeyNames(string key)

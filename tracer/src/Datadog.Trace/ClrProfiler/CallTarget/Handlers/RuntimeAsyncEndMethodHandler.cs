@@ -130,7 +130,7 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
 
         if (OnAsyncMethodEnd is not null)
         {
-            OnAsyncMethodEnd(instance, null, exception, in state);
+            OnAsyncMethodEnd(instance, returnValue: null, exception, in state);
         }
 
         if (OnMethodEnd is not null)

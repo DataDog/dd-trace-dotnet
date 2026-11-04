@@ -98,7 +98,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString(), isRemote: true);
+                var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null, rawTraceId.ToString(), rawSpanId.ToString(), isRemote: true);
 
                 context = new PropagationContext(spanContext, baggage: null);
 
@@ -115,7 +115,7 @@ namespace Datadog.Trace.Propagators
             var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "1" : "0";
 
 #if NET6_0_OR_GREATER
-            return string.Create(null, stackalloc char[128], $"{context.RawTraceId}-{context.RawSpanId}-{sampled}");
+            return string.Create(provider: null, stackalloc char[128], $"{context.RawTraceId}-{context.RawSpanId}-{sampled}");
 #else
             return $"{context.RawTraceId}-{context.RawSpanId}-{sampled}";
 #endif

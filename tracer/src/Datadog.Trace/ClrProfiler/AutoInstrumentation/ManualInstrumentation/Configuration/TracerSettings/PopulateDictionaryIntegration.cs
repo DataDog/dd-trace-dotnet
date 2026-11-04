@@ -38,7 +38,7 @@ public sealed class PopulateDictionaryIntegration
         // settings for the "mutable" settings
         var settings = useDefaultSources
                            ? Datadog.Trace.Tracer.Instance.Settings
-                           : new Trace.Configuration.TracerSettings(null, new ConfigurationTelemetry(), new OverrideErrorLog());
+                           : new Trace.Configuration.TracerSettings(source: null, new ConfigurationTelemetry(), new OverrideErrorLog());
 
         PopulateSettings(values, settings);
 

@@ -29,7 +29,7 @@ internal readonly partial struct SecurityCoordinator
         _localRootSpan = TryGetRoot(span);
         _appsecRequestContext = _localRootSpan.Context.TraceContext.AppSecRequestContext;
         _httpTransport = transport;
-        Reporter = new SecurityReporter(_localRootSpan, transport, true);
+        Reporter = new SecurityReporter(_localRootSpan, transport, isRoot: true);
     }
 
     internal static SecurityCoordinator? TryGet(Security security, Span span)
@@ -106,7 +106,7 @@ internal readonly partial struct SecurityCoordinator
             telemetrySucessReport.Invoke();
             if (result.ShouldBlock)
             {
-                throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!, true);
+                throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!, reported: true);
             }
         }
     }

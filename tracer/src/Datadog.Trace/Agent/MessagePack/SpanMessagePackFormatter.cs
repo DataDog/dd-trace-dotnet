@@ -478,7 +478,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // of the dictionary, so we need a temporary buffer
 
             var temporaryBytes = new byte[256];
-            var tagWriter = new TagWriter(this, null, temporaryBytes, 0);
+            var tagWriter = new TagWriter(this, tagProcessors: null, temporaryBytes, 0);
             model.Span.Tags.EnumerateMetaStruct(ref tagWriter);
             temporaryBytes = tagWriter.Bytes;
             Array.Resize(ref temporaryBytes, tagWriter.Offset);

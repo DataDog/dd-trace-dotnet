@@ -257,7 +257,7 @@ namespace Datadog.Trace
         /// stopping the background processes.
         /// </summary>
         [TestingOnly]
-        internal Task ShutdownAsync() => RunShutdownTasksAsync(this, null);
+        internal Task ShutdownAsync() => RunShutdownTasksAsync(this, heartbeatTimer: null);
 
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
         {

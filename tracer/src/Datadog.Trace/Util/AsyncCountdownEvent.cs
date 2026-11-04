@@ -82,7 +82,7 @@ internal sealed class AsyncCountdownEvent
 
     public void AddCount(long addCount)
     {
-        ModifyCount(addCount, true);
+        ModifyCount(addCount, add: true);
     }
 
     public void AddCount()
@@ -92,7 +92,7 @@ internal sealed class AsyncCountdownEvent
 
     public void Signal(long signalCount)
     {
-        ModifyCount(signalCount, false);
+        ModifyCount(signalCount, add: false);
     }
 
     public void Signal()

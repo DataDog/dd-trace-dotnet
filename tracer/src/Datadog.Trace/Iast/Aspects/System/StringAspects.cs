@@ -33,7 +33,7 @@ public sealed class StringAspects
         var result = target.Trim();
         try
         {
-            return StringModuleImpl.OnStringTrim(target, result, null, true, true);
+            return StringModuleImpl.OnStringTrim(target, result, trimChar: null, left: true, right: true);
         }
         catch (Exception ex)
         {
@@ -57,11 +57,11 @@ public sealed class StringAspects
         {
             if (trimChars is not null && trimChars.Length > 0)
             {
-                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, true, true);
+                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, left: true, right: true);
             }
             else
             {
-                return StringModuleImpl.OnStringTrim(target, result, null, true, true);
+                return StringModuleImpl.OnStringTrim(target, result, trimChar: null, left: true, right: true);
             }
         }
         catch (Exception ex)
@@ -85,7 +85,7 @@ public sealed class StringAspects
         var result = target.Trim(trimChar);
         try
         {
-            return StringModuleImpl.OnStringTrim(target, result, trimChar, true, true);
+            return StringModuleImpl.OnStringTrim(target, result, trimChar, left: true, right: true);
         }
         catch (Exception ex)
         {
@@ -110,11 +110,11 @@ public sealed class StringAspects
         {
             if (trimChars is not null && trimChars.Length > 0)
             {
-                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, true, false);
+                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, left: true, right: false);
             }
             else
             {
-                return StringModuleImpl.OnStringTrim(target, result, null, true, false);
+                return StringModuleImpl.OnStringTrim(target, result, trimChar: null, left: true, right: false);
             }
         }
         catch (Exception ex)
@@ -138,7 +138,7 @@ public sealed class StringAspects
         var result = target.TrimStart(trimChar);
         try
         {
-            return StringModuleImpl.OnStringTrim(target, result, trimChar, true, false);
+            return StringModuleImpl.OnStringTrim(target, result, trimChar, left: true, right: false);
         }
         catch (Exception ex)
         {
@@ -159,7 +159,7 @@ public sealed class StringAspects
         var result = target.TrimStart();
         try
         {
-            return StringModuleImpl.OnStringTrim(target, result, null, true, false);
+            return StringModuleImpl.OnStringTrim(target, result, trimChar: null, left: true, right: false);
         }
         catch (Exception ex)
         {
@@ -184,11 +184,11 @@ public sealed class StringAspects
         {
             if (trimChars is not null && trimChars.Length > 0)
             {
-                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, false, true);
+                return StringModuleImpl.OnStringTrimArray(target, result, trimChars, left: false, right: true);
             }
             else
             {
-                return StringModuleImpl.OnStringTrim(target, result, null, false, true);
+                return StringModuleImpl.OnStringTrim(target, result, trimChar: null, left: false, right: true);
             }
         }
         catch (Exception ex)
@@ -212,7 +212,7 @@ public sealed class StringAspects
         var result = target.TrimEnd(trimChar);
         try
         {
-            return StringModuleImpl.OnStringTrim(target, result, trimChar, false, true);
+            return StringModuleImpl.OnStringTrim(target, result, trimChar, left: false, right: true);
         }
         catch (Exception ex)
         {
@@ -233,7 +233,7 @@ public sealed class StringAspects
         var result = target.TrimEnd();
         try
         {
-            return StringModuleImpl.OnStringTrim(target, result, null, false, true);
+            return StringModuleImpl.OnStringTrim(target, result, trimChar: null, left: false, right: true);
         }
         catch (Exception ex)
         {

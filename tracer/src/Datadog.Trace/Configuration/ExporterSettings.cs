@@ -452,7 +452,7 @@ namespace Datadog.Trace.Configuration
             // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets, so we don't care if the file already exists
             else if (_fileExists(DefaultMetricsUnixDomainSocket))
             {
-                SetUds(DefaultMetricsUnixDomainSocket, DefaultMetricsUnixDomainSocket, DefaultMetricsUnixDomainSocket, null, out settings);
+                SetUds(DefaultMetricsUnixDomainSocket, DefaultMetricsUnixDomainSocket, DefaultMetricsUnixDomainSocket, source: null, out settings);
             }
 #endif
             else

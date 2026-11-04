@@ -26,5 +26,5 @@ internal readonly struct GlobalCoverageSnapshotResult
         => new(GlobalCoverageSnapshotStatus.Success, snapshot, GlobalCoverageFailureReason.None);
 
     public static GlobalCoverageSnapshotResult Suppressed(GlobalCoverageFailureReason reason)
-        => new(GlobalCoverageSnapshotStatus.SuppressedIncomplete, null, reason);
+        => new(GlobalCoverageSnapshotStatus.SuppressedIncomplete, snapshot: null, reason);
 }

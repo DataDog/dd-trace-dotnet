@@ -32,7 +32,7 @@ namespace Datadog.Trace
 
         // Signaled when RunShutdownTasks finishes. Subsequent callers wait on this
         // instead of returning early, preventing the runtime from tearing down the process prematurely.
-        private readonly ManualResetEventSlim _shutdownComplete = new(false);
+        private readonly ManualResetEventSlim _shutdownComplete = new(initialState: false);
 
 #if NETFRAMEWORK
         // Our Ctrl+C / Ctrl+Break registration. See ConsoleControlHandler for why we don't use Console.CancelKeyPress.
@@ -190,7 +190,7 @@ namespace Datadog.Trace
                 {
                     if (current is not null)
                     {
-                        SetSynchronizationContext(null);
+                        SetSynchronizationContext(context: null);
                     }
 
                     while (_shutdownHooks.TryDequeue(out var actionOrFunc))

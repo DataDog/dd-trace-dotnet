@@ -38,8 +38,8 @@ internal sealed partial class TestOptimizationClient
             new Data<TestManagementQuery>(
                 commitSha,
                 TestManagementType,
-                new TestManagementQuery(_repositoryUrl, commitSha, null, commitMessage, branch)),
-            null);
+                new TestManagementQuery(_repositoryUrl, commitSha, module: null, commitMessage, branch)),
+            repositoryUrl: null);
 
         var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
         Log.Debug("TestOptimizationClient: TestManagement.JSON RQ = {Json}", jsonQuery);
@@ -220,7 +220,7 @@ internal sealed partial class TestOptimizationClient
             AttemptToFix = attemptToFix;
         }
 
-        public static TestManagementResponseTestPropertiesAttributes Default { get; } = new(false, false, false);
+        public static TestManagementResponseTestPropertiesAttributes Default { get; } = new(quarantined: false, disabled: false, attemptToFix: false);
 
         [JsonProperty("quarantined")]
         public bool Quarantined { get; private set; }

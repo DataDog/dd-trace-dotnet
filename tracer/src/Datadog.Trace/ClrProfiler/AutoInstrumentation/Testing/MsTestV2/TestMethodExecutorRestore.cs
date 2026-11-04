@@ -11,10 +11,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 internal static class TestMethodExecutorRestore
 {
     internal static CallTargetState Create(ITestMethodOptions testMethodOptions, object originalExecutor, object replacementExecutor)
-        => new(null, new TestMethodOptionsExecutorRestoreState(testMethodOptions, originalExecutor, replacementExecutor));
+        => new(scope: null, new TestMethodOptionsExecutorRestoreState(testMethodOptions, originalExecutor, replacementExecutor));
 
     internal static CallTargetState Create(ITestMethodInfoV3_9 testMethodInfo, object originalExecutor, object replacementExecutor)
-        => new(null, new TestMethodInfoExecutorRestoreState(testMethodInfo, originalExecutor, replacementExecutor));
+        => new(scope: null, new TestMethodInfoExecutorRestoreState(testMethodInfo, originalExecutor, replacementExecutor));
 
     internal static void Restore(in CallTargetState state)
     {

@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 return CouchbaseCommon.CommonOnMethodBegin(operation, normalizedSeedNodes);
             }
 
-            return CouchbaseCommon.CommonOnMethodBegin(operation, null);
+            return CouchbaseCommon.CommonOnMethodBegin(operation, normalizedSeedNodes: null);
         }
 
         /// <summary>

@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 public sealed class OpenFeatureSdkCommitExposureIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref IDictionary<string, string>? evaluationMetadata)
-        => new(null, evaluationMetadata);
+        => new(scope: null, evaluationMetadata);
 
     internal static CallTargetReturn<int> OnMethodEnd<TTarget>(int returnValue, Exception? exception, in CallTargetState state)
         => new(TracerManager.Instance.FeatureFlags?.CommitExposure(state.State as IDictionary<string, string>) ?? ExposureCommitResult.NothingPending);

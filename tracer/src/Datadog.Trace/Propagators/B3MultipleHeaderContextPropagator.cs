@@ -77,7 +77,7 @@ namespace Datadog.Trace.Propagators
             }
 
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
-            var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
+            var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null, rawTraceId, rawSpanId, isRemote: true);
             context = new PropagationContext(spanContext, baggage: null);
 
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3Multi);

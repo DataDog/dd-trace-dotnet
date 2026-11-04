@@ -347,7 +347,7 @@ namespace Datadog.Trace.Debugger
                     RcmSubscriptionManager.Instance,
                     uploadSymbols => OnSymbolDatabaseRemoteConfiguration(tracerSettings, newDebuggerSettings, uploadSymbols));
 
-                if (Interlocked.CompareExchange(ref _symDbRemoteConfig, symDbRemoteConfig, null) is not null)
+                if (Interlocked.CompareExchange(ref _symDbRemoteConfig, symDbRemoteConfig, comparand: null) is not null)
                 {
                     return;
                 }
@@ -378,7 +378,7 @@ namespace Datadog.Trace.Debugger
                     // initialized instance and clear the field if it still references our instance,
                     // so a future call can retry from a clean slate.
                     SafeDisposal.TryDispose(symDbRemoteConfig);
-                    Interlocked.CompareExchange(ref _symDbRemoteConfig, null, symDbRemoteConfig);
+                    Interlocked.CompareExchange(ref _symDbRemoteConfig, value: null, symDbRemoteConfig);
                 }
             }
         }
@@ -632,7 +632,7 @@ namespace Datadog.Trace.Debugger
             }
             finally
             {
-                Interlocked.CompareExchange(ref _diDebounceGate, null, gate);
+                Interlocked.CompareExchange(ref _diDebounceGate, value: null, gate);
             }
         }
 

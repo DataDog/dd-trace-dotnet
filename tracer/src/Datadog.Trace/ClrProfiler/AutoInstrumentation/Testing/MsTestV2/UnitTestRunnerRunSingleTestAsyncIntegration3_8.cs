@@ -52,7 +52,7 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TMessageLogger>(TTarget instance, TTestMethod testMethod, IDictionary<string, object?> testContextProperties, TMessageLogger messageLogger)
     {
-        return new CallTargetState(null, new StrongBox<MethodInfoCacheItem?>(MsTestIntegration.IsTestMethodRunnableThreadLocal.Value));
+        return new CallTargetState(scope: null, new StrongBox<MethodInfoCacheItem?>(MsTestIntegration.IsTestMethodRunnableThreadLocal.Value));
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)

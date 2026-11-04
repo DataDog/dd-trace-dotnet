@@ -85,7 +85,7 @@ public sealed class HandlerWrapperSetHandlerIntegration
             if (proxyInstance is null)
             {
                 LambdaCommon.Log("DuckCast.IInvocationRequest got null proxyInstance", debug: false);
-                scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, null);
+                scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, context: null);
             }
             else
             {
@@ -100,7 +100,7 @@ public sealed class HandlerWrapperSetHandlerIntegration
 
         public void OnException(object sender, Exception ex)
         {
-            LambdaCommon.Log("OnDelegateBegin could not send payload to the extension", ex, false);
+            LambdaCommon.Log("OnDelegateBegin could not send payload to the extension", ex, debug: false);
         }
 
         public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
@@ -137,7 +137,7 @@ public sealed class HandlerWrapperSetHandlerIntegration
             }
             catch (Exception ex)
             {
-                LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
+                LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, debug: false);
                 await LambdaCommon.EndInvocationAsync(string.Empty, ex, callTargetState, RequestBuilder).ConfigureAwait(false);
             }
 

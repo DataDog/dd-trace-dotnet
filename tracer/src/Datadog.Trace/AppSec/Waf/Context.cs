@@ -50,7 +50,7 @@ internal sealed class Context : IContext
     }
 
 #pragma warning disable MA0055 // Do not use finalizer - releases the native WAF context if Dispose isn't called
-    ~Context() => Dispose(false);
+    ~Context() => Dispose(disposing: false);
 #pragma warning restore MA0055
 
     public static IContext? GetContext(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -66,10 +66,10 @@ internal sealed class Context : IContext
     }
 
     public IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds)
-        => RunInternal(addressData, false, timeoutMicroSeconds, isRasp: false, out _);
+        => RunInternal(addressData, ephemeral: false, timeoutMicroSeconds, isRasp: false, out _);
 
     public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome)
-        => RunInternal(ephemeralAddressData, true, timeoutMicroSeconds, isRasp, out outcome);
+        => RunInternal(ephemeralAddressData, ephemeral: true, timeoutMicroSeconds, isRasp, out outcome);
 
     public Dictionary<string, object> FilterAddresses(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
@@ -289,7 +289,7 @@ internal sealed class Context : IContext
 
     public void Dispose()
     {
-        Dispose(true);
+        Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
 

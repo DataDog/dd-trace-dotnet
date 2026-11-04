@@ -167,7 +167,7 @@ public sealed class TestSuite
     /// </summary>
     public void Close()
     {
-        Close(null);
+        Close(duration: null);
     }
 
     /// <summary>
@@ -231,7 +231,7 @@ public sealed class TestSuite
     /// <returns>Test instance</returns>
     internal Test CreateTest(string name)
     {
-        return new Test(this, name, null);
+        return new Test(this, name, startDate: null);
     }
 
     /// <summary>

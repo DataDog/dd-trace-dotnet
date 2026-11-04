@@ -45,7 +45,7 @@ internal class DatadogExporter : IExporter
 
     private DatadogExporter()
     {
-        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTimeOffset.UtcNow, false);
+        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTimeOffset.UtcNow, propagateEnvironmentVariables: false);
     }
 
     /// <inheritdoc />
@@ -221,7 +221,7 @@ internal class DatadogExporter : IExporter
                                 test.AddBenchmarkData(
                                     BenchmarkMeasureType.TotalHeapAllocations,
                                     "Total Bytes allocated",
-                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.GetTotalAllocatedBytes(true) ?? 0]));
+                                    BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.GetTotalAllocatedBytes(excludeAllocationQuantumSideEffects: true) ?? 0]));
                             }
 
                             test.GetTags().FinalStatus = benchmarkTest.Success ? TestTags.StatusPass : TestTags.StatusFail;

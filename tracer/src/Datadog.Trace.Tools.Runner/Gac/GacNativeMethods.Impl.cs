@@ -28,7 +28,7 @@ internal sealed partial class GacNativeMethods
         var hr = createAssemblyCache(out var ppAsmCache, IntPtr.Zero);
         if (hr != Hresult.S_OK)
         {
-            throw new TargetInvocationException($"Error creating AssemblyCache. HRESULT = {hr}", null);
+            throw new TargetInvocationException($"Error creating AssemblyCache. HRESULT = {hr}", inner: null);
         }
 
         return ppAsmCache;
@@ -41,7 +41,7 @@ internal sealed partial class GacNativeMethods
         var hr = createAssemblyNameObject(out var ppAsmName, assemblyName, 0, IntPtr.Zero);
         if (hr != Hresult.S_OK)
         {
-            throw new TargetInvocationException($"Error creating AssemblyNameObject. HRESULT = {hr}", null);
+            throw new TargetInvocationException($"Error creating AssemblyNameObject. HRESULT = {hr}", inner: null);
         }
 
         return ppAsmName;

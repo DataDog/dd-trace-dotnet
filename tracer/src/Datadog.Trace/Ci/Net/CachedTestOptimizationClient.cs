@@ -25,8 +25,8 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
     public CachedTestOptimizationClient(ITestOptimizationClient client)
     {
         _client = client;
-        _settingsWithoutFrameworkInfo = new(() => _client.GetSettingsAsync(true));
-        _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(false));
+        _settingsWithoutFrameworkInfo = new(() => _client.GetSettingsAsync(skipFrameworkInfo: true));
+        _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(skipFrameworkInfo: false));
         _knownTests = new(_client.GetKnownTestsAsync);
         _commits = new(_client.GetCommitsAsync);
         _uploadRepositoryChanges = new(_client.UploadRepositoryChangesAsync);
@@ -41,7 +41,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
             if (skipFrameworkResponse.RequireGit == true)
             {
                 // if we require git we need to avoid catching the value because another settings request need to be executed.
-                _settingsWithoutFrameworkInfo = new(() => _client.GetSettingsAsync(true));
+                _settingsWithoutFrameworkInfo = new(() => _client.GetSettingsAsync(skipFrameworkInfo: true));
             }
 
             return skipFrameworkResponse;
@@ -51,7 +51,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
         if (response.RequireGit == true)
         {
             // if we require git we need to avoid catching the value because another settings request need to be executed.
-            _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(false));
+            _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(skipFrameworkInfo: false));
         }
 
         return response;

@@ -46,7 +46,7 @@ public static class XUnitTestRunnerV3_4XIntegration
         var testCaseMetadata = ((context.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(testCaseUniqueID);
         var test = XUnitIntegration.CreateTest(ref runnerInstance, testCaseMetadata);
         var state = Tuple.Create(test, (object)context);
-        return new CallTargetState(null, state);
+        return new CallTargetState(scope: null, state);
     }
 
     internal static TestRunnerStruct CreateTestRunnerData(IXunitTestRunnerContextV3_4X context)

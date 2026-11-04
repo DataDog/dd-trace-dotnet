@@ -135,7 +135,7 @@ internal sealed class GlobalCoverageOutputManager
             // FileMode.CreateNew keeps identities collision-free and leaves a durable blocker if
             // the process exits before the atomic coverage artifact is committed.
             using var pending = new FileStream(_pendingPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
-            pending.Flush(true);
+            pending.Flush(flushToDisk: true);
         }
         catch (Exception ex)
         {

@@ -157,7 +157,7 @@ internal static class SeleniumCommon
         try
         {
             // Execute RUM flush script
-            if (instance.ExecuteScript(RumStopSessionScript, null) is true)
+            if (instance.ExecuteScript(RumStopSessionScript, args: null) is true)
             {
                 test.GetTags().IsRumActive = "true";
                 Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", TestOptimization.Instance.Settings.RumFlushWaitMillis);

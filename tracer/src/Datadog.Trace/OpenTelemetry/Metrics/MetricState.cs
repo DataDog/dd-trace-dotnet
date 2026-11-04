@@ -199,7 +199,7 @@ internal sealed class MetricState
             _identity.IsLongType,
             isOverflow: true);
 
-        return Interlocked.CompareExchange(ref _overflowPoint, created, null) ?? created;
+        return Interlocked.CompareExchange(ref _overflowPoint, created, comparand: null) ?? created;
     }
 }
 #endif

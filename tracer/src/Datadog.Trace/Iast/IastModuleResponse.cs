@@ -11,8 +11,8 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct IastModuleResponse
 {
-    public static readonly IastModuleResponse Empty = new(false);
-    public static readonly IastModuleResponse Vulnerable = new(true);
+    public static readonly IastModuleResponse Empty = new(vulnAdded: false);
+    public static readonly IastModuleResponse Vulnerable = new(vulnAdded: true);
 
     public IastModuleResponse(bool vulnAdded = true)
     {

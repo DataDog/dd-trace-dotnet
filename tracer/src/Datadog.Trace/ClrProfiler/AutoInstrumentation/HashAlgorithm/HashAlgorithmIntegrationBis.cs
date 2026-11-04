@@ -70,7 +70,7 @@ public sealed class HashAlgorithmIntegrationBis
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object array)
     {
-        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance, false));
+        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance, autoCloseScopeWhenSingleSpan: false));
     }
 
     /// <summary>

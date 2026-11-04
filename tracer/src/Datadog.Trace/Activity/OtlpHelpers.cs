@@ -405,7 +405,7 @@ namespace Datadog.Trace.Activity
         {
             if (value is null)
             {
-                span.SetTag(key, null);
+                span.SetTag(key, value: null);
                 return;
             }
 

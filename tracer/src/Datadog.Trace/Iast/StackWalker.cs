@@ -61,7 +61,7 @@ internal static class StackWalker
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static StackTrace? GetStackTrace()
     {
-        return ExecutionStackGuard.HasSufficientStack() ? new StackTrace(DefaultSkipFrames, true) : null;
+        return ExecutionStackGuard.HasSufficientStack() ? new StackTrace(DefaultSkipFrames, fNeedFileInfo: true) : null;
     }
 
     /// <summary>

@@ -27,7 +27,7 @@ internal sealed class FlagEvaluationWriter
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<FlagEvaluationWriter>();
     private readonly object _gate = new();
-    private readonly AutoResetEvent _wake = new(false);
+    private readonly AutoResetEvent _wake = new(initialState: false);
     private readonly BoundedConcurrentQueue<FlagEvalEvent> _queue;
     private readonly FlagEvaluationAggregator _aggregator;
     private readonly FlagEvaluationTelemetry _telemetry;

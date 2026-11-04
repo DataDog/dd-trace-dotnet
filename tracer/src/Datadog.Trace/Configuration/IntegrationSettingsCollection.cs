@@ -49,7 +49,7 @@ namespace Datadog.Trace.Configuration
                     "Returning default settings, changes will not be saved",
                     integrationName);
 
-                return new IntegrationSettings(integrationName, source: null, false);
+                return new IntegrationSettings(integrationName, source: null, isExplicitlyDisabled: false);
             }
         }
 

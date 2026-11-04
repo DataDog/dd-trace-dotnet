@@ -322,10 +322,10 @@ internal static class DatadogLoggingFactory
 
         // We only check for the top-level key here, telemetry may be _indirectly_ disabled (because other keys are etc)
         // in which case the collector will be disabled later, but this is a preferable option.
-        var telemetryEnabled = config.WithKeys(ConfigurationKeys.Telemetry.Enabled).AsBool(true);
+        var telemetryEnabled = config.WithKeys(ConfigurationKeys.Telemetry.Enabled).AsBool(defaultValue: true);
         if (telemetryEnabled)
         {
-            return config.WithKeys(ConfigurationKeys.Telemetry.TelemetryLogsEnabled).AsBool(true)
+            return config.WithKeys(ConfigurationKeys.Telemetry.TelemetryLogsEnabled).AsBool(defaultValue: true)
                        ? new RedactedErrorLoggingConfiguration(TelemetryFactory.RedactedErrorLogs) // use the global collector
                        : null;
         }

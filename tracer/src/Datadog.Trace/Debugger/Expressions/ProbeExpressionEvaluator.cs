@@ -631,7 +631,7 @@ internal sealed class ProbeExpressionEvaluator
             }
             else
             {
-                compiledExpressions[i] = new CompiledExpression<string>(null, null, current.Value.Str, null);
+                compiledExpressions[i] = new CompiledExpression<string>(@delegate: null, parsedExpression: null, current.Value.Str, errors: null);
             }
         }
 
@@ -679,14 +679,14 @@ internal sealed class ProbeExpressionEvaluator
             {
                 when = new CompiledExpression<bool>(
                     FalseDelegate,
-                    null,
-                    null,
+                    parsedExpression: null,
+                    rawExpression: null,
                     new EvaluationError[] { new() { Expression = null, Message = "'when' should be a boolean expression, not a literal" } });
             }
             else
             {
                 when = current.Key == null // span decoration doesn't must have a condition
-                           ? new CompiledExpression<bool>(TrueDelegate, null, null, null)
+                           ? new CompiledExpression<bool>(TrueDelegate, parsedExpression: null, rawExpression: null, errors: null)
                            : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers);
             }
 
@@ -709,7 +709,7 @@ internal sealed class ProbeExpressionEvaluator
                     }
                     else
                     {
-                        compiledTagsK[k] = new CompiledExpression<string>(null, null, tag.Value.Str, null);
+                        compiledTagsK[k] = new CompiledExpression<string>(@delegate: null, parsedExpression: null, tag.Value.Str, errors: null);
                     }
                 }
 

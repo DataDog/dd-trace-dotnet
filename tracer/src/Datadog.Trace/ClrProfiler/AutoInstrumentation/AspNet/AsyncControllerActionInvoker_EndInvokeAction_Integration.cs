@@ -85,8 +85,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var now = scope.Span.Context.TraceContext.Clock.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, proxyScope, now));
 
-                    scope.SetFinishOnClose(false);
-                    proxyScope?.SetFinishOnClose(false);
+                    scope.SetFinishOnClose(finishOnClose: false);
+                    proxyScope?.SetFinishOnClose(finishOnClose: false);
 
                     scope.Dispose();
                     proxyScope?.Dispose();

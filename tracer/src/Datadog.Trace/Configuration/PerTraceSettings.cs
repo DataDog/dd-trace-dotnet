@@ -46,7 +46,7 @@ namespace Datadog.Trace.Configuration
 
             if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
             {
-                return new ServiceNameMetadata(Settings.DefaultServiceName, null);
+                return new ServiceNameMetadata(Settings.DefaultServiceName, source: null);
             }
 
             if (!_serviceNameCache.TryGetValue(integrationKey, out var resolvedName))

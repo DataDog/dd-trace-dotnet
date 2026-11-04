@@ -27,7 +27,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             try
             {
                 string errorMsg = string.Empty;
-                return MultipartIdentifier.ParseMultipartIdentifier(typeName, "[\"", "]\"", '.', 3, true, errorMsg, true);
+                return MultipartIdentifier.ParseMultipartIdentifier(typeName, "[\"", "]\"", '.', 3, removequotes: true, errorMsg, ThrowOnEmptyMultipartName: true);
             }
             catch (Exception)
             {

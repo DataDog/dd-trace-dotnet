@@ -320,7 +320,7 @@ namespace Datadog.Trace.Activity.Handlers
             }
 
             var timer = new Timer(static _ => RunReconciliationSweep(), state: null, dueTime: ReconciliationInterval, period: ReconciliationInterval);
-            if (Interlocked.CompareExchange(ref _reconciliationTimer, timer, null) is not null)
+            if (Interlocked.CompareExchange(ref _reconciliationTimer, timer, comparand: null) is not null)
             {
                 // Another thread won the race and already started the loop
                 timer.Dispose();

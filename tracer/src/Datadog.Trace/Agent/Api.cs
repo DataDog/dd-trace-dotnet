@@ -97,7 +97,7 @@ namespace Datadog.Trace.Agent
             _statsd.SetRequired(StatsdConsumer.TraceApi, enabled);
         }
 
-        public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0);
+        public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, statsComputationEnabled: false, 0, 0);
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         {

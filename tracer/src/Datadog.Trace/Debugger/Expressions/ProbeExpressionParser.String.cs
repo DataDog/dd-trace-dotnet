@@ -40,7 +40,7 @@ internal partial class ProbeExpressionParser<T>
 
         var pattern = ParseTree(reader, parameters, itParameter);
         var matchesMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(RegexIsMatch), [typeof(string), typeof(string), typeof(EvaluationBudget).MakeByRefType()]);
-        return RedactDictionaryOperation(source, Expression.Call(null, matchesMethod, source, pattern, _evaluationBudgetParameterExpression));
+        return RedactDictionaryOperation(source, Expression.Call(instance: null, matchesMethod, source, pattern, _evaluationBudgetParameterExpression));
     }
 
     private Expression Contains(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -95,7 +95,7 @@ internal partial class ProbeExpressionParser<T>
                 source,
                 Expression.Block(
                     BudgetCheck(),
-                    Expression.Call(null, emptyMethod, source)));
+                    Expression.Call(instance: null, emptyMethod, source)));
         }
 
         try

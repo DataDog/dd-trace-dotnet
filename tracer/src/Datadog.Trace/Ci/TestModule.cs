@@ -49,7 +49,7 @@ public sealed class TestModule
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
-        : this(name, framework, frameworkVersion, startDate, null)
+        : this(name, framework, frameworkVersion, startDate, sessionSpanTags: null)
     {
     }
 
@@ -155,13 +155,13 @@ public sealed class TestModule
 
                 if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, out var testSessionWorkingDirectory))
                 {
-                    tags.WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(testSessionWorkingDirectory, false);
+                    tags.WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(testSessionWorkingDirectory, useOSSeparator: false);
                 }
             }
             else
             {
                 _testOptimization.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
-                _fakeSession = TestSession.GetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
+                _fakeSession = TestSession.GetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, framework: null, startDate, propagateEnvironmentVariables: false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
                     tags.SessionId = fakeSessionTags.SessionId;
@@ -265,7 +265,7 @@ public sealed class TestModule
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <returns>New test module instance</returns>
     internal static TestModule Create(string name, string? framework, string? frameworkVersion)
-        => Create(name, framework, frameworkVersion, null);
+        => Create(name, framework, frameworkVersion, startDate: null);
 
     /// <summary>
     /// Create a new Test Module
@@ -333,7 +333,7 @@ public sealed class TestModule
     /// <remarks>Use CloseAsync() version whenever possible.</remarks>
     public void Close()
     {
-        Close(null);
+        Close(duration: null);
     }
 
     /// <summary>
@@ -356,7 +356,7 @@ public sealed class TestModule
     /// <returns>Task instance </returns>
     public Task CloseAsync()
     {
-        return CloseAsync(null);
+        return CloseAsync(duration: null);
     }
 
     /// <summary>
@@ -533,7 +533,7 @@ public sealed class TestModule
     /// <returns>Test suite instance</returns>
     internal TestSuite GetOrCreateSuite(string name)
     {
-        return GetOrCreateSuite(name, null);
+        return GetOrCreateSuite(name, startDate: null);
     }
 
     /// <summary>

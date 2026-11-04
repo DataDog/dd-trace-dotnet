@@ -100,7 +100,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length, false);
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length, addTelemetry: false);
         }
         catch (Exception err)
         {
@@ -130,7 +130,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length, false);
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length, addTelemetry: false);
         }
         catch (Exception err)
         {
@@ -165,7 +165,7 @@ internal static class StringModuleImpl
             {
                 if (i >= startIndex && (count < 0 || i < startIndex + count))
                 {
-                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, null, 1, element?.ToString() ?? string.Empty, false);
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, delimiterRanges: null, 1, element?.ToString() ?? string.Empty, addDelimiterRanges: false);
                 }
 
                 i++;

@@ -1610,7 +1610,7 @@ internal static class CoverageBackfillDataStore
                             return false;
                         }
 
-                        File.Replace(tempPath, filePath, null);
+                        File.Replace(tempPath, filePath, destinationBackupFileName: null);
                     }
                     else
                     {

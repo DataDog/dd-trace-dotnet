@@ -554,7 +554,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             try
             {
                 // Set the synchronization context to null to avoid deadlocks.
-                SynchronizationContext.SetSynchronizationContext(null);
+                SynchronizationContext.SetSynchronizationContext(syncContext: null);
 
                 // Wait synchronously for the task to complete.
                 return duckTask.GetAwaiter().GetResult()?.ClusterId;

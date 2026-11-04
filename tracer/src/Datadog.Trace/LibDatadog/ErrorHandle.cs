@@ -11,7 +11,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog;
 
-internal sealed class ErrorHandle() : SafeHandle(IntPtr.Zero, true)
+internal sealed class ErrorHandle() : SafeHandle(IntPtr.Zero, ownsHandle: true)
 {
     private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ErrorHandle>();
 

@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             var attributes = ExtractAttributes(state, eventId);
             var (traceId, spanId, flags) = ExtractTraceContext();
 
-            return new LoggerDirectSubmissionLogEvent(null)
+            return new LoggerDirectSubmissionLogEvent(serializedEvent: null)
             {
                 OtlpLog = new LogPoint
                 {

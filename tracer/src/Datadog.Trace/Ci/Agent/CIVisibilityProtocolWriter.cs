@@ -318,7 +318,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         {
             _sender = sender;
             Index = Interlocked.Increment(ref _globalIndexes);
-            FlushDelayEvent = new AsyncManualResetEvent(false);
+            FlushDelayEvent = new AsyncManualResetEvent(set: false);
             CiTestCycleBuffer = ciTestCycleBuffer;
             CiTestCycleBufferWatch = Stopwatch.StartNew();
             CiCodeCoverageBuffer = ciCodeCoverageBuffer;

@@ -355,7 +355,7 @@ namespace Datadog.Trace.AppSec
                 typeof(object),
                 [typeof(object)],
                 typeof(ObjectExtractor).Module,
-                true);
+                skipVisibility: true);
             var ilGen = dynMethod.GetILGenerator();
             ilGen.Emit(OpCodes.Ldarg_0);
             if (bodyType.IsValueType)
@@ -385,7 +385,7 @@ namespace Datadog.Trace.AppSec
                 typeof(object),
                 [typeof(object)],
                 typeof(ObjectExtractor).Module,
-                true);
+                skipVisibility: true);
             var ilGen = dynMethod.GetILGenerator();
             ilGen.Emit(OpCodes.Ldarg_0);
             if (bodyType.IsValueType)
@@ -606,7 +606,7 @@ namespace Datadog.Trace.AppSec
                     {
                         if (dictValue is null)
                         {
-                            items.Add(dictKey, null);
+                            items.Add(dictKey, value: null);
                         }
                         else
                         {

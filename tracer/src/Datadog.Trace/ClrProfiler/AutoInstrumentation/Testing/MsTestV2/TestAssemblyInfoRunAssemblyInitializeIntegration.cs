@@ -72,7 +72,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, assemblyName));
+        return new CallTargetState(scope: null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, assemblyName));
     }
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)

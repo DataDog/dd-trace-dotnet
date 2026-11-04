@@ -75,7 +75,7 @@ public static class SignInManagerPasswordSignInIntegration
             // here as it's the first login step, state.State is the username, db hasn't been hit yet.
             if (state.State is not string login || string.IsNullOrEmpty(login))
             {
-                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(true, foundLogin: false);
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId: true, foundLogin: false);
                 return returnValue;
             }
 

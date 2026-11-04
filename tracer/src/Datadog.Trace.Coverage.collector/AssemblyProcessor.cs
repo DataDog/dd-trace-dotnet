@@ -158,7 +158,7 @@ namespace Datadog.Trace.Coverage.Collector
                             // We change the `isJITOptimizerDisabled` second argument to `false` to enable jit optimizations.
                             if (cAttr.ConstructorArguments.Count == 2)
                             {
-                                cAttr.ConstructorArguments[1] = new CustomAttributeArgument(cAttr.ConstructorArguments[1].Type, false);
+                                cAttr.ConstructorArguments[1] = new CustomAttributeArgument(cAttr.ConstructorArguments[1].Type, value: false);
                             }
                         }
                     }
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Coverage.Collector
                 // Process all modules in the assembly
                 var module = assemblyDefinition.MainModule;
                 _logger.Debug($"Processing module: {module.Name}");
-                if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, null, _settings.ExcludeFilters))
+                if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, type: null, _settings.ExcludeFilters))
                 {
                     _logger.Debug($"Module: {module.FileName}, ignored by settings filter");
                     return;
@@ -1225,12 +1225,12 @@ namespace Datadog.Trace.Coverage.Collector
 
                         if (File.Exists(datadogTraceDllPath))
                         {
-                            File.Copy(datadogTraceDllPath, outputAssemblyDllLocation, true);
+                            File.Copy(datadogTraceDllPath, outputAssemblyDllLocation, overwrite: true);
                         }
 
                         if (File.Exists(datadogTracePdbPath))
                         {
-                            File.Copy(datadogTracePdbPath, outputAssemblyPdbLocation, true);
+                            File.Copy(datadogTracePdbPath, outputAssemblyPdbLocation, overwrite: true);
                         }
                     }
 

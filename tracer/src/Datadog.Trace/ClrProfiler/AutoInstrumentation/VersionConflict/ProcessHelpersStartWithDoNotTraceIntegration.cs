@@ -39,7 +39,7 @@ public sealed class ProcessHelpersStartWithDoNotTraceIntegration
             // However, because the types aren't shared between 2.x and 3.x, and because it's the 3.x types that are
             // doing the tracing, this value is not respected. To work around that, we instrument the 2.x libraries
             // and set the 3.x version, mirroring the desired behaviour.
-            ProcessHelpers.ForceDoNotTrace(true);
+            ProcessHelpers.ForceDoNotTrace(doNotTrace: true);
         }
 
         return CallTargetState.GetDefault();
@@ -48,7 +48,7 @@ public sealed class ProcessHelpersStartWithDoNotTraceIntegration
     internal static CallTargetReturn<System.Diagnostics.Process?> OnMethodEnd<TTarget>(System.Diagnostics.Process? returnValue, Exception? exception, in CallTargetState state)
     {
         // Always reset this back to false
-        ProcessHelpers.ForceDoNotTrace(false);
+        ProcessHelpers.ForceDoNotTrace(doNotTrace: false);
         return new CallTargetReturn<System.Diagnostics.Process?>(returnValue);
     }
 }

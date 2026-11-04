@@ -30,7 +30,7 @@ internal sealed class AsyncStateMachineAttributeTypeProvider : ICustomAttributeT
 
     public string GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
-        return TypeProvider.ParseTypeReference(reader, handle, false);
+        return TypeProvider.ParseTypeReference(reader, handle, includeResScope: false);
     }
 
     public string GetSZArrayType(string elementType)

@@ -33,7 +33,7 @@ namespace Datadog.Trace.Util
             => GetCleanUriPath(uri.AbsolutePath, virtualPathToRemove);
 
         public static string GetCleanUriPath(string absolutePath)
-            => GetCleanUriPath(absolutePath, null);
+            => GetCleanUriPath(absolutePath, virtualPathToRemove: null);
 
         /// <summary>
         /// Cleans identifiers from an absolute path, and optionally removes the provided prefix

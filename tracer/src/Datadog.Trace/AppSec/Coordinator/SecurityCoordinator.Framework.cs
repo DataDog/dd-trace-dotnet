@@ -34,7 +34,7 @@ internal readonly partial struct SecurityCoordinator
         _localRootSpan = TryGetRoot(span);
         _appsecRequestContext = _localRootSpan.Context.TraceContext.AppSecRequestContext;
         _httpTransport = transport;
-        Reporter = new SecurityReporter(_localRootSpan, transport, true);
+        Reporter = new SecurityReporter(_localRootSpan, transport, isRoot: true);
     }
 
     internal static SecurityCoordinator? TryGet(Security security, Span span)
@@ -74,7 +74,7 @@ internal readonly partial struct SecurityCoordinator
                 typeof(void),
                 [typeof(IResult), typeof(HttpStatusCode), typeof(string), typeof(string)],
                 typeof(SecurityCoordinator).Module,
-                true);
+                skipVisibility: true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
             if (il is null)
             {
@@ -101,11 +101,11 @@ internal readonly partial struct SecurityCoordinator
             il.Emit(OpCodes.Ldarg_2);
             var encodingType = typeof(Encoding);
             var encodingUtf8Prop = encodingType.GetProperty("UTF8");
-            il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, null);
+            il.EmitCall(OpCodes.Call, encodingUtf8Prop.GetMethod, optionalParameterTypes: null);
             // media type
             il.Emit(OpCodes.Ldarg_3);
             il.Emit(OpCodes.Newobj, contentCtor);
-            il.EmitCall(OpCodes.Callvirt, messageContentProperty.SetMethod, null);
+            il.EmitCall(OpCodes.Callvirt, messageContentProperty.SetMethod, optionalParameterTypes: null);
             il.Emit(OpCodes.Ldloc_0);
             il.Emit(OpCodes.Throw);
             return (Action<IResult, HttpStatusCode, string, string>)dynMethod.CreateDelegate(typeof(Action<IResult, HttpStatusCode, string, string>));
@@ -126,7 +126,7 @@ internal readonly partial struct SecurityCoordinator
                 typeof(void),
                 [typeof(IResult), typeof(HttpStatusCode), typeof(string)],
                 typeof(SecurityCoordinator).Module,
-                true);
+                skipVisibility: true);
             var il = GetBaseIlForThrowingHttpResponseException(dynMethod);
             if (il is null)
             {
@@ -157,12 +157,12 @@ internal readonly partial struct SecurityCoordinator
                 return null;
             }
 
-            il.EmitCall(OpCodes.Callvirt, headerProperty.GetMethod, null);
+            il.EmitCall(OpCodes.Callvirt, headerProperty.GetMethod, optionalParameterTypes: null);
             // location
             il.Emit(OpCodes.Ldstr, "Location");
             il.Emit(OpCodes.Ldarg_2);
 
-            il.EmitCall(OpCodes.Callvirt, tryAddWithoutValidationMethod, null);
+            il.EmitCall(OpCodes.Callvirt, tryAddWithoutValidationMethod, optionalParameterTypes: null);
 
             il.Emit(OpCodes.Ldloc_0);
             il.Emit(OpCodes.Throw);
@@ -195,12 +195,12 @@ internal readonly partial struct SecurityCoordinator
         }
 
         var blockException = typeof(BlockException);
-        var blockExceptionCtor = blockException.GetConstructor(BindingFlags.Public | BindingFlags.Instance, null, [typeof(IResult)], null);
+        var blockExceptionCtor = blockException.GetConstructor(BindingFlags.Public | BindingFlags.Instance, binder: null, [typeof(IResult)], modifiers: null);
         var exceptionCtor = exceptionType.GetConstructor([typeof(HttpStatusCode)]);
         var exceptionResponseProperty = exceptionType.GetProperty("Response");
         var setValueMethod = typeof(FieldInfo).GetMethod("SetValue", [typeof(object), typeof(object)]);
         var getTypeFromHandle = typeof(Type).GetMethod("GetTypeFromHandle");
-        var getFieldMethod = typeof(Type).GetMethod("GetField", [typeof(string), typeof(BindingFlags)], null);
+        var getFieldMethod = typeof(Type).GetMethod("GetField", [typeof(string), typeof(BindingFlags)], modifiers: null);
         var getBaseType = typeof(Type).GetProperty("BaseType");
 
         var il = method.GetILGenerator();
@@ -213,24 +213,24 @@ internal readonly partial struct SecurityCoordinator
         il.Emit(OpCodes.Ldloc_0);
         // typeof(HttpResponseException)
         il.Emit(OpCodes.Ldtoken, exceptionType);
-        il.EmitCall(OpCodes.Call, getTypeFromHandle, null);
+        il.EmitCall(OpCodes.Call, getTypeFromHandle, optionalParameterTypes: null);
         // .BaseType
-        il.EmitCall(OpCodes.Callvirt, getBaseType.GetMethod, null);
+        il.EmitCall(OpCodes.Callvirt, getBaseType.GetMethod, optionalParameterTypes: null);
 
         // .GetField("_innerException", BindingFlags.Instance | BindingFlags.NonPublic)
         il.Emit(OpCodes.Ldstr, "_innerException");
         il.Emit(OpCodes.Ldc_I4_S, (int)(BindingFlags.Instance | BindingFlags.NonPublic));
-        il.EmitCall(OpCodes.Callvirt, getFieldMethod, null);
+        il.EmitCall(OpCodes.Callvirt, getFieldMethod, optionalParameterTypes: null);
         // loads httpexception
         il.Emit(OpCodes.Ldloc_0);
         // loads IResult
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Newobj, blockExceptionCtor); // loads blockexception
-        il.EmitCall(OpCodes.Callvirt, setValueMethod, null);
+        il.EmitCall(OpCodes.Callvirt, setValueMethod, optionalParameterTypes: null);
 
         il.Emit(OpCodes.Ldloc_0);
         // httpResponseException.Response
-        il.EmitCall(OpCodes.Callvirt, exceptionResponseProperty.GetMethod, null);
+        il.EmitCall(OpCodes.Callvirt, exceptionResponseProperty.GetMethod, optionalParameterTypes: null);
 
         return il;
     }
@@ -419,7 +419,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (blockingAction.IsRedirect)
         {
-            httpResponse.Redirect(blockingAction.RedirectLocation, false);
+            httpResponse.Redirect(blockingAction.RedirectLocation, endResponse: false);
 
             // Redirect() set a status code (301 or 302) and ends the response,
             // but we want to set the status code to the one we have in the blocking action

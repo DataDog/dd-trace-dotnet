@@ -155,7 +155,7 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         int error;
         try
         {
-            added = NativeMethods.SetConsoleCtrlHandler(_routine, true);
+            added = NativeMethods.SetConsoleCtrlHandler(_routine, add: true);
             error = added ? 0 : Marshal.GetLastWin32Error();
         }
         catch
@@ -232,7 +232,7 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
             // dangling", and there is nothing to report or retry. .NET Core goes further and skips the call
             // altogether; see https://github.com/dotnet/runtime/blob/d47cfe5617b72752e2e959459e85ed87fcbbeb66/src/libraries/System.Private.CoreLib/src/System/Runtime/InteropServices/PosixSignalRegistration.Windows.cs
             // but we have to do the unregister because multiple app domains can exist in the same process
-            NativeMethods.SetConsoleCtrlHandler(_routine, false);
+            NativeMethods.SetConsoleCtrlHandler(_routine, add: false);
         }
         catch
         {
@@ -291,7 +291,7 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         // Deliberately not disposed: a worker that finishes after we stop waiting would throw
         // ObjectDisposedException on a thread pool thread, so we leave it to the GC.
         // LifetimeManager._shutdownComplete has a similar pattern.
-        private readonly ManualResetEventSlim _completed = new(false);
+        private readonly ManualResetEventSlim _completed = new(initialState: false);
 
         private bool _started;
 

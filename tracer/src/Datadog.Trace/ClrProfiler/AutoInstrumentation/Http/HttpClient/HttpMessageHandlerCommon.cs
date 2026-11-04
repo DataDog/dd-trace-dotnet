@@ -131,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     var statusCode = responseMessage.StatusCode;
                     var protocolVersion = responseMessage.Version;
 #endif
-                    scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    scope.Span.SetHttpStatusCode(statusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
                     HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, protocolVersion);
                 }
 

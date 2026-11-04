@@ -173,7 +173,7 @@ internal sealed class GlobalCoverageInputReader
         using var sha256 = SHA256.Create();
         GlobalCoverageInfo? model;
         using (var hashingStream = new HashingReadStream(stream, sha256))
-        using (var streamReader = new StreamReader(hashingStream, new UTF8Encoding(false, true), true, _limits.ScannerBufferCharacters, true))
+        using (var streamReader = new StreamReader(hashingStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true), detectEncodingFromByteOrderMarks: true, _limits.ScannerBufferCharacters, leaveOpen: true))
         using (var jsonReader = new JsonTextReader(streamReader) { MaxDepth = _limits.MaximumDepth, DateParseHandling = DateParseHandling.None })
         {
             model = JsonSerializer.Create().Deserialize<GlobalCoverageInfo>(jsonReader);

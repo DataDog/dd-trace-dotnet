@@ -104,7 +104,6 @@ dotnet_diagnostic.MA0189.severity = none # Use InlineArray instead of fixed-size
 # Rules we want, but which currently have violations.
 # These are temporarily disabled, and will be fixed and enabled in subsequent PRs.
 # ---------------------------------------------------------------------------------------------------
-dotnet_diagnostic.MA0003.severity = none # Add parameter name to improve readability - ~940 null/bool literal arguments across ~350 files. Mechanical (code fix available in the IDE), but a large diff
 dotnet_diagnostic.MA0009.severity = none # Add regex evaluation timeout - skipped: most hits are fixed, linear patterns (git output, CI env, cgroup lines, request header parsing). Note: remote-config feature-flag patterns (ConditionConfiguration) run without a timeout and are worth revisiting separately
 dotnet_diagnostic.MA0012.severity = none # Do not raise reserved exception type - deferred (not mechanical): fixing means choosing a replacement exception type per site; ThrowHelper.ThrowNullReferenceException has many callers (incl. DuckTyping), plus direct NullReferenceException/IndexOutOfRangeException throws in Activity, IAST, the obfuscator and the debugger
 dotnet_diagnostic.MA0015.severity = none # Specify the parameter name in ArgumentException - deferred (likely handled later; not mechanical): only some hits map to a real parameter, many debugger sites throw argument exceptions about internal state (should be a different exception type), and ThrowHelper/Base64DecodingStream helpers need a paramName
@@ -119,3 +118,11 @@ dotnet_diagnostic.MA0097.severity = none # A class that implements IComparable<T
 dotnet_diagnostic.MA0106.severity = none # Avoid closure by using an overload with the 'factoryArgument' parameter - skipped for now: the overloads are .NET Core-only, so call sites would need #if. Could add polyfill extension methods (GetOrAdd/AddOrUpdate with a factory argument) to simplify call sites, though they wouldn't give a perf benefit on .NET Framework
 dotnet_diagnostic.MA0168.severity = none # Use readonly struct for in or ref readonly parameter - deferred: needs per-site decisions rather than a mechanical fix. Most hits are BCL types that are only non-readonly on net461/netstandard2.0 (CancellationToken, DateTimeOffset?, ArraySegment, Guid, RuntimeMethodHandle), including 13 CallTarget OnMethodBegin handlers; others are signatures we can't change (public SetBenchmarkMetadata, P/Invoke, IAST Uri aspects, [DuckCopy] gRPC structs). Also, ProbeInfo can't simply become readonly: DynamicInstrumentation.SetProbeStatusToEmitting writes probe.IsEmitted on a by-value copy, a dead store that means EMITTING is re-sent on every emission (a bug worth fixing separately)
 dotnet_diagnostic.MA0221.severity = none # TryGetValue method should use [MaybeNullWhen(false)] on the value parameter - skipped: reports a single diagnostic with no source location in Datadog.Trace on net461/netstandard2.0, which can't be traced to a method or suppressed with a pragma
+
+# ---------------------------------------------------------------------------------------------------
+# Rule options
+# ---------------------------------------------------------------------------------------------------
+# MA0003: no named argument required where the method name or the other arguments already say what the value is:
+# Interlocked.Exchange (but not CompareExchange, where value and comparand are easy to mix up), configuration
+# telemetry Record(key, bool, origin), single-bool Set*Enabled setters, and JsonWriter.WriteValue.
+MA0003.excluded_methods_regex = Interlocked\.Exchange[`(]|ConfigurationTelemetry\.Record\(System\.String,System\.Boolean,|\.Set\w+Enabled\(System\.Boolean\)|Json\w*Writer\.WriteValue\(

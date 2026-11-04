@@ -35,7 +35,7 @@ internal sealed class GlobalCoverageStagedArtifact : IDisposable
 
         if (_replaceExisting && File.Exists(_destinationPath))
         {
-            File.Replace(temporaryPath, _destinationPath, null);
+            File.Replace(temporaryPath, _destinationPath, destinationBackupFileName: null);
         }
         else
         {

@@ -36,7 +36,7 @@ internal sealed class ProfilerSettings
         var envConfigBuilder = new ConfigurationBuilder(envConfig, telemetry);
         _isManagedActivationEnabled = envConfigBuilder
                                       .WithKeys(ConfigurationKeys.Profiler.ProfilerManagedActivationEnabled)
-                                      .AsBool(true);
+                                      .AsBool(defaultValue: true);
 
         // If we're using managed activation, we use the "full" config source set.
         // Otherwise we only read from the environment variables, to "match" the behavior of the profiler
@@ -76,7 +76,7 @@ internal sealed class ProfilerSettings
         {
             var arm64ProfilingEnabled = profilingConfig
                                         .WithKeys(ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64)
-                                        .AsBool(false);
+                                        .AsBool(defaultValue: false);
             if (!arm64ProfilingEnabled)
             {
                 ProfilerState = ProfilerState.Disabled;

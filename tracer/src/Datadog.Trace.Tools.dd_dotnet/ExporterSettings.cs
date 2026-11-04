@@ -63,7 +63,7 @@ public partial class ExporterSettings
     public ExporterSettings(string agentUri)
     {
         _fileExists = File.Exists;
-        var traceSettings = GetTraceTransport(agentUri, null, null, null, null);
+        var traceSettings = GetTraceTransport(agentUri, tracesPipeName: null, agentHost: null, agentPort: null, tracesUnixDomainSocketPath: null);
         TracesTransport = traceSettings.Transport;
         TracesPipeName = traceSettings.PipeName;
         TracesUnixDomainSocketPath = traceSettings.UdsPath;

@@ -176,9 +176,9 @@ namespace Datadog.Trace.Activity
                     throw new NullReferenceException("Activity.Current property cannot be found in the Activity type.");
                 }
 
-                var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
+                var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, skipVisibility: true);
                 var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
-                activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
+                activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, optionalParameterTypes: null);
                 activityCurrentDynMethodIl.Emit(OpCodes.Ret);
                 _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
             }
@@ -310,7 +310,7 @@ namespace Datadog.Trace.Activity
             var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { diagnosticListenerType });
             var onNextMethodIl = onNextMethod.GetILGenerator();
             onNextMethodIl.Emit(OpCodes.Ldarg_1);
-            onNextMethodIl.EmitCall(OpCodes.Call, onSetListenerMethodInfo, null);
+            onNextMethodIl.EmitCall(OpCodes.Call, onSetListenerMethodInfo, optionalParameterTypes: null);
             onNextMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo()?.AsType();
@@ -334,7 +334,7 @@ namespace Datadog.Trace.Activity
             // Create dynamic method: (object activity, int kind) => activity.Kind = kind
             var dynMethod = new DynamicMethod(
                 "ActivityKindSetter",
-                null,
+                returnType: null,
                 [typeof(object), typeof(int)],
                 typeof(DuckType).Module,
                 skipVisibility: true);

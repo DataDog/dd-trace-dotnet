@@ -54,7 +54,7 @@ internal static class SecurityCoordinatorHelpers
                     }
 
                     var args = BuildResponseArgs(httpContext.Response.StatusCode, headers);
-                    var result = securityCoordinator.RunWaf(args, true);
+                    var result = securityCoordinator.RunWaf(args, lastWafCall: true);
                     securityCoordinator.BlockAndReport(result);
                 }
             }
@@ -92,7 +92,7 @@ internal static class SecurityCoordinatorHelpers
             }
 
             var args = BuildResponseArgs(httpContext.Response.StatusCode, httpContext.Response.Headers);
-            if (securityCoordinator.RunWaf(args, true) is { } result)
+            if (securityCoordinator.RunWaf(args, lastWafCall: true) is { } result)
             {
                 securityCoordinator.Reporter.TryReport(result, blocked: false);
             }

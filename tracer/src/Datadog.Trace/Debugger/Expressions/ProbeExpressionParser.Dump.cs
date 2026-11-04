@@ -81,7 +81,7 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
-        if (ShouldRedactDumpValue(null, expression.Type))
+        if (ShouldRedactDumpValue(name: null, expression.Type))
         {
             return Expression.Constant(RedactedValueDump);
         }
@@ -207,8 +207,8 @@ internal partial class ProbeExpressionParser<T>
         ParameterExpression parameterExp = Expression.Parameter(typeof(FieldInfo), "fieldInfo");
         MemberExpression propertyExp = Expression.Property(parameterExp, "MetadataToken");
         Expression<Func<FieldInfo, int>> lambdaExp = Expression.Lambda<Func<FieldInfo, int>>(propertyExp, parameterExp);
-        var fieldInfoArray = Expression.Call(null, getSafeFieldsMethod, Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags)));
-        var fieldInfoOrderedArray = Expression.Call(null, toArray, Expression.Call(null, orderByMethod, fieldInfoArray, lambdaExp));
+        var fieldInfoArray = Expression.Call(instance: null, getSafeFieldsMethod, Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags)));
+        var fieldInfoOrderedArray = Expression.Call(instance: null, toArray, Expression.Call(instance: null, orderByMethod, fieldInfoArray, lambdaExp));
         var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), [typeof(string)]);
         var expressions = new List<Expression>();
 
@@ -231,7 +231,7 @@ internal partial class ProbeExpressionParser<T>
 
         var fieldGetValueExpression =
            Expression.Call(
-               null,
+               instance: null,
                GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(GetFieldValueForDump), [typeof(FieldInfo), typeof(object)]),
                fieldAtIndex,
                Expression.Convert(expression, typeof(object)));
@@ -333,7 +333,7 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('[');
                 foreach (var item in (value as IList))
                 {
-                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
+                    sb.Append(DumpObject(item, item?.GetType(), name: null, 1));
                     if (++count == 3)
                     {
                         sb.Append(", ...");
@@ -351,7 +351,7 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('[');
                 foreach (var item in (value as IEnumerable))
                 {
-                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
+                    sb.Append(DumpObject(item, item?.GetType(), name: null, 1));
                     if (++count == 3)
                     {
                         sb.Append(", ...");
@@ -370,9 +370,9 @@ internal partial class ProbeExpressionParser<T>
                 foreach (DictionaryEntry entry in (value as IDictionary))
                 {
                     sb.Append('[');
-                    sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
+                    sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), name: null, 1));
                     sb.Append(", ");
-                    sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedValueDump : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
+                    sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedValueDump : DumpObject(entry.Value, entry.Value?.GetType(), name: null, 1));
                     sb.Append(']');
                     if (++count == 3)
                     {

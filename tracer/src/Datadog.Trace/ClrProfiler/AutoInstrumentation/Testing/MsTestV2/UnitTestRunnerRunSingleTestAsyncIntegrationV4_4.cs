@@ -40,7 +40,7 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegrationV4_4
         var previousState = UnitTestRunnerRunSingleTestAsyncIntegration3_8.OnMethodBegin(instance, element, testProperties, logger);
         var execution = new MsTestExecution(previousState, MsTestExecution.Current);
         MsTestExecution.Current = execution;
-        return new CallTargetState(null, execution);
+        return new CallTargetState(scope: null, execution);
     }
 
     /// <summary>

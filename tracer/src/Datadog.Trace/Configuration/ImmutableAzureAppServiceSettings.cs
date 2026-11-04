@@ -94,9 +94,9 @@ namespace Datadog.Trace.Configuration
                 SiteType = "app";
             }
 
-            DebugModeEnabled = config.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(false);
-            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
-            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
+            DebugModeEnabled = config.WithKeys(ConfigurationKeys.DebugEnabled).AsBool(defaultValue: false);
+            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(defaultValue: false);
+            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(defaultValue: false);
             AgentMaxRetryIntervalSeconds = config.WithKeys(ConfigurationKeys.AzureAppService.AasAgentMaxRetryIntervalSeconds)
                                                  .AsInt32(DefaultAgentMaxRetryIntervalSeconds, static x => x > 0)
                                                  .Value;

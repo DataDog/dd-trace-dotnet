@@ -56,7 +56,7 @@ internal static class EventHubsCommon
         return CreateSenderSpanInternal(
             instance.EventHubName,
             networkDestinationName,
-            null,
+            networkDestinationPort: null,
             operationName,
             messages,
             messageCount,

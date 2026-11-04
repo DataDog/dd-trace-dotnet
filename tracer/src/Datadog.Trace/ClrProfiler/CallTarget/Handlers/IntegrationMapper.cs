@@ -101,7 +101,7 @@ internal static class IntegrationMapper
             typeof(CallTargetState),
             new[] { targetType }.Concat(argumentsTypes),
             onMethodBeginMethodInfo.Module,
-            true);
+            skipVisibility: true);
 
         var ilWriter = callMethod.GetILGenerator();
 
@@ -201,7 +201,7 @@ internal static class IntegrationMapper
 
         // Call method
         onMethodBeginMethodInfo = onMethodBeginMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-        ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
+        ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, optionalParameterTypes: null);
         ilWriter.Emit(OpCodes.Ret);
 
         Log.Debug("Created BeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
@@ -271,7 +271,7 @@ internal static class IntegrationMapper
             typeof(CallTargetState),
             [targetType, typeof(object[])],
             onMethodBeginMethodInfo.Module,
-            true);
+            skipVisibility: true);
 
         var ilWriter = callMethod.GetILGenerator();
 
@@ -314,7 +314,7 @@ internal static class IntegrationMapper
 
             if (targetParameterTypeConstraint != null)
             {
-                ilWriter.EmitCall(OpCodes.Call, ConvertTypeMethodInfo.MakeGenericMethod(targetParameterTypeConstraint), null);
+                ilWriter.EmitCall(OpCodes.Call, ConvertTypeMethodInfo.MakeGenericMethod(targetParameterTypeConstraint), optionalParameterTypes: null);
             }
             else if (targetParameterType.IsValueType)
             {
@@ -324,7 +324,7 @@ internal static class IntegrationMapper
 
         // Call method
         onMethodBeginMethodInfo = onMethodBeginMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-        ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
+        ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, optionalParameterTypes: null);
         ilWriter.Emit(OpCodes.Ret);
 
         Log.Debug("Created SlowBeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
@@ -411,7 +411,7 @@ internal static class IntegrationMapper
             typeof(CallTargetReturn),
             [targetType, typeof(Exception), typeof(CallTargetState).MakeByRefType()],
             onMethodEndMethodInfo.Module,
-            true);
+            skipVisibility: true);
 
         var ilWriter = callMethod.GetILGenerator();
 
@@ -438,7 +438,7 @@ internal static class IntegrationMapper
 
         // Call Method
         onMethodEndMethodInfo = onMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-        ilWriter.EmitCall(OpCodes.Call, onMethodEndMethodInfo, null);
+        ilWriter.EmitCall(OpCodes.Call, onMethodEndMethodInfo, optionalParameterTypes: null);
 
         ilWriter.Emit(OpCodes.Ret);
 
@@ -557,7 +557,7 @@ internal static class IntegrationMapper
             typeof(CallTargetReturn<>).MakeGenericType(returnType),
             [targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType()],
             onMethodEndMethodInfo.Module,
-            true);
+            skipVisibility: true);
 
         var ilWriter = callMethod.GetILGenerator();
 
@@ -591,13 +591,13 @@ internal static class IntegrationMapper
 
         // Call Method
         onMethodEndMethodInfo = onMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-        ilWriter.EmitCall(OpCodes.Call, onMethodEndMethodInfo, null);
+        ilWriter.EmitCall(OpCodes.Call, onMethodEndMethodInfo, optionalParameterTypes: null);
 
         // Unwrap return value proxy
         if (returnValueProxyType != null)
         {
             var unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
-            ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, null);
+            ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, optionalParameterTypes: null);
         }
 
         ilWriter.Emit(OpCodes.Ret);
@@ -738,7 +738,7 @@ internal static class IntegrationMapper
             dynMethodReturnType,
             [targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType()],
             onAsyncMethodEndMethodInfo.Module,
-            true);
+            skipVisibility: true);
 
         var ilWriter = callMethod.GetILGenerator();
 
@@ -772,7 +772,7 @@ internal static class IntegrationMapper
 
         // Call Method
         onAsyncMethodEndMethodInfo = onAsyncMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-        ilWriter.EmitCall(OpCodes.Call, onAsyncMethodEndMethodInfo, null);
+        ilWriter.EmitCall(OpCodes.Call, onAsyncMethodEndMethodInfo, optionalParameterTypes: null);
 
         // Unwrap return value proxy
         if (returnValueProxyType != null)
@@ -796,7 +796,7 @@ internal static class IntegrationMapper
                 unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
             }
 
-            ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, null);
+            ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, optionalParameterTypes: null);
         }
 
         ilWriter.Emit(OpCodes.Ret);

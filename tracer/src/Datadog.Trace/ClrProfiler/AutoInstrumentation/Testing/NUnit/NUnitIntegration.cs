@@ -96,9 +96,9 @@ internal static class NUnitIntegration
         }
 
         span.Error = false;
-        span.SetTag(Tags.ErrorType, null);
-        span.SetTag(Tags.ErrorMsg, null);
-        span.SetTag(Tags.ErrorStack, null);
+        span.SetTag(Tags.ErrorType, value: null);
+        span.SetTag(Tags.ErrorMsg, value: null);
+        span.SetTag(Tags.ErrorStack, value: null);
     }
 
     internal static TTestCommand CreateTestOptimizationTestCommand<TTestCommand>(TTestCommand testCommand)

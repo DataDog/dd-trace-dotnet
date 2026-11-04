@@ -131,7 +131,7 @@ namespace Datadog.Trace
         [Instrumented]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public IScope StartActive(string operationName)
-            => StartActive(operationName, parent: null, serviceName: null, null, finishOnClose: true);
+            => StartActive(operationName, parent: null, serviceName: null, startTime: null, finishOnClose: true);
 
         /// <inheritdoc cref="ITracer" />
         [Instrumented]

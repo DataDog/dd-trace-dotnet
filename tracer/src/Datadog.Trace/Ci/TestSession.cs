@@ -92,7 +92,7 @@ public sealed class TestSession
         WorkingDirectory = originalWorkingDirectory;
         Framework = framework;
 
-        WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
+        WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(WorkingDirectory, useOSSeparator: false);
 
         var tags = new TestSessionSpanTags
         {
@@ -373,7 +373,7 @@ public sealed class TestSession
     /// <param name="status">Test session status</param>
     public void Close(TestStatus status)
     {
-        Close(status, null);
+        Close(status, duration: null);
     }
 
     /// <summary>
@@ -397,7 +397,7 @@ public sealed class TestSession
     /// <returns>Task instance</returns>
     public Task CloseAsync(TestStatus status)
     {
-        return CloseAsync(status, null);
+        return CloseAsync(status, duration: null);
     }
 
     /// <summary>
@@ -540,7 +540,7 @@ public sealed class TestSession
     /// <returns>New test module instance</returns>
     public TestModule CreateModule(string name)
     {
-        return new TestModule(name, null, null, null, Tags);
+        return new TestModule(name, framework: null, frameworkVersion: null, startDate: null, Tags);
     }
 
     /// <summary>
@@ -552,7 +552,7 @@ public sealed class TestSession
     /// <returns>New test module instance</returns>
     internal TestModule CreateModule(string name, string framework, string frameworkVersion)
     {
-        return new TestModule(name, framework, frameworkVersion, null, Tags);
+        return new TestModule(name, framework, frameworkVersion, startDate: null, Tags);
     }
 
     /// <summary>

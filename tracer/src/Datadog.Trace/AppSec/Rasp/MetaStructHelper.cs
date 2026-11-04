@@ -169,7 +169,7 @@ internal static class MetaStructHelper
         // will resize it.
 
         var buffer = new byte[256];
-        var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, value, null);
+        var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, value, formatterResolver: null);
         Array.Resize(ref buffer, bytesCopied);
 
         return buffer;

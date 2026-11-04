@@ -42,7 +42,7 @@ internal sealed class CommandTokenizer : ITokenizer
                 int start = group.Index;
                 int end = group.Index + group.Length;
 
-                res.Add(new Range(start, end - start, null));
+                res.Add(new Range(start, end - start, source: null));
             }
         }
 

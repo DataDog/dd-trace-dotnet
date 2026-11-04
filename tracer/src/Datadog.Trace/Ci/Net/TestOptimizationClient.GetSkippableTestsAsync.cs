@@ -40,10 +40,10 @@ internal sealed partial class TestOptimizationClient
         var requestConfigurations = GetTestConfigurations(testBundle: scope.TestBundle);
         var query = new DataEnvelope<Data<SkippableTestsQuery>>(
             new Data<SkippableTestsQuery>(
-                null,
+                id: null,
                 SkippableType,
                 new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, requestConfigurations, SkippableTestsRequestScope.TestLevel)),
-            null);
+            repositoryUrl: null);
 
         var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
         Log.Debug("TestOptimizationClient: Skippable.JSON RQ = {Json}", jsonQuery);

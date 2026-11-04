@@ -94,11 +94,11 @@ internal static class CiUtils
                 applicationContext,
                 context,
                 commonTracerSettings,
-                new Utils.CIVisibilityOptions(TestOptimizationSettings.FromDefaultSources().InstallDatadogTraceInGac, true, reducePathLength),
+                new Utils.CIVisibilityOptions(TestOptimizationSettings.FromDefaultSources().InstallDatadogTraceInGac, EnableVsTestConsoleConfigModification: true, reducePathLength),
                 out var profilerEnvironmentVariables))
         {
             context.ExitCode = 1;
-            return new InitResults(false, lstArguments, null, false, false, Task.CompletedTask);
+            return new InitResults(success: false, lstArguments, profilerEnvironmentVariables: null, testSkippingEnabled: false, codeCoverageEnabled: false, Task.CompletedTask);
         }
 
         if (includeRunScopedBackfillEnvironment)
@@ -162,7 +162,7 @@ internal static class CiUtils
                 Utils.WriteError("An API key is required in Agentless mode.");
                 Log.Error("RunHelper: An API key is required in Agentless mode.");
                 context.ExitCode = 1;
-                return new InitResults(false, lstArguments, profilerEnvironmentVariables, false, false, Task.CompletedTask);
+                return new InitResults(success: false, lstArguments, profilerEnvironmentVariables, testSkippingEnabled: false, codeCoverageEnabled: false, Task.CompletedTask);
             }
         }
         else
@@ -174,7 +174,7 @@ internal static class CiUtils
                 await discoveryService.DisposeAsync().ConfigureAwait(false);
                 Log.Error("RunCiCommand: Agent configuration cannot be retrieved.");
                 context.ExitCode = 1;
-                return new InitResults(false, lstArguments, profilerEnvironmentVariables, false, false, Task.CompletedTask);
+                return new InitResults(success: false, lstArguments, profilerEnvironmentVariables, testSkippingEnabled: false, codeCoverageEnabled: false, Task.CompletedTask);
             }
         }
 
@@ -502,7 +502,7 @@ internal static class CiUtils
             }
         }
 
-        return new InitResults(true, lstArguments, profilerEnvironmentVariables, testSkippingEnabled, codeCoverageEnabled, uploadRepositoryChangesTask, temporaryArgumentFiles);
+        return new InitResults(success: true, lstArguments, profilerEnvironmentVariables, testSkippingEnabled, codeCoverageEnabled, uploadRepositoryChangesTask, temporaryArgumentFiles);
     }
 
     private static bool HasExplicitAdditionalEnvironmentVariable(InvocationContext context, CommonTracerSettings commonTracerSettings, string key)
@@ -1036,12 +1036,12 @@ internal static class CiUtils
     {
         foreach (var key in RunScopedBackfillEnvironmentVariables)
         {
-            EnvironmentHelpers.SetEnvironmentVariable(key, null);
+            EnvironmentHelpers.SetEnvironmentVariable(key, value: null);
         }
 
         if (clearCodeCoveragePath)
         {
-            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, null);
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, value: null);
         }
     }
 
@@ -1049,7 +1049,7 @@ internal static class CiUtils
     {
         foreach (var key in RunScopedPropagationEnvironmentVariables)
         {
-            EnvironmentHelpers.SetEnvironmentVariable(key, null);
+            EnvironmentHelpers.SetEnvironmentVariable(key, value: null);
         }
     }
 

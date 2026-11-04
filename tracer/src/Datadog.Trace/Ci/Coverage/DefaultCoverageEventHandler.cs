@@ -69,7 +69,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     {
                         fileCoverage = new FileCoverage
                         {
-                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false),
+                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, useOSSeparator: false),
                         };
 
                         fileDictionary = new Dictionary<string, FileCoverage>
@@ -81,7 +81,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                     {
                         fileCoverage = new FileCoverage
                         {
-                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false),
+                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, useOSSeparator: false),
                         };
 
                         fileDictionary[moduleFile.Path] = fileCoverage;

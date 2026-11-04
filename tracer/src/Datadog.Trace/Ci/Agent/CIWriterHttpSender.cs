@@ -198,7 +198,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
             {
                 agentlessMemoryStream = new MemoryStream();
                 int uncompressedSize;
-                using (var gzipStream = new GZipStream(agentlessMemoryStream, CompressionLevel.Fastest, true))
+                using (var gzipStream = new GZipStream(agentlessMemoryStream, CompressionLevel.Fastest, leaveOpen: true))
                 {
                     uncompressedSize = payload.WriteTo(gzipStream);
                 }
@@ -223,7 +223,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
 
             Func<IApiRequest, EventPlatformPayload, ArraySegment<byte>, Task<IApiResponse>> sender = useGzip
                 ? static (request, _, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, "gzip")
-                : static (request, _, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, null);
+                : static (request, _, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, contentEncoding: null);
             await SendPayloadAsync(payload, sender, payloadArraySegment).ConfigureAwait(false);
         }
         finally

@@ -179,7 +179,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 if (execution is { HasNativeRetry: true })
                 {
                     ApplyRetryTags(testMethodState.Test.GetTags(), new RetryState { IsNativeRetry = execution.IsNativeRetry });
-                    execution.FinishAttempt(testMethodState.Test, null, TestStatus.Fail, null);
+                    execution.FinishAttempt(testMethodState.Test, result: null, TestStatus.Fail, skipReason: null);
                 }
                 else
                 {
@@ -237,14 +237,14 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                             initialExecutionPassed = true;
                             var cacheKey = GetCacheKey(displayName);
                             // Cache per-row initial execution result for parameterized tests
-                            SetInitialExecutionPassed(testMethodState.TestMethod, cacheKey, true);
+                            SetInitialExecutionPassed(testMethodState.TestMethod, cacheKey, passed: true);
                         }
                         else if (resultStatus == TestStatus.Fail)
                         {
                             initialExecutionFailed = true;
                             var cacheKey = GetCacheKey(displayName);
                             // Cache per-row initial execution failure for ATF tracking
-                            SetInitialExecutionFailed(testMethodState.TestMethod, cacheKey, true);
+                            SetInitialExecutionFailed(testMethodState.TestMethod, cacheKey, failed: true);
                         }
                     }
                     else
@@ -510,7 +510,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     // Cache per-row ATF failure for parameterized tests (retry path)
                     if (retryState.IsARetry && testMethod is not null)
                     {
-                        SetAllAttemptsPassed(testMethod, cacheKey, false);
+                        SetAllAttemptsPassed(testMethod, cacheKey, allPassed: false);
                     }
                 }
 
@@ -520,7 +520,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     retryState.InitialExecutionFailed = true;
                     if (testMethod is not null)
                     {
-                        SetInitialExecutionFailed(testMethod, cacheKey, true);
+                        SetInitialExecutionFailed(testMethod, cacheKey, failed: true);
                     }
                 }
 
@@ -550,14 +550,14 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     retryState.AnyRetryPassed = true;
 
                     // Cache per-row retry pass result for parameterized tests
-                    SetAnyRetryPassed(testMethod, cacheKey, true);
+                    SetAnyRetryPassed(testMethod, cacheKey, passed: true);
                 }
                 else if (retryState.SelectedRetryMode == TestRetryMode.AttemptToFix && testStatus == TestStatus.Fail && testMethod is not null)
                 {
                     retryState.AllAttemptsPassed = false;
 
                     // Cache per-row ATF failure for parameterized tests
-                    SetAllAttemptsPassed(testMethod, cacheKey, false);
+                    SetAllAttemptsPassed(testMethod, cacheKey, allPassed: false);
                 }
             }
             else
@@ -568,14 +568,14 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     retryState.InitialExecutionPassed = true;
 
                     // Cache per-row initial pass result for parameterized tests
-                    SetInitialExecutionPassed(testMethod, cacheKey, true);
+                    SetInitialExecutionPassed(testMethod, cacheKey, passed: true);
                 }
                 else if (testStatus == TestStatus.Fail && testMethod is not null)
                 {
                     retryState.InitialExecutionFailed = true;
 
                     // Cache per-row initial execution failure for ATF tracking
-                    SetInitialExecutionFailed(testMethod, cacheKey, true);
+                    SetInitialExecutionFailed(testMethod, cacheKey, failed: true);
                 }
             }
 

@@ -52,7 +52,7 @@ public static class TestClassInfoRunClassCleanupIntegration
     {
         if (MsTestIntegration.IsEnabled && MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance) is { } suite)
         {
-            return new CallTargetState(null, suite);
+            return new CallTargetState(scope: null, suite);
         }
 
         return CallTargetState.GetDefault();
@@ -82,7 +82,7 @@ public static class TestClassInfoRunClassCleanupIntegration
 
             if (returnValue is string { } strWarning)
             {
-                suite.SetErrorInfo("SuiteCleanUp", strWarning, null);
+                suite.SetErrorInfo("SuiteCleanUp", strWarning, callStack: null);
                 suite.Tags.Status = TestTags.StatusFail;
             }
 

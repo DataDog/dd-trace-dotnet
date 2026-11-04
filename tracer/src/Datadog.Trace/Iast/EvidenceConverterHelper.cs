@@ -81,7 +81,7 @@ internal static class EvidenceConverterHelper
                 if (Source is not null && Source.IsSensitive)
                 {
                     // redact the full tainted value as the source is sensitive (password, certificate, ...)
-                    AddValuePart(0, Value.Length, true, parts);
+                    AddValuePart(0, Value.Length, redact: true, parts);
                 }
                 else if (SensitiveRanges is not null)
                 {
@@ -92,14 +92,14 @@ internal static class EvidenceConverterHelper
                         var start = sensitive.Start;
                         var end = sensitive.Start + sensitive.Length;
                         // append previous tainted chunk (if any)
-                        AddValuePart(index, start, false, parts);
+                        AddValuePart(index, start, redact: false, parts);
                         // append current sensitive tainted chunk
-                        AddValuePart(start, end, true, parts);
+                        AddValuePart(start, end, redact: true, parts);
                         index = end;
                     }
 
                     // append last tainted chunk (if any)
-                    AddValuePart(index, Value.Length, false, parts);
+                    AddValuePart(index, Value.Length, redact: false, parts);
                 }
             }
 
@@ -124,20 +124,20 @@ internal static class EvidenceConverterHelper
                     {
                         // if matches append the matching part from the redacted value
                         var pattern = Source.RedactedValue.Substring(matching, length);
-                        valueParts.Add(new ValuePart(pattern, Source, true));
+                        valueParts.Add(new ValuePart(pattern, Source, isRedacted: true));
                     }
                     else
                     {
                         // otherwise redact the string
                         var pattern = Source.RedactString(chunk);
-                        valueParts.Add(new ValuePart(pattern, Source, true));
+                        valueParts.Add(new ValuePart(pattern, Source, isRedacted: true));
                     }
                 }
                 else
                 {
                     // Null source
                     var pattern = Source.RedactString(chunk);
-                    valueParts.Add(new ValuePart(pattern, Source, true));
+                    valueParts.Add(new ValuePart(pattern, Source, isRedacted: true));
                 }
             }
         }

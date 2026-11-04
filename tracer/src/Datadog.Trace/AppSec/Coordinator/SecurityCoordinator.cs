@@ -182,7 +182,7 @@ internal readonly partial struct SecurityCoordinator
 
                 // run the WAF and execute the results
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
-                SetErrorInformation(false, result);
+                SetErrorInformation(isRasp: false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
                 SecurityReporter.RecordWafTelemetry(result, isRasp: false);
 

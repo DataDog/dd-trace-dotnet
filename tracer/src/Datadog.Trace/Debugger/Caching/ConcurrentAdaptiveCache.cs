@@ -443,7 +443,7 @@ namespace Datadog.Trace.Debugger.Caching
 
         public void Dispose()
         {
-            Dispose(true);
+            Dispose(disposing: true);
         }
 
         private void Dispose(bool disposing)

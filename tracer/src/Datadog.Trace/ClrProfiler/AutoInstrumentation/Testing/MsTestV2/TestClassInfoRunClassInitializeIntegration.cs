@@ -45,7 +45,7 @@ public static class TestClassInfoRunClassInitializeIntegration
             instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
         }
 
-        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance));
+        return new CallTargetState(scope: null, MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance));
     }
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)

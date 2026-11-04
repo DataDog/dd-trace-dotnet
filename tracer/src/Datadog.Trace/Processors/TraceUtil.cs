@@ -16,7 +16,7 @@ namespace Datadog.Trace.Processors
         // MaxTagLength the maximum length a tag can have
         private const int MaxTagLength = 200;
 
-        private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
+        private static readonly UTF8Encoding Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         /// <summary>
         /// Truncates <paramref name="value"/> so its UTF-8 byte length is at most <paramref name="limit"/>,

@@ -136,7 +136,7 @@ internal sealed class Baggage : IDictionary<string, string?>
     {
         if (_items is null)
         {
-            Interlocked.CompareExchange(ref _items, [], null);
+            Interlocked.CompareExchange(ref _items, [], comparand: null);
         }
 
         return _items;

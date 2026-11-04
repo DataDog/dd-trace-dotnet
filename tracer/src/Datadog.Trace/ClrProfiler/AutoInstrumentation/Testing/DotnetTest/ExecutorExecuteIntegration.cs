@@ -34,7 +34,7 @@ public sealed class ExecutorExecuteIntegration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, DotnetCommon.CreateSession());
+        return new CallTargetState(scope: null, DotnetCommon.CreateSession());
     }
 
     internal static CallTargetReturn<int> OnMethodEnd<TTarget>(int returnValue, Exception? exception, in CallTargetState state)

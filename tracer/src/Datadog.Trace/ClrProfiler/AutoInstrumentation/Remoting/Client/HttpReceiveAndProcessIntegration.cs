@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         {
             if (state.Scope is not null && state.State is HttpWebResponse response)
             {
-                state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
                 HttpSemanticConventions.SetHttpClientResponseValues(state.Scope.Span, response.ProtocolVersion);
             }
 

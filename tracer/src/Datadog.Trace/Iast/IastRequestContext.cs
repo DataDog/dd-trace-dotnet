@@ -171,7 +171,7 @@ internal sealed class IastRequestContext
                 bodyExtracted = ObjectExtractor.Extract(body);
             }
 
-            AddExtractedBody(bodyExtracted, null);
+            AddExtractedBody(bodyExtracted, key: null);
         }
         catch
         {
@@ -215,7 +215,7 @@ internal sealed class IastRequestContext
     private void AddRequestParameter(string name, string value)
     {
         _taintedObjects.TaintInputString(value, new Source(SourceType.RequestParameterValue, name, value));
-        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestParameterName, name, null));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.RequestParameterName, name, value: null));
     }
 
     private void AddRoutedParameter(string name, string value)
@@ -225,17 +225,17 @@ internal sealed class IastRequestContext
 
     private void AddQueryStringRaw(string queryString)
     {
-        _taintedObjects.TaintInputString(queryString, new Source(SourceType.RequestQuery, null, queryString));
+        _taintedObjects.TaintInputString(queryString, new Source(SourceType.RequestQuery, name: null, queryString));
     }
 
     private void AddQueryUrl(string url)
     {
-        _taintedObjects.TaintInputString(url, new Source(SourceType.RequestUri, null, url));
+        _taintedObjects.TaintInputString(url, new Source(SourceType.RequestUri, name: null, url));
     }
 
     private void AddQueryPath(string path)
     {
-        _taintedObjects.TaintInputString(path, new Source(SourceType.RequestPath, null, path));
+        _taintedObjects.TaintInputString(path, new Source(SourceType.RequestPath, name: null, path));
     }
 
     private void AddRouteData(IDictionary<string, object>? routeData)

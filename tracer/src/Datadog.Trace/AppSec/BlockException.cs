@@ -15,7 +15,7 @@ namespace Datadog.Trace.AppSec
     {
         // This constructor is not referenced but it's used with reflection
         public BlockException(IResult result)
-            : this(result, false)
+            : this(result, reported: false)
         {
         }
 
