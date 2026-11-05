@@ -5,7 +5,6 @@
 
 using System;
 using System.IO;
-using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
@@ -19,9 +18,7 @@ internal static class SnapshotHelper
 {
     static SnapshotHelper()
     {
-        // Best-effort: raise the shared serializer timeout to make timeouts on slow CI machines rarer for tests that don't set
-        // DebuggerSnapshotCreator.MaxSerializationTimeInMilliseconds. This depends on run order (other code can reset it),
-        // so tests that need deterministic captures should set that override instead.
+        // Configure the serializer with a high timeout for tests to prevent rare timeout failures on slow CI machines
         var testSettings = new DebuggerSettings(
             new NameValueConfigurationSource(new()
             {
@@ -50,11 +47,7 @@ internal static class SnapshotHelper
             MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
             MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-        // Snapshot content must not depend on the shared wall-clock budget, which other tests can change
-        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, processTagsProvider: static () => null, serviceNameProvider: static () => "test-service")
-        {
-            MaxSerializationTimeInMilliseconds = Timeout.Infinite
-        };
+        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, processTagsProvider: static () => null, serviceNameProvider: static () => "test-service");
         {
             // method entry
             snapshotCreator.StartEntry();

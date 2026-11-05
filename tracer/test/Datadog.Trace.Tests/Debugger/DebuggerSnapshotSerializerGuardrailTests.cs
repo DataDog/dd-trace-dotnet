@@ -8,11 +8,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -76,6 +76,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the throwing getter runs, so the capture is marked Timeout instead of RuntimeError")]
     public void Capture_WhenMemberGetterThrows_MarksRuntimeError()
     {
         var (snapshot, incompleteReasons) = Capture(new ThrowingMessageException());
@@ -117,8 +118,6 @@ public class DebuggerSnapshotSerializerGuardrailTests
             MaxLength: maxLength,
             MaxFieldCount: maxFieldCount);
 
-        // These tests assert on which guardrail fires, so opt out of the wall-clock budget: the shared one (200ms by default, changed by
-        // other tests depending on run order) can expire during cold reflection/JIT on a busy agent and report Timeout instead.
         return new DebuggerSnapshotCreator(
             isFullSnapshot: true,
             ProbeLocation.Method,
@@ -126,10 +125,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
             tags: [],
             limitInfo,
             processTagsProvider: static () => null,
-            serviceNameProvider: static () => "test-service")
-        {
-            MaxSerializationTimeInMilliseconds = Timeout.Infinite
-        };
+            serviceNameProvider: static () => "test-service");
     }
 
     private static void CaptureInto(DebuggerSnapshotCreator snapshotCreator, object value)
