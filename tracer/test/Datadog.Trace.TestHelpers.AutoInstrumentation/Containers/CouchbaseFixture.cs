@@ -14,6 +14,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Docker.DotNet.Models;
@@ -47,6 +48,16 @@ public class CouchbaseFixture : ContainerFixture
         var useHostNetwork = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                           && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CONTAINER_HOSTNAME"));
         var builder = new ContainerBuilder(Image)
+                     // Resolve the host after container creation, but configure it before Couchbase starts.
+                     // Renaming a running node leaves its old leader lease active for up to 15 seconds.
+                     .WithEntrypoint("/bin/sh", "-c")
+                     .WithCommand("while [ ! -f /tmp/couchbase-start ]; do sleep 0.1; done; exec /entrypoint.sh couchbase-server")
+                     .WithStartupCallback(async (container, cancellationToken) =>
+                     {
+                         Host = useHostNetwork ? GetDockerHost() : container.Hostname;
+                         await container.CopyAsync(Encoding.UTF8.GetBytes(Host), "/opt/couchbase/var/lib/couchbase/ip_start", uid: 1000, gid: 1000, ct: cancellationToken).ConfigureAwait(false);
+                         await container.CopyAsync(Array.Empty<byte>(), "/tmp/couchbase-start", ct: cancellationToken).ConfigureAwait(false);
+                     })
                      .WithCreateParameterModifier(p =>
                      {
                          p.HostConfig ??= new HostConfig();
@@ -69,9 +80,7 @@ public class CouchbaseFixture : ContainerFixture
         var container = builder.Build();
         registerResource("container", container);
         await StartContainerAsync(container).ConfigureAwait(false);
-        Host = useHostNetwork ? GetDockerHost() : container.Hostname;
 
-        await RunCliAsync(container, "node-init", "--node-init-hostname", Host).ConfigureAwait(false);
         // Community Edition requires the index service when the query service is enabled.
         await RunCliAsync(
             container,
