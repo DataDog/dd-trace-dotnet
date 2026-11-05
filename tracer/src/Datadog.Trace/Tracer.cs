@@ -28,9 +28,6 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {
-    /// <summary>
-    /// The tracer is responsible for creating spans and flushing them to the Datadog agent
-    /// </summary>
 #pragma  warning disable DDSEAL001 // We derive from this in tests
     public class Tracer : IDatadogTracer, IDatadogOpenTracingTracer
 #pragma warning restore DDSEAL001
