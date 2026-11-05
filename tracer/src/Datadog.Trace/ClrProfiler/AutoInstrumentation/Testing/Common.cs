@@ -42,8 +42,9 @@ internal static class Common
         };
     }
 
+    // Attempt to Fix verifies a fix, so its failures must surface even when the test is also quarantined or disabled.
     internal static bool IsFailureSuppressed(TestSpanTags? tags)
-        => tags?.AutomationExclusions.PreventFailureSuppression != true && (tags?.IsQuarantined == "true" || tags?.IsDisabled == "true");
+        => tags?.AutomationExclusions.PreventFailureSuppression != true && !IsAttemptToFix(tags) && (tags?.IsQuarantined == "true" || tags?.IsDisabled == "true");
 
     internal static bool IsAttemptToFix(TestSpanTags? tags)
         => tags?.AutomationExclusions.NoAutoRetry != true && tags?.IsAttemptToFix == "true";
@@ -496,8 +497,8 @@ internal static class Common
     /// <summary>
     /// Calculates the final status for a test based on execution results and test management tags.
     /// Priority order (first match wins):
-    /// 1. Unprotected quarantined/disabled -> skip (mask to skip)
-    /// 2. For ATF tests: any execution failed -> fail (flaky test = fix didn't work)
+    /// 1. For ATF tests: any execution failed -> fail (flaky test = fix didn't work)
+    /// 2. Suppressed quarantined/disabled -> skip (mask to skip)
     /// 3. Any execution passed -> pass
     /// 4. Skip/inconclusive AND no pass -> skip
     /// 5. All executions failed -> fail
@@ -509,17 +510,17 @@ internal static class Common
     /// <returns>The final status string: "pass", "fail", or "skip".</returns>
     internal static string CalculateFinalStatus(bool anyExecutionPassed, bool anyExecutionFailed, bool isSkippedOrInconclusive, TestSpanTags? testTags)
     {
-        // Priority 1: Unprotected quarantined/disabled tests mask to skip
-        if (IsFailureSuppressed(testTags))
-        {
-            return TestTags.StatusSkip;
-        }
-
-        // Priority 2: For ATF tests, any failure means fix didn't work (test is still flaky)
+        // Priority 1: For ATF tests, any failure means fix didn't work (test is still flaky)
         // This must be checked BEFORE anyPassed for ATF tests
         if (IsAttemptToFix(testTags) && anyExecutionFailed)
         {
             return TestTags.StatusFail;
+        }
+
+        // Priority 2: Suppressed quarantined/disabled tests mask to skip
+        if (IsFailureSuppressed(testTags))
+        {
+            return TestTags.StatusSkip;
         }
 
         // Priority 3: Any execution passed -> pass (pass takes precedence over skip)

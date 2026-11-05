@@ -430,7 +430,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                     }
                     """),
                 1,
-                34,
+                16,
                 "quarantined_and_disabled");
         }
     }

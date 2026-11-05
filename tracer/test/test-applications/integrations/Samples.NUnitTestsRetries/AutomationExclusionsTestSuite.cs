@@ -27,6 +27,6 @@ public class AutomationExclusionsTestSuite
     [PreventFailureSuppression]
     public void ProtectedFlakyFailure()
     {
-        Assert.That(Interlocked.Increment(ref _protectedFlakyFailureExecutions) > 1, Is.True);
+        Assert.That(Interlocked.Increment(ref _protectedFlakyFailureExecutions) != 2, Is.True);
     }
 }

@@ -263,7 +263,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         runSummary.Failed = 0;
                         runSummary.Skipped = 1;
                     }
-                    else if (testCaseMetadata.HasBlockingAttemptToFixFailure)
+                    else if (testCaseMetadata.HasFailedAttemptToFix)
                     {
                         runSummary.Total = 1;
                         runSummary.Skipped = 0;
