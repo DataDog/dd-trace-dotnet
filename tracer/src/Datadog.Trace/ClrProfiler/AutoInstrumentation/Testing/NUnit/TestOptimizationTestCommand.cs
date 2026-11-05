@@ -69,14 +69,15 @@ internal sealed class TestOptimizationTestCommand
 
         // Determine if retries will happen (used for final_status decision)
         var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-        var efdWillRetry = !exclusions.NoAutoRetry && !isSkippedOrInconclusive && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
+        var isAttemptToFix = !exclusions.NoAutoRetry && testManagementProperties is { AttemptToFix: true };
+        var efdWillRetry = !isAttemptToFix && !exclusions.NoAutoRetry && !isSkippedOrInconclusive && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true";
         var atrRemainingBudget = testOptimization.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
         // -1 = uninitialized → assume retries possible; 0 = exhausted → no retries
         var atrHasBudget = atrRemainingBudget != 0;
-        var atrWillRetry = !exclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
+        var atrWillRetry = !isAttemptToFix && !exclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
                            testOptimization.FlakyRetryFeature?.Enabled == true &&
                            atrHasBudget;
-        var atfWillRetry = !exclusions.NoAutoRetry && !isSkippedOrInconclusive && testManagementProperties is { AttemptToFix: true };
+        var atfWillRetry = isAttemptToFix && !isSkippedOrInconclusive && resultStatus != TestStatus.Failed;
 
         // Apply retries
         if (efdWillRetry)
@@ -98,8 +99,7 @@ internal sealed class TestOptimizationTestCommand
         }
         else if (atfWillRetry)
         {
-            // testManagementProperties is validated non-null by the atfWillRetry pattern match above
-            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties!), context, result, keepFailure: exclusions.PreventFailureSuppression);
+            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization), context, result, keepFailure: true);
         }
 
         // Keep the actual outcomes for retry decisions and aggregation, then hide the final result from NUnit.
@@ -256,12 +256,13 @@ internal sealed class TestOptimizationTestCommand
             if (!retryState.IsARetry && testTags.FinalStatus is null)
             {
                 var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-                var efdWillRetry = !testTags.AutomationExclusions.NoAutoRetry && TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
+                var isAttemptToFix = Common.IsAttemptToFix(testTags);
+                var efdWillRetry = !isAttemptToFix && !testTags.AutomationExclusions.NoAutoRetry && TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
                 var atrRemainingBudget = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
-                var atrWillRetry = !testTags.AutomationExclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
+                var atrWillRetry = !isAttemptToFix && !testTags.AutomationExclusions.NoAutoRetry && resultStatus == TestStatus.Failed &&
                                    TestOptimization.Instance.FlakyRetryFeature?.Enabled == true &&
                                    atrRemainingBudget != 0;
-                var atfWillRetry = Common.IsAttemptToFix(testTags);
+                var atfWillRetry = isAttemptToFix && resultStatus != TestStatus.Failed;
                 var willRetry = !isSkippedOrInconclusive && (efdWillRetry || atrWillRetry || atfWillRetry);
 
                 if (!willRetry)
@@ -269,6 +270,10 @@ internal sealed class TestOptimizationTestCommand
                     var anyExecutionPassed = resultStatus == TestStatus.Passed;
                     var anyExecutionFailed = resultStatus == TestStatus.Failed;
                     testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
+                    if (isAttemptToFix && anyExecutionFailed)
+                    {
+                        testTags.AttemptToFixPassed = "false";
+                    }
                 }
             }
 
@@ -293,11 +298,14 @@ internal sealed class TestOptimizationTestCommand
                 isAtrBudgetExhausted = remainingBudget <= 1;
             }
 
-            var isFinalExecution = retryState.IsLastRetry || isAtrEarlyExit || isAtrBudgetExhausted;
+            // ATF stops at the first failure
+            var isAttemptToFixFailure = attemptToFixRetryBehavior && resultStatus == TestStatus.Failed;
+
+            var isFinalExecution = retryState.IsLastRetry || isAtrEarlyExit || isAtrBudgetExhausted || isAttemptToFixFailure;
 
             if (isFinalExecution)
             {
-                if (retryState.AllRetriesFailed)
+                if (retryState.AllRetriesFailed && !attemptToFixRetryBehavior)
                 {
                     testTags.HasFailedAllRetries = "true";
                 }

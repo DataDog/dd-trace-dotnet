@@ -117,9 +117,8 @@ internal static class XUnitIntegration
 
             testCaseMetadata.SelectedRetryMode = selectedRetryMode;
             testCaseMetadata.IsRetry = isRetry;
-            testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
-            testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
-            testCaseMetadata.PreventFailureSuppression = testTags.AutomationExclusions.PreventFailureSuppression;
+            testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined && !testCaseMetadata.IsAttemptToFix;
+            testCaseMetadata.IsDisabledTest = testManagementData.Disabled && !testCaseMetadata.IsAttemptToFix;
 
             Common.ApplyRetryTags(testTags, isRetry, selectedRetryMode);
         }
@@ -320,7 +319,7 @@ internal static class XUnitIntegration
             willHaveRetries = testCaseMetadata.SelectedRetryMode switch
             {
                 TestRetryMode.EarlyFlakeDetection => true,
-                TestRetryMode.AttemptToFix => true,
+                TestRetryMode.AttemptToFix => !testCaseMetadata.HasAnException,
                 TestRetryMode.AutomaticTestRetry => retryDecision is { } decision
                                                         ? decision == XUnitRetryExecutionDecision.Retry
                                                         : !isSkip && testCaseMetadata.HasAnException && GetRemainingAtrBudget() != 0,
@@ -346,7 +345,10 @@ internal static class XUnitIntegration
         // Single-execution test: TotalExecutions == 1 means no retries were scheduled
         var isSingleExecution = testCaseMetadata.TotalExecutions == 1 && !willHaveRetries;
 
-        var isFinalExecution = testCaseMetadata.IsLastRetry || isSingleExecution || isAtrEarlyExit || isAtrBudgetExhausted;
+        // ATF stops at the first failure
+        var isAttemptToFixFailure = testCaseMetadata is { IsAttemptToFix: true, HasAnException: true };
+
+        var isFinalExecution = testCaseMetadata.IsLastRetry || isSingleExecution || isAtrEarlyExit || isAtrBudgetExhausted || isAttemptToFixFailure;
 
         if (!isFinalExecution)
         {
@@ -356,7 +358,7 @@ internal static class XUnitIntegration
         // Only set retry-specific tags for tests with actual retries
         if (testCaseMetadata.TotalExecutions > 1)
         {
-            if (testCaseMetadata.AllRetriesFailed)
+            if (testCaseMetadata is { AllRetriesFailed: true, IsAttemptToFix: false })
             {
                 tags.HasFailedAllRetries = "true";
             }
@@ -379,7 +381,7 @@ internal static class XUnitIntegration
 
         // ATF: AttemptToFixPassed should be consistent with final_status
         // If any execution failed, the fix didn't work
-        if (testCaseMetadata is { TotalExecutions: > 1, IsAttemptToFix: true })
+        if (testCaseMetadata.IsAttemptToFix && (testCaseMetadata.TotalExecutions > 1 || anyExecutionFailed))
         {
             tags.AttemptToFixPassed = anyExecutionFailed ? "false" : "true";
         }
@@ -424,6 +426,11 @@ internal static class XUnitIntegration
 
     internal static XUnitRetryExecutionDecision GetRetryExecutionDecision(TestCaseMetadata testCaseMetadata, bool hasFailures, bool hasNotRun, ref int totalRetries)
     {
+        if (testCaseMetadata.IsAttemptToFix && hasFailures)
+        {
+            return XUnitRetryExecutionDecision.AttemptToFixFailed;
+        }
+
         if (!testCaseMetadata.IsFlakyRetry)
         {
             return XUnitRetryExecutionDecision.Retry;

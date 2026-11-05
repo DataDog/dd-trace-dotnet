@@ -75,7 +75,7 @@ public class TestAutomationExclusionsTests
     }
 
     [Theory]
-    [InlineData(false, false, "skip")]
+    [InlineData(false, false, "fail")]
     [InlineData(false, true, "skip")]
     [InlineData(true, false, "fail")]
     [InlineData(true, true, "fail")]
@@ -107,12 +107,13 @@ public class TestAutomationExclusionsTests
         {
             PreventFailureSuppression = "true",
             NoAutoRetry = "true",
-            IsQuarantined = "true",
-            IsAttemptToFix = "true"
+            IsQuarantined = "true"
         };
         TestAutomationExclusions.From(tags).PreventFailureSuppression.Should().BeFalse();
         TestAutomationExclusions.From(tags).NoAutoRetry.Should().BeFalse();
         Common.IsFailureSuppressed(tags).Should().BeTrue();
+
+        tags.IsAttemptToFix = "true";
         Common.IsAttemptToFix(tags).Should().BeTrue();
     }
 
