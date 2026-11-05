@@ -25,8 +25,24 @@ internal static class GzipWarmUp
 {
 #if !NETFRAMEWORK
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GzipWarmUp));
-    private static readonly object Lock = new();
-    private static bool _done;
+
+    // Keep this an explicit static constructor: without one the type is beforefieldinit, and calling the empty RunOnce()
+    // would no longer run the warm-up. The runtime runs it exactly once, and other threads that reach the type wait until it finishes.
+    static GzipWarmUp()
+    {
+        try
+        {
+            var frameworkDescription = FrameworkDescription.Instance;
+            if (frameworkDescription.IsWindows() && frameworkDescription.RuntimeVersion.Major < 9)
+            {
+                CompressOnce();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error warming up gzip compression");
+        }
+    }
 #endif
 
     /// <summary>
@@ -34,31 +50,8 @@ internal static class GzipWarmUp
     /// </summary>
     public static void RunOnce()
     {
-#if !NETFRAMEWORK
-        // Later callers wait for the first one to finish, so they never start compressing during the warm-up.
-        lock (Lock)
-        {
-            if (_done)
-            {
-                return;
-            }
-
-            _done = true;
-
-            try
-            {
-                var frameworkDescription = FrameworkDescription.Instance;
-                if (frameworkDescription.IsWindows() && frameworkDescription.RuntimeVersion.Major < 9)
-                {
-                    CompressOnce();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error warming up gzip compression");
-            }
-        }
-#endif
+        // Intentionally empty: on .NET Core the first call triggers the static constructor, which does the work.
+        // There is nothing to do on .NET Framework.
     }
 
 #if !NETFRAMEWORK
