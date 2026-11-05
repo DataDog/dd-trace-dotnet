@@ -88,7 +88,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 try
                 {
                     // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                     // *
                     _continuation(target, result, ex, in state);
                 }
@@ -103,7 +103,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             try
             {
                 // *
-                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
                 return _continuation(target, result, null, in state);
             }
@@ -150,7 +150,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 try
                 {
                     // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                     // *
                     await _asyncContinuation(target, result, ex, in state).ConfigureAwait(_preserveContext);
                 }
@@ -165,7 +165,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             try
             {
                 // *
-                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
                 // *
                 return await _asyncContinuation(target, result, null, in state).ConfigureAwait(_preserveContext);
             }
