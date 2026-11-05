@@ -259,7 +259,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         var values = new NameValueCollection
         {
             [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = source,
-            [ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled] = "false",
+            [ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled] = "false",
         };
         var delivery = new FakeDeliverySource();
         var rcm = new MockRcmSubscriptionManager();

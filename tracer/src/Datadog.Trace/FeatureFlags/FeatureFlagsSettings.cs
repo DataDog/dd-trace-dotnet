@@ -93,7 +93,7 @@ internal sealed class FeatureFlagsSettings
         telemetry.Record(ConfigurationKeys.FeatureFlags.FeatureFlagsEnabled, Enabled, ConfigurationOrigins.Calculated);
 
         EvaluationEventsEnabled = config
-                                 .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled)
+                                 .WithKeys(ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled)
                                  .AsBool(true);
 
         var agentlessBaseUrl = config

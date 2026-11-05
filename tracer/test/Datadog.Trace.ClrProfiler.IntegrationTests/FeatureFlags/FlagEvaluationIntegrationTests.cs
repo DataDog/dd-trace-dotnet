@@ -87,7 +87,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         };
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.1");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, agentless ? "agentless" : "remote_config");
-        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, enabled ? "true" : "false");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled, enabled ? "true" : "false");
         SetEnvironmentVariable(ConfigurationKeys.ApiKey, "not-an-event-credential");
         using var telemetry = this.ConfigureTelemetry();
         var arguments = synchronous ? "evp-sync" : "evp";
@@ -176,7 +176,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         };
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.1");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config");
-        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled, "true");
         using var telemetry = this.ConfigureTelemetry();
         using var process = await RunSampleAndWaitForExit(agent, arguments: after ? "evp-after-error evp-wait-for-delivery" : "evp-before-error evp-wait-for-delivery");
         process.StandardOutput.Should().Contain("<EVP: HOOK DEFAULT FLUSHED>");
@@ -258,7 +258,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
 
         using var cdn = new FlagEvaluationConfigurationServer(Envelope(configuration));
         SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, "false");
-        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl, cdn.Url + "configuration");
         SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}");
@@ -295,7 +295,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         };
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl, cdn.Url + "configuration");
-        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, "false");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.EvaluationCountsEnabled, "false");
         using var telemetry = this.ConfigureTelemetry();
         using var process = await RunSampleAndWaitForExit(agent, arguments: "evp-startup-gate");
 
