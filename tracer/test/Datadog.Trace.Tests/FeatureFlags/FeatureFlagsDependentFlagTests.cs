@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -412,9 +413,11 @@ public class FeatureFlagsDependentFlagTests
     [Fact]
     public void EvaluatorParameterPresenceSurvivesJsonRoundTrips()
     {
-        var absent = RoundTrip(Configuration(
-            StaticFlag("dependency", "on"),
-            DependentFlag("root", Allocation("root", [Dependency("dependency", "on")], "on"))), out var absentJson);
+        var absent = RoundTrip(
+            Configuration(
+                StaticFlag("dependency", "on"),
+                DependentFlag("root", Allocation("root", [Dependency("dependency", "on")], "on"))),
+            out var absentJson);
         absentJson.Should().NotContainKey(nameof(ServerConfiguration.EvaluatorParams));
         absent.EvaluatorParamsField.IsPresent.Should().BeFalse();
         Evaluator(absent).Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
@@ -546,5 +549,4 @@ public class FeatureFlagsDependentFlagTests
 
     private static ConditionConfiguration Attribute(string key, string value)
         => new() { Attribute = key, Operator = ConditionOperator.ONE_OF, Value = new[] { value } };
-
 }

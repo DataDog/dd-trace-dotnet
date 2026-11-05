@@ -321,7 +321,7 @@ public partial class FeatureFlagsEvaluatorTests
     {
         var flags = new FlagCollection { ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag() };
         var events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
-        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+        var evaluator = new FeatureFlagsEvaluator(RecordExposures(events), new ServerConfiguration { Flags = flags });
         var context = new EvaluationContext(
             "user-123",
             new Dictionary<string, object?>

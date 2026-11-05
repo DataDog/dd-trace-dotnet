@@ -126,7 +126,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             };
             module.ApplyConfiguration(new ServerConfiguration { Flags = new FlagCollection { ["root"] = flag } }).Should().BeTrue();
 
-            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", null, deferExposures: false, reportRootEvaluation: true).Variant.Should().Be("on");
+            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", null, deferExposure: false, reportRootEvaluation: true).Variant.Should().Be("on");
             await module.FlushAsync();
 
             var observation = JObject.Parse(received.Should().ContainSingle().Subject.BodyInJson)["flagEvaluations"]!.Should().ContainSingle().Subject;
@@ -152,7 +152,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         {
             module.Activate();
 
-            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", null, deferExposures: false, reportRootEvaluation: true).Error.Should().Be("PROVIDER_NOT_READY");
+            module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", null, deferExposure: false, reportRootEvaluation: true).Error.Should().Be("PROVIDER_NOT_READY");
             await module.FlushAsync();
 
             var observation = JObject.Parse(received.Should().ContainSingle().Subject.BodyInJson)["flagEvaluations"]!.Should().ContainSingle().Subject;
@@ -399,7 +399,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             flag.Allocations![0].DoLog = false;
             module.ApplyConfiguration(new ServerConfiguration { ObserveFullEvaluationData = true, Flags = new FlagCollection { ["flag"] = flag } }).Should().BeTrue();
             var attributes = new ThrowOnEnumerationDictionary();
-            var evaluated = module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "subject", attributes, deferExposures: false, reportRootEvaluation: true);
+            var evaluated = module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "subject", attributes, deferExposure: false, reportRootEvaluation: true);
             evaluated.Value.Should().Be("tracked-value");
             evaluated.Error.Should().BeNull();
             attributes.WasEnumerated.Should().BeFalse();

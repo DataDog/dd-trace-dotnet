@@ -475,7 +475,11 @@ namespace Datadog.Trace.FeatureFlags
                     {
                         try
                         {
-                            ReportExposure(in exposure);
+                            var result = ReportExposure(in exposure);
+                            if (independent.FlagMetadata is { } immediateMetadata)
+                            {
+                                immediateMetadata[FeatureFlagMetadataKeys.ExposureCacheHit] = result == ExposureRecordResult.Repeat ? "true" : "false";
+                            }
                         }
                         catch
                         {
