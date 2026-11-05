@@ -340,7 +340,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
             // Flaky retry is enabled and the test failed
             Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
-            var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
+            var remainingRetries = testOptimization.FlakyRetryFeature?.GetFlakyRetryCount(attempt.Duration) ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
             if (remainingRetries > 0)
             {
                 var retryState = new RetryState

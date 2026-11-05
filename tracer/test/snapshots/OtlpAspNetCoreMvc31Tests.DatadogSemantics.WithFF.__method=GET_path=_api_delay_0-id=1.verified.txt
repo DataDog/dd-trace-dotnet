@@ -126,6 +126,12 @@
                   }
                 },
                 {
+                  "key": "_sampling_priority_v1",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "aspnet_core.endpoint",
                   "value": {
                     "stringValue": "Samples.AspNetCoreMvc.Controllers.ApiController.Delay (Samples.AspNetCoreMvc31)"
@@ -215,7 +221,8 @@
                     "stringValue": "web"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             },
             {
               "traceId": "normalized-trace-id",
@@ -227,6 +234,12 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "_dd.p.dm",
+                  "value": {
+                    "stringValue": "-0"
+                  }
+                },
                 {
                   "key": "aspnet_core.action",
                   "value": {
@@ -281,7 +294,8 @@
                     "stringValue": "web"
                   }
                 }
-              ]
+              ],
+              "flags": 1
             }
           ]
         }

@@ -64,16 +64,19 @@ partial class Build : NukeBuild
     [Parameter("The current latest tracer version")]
     const int LatestMajorVersion = 3;
 
-    [Parameter("The current version of the source and build")]
-    readonly string Version = "3.56.0";
+    /// <summary>Gets the version being built, read from version.props. Three parts, numeric only.</summary>
+    string Version => ProjectInfo.Version;
 
-    [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
-    readonly bool IsPrerelease = false;
+    /// <summary>Gets the semver prerelease suffix of the version being built, including its leading '-', or empty for a release.</summary>
+    string VersionSuffix => ProjectInfo.VersionSuffix;
+
+    /// <summary>Gets a value indicating whether this version is a prerelease, which per semver means it has any suffix.</summary>
+    bool IsPrerelease => VersionSuffix.Length > 0;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
 
-    [Parameter("Whether the new build version is a prerelease(for packaging purposes)")]
+    [Parameter("Whether the new build version is a prerelease (for packaging purposes). Sets the -prerelease suffix.")]
     readonly bool? NewIsPrerelease;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
@@ -115,6 +118,15 @@ partial class Build : NukeBuild
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
+
+    string CppCheckVersionDefines
+    {
+        get
+        {
+            var version = new System.Version(Version);
+            return $"-DDD_VERSION_MAJOR={version.Major} -DDD_VERSION_MINOR={version.Minor} -DDD_VERSION_PATCH={version.Build} -DDD_VERSION_SUFFIX={VersionSuffix}";
+        }
+    }
 
     public Build()
     {

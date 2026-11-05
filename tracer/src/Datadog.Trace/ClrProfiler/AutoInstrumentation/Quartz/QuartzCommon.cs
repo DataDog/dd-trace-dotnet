@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             {
                 _ when operationName.Contains("Execute") => "execute " + jobName,
                 _ when operationName.Contains("Veto") => "veto " + jobName,
+                "Quartz.JobStore.ScheduleJob" => "schedule " + jobName,
                 _ => operationName
             };
         }
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             string? jobName = null;
             foreach (var tag in activity.TagObjects)
             {
-                if (tag.Key == "job.name")
+                if (tag.Key is "job.name" or "quartz.job.name")
                 {
                     jobName = tag.Value as string;
                     break;
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 
             if (string.IsNullOrEmpty(jobName))
             {
-                Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
+                Log.Debug("Unable to update Quartz Span's resource name: job.name or quartz.job.name tag was not found.");
                 return;
             }
 
@@ -85,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             string? jobName = null;
             foreach (var tag in activity.Tags)
             {
-                if (tag.Key == "job.name")
+                if (tag.Key is "job.name" or "quartz.job.name")
                 {
                     jobName = tag.Value;
                     break;
@@ -94,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 
             if (string.IsNullOrEmpty(jobName))
             {
-                Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
+                Log.Debug("Unable to update Quartz Span's resource name: job.name or quartz.job.name tag was not found.");
                 return;
             }
 

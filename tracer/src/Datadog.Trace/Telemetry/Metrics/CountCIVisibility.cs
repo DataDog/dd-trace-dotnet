@@ -268,4 +268,11 @@ internal enum CountCIVisibility
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>("test_management_tests.request_errors", isCommon: true, NS.CIVisibility)]
     TestManagementTestsRequestErrors,
+
+    /// <summary>
+    /// The number of sessions that pick the automatic test retries count from the duration of each test.
+    /// Tagged with has_custom_buckets:true when DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS sets the counts
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityDynamicFlakyRetryBuckets>("dynamic_atr_retries.enabled", isCommon: true, NS.CIVisibility)]
+    DynamicAtrRetriesEnabled,
 }

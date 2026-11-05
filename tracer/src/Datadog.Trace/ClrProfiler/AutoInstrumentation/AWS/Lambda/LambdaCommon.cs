@@ -26,6 +26,12 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LambdaRuntimeAwsRequestIdHeader = "lambda-runtime-aws-request-id";
 
+    internal static bool IsEnabled(Tracer tracer)
+    {
+        // IsIntegrationEnabled is false when either DD_TRACE_ENABLED or DD_TRACE_AWSLAMBDA_ENABLED is false.
+        return tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AwsLambda);
+    }
+
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers, string awsRequestId = null)
     {
         var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
@@ -96,6 +102,25 @@ internal abstract class LambdaCommon
 
         scope?.Dispose();
 
+        await FlushAsync().ConfigureAwait(false);
+
+        try
+        {
+            SendEndInvocation(requestBuilder, stateObject, exception != null, returnValue);
+        }
+        catch (Exception ex)
+        {
+            Log("Could not send payload to the extension", ex, false);
+        }
+    }
+
+    /// <summary>
+    /// Flushes traces and Data Streams points. Lambda can freeze the execution environment as soon as the handler
+    /// returns, so this runs at the end of every invocation, including when the AWS Lambda integration is disabled
+    /// and no start/end-invocation is sent (other integrations or manual instrumentation may still have recorded data).
+    /// </summary>
+    internal static async Task FlushAsync()
+    {
         try
         {
             await Task.WhenAll(
@@ -108,15 +133,6 @@ internal abstract class LambdaCommon
         catch (Exception ex)
         {
             Log("Could not flush to the extension", ex, false);
-        }
-
-        try
-        {
-            SendEndInvocation(requestBuilder, stateObject, exception != null, returnValue);
-        }
-        catch (Exception ex)
-        {
-            Log("Could not send payload to the extension", ex, false);
         }
     }
 

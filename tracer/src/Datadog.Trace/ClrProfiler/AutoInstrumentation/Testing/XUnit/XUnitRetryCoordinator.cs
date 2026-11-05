@@ -57,7 +57,7 @@ internal static class XUnitRetryCoordinator
                     XUnitIntegration.InitializeTotalExecutions(
                         testOptimization,
                         testCaseMetadata,
-                        () => Common.GetNumberOfExecutionsForDuration(TimeSpan.FromSeconds((double)runSummary.Time)));
+                        TimeSpan.FromSeconds((double)runSummary.Time));
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)

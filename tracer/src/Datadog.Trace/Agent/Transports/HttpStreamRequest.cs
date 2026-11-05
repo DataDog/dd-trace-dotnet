@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
@@ -25,12 +26,14 @@ namespace Datadog.Trace.Agent.Transports
         private readonly DatadogHttpClient _client;
         private readonly IStreamFactory _streamFactory;
         private readonly HttpHeaders _headers = new();
+        private readonly TimeSpan? _requestTimeout;
 
-        public HttpStreamRequest(DatadogHttpClient client, Uri uri, IStreamFactory streamFactory)
+        public HttpStreamRequest(DatadogHttpClient client, Uri uri, IStreamFactory streamFactory, TimeSpan? requestTimeout = null)
         {
             _uri = uri;
             _client = client;
             _streamFactory = streamFactory;
+            _requestTimeout = requestTimeout;
         }
 
         public void AddHeader(string name, string value)
@@ -95,8 +98,18 @@ namespace Datadog.Trace.Agent.Transports
 
         private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding, bool chunkedEncoding, string multipartBoundary = null)
         {
+            using var cancellation = _requestTimeout is { } timeout ? new CancellationTokenSource(timeout) : null;
+#if NET5_0_OR_GREATER
+            using (var bidirectionalStream = cancellation is null
+                                                ? _streamFactory.GetBidirectionalStream()
+                                                : await _streamFactory.GetBidirectionalStreamAsync(cancellation.Token).ConfigureAwait(false))
+#else
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
+#endif
             {
+                // Disposing the underlying pipe/socket interrupts pending reads and writes,
+                // including on runtimes whose stream APIs do not support cancellation tokens.
+                using var registration = cancellation?.Token.Register(static state => ((Stream)state).Dispose(), bidirectionalStream) ?? default;
                 if (contentType != null)
                 {
                     _headers.Add("Content-Type", ContentTypeHelper.GetContentType(contentType, multipartBoundary));

@@ -365,7 +365,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: GetTestRunnerArguments(packageVersion, false), packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                         settings.UseTextForParameters("packageVersion=all");
@@ -493,7 +493,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                             // CI Library Language
-                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.SemanticVersion);
 
                             // Check Session data
                             AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
@@ -754,6 +754,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         useDotnetExec: false))
                .ConfigureAwait(false);
         }
+
+        protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
+            => NUnitTests.GetSharedSampleArguments(packageVersion) ?? base.GetTestRunnerArguments(packageVersion, useDotnetExec);
 
         protected override void CheckSimpleTestSpan(MockCIVisibilityTest targetTest)
         {

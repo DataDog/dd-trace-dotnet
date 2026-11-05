@@ -12,11 +12,28 @@ namespace PrepareRelease
 {
     public abstract class SetAllVersions
     {
-        protected SetAllVersions(string tracerDirectory, string tracerVersion, bool isPrerelease)
+        // A semver prerelease suffix: '-' then dot-separated identifiers of [0-9A-Za-z-], or empty for a release
+        private const string VersionSuffixPattern = @"-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*";
+        private static readonly Regex VersionSuffixRegex = new($"^({VersionSuffixPattern})?$");
+
+        protected SetAllVersions(string tracerDirectory, string tracerVersion, string versionSuffix)
         {
             TracerDirectory = tracerDirectory;
+
+            // new Version() rejects suffixes like -prerelease; the parts check rejects 2- and 4-part versions.
+            // Validating here means a bad value fails before anything is written.
             TracerVersion = new Version(tracerVersion);
-            IsPrerelease = isPrerelease;
+            if (TracerVersion.Build < 0 || TracerVersion.Revision >= 0)
+            {
+                throw new ArgumentException($"Version must be a three-part numeric version (e.g. 3.58.0), but was '{tracerVersion}'", nameof(tracerVersion));
+            }
+
+            if (!VersionSuffixRegex.IsMatch(versionSuffix))
+            {
+                throw new ArgumentException($"Version suffix must be empty or a semver prerelease suffix such as -prerelease, but was '{versionSuffix}'", nameof(versionSuffix));
+            }
+
+            VersionSuffix = versionSuffix;
         }
 
         /// <summary>
@@ -25,84 +42,21 @@ namespace PrepareRelease
         public string TracerDirectory { get; }
 
         /// <summary>
-        /// Gets the current tracer version.
-        /// This is the single source of truth for the current tracer version.
-        /// When changing the tracer version, update this value and <see cref="IsPrerelease" />,
-        /// then run the "PrepareRelease" tool to update the entire solution.
+        /// Gets the version to write. The source of truth is tracer/build/_build/version.props;
+        /// change it with the UpdateVersion Nuke target rather than editing files by hand.
         /// </summary>
         public Version TracerVersion { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the current tracer version is a prerelease.
+        /// Gets the semver prerelease suffix to write, including its leading '-', or empty for a release.
         /// </summary>
-        public bool IsPrerelease { get; }
+        public string VersionSuffix { get; }
 
         public abstract void Run();
 
-        private string FunctionCallReplace(string text, string functionName)
-        {
-            const string split = ", ";
-            var pattern = @$"{functionName}\({VersionPattern(split, fourPartVersion: true)}\)";
-            var replacement = $"{functionName}({FourPartVersionString(split)})";
-
-            return Regex.Replace(text, pattern, replacement, RegexOptions.Singleline);
-        }
-
-        private string FourPartVersionReplace(string text)
-        {
-            return Regex.Replace(text, VersionPattern(fourPartVersion: true), FourPartVersionString(), RegexOptions.Singleline);
-        }
-
-        private string ThreePartVersionReplace(string text)
-        {
-            return Regex.Replace(text, VersionPattern(), VersionString(), RegexOptions.Singleline);
-        }
-
-        private string FullVersionReplace(string text, string split, string prefix = "")
-        {
-            return Regex.Replace(text, prefix + VersionPattern(split), prefix + VersionString(split), RegexOptions.Singleline);
-        }
-
-        private string FullAssemblyNameReplace(string text)
-        {
-            return Regex.Replace(text, AssemblyString(VersionPattern()), AssemblyString(VersionString()), RegexOptions.Singleline);
-        }
-
-        private string DatadogTraceNugetDependencyVersionReplace(string text)
-        {
-            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
-        }
-
         private string DatadogTraceBundleNugetDependencyVersionReplace(string text)
         {
-            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
-        }
-
-        private string NugetVersionReplace(string text)
-        {
-            return Regex.Replace(text, $"<Version>{VersionPattern(withPrereleasePostfix: true)}</Version>", $"<Version>{VersionString(withPrereleasePostfix: true)}</Version>", RegexOptions.Singleline);
-        }
-
-        private string PropsVersionReplace(string text)
-        {
-            return Regex.Replace(text, $"<ProductVersion>{VersionPattern(withPrereleasePostfix: false)}</ProductVersion>", $"<ProductVersion>{VersionString(withPrereleasePostfix: false)}</ProductVersion>", RegexOptions.Singleline);
-        }
-
-        private string WixProjReplace(string text)
-        {
-            text = Regex.Replace(
-                text,
-                $"<OutputName>datadog-dotnet-apm-{VersionPattern(withPrereleasePostfix: true)}-\\$\\(Platform\\)</OutputName>",
-                $"<OutputName>datadog-dotnet-apm-{VersionString(withPrereleasePostfix: true)}-$(Platform)</OutputName>",
-                RegexOptions.Singleline);
-
-            text = Regex.Replace(
-                text,
-                $"InstallerVersion={VersionPattern()}",
-                $"InstallerVersion={VersionString()}",
-                RegexOptions.Singleline);
-
-            return text;
+            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withSuffix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withSuffix: true)}\" />", RegexOptions.Singleline);
         }
 
         private void SynchronizeVersion(string path, Func<string, string> transform)
@@ -119,31 +73,24 @@ namespace PrepareRelease
             var fileContent = File.ReadAllText(fullPath);
             var newFileContent = transform(fileContent);
 
+            if (newFileContent == fileContent)
+            {
+                throw new Exception(
+                    $"No version strings were replaced in {path}. Either its format changed and the " +
+                    "pattern in SetAllVersions no longer matches, or the file already holds this " +
+                    "version - check which before changing the pattern.");
+            }
+
             File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
-        private string FourPartVersionString(string split = ".")
-        {
-            return $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}{split}0";
-        }
-
-        private string VersionString(string split = ".", bool withPrereleasePostfix = false)
+        private string VersionString(string split = ".", bool withSuffix = false)
         {
             var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}";
-
-            // this gets around a compiler warning about unreachable code below
-            var isPreRelease = IsPrerelease;
-
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (withPrereleasePostfix && isPreRelease)
-            {
-                newVersion = newVersion + "-prerelease";
-            }
-
-            return newVersion;
+            return withSuffix ? newVersion + VersionSuffix : newVersion;
         }
 
-        private string VersionPattern(string split = ".", bool withPrereleasePostfix = false, bool fourPartVersion = false)
+        private string VersionPattern(string split = ".", bool withSuffix = false)
         {
             if (split == ".")
             {
@@ -152,28 +99,18 @@ namespace PrepareRelease
 
             var pattern = $@"\d+{split}\d+{split}\d+";
 
-            if (fourPartVersion)
+            if (withSuffix)
             {
-                pattern = pattern + $@"{split}\d+";
-            }
-
-            if (withPrereleasePostfix)
-            {
-                pattern = pattern + "(\\-prerelease)?";
+                pattern = pattern + $"({VersionSuffixPattern})?";
             }
 
             return pattern;
         }
 
-        private string AssemblyString(string versionText)
-        {
-            return $"Datadog.Trace, Version={versionText}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-        }
-
         public class Samples : SetAllVersions
         {
-            public Samples(string tracerDirectory, string tracerVersion, bool isPrerelease)
-                : base(tracerDirectory, tracerVersion, isPrerelease)
+            public Samples(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
             }
 
@@ -229,8 +166,8 @@ namespace PrepareRelease
 
         public class Source : SetAllVersions
         {
-            public Source(string tracerDirectory, string tracerVersion, bool isPrerelease)
-                : base(tracerDirectory, tracerVersion, isPrerelease)
+            public Source(string tracerDirectory, string tracerVersion, string versionSuffix)
+                : base(tracerDirectory, tracerVersion, versionSuffix)
             {
             }
 
@@ -238,114 +175,31 @@ namespace PrepareRelease
             {
                 Console.WriteLine($"Updating source version instances to {VersionString()}");
 
-                // Pipeline
+                // The only copy of the version. Managed projects import it directly, native projects
+                // through build/DdVersion.props, and CMake reads it in build/cmake/DdVersion.cmake.
+                // Always changes, because UpdateVersion rejects a bump that does not change the
+                // version number.
                 SynchronizeVersion(
-                    "../.azure-pipelines/ultimate-pipeline.yml",
-                    text => Regex.Replace(text, $"ToolVersion: {VersionPattern(withPrereleasePostfix: true)}", $"ToolVersion: {VersionString(withPrereleasePostfix: true)}"));
-
-                // Nuke build
-                SynchronizeVersion(
-                    "build/_build/Build.cs",
-                    text => Regex.Replace(text, $"readonly string Version = \"{VersionPattern()}\"", $"readonly string Version = \"{VersionString()}\""));
-
-                SynchronizeVersion(
-                    "build/_build/Build.cs",
-                    text => Regex.Replace(text, "readonly bool IsPrerelease = (true|false)", $"readonly bool IsPrerelease = {(IsPrerelease ? "true" : "false")}"));
-
-                SynchronizeVersion(
-                    "src/Directory.Build.props",
-                    NugetVersionReplace);
-
-                // Fully qualified name updates
-                SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                    FullAssemblyNameReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Tracer.Native/dd_profiler_constants.h",
-                    FullAssemblyNameReplace);
-
-                SynchronizeVersion(
-                    "src/Datadog.Tracer.Native/dd_profiler_constants.h",
-                    text => FunctionCallReplace(text, "WithVersion"));
-
-                // Four-part AssemblyVersion update
-                SynchronizeVersion(
-                    "src/Datadog.Trace/TracerConstants.cs",
-                    // upgrading four part, then three part *seems* safe
-                    text => ThreePartVersionReplace(FourPartVersionReplace(text)));
-
-                // Native clr profiler updates
-                SynchronizeVersion(
-                    "src/Datadog.Tracer.Native/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Tracer.Native\" VERSION "));
-
-                SynchronizeVersion(
-                    "src/Datadog.Tracer.Native/Resource.rc",
+                    "build/_build/version.props",
                     text =>
                     {
-                        text = FullVersionReplace(text, ",");
-                        text = FullVersionReplace(text, ".");
-                        return text;
+                        text = ReplaceElement(text, "DD_VersionPrefix", VersionString());
+                        return ReplaceElement(text, "DD_VersionSuffix", VersionSuffix);
                     });
-
-                // .NET profiler
-
-                SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
-                    text =>
-                    {
-                        text = FullVersionReplace(text, ",");
-                        text = FullVersionReplace(text, ".");
-                        return text;
-                    });
-
-                SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Profiler.Native.Linux\" VERSION "));
-
-                SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Linux.ApiWrapper\" VERSION "));
-
-                SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
-                    text => FullVersionReplace(text, "."));
-
-                // Native loader
-
-                SynchronizeVersion(
-                    "../shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
-                    text =>
-                    {
-                        text = FullVersionReplace(text, ",");
-                        text = FullVersionReplace(text, ".");
-                        return text;
-                    });
-
-                SynchronizeVersion(
-                    "../shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Trace.ClrProfiler.Native\" VERSION "));
-
-                SynchronizeVersion(
-                    "../shared/src/native-src/version.h",
-                    text => FullVersionReplace(text, "."));
-
-                // Misc
-
-                SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/ProductVersion.props",
-                    PropsVersionReplace);
-
-                SynchronizeVersion("build/artifacts/dd-dotnet.sh",
-                    text => FullVersionReplace(text, "."));
-
-                // Deployment updates
-                SynchronizeVersion(
-                    "../shared/src/msi-installer/WindowsInstaller.wixproj",
-                    WixProjReplace);
 
                 Console.WriteLine($"Completed synchronizing source versions to {VersionString()}");
+            }
+
+            private static string ReplaceElement(string text, string element, string value)
+            {
+                // version.props documents that each element appears exactly once, and is never mentioned in comments
+                var pattern = $"<{element}>[^<]*</{element}>";
+                if (!Regex.IsMatch(text, pattern))
+                {
+                    throw new Exception($"Could not find <{element}> in version.props");
+                }
+
+                return Regex.Replace(text, pattern, $"<{element}>{value}</{element}>");
             }
         }
     }

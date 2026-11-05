@@ -667,6 +667,33 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
+        public void CheckWeakGCHandleScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 17: weak handles must not be treated as retention roots
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 17");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for weak GCHandle scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree => TypeExistsInTree(tree, "WeakHandleTarget")),
+                "Expected at least one snapshot to contain the strongly reachable WeakHandleTarget type");
+            Assert.DoesNotContain(
+                trees,
+                tree => HasRootOfCategoryAndType(tree, "H", "WeakHandleTarget"));
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckPinnedLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 18: Pinned handle - tests Pinning root category
@@ -915,35 +942,39 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         /// <summary>
-        /// Collect the names of the tree types that correspond to real heap objects.
-        /// Nodes without any size are inline value types: they live inside their containing
-        /// object so the GC never reports them as heap objects in the class histogram.
+        /// Collect tree types that also occur as standalone objects in the class histogram.
+        /// Reference-tree sizes are no longer collected, so histogram membership replaces
+        /// the old size-based distinction between heap objects and inline value types.
         /// </summary>
-        private static HashSet<string> CollectHeapObjectTypeNames(ReferenceTree tree)
+        private static HashSet<string> CollectHeapObjectTypeNames(ReferenceTree tree, HashSet<string> histogramTypes)
         {
             var types = new HashSet<string>();
             foreach (var root in tree.Roots)
             {
-                CollectHeapObjectTypeNamesRecursive(root, tree, types);
+                CollectHeapObjectTypeNamesRecursive(root, tree, histogramTypes, types);
             }
 
             return types;
         }
 
-        private static void CollectHeapObjectTypeNamesRecursive(ReferenceNode node, ReferenceTree tree, HashSet<string> types)
+        private static void CollectHeapObjectTypeNamesRecursive(
+            ReferenceNode node,
+            ReferenceTree tree,
+            HashSet<string> histogramTypes,
+            HashSet<string> types)
         {
             // AssertTypeIndicesResolve has already ruled out an out-of-range index, so "?" here
             // can only be a name the profiler failed to resolve. Such a type cannot be matched
             // against the histogram, so it is left out rather than reported as a mismatch.
             var typeName = tree.GetTypeName(node.TypeIndex);
-            if (node.TotalSize > 0 && typeName != "?")
+            if (typeName != "?" && histogramTypes.Contains(typeName))
             {
                 types.Add(typeName);
             }
 
             foreach (var child in node.Children)
             {
-                CollectHeapObjectTypeNamesRecursive(child, tree, types);
+                CollectHeapObjectTypeNamesRecursive(child, tree, histogramTypes, types);
             }
         }
 
@@ -1345,7 +1376,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             {
                 var histogramTypes = ReadHistogramTypeNames(histogramsById[snapshotId]);
                 var tree = LoadAndValidateAllTrees(new[] { treesById[snapshotId] }).Single();
-                var treeTypes = CollectHeapObjectTypeNames(tree);
+                var treeTypes = CollectHeapObjectTypeNames(tree, histogramTypes);
 
                 // The histogram is a superset by design: the tree only contains what the
                 // traversal reached (interior pointer roots are skipped, depth is capped...).

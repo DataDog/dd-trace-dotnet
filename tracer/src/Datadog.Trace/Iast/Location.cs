@@ -21,6 +21,10 @@ internal readonly struct Location
 
     internal readonly StackTrace? _stack = null;
 
+    // What deduplicates the vulnerability, which may differ from the reported Class/Method
+    private readonly string? _identityClass;
+    private readonly string? _identityMethod;
+
     public Location(string method)
     {
         var index = method.LastIndexOf("::", StringComparison.Ordinal);
@@ -36,13 +40,29 @@ internal readonly struct Location
         {
             Method = method;
         }
+
+        _identityClass = Class;
+        _identityMethod = Method;
     }
 
-    public Location(StackFrame? stackFrame, StackTrace? stack, string? stackId, ulong? spanId)
+    public Location(StackFrame? stackFrame, StackTrace? stack, string? stackId, ulong? spanId, StackFrame? identityFrame = null)
     {
         var method = stackFrame?.GetMethod();
         Class = method?.DeclaringType?.FullName;
         Method = method?.Name;
+
+        if (identityFrame is null || identityFrame == stackFrame)
+        {
+            _identityClass = Class;
+            _identityMethod = Method;
+        }
+        else
+        {
+            var identityMethod = identityFrame.GetMethod();
+            _identityClass = identityMethod?.DeclaringType?.FullName;
+            _identityMethod = identityMethod?.Name;
+        }
+
         var line = stackFrame?.GetFileLineNumber();
         Line = line > 0 ? line : null;
         Path = GetFileName(stackFrame?.GetFileName());
@@ -58,6 +78,8 @@ internal readonly struct Location
         this.Class = typeName;
         this.Method = methodName;
         Line = line > 0 ? line : null;
+        _identityClass = typeName;
+        _identityMethod = methodName;
 
         this.SpanId = spanId == 0 ? null : spanId;
     }
@@ -77,7 +99,7 @@ internal readonly struct Location
     public override int GetHashCode()
     {
         // We do not calculate the hash including the spanId nor the line
-        return IastUtils.GetHashCode(Class, Method);
+        return IastUtils.GetHashCode(_identityClass, _identityMethod);
     }
 
     // Extracts the file name from a path, handling both Windows ('\') and Unix ('/') separators.

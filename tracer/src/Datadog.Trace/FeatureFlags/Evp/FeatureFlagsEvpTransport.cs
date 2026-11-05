@@ -41,8 +41,6 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     private static readonly TimeSpan InitialDiscoveryWait = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RouteRecoveryCooldown = TimeSpan.FromSeconds(30);
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
-
     private readonly FeatureFlagsSource _source;
     private readonly IApiRequestFactory? _directRequestFactory;
     private readonly IDiscoveryService _discoveryService;
@@ -54,7 +52,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     private readonly Func<DateTimeOffset> _utcNow;
     private readonly bool _discoverySubscribed;
     private readonly object _settingsLock = new();
-    private readonly IDatadogLogger _log = Log;
+    private readonly IDatadogLogger _log;
 
     private LocalEndpoint _localEndpoint;
     private int _directIsSticky;
@@ -63,6 +61,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     internal FeatureFlagsEvpTransport(TracerSettings settings, IDiscoveryService discoveryService, Action<string>? warningSink = null)
     {
+        _log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
         _source = settings.FeatureFlags.Source;
         var exporter = settings.Manager.InitialExporterSettings;
         _localEndpoint = new(CreateLocalRequestFactory(exporter, _source == FeatureFlagsSource.RemoteConfig), exporter);
@@ -104,7 +103,10 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
         _settingsSubscription = settings.Manager.SubscribeToChanges(changes =>
         {
-            if (changes.UpdatedExporter is { } updatedExporter)
+            // Replay may describe a later context-only update. Its previous exporter is
+            // still the current address, not necessarily InitialExporterSettings.
+            var updatedExporter = changes.UpdatedExporter ?? changes.PreviousExporter;
+            if (!ReferenceEquals(Volatile.Read(ref _localEndpoint).ExporterSettings, updatedExporter))
             {
                 UpdateExporter(updatedExporter);
             }
@@ -128,7 +130,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     {
         _source = source;
         _localEndpoint = new(localRequestFactory, exporterSettings);
-        _log = logger ?? Log;
+        _log = logger ?? DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
         _directRequestFactory = source == FeatureFlagsSource.Agentless ? directRequestFactory : null;
         _discoveryService = discoveryService;
         _discoveryCallback = UpdateAgentConfiguration;
@@ -169,7 +171,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     [
         new(TelemetryConstants.ApiKeyHeader, apiKey),
         new(FeatureFlagsEvpHeaderHelper.EvpOriginHeader, FeatureFlagsEvpHeaderHelper.EvpOrigin),
-        new(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.ThreePartVersion),
+        new(FeatureFlagsEvpHeaderHelper.EvpOriginVersionHeader, TracerConstants.SemanticVersion),
         new(HttpHeaderNames.TracingEnabled, "false"),
     ];
 
@@ -209,7 +211,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 #else
         // HttpWebRequest uses the platform default proxy and bypass list. Redirects stay disabled
         // so the API key is sent only to the configured intake host.
-        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false, enforceAsyncTimeout: true);
+        return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5), allowAutoRedirect: false);
 #endif
     }
 
@@ -220,7 +222,8 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             productName: "Feature Flags EVP",
             tcpTimeout: TimeSpan.FromSeconds(5),
             httpHeaderHelper: FeatureFlagsEvpHeaderHelper.Instance,
-            allowAutoRedirect: allowAutoRedirect);
+            allowAutoRedirect: allowAutoRedirect,
+            requestTimeout: TimeSpan.FromSeconds(5));
 
     [TestingAndPrivateOnly]
     internal static bool IsDefinitivePreSendSocketFailure(SocketException exception)
@@ -232,6 +235,9 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                                              or SocketError.AddressNotAvailable
         || exception.ErrorCode == 2 // ENOENT for a missing Unix domain socket
         || exception.ErrorCode == 10061; // WSAECONNREFUSED
+
+    private static bool IsEvaluationRejection(int statusCode)
+        => statusCode is >= 400 and < 500 and not (404 or 405 or 408 or 429);
 
     private static NetworkFailure ClassifyNetworkFailure(Exception exception)
     {
@@ -300,6 +306,20 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     internal Task SendAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings)
         => SendAsync(intakePath, request => request.PostAsJsonAsync(payload, MultipartCompression.GZip, serializerSettings));
 
+    // The writer has already applied privacy rules, payload limits and gzip compression.
+    internal async Task SendFlagEvaluationsAsync(ArraySegment<byte> payload)
+    {
+        try
+        {
+            await SendAsync(FlagEvaluationIntakePath, request => request.PostAsync(payload, "application/json", "gzip")).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Neither exception messages nor response bodies are safe evaluation diagnostics.
+            _log.ErrorSkipTelemetry("FeatureFlags flagevaluation send failed; dropping this batch without retry.");
+        }
+    }
+
     private void UpdateExporter(ExporterSettings exporter)
     {
         lock (_settingsLock)
@@ -336,6 +356,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     {
         if (Volatile.Read(ref _disposed) != 0)
         {
+            _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: event delivery has stopped", intakePath);
             return;
         }
 
@@ -395,6 +416,8 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         {
             WarnUnavailable();
         }
+
+        _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: no event delivery route is available", intakePath);
     }
 
     private void WarnInvalidSite()
@@ -406,7 +429,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         }
         else
         {
-            Log.Warning("Feature Flags direct event delivery is disabled because DD_SITE is not a valid DNS site suffix");
+            _log.Warning("Feature Flags direct event delivery is disabled because DD_SITE is not a valid DNS site suffix");
         }
     }
 
@@ -419,7 +442,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         }
         else
         {
-            Log.Warning("Feature Flags event delivery is unavailable because no compatible local EVP route or direct intake credentials are available");
+            _log.Warning("Feature Flags event delivery is unavailable because no compatible local EVP route or direct intake credentials are available");
         }
     }
 
@@ -463,6 +486,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                 WarnUnavailable();
             }
 
+            _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: the Agent EVP proxy route is cooling down after a failure", intakePath);
             return;
         }
 
@@ -490,6 +514,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             if (response.StatusCode is >= 200 and < 300)
             {
                 local.UnavailableUntilUtcTicks = 0;
+                _log.Debug<string, string, int>("Feature Flags: {IntakePath} batch accepted by the Agent EVP proxy ({ProxyEndpoint}) with HTTP {StatusCode}", intakePath, localProxyEndpoint, response.StatusCode);
                 return;
             }
 
@@ -499,11 +524,12 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             {
                 if (LeaveLocalRoute(local))
                 {
+                    _log.Debug<int>("Feature Flags: Agent EVP proxy returned HTTP {StatusCode}; replaying the unaccepted batch through direct intake", response.StatusCode);
                     await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
                 }
                 else
                 {
-                    Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", response.StatusCode);
+                    LogLocalRejection(intakePath, response.StatusCode);
                 }
 
                 return;
@@ -512,17 +538,25 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             // Other responses may have come from upstream after the Agent accepted the payload.
             // Never replay this batch, but leave the failed route for future Agentless batches.
             LeaveLocalRoute(local);
-            Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", response.StatusCode);
+            LogLocalRejection(intakePath, response.StatusCode);
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.DefinitivePreSend)
         {
             if (LeaveLocalRoute(local))
             {
+                _log.Debug("Feature Flags: local EVP request failed before sending; replaying the batch through direct intake");
                 await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
             }
             else
             {
-                Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent");
+                if (intakePath == FlagEvaluationIntakePath)
+                {
+                    LogEvaluationNetworkFailure();
+                }
+                else
+                {
+                    _log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed before the payload was sent; the batch is dropped without replay");
+                }
             }
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.Ambiguous)
@@ -531,8 +565,37 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             // current one can never be duplicated across the local and direct routes.
             LeaveLocalRoute(local);
 
-            Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
+            if (intakePath == FlagEvaluationIntakePath)
+            {
+                LogEvaluationNetworkFailure();
+            }
+            else
+            {
+                _log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
+            }
         }
+    }
+
+    private void LogLocalRejection(string intakePath, int statusCode)
+    {
+        if (intakePath != FlagEvaluationIntakePath)
+        {
+            _log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}; the batch will not be replayed", statusCode);
+        }
+        else if (IsEvaluationRejection(statusCode))
+        {
+            _log.Error<int>("FeatureFlags flagevaluation Agent request rejected with HTTP status {StatusCode}; dropping this batch without retry.", statusCode);
+        }
+        else
+        {
+            _log.ErrorSkipTelemetry<int>("FeatureFlags flagevaluation Agent request failed with HTTP status {StatusCode}; dropping this batch without retry.", statusCode);
+        }
+    }
+
+    private void LogEvaluationNetworkFailure()
+    {
+        // Network exceptions may include customer-controlled data. Keep them out of logs.
+        _log.ErrorSkipTelemetry("FeatureFlags flagevaluation request failed; see https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet");
     }
 
     private bool LeaveLocalRoute(LocalEndpoint local)
@@ -560,6 +623,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         // start a new fallback request after the transport has been disposed.
         if (Volatile.Read(ref _disposed) != 0 || directFactory is null)
         {
+            _log.Debug<string>("Feature Flags: {IntakePath} batch dropped: event delivery has stopped", intakePath);
             return;
         }
 
@@ -568,10 +632,14 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         {
             var request = directFactory.Create(endpoint);
             using var response = await sendAsync(request).ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300)
+            if (response.StatusCode is >= 200 and < 300)
+            {
+                _log.Debug<string, int>("Feature Flags: {IntakePath} batch accepted by the Datadog intake with HTTP {StatusCode}", intakePath, response.StatusCode);
+            }
+            else
             {
                 const string Message = "Feature Flags direct EVP request to {Endpoint} failed with HTTP status code {StatusCode} after 1 attempt; the batch will not be replayed. See https://docs.datadoghq.com/feature_flags/";
-                if (response.StatusCode == 400)
+                if (response.StatusCode == 400 || (intakePath == FlagEvaluationIntakePath && IsEvaluationRejection(response.StatusCode)))
                 {
                     _log.Error<string, int>(Message, intakePath, response.StatusCode);
                 }
@@ -584,7 +652,14 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         catch (Exception ex)
         {
             // Direct intake is terminal: never loop a failed direct request back through the Agent.
-            Log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed");
+            if (intakePath == FlagEvaluationIntakePath)
+            {
+                LogEvaluationNetworkFailure();
+            }
+            else
+            {
+                _log.ErrorSkipTelemetry(ex, "Feature Flags direct EVP request failed; delivery is unconfirmed and the batch will not be replayed");
+            }
         }
     }
 

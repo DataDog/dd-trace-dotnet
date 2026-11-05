@@ -97,7 +97,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         console.Output.Should().Contain(VersionConflict);
 
-        console.Output.Should().Contain(MultipleTracers(new[] { "1.29.0.0", TracerConstants.AssemblyVersion }));
+        console.Output.Should().Contain(MultipleTracers(["1.29.0.0", ProjectInfo.AssemblyVersion]));
     }
 
     [SkippableFact]
@@ -208,12 +208,12 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         result.Should().BeTrue();
 
         console.Output.Should().Contain(
-            TracerVersion(TracerConstants.AssemblyVersion),
+            TracerVersion(ProjectInfo.AssemblyVersion),
             ContinuousProfilerNotSet);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
+            console.Output.Should().Contain(ProfilerVersion(ProjectInfo.AssemblyVersion));
         }
 
         console.Output.Should().NotContainAny(
@@ -266,7 +266,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         result.Should().BeTrue();
 
         console.Output.Should().ContainAll(
-            TracerVersion(TracerConstants.AssemblyVersion),
+            TracerVersion(ProjectInfo.AssemblyVersion),
             ContinuousProfilerEnabled,
             CorrectlySetupEnvironment(CorProfilerKey, Utils.Profilerid),
             CorrectlySetupEnvironment(CorEnableKey, "1"),

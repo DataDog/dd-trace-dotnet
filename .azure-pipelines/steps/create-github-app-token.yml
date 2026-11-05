@@ -1,3 +1,8 @@
+parameters:
+  - name: continueOnError
+    type: boolean
+    default: false
+
 steps:
     # Based on https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app#example-using-bash-to-generate-a-jwt
   - bash: |
@@ -54,7 +59,7 @@ steps:
       url="https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens"
       echo "Sending request with JWT to $url"
 
-      response=$(curl --fail --silent --show-error \
+      response=$(curl --fail --silent --show-error $(CURL_RETRY_FLAGS) \
         --request POST \
         --url $url \
         --header "Accept: application/vnd.github+json" \
@@ -76,6 +81,7 @@ steps:
     displayName: Retrieve Installation Token
     name: retrieve_github_token
     retryCountOnTaskFailure: 3
+    continueOnError: ${{ parameters.continueOnError }}
     env:
       GITHUB_APP_INSTALLATION_ID: $(GITHUB_APP_INSTALLATION_ID)
       GITHUB_APP_CLIENT_ID: $(GITHUB_APP_CLIENT_ID)

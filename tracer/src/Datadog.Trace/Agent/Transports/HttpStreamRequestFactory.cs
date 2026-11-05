@@ -15,6 +15,7 @@ namespace Datadog.Trace.Agent.Transports
         private readonly IStreamFactory _streamFactory;
         private readonly DatadogHttpClient _httpClient;
         private readonly Uri _baseEndpoint;
+        private readonly TimeSpan? _requestTimeout;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpStreamRequestFactory"/> class.
@@ -28,11 +29,13 @@ namespace Datadog.Trace.Agent.Transports
         /// e.g. see this issue around nodejs (called from go) https://github.com/grpc/grpc-go/issues/2628 and
         /// issue/discussion in aspnetcore here https://github.com/dotnet/aspnetcore/issues/18522.
         /// Typically, you should use <c>http://localhost</c> as the host instead for non-TCP clients (e.g. UDS and named pipes)</param>
-        public HttpStreamRequestFactory(IStreamFactory streamFactory, DatadogHttpClient httpClient, Uri baseEndpoint)
+        /// <param name="requestTimeout">Optional deadline for the request, including response reads.</param>
+        public HttpStreamRequestFactory(IStreamFactory streamFactory, DatadogHttpClient httpClient, Uri baseEndpoint, TimeSpan? requestTimeout = null)
         {
             _streamFactory = streamFactory;
             _httpClient = httpClient;
             _baseEndpoint = baseEndpoint;
+            _requestTimeout = requestTimeout;
         }
 
         public Uri GetEndpoint(string relativePath)
@@ -47,7 +50,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public IApiRequest Create(Uri endpoint)
         {
-            return new HttpStreamRequest(_httpClient, endpoint, _streamFactory);
+            return new HttpStreamRequest(_httpClient, endpoint, _streamFactory, _requestTimeout);
         }
 
         public void SetProxy(WebProxy proxy, NetworkCredential credential)

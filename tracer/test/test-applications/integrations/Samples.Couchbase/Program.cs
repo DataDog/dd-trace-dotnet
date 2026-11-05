@@ -83,10 +83,8 @@ namespace Samples.Couchbase
 
         private static string Host()
         {
-            var host = Environment.GetEnvironmentVariable("COUCHBASE_HOST");
-            var port = Environment.GetEnvironmentVariable("COUCHBASE_PORT");
-            if (host == null || port == null)
-                return "127.0.0.1:8091";
+            var host = Environment.GetEnvironmentVariable("COUCHBASE_HOST") ?? "127.0.0.1";
+            var port = Environment.GetEnvironmentVariable("COUCHBASE_PORT") ?? "8091";
 
             return $"{host}:{port}";
         }

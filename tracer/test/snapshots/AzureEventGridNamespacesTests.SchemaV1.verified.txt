@@ -1,0 +1,154 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: EventGridSenderClient.Send(CloudEvent),
+    Resource: EventGridSenderClient.Send(CloudEvent),
+    Service: Samples.AzureEventGridNamespaces,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: azure_eventgrid.send,
+    Resource: eventgrid,
+    Service: Samples.AzureEventGridNamespaces,
+    Type: queue,
+    ParentId: Id_2,
+    Tags: {
+      component: AzureEventGrid,
+      env: integration_tests,
+      language: dotnet,
+      messaging.message_id: Guid_2,
+      messaging.operation: send,
+      messaging.system: eventgrid,
+      network.destination.name: localhost,
+      network.destination.port: 00000,
+      span.kind: producer
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_5,
+    Name: EventGridSenderClient.Send(IEnumerable<CloudEvent>),
+    Resource: EventGridSenderClient.Send(IEnumerable<CloudEvent>),
+    Service: Samples.AzureEventGridNamespaces,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_6,
+    Name: azure_eventgrid.send,
+    Resource: eventgrid,
+    Service: Samples.AzureEventGridNamespaces,
+    Type: queue,
+    ParentId: Id_5,
+    Tags: {
+      component: AzureEventGrid,
+      env: integration_tests,
+      language: dotnet,
+      messaging.batch.message_count: 3,
+      messaging.operation: send,
+      messaging.system: eventgrid,
+      network.destination.name: localhost,
+      network.destination.port: 00000,
+      span.kind: producer
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: EventGridSenderClient.SendAsync(CloudEvent),
+    Resource: EventGridSenderClient.SendAsync(CloudEvent),
+    Service: Samples.AzureEventGridNamespaces,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_9,
+    Name: azure_eventgrid.send,
+    Resource: eventgrid,
+    Service: Samples.AzureEventGridNamespaces,
+    Type: queue,
+    ParentId: Id_8,
+    Tags: {
+      component: AzureEventGrid,
+      env: integration_tests,
+      language: dotnet,
+      messaging.message_id: Guid_3,
+      messaging.operation: send,
+      messaging.system: eventgrid,
+      network.destination.name: localhost,
+      network.destination.port: 00000,
+      span.kind: producer
+    }
+  },
+  {
+    TraceId: Id_10,
+    SpanId: Id_11,
+    Name: EventGridSenderClient.SendAsync(IEnumerable<CloudEvent>),
+    Resource: EventGridSenderClient.SendAsync(IEnumerable<CloudEvent>),
+    Service: Samples.AzureEventGridNamespaces,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_10,
+    SpanId: Id_12,
+    Name: azure_eventgrid.send,
+    Resource: eventgrid,
+    Service: Samples.AzureEventGridNamespaces,
+    Type: queue,
+    ParentId: Id_11,
+    Tags: {
+      component: AzureEventGrid,
+      env: integration_tests,
+      language: dotnet,
+      messaging.batch.message_count: 3,
+      messaging.operation: send,
+      messaging.system: eventgrid,
+      network.destination.name: localhost,
+      network.destination.port: 00000,
+      span.kind: producer
+    }
+  }
+]

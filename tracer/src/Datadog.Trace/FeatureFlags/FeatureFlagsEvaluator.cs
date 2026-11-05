@@ -25,6 +25,7 @@ namespace Datadog.Trace.FeatureFlags
     internal sealed class FeatureFlagsEvaluator
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
+        internal const string MetadataErrorCode = "errorCode";
 
         internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
         internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
@@ -52,8 +53,15 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
+        /// <summary>
+        /// Gets the configuration this evaluator resolves against, which diagnostics use to identify it.
+        /// </summary>
+        internal ServerConfiguration? Configuration => _config;
+
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
+            // Capture before evaluating: even an exception after a configuration update keeps this consent.
+            var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
             try
             {
                 var config = _config;
@@ -66,7 +74,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "PROVIDER_NOT_READY",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "PROVIDER_NOT_READY"
+                            ["errorCode"] = "PROVIDER_NOT_READY",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -81,7 +90,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "FLAG_NOT_FOUND",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "FLAG_NOT_FOUND"
+                            ["errorCode"] = "FLAG_NOT_FOUND",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -94,7 +104,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "PARSE_ERROR",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "PARSE_ERROR"
+                            ["errorCode"] = "PARSE_ERROR",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -103,7 +114,11 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.Disabled);
+                        EvaluationReason.Disabled,
+                        metadata: new Dictionary<string, string>
+                        {
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        });
                 }
 
                 if (flag.VariationType != resultType)
@@ -115,7 +130,8 @@ namespace Datadog.Trace.FeatureFlags
                         error: "TYPE_MISMATCH",
                         metadata: new Dictionary<string, string>
                         {
-                            ["errorCode"] = "TYPE_MISMATCH"
+                            ["errorCode"] = "TYPE_MISMATCH",
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                         });
                 }
 
@@ -124,7 +140,11 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.Default);
+                        EvaluationReason.Default,
+                        metadata: new Dictionary<string, string>
+                        {
+                            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                        });
                 }
 
                 var now = DateTime.UtcNow;
@@ -187,7 +207,7 @@ namespace Datadog.Trace.FeatureFlags
                                            : hadShards ? EvaluationReason.Split
                                            : EvaluationReason.Static;
 
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent);
                             }
                         }
                     }
@@ -197,7 +217,11 @@ namespace Datadog.Trace.FeatureFlags
                 return new Evaluation(
                     flagKey,
                     defaultValue,
-                    EvaluationReason.Default);
+                    EvaluationReason.Default,
+                    metadata: new Dictionary<string, string>
+                    {
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
+                    });
             }
             catch (FormatException ex)
             {
@@ -209,7 +233,8 @@ namespace Datadog.Trace.FeatureFlags
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = ex.Message
+                        ["message"] = ex.Message,
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
             catch (MissingTargetingKeyException)
@@ -221,7 +246,8 @@ namespace Datadog.Trace.FeatureFlags
                     error: "TARGETING_KEY_MISSING",
                     metadata: new Dictionary<string, string>
                     {
-                        ["errorCode"] = "TARGETING_KEY_MISSING"
+                        ["errorCode"] = "TARGETING_KEY_MISSING",
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
             catch (Exception ex)
@@ -234,7 +260,8 @@ namespace Datadog.Trace.FeatureFlags
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "GENERAL",
-                        ["message"] = ex.Message
+                        ["message"] = ex.Message,
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
         }
@@ -594,7 +621,7 @@ namespace Datadog.Trace.FeatureFlags
             return int.Parse(Convert.ToString(value)!, CultureInfo.InvariantCulture);
         }
 
-        private static string? AllocationKey(Evaluation evaluation)
+        internal static string? AllocationKey(Evaluation evaluation)
         {
             if (evaluation.FlagMetadata == null)
             {
@@ -602,6 +629,20 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return evaluation.FlagMetadata.TryGetValue(MetadataAllocationKey, out var key) ? key : null;
+        }
+
+        /// <summary>
+        /// Returns the structured error code, which is always one of a fixed set, unlike
+        /// <see cref="Evaluation.Error"/>, which can carry an exception message.
+        /// </summary>
+        internal static string? ErrorCode(Evaluation evaluation)
+        {
+            if (evaluation.FlagMetadata == null)
+            {
+                return null;
+            }
+
+            return evaluation.FlagMetadata.TryGetValue(MetadataErrorCode, out var code) ? code : null;
         }
 
         internal static IDictionary<string, object?> FlattenContext(EvaluationContext? context)
@@ -672,7 +713,8 @@ namespace Datadog.Trace.FeatureFlags
             Allocation allocation,
             EvaluationReason reason,
             DateTime evalTime,
-            EvaluationContext? context)
+            EvaluationContext? context,
+            string consent)
         {
             var variationKey = split.VariationKey!;
 
@@ -696,6 +738,7 @@ namespace Datadog.Trace.FeatureFlags
             var metadata = new Dictionary<string, string>
             {
                 [MetadataAllocationKey] = allocation.Key,
+                [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
             };
 
             // do_log and the split serial id are only consumed by APM span enrichment, so emit them
@@ -722,6 +765,10 @@ namespace Datadog.Trace.FeatureFlags
             {
                 DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
             }
+            else
+            {
+                Log.Debug<string, string>("Feature Flags: exposure not recorded for {FlagKey}: allocation {AllocationKey} has exposure logging disabled", flagKey, allocation.Key);
+            }
 
             return evaluation;
 
@@ -735,7 +782,8 @@ namespace Datadog.Trace.FeatureFlags
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = error
+                        ["message"] = error,
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent
                     });
             }
         }
@@ -752,6 +800,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (allocationKey == null || variantKey == null)
             {
+                Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
                 return;
             }
 

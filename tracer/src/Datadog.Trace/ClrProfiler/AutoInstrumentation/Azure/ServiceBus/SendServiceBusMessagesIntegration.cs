@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class SendServiceBusMessagesIntegration
     {
-        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:servicebus"];
+        private static readonly EdgeTags DefaultProduceEdgeTags = new(["direction:out", "type:servicebus"]);
 
         internal static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, IEnumerable messages, string activityName, TOperation operation)
             where TTarget : ITransportSender, IDuckType
@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                     ? DefaultProduceEdgeTags
                     : dataStreamsManager.GetOrCreateEdgeTags(
                         new ServiceBusEdgeTagCacheKey(entityPath!, IsConsume: false),
-                        static k => ["direction:out", $"topic:{k.EntityPath}", "type:servicebus"]);
+                        static k => new EdgeTags(["direction:out", $"topic:{k.EntityPath}", "type:servicebus"]));
                 foreach (var msgObj in messages)
                 {
                     if (msgObj?.DuckCast<IServiceBusMessage>() is { } message

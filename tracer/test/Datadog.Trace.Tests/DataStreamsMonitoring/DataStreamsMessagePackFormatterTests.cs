@@ -120,7 +120,7 @@ public class DataStreamsMessagePackFormatterTests
             Env = settings.Manager.InitialMutableSettings.Environment,
             Service = service,
             Lang = "dotnet",
-            TracerVersion = TracerConstants.AssemblyVersion,
+            TracerVersion = TracerConstants.SemanticVersion,
             ProductMask = 3,
             Stats = new MockDataStreamsBucket[]
             {

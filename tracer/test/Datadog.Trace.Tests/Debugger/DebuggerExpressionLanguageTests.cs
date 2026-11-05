@@ -1805,7 +1805,7 @@ namespace Datadog.Trace.Tests.Debugger
             var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.NotEqual(secret, result);
-            Assert.Equal("{REDACTED}", result);
+            Assert.Equal("{redacted}", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
@@ -1839,7 +1839,7 @@ namespace Datadog.Trace.Tests.Debugger
             var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.NotEqual(secret, result);
-            Assert.Equal("{REDACTED}", result);
+            Assert.Equal("{redacted}", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
@@ -2163,7 +2163,7 @@ namespace Datadog.Trace.Tests.Debugger
             var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             Assert.NotEqual(secret, sensitiveResult);
-            Assert.Equal("{REDACTED}", sensitiveResult);
+            Assert.Equal("{redacted}", sensitiveResult);
 
             var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
             var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
@@ -2380,7 +2380,7 @@ namespace Datadog.Trace.Tests.Debugger
             var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
             var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
-            Assert.Equal("{REDACTED}", sensitiveResult);
+            Assert.Equal("{redacted}", sensitiveResult);
             Assert.Equal(publicValue, publicResult);
             Assert.Equal(0, SideEffectingValueHolder.GetterCalls);
             Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
@@ -2516,8 +2516,8 @@ namespace Datadog.Trace.Tests.Debugger
             var stringCompiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
             var stringResult = EvaluateCompiled(stringCompiled, scopeMembers);
 
-            Assert.Equal("{REDACTED}", objectResult);
-            Assert.Equal("{REDACTED}", stringResult);
+            Assert.Equal("{redacted}", objectResult);
+            Assert.Equal("{redacted}", stringResult);
             Assert.Equal(0, SideEffectingValueHolder.GetterCalls);
             var objectError = Assert.Single(objectCompiled.Errors);
             Assert.Contains("cannot be safely read", objectError.Message);
@@ -3177,7 +3177,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             result.Template.Should().NotContain(passwordSecret);
             result.Template.Should().NotContain(apiKeySecret);
-            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().Contain("{redacted}");
             result.Template.Should().Contain(publicValue);
             result.Errors.Should().BeNullOrEmpty();
         }
@@ -3198,7 +3198,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             var result = evaluator.Evaluate(scopeMembers);
 
-            result.Template.Should().Be("{REDACTED}");
+            result.Template.Should().Be("{redacted}");
             result.Errors.Should().BeNullOrEmpty();
         }
 
@@ -3220,7 +3220,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             var result = evaluator.Evaluate(scopeMembers);
 
-            result.Template.Should().Contain("Authorization={REDACTED}");
+            result.Template.Should().Contain("Authorization={redacted}");
             result.Template.Should().NotContain(authorizationSecret);
             result.Template.Should().NotContain(authorizationPublicValue);
             result.Errors.Should().BeNullOrEmpty();
@@ -3245,7 +3245,7 @@ namespace Datadog.Trace.Tests.Debugger
             var result = evaluator.Evaluate(scopeMembers);
 
             result.Template.Should().Contain("Authorization");
-            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().Contain("{redacted}");
             result.Template.Should().NotContain(authorizationSecret);
             result.Template.Should().Contain(publicValue);
             result.Errors.Should().BeNullOrEmpty();
@@ -3279,7 +3279,7 @@ namespace Datadog.Trace.Tests.Debugger
             decoration.TagName.Should().Be("tag");
             decoration.Value.Should().NotContain(passwordSecret);
             decoration.Value.Should().NotContain(apiKeySecret);
-            decoration.Value.Should().Contain("{REDACTED}");
+            decoration.Value.Should().Contain("{redacted}");
             decoration.Value.Should().Contain(publicValue);
             decoration.Errors.Should().BeNullOrEmpty();
             result.Errors.Should().BeNullOrEmpty();

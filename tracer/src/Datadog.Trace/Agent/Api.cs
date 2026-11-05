@@ -41,7 +41,7 @@ namespace Datadog.Trace.Agent
         private readonly ContainerMetadata _containerMetadata;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
-        private readonly Action<Dictionary<string, float>> _updateSampleRates;
+        private readonly Action<Dictionary<string, double>> _updateSampleRates;
         private readonly Action<string> _updateConfigState;
         private readonly bool _partialFlushEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Agent
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
             ContainerMetadata containerMetadata,
-            Action<Dictionary<string, float>> updateSampleRates,
+            Action<Dictionary<string, double>> updateSampleRates,
             Action<string> updateConfigState,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,
@@ -238,7 +238,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    var tag = ex is TimeoutException or OperationCanceledException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                     TelemetryFactory.Metrics.RecordCountStatsApiErrors(tag);
                     throw;
                 }
@@ -321,7 +321,7 @@ namespace Datadog.Trace.Agent
                 {
                     // count only network/infrastructure errors, not valid responses with error status codes
                     // (which are handled below)
-                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    var tag = ex is TimeoutException or OperationCanceledException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                     TelemetryFactory.Metrics.RecordCountTraceApiErrors(tag);
                     healthStats?.Increment(TracerMetricNames.Api.Errors);
                     throw;
@@ -420,7 +420,7 @@ namespace Datadog.Trace.Agent
         internal struct ApiResponse
         {
             [JsonProperty("rate_by_service")]
-            public Dictionary<string, float> RateByService { get; set; }
+            public Dictionary<string, double> RateByService { get; set; }
         }
 
         private readonly struct SendTracesState

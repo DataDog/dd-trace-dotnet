@@ -265,7 +265,7 @@
     <ClInclude Include="TypeReferenceTree.h" />
     <ClInclude Include="TypeReferenceTreeJsonSerializer.h" />
     <ClInclude Include="TypeReferenceTreeBinarySerializer.h" />
-    <ClInclude Include="VisitedObjectSet.h" />
+    <ClInclude Include="VisitedAddressBitmap.h" />
     <ClInclude Include="IGcSettingsProvider.h" />
     <ClInclude Include="IHeapSnapshotManager.h" />
     <ClInclude Include="INativeThreadList.h" />
