@@ -17,6 +17,7 @@ using Datadog.Trace.Logging;
 #if NETFRAMEWORK
 using Datadog.Trace.PlatformHelpers;
 #endif
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -239,8 +240,10 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Runs and removes each queued hook in order. A hook that throws or times out
-        /// is logged and does not prevent the remaining hooks from running.
+        /// is logged and does not prevent the remaining hooks from running, except for
+        /// a <see cref="ThreadAbortException"/>, which is rethrown.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal static void RunShutdownHooks(ConcurrentQueue<object> hooks, Exception? exception, TimeSpan asyncHookTimeout)
         {
             while (hooks.TryDequeue(out var actionOrFunc))

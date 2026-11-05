@@ -36,9 +36,11 @@ public class LifetimeManagerTests
         hooks.Enqueue(SyncHook("sync after"));
         hooks.Enqueue(AsyncHook("async after"));
 
-        // The short timeout only matters for the hook that never completes. The healthy async hook
-        // completes synchronously, so the timeout never applies to it.
-        LifetimeManager.RunShutdownHooks(hooks, shutdownException, TimeSpan.FromMilliseconds(100));
+        // Only the hook that never completes needs a short timeout. The other cases use a long one, so
+        // a timer never decides their outcome. The healthy async hook completes synchronously, so no
+        // timeout applies to it.
+        var timeout = failure == HookFailure.AsyncHookTimesOut ? TimeSpan.FromMilliseconds(100) : TimeSpan.FromSeconds(30);
+        LifetimeManager.RunShutdownHooks(hooks, shutdownException, timeout);
 
         ran.Should().Equal("before", "sync after", "async after");
         hooks.Should().BeEmpty();
