@@ -85,8 +85,10 @@ internal static class FlagEvaluationContext
         }
     }
 
-    // Split features come from flag configuration, which already bounds them, so they skip the context
-    // limits: dropping one would merge buckets that differ only in that feature.
+    // Split features come from flag configuration, not from the caller, so they skip the context
+    // limits: dropping one would merge buckets that differ only in that feature. The tracer applies no
+    // count or length cap of its own; a row that still exceeds the payload limit after degradation is
+    // dropped, like a row with an oversized flag key.
     internal static Dictionary<string, object?>? CopyFeatures(IReadOnlyDictionary<string, object?>? features)
     {
         if (features is null || features.Count == 0)
