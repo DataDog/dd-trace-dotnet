@@ -25,7 +25,8 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
-    private static readonly ConditionalWeakTable<ImmutableMetadata, IReadOnlyDictionary<string, object>> HookFeatures = new();
+    private static readonly ConditionalWeakTable<ImmutableMetadata, SplitFeatures> Features = new();
+    private static readonly string[] FeaturePrefixes = [FeatureFlagMetadataKeys.FeaturePrefix, FeatureFlagMetadataKeys.ExposureFeaturePrefix, FeatureFlagMetadataKeys.EvaluationFeaturePrefix];
 
     // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
     private static readonly ConditionalWeakTable<ImmutableMetadata, EvaluationContext> EvaluatedContexts = new();
@@ -50,6 +51,16 @@ internal static class FeatureFlagsSdk
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static void EnqueueEVP(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int flags)
+    {
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool CanEnqueueEVPWithFeatures() => false;
+
+    // Called only when the split has EVALUATION features: the ninth argument takes CallTarget's
+    // allocating slow path, which every other evaluation avoids by calling EnqueueEVP.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void EnqueueEVPWithFeatures(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, IReadOnlyDictionary<string, object?>? features, int flags)
     {
     }
 
@@ -149,7 +160,11 @@ internal static class FeatureFlagsSdk
     /// records the typed map beside the result it built; the entry dies with the result.
     /// </summary>
     internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
-        => metadata is not null && HookFeatures.TryGetValue(metadata, out var features) ? features : null;
+        => metadata is not null && Features.TryGetValue(metadata, out var features) ? features.Hook : null;
+
+    /// <summary>The selected split's EVALUATION-destination features, for evaluation counts.</summary>
+    internal static IReadOnlyDictionary<string, object?>? GetEvaluationFeatures(ImmutableMetadata? metadata)
+        => metadata is not null && Features.TryGetValue(metadata, out var features) ? features.Evaluation : null;
 
     /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
@@ -226,16 +241,35 @@ internal static class FeatureFlagsSdk
 
         var dic = new Dictionary<string, object>();
         Dictionary<string, object>? hookFeatures = null;
+        Dictionary<string, object?>? evaluationFeatures = null;
         if (metadata is not null)
         {
+            var featureTypes = metadata.TryGetValue(FeatureFlagMetadataKeys.FeatureTypes, out var encodedTypes) ? ParseFeatureTypes(encodedTypes) : null;
             foreach (var pair in metadata)
             {
-                var converted = ConvertMetadataValue(pair.Key, pair.Value);
+                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes)
+                {
+                    continue;
+                }
+
+                if (FeaturePrefixOf(pair.Key) is not { } prefix)
+                {
+                    dic[pair.Key] = ConvertMetadataValue(pair.Key, pair.Value);
+                    continue;
+                }
+
+                var featureKey = pair.Key.Substring(prefix.Length);
+                var converted = ConvertFeatureValue(pair.Value, featureTypes is not null && featureTypes.TryGetValue(featureKey, out var type) ? type : '\0');
                 dic[pair.Key] = converted;
-                if (pair.Key.StartsWith(FeatureFlagMetadataKeys.FeaturePrefix, StringComparison.Ordinal))
+                if (prefix == FeatureFlagMetadataKeys.FeaturePrefix)
                 {
                     hookFeatures ??= new Dictionary<string, object>();
-                    hookFeatures[pair.Key.Substring(FeatureFlagMetadataKeys.FeaturePrefix.Length)] = converted;
+                    hookFeatures[featureKey] = converted;
+                }
+                else if (prefix == FeatureFlagMetadataKeys.EvaluationFeaturePrefix)
+                {
+                    evaluationFeatures ??= new Dictionary<string, object?>();
+                    evaluationFeatures[featureKey] = converted;
                 }
             }
         }
@@ -255,16 +289,16 @@ internal static class FeatureFlagsSdk
         }
 
         var immutable = new ImmutableMetadata(dic);
-        if (hookFeatures is not null)
+        if (hookFeatures is not null || evaluationFeatures is not null)
         {
-            HookFeatures.Add(immutable, hookFeatures);
+            Features.Add(immutable, new SplitFeatures(hookFeatures, evaluationFeatures));
         }
 
         return immutable;
     }
 
     // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
-    // typed values, so the keys with a known type are converted here.
+    // typed values, so the known non-feature keys are converted here. Features go through ConvertFeatureValue.
     private static object ConvertMetadataValue(string key, string value)
     {
         if (key == FeatureFlagMetadataKeys.DoLog || key == FeatureFlagMetadataKeys.ExposureCacheHit)
@@ -279,34 +313,60 @@ internal static class FeatureFlagsSdk
             return unchecked((int)serialId);
         }
 
-        if (key.StartsWith(FeatureFlagMetadataKeys.FeaturePrefix, StringComparison.Ordinal)
-            || key.StartsWith(FeatureFlagMetadataKeys.ExposureFeaturePrefix, StringComparison.Ordinal)
-            || key.StartsWith(FeatureFlagMetadataKeys.EvaluationFeaturePrefix, StringComparison.Ordinal))
-        {
-            return ConvertFeatureValue(value);
-        }
-
         return value;
     }
 
-    // Feature values cross the package boundary as strings; the evaluator encodes booleans and
-    // numbers so this restores their type. A string feature whose value happens to look like a
-    // boolean or a number is indistinguishable after that channel and comes back typed.
-    private static object ConvertFeatureValue(string value)
+    private static string? FeaturePrefixOf(string metadataKey)
     {
-        if (value == "true")
+        foreach (var prefix in FeaturePrefixes)
         {
-            return true;
+            if (metadataKey.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return prefix;
+            }
         }
 
-        if (value == "false")
+        return null;
+    }
+
+    // A value is a boolean or a number only when the tracer listed it as one, so a string feature
+    // whose value looks like a boolean or a number stays a string.
+    private static object ConvertFeatureValue(string value, char type) => type switch
+    {
+        'b' when value == "true" => true,
+        'b' when value == "false" => false,
+        'n' when double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => number,
+        _ => value,
+    };
+
+    // Reads FeatureFlagMetadataKeys.FeatureTypes. A malformed item never fails the evaluation: an
+    // unknown type letter skips that item, and a broken length prefix ends parsing, so the remaining
+    // values stay strings.
+    private static Dictionary<string, char>? ParseFeatureTypes(string encoded)
+    {
+        Dictionary<string, char>? types = null;
+        var position = 0;
+        while (position < encoded.Length)
         {
-            return false;
+            var colon = encoded.IndexOf(':', position);
+            if (colon <= position
+                || !int.TryParse(encoded.Substring(position, colon - position), NumberStyles.None, CultureInfo.InvariantCulture, out var length)
+                || length > encoded.Length - colon - 2)
+            {
+                break;
+            }
+
+            var key = encoded.Substring(colon + 1, length);
+            var type = encoded[colon + 1 + length];
+            position = colon + 2 + length;
+            if (type is 'b' or 'n')
+            {
+                types ??= new Dictionary<string, char>(StringComparer.Ordinal);
+                types[key] = type;
+            }
         }
 
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
-            ? number
-            : value;
+        return types;
     }
 
     public static Value JsonToValue(object? obj)
@@ -348,5 +408,12 @@ internal static class FeatureFlagsSdk
     private static Value ConvertArray(object?[] array)
     {
         return new Value(array.Select(ConvertObject).ToList());
+    }
+
+    private sealed class SplitFeatures(IReadOnlyDictionary<string, object>? hook, IReadOnlyDictionary<string, object?>? evaluation)
+    {
+        internal IReadOnlyDictionary<string, object>? Hook { get; } = hook;
+
+        internal IReadOnlyDictionary<string, object?>? Evaluation { get; } = evaluation;
     }
 }

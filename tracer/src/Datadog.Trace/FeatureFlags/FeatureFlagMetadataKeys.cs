@@ -21,5 +21,10 @@ namespace Datadog.Trace.FeatureFlags
         internal const string FeaturePrefix = "__dd_feature.";
         internal const string ExposureFeaturePrefix = "__dd_exposure_feature.";
         internal const string EvaluationFeaturePrefix = "__dd_evaluation_feature.";
+
+        // Feature values cross to the provider as strings. This entry lists the features whose value is a
+        // boolean or a number, as "<key length>:<key><b|n>" items, so a string such as "true" stays a
+        // string. It is written only when there is such a feature; its absence means every value is a string.
+        internal const string FeatureTypes = "__dd_feature_types";
     }
 }

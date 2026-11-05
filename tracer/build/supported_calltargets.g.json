@@ -14639,6 +14639,28 @@
     "IntegrationName": "OpenFeature",
     "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
     "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "CanEnqueueEVPWithFeatures",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     "TargetMethodName": "EnqueueEVP",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
@@ -14662,6 +14684,38 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEnqueueEVPIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "EnqueueEVPWithFeatures",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.Int64",
+      "System.String",
+      "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Object]",
+      "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Object]",
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEnqueueEVPWithFeaturesIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

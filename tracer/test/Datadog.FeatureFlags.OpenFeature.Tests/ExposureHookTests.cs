@@ -109,6 +109,7 @@ public class ExposureHookTests
             ["__dd_feature.internal.count"] = "3",
             ["__dd_exposure_feature.holdout.key"] = "06ad",
             ["__dd_evaluation_feature.holdout.key"] = "06ad",
+            [FeatureFlagMetadataKeys.FeatureTypes] = "42:holdout.should_include_in_holdout_analysisb14:internal.countn",
         };
         var received = new List<ExposureEvaluation>();
         var hook = new ExposureHook(e => received.Add(e));

@@ -124,9 +124,12 @@ OpenFeature.Api.Instance.AddHooks(new ExposureHook(evaluation =>
 ### Features
 
 `Features` returns the features of the selected split whose destinations include the customer
-hook, keyed without the `__dd_feature.` prefix. Values are a `string`, `double` or `bool`. The
-map is empty when the split has no such features. Datadog can add destinations later; the tracer
-ignores a destination it does not know and logs a warning once for each one.
+hook, keyed without the `__dd_feature.` prefix. Values are a `string`, `double` or `bool`, with the
+type the feature has in the flag configuration: a string feature whose value is `"true"` or
+`"2026"` stays a `string`. The map is empty when the split has no such features, and with a tracer
+that does not report split features. A tracer that reports features but not their types gives
+every value as a `string`. Datadog can add destinations later; the tracer ignores a destination it
+does not know and logs a warning once for each one.
 
 ### Flag metadata
 

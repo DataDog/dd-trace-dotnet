@@ -729,6 +729,7 @@ namespace Datadog.Trace.FeatureFlags
 
             Dictionary<string, object>? exposureFeatures = null;
             HashSet<string>? seenKeys = null;
+            StringBuilder? types = null;
 
             foreach (var feature in features)
             {
@@ -738,6 +739,8 @@ namespace Datadog.Trace.FeatureFlags
                     continue;
                 }
 
+                var value = NormalizeFeatureValue(feature.Value);
+                var written = false;
                 foreach (var destination in feature.Destinations)
                 {
                     string? prefix;
@@ -759,14 +762,25 @@ namespace Datadog.Trace.FeatureFlags
                         continue;
                     }
 
-                    var value = NormalizeFeatureValue(feature.Value);
                     metadata[prefix + feature.Key] = FeatureMetadataValue(value);
+                    written = true;
                     if (prefix == FeatureFlagMetadataKeys.ExposureFeaturePrefix)
                     {
                         exposureFeatures ??= new Dictionary<string, object>();
                         exposureFeatures[feature.Key] = value;
                     }
                 }
+
+                if (written && value is bool or double)
+                {
+                    types ??= new StringBuilder();
+                    types.Append(feature.Key.Length.ToString(CultureInfo.InvariantCulture)).Append(':').Append(feature.Key).Append(value is bool ? 'b' : 'n');
+                }
+            }
+
+            if (types is not null)
+            {
+                metadata[FeatureFlagMetadataKeys.FeatureTypes] = types.ToString();
             }
 
             return exposureFeatures;
