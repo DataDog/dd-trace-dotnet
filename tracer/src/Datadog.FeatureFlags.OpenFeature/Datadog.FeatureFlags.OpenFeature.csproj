@@ -39,6 +39,7 @@
   <ItemGroup>
      <!-- If you update this version, be sure to update the TargetFrameworks element above-->
     <PackageReference Include="OpenFeature" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '' And !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">

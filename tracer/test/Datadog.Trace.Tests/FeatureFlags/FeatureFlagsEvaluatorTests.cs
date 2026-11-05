@@ -7,7 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -266,7 +268,7 @@ public partial class FeatureFlagsEvaluatorTests
         };
 
         List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
-        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+        var evaluator = new FeatureFlagsEvaluator(RecordExposures(events), new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
         var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
@@ -288,7 +290,7 @@ public partial class FeatureFlagsEvaluatorTests
         };
 
         List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
-        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+        var evaluator = new FeatureFlagsEvaluator(RecordExposures(events), new ServerConfiguration { Flags = flags });
 
         evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user-123"));
 
@@ -305,12 +307,230 @@ public partial class FeatureFlagsEvaluatorTests
         var flags = new FlagCollection { ["exposure-flag"] = flag };
 
         List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
-        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+        var evaluator = new FeatureFlagsEvaluator(RecordExposures(events), new ServerConfiguration { Flags = flags });
 
         evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user-123"));
 
         events.Should().HaveCount(1);
         events[0].SerialId.Should().BeNull();
+    }
+
+    // ---------------------------------------------------------------------
+    // Split features tests
+    // ---------------------------------------------------------------------
+
+    public static IEnumerable<object?[]> SplitFeaturesParseCases()
+    {
+        // json, expected (key, value, destinations) or null for a dropped feature
+        yield return new object?[]
+        {
+            """{"features":[{"key":"holdout.key","value":"06ad","destinations":["HOOK"]}]}""",
+            new List<(string Key, object Value, string[] Destinations)> { ("holdout.key", "06ad", new[] { "HOOK" }) }
+        };
+
+        // Mixed value types, multiple destinations
+        yield return new object?[]
+        {
+            """{"features":[{"key":"a","value":false,"destinations":["HOOK","EXPOSURE"]},{"key":"b","value":1.5,"destinations":["EVALUATION"]},{"key":"c","value":7,"destinations":["HOOK"]}]}""",
+            new List<(string Key, object Value, string[] Destinations)>
+            {
+                ("a", false, new[] { "HOOK", "EXPOSURE" }),
+                ("b", 1.5, new[] { "EVALUATION" }),
+                ("c", 7d, new[] { "HOOK" })
+            }
+        };
+
+        // A non-list features field is dropped, not an error
+        yield return new object?[] { "{\"features\":\"garbage\"}", null };
+        yield return new object?[] { "{\"features\":42}", null };
+        yield return new object?[] { "{\"features\":null}", null };
+
+        // Non-object and malformed entries are skipped; the valid one survives
+        yield return new object?[]
+        {
+            """{"features":["junk",42,null,{},{"value":"v"},{"key":"k"},{"key":"k","value":"v"},{"key":"k","value":"v","destinations":[]},{"key":"k","value":"v","destinations":"no"},{"key":"k","value":{},"destinations":["HOOK"]},{"key":"k","value":"v","destinations":[42,""]},{"key":42,"value":"v","destinations":["HOOK"]},{"key":"k","value":"v","destinations":["HOOK"]}]}""",
+            new List<(string Key, object Value, string[] Destinations)> { ("k", "v", new[] { "HOOK" }) }
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(SplitFeaturesParseCases))]
+    public void SplitFeaturesParseLeniently(string json, List<(string Key, object Value, string[] Destinations)>? expected)
+    {
+        var split = JsonConvert.DeserializeObject<Split>(json);
+
+        split.Should().NotBeNull();
+        if (expected is null)
+        {
+            split!.Features.Should().BeNull();
+            return;
+        }
+
+        split!.Features.Should().NotBeNull();
+        var parsed = split.Features!;
+        parsed.Should().HaveCount(expected.Count);
+        for (var i = 0; i < expected.Count; i++)
+        {
+            parsed[i].Key.Should().Be(expected[i].Key);
+            parsed[i].Value.Should().Be(expected[i].Value);
+            parsed[i].Destinations.Should().Equal(expected[i].Destinations);
+        }
+    }
+
+    [Theory]
+    [InlineData("\"features\":\"garbage\"")]
+    [InlineData("\"features\":42")]
+    [InlineData("\"features\":[\"junk\",{\"key\":\"k\",\"value\":{\"nested\":true},\"destinations\":[\"HOOK\"]}]")]
+    [InlineData("\"features\":[{\"key\":\"huge\",\"value\":123456789012345678901234567890,\"destinations\":[\"HOOK\"]},{\"key\":\"kept\",\"value\":\"v\",\"destinations\":[\"HOOK\"]}]")]
+    public void MalformedFeaturesFieldNeverFailsTheFlag(string featuresJson)
+    {
+        var json = "{\"flags\":{\"features-flag\":{\"key\":\"features-flag\",\"enabled\":true,\"variationType\":\"STRING\",\"variations\":{\"on\":{\"key\":\"on\",\"value\":\"value\"}},\"allocations\":[{\"key\":\"alloc\",\"splits\":[{\"variationKey\":\"on\",\"shards\":[]," + featuresJson + "}]}]}}}";
+        var config = JsonConvert.DeserializeObject<ServerConfiguration>(json);
+        var evaluator = new FeatureFlagsEvaluator(null, config!);
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        result.Reason.Should().Be(EvaluationReason.Static);
+        result.Value.Should().Be("value");
+        result.Error.Should().BeNull();
+        if (featuresJson.Contains("\"kept\""))
+        {
+            result.FlagMetadata!.Should().ContainKey("__dd_feature.kept", "only the out-of-range feature is skipped");
+            result.FlagMetadata!.Keys.Should().NotContain("__dd_feature.huge");
+        }
+    }
+
+    [Fact]
+    public void DateLikeStringFeaturesAreKeptAsStrings()
+    {
+        var json = "{\"flags\":{\"features-flag\":{\"key\":\"features-flag\",\"enabled\":true,\"variationType\":\"STRING\",\"variations\":{\"on\":{\"key\":\"on\",\"value\":\"value\"}},\"allocations\":[{\"key\":\"alloc\",\"splits\":[{\"variationKey\":\"on\",\"shards\":[],\"features\":[{\"key\":\"holdout.start\",\"value\":\"2026-11-02T00:00:00Z\",\"destinations\":[\"HOOK\"]}]}]}]}}}";
+        var config = JsonConvert.DeserializeObject<ServerConfiguration>(json);
+        var evaluator = new FeatureFlagsEvaluator(null, config!);
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        var value = result.FlagMetadata!["__dd_feature.holdout.start"];
+        DateTimeOffset.Parse(value, CultureInfo.InvariantCulture).Should().Be(new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero), "the same instant survives, even when the text differs");
+    }
+
+    [Fact]
+    public void EvaluateWritesFeatureMetadataForEachDestination()
+    {
+        var features = new List<Feature>
+        {
+            new("holdout.key", "06ad", new List<string> { "HOOK", "EXPOSURE" }),
+            new("holdout.assignment_group", "status_quo", new List<string> { "HOOK" }),
+            new("holdout.should_include_in_holdout_analysis", false, new List<string> { "HOOK", "EVALUATION" }),
+            new("internal.count", 3, new List<string> { "EVALUATION" }),
+            new("exposure.only", 7, new List<string> { "EXPOSURE" }),
+        };
+        var events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
+        var evaluator = new FeatureFlagsEvaluator(RecordExposures(events), new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features, doLog: true) });
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        var metadata = result.FlagMetadata!;
+        metadata["__dd_feature.holdout.key"].Should().Be("06ad");
+        metadata["__dd_feature.holdout.assignment_group"].Should().Be("status_quo");
+        metadata["__dd_feature.holdout.should_include_in_holdout_analysis"].Should().Be("false");
+        metadata["__dd_exposure_feature.holdout.key"].Should().Be("06ad");
+        metadata["__dd_evaluation_feature.holdout.should_include_in_holdout_analysis"].Should().Be("false");
+        metadata["__dd_evaluation_feature.internal.count"].Should().Be("3");
+        metadata.Keys.Should().NotContain("__dd_exposure_feature.holdout.assignment_group");
+        metadata.Keys.Should().NotContain("__dd_feature.internal.count");
+
+        events.Should().ContainSingle();
+        events[0].Features.Should().BeEquivalentTo(new Dictionary<string, object> { ["holdout.key"] = "06ad", ["exposure.only"] = 7d });
+    }
+
+    [Fact]
+    public void EvaluateKeepsTheFirstValidFeatureForARepeatedKey()
+    {
+        var features = new List<Feature>
+        {
+            new("holdout.key", "first", new List<string> { "HOOK" }),
+            new("holdout.key", "second", new List<string> { "HOOK", "EXPOSURE" }),
+        };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features, doLog: false) });
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        var metadata = result.FlagMetadata!;
+        metadata["__dd_feature.holdout.key"].Should().Be("first");
+        metadata.Keys.Should().NotContain("__dd_exposure_feature.holdout.key");
+    }
+
+    [Fact]
+    public void EvaluateIgnoresAFeatureWithOnlyUnknownDestinations()
+    {
+        var features = new List<Feature>
+        {
+            new("unknown.only", "value", new List<string> { "SOMEWHERE_NEW" }),
+            new("known", "value", new List<string> { "SOMEWHERE_NEW", "HOOK" }),
+        };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features, doLog: false) });
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        var metadata = result.FlagMetadata!;
+        metadata.Keys.Should().NotContain("__dd_feature.unknown.only");
+        metadata["__dd_feature.known"].Should().Be("value");
+    }
+
+    [Fact]
+    public void EvaluateAddsNoFeatureMetadataWhenTheSplitHasNone()
+    {
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = CreateFlagsWithSplitFeatures(features: null, doLog: false) });
+
+        var result = evaluator.Evaluate("features-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        result.FlagMetadata!.Keys.Should().NotContain(k => k.StartsWith("__dd_feature.", StringComparison.Ordinal)
+                                                        || k.StartsWith("__dd_exposure_feature.", StringComparison.Ordinal)
+                                                        || k.StartsWith("__dd_evaluation_feature.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ExposureMetadataIsEmittedWithoutSpanEnrichment()
+    {
+        var flags = new FlagCollection { ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag() };
+        var evaluator = new FeatureFlagsEvaluator(RecordExposures(new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>()), new ServerConfiguration { Flags = flags }, spanEnrichmentEnabled: false);
+
+        var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        result.FlagMetadata![FeatureFlagMetadataKeys.DoLog].Should().Be("true");
+        result.FlagMetadata[FeatureFlagMetadataKeys.SplitSerialId].Should().Be(FeatureFlagsHelpers.ExposureSerialId.ToString());
+        result.FlagMetadata[FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
+    }
+
+    [Fact]
+    public void FailedEvaluationRecordsNothingAndStampsNoVerdict()
+    {
+        var events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
+        var evaluator = new FeatureFlagsEvaluator(RecordExposures(events), new ServerConfiguration { Flags = new FlagCollection() });
+
+        var result = evaluator.Evaluate("missing-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+        result.Error.Should().Be("FLAG_NOT_FOUND");
+        events.Should().BeEmpty();
+        result.FlagMetadata!.Keys.Should().NotContain(FeatureFlagMetadataKeys.ExposureCacheHit);
+    }
+
+    [Fact]
+    public void ExposureCacheVerdictIsStampedFromTheReporter()
+    {
+        var flags = new FlagCollection { ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag() };
+
+        foreach (var (reported, stamp) in new[] { (ExposureRecordResult.New, "false"), (ExposureRecordResult.Repeat, "true"), (ExposureRecordResult.NotRecorded, null) })
+        {
+            var evaluator = new FeatureFlagsEvaluator(
+                (in Trace.FeatureFlags.Exposure.Model.ExposureEvent _) => reported,
+                new ServerConfiguration { Flags = flags });
+
+            var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user"));
+
+            result.FlagMetadata!.TryGetValue(FeatureFlagMetadataKeys.ExposureCacheHit, out var actual);
+            actual.Should().Be(stamp, $"the reporter said {reported}; nothing recorded means no verdict");
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -610,6 +830,24 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("on", result.Variant);
         Assert.Null(result.Error);
+    }
+
+    private static FeatureFlagsEvaluator.ReportExposureDelegate RecordExposures(List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events)
+    {
+        return (in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) =>
+        {
+            events.Add(e);
+            return ExposureRecordResult.New;
+        };
+    }
+
+    private static FlagCollection CreateFlagsWithSplitFeatures(List<Feature>? features, bool doLog)
+    {
+        var variants = new Dictionary<string, Variant> { ["on"] = new Variant("on", "value") };
+        var split = new Split { VariationKey = "on", Shards = new List<Shard>(), SerialId = 4242, Features = features };
+        var alloc = new Allocation { Key = "alloc", Splits = new List<Split> { split }, DoLog = doLog };
+        var flag = new Flag { Key = "features-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+        return new FlagCollection { ["features-flag"] = flag };
     }
 
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -24,6 +25,11 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
+    private static readonly ConditionalWeakTable<ImmutableMetadata, IReadOnlyDictionary<string, object>> HookFeatures = new();
+
+    // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
+    private static readonly ConditionalWeakTable<ImmutableMetadata, EvaluationContext> EvaluatedContexts = new();
+
     internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
 
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
@@ -109,6 +115,12 @@ internal static class FeatureFlagsSdk
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
         var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
+        // Only exposures need the context in ExposureHook, so other evaluations skip the table.
+        if (context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
+        {
+            EvaluatedContexts.Add(metadata, context);
+        }
+
         return resolution;
     }
 
@@ -130,6 +142,18 @@ internal static class FeatureFlagsSdk
         { IsNumber: true } => value.AsDouble,
         _ => value.AsObject,
     };
+
+    /// <summary>
+    /// The selected split's HOOK-destination features associated with a result's metadata, for
+    /// <see cref="ExposureHook"/>. OpenFeature metadata has no enumeration API, so the provider
+    /// records the typed map beside the result it built; the entry dies with the result.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
+        => metadata is not null && HookFeatures.TryGetValue(metadata, out var features) ? features : null;
+
+    /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
+    internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
+        => metadata is not null && EvaluatedContexts.TryGetValue(metadata, out var context) ? context : null;
 
     internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs)
     {
@@ -200,7 +224,22 @@ internal static class FeatureFlagsSdk
             return null;
         }
 
-        var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
+        var dic = new Dictionary<string, object>();
+        Dictionary<string, object>? hookFeatures = null;
+        if (metadata is not null)
+        {
+            foreach (var pair in metadata)
+            {
+                var converted = ConvertMetadataValue(pair.Key, pair.Value);
+                dic[pair.Key] = converted;
+                if (pair.Key.StartsWith(FeatureFlagMetadataKeys.FeaturePrefix, StringComparison.Ordinal))
+                {
+                    hookFeatures ??= new Dictionary<string, object>();
+                    hookFeatures[pair.Key.Substring(FeatureFlagMetadataKeys.FeaturePrefix.Length)] = converted;
+                }
+            }
+        }
+
         if (evalTimeMs is { } time)
         {
             dic[FeatureFlagMetadataKeys.ObserveFullEvaluationData] =
@@ -215,7 +254,59 @@ internal static class FeatureFlagsSdk
             dic.Remove(FeatureFlagMetadataKeys.EvaluationTimestampMs);
         }
 
-        return new ImmutableMetadata(dic);
+        var immutable = new ImmutableMetadata(dic);
+        if (hookFeatures is not null)
+        {
+            HookFeatures.Add(immutable, hookFeatures);
+        }
+
+        return immutable;
+    }
+
+    // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
+    // typed values, so the keys with a known type are converted here.
+    private static object ConvertMetadataValue(string key, string value)
+    {
+        if (key == FeatureFlagMetadataKeys.DoLog || key == FeatureFlagMetadataKeys.ExposureCacheHit)
+        {
+            return value == "true";
+        }
+
+        if (key == FeatureFlagMetadataKeys.SplitSerialId
+            && long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var serialId))
+        {
+            // The serial id comes from a uint32 configuration value; the int form preserves its bits.
+            return unchecked((int)serialId);
+        }
+
+        if (key.StartsWith(FeatureFlagMetadataKeys.FeaturePrefix, StringComparison.Ordinal)
+            || key.StartsWith(FeatureFlagMetadataKeys.ExposureFeaturePrefix, StringComparison.Ordinal)
+            || key.StartsWith(FeatureFlagMetadataKeys.EvaluationFeaturePrefix, StringComparison.Ordinal))
+        {
+            return ConvertFeatureValue(value);
+        }
+
+        return value;
+    }
+
+    // Feature values cross the package boundary as strings; the evaluator encodes booleans and
+    // numbers so this restores their type. A string feature whose value happens to look like a
+    // boolean or a number is indistinguishable after that channel and comes back typed.
+    private static object ConvertFeatureValue(string value)
+    {
+        if (value == "true")
+        {
+            return true;
+        }
+
+        if (value == "false")
+        {
+            return false;
+        }
+
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+            ? number
+            : value;
     }
 
     public static Value JsonToValue(object? obj)

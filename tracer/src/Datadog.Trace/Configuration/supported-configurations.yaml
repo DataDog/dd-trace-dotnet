@@ -3329,6 +3329,20 @@ supportedConfigurations:
       Enables Feature Flags flagevaluation track EVP events through the configured Datadog Agent.
       Default value is <c>true</c> (enabled). Disabling this does not disable flag evaluation,
       configuration fetching, experiment exposures, or span enrichment.
+  DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    product: FeatureFlags
+    documentation: |-
+      Configuration key for sending feature flag exposures to Datadog.
+      Default value is <c>true</c> (enabled).
+      When <c>false</c>, the SDK sends no exposure events to Datadog. The exposure cache still
+      records, and exposure hooks registered by the application still receive every evaluation
+      with the same deduplication verdicts.
+      This stops exposures only; flag evaluation events are controlled by
+      <see cref="ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled"/>.
   DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED:
   - implementation: A
     scope: managed
