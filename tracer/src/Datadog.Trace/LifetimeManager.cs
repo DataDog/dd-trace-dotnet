@@ -193,21 +193,7 @@ namespace Datadog.Trace
                         SetSynchronizationContext(null);
                     }
 
-                    while (_shutdownHooks.TryDequeue(out var actionOrFunc))
-                    {
-                        if (actionOrFunc is Action<Exception?> action)
-                        {
-                            action(exception);
-                        }
-                        else if (actionOrFunc is Func<Exception?, Task> func)
-                        {
-                            AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
-                        }
-                        else
-                        {
-                            Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
-                        }
-                    }
+                    RunShutdownHooks(_shutdownHooks, exception, TaskTimeout);
                 }
                 catch (Exception ex)
                 {
@@ -247,6 +233,40 @@ namespace Datadog.Trace
                 catch (MethodAccessException mae)
                 {
                     Log.Warning(mae, "Access to security crital method SynchronizationContext.SetSynchronizationContext has failed.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs and removes each queued hook in order. A hook that throws or times out
+        /// is logged and does not prevent the remaining hooks from running.
+        /// </summary>
+        internal static void RunShutdownHooks(ConcurrentQueue<object> hooks, Exception? exception, TimeSpan asyncHookTimeout)
+        {
+            while (hooks.TryDequeue(out var actionOrFunc))
+            {
+                try
+                {
+                    if (actionOrFunc is Action<Exception?> action)
+                    {
+                        action(exception);
+                    }
+                    else if (actionOrFunc is Func<Exception?, Task> func)
+                    {
+                        AsyncUtil.RunSync(func, exception, (int)asyncHookTimeout.TotalMilliseconds);
+                    }
+                    else
+                    {
+                        Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
+                    }
+                }
+                catch (ThreadAbortException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error running shutdown hook");
                 }
             }
         }
