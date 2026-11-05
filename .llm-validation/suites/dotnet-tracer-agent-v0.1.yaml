@@ -29,7 +29,9 @@ cases:
         The wrapper in tracer/build/_build/Build.Utilities.cs maps its flags to the direct CLI arguments;
         --output-path maps to --output. Both accept --overload-index <n>. For parameter types, the wrapper splits
         --parameter-types "<type1> <type2>"; the direct CLI requires separate arguments: --parameter-types <type1> <type2>.
-        the direct CLI also accepts -t/-m aliases. The installed tool name is dd-autoinstrumentation, with
+        The wrapper also accepts --generator-args "--set createDucktypeInstance=true --json" to forward
+        additional CLI options, as documented in docs/development/InstrumentationGenerator.md.
+        The direct CLI also accepts -t/-m aliases. The installed tool name is dd-autoinstrumentation, with
         inspect <assembly-path> --list-methods <type-full-name> --json documented in docs/development/for-ai/InstrumentationGenerator-CLI.md.
         One valid invocation is sufficient; alternatives and discovery are optional. Assess argument correctness
         and actionable guidance, not how many alternatives are listed.
