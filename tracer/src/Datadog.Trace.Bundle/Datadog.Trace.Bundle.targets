@@ -67,9 +67,6 @@
     <PropertyGroup>
       <_DatadogPlatformList>;@(_DatadogPlatform);</_DatadogPlatformList>
       <_DatadogSupportedPlatformList>;@(_DatadogSupportedPlatform);</_DatadogSupportedPlatformList>
-      <_DatadogRuntimeIdentifierOS Condition="$(_DatadogRuntimeIdentifier.StartsWith('win'))">win-</_DatadogRuntimeIdentifierOS>
-      <_DatadogRuntimeIdentifierOS Condition="$(_DatadogRuntimeIdentifier.StartsWith('linux')) OR $(_DatadogRuntimeIdentifier.StartsWith('alpine'))">linux-</_DatadogRuntimeIdentifierOS>
-      <_DatadogRuntimeIdentifierOS Condition="$(_DatadogRuntimeIdentifier.StartsWith('osx'))">osx-</_DatadogRuntimeIdentifierOS>
     </PropertyGroup>
 
     <Error Code="DDBUNDLE002"
@@ -80,11 +77,18 @@
            Condition="'@(_DatadogUnsupportedRuntime)' != ''"
            Text="[Datadog.Trace.Bundle] Invalid DatadogRuntimes value(s) '@(_DatadogUnsupportedRuntime)'. DatadogRuntimes defaults to the TargetFramework being published, and must list the runtime(s) the application runs on, for example net48 or net6.0;net8.0. Valid values are .NET Framework target frameworks, and .NET Core target frameworks for .NET Core 2.1 or later. Set DatadogRuntimes explicitly, or remove the DatadogPlatforms property to publish all Datadog files." />
 
+    <!-- The RuntimeIdentifier is only validated when it is one of the supported platforms. Other RIDs, such as
+         version-specific or distro-specific RIDs (e.g. win10-x64 or alpine.3.18-x64), aren't mapped to a platform -->
     <Warning Code="DDBUNDLE010"
              Condition="'$(_DatadogRuntimeIdentifier)' != '' AND
-                        (('$(_DatadogRuntimeIdentifierOS)' != '' AND !$(_DatadogPlatformList.Contains(';$(_DatadogRuntimeIdentifierOS)'))) OR
-                         ($(_DatadogSupportedPlatformList.Contains(';$(_DatadogRuntimeIdentifier);')) AND !$(_DatadogPlatformList.Contains(';$(_DatadogRuntimeIdentifier);'))))"
-             Text="[Datadog.Trace.Bundle] The application is published for RuntimeIdentifier '$(RuntimeIdentifier)', but DatadogPlatforms ('$(DatadogPlatforms)') does not include a matching platform. Automatic instrumentation will not work on that platform." />
+                        $(_DatadogSupportedPlatformList.Contains(';$(_DatadogRuntimeIdentifier);')) AND
+                        !$(_DatadogPlatformList.Contains(';$(_DatadogRuntimeIdentifier);'))"
+             Text="[Datadog.Trace.Bundle] The application is published for RuntimeIdentifier '$(RuntimeIdentifier)', but DatadogPlatforms ('$(DatadogPlatforms)') does not include it. Automatic instrumentation will not work on that platform." />
+
+    <Warning Code="DDBUNDLE013"
+             Condition="'$(_DatadogRuntimeIdentifier)' != '' AND
+                        !$(_DatadogSupportedPlatformList.Contains(';$(_DatadogRuntimeIdentifier);'))"
+             Text="[Datadog.Trace.Bundle] The application is published for RuntimeIdentifier '$(RuntimeIdentifier)', which can't be validated against DatadogPlatforms ('$(DatadogPlatforms)'). Make sure DatadogPlatforms includes the platform the application runs on, or automatic instrumentation will not work. Supported values are: @(_DatadogSupportedPlatform, ', ')." />
 
     <Warning Code="DDBUNDLE011"
              Condition="'@(_DatadogRuntime->WithMetadataValue('ManagedDirectory', 'net461'))' != '' AND !$(_DatadogPlatformList.Contains(';win-'))"

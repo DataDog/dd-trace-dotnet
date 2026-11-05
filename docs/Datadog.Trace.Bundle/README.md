@@ -122,6 +122,7 @@ This only applies to `dotnet publish` of SDK-style projects. If you don't set `D
 | `DDBUNDLE010` | Warning: the application is published for a `RuntimeIdentifier` that is not included in `DatadogPlatforms`. |
 | `DDBUNDLE011` | Warning: `DatadogRuntimes` includes .NET Framework, but `DatadogPlatforms` does not include a Windows platform. |
 | `DDBUNDLE012` | Warning: a .NET Framework application's `PlatformTarget` (`x86` or `x64`) is not included in `DatadogPlatforms`. |
+| `DDBUNDLE013` | Warning: the application is published for a `RuntimeIdentifier` that isn't one of the `DatadogPlatforms` values, such as a version-specific RID like `win10-x64`, so it can't be validated. Make sure `DatadogPlatforms` includes the platform the application runs on. |
 
 ## Get in touch
 

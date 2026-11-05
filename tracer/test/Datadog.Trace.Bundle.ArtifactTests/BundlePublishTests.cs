@@ -90,6 +90,10 @@ public class BundlePublishTests : IClassFixture<BundleProjectFixture>
     [InlineData("-f net8.0 -r linux-arm64 -p:DatadogPlatforms=linux-x64", "DDBUNDLE010")]
     [InlineData("-f net48 -p:DatadogPlatforms=linux-x64", "DDBUNDLE011")]
     [InlineData("-f net48 -p:DatadogPlatforms=win-x64 -p:PlatformTarget=x86", "DDBUNDLE012")]
+    // Version-specific RIDs aren't mapped to a platform, so they can't be validated, even if DatadogPlatforms matches.
+    // UseRidGraph is required, as the restore runs for every TargetFramework, and net8.0+ rejects version-specific RIDs
+    [InlineData("-f net5.0 -r win10-x64 --no-self-contained -p:UseRidGraph=true -p:DatadogPlatforms=win-x86", "DDBUNDLE013")]
+    [InlineData("-f net5.0 -r win10-x64 --no-self-contained -p:UseRidGraph=true -p:DatadogPlatforms=win-x64", "DDBUNDLE013")]
     public void WarnsOnContradictions(string arguments, string warningCode)
     {
         var result = Publish(arguments);
