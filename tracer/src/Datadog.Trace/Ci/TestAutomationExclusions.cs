@@ -28,30 +28,40 @@ internal readonly struct TestAutomationExclusions
 
     internal static TestAutomationExclusions From(MethodInfo? method)
     {
+        if (method is null)
+        {
+            return default;
+        }
+
         var preventFailureSuppression = false;
         var noAutoRetry = false;
         try
         {
-            if (method is not null)
+            // Inspect metadata without constructing attributes or running customer code.
+            foreach (var attribute in method.GetCustomAttributesData())
             {
-                // Inspect metadata without constructing attributes or running customer code.
-                foreach (var attribute in method.GetCustomAttributesData())
-                {
-                    switch (attribute.AttributeType.FullName)
-                    {
-                        case "Datadog.Trace.Ci.PreventFailureSuppressionAttribute":
-                            preventFailureSuppression = true;
-                            break;
-                        case "Datadog.Trace.Ci.NoAutoRetryAttribute":
-                            noAutoRetry = true;
-                            break;
-                    }
-                }
+                Read(attribute.AttributeType, ref preventFailureSuppression, ref noAutoRetry);
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Unable to read test automation exclusion attributes.");
+            // CustomAttributeData also resolves the member types of every attribute, so an unrelated attribute with a
+            // missing dependency fails here even though the framework can still read it.
+            Log.Debug(ex, "Unable to read test automation exclusion metadata, reading the attribute instances instead.");
+            try
+            {
+                foreach (var attribute in method.GetCustomAttributes(inherit: false))
+                {
+                    Read(attribute.GetType(), ref preventFailureSuppression, ref noAutoRetry);
+                }
+            }
+            catch (Exception fallbackEx)
+            {
+                Log.Error(fallbackEx, "Unable to read test automation exclusion attributes.");
+
+                // An unknown declaration must not let Datadog suppress a failure.
+                preventFailureSuppression = true;
+            }
         }
 
         return new TestAutomationExclusions(preventFailureSuppression, noAutoRetry);
@@ -71,4 +81,17 @@ internal readonly struct TestAutomationExclusions
         => PreventFailureSuppression || NoAutoRetry
             ? new(assigned.Quarantined && !PreventFailureSuppression, assigned.Disabled && !PreventFailureSuppression, assigned.AttemptToFix && !NoAutoRetry)
             : assigned;
+
+    private static void Read(Type attributeType, ref bool preventFailureSuppression, ref bool noAutoRetry)
+    {
+        switch (attributeType.FullName)
+        {
+            case "Datadog.Trace.Ci.PreventFailureSuppressionAttribute":
+                preventFailureSuppression = true;
+                break;
+            case "Datadog.Trace.Ci.NoAutoRetryAttribute":
+                noAutoRetry = true;
+                break;
+        }
+    }
 }

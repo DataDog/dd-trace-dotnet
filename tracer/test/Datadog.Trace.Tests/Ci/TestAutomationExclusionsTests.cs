@@ -7,6 +7,7 @@ extern alias DatadogTraceManual;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Net;
@@ -114,6 +115,32 @@ public class TestAutomationExclusionsTests
         Common.IsFailureSuppressed(tags).Should().BeFalse();
         Common.IsAttemptToFix(tags).Should().BeFalse();
         Common.CalculateFinalStatus(false, true, false, tags).Should().Be("fail");
+    }
+
+    [Fact]
+    public void MetadataReadFailureFallsBackToAttributeInstances()
+    {
+        var method = new Mock<MethodInfo>();
+        method.Setup(x => x.GetCustomAttributesData()).Throws(new FileNotFoundException());
+        method.Setup(x => x.GetCustomAttributes(false)).Returns([new NoAutoRetryAttribute()]);
+
+        var exclusions = TestAutomationExclusions.From(method.Object);
+
+        exclusions.PreventFailureSuppression.Should().BeFalse();
+        exclusions.NoAutoRetry.Should().BeTrue();
+    }
+
+    [Fact]
+    public void UnreadableAttributesNeverEnableFailureSuppression()
+    {
+        var method = new Mock<MethodInfo>();
+        method.Setup(x => x.GetCustomAttributesData()).Throws(new FileNotFoundException());
+        method.Setup(x => x.GetCustomAttributes(false)).Throws(new FileNotFoundException());
+
+        var exclusions = TestAutomationExclusions.From(method.Object);
+
+        exclusions.PreventFailureSuppression.Should().BeTrue();
+        exclusions.NoAutoRetry.Should().BeFalse();
     }
 
     [Fact]

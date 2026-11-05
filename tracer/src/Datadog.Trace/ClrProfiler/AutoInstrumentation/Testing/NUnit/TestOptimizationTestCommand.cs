@@ -119,6 +119,12 @@ internal sealed class TestOptimizationTestCommand
         return result.Instance;
     }
 
+    internal static bool IsEarlyFlakeDetectionSlowAbort(TestSpanTags testTags, TimeSpan duration)
+        => duration.TotalMinutes >= 5 &&
+           !testTags.AutomationExclusions.NoAutoRetry &&
+           TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true &&
+           testTags.TestIsNew == "true";
+
     private static void AgregateResults(ITestResult result, ITestResult retryResult)
     {
         result.Duration += retryResult.Duration;
@@ -258,9 +264,7 @@ internal sealed class TestOptimizationTestCommand
                 }
             }
 
-            if (duration.TotalMinutes >= 5 &&
-                TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true &&
-                testTags.TestIsNew == "true")
+            if (IsEarlyFlakeDetectionSlowAbort(testTags, duration))
             {
                 testTags.EarlyFlakeDetectionTestAbortReason = "slow";
             }

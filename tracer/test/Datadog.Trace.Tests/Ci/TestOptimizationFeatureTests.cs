@@ -18,6 +18,7 @@ using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Net;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -2786,13 +2787,17 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         }
     }
 
+    // Without native retries, MSTest receives the first result unless an attempt passed, so masking only changes the
+    // last attempt. With native retries, masking changes the selected result instead.
     [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(false, true, false)]
-    [InlineData(true, false, false)]
-    [InlineData(true, true, false)]
-    [InlineData(true, true, true)]
-    public async Task MsTestAttemptToFixRetainsRetriesAndHonorsFailureProtection(bool nativeRetry, bool preventSuppression, bool nativeRecovers)
+    [InlineData(false, false, false, false, "Failed", "Ignored")]
+    [InlineData(false, true, false, false, "Failed", "Failed")]
+    [InlineData(false, false, false, true, "Failed", "Ignored")]
+    [InlineData(false, true, false, true, "Passed", "Passed")]
+    [InlineData(true, false, false, false, "Ignored", "Failed")]
+    [InlineData(true, true, false, false, "Failed", "Failed")]
+    [InlineData(true, true, true, false, "Passed", null)]
+    public async Task MsTestAttemptToFixRetainsRetriesAndHonorsFailureProtection(bool nativeRetry, bool preventSuppression, bool nativeRecovers, bool retryPasses, string expectedFrameworkOutcome, string expectedRetryOutcome)
     {
         var methodName = nativeRecovers ? nameof(ExcludedTest) : preventSuppression ? nameof(ProtectedTest) : nameof(OrdinaryTest);
         var method = typeof(TestOptimizationFeatureTests).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
@@ -2813,7 +2818,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         {
             module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameMsTestV2, "4.4.0");
             suite = module.GetOrCreateSuite("Fixture");
-            var testMethod = new MsTestMethodStub(method, [], methodName) { RetryAttribute = nativeRetry ? new object() : null };
+            var testMethod = new MsTestMethodStub(method, [], methodName) { RetryAttribute = nativeRetry ? new object() : null, RetryPasses = retryPasses };
             if (nativeRetry)
             {
                 execution = new MsTestExecution(CallTargetState.GetDefault(), parent: null);
@@ -2841,17 +2846,14 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             }
 
             testMethod.InvokeCount.Should().Be(nativeRecovers ? 0 : 1);
-            // Inspect the final retry result directly when no native policy selects the result.
-            var selected = nativeRetry ? results.Should().ContainSingle().Subject.Should().BeOfType<MsTestResultStub>().Subject : testMethod.LastResult;
-            selected.Should().NotBeNull();
-            selected.Outcome.Should().Be(nativeRecovers ? UnitTestOutcome.Passed : preventSuppression ? UnitTestOutcome.Failed : UnitTestOutcome.Ignored);
-            if (preventSuppression && !nativeRecovers)
+            var selected = results.Should().ContainSingle().Subject.Should().BeOfType<MsTestResultStub>().Subject;
+            selected.Outcome.ToString().Should().Be(expectedFrameworkOutcome);
+            (selected.TestFailureException is not null).Should().Be(expectedFrameworkOutcome == "Failed");
+            var retryOutcome = testMethod.LastResult?.Outcome.ToString();
+            retryOutcome.Should().Be(expectedRetryOutcome);
+            if (expectedRetryOutcome is not null)
             {
-                selected.TestFailureException.Should().NotBeNull();
-            }
-            else
-            {
-                selected.TestFailureException.Should().BeNull();
+                testMethod.RetryTest.GetTags().FinalStatus.Should().Be(TestTags.StatusFail);
             }
         }
         finally
@@ -2860,6 +2862,30 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             suite?.Close();
             module?.Close();
             TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void NUnitSlowAbortIsOnlyReportedForEarlyFlakeDetectionRetries(bool noAutoRetry, bool expected)
+    {
+        var earlyFlake = new Mock<ITestOptimizationEarlyFlakeDetectionFeature>();
+        earlyFlake.Setup(x => x.Enabled).Returns(true);
+        var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.EarlyFlakeDetectionFeature).Returns(earlyFlake.Object);
+        TestOptimization.Instance = optimization.Object;
+        try
+        {
+            var tags = new TestSpanTags { TestIsNew = "true" };
+            new TestAutomationExclusions(preventFailureSuppression: false, noAutoRetry).ApplyTo(tags);
+
+            NUnitTestCommand.IsEarlyFlakeDetectionSlowAbort(tags, TimeSpan.FromMinutes(5)).Should().Be(expected);
+        }
+        finally
+        {
             TestOptimization.Instance = new TestOptimization();
             TestOptimization.Instance.Reset();
         }
@@ -3041,12 +3067,17 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public MsTestResultStub LastResult { get; private set; }
 
+        public bool RetryPasses { get; set; }
+
+        public Test RetryTest { get; private set; }
+
         public Attribute[] GetAllAttributes(bool inherit) => [];
 
         public object Invoke(object[] arguments)
         {
             InvokeCount++;
-            return LastResult = new MsTestResultStub();
+            RetryTest = Test.Current;
+            return LastResult = RetryPasses ? new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null } : new MsTestResultStub();
         }
 
         public void SetArguments(object[] arguments)
