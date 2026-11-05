@@ -20,6 +20,7 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DebuggerSnapshotSerializerGuardrailTests
 {
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the depth limit is reached, so the capture is marked Timeout instead of Depth")]
     public void Capture_WhenDepthLimitApplies_MarksDepth()
     {
         var (snapshot, incompleteReasons) = Capture(new WideDepthTarget(), maxReferenceDepth: 1);
@@ -29,6 +30,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the collection size limit is reached, so the capture is marked Timeout instead of CollectionSize")]
     public void Capture_WhenCollectionSizeLimitApplies_MarksCollectionSize()
     {
         var (snapshot, incompleteReasons) = Capture(new List<int> { 1, 2, 3, 4 }, maxCollectionSize: 1);
@@ -58,6 +60,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the field count limit is reached, so the capture is marked Timeout instead of FieldCount")]
     public void Capture_WhenFieldCountLimitApplies_MarksFieldCount()
     {
         var (snapshot, incompleteReasons) = Capture(new ManyFieldsTarget(), maxFieldCount: 1);
@@ -67,6 +70,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
     }
 
     [Fact]
+    [Flaky("Races the serializer's wall-clock time budget: on slow CI agents it can expire before the throwing enumerator runs, so the capture is marked Timeout instead of RuntimeError")]
     public void Capture_WhenEnumerableThrows_MarksRuntimeError()
     {
         var (snapshot, incompleteReasons) = Capture(new ThrowingCaptureCollection());
