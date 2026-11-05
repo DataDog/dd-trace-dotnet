@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 using Xunit;
+using static Datadog.Trace.Tests.CallTarget.ContinuationGeneratorTestHelpers;
 
 namespace Datadog.Trace.Tests.CallTarget
 {
@@ -334,51 +335,6 @@ namespace Datadog.Trace.Tests.CallTarget
             Assert.IsType<BubbleUpException>(ex.InnerException);
         }
 
-        private static void Complete<T>(TaskCompletionSource<T> tcs, bool faulted)
-        {
-            if (faulted)
-            {
-                tcs.TrySetException(new CustomException("Internal Test Exception"));
-            }
-            else
-            {
-                tcs.TrySetResult(default);
-            }
-        }
-
-        internal class CustomException : Exception
-        {
-            public CustomException(string message)
-                : base(message)
-            {
-            }
-        }
-
-        internal class CustomCancellationException : OperationCanceledException
-        {
-            public CustomCancellationException(CancellationToken token)
-                : base(token)
-            {
-            }
-        }
-
-        internal class CustomSynchronizationContext : SynchronizationContext
-        {
-            private readonly TaskCompletionSource<bool> _tcs = new();
-
-            public Task Task => _tcs.Task;
-
-            public override void Post(SendOrPostCallback d, object state)
-            {
-                _tcs.TrySetResult(true);
-            }
-
-            public override void Send(SendOrPostCallback d, object state)
-            {
-                _tcs.TrySetResult(true);
-            }
-        }
-
         internal class PreserveContextTests
         {
             [PreserveContext]
@@ -435,10 +391,6 @@ namespace Datadog.Trace.Tests.CallTarget
                 await Task.Yield();
                 throw new InvalidOperationException("Blocked", new BubbleUpException());
             }
-        }
-
-        internal class BubbleUpException : CallTargetBubbleUpException
-        {
         }
     }
 }
