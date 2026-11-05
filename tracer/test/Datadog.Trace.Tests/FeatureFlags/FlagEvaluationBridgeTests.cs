@@ -28,6 +28,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
+// Some tests swap the global metrics collector, which other test classes also use.
+[Collection(nameof(TracerInstanceTestCollection))]
 public class FlagEvaluationBridgeTests
 {
     private delegate CallTargetState EnqueueCallback(object? target, ref string? flag, ref string? variant, ref string? allocation, ref string? subject, ref long time, ref string? error, ref IReadOnlyDictionary<string, object?>? attributes, ref int flags);
@@ -203,6 +205,39 @@ public class FlagEvaluationBridgeTests
             await writer.CloseAsync(TimeSpan.FromSeconds(2));
             await collector.DisposeAsync();
         }
+    }
+
+    [Fact]
+    public void EnqueueWithFeaturesSlowPathCastsEveryArgumentWithoutAHookError()
+    {
+        // OnMethodBegin turns any exception into a hook error, so a wrong cast is visible only there.
+        // Start the tracer first: its startup replaces the global metrics collector.
+        _ = TracerManager.Instance;
+        var metrics = new Mock<IMetricsTelemetryCollector>();
+        var previous = TelemetryFactory.SetMetricsForTesting(metrics.Object);
+        try
+        {
+            var generated = IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(OpenFeatureSdkEnqueueEVPWithFeaturesIntegration), typeof(object))!;
+            var invoke = (BeginMethodSlowHandler<OpenFeatureSdkEnqueueEVPWithFeaturesIntegration, object>.InvokeDelegate)generated.CreateDelegate(typeof(BeginMethodSlowHandler<OpenFeatureSdkEnqueueEVPWithFeaturesIntegration, object>.InvokeDelegate));
+            object[] arguments = ["flag", "on", "allocation", "subject", 1790000000000L, "GENERAL", new Dictionary<string, object?> { ["country"] = "US" }, new Dictionary<string, object?> { ["holdout.key"] = "h1" }, FlagEvaluationBridge.ObserveFullEvaluationData];
+
+            invoke(null, arguments);
+
+            metrics.Verify(m => m.RecordCountFlagEvaluationHookErrors(It.IsAny<int>()), Times.Never());
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previous);
+        }
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void CanEnqueueWithFeaturesIsTrueUnlessTheStubThrew(bool threw, bool expected)
+    {
+        var state = CallTargetState.GetDefault();
+        OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration.OnMethodEnd<object>(false, threw ? new InvalidOperationException() : null, in state).GetReturnValue().Should().Be(expected);
     }
 
     [Fact]
