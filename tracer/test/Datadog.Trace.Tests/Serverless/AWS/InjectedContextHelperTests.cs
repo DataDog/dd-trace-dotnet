@@ -1,24 +1,24 @@
-// <copyright file="StripInjectedContextTests.cs" company="Datadog">
+// <copyright file="InjectedContextHelperTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if NET6_0_OR_GREATER
 using System;
-using System.IO;
 using System.Text;
 using System.Text.Json;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Serverless.AWS;
 
 /// <summary>
-/// Unit tests for StripInjectedContext.
+/// Unit tests for InjectedContextHelper.
 /// Fuzz section uses fixed seeds so CI is deterministic and results are reproducible.
 /// To reproduce a failure, add the seed printed in the failure message as an InlineData.
 /// </summary>
-public class StripInjectedContextTests
+public class InjectedContextHelperTests
 {
     private const string Carrier = "{\"x-datadog-trace-id\":\"123\",\"x-datadog-parent-id\":\"456\"}";
 
@@ -29,57 +29,55 @@ public class StripInjectedContextTests
     };
 
     // -----------------------------------------------------------------------
-    // EventBridge: _datadog is in detail object
+    // EventBridge (_datadog in detail) and SQS (_datadog at the top level)
     // -----------------------------------------------------------------------
 
-    [Fact]
-    public void EventBridge_WithCarrier_StripsCarrier()
+    [Theory]
+    [InlineData($"{{\"detail-type\":\"order.created\",\"detail\":{{\"orderId\":42,\"_datadog\":{Carrier}}}}}", "{\"detail-type\":\"order.created\",\"detail\":{\"orderId\":42}}")]
+    [InlineData($"{{\"detail-type\":\"e\",\"detail\":{{\"_datadog\":{Carrier}}}}}", "{\"detail-type\":\"e\",\"detail\":{}}")]
+    [InlineData($"{{\"detail\":{{\"_datadog\":{Carrier},\"orderId\":42}}}}", "{\"detail\":{\"orderId\":42}}")]
+    [InlineData($"{{\"orderId\":42,\"customer\":\"acme\",\"_datadog\":{Carrier}}}", "{\"orderId\":42,\"customer\":\"acme\"}")]
+    public void EventBridgeAndSqs_WithCarrier_StripsCarrier(string input, string expected)
     {
-        var input = $"{{\"detail-type\":\"order.created\",\"detail\":{{\"orderId\":42,\"_datadog\":{Carrier}}}}}";
-        var expected = "{\"detail-type\":\"order.created\",\"detail\":{\"orderId\":42}}";
-        StripInjectedContext.StripInternal(input).Should().Be(expected);
-    }
-
-    [Fact]
-    public void EventBridge_WithoutCarrier_Unchanged()
-    {
-        var input = "{\"detail-type\":\"order.created\",\"detail\":{\"orderId\":42}}";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
-    [Fact]
-    public void EventBridge_CarrierOnly_BecomesEmptyObject()
-    {
-        var input = $"{{\"detail-type\":\"e\",\"detail\":{{\"_datadog\":{Carrier}}}}}";
-        var expected = "{\"detail-type\":\"e\",\"detail\":{}}";
-        StripInjectedContext.StripInternal(input).Should().Be(expected);
-    }
-
-    [Fact]
-    public void EventBridge_CarrierFirst_StripsCarrier()
-    {
-        var input = $"{{\"detail\":{{\"_datadog\":{Carrier},\"orderId\":42}}}}";
-        var expected = "{\"detail\":{\"orderId\":42}}";
-        StripInjectedContext.StripInternal(input).Should().Be(expected);
+        InjectedContextHelper.StripContext(input).Should().Be(expected);
     }
 
     // -----------------------------------------------------------------------
-    // SQS: _datadog is a top-level key in the message body
+    // Nothing to strip: the same instance is returned, so the caller keeps the original stream
     // -----------------------------------------------------------------------
 
-    [Fact]
-    public void Sqs_WithCarrier_StripsCarrier()
+    [Theory]
+    [InlineData("{\"detail-type\":\"order.created\",\"detail\":{\"orderId\":42}}")]
+    [InlineData("{\"orderId\":42,\"customer\":\"acme\"}")]
+    [InlineData("{\"note\":\"contains _datadog text\",\"count\":1}")]
+    [InlineData("{\"{\\\"_datadog\\\":{}}\":1}")]
+    [InlineData("{\"m\":\"{\\\"_datadog\\\":{\\\"a\\\":1}} trailing text\"}")]
+    [InlineData("{\"note\":\"{\\\"_datadog\\\":{}} is an example {}\"}")]
+    [InlineData("{\"note\":\"{see \\\"_datadog\\\":{\\\"x\\\":1} for details}\"}")]
+    [InlineData("{\"note\":\"{\\\"_datadog\\\":{\\\"a\\\":1} \\\"b\\\"}\"}")]
+    [InlineData("{\"m\":\"{\\\"_datadog\\\":{}}\\x\"}")]
+    [InlineData($"{{\"name\":\"\uFFFD\",\"_datadog\":{Carrier}}}")]
+    public void NothingToStrip_ReturnsSameInstance(string input)
     {
-        var input = $"{{\"orderId\":42,\"customer\":\"acme\",\"_datadog\":{Carrier}}}";
-        var expected = "{\"orderId\":42,\"customer\":\"acme\"}";
-        StripInjectedContext.StripInternal(input).Should().Be(expected);
+        InjectedContextHelper.StripContext(input).Should().BeSameAs(input);
     }
 
-    [Fact]
-    public void Sqs_WithoutCarrier_Unchanged()
+    [Theory]
+    [InlineData("{\"_datadog\":{\"x-datadog-trace-id\":\"1\"")]
+    [InlineData("{\"_datadog\":{\"a\":1},\"x\":{\"_datadog\":{\"b\":2")]
+    [InlineData("{\"_datadog\":{},\"x\":\"_datadog")]
+    [InlineData("{\"_datadog\":{\"a\":1},\"x\":\"abc _datadog")]
+    public void MalformedJson_ReturnsSameInstance(string input)
     {
-        var input = "{\"orderId\":42,\"customer\":\"acme\"}";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
+        InjectedContextHelper.StripContext(input).Should().BeSameAs(input);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void NullOrEmpty_ReturnsInput(string input)
+    {
+        InjectedContextHelper.StripContext(input).Should().BeSameAs(input);
     }
 
     // -----------------------------------------------------------------------
@@ -90,10 +88,10 @@ public class StripInjectedContextTests
     public void Sns_WithCarrier_StripsFromEncodedMessage()
     {
         var innerJson = $"{{\"orderId\":42,\"_datadog\":{Carrier}}}";
-        var encodedInner = System.Text.Json.JsonSerializer.Serialize(innerJson); // produces "..." escaped
+        var encodedInner = JsonSerializer.Serialize(innerJson);
         var input = $"{{\"Type\":\"Notification\",\"Message\":{encodedInner}}}";
 
-        var result = StripInjectedContext.StripInternal(input);
+        var result = InjectedContextHelper.StripContext(input);
 
         using var doc = JsonDocument.Parse(result);
         doc.RootElement.GetProperty("Type").GetString().Should().Be("Notification");
@@ -113,7 +111,7 @@ public class StripInjectedContextTests
     public void NonObjectCarrier_IsKept(string kvPair)
     {
         var input = $"{{{kvPair},\"other\":1}}";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
+        InjectedContextHelper.StripContext(input).Should().BeSameAs(input);
     }
 
     // -----------------------------------------------------------------------
@@ -121,48 +119,21 @@ public class StripInjectedContextTests
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void NullInput_ReturnsNull()
-    {
-        StripInjectedContext.StripInternal(null).Should().BeNull();
-    }
-
-    [Fact]
-    public void EmptyInput_ReturnsEmpty()
-    {
-        StripInjectedContext.StripInternal(string.Empty).Should().Be(string.Empty);
-    }
-
-    [Fact]
-    public void MalformedJson_UnclosedCarrierObject_OriginalReturned()
-    {
-        // Carrier object never closes - should fail-open
-        var input = "{\"_datadog\":{\"x-datadog-trace-id\":\"1\"";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
-    [Fact]
-    public void CarrierKeyInStringValue_IsNotStripped()
-    {
-        // "_datadog" appears inside a string value, not as a key
-        var input = "{\"note\":\"contains _datadog text\",\"count\":1}";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
-    [Fact]
     public void NestedSnsInSqs_StripsAtAllLevels()
     {
         // SQS body contains SNS-style Message which itself contains _datadog
         var innerInner = $"{{\"data\":1,\"_datadog\":{Carrier}}}";
-        var innerMessage = System.Text.Json.JsonSerializer.Serialize(innerInner);
+        var innerMessage = JsonSerializer.Serialize(innerInner);
         var sqsBody = $"{{\"Type\":\"Notification\",\"Message\":{innerMessage}}}";
-        var encodedSqsBody = System.Text.Json.JsonSerializer.Serialize(sqsBody);
+        var encodedSqsBody = JsonSerializer.Serialize(sqsBody);
         var input = $"{{\"body\":{encodedSqsBody}}}";
 
-        var result = StripInjectedContext.StripInternal(input);
+        var result = InjectedContextHelper.StripContext(input);
 
         using var outer = JsonDocument.Parse(result);
         var body = outer.RootElement.GetProperty("body").GetString();
-        using var sns = JsonDocument.Parse(body!);
+        body.Should().NotBeNull();
+        using var sns = JsonDocument.Parse(body);
         sns.RootElement.GetProperty("Message").GetString().Should().Be("{\"data\":1}");
     }
 
@@ -182,18 +153,19 @@ public class StripInjectedContextTests
         var carrierJson = $"{{\"_datadog\":{Carrier}}}";
 
         // MaxDepth levels of string-encoded JSON: carrier is stripped at the innermost level
-        var current = StripInjectedContext.StripInternal(Wrap(carrierJson, StripInjectedContext.MaxDepth));
-        for (int i = 0; i < StripInjectedContext.MaxDepth; i++)
+        var current = InjectedContextHelper.StripContext(Wrap(carrierJson, InjectedContextHelper.MaxDepth));
+        for (int i = 0; i < InjectedContextHelper.MaxDepth; i++)
         {
             using var doc = JsonDocument.Parse(current);
-            current = doc.RootElement.GetProperty("m").GetString()!;
+            current = doc.RootElement.GetProperty("m").GetString();
+            current.Should().NotBeNull();
         }
 
         current.Should().Be("{}");
 
         // One level deeper than MaxDepth: left untouched
-        var beyondLimit = Wrap(carrierJson, StripInjectedContext.MaxDepth + 1);
-        StripInjectedContext.StripInternal(beyondLimit).Should().Be(beyondLimit);
+        var beyondLimit = Wrap(carrierJson, InjectedContextHelper.MaxDepth + 1);
+        InjectedContextHelper.StripContext(beyondLimit).Should().BeSameAs(beyondLimit);
     }
 
     [Theory]
@@ -205,45 +177,7 @@ public class StripInjectedContextTests
     [InlineData("{\"_datadog\":{\"a\":1},\"_datadog\":\"keep\"}", "{\"_datadog\":\"keep\"}")]
     public void EdgeCases_StripCorrectly(string input, string expected)
     {
-        StripInjectedContext.StripInternal(input).Should().Be(expected);
-    }
-
-    [Fact]
-    public void EncodedJsonInKey_IsNotRewritten()
-    {
-        var input = "{\"{\\\"_datadog\\\":{}}\":1}";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
-    [Fact]
-    public void EncodedStringNotEndingWithBrace_IsNotRewritten()
-    {
-        var input = "{\"m\":\"{\\\"_datadog\\\":{\\\"a\\\":1}} trailing text\"}";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
-    [Theory]
-    [InlineData("{\"note\":\"{\\\"_datadog\\\":{}} is an example {}\"}")]
-    [InlineData("{\"note\":\"{see \\\"_datadog\\\":{\\\"x\\\":1} for details}\"}")]
-    [InlineData("{\"note\":\"{\\\"_datadog\\\":{\\\"a\\\":1} \\\"b\\\"}\"}")]
-    public void EncodedBraceDelimitedText_NotJsonObject_IsNotRewritten(string input)
-    {
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
-    [Fact]
-    public void MalformedJson_UnclosedCarrierAfterValidCarrier_OriginalReturned()
-    {
-        var input = "{\"_datadog\":{\"a\":1},\"x\":{\"_datadog\":{\"b\":2";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
-    [Theory]
-    [InlineData("{\"_datadog\":{},\"x\":\"_datadog")]
-    [InlineData("{\"_datadog\":{\"a\":1},\"x\":\"abc _datadog")]
-    public void MalformedJson_UnterminatedStringAfterCarrier_OriginalReturned(string input)
-    {
-        StripInjectedContext.StripInternal(input).Should().Be(input);
+        InjectedContextHelper.StripContext(input).Should().Be(expected);
     }
 
     [Fact]
@@ -252,10 +186,12 @@ public class StripInjectedContextTests
         var inner = "{\"_datadog\":{\"a\":1},\"s\":\"tab\\tquote\\\"slash\\/e\\u00e9\"}";
         var input = "{\"Message\":" + JsonSerializer.Serialize(inner) + "}";
 
-        var result = StripInjectedContext.StripInternal(input);
+        var result = InjectedContextHelper.StripContext(input);
 
         using var outer = JsonDocument.Parse(result);
-        using var decoded = JsonDocument.Parse(outer.RootElement.GetProperty("Message").GetString()!);
+        var message = outer.RootElement.GetProperty("Message").GetString();
+        message.Should().NotBeNull();
+        using var decoded = JsonDocument.Parse(message);
         decoded.RootElement.TryGetProperty("_datadog", out _).Should().BeFalse();
         decoded.RootElement.GetProperty("s").GetString().Should().Be("tab\tquote\"slash/e\u00e9");
     }
@@ -265,81 +201,41 @@ public class StripInjectedContextTests
     {
         var input = "{\"Message\":\"{\\n\\t\\\"_datadog\\\":{},\\\"k\\\":\\\"a\\/b\\\",\\\"\\u0041\\\":1}\"}";
 
-        var result = StripInjectedContext.StripInternal(input);
+        var result = InjectedContextHelper.StripContext(input);
 
         using var outer = JsonDocument.Parse(result);
-        using var decoded = JsonDocument.Parse(outer.RootElement.GetProperty("Message").GetString()!);
+        var message = outer.RootElement.GetProperty("Message").GetString();
+        message.Should().NotBeNull();
+        using var decoded = JsonDocument.Parse(message);
         decoded.RootElement.TryGetProperty("_datadog", out _).Should().BeFalse();
         decoded.RootElement.GetProperty("k").GetString().Should().Be("a/b");
         decoded.RootElement.GetProperty("A").GetInt32().Should().Be(1);
     }
 
-    [Fact]
-    public void EncodedJson_WithInvalidEscape_IsNotRewritten()
-    {
-        var input = "{\"m\":\"{\\\"_datadog\\\":{}}\\x\"}";
-        StripInjectedContext.StripInternal(input).Should().Be(input);
-    }
-
     // -----------------------------------------------------------------------
-    // StripStream: integration with stream replacement
+    // Lone surrogates: the caller relies on strict UTF-8 encoding to keep the original stream
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void StripStream_LoneSurrogateInEncodedJson_KeepsOriginal()
+    public void LoneSurrogateInEncodedJson_IsRejectedByStrictUtf8Encoding()
     {
+        // The caller encodes with EncodingHelpers.Utf8NoBom and keeps the original stream when it throws
         var input = "{\"Message\":\"{\\\"_datadog\\\":{},\\\"s\\\":\\\"\\ud800\\\"}\"}";
 
-        StripInjectedContext.StripStream(input, enabled: true).Should().BeNull();
-    }
+        var stripped = InjectedContextHelper.StripContext(input);
 
-    [Fact]
-    public void StripStream_WhenDisabled_ReturnsNull()
-    {
-        var json = $"{{\"orderId\":42,\"_datadog\":{Carrier}}}";
-        StripInjectedContext.StripStream(json, enabled: false).Should().BeNull();
-    }
-
-    [Fact]
-    public void StripStream_WhenEnabled_ReturnsStrippedStream()
-    {
-        var json = $"{{\"orderId\":42,\"_datadog\":{Carrier}}}";
-
-        using var stream = StripInjectedContext.StripStream(json, enabled: true);
-
-        stream.Should().NotBeNull();
-        new StreamReader(stream!).ReadToEnd().Should().Be("{\"orderId\":42}");
-    }
-
-    [Fact]
-    public void StripStream_NoCarrierKey_ReturnsNull()
-    {
-        StripInjectedContext.StripStream("{\"orderId\":42}", enabled: true).Should().BeNull();
-    }
-
-    [Fact]
-    public void StripStream_CarrierKeyOnlyInStringValue_ReturnsNull()
-    {
-        // Contains "_datadog" text but nothing to remove: original stream must be kept.
-        var json = "{\"note\":\"contains _datadog text\"}";
-        StripInjectedContext.StripStream(json, enabled: true).Should().BeNull();
-    }
-
-    [Fact]
-    public void StripStream_PayloadWithReplacementChar_ReturnsNull()
-    {
-        var json = $"{{\"name\":\"\uFFFD\",\"_datadog\":{Carrier}}}";
-        StripInjectedContext.StripStream(json, enabled: true).Should().BeNull();
+        var encode = () => EncodingHelpers.Utf8NoBom.GetBytes(stripped);
+        encode.Should().Throw<EncoderFallbackException>();
     }
 
     // -----------------------------------------------------------------------
     // Fuzz / randomized section (seeded, deterministic, no new dependencies)
     //
     // Each test generates random JSON-like strings and asserts:
-    //   1. StripInternal never throws.
+    //   1. StripContext never throws.
     //   2. If input contains no "_datadog" key, output equals input.
     //   3. Output never contains a "_datadog":{...} carrier (object value).
-    //   4. Non-carrier _datadog entries are preserved.
+    // Preservation of non-object _datadog values is covered by NonObjectCarrier_IsKept.
     // -----------------------------------------------------------------------
 
     [Theory]
@@ -355,10 +251,11 @@ public class StripInjectedContextTests
         {
             var payload = GenerateRandomPayload(rng);
             string result = null;
-            var act = () => result = StripInjectedContext.StripInternal(payload);
+            var act = () => result = InjectedContextHelper.StripContext(payload);
             act.Should().NotThrow($"seed={seed}, iteration={i}, input={payload}");
 
-            var parse = () => JsonDocument.Parse(result!).Dispose();
+            result.Should().NotBeNull();
+            var parse = () => JsonDocument.Parse(result).Dispose();
             parse.Should().NotThrow($"output must be valid JSON; seed={seed}, iteration={i}, input={payload}, result={result}");
 
             // If payload had no carrier key at all, result must equal input
@@ -379,7 +276,7 @@ public class StripInjectedContextTests
         for (int i = 0; i < 300; i++)
         {
             var payload = GeneratePayloadWithCarrier(rng);
-            var result = StripInjectedContext.StripInternal(payload);
+            var result = InjectedContextHelper.StripContext(payload);
             var parse = () => JsonDocument.Parse(result).Dispose();
             parse.Should().NotThrow($"output must be valid JSON; seed={seed}, iteration={i}, input={payload}, result={result}");
 

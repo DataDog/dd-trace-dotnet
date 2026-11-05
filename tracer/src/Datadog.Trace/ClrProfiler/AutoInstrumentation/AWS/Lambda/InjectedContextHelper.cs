@@ -1,4 +1,4 @@
-// <copyright file="StripInjectedContext.cs" company="Datadog">
+// <copyright file="InjectedContextHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,9 +23,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 /// Carriers inside string-encoded JSON (SNS Message, SQS body) are decoded,
 /// stripped recursively up to <see cref="MaxDepth"/> levels, and re-encoded.
 /// A "_datadog" key whose value is not an object is treated as customer data and kept.
-/// Fail-open: on any error the original stream is kept.
+/// Fail-open: malformed JSON is returned unchanged, and the caller keeps the original payload on any error.
 /// </summary>
-internal static class StripInjectedContext
+internal static class InjectedContextHelper
 {
     /// <summary>SNS-to-SQS fan-out needs 2 levels of string-encoded JSON; one more is a safety margin.</summary>
     internal const int MaxDepth = 3;
@@ -46,47 +46,21 @@ internal static class StripInjectedContext
     }
 
     /// <summary>
-    /// If <paramref name="enabled"/> is true and <paramref name="json"/> contains a "_datadog" carrier,
-    /// returns a new MemoryStream over the stripped payload.
-    /// Returns null when disabled, when nothing was removed, or on any error (fail-open),
-    /// so the caller keeps the original stream.
+    /// Strips "_datadog":{...} carriers from <paramref name="json"/>.
+    /// Returns the same instance when nothing was removed, so callers can check with ReferenceEquals.
     /// </summary>
-    internal static MemoryStream? StripStream(string json, bool enabled)
+    internal static string StripContext(string json)
     {
-        if (!enabled || string.IsNullOrEmpty(json) || json.IndexOf(CarrierKey, StringComparison.Ordinal) < 0)
-        {
-            return null;
-        }
-
         // Invalid UTF-8 was decoded to U+FFFD and would be re-encoded as such, so keep the payload as is.
-        if (json.IndexOf('\uFFFD') >= 0)
+        if (string.IsNullOrEmpty(json)
+            || json.IndexOf(CarrierKey, StringComparison.Ordinal) < 0
+            || json.IndexOf('\uFFFD') >= 0)
         {
-            return null;
+            return json;
         }
 
-        try
-        {
-            var stripped = StripInternal(json);
-            if (ReferenceEquals(stripped, json))
-            {
-                return null;
-            }
-
-            return new MemoryStream(EncodingHelpers.Utf8NoBom.GetBytes(stripped));
-        }
-        catch (Exception ex)
-        {
-            LambdaCommon.Log("Unable to strip _datadog from Lambda payload; using original", ex, debug: false);
-            return null;
-        }
+        return StripJson(json, depth: 0);
     }
-
-    /// <summary>
-    /// Strips "_datadog":{...} from <paramref name="json"/>. Unconditional (no config check).
-    /// Internal so unit tests and benchmarks can call it directly.
-    /// </summary>
-    internal static string StripInternal(string json)
-        => string.IsNullOrEmpty(json) ? json : StripJson(json, depth: 0);
 
     /// <summary>
     /// Walks string tokens once. A "_datadog" key with an object value is cut out;

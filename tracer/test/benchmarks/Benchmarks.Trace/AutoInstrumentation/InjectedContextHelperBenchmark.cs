@@ -1,4 +1,4 @@
-// <copyright file="StripInjectedContextBenchmark.cs" company="Datadog">
+// <copyright file="InjectedContextHelperBenchmark.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,13 +9,13 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 namespace Benchmarks.Trace;
 
 /// <summary>
-/// Measures the cost of StripInjectedContext.StripInternal for the three Lambda event shapes.
+/// Measures the cost of InjectedContextHelper.StripContext for the three Lambda event shapes.
 /// Mirrors the payload shapes of the Java JMH benchmark.
-/// Run with: dotnet run -c Release -f net11.0 -- --filter '*StripInjectedContextBenchmark*' --inProcess
+/// Run with: dotnet run -c Release -f net11.0 -- --filter '*InjectedContextHelperBenchmark*' --inProcess
 /// </summary>
 [MemoryDiagnoser]
 [BenchmarkCategory(Constants.TracerCategory)]
-public class StripInjectedContextBenchmark
+public class InjectedContextHelperBenchmark
 {
     private const string Carrier = "{\"x-datadog-trace-id\":\"123\",\"x-datadog-parent-id\":\"456\"}";
     private string _payload;
@@ -46,7 +46,7 @@ public class StripInjectedContextBenchmark
     }
 
     [Benchmark]
-    public string StripInternal() => StripInjectedContext.StripInternal(_payload);
+    public string StripContext() => InjectedContextHelper.StripContext(_payload);
 
     private static string EscapeForJsonString(string s)
     => s.Replace("\"", "\\\"");
