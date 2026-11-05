@@ -18,6 +18,22 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class FeatureFlagsSettingsTests
 {
     [Theory]
+    [InlineData(null, "disabled")]
+    [InlineData("immediate", "immediate")]
+    [InlineData("unsupported", "unsupported")]
+    public void PassesOptOutModeToProviderForOverrideAndValidation(string? configured, string expected)
+    {
+        var values = new NameValueCollection();
+        if (configured is not null)
+        {
+            values[ConfigurationKeys.FeatureFlags.ExperimentationOptOutMode] = configured;
+        }
+
+        var settings = new FeatureFlagsSettings(new NameValueConfigurationSource(values), NullConfigurationTelemetry.Instance);
+        settings.ExperimentationOptOutMode.Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData(null, true)]
     [InlineData("true", true)]
     [InlineData("false", false)]

@@ -42,31 +42,44 @@ public class CanonicalFixtureTests
 
         foreach (var resource in resources)
         {
-            var cases = JsonLinq.JArray.Parse(ReadResource(resource));
+            using var reader = new Json.JsonTextReader(new StringReader(ReadResource(resource))) { DateParseHandling = Json.DateParseHandling.None };
+            var cases = JsonLinq.JArray.Load(reader);
             Assert.NotEmpty(cases);
             for (var index = 0; index < cases.Count; index++)
             {
                 var description = $"{resource.Substring(CasesPrefix.Length)}[{index}]";
                 var json = cases[index].ToString(Json.Formatting.None);
-                yield return [description, json, false];
-                yield return [description, json, true];
+                yield return [description, json, false, false];
+                yield return [description, json, true, false];
+                if (cases[index]["capabilities"]?["experimentationOptOutImmediate"] is not null)
+                {
+                    yield return [description + " immediate", json, false, true];
+                    yield return [description + " immediate", json, true, true];
+                }
             }
         }
     }
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public async Task PublicProviderMethodsMatchCanonicalFixtures(string description, string json, bool useAsync)
+    public async Task PublicProviderMethodsMatchCanonicalFixtures(string description, string json, bool useAsync, bool immediate)
     {
         Assert.False(string.IsNullOrEmpty(description));
-        var testCase = JsonLinq.JObject.Parse(json);
+        using var reader = new Json.JsonTextReader(new StringReader(json)) { DateParseHandling = Json.DateParseHandling.None };
+        var testCase = JsonLinq.JObject.Load(reader);
+        if (immediate)
+        {
+            testCase["result"] = testCase["capabilities"]!["experimentationOptOutImmediate"]!.DeepClone();
+        }
+
         var evaluator = new TracerFlags.FeatureFlagsEvaluator(null, Configuration);
         using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
             new EvaluationAdapter(evaluator.Evaluate(
                 key,
                 (TracerFlags.ValueType)type,
                 fallback,
-                new TracerFlags.EvaluationContext(targetingKey, attributes))));
+                new TracerFlags.EvaluationContext(targetingKey, attributes),
+                immediate)));
 
         var builder = EvaluationContext.Builder();
         foreach (var attribute in ((JsonLinq.JObject)testCase["attributes"]!).Properties())
@@ -121,6 +134,38 @@ public class CanonicalFixtureTests
         }
     }
 
+    [Theory]
+    [InlineData("2026-10-19", false)]
+    [InlineData("2026-10-19", true)]
+    [InlineData("2026-10-19T15:30:00", false)]
+    [InlineData("2026-10-19T15:30:00", true)]
+    public async Task ImmediateOptOutPreservesAllocationTimestampCompatibility(string timestamp, bool useAsync)
+    {
+        // These formats are accepted by allocation timestamps. Opt-out must not
+        // reject them with InvalidContext or keep the subject in the experiment.
+        var testCase = new JsonLinq.JObject
+        {
+            ["flag"] = "new-user-onboarding",
+            ["variationType"] = "STRING",
+            ["defaultValue"] = "default",
+            ["targetingKey"] = "19",
+            ["attributes"] = new JsonLinq.JObject
+            {
+                ["country"] = "UK",
+                ["dd_experimentation_opt_out_at"] = timestamp
+            },
+            ["result"] = new JsonLinq.JObject { ["value"] = "red", ["reason"] = "TARGETING_MATCH" },
+            ["capabilities"] = new JsonLinq.JObject
+            {
+                ["experimentationOptOutImmediate"] = new JsonLinq.JObject { ["value"] = "default", ["reason"] = "DEFAULT" }
+            }
+        };
+
+        var json = testCase.ToString(Json.Formatting.None);
+        await PublicProviderMethodsMatchCanonicalFixtures("Allocation timestamp compatibility", json, useAsync, immediate: false);
+        await PublicProviderMethodsMatchCanonicalFixtures("Allocation timestamp compatibility", json, useAsync, immediate: true);
+    }
+
     private static void AssertResolution<T>(JsonLinq.JObject testCase, ResolutionDetails<T> actual)
     {
         var expected = testCase["result"]!;
@@ -166,7 +211,10 @@ public class CanonicalFixtureTests
             _ => throw new InvalidOperationException($"Unsupported fixture errorCode: {errorCode}"),
         };
         Assert.Equal(expectedError, actual.ErrorType);
-        Assert.Equal(errorCode, actual.ErrorMessage);
+        var expectedMessage = expectedError == ErrorType.InvalidContext
+            ? "dd_experimentation_opt_out_at must be an RFC3339 timestamp string; supply a valid timestamp to opt out, or omit the attribute to permit experimentation"
+            : errorCode;
+        Assert.Equal(expectedMessage, actual.ErrorMessage);
     }
 
     private static string ReadResource(string name)
