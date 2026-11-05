@@ -34,6 +34,17 @@ public class XUnitRetriesTestsV3 : TestingFrameworkRetriesTests
 
     public static IEnumerable<object[]> GetQuarantineRetryData() => GetQuarantineRetryData(PackageVersions.XUnitRetriesV3);
 
+    public static IEnumerable<object[]> GetAutomationExclusionData() => GetAutomationExclusionData(PackageVersions.XUnitRetriesV3);
+
+    [SkippableTheory]
+    [MemberData(nameof(GetAutomationExclusionData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task AutomationExclusions(string packageVersion, string testName, int expectedExecutions, string expectedFinalStatus, int expectedExitCode, string expectedTag)
+        => base.AutomationExclusions(packageVersion, testName, expectedExecutions, expectedFinalStatus, expectedExitCode, expectedTag);
+
     [SkippableTheory]
     [MemberData(nameof(GetQuarantineRetryData))]
     [Trait("Category", "EndToEnd")]
@@ -69,5 +80,12 @@ public class XUnitRetriesTestsV3 : TestingFrameworkRetriesTests
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
     public override Task FlakyRetriesWithExceptionReplay(string packageVersion) => base.FlakyRetriesWithExceptionReplay(packageVersion);
+
+    // The automation exclusion scenarios share this sample, so keep the retry scenarios on their own suite.
+    protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
+        => "-class Samples.XUnitTestsRetriesV3.TestSuite";
+
+    protected override string GetTestFilterArguments(string fullyQualifiedName)
+        => $"-method {fullyQualifiedName}";
 }
 #endif

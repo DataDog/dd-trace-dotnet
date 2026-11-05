@@ -21,6 +21,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />
     <!-- Microsoft.NET.Test.Sdk implicitly references Microsoft.TestPlatform.TestHost, but that -->
     <!-- includes Windows-specific testhost that mean that you can't use a built project on all -->

@@ -36,6 +36,17 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
 
     public static IEnumerable<object[]> GetQuarantineRetryData() => GetQuarantineRetryData(PackageVersions.MSTest2Retries);
 
+    public static IEnumerable<object[]> GetAutomationExclusionData() => GetAutomationExclusionData(PackageVersions.MSTest2Retries);
+
+    [SkippableTheory]
+    [MemberData(nameof(GetAutomationExclusionData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task AutomationExclusions(string packageVersion, string testName, int expectedExecutions, string expectedFinalStatus, int expectedExitCode, string expectedTag)
+        => base.AutomationExclusions(packageVersion, testName, expectedExecutions, expectedFinalStatus, expectedExitCode, expectedTag);
+
     [SkippableTheory]
     [MemberData(nameof(GetQuarantineRetryData))]
     [Trait("Category", "EndToEnd")]
