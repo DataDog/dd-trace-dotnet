@@ -298,7 +298,7 @@ internal static class FeatureFlagsSdk
     }
 
     // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
-    // typed values, so the keys with a known type are converted here.
+    // typed values, so the known non-feature keys are converted here. Features go through ConvertFeatureValue.
     private static object ConvertMetadataValue(string key, string value)
     {
         if (key == FeatureFlagMetadataKeys.DoLog || key == FeatureFlagMetadataKeys.ExposureCacheHit)

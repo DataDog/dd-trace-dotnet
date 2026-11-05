@@ -10,4 +10,4 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 // Consent is absent: degraded output omits both subject identity and evaluation context.
 // FeaturesKey is the canonical form of the split's EVALUATION features, so evaluations that differ
 // only in those features count separately. The serial id is deliberately not part of any key.
-internal readonly record struct DegradedKey(string FlagKey, string? Variant, string? AllocationKey, string? ErrorCode, string FeaturesKey = "");
+internal readonly record struct DegradedKey(string FlagKey, string? Variant, string? AllocationKey, string? ErrorCode, string FeaturesKey);

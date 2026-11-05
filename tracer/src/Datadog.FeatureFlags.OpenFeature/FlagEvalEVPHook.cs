@@ -44,13 +44,13 @@ internal sealed class FlagEvalEVPHook : Hook
         Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, int> enqueue,
         Action recordError,
         CaptureSnapshot capture,
-        Func<bool>? canEnqueueWithFeatures = null,
-        Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, IReadOnlyDictionary<string, object?>?, int>? enqueueWithFeatures = null)
+        Func<bool> canEnqueueWithFeatures,
+        Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, IReadOnlyDictionary<string, object?>?, int> enqueueWithFeatures)
     {
         _canEnqueue = canEnqueue;
         _enqueue = enqueue;
-        _canEnqueueWithFeatures = canEnqueueWithFeatures ?? (static () => false);
-        _enqueueWithFeatures = enqueueWithFeatures ?? (static (_, _, _, _, _, _, _, _, _) => { });
+        _canEnqueueWithFeatures = canEnqueueWithFeatures;
+        _enqueueWithFeatures = enqueueWithFeatures;
         _recordError = recordError;
         _capture = capture;
     }

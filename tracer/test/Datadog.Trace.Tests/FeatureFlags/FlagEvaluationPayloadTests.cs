@@ -95,7 +95,7 @@ public class FlagEvaluationPayloadTests
     [InlineData(true, false)]
     public void SerializerIndependentlyProtectsOverPermissiveEntries(bool keyConsent, bool entryConsent)
     {
-        var key = new FullKey(new DegradedKey("flag", "on", null, ErrorCanary), TargetCanary, "ignored", keyConsent);
+        var key = new FullKey(new DegradedKey("flag", "on", null, ErrorCanary, string.Empty), TargetCanary, "ignored", keyConsent);
         var entry = new EvaluationEntry(Epoch, entryConsent, new Dictionary<string, object?> { ["secret"] = ContextCanary });
         var state = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [key] = entry }, [], 0);
 
@@ -115,7 +115,7 @@ public class FlagEvaluationPayloadTests
     public void SerializerAlwaysOmitsDegradedContextEvenWhenEntryIsMalformed()
     {
         var entry = new EvaluationEntry(Epoch, true, new Dictionary<string, object?> { ["secret"] = ContextCanary });
-        var state = new DrainResult([], new Dictionary<DegradedKey, EvaluationEntry> { [new("flag", "on", null, ErrorCanary)] = entry }, 0);
+        var state = new DrainResult([], new Dictionary<DegradedKey, EvaluationEntry> { [new("flag", "on", null, ErrorCanary, string.Empty)] = entry }, 0);
 
         var bytes = Encode(state).Payloads.Should().ContainSingle().Subject;
 
@@ -129,7 +129,7 @@ public class FlagEvaluationPayloadTests
     [InlineData(true)]
     public void SerializerIndependentlyOmitsMalformedTarget(bool consent)
     {
-        var key = new FullKey(new("flag", "on", null, null), "\uD800", string.Empty, consent);
+        var key = new FullKey(new("flag", "on", null, null, string.Empty), "\uD800", string.Empty, consent);
         var state = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [key] = new(Epoch, consent, null) }, [], 0);
 
         var result = Encode(state);
@@ -154,7 +154,7 @@ public class FlagEvaluationPayloadTests
             attributes["field-" + i] = i;
         }
 
-        var key = new FullKey(new("flag", "on", null, null), TargetCanary, string.Empty, true);
+        var key = new FullKey(new("flag", "on", null, null, string.Empty), TargetCanary, string.Empty, true);
         var state = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [key] = new(Epoch, true, attributes) }, [], 0);
 
         var bytes = Encode(state).Payloads.Single();
@@ -269,13 +269,13 @@ public class FlagEvaluationPayloadTests
     public void ObviouslyOversizedKeysDoNotAllocateTheirSerializedRepresentation(string dimension, bool degraded)
     {
         var large = new string('x', 1024 * 1024);
-        var dimensions = new DegradedKey(dimension == "flag" ? large : "flag", dimension == "variant" ? large : "on", dimension == "allocation" ? large : null, null);
+        var dimensions = new DegradedKey(dimension == "flag" ? large : "flag", dimension == "variant" ? large : "on", dimension == "allocation" ? large : null, null, string.Empty);
         var entry = new EvaluationEntry(Epoch, true, null);
         entry.Observe(Epoch, true);
         var state = degraded
                         ? new DrainResult([], new Dictionary<DegradedKey, EvaluationEntry> { [dimensions] = entry }, 0)
                         : new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [new(dimensions, dimension == "target" ? large : "subject", string.Empty, true)] = entry }, [], 0);
-        var warmup = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [new(new("flag", "on", null, null), "subject", string.Empty, true)] = new(Epoch, true, null) }, [], 0);
+        var warmup = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [new(new("flag", "on", null, null, string.Empty), "subject", string.Empty, true)] = new(Epoch, true, null) }, [], 0);
         Encode(warmup, 512);
 
         var before = GC.GetAllocatedBytesForCurrentThread();
@@ -312,7 +312,7 @@ public class FlagEvaluationPayloadTests
     {
         var target = (valid ? string.Empty : "\uD800") + new string('x', 4096);
         var entry = new EvaluationEntry(Epoch, entryConsent, new Dictionary<string, object?> { ["country"] = "US" });
-        var key = new FullKey(new("flag", "on", null, null), target, string.Empty, keyConsent);
+        var key = new FullKey(new("flag", "on", null, null, string.Empty), target, string.Empty, keyConsent);
         var state = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [key] = entry }, [], 0);
 
         var result = Encode(state, 512);
@@ -345,8 +345,8 @@ public class FlagEvaluationPayloadTests
     [Fact]
     public void MalformedRowDoesNotPoisonOtherRows()
     {
-        var good = new FullKey(new("good", "on", null, null), null, string.Empty, false);
-        var bad = new FullKey(new(null!, "on", null, null), null, string.Empty, false);
+        var good = new FullKey(new("good", "on", null, null, string.Empty), null, string.Empty, false);
+        var bad = new FullKey(new(null!, "on", null, null, string.Empty), null, string.Empty, false);
         var badEntry = new EvaluationEntry(Epoch, false, null);
         badEntry.Observe(Epoch, false);
         var state = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [bad] = badEntry, [good] = new(Epoch, false, null) }, [], 0);
