@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -59,15 +60,52 @@ public class DebuggerUploaderTests
         batchUploader.Events.Should().ContainSingle();
     }
 
-    private static DebuggerUploaderBase CreateUploader(bool diagnostics, IBatchUploader batchUploader, out Action<int> add)
+    [Fact]
+    public void Dispose_DrainsQueuedDiagnosticsWhenEachUploadOutlastsTheResendInterval()
     {
-        var settings = new DebuggerSettings(
+        var clock = new SimpleClock();
+        using var clockLease = Clock.SetForCurrentThread(clock);
+        var resendInterval = TimeSpan.FromSeconds(CreateSettings().DiagnosticsIntervalSeconds);
+        var slowUploads = 0;
+        var batchUploader = new ControlledBatchUploader(
+            blockFirst: false,
+            onUpload: () =>
+            {
+                // Bounding the slow uploads makes a drain that never empties fail instead of hang.
+                if (slowUploads++ < 10)
+                {
+                    clock.UtcNow += resendInterval;
+                }
+            });
+        using var uploader = CreateUploader(diagnostics: true, batchUploader, out var add);
+        for (var i = 0; i < 5; i++)
+        {
+            add(i);
+        }
+
+        // Disposing before the loop starts runs the whole drain on this thread, which owns the fake clock.
+        uploader.Dispose();
+        var flushing = uploader.StartFlushingAsync();
+
+        flushing.Status.Should().Be(TaskStatus.RanToCompletion);
+        batchUploader.Events.Should().HaveCount(5).And.OnlyHaveUniqueItems();
+        batchUploader.Calls.Should().Be(3);
+    }
+
+    private static DebuggerSettings CreateSettings()
+    {
+        return new DebuggerSettings(
             new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.Debugger.UploadBatchSize, "2" },
                 { ConfigurationKeys.Debugger.UploadFlushInterval, "2000" },
             }),
             NullConfigurationTelemetry.Instance);
+    }
+
+    private static DebuggerUploaderBase CreateUploader(bool diagnostics, IBatchUploader batchUploader, out Action<int> add)
+    {
+        var settings = CreateSettings();
         if (diagnostics)
         {
             var sink = DiagnosticsSink.Create(() => "service", settings);
@@ -86,7 +124,7 @@ public class DebuggerUploaderTests
         await task;
     }
 
-    private sealed class ControlledBatchUploader(bool blockFirst) : IBatchUploader
+    private sealed class ControlledBatchUploader(bool blockFirst, Action onUpload = null) : IBatchUploader
     {
         public TaskCompletionSource<bool> Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -100,6 +138,7 @@ public class DebuggerUploaderTests
         {
             Events.AddRange(payloads);
             Calls++;
+            onUpload?.Invoke();
             Started.TrySetResult(true);
             return blockFirst && Calls == 1 ? Release.Task : Task.CompletedTask;
         }

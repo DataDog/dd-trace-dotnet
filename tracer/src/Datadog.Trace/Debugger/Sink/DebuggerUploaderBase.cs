@@ -45,6 +45,8 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
     protected abstract bool HasPendingEvents { get; }
 
+    protected bool IsDisposed => _processExit.Task.IsCompleted;
+
     public async Task StartFlushingAsync()
     {
         var currentInterval = _initialFlushInterval;

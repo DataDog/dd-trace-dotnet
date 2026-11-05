@@ -259,21 +259,31 @@ namespace Datadog.Trace.Debugger.Sink
             }
         }
 
-        public List<ProbeStatus> GetDiagnostics()
+        /// <summary>
+        /// Removes and returns the next batch of queued diagnostics.
+        /// </summary>
+        /// <param name="queuePeriodicResends">
+        /// Whether to first queue diagnostics whose resend interval has elapsed. Pass <c>false</c> to drain only the
+        /// diagnostics already queued, so repeated calls empty the queue even when the interval elapses between them.
+        /// </param>
+        public List<ProbeStatus> GetDiagnostics(bool queuePeriodicResends = true)
         {
             lock (_locker)
             {
                 var now = Clock.UtcNow;
                 List<TimedMessage>? messagesToReemit = null;
-                foreach (var timedMessage in _diagnostics.Values)
+                if (queuePeriodicResends)
                 {
-                    if (timedMessage.IsQueued || timedMessage.RemoveAfterEmit || !ShouldEmitAgain(timedMessage.LastEmit))
+                    foreach (var timedMessage in _diagnostics.Values)
                     {
-                        continue;
-                    }
+                        if (timedMessage.IsQueued || timedMessage.RemoveAfterEmit || !ShouldEmitAgain(timedMessage.LastEmit))
+                        {
+                            continue;
+                        }
 
-                    messagesToReemit ??= new List<TimedMessage>();
-                    messagesToReemit.Add(timedMessage);
+                        messagesToReemit ??= new List<TimedMessage>();
+                        messagesToReemit.Add(timedMessage);
+                    }
                 }
 
                 if (messagesToReemit is not null)

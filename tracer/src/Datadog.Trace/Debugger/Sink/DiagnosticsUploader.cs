@@ -35,7 +35,8 @@ namespace Datadog.Trace.Debugger.Sink
 
         protected override async Task Upload()
         {
-            var diagnostics = _diagnosticsSink.GetDiagnostics();
+            // After disposal, drain only what is already queued. Periodic resends could otherwise refill the queue forever.
+            var diagnostics = _diagnosticsSink.GetDiagnostics(queuePeriodicResends: !IsDisposed);
             if (diagnostics.Count > 0)
             {
                 await _diagnosticsBatchUploader.Upload(diagnostics.Select(JsonHelper.SerializeObject)).ConfigureAwait(continueOnCapturedContext: false);
