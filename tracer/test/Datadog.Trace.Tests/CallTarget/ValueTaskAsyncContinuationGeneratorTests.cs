@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -295,6 +296,47 @@ namespace Datadog.Trace.Tests.CallTarget
 
         [Theory]
         [CombinatorialData]
+        public async Task ContinuationRunsOnceWhenTargetThrowsTest(bool hasResult)
+        {
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            IntegrationThatRecordsExceptions.Exceptions.Clear();
+            if (hasResult)
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatRecordsExceptions, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
+            }
+            else
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatRecordsExceptions, ValueTaskAsyncContinuationGeneratorTests, ValueTask>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
+            }
+
+            // The integration sees the target's exception, exactly once
+            Assert.Same(exception, Assert.Single(IntegrationThatRecordsExceptions.Exceptions));
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationWhenTargetThrowsTest(bool hasResult)
+        {
+            // The target's exception is rethrown by the rewritten method, but the integration's must not fault the task
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            if (hasResult)
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
+            }
+            else
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskAsyncContinuationGeneratorTests, ValueTask>();
+                await AwaitIgnoringTargetException(tcg.SetContinuation(this, default, exception, in state).AsTask(), exception);
+            }
+        }
+
+        [Theory]
+        [CombinatorialData]
         public async Task BubbleUpExceptionReachesTheCallerTest(bool alreadyCompleted, bool faulted)
         {
             // AppSec blocks by throwing an exception that wraps a CallTargetBubbleUpException, which must reach the application
@@ -347,6 +389,17 @@ namespace Datadog.Trace.Tests.CallTarget
             else
             {
                 tcs.TrySetResult(default);
+            }
+        }
+
+        private static async Task AwaitIgnoringTargetException(Task task, Exception targetException)
+        {
+            // Depending on the runtime the returned task may carry the target's exception, which is fine because the
+            // rewritten method rethrows that one anyway. Anything else is the integration's exception escaping.
+            var ex = await Record.ExceptionAsync(() => task);
+            if (ex is not null)
+            {
+                Assert.Same(targetException, ex);
             }
         }
 
@@ -425,10 +478,26 @@ namespace Datadog.Trace.Tests.CallTarget
 
         internal class IntegrationThatThrows
         {
-            public static async Task<string> OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, CallTargetState state)
+            public static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
             {
                 await Task.Yield();
                 throw new CustomException("Integration Exception");
+            }
+        }
+
+        internal class IntegrationThatRecordsExceptions
+        {
+            public static List<Exception> Exceptions { get; } = [];
+
+            public static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+            {
+                await Task.Yield();
+                lock (Exceptions)
+                {
+                    Exceptions.Add(exception);
+                }
+
+                return returnValue;
             }
         }
 

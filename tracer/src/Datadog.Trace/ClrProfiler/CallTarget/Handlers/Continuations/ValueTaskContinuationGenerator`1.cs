@@ -148,7 +148,19 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
         {
             if (exception != null)
             {
-                return await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
+                    // *
+                    return await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                }
+                catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                }
+
+                return default;
             }
 
             TResult? result = default;
