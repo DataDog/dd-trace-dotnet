@@ -40,6 +40,8 @@ public class W3CBaggagePropagatorTests
             { "key=%20", [("key", " ")] },                               // encode whitespace
             { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },    // encode whitespace
             { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] }, // encode unicode
+            { "key%2520=100%25", [("key%20", "100%")] },                  // encode literal %
+            { "key=a+b", [("key", "a+b")] },                              // literal + not encoded
         };
 
     public static TheoryData<string, (string Key, string Value)[]> ExtractBaggageData
@@ -96,12 +98,14 @@ public class W3CBaggagePropagatorTests
     [InlineData("abcd", true, "abcd")]                                                               // no chars to encode
     [InlineData("José 🐶\t我", true, "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")]                         // always encode whitespace and Unicode chars
     [InlineData("\",;\\()/:<=>?@[]{}", true, "%22%2C%3B%5C%28%29%2F%3A%3C%3D%3E%3F%40%5B%5D%7B%7D")] // other chars (NOTE: different from value)
+    [InlineData("100% a+b", true, "100%25%20a+b")]                                                 // encode literal %, keep literal +
     // values
     [InlineData(null, false, "")]                                             // null
     [InlineData("", false, "")]                                               // empty string
     [InlineData("abcd", false, "abcd")]                                       // no chars to encode
     [InlineData("José 🐶\t我", false, "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")] // always encode whitespace and Unicode chars
     [InlineData("\",;\\()/:<=>?@[]{}", false, "%22%2C%3B%5C()/:<=>?@[]{}")]   // other chars (NOTE: different from key)
+    [InlineData("100% a+b", false, "100%25%20a+b")]                           // encode literal %, keep literal +
     public void EncodeStringAndAppend(string value, bool isKey, string expected)
     {
         var sb = new StringBuilder();
@@ -116,6 +120,9 @@ public class W3CBaggagePropagatorTests
     [InlineData("a%62c%64", "abcd")]
     [InlineData("Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91", "José 🐶\t我")]
     [InlineData("José 🐶\t我", "José 🐶\t我")]
+    [InlineData("100%25", "100%")]
+    [InlineData("a+b", "a+b")]           // literal +, not a space
+    [InlineData("100%", "100%")]         // invalid escape kept as-is
     public void Decode(string value, string expected)
     {
         W3CBaggagePropagator.Decode(value).Should().Be(expected);

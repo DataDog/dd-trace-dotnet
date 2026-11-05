@@ -17,7 +17,7 @@
     <ProjectReference Include="..\..\src\Datadog.Trace.Tools.dd_dotnet\Datadog.Trace.Tools.dd_dotnet.csproj" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
     <!-- Generates the ProjectInfo class for assertions -->
-    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta3" PrivateAssets="all" />
+    <PackageReference Include="NetEscapades.ProjectInfo" Version="0.1.0-beta4" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />

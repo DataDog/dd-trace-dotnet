@@ -258,6 +258,7 @@ internal static partial class ConfigurationKeys
     /// <summary>
     /// Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
     /// Default value is <c>true</c> (enabled) on .NET 6+ and <c>false</c> (disabled) otherwise.
+    /// Runtime metrics are always disabled when <see cref="ConfigurationKeys.OpenTelemetry.SdkDisabled"/> is <c>true</c>.
     /// </summary>
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
