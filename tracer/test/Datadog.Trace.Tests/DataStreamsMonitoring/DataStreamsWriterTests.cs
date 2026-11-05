@@ -414,6 +414,66 @@ public class DataStreamsWriterTests
         await writer.DisposeAsync();
     }
 
+    [Fact]
+    [Trait("Category", "FormalMethods")]
+    public async Task Diagnostic_FailedSendIsNotRetried()
+    {
+        var api = new FaultyApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs: int.MaxValue);
+        TriggerSupportUpdate(discovery, isSupported: true);
+        writer.AddTransaction(new DataStreamsTransactionInfo("tx-id", 1L, "checkpoint"));
+
+        await writer.FlushAsync();
+        await writer.FlushAsync();
+
+        api.Sent.Should().ContainSingle("serialization removes the transaction before the API reports failure");
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "FormalMethods")]
+    public async Task Diagnostic_FlushCanReturnWhilePrecedingPointIsStillPending()
+    {
+        var api = new BlockingApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs: int.MaxValue);
+        TriggerSupportUpdate(discovery, isSupported: true);
+        writer.AddTransaction(new DataStreamsTransactionInfo("first", 1L, "checkpoint"));
+
+        var firstFlush = writer.FlushAsync();
+        await api.SendEntered.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
+        writer.AddTransaction(new DataStreamsTransactionInfo("second", 2L, "checkpoint"));
+        var secondFlush = writer.FlushAsync();
+        await secondFlush.WaitAsync(TimeSpan.FromSeconds(5));
+
+        api.Sent.Should().ContainSingle("the second flush timed out twice without draining its point");
+
+        api.ReleaseSend();
+        await firstFlush.WaitAsync(TimeSpan.FromSeconds(30));
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "FormalMethods")]
+    public async Task Diagnostic_DisposeReturnsWhileAnAcceptedSendIsStillRunning()
+    {
+        var api = new BlockingApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs: int.MaxValue);
+        TriggerSupportUpdate(discovery, isSupported: true);
+        writer.AddTransaction(new DataStreamsTransactionInfo("tx-id", 1L, "checkpoint"));
+
+        var flush = writer.FlushAsync();
+        await api.SendEntered.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
+        await writer.DisposeAsync().WaitAsync(TimeSpan.FromSeconds(5));
+
+        api.SendCompleted.IsCompleted.Should().BeFalse("DisposeAsync returned through its timeout path");
+
+        api.ReleaseSend();
+        await flush.WaitAsync(TimeSpan.FromSeconds(30));
+        await api.SendCompleted.WaitAsync(TimeSpan.FromSeconds(30));
+    }
+
     private static void HasOneOrTwoPoints(StubApi api)
     {
         // The origin and current points _might_ be sent in separate payloads
@@ -545,5 +605,30 @@ public class DataStreamsWriterTests
             base.SendAsync(bytes);
             return Task.FromResult(false);
         }
+    }
+
+    private class BlockingApi : StubApi
+    {
+        private readonly TaskCompletionSource<bool> _releaseSend = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource<bool> SendEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task SendCompleted { get; private set; } = Task.CompletedTask;
+
+        public override Task<bool> SendAsync(ArraySegment<byte> bytes)
+        {
+            base.SendAsync(bytes);
+            SendEntered.TrySetResult(true);
+            return WaitForRelease();
+
+            async Task<bool> WaitForRelease()
+            {
+                SendCompleted = _releaseSend.Task;
+                await _releaseSend.Task.ConfigureAwait(false);
+                return true;
+            }
+        }
+
+        public void ReleaseSend() => _releaseSend.TrySetResult(true);
     }
 }
