@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 /// <summary>
 /// Tells the provider that this tracer accepts EnqueueEVPWithFeatures. With an older tracer the stub
 /// keeps returning false, and the provider falls back to EnqueueEVP so the evaluation is still counted.
+/// It also returns false once CallTarget has disabled the EnqueueEVPWithFeatures integration, so later
+/// evaluations are still counted, without their features. Both stubs are on the same type.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",
@@ -29,5 +32,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 public sealed class OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration
 {
     internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(bool returnValue, Exception? exception, in CallTargetState state)
-        => new(exception is null);
+        => new(exception is null && IntegrationOptions<OpenFeatureSdkEnqueueEVPWithFeaturesIntegration, TTarget>.IsIntegrationEnabled);
 }

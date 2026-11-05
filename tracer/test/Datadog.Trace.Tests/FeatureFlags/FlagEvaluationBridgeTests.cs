@@ -206,6 +206,17 @@ public class FlagEvaluationBridgeTests
     }
 
     [Fact]
+    public void CanEnqueueWithFeaturesIsFalseOnceTheDeliveryIntegrationIsDisabled()
+    {
+        var state = CallTargetState.GetDefault();
+        OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration.OnMethodEnd<DisabledDeliveryTarget>(false, null, in state).GetReturnValue().Should().BeTrue();
+
+        IntegrationOptions<OpenFeatureSdkEnqueueEVPWithFeaturesIntegration, DisabledDeliveryTarget>.DisableIntegration();
+
+        OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration.OnMethodEnd<DisabledDeliveryTarget>(false, null, in state).GetReturnValue().Should().BeFalse("evaluations must fall back to EnqueueEVP");
+    }
+
+    [Fact]
     public void UnexpectedHookErrorIsBestEffortEvenWhenTheMetricSinkThrows()
     {
         var collector = new Mock<IMetricsTelemetryCollector>(MockBehavior.Strict);
@@ -225,4 +236,9 @@ public class FlagEvaluationBridgeTests
         },
         new Dictionary<string, string> { ["service"] = "bridge-test" },
         metrics: metrics);
+
+    // A target type of its own, because disabling an integration is static state for that type.
+    private sealed class DisabledDeliveryTarget
+    {
+    }
 }
