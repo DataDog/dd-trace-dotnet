@@ -117,13 +117,13 @@ public class CouchbaseFixture : ContainerFixture
 
     private static async Task CreateBucketAsync(IContainer container)
     {
-        var elapsed = Stopwatch.StartNew();
+        var elapsed = new Stopwatch();
         try
         {
             // The CLI's --wait has its own 60-second deadline, independent of RunCliAsync's timeout.
             // Create once, then poll the existing bucket: a readiness timeout does not undo creation.
             await RunCliAsync(container, "bucket-create", "--bucket", "default", "--bucket-type", "couchbase", "--bucket-ramsize", "100", "--bucket-replica", "0").ConfigureAwait(false);
-            elapsed.Restart();
+            elapsed.Start();
             using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
             try
             {
