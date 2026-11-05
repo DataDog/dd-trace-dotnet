@@ -43,17 +43,19 @@ public class CouchbaseFixture : ContainerFixture
         var useHostNetwork = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                           && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CONTAINER_HOSTNAME"));
         var builder = new ContainerBuilder(Image)
+                     .WithCreateParameterModifier(p =>
+                     {
+                         p.HostConfig ??= new HostConfig();
+                         // Couchbase requires 200000 file descriptors; Docker can default to 1024.
+                         p.HostConfig.Ulimits = [new Ulimit { Name = "nofile", Soft = 200000, Hard = 200000 }];
+                         if (useHostNetwork)
+                         {
+                             p.HostConfig.NetworkMode = "host";
+                         }
+                     })
                      .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("curl", "--fail", "--silent", "http://localhost:8091/pools"));
 
-        if (useHostNetwork)
-        {
-            builder = builder.WithCreateParameterModifier(p =>
-            {
-                p.HostConfig ??= new HostConfig();
-                p.HostConfig.NetworkMode = "host";
-            });
-        }
-        else
+        if (!useHostNetwork)
         {
             builder = builder.WithPortBinding(ManagementPort, false)
                              .WithPortBinding(QueryPort, false)
