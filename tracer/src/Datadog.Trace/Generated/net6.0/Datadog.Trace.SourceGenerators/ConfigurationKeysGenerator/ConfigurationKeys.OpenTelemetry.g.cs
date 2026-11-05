@@ -249,13 +249,9 @@ internal static partial class ConfigurationKeys
         public const string TracesSamplerArg = "OTEL_TRACES_SAMPLER_ARG";
 
         /// <summary>
-        /// Tri-state gate for OTLP span metrics export (traces.span.sdk.metrics.duration).
-        /// When unset, auto-enables iff OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
-        /// When true, enables span metrics export, unless traces aren't actually exported using
-        /// OTLP encoding, in which case the setting is forced back to false (with a warning
-        /// logged and the calculated value reported in telemetry), since OTLP span metrics
-        /// require OTLP trace export.
-        /// When false, always disables span metrics export.
+        /// Enables client-side APM RED metrics computation and export over OTLP.
+        /// Disabled by default. Requires OTLP trace export; otherwise the setting is forced
+        /// back to false, with a warning logged and the calculated value reported in telemetry.
         /// </summary>
         public const string TracesSpanMetricsEnabled = "OTEL_TRACES_SPAN_METRICS_ENABLED";
     }
