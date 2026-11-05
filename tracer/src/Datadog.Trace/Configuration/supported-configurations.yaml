@@ -4198,7 +4198,7 @@ supportedConfigurations:
   - implementation: A
     scope: managed
     type: boolean
-    default: false
+    default: 'false'
     product: OpenTelemetry
     const_name: TracesSpanMetricsEnabled
     documentation: |-
