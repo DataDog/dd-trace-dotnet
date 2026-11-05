@@ -486,9 +486,9 @@ namespace Datadog.Trace.Tests.Debugger
                 _sink.AddProbeStatus($"probe-{i}", Status.RECEIVED);
             }
 
-            var drained = _sink.GetDiagnostics(queuePeriodicResends: false);
+            var drained = _sink.GetQueuedDiagnostics();
             _timeLord.TravelTo(_timeLord.UtcNow.AddSeconds(_settings.DiagnosticsIntervalSeconds));
-            drained.AddRange(_sink.GetDiagnostics(queuePeriodicResends: false));
+            drained.AddRange(_sink.GetQueuedDiagnostics());
 
             drained.Select(p => p.DebuggerDiagnostics.Diagnostics.ProbeId).Should().OnlyHaveUniqueItems().And.HaveCount(_settings.UploadBatchSize + 1);
             _sink.IsEmpty.Should().BeTrue();

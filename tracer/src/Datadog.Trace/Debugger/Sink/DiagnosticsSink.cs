@@ -260,13 +260,23 @@ namespace Datadog.Trace.Debugger.Sink
         }
 
         /// <summary>
-        /// Removes and returns the next batch of queued diagnostics.
+        /// Queues diagnostics whose resend interval has elapsed, then removes and returns the next batch.
         /// </summary>
-        /// <param name="queuePeriodicResends">
-        /// Whether to first queue diagnostics whose resend interval has elapsed. Pass <c>false</c> to drain only the
-        /// diagnostics already queued, so repeated calls empty the queue even when the interval elapses between them.
-        /// </param>
-        public List<ProbeStatus> GetDiagnostics(bool queuePeriodicResends = true)
+        public List<ProbeStatus> GetDiagnostics()
+        {
+            return TakeBatch(queuePeriodicResends: true);
+        }
+
+        /// <summary>
+        /// Removes and returns the next batch of diagnostics that are already queued, without queueing periodic resends.
+        /// Repeated calls empty the queue even when the resend interval elapses between them.
+        /// </summary>
+        public List<ProbeStatus> GetQueuedDiagnostics()
+        {
+            return TakeBatch(queuePeriodicResends: false);
+        }
+
+        private List<ProbeStatus> TakeBatch(bool queuePeriodicResends)
         {
             lock (_locker)
             {

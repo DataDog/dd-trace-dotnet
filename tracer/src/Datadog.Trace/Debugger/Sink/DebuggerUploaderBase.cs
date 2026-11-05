@@ -50,7 +50,7 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
     public async Task StartFlushingAsync()
     {
         var currentInterval = _initialFlushInterval;
-        while (!_processExit.Task.IsCompleted || HasPendingEvents)
+        while (!IsDisposed || HasPendingEvents)
         {
             try
             {
@@ -73,7 +73,7 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
 
         async Task Delay(int delay)
         {
-            if (_processExit.Task.IsCompleted)
+            if (IsDisposed)
             {
                 return;
             }
