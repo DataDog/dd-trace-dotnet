@@ -21,7 +21,7 @@
     <!-- The semver prerelease suffix, including its leading '-' (e.g. -prerelease), or empty for a
          release. Almost always empty. Any suffix makes this version a prerelease. Native code
          receives it as the DD_VERSION_SUFFIX definition. -->
-    <DD_VersionSuffix></DD_VersionSuffix>
+    <DD_VersionSuffix>-dev.feature-test.1</DD_VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
