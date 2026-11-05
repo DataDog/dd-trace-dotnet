@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.FeatureFlags;
@@ -313,6 +314,42 @@ public partial class FeatureFlagsEvaluatorTests
 
         events.Should().HaveCount(1);
         events[0].SerialId.Should().BeNull();
+    }
+
+    [Fact]
+    public void ExposureContextDoesNotInspectDiscardedCollections()
+    {
+        var flags = new FlagCollection { ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag() };
+        var events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
+        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+        var context = new EvaluationContext(
+            "user-123",
+            new Dictionary<string, object?>
+            {
+                ["safe"] = "value",
+                ["throwing"] = new ThrowingList(),
+            });
+
+        var result = evaluator.Evaluate("exposure-flag", ValueType.String, "default", context);
+
+        result.Value.Should().Be("tracked-value");
+        events.Should().ContainSingle();
+        events[0].Subject.Attributes.Should().HaveCount(1);
+        events[0].Subject.Attributes["safe"].Should().Be("value");
+    }
+
+    [Fact]
+    public void ExposureContextBoundsTopLevelAttributes()
+    {
+        var attributes = new Dictionary<string, object?>();
+        for (var i = 0; i < 1_000; i++)
+        {
+            attributes[$"attribute-{i}"] = i;
+        }
+
+        var flattened = FeatureFlagsEvaluator.FlattenContext(new EvaluationContext("user-123", attributes));
+
+        flattened.Should().HaveCount(128);
     }
 
     // ---------------------------------------------------------------------
@@ -882,6 +919,43 @@ public partial class FeatureFlagsEvaluatorTests
         var alloc = new Allocation { Key = "time-alloc", StartAt = startAt, EndAt = endAt, Splits = splits, DoLog = false };
 
         return new Flag { Key = key, Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+    }
+
+    private sealed class ThrowingList : IList
+    {
+        public int Count => throw new InvalidOperationException("Count must not be read");
+
+        public bool IsReadOnly => true;
+
+        public bool IsFixedSize => true;
+
+        public bool IsSynchronized => false;
+
+        public object SyncRoot => this;
+
+        public object? this[int index]
+        {
+            get => throw new InvalidOperationException("Indexer must not be read");
+            set => throw new NotSupportedException();
+        }
+
+        public int Add(object? value) => throw new NotSupportedException();
+
+        public void Clear() => throw new NotSupportedException();
+
+        public bool Contains(object? value) => throw new InvalidOperationException("Collection must not be inspected");
+
+        public int IndexOf(object? value) => throw new InvalidOperationException("Collection must not be inspected");
+
+        public void Insert(int index, object? value) => throw new NotSupportedException();
+
+        public void Remove(object? value) => throw new NotSupportedException();
+
+        public void RemoveAt(int index) => throw new NotSupportedException();
+
+        public void CopyTo(Array array, int index) => throw new InvalidOperationException("Collection must not be inspected");
+
+        public IEnumerator GetEnumerator() => throw new InvalidOperationException("Collection must not be enumerated");
     }
 }
 #pragma warning restore SA1204 // Static elements should appear before instance elements

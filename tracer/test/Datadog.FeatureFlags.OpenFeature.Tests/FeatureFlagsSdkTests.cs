@@ -5,17 +5,51 @@
 
 #nullable enable
 
+extern alias Tracer;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using FluentAssertions;
 using OpenFeature.Constant;
+using OpenFeature.Model;
 using Xunit;
 
 namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
 public class FeatureFlagsSdkTests
 {
+    [Fact]
+    public void TracerDetectsBridgesFromSdkTargetAssembly()
+    {
+        Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
+              .HasExposureCommitBridge(typeof(DatadogProvider)).Should().BeTrue();
+        Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
+              .HasEvaluationEventBridge(typeof(DatadogProvider)).Should().BeTrue();
+        Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
+              .HasExposureCommitBridge(typeof(FeatureFlagsSdkTests)).Should().BeFalse();
+        Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
+              .HasEvaluationEventBridge(typeof(FeatureFlagsSdkTests)).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData((int)EvaluationReason.Static, Reason.Static)]
+    [InlineData((int)EvaluationReason.Default, Reason.Default)]
+    [InlineData((int)EvaluationReason.TargetingMatch, Reason.TargetingMatch)]
+    [InlineData((int)EvaluationReason.Split, Reason.Split)]
+    [InlineData((int)EvaluationReason.Disabled, Reason.Disabled)]
+    [InlineData((int)EvaluationReason.Cached, Reason.Cached)]
+    [InlineData((int)EvaluationReason.Unknown, Reason.Unknown)]
+    [InlineData((int)EvaluationReason.Error, Reason.Error)]
+    public void ResolutionUsesCanonicalOpenFeatureReason(int evaluationReason, string expected)
+    {
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null, reason: (EvaluationReason)evaluationReason), null);
+
+        result.Reason.Should().Be(expected);
+    }
+
     [Theory]
     [InlineData(null, false)]
     [InlineData("false", false)]
@@ -116,6 +150,175 @@ public class FeatureFlagsSdkTests
 
         result.Value.Should().BeTrue();
         result.FlagMetadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void NestedContextValuesAreNormalizedBeforeTracerEvaluation()
+    {
+        IDictionary<string, object?>? captured = null;
+        var createdAt = new DateTime(2026, 11, 4, 1, 2, 3, DateTimeKind.Utc);
+        var context = global::OpenFeature.Model.EvaluationContext.Builder()
+                                       .Set("createdAt", new Value(createdAt))
+                                       .Set("user", new Value(new Structure(new Dictionary<string, Value>
+                                       {
+                                           ["country"] = new("US"),
+                                           ["tags"] = new(new List<Value> { new("paid"), new(false) }),
+                                       })))
+                                       .Build();
+
+        FeatureFlagsSdk.Resolve(
+            "flag",
+            Trace.FeatureFlags.ValueType.Boolean,
+            false,
+            context,
+            evaluate: (_, _, _, _, attributes) =>
+            {
+                captured = attributes;
+                return new TestEvaluation(null);
+            });
+
+        captured.Should().NotBeNull();
+        captured!["createdAt"].Should().Be(createdAt);
+        captured!["user"].Should().BeEquivalentTo(new Dictionary<string, object?>
+        {
+            ["country"] = "US",
+            ["tags"] = new object?[] { "paid", false },
+        });
+    }
+
+    [Fact]
+    public void NestedContextNormalizationBoundsDepthContainersAndNodes()
+    {
+        var deep = new Value("leaf");
+        for (var i = 0; i < 10; i++)
+        {
+            deep = new Value(new Structure(new Dictionary<string, Value> { ["child"] = deep }));
+        }
+
+        var wide = new Value(Enumerable.Repeat(new Value("item"), 300).ToList());
+        var branches = new Dictionary<string, Value>();
+        for (var i = 0; i < 256; i++)
+        {
+            branches[i.ToString()] = new Value(Enumerable.Repeat(new Value("item"), 256).ToList());
+        }
+
+        var capturedDeep = Capture(deep);
+        var capturedWide = Capture(wide);
+        var capturedBranches = Capture(new Value(new Structure(branches)));
+
+        MaximumDepth(capturedDeep["value"]).Should().BeLessOrEqualTo(5, "the root attribute is depth one");
+        ((object?[])capturedWide["value"]!).Should().HaveCountLessOrEqualTo(256);
+        CountNodes(capturedBranches).Should().BeLessOrEqualTo(1_281, "the root dictionary is not an OpenFeature Value node");
+        OmissionReasons(capturedDeep).Should().HaveFlag(ContextOmissionReason.MaxSnapshotDepth);
+        OmissionReasons(capturedWide).Should().HaveFlag(ContextOmissionReason.MaxListElements);
+        OmissionReasons(capturedBranches).Should().HaveFlag(ContextOmissionReason.MaxVisitedNodes);
+
+        static IDictionary<string, object?> Capture(Value value)
+        {
+            IDictionary<string, object?>? captured = null;
+            var context = global::OpenFeature.Model.EvaluationContext.Builder().Set("value", value).Build();
+            FeatureFlagsSdk.Resolve(
+                "flag",
+                Trace.FeatureFlags.ValueType.Boolean,
+                false,
+                context,
+                evaluate: (_, _, _, _, attributes) =>
+                {
+                    captured = attributes;
+                    return new TestEvaluation(null);
+                });
+
+            return captured!;
+        }
+
+        static ContextOmissionReason OmissionReasons(IDictionary<string, object?> attributes)
+        {
+            var sdkReasons = ((FeatureFlagsSdk.ContextAttributes)attributes).ContextOmissionReasons;
+            var tracerReasons = Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration.GetContextOmissionReasons(attributes);
+            tracerReasons.Should().Be(sdkReasons, "the profiler bridge must preserve SDK normalization omissions");
+            return (ContextOmissionReason)sdkReasons;
+        }
+
+        static int CountNodes(object? value)
+        {
+            if (value is IDictionary<string, object?> dictionary)
+            {
+                return 1 + dictionary.Values.Sum(CountNodes);
+            }
+
+            if (value is object?[] array)
+            {
+                return 1 + array.Sum(CountNodes);
+            }
+
+            return 1;
+        }
+
+        static int MaximumDepth(object? value)
+        {
+            if (value is IDictionary<string, object?> dictionary && dictionary.Count > 0)
+            {
+                return 1 + dictionary.Values.Max(MaximumDepth);
+            }
+
+            if (value is object?[] array && array.Length > 0)
+            {
+                return 1 + array.Max(MaximumDepth);
+            }
+
+            return 1;
+        }
+    }
+
+    [Fact]
+    public void NestedContextNormalizationSharesNodeBudgetAndRetainsLaterScalars()
+    {
+        IDictionary<string, object?>? captured = null;
+        var builder = global::OpenFeature.Model.EvaluationContext.Builder();
+        for (var i = 0; i < 10; i++)
+        {
+            builder.Set($"nested-{i}", new Value(Enumerable.Repeat(new Value("item"), 256).ToList()));
+        }
+
+        var context = builder.Set("later-scalar", new Value("retained")).Build();
+        FeatureFlagsSdk.Resolve(
+            "flag",
+            Trace.FeatureFlags.ValueType.Boolean,
+            false,
+            context,
+            evaluate: (_, _, _, _, attributes) =>
+            {
+                captured = attributes;
+                return new TestEvaluation(null);
+            });
+
+        captured.Should().NotBeNull();
+        captured!["later-scalar"].Should().Be("retained");
+        captured.Where(pair => pair.Key.StartsWith("nested-", StringComparison.Ordinal))
+                .Sum(pair => CountExpandedNodes(pair.Value))
+                .Should().BeLessOrEqualTo(1_280);
+        ((ContextOmissionReason)((FeatureFlagsSdk.ContextAttributes)captured).ContextOmissionReasons)
+           .Should().HaveFlag(ContextOmissionReason.MaxVisitedNodes);
+
+        static int CountExpandedNodes(object? value)
+        {
+            if (value is null)
+            {
+                return 0;
+            }
+
+            if (value is IDictionary<string, object?> dictionary)
+            {
+                return 1 + dictionary.Values.Sum(CountExpandedNodes);
+            }
+
+            if (value is object?[] array)
+            {
+                return 1 + array.Sum(CountExpandedNodes);
+            }
+
+            return 1;
+        }
     }
 
     [Fact]
@@ -268,13 +471,13 @@ public class FeatureFlagsSdkTests
         FeatureFlagsSdk.GetHookFeatures(result.FlagMetadata).Should().BeNull();
     }
 
-    private sealed class TestEvaluation(IDictionary<string, string>? metadata, string? error = null) : IEvaluation
+    private sealed class TestEvaluation(IDictionary<string, string>? metadata, string? error = null, EvaluationReason? reason = null) : IEvaluation
     {
         public string FlagKey => "flag";
 
         public object Value => true;
 
-        public EvaluationReason Reason => error is null ? EvaluationReason.Static : EvaluationReason.Error;
+        public EvaluationReason Reason => reason ?? (error is null ? EvaluationReason.Static : EvaluationReason.Error);
 
         public string? Variant => "on";
 

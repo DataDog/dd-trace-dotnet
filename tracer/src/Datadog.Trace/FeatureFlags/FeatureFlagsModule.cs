@@ -73,7 +73,7 @@ namespace Datadog.Trace.FeatureFlags
 
         // Keyed by the metadata dictionary handed to the provider, which hands the same instance back
         // to commit. An evaluation that is never committed (an error, or no hooks ran) is collected.
-        private readonly ConditionalWeakTable<IDictionary<string, string>, StrongBox<ExposureEvent>> _deferredExposures = new();
+        private readonly ConditionalWeakTable<IDictionary<string, string>, StrongBox<IReadOnlyList<ExposureEvent>>> _deferredExposures = new();
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -425,11 +425,13 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
-            => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposure: false);
+            => Evaluate(flagKey, resultType, defaultValue, targetingKey, attributes, deferExposure: false, reportRootEvaluation: false);
 
         // With deferExposure, the exposure waits for CommitExposure instead of being recorded and sent.
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes, bool deferExposure, bool reportRootEvaluation = false, int contextOmissionReasons = 0)
         {
+            var evaluationTime = DateTime.UtcNow;
+            var context = new EvaluationContext(targetingKey, attributes, (ContextOmissionReason)contextOmissionReasons);
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
             {
@@ -440,26 +442,59 @@ namespace Datadog.Trace.FeatureFlags
                     error: "PROVIDER_NOT_READY",
                     metadata: new Dictionary<string, string>
                     {
+                        [FeatureFlagsEvaluator.MetadataErrorCode] = "PROVIDER_NOT_READY",
                         [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
                     });
+
+                if (reportRootEvaluation)
+                {
+                    ReportEvaluation(notReady, evaluationTime, context);
+                }
 
                 LogEvaluation(notReady, resultType, defaultValue, targetingKey, attributes, configuration: null);
 
                 return notReady;
             }
 
-            var context = new EvaluationContext(targetingKey, attributes);
-            var evaluation = deferExposure
-                                 ? evaluator.EvaluateWithDeferredExposure(flagKey, resultType, defaultValue, context)
-                                 : evaluator.Evaluate(flagKey, resultType, defaultValue, context);
-            if (evaluation.PendingExposure is { } pending && evaluation.FlagMetadata is { } metadata)
+            var collectDependencyEvaluations = Volatile.Read(ref _availableEvaluationWriter) is not null;
+            var trace = collectDependencyEvaluations
+                            ? evaluator.EvaluateWithTrace(flagKey, resultType, defaultValue, context)
+                            : evaluator.EvaluateWithoutDependencyTelemetry(flagKey, resultType, defaultValue, context);
+            ReportDependencyEvaluations(trace.DependencyEvaluations);
+
+            var evaluation = trace.Details;
+            if (reportRootEvaluation)
             {
-                _deferredExposures.Add(metadata, new StrongBox<ExposureEvent>(pending));
+                ReportEvaluation(evaluation, evaluationTime, context);
+            }
+
+            if (deferExposure && trace.DependencyExposures.Count > 0 && evaluation.FlagMetadata is { } metadata)
+            {
+                _deferredExposures.Add(metadata, new StrongBox<IReadOnlyList<ExposureEvent>>(trace.DependencyExposures));
+            }
+            else
+            {
+                ReportExposures(trace.DependencyExposures);
             }
 
             LogEvaluation(evaluation, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
 
             return evaluation;
+
+            void ReportExposures(IReadOnlyList<ExposureEvent> exposures)
+            {
+                foreach (var exposure in exposures)
+                {
+                    try
+                    {
+                        ReportExposure(in exposure);
+                    }
+                    catch
+                    {
+                        // Exposure delivery is best effort and must not affect resolution.
+                    }
+                }
+            }
         }
 
         [TestingAndPrivateOnly]
@@ -819,7 +854,7 @@ namespace Datadog.Trace.FeatureFlags
                 var ffeProduct = new FfeProduct(ApplyRemoteConfigurations, _log);
                 _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
-                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+                _rcmSubscriptionManager.SetCapability(FeatureFlagCapabilities.RemoteConfigMask(FeatureFlagsEvaluator.GetCapabilities()), true);
                 _deliveryStarted = true;
                 _log.Debug("FeatureFlagsModule::SubscribeToRemoteConfiguration -> Starting remote_config configuration source (Agent Remote Configuration)");
             }
@@ -896,7 +931,18 @@ namespace Datadog.Trace.FeatureFlags
                 return ExposureCommitResult.NothingPending;
             }
 
-            return ReportExposure(pending.Value) switch
+            if (pending.Value is not { } exposures)
+            {
+                return ExposureCommitResult.NothingPending;
+            }
+
+            var result = ExposureRecordResult.NotRecorded;
+            foreach (var exposure in exposures)
+            {
+                result = ReportExposure(in exposure);
+            }
+
+            return result switch
             {
                 ExposureRecordResult.New => ExposureCommitResult.New,
                 ExposureRecordResult.Repeat => ExposureCommitResult.Repeat,
@@ -917,6 +963,109 @@ namespace Datadog.Trace.FeatureFlags
             _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
             return ExposureRecordResult.NotRecorded;
         }
+
+        private void ReportDependencyEvaluation(DependencyEvaluation dependency)
+        {
+            var writer = Volatile.Read(ref _availableEvaluationWriter);
+            if (writer is null)
+            {
+                return;
+            }
+
+            var evaluation = dependency.Evaluation;
+            var consent = HasFullEvaluationDataConsent(evaluation);
+            var flattenOmissions = ContextOmissionReason.None;
+            var attributes = consent ? DependencyEvaluation.FlattenContext(dependency.ContextAttributes, out flattenOmissions) : null;
+            ReportDependencyEvaluation(writer, dependency, consent, attributes, flattenOmissions);
+        }
+
+        private void ReportDependencyEvaluations(IReadOnlyList<DependencyEvaluation> dependencies)
+        {
+            var writer = Volatile.Read(ref _availableEvaluationWriter);
+            if (writer is null || dependencies.Count == 0)
+            {
+                return;
+            }
+
+            IReadOnlyDictionary<string, object?>? cachedSource = null;
+            IReadOnlyDictionary<string, object?>? cachedAttributes = null;
+            var cachedOmissions = ContextOmissionReason.None;
+            var hasCachedContext = false;
+            foreach (var dependency in dependencies)
+            {
+                try
+                {
+                    var evaluation = dependency.Evaluation;
+                    var consent = HasFullEvaluationDataConsent(evaluation);
+                    if (consent && (!hasCachedContext || !ReferenceEquals(cachedSource, dependency.ContextAttributes)))
+                    {
+                        cachedSource = dependency.ContextAttributes;
+                        cachedAttributes = DependencyEvaluation.FlattenContext(cachedSource, out cachedOmissions);
+                        hasCachedContext = true;
+                    }
+
+                    ReportDependencyEvaluation(
+                        writer,
+                        dependency,
+                        consent,
+                        consent ? cachedAttributes : null,
+                        consent ? cachedOmissions : ContextOmissionReason.None);
+                }
+                catch
+                {
+                    // Dependency evaluation telemetry is best effort and must not affect resolution.
+                }
+            }
+        }
+
+#pragma warning disable SA1204 // Static telemetry helpers stay beside their instance callers.
+        private static void ReportDependencyEvaluation(
+            FlagEvaluationWriter writer,
+            DependencyEvaluation dependency,
+            bool consent,
+            IReadOnlyDictionary<string, object?>? attributes,
+            ContextOmissionReason flattenOmissions)
+        {
+            var evaluation = dependency.Evaluation;
+            writer.TryEnqueue(
+                new FlagEvalEvent(
+                    evaluation.FlagKey,
+                    evaluation.Variant,
+                    FeatureFlagsEvaluator.AllocationKey(evaluation),
+                    dependency.TargetingKey,
+                    new DateTimeOffset(dependency.EvaluationTime).ToUnixTimeMilliseconds(),
+                    attributes,
+                    FeatureFlagsEvaluator.ErrorCode(evaluation),
+                    consent),
+                (int)(dependency.ContextOmissions | flattenOmissions));
+        }
+
+        private void ReportEvaluation(Evaluation evaluation, DateTime evaluationTime, EvaluationContext context)
+        {
+            // Legacy SDKs rely on this compatibility path for their root event. Avoid detaching a
+            // consented context when delivery is unavailable; the snapshot can visit up to 1,280
+            // nodes and ReportDependencyEvaluation would discard it immediately.
+            if (Volatile.Read(ref _availableEvaluationWriter) is null)
+            {
+                return;
+            }
+
+            try
+            {
+                var consent = HasFullEvaluationDataConsent(evaluation);
+                var attributes = DependencyEvaluation.SnapshotContext(context, consent, out var omissions);
+                ReportDependencyEvaluation(DependencyEvaluation.Snapshot(evaluation, evaluationTime, context.TargetingKey, attributes, omissions));
+            }
+            catch
+            {
+                // Compatibility telemetry for an SDK without its own evaluation hook is best effort.
+            }
+        }
+
+        private static bool HasFullEvaluationDataConsent(Evaluation evaluation)
+            => evaluation.FlagMetadata?.TryGetValue(FeatureFlagMetadataKeys.ObserveFullEvaluationData, out var value) == true
+            && value == "true";
+#pragma warning restore SA1204
 
         // Created on first use because most applications never evaluate a flag, and under the lock
         // because the evaluation path races disposal. Only the very first exposure takes the lock:

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
@@ -132,6 +133,100 @@ public class UfcConfigurationParserTests
         configuration!.Flags.Should().NotBeNull();
         configuration!.Flags!.Should().ContainKey("test-flag");
         configuration!.Flags!["test-flag"].Enabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ParsesOptionalEvaluatorParamsAndFlagEvaluationCondition()
+    {
+        var body = """
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "evaluatorParams": {},
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": { "key": "prerequisite" }, "operator": "ONE_OF", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParams.Should().NotBeNull();
+        configuration.EvaluatorParams!.MaxDependencyDepth.Should().BeNull();
+        var condition = configuration.Flags!["root"].Allocations![0].Rules![0].Conditions![0];
+        condition.Attribute.Should().BeNull();
+        condition.FlagEvaluation!.Key.Should().Be("prerequisite");
+    }
+
+    [Fact]
+    public void PreservesExplicitNullMaximumDependencyDepth()
+    {
+        var body = ValidEnvelope.Replace("\"flags\": {}", "\"evaluatorParams\": { \"maxDependencyDepth\": null }, \"flags\": {}");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParams.Should().NotBeNull();
+        configuration.EvaluatorParams!.MaxDependencyDepthField.IsPresent.Should().BeTrue();
+        configuration.EvaluatorParams.MaxDependencyDepth.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("5")]
+    [InlineData("true")]
+    [InlineData("\"invalid\"")]
+    [InlineData("[]")]
+    public void IgnoresNonObjectEvaluatorParams(string token)
+    {
+        var body = ValidEnvelope.Replace("\"flags\": {}", $"\"evaluatorParams\": {token}, \"flags\": {{}}");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.EvaluatorParamsField.IsPresent.Should().BeFalse();
+        configuration.EvaluatorParams.Should().BeNull();
+        JsonConvert.SerializeObject(configuration).Should().NotContain("\"evaluatorParams\"");
+    }
+
+    [Fact]
+    public void RejectsMalformedFlagEvaluationDescriptor()
+    {
+        const string descriptor = "{ \"key\": 123 }";
+        var body = $$"""
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": {{descriptor}}, "operator": "ONE_OF", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags.Should().NotContainKey("root");
+    }
+
+    [Fact]
+    public void IgnoresUnknownFlagEvaluationFields()
+    {
+        var body = """
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "flags": { "root": { "key": "root", "enabled": true, "variationType": "STRING",
+                                          "allocations": [{ "key": "allocation", "rules": [{ "conditions": [{
+                                            "flagEvaluation": { "key": "dependency", "property": "variant" }, "operator": "ONE_OF", "value": ["on"]
+                                          }] }], "splits": [] }] } } } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Flags.Should().ContainKey("root");
+        configuration.Flags!["root"].Allocations![0].Rules![0].Conditions![0].FlagEvaluation!.Key.Should().Be("dependency");
     }
 
     [Fact]

@@ -14,5 +14,7 @@
     <!-- Link the canonical snapshot already used by FeatureFlagsEvaluatorTests; do not copy it. -->
     <EmbeddedResource Include="../Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data/ufc-config.json" LogicalName="Fixtures.ufc-config.json" />
     <EmbeddedResource Include="../Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data/evaluation-cases/*.json" LogicalName="Fixtures.evaluation-cases.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data/evaluation-suites/dependent-flags/ufc-config.json" LogicalName="Fixtures.evaluation-suites.dependent-flags.ufc-config.json" />
+    <EmbeddedResource Include="../Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data/evaluation-suites/dependent-flags/cases/dependent-flags.json" LogicalName="Fixtures.evaluation-suites.dependent-flags.cases.dependent-flags.json" />
   </ItemGroup>
 </Project>

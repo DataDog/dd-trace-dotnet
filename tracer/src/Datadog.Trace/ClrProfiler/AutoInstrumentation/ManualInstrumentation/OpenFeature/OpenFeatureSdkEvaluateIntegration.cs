@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
@@ -31,8 +32,31 @@ public sealed class OpenFeatureSdkEvaluateIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
-        return new CallTargetState(null, new State(flagKey, targetType, defaultValue, targetingKey, attributes));
+        return new CallTargetState(null, new State(flagKey, targetType, defaultValue, targetingKey, attributes, GetContextOmissionReasons(attributes)));
     }
+
+    internal static int GetContextOmissionReasons(IDictionary<string, object?>? attributes)
+    {
+        try
+        {
+            if (attributes is not null && attributes.TryDuckCast<ContextAttributesWithOmissions>(out var contextAttributes))
+            {
+                return contextAttributes.ContextOmissionReasons;
+            }
+        }
+        catch
+        {
+            // Context omission telemetry is best effort and must not affect flag resolution.
+        }
+
+        return 0;
+    }
+
+    internal static bool HasExposureCommitBridge(Type targetType)
+        => targetType.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.ExposureCommitBridge", throwOnError: false) is not null;
+
+    internal static bool HasEvaluationEventBridge(Type targetType)
+        => targetType.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.FlagEvalEVPHook", throwOnError: false) is not null;
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
@@ -42,10 +66,13 @@ public sealed class OpenFeatureSdkEvaluateIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
-        return new CallTargetReturn<TReturn?>(Evaluate((State)state.State!, deferExposure: false).DuckCast<TReturn>());
+        return new CallTargetReturn<TReturn?>(Evaluate(
+            (State)state.State!,
+            deferExposure: false,
+            reportRootEvaluation: !HasEvaluationEventBridge(typeof(TTarget))).DuckCast<TReturn>());
     }
 
-    internal static FeatureFlags.Evaluation? Evaluate(State parameters, bool deferExposure)
+    internal static FeatureFlags.Evaluation? Evaluate(State parameters, bool deferExposure, bool reportRootEvaluation = false)
     {
         var flags = TracerManager.Instance.FeatureFlags;
 
@@ -53,10 +80,26 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         // via the manual API or an older OpenFeature package), start delivery on first evaluation.
         flags?.Activate();
 
-        return flags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey, parameters.Attributes, deferExposure);
+        return flags?.Evaluate(
+            parameters.FlagKey,
+            parameters.TargetType,
+            parameters.DefaultValue,
+            parameters.TargetingKey,
+            parameters.Attributes,
+            deferExposure,
+            reportRootEvaluation,
+            contextOmissionReasons: parameters.ContextOmissionReasons);
     }
 
-    internal sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes)
+    [DuckCopy]
+    private struct ContextAttributesWithOmissions
+    {
+#pragma warning disable CS0649 // Duck typing populates this field.
+        public int ContextOmissionReasons;
+#pragma warning restore CS0649
+    }
+
+    internal sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes, int ContextOmissionReasons)
     {
     }
 }

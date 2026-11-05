@@ -162,6 +162,45 @@ public class ExposureApiTests
     }
 
     [Fact]
+    public async Task QueueOverflowDropsNewExposureWithoutGrowingThePendingBatch()
+    {
+        var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSend = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var logger = CreateDebugLogger();
+        var local = new TestRequestFactory(
+            new Uri("http://agent:8126/"),
+            uri => new BlockingApiRequest(uri, sendStarted, releaseSend),
+            uri => new RecordingJsonApiRequest(uri),
+            uri => new RecordingJsonApiRequest(uri));
+        using var transport = CreateLocalTransport(local, logger.Object);
+        using var api = new ExposureApi(
+            CreateSettings(),
+            transport,
+            TimeSpan.FromHours(1),
+            TimeSpan.FromSeconds(3),
+            logger.Object,
+            queueCapacity: 2,
+            batchSize: 1);
+
+        api.SendExposure(CreateExposure("in-flight"));
+        (await Task.WhenAny(sendStarted.Task, Task.Delay(TimeSpan.FromSeconds(30))))
+           .Should().BeSameAs(sendStarted.Task);
+
+        api.SendExposure(CreateExposure("queued-1"));
+        api.SendExposure(CreateExposure("queued-2"));
+        api.SendExposure(CreateExposure("overflow"));
+
+        ArgumentsOf(logger, "queue is full").Should().Equal("overflow");
+        releaseSend.TrySetResult(true);
+        api.Dispose();
+
+        local.RequestsSent.Should().HaveCount(3);
+        local.RequestsSent.Cast<RecordingJsonApiRequest>().Should().OnlyContain(
+            request => JObject.Parse(request.PayloadJson)["exposures"]!.Count() == 1,
+            "each queue drain is bounded by the configured batch size");
+    }
+
+    [Fact]
     public void ReportsWhatHappensToEachExposureThroughShutdown()
     {
         var logger = CreateDebugLogger();

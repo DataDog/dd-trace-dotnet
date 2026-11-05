@@ -11,6 +11,8 @@ namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class ServerConfiguration
 {
+    private OptionalField<EvaluatorParams> _evaluatorParams;
+
     [JsonConverter(typeof(StrictBooleanTrueJsonConverter))]
     public bool ObserveFullEvaluationData { get; set; }
 
@@ -20,8 +22,27 @@ internal sealed class ServerConfiguration
 
     public Environment? Environment { get; set; }
 
+    [JsonConverter(typeof(LenientEvaluatorParamsJsonConverter))]
+    public EvaluatorParams? EvaluatorParams
+    {
+        get => _evaluatorParams.Value;
+        set
+        {
+            if (ReferenceEquals(value, EvaluatorParams.Ignored))
+            {
+                return;
+            }
+
+            _evaluatorParams = new OptionalField<EvaluatorParams>(value);
+        }
+    }
+
+    internal OptionalField<EvaluatorParams> EvaluatorParamsField => _evaluatorParams;
+
     [JsonConverter(typeof(FlagCollectionJsonConverter))]
     public FlagCollection? Flags { get; set; }
+
+    public bool ShouldSerializeEvaluatorParams() => _evaluatorParams.IsPresent;
 
     internal void Merge(ServerConfiguration other)
     {
@@ -41,6 +62,11 @@ internal sealed class ServerConfiguration
         if (other.Environment is not null)
         {
             Environment = other.Environment;
+        }
+
+        if (other.EvaluatorParamsField.IsPresent)
+        {
+            EvaluatorParams = other.EvaluatorParams;
         }
 
         if (Flags is null)

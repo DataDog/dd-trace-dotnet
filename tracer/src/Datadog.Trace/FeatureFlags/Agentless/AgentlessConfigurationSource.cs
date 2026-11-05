@@ -18,6 +18,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -32,7 +33,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 {
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
-
     private static readonly TimeSpan FirstRetryMin = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan FirstRetryMax = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan SecondRetryMin = TimeSpan.FromSeconds(5);
@@ -264,17 +264,34 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private static ApiWebRequestFactory CreateRequestFactory(AgentlessEndpoint endpoint, FeatureFlagsSettings settings)
 #endif
     {
+        var headers = GetRequestHeaders(endpoint, settings);
+
+#if NETCOREAPP
+        return new HttpClientRequestFactory(endpoint.Uri, headers, timeout: settings.RequestTimeout);
+#else
+        return new ApiWebRequestFactory(endpoint.Uri, headers, timeout: settings.RequestTimeout);
+#endif
+    }
+
+    [TestingAndPrivateOnly]
+    internal static KeyValuePair<string, string>[] GetRequestHeaders(AgentlessEndpoint endpoint, FeatureFlagsSettings settings)
+    {
         var headers = new List<KeyValuePair<string, string>>
         {
             // The endpoint serves gzip, and neither transport decompresses for us.
             new("Accept-Encoding", "gzip"),
             new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
             new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.SemanticVersion),
-
             // Without this the poll is itself instrumented, producing a span per poll and letting
             // auto-instrumentation recurse through the poller's own client.
             new(HttpHeaderNames.TracingEnabled, "false"),
         };
+
+        var capabilities = FeatureFlagCapabilities.HeaderValue(FeatureFlagsEvaluator.GetCapabilities());
+        if (capabilities is not null)
+        {
+            headers.Add(new("X-DD-FEATURE-FLAGS-CAPABILITIES", capabilities));
+        }
 
         if (endpoint.IsManaged)
         {
@@ -283,13 +300,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             headers.Add(new(TelemetryConstants.ApiKeyHeader, settings.ApiKey!));
         }
 
-        // The endpoint is only the factory's default: both transports honour the URI passed to
-        // Create, which is what carries the current environment.
-#if NETCOREAPP
-        return new HttpClientRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
-#else
-        return new ApiWebRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
-#endif
+        return headers.ToArray();
     }
 
     private async Task RunAsync()

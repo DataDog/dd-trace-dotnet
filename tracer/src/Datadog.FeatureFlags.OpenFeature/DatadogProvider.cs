@@ -50,7 +50,6 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
     // Startup gate: enabling events later requires a new provider (or application restart).
     private readonly FlagEvalEVPHook? _evpHook;
-
     // Hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
     private readonly IImmutableList<Hook> _providerHooks;
 

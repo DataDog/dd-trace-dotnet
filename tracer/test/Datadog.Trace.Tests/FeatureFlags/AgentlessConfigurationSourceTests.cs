@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -37,6 +38,21 @@ public class AgentlessConfigurationSourceTests
         """;
 
     private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
+
+    [Fact]
+    public void RequestHeadersAdvertiseDependentFlagSupport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            [ConfigurationKeys.ApiKey] = "test-api-key",
+        }));
+        var headers = AgentlessConfigurationSource.GetRequestHeaders(CreateEndpoint(), settings.FeatureFlags)
+                                                  .ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        headers.Should().Contain(
+            "X-DD-FEATURE-FLAGS-CAPABILITIES",
+            FeatureFlagCapabilities.DependentFlagVariantKeyV1);
+    }
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
