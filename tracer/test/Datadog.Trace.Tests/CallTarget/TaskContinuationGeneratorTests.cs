@@ -283,18 +283,35 @@ namespace Datadog.Trace.Tests.CallTarget
             Assert.Equal("ReturnValue[Modified]", rValue);
         }
 
-        [Fact]
-        public async Task ThrowingContinuationKeepsOriginalResultTest()
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationKeepsOriginalResultTest(bool alreadyCompleted)
         {
             var tcg = new TaskContinuationGenerator<IntegrationThatThrows, TaskContinuationGeneratorTests, Task<string>, string>();
             var state = CallTargetState.GetDefault();
             var tcs = new TaskCompletionSource<string>();
-            var cTask = tcg.SetContinuation(this, tcs.Task, null, in state);
+            var previousTask = alreadyCompleted ? Task.FromResult("ReturnValue") : tcs.Task;
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
             tcs.SetResult("ReturnValue");
 
             // An integration failing must not change what the instrumented method returns
             var rValue = await cTask;
             Assert.Equal("ReturnValue", rValue);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationNoResultTest(bool alreadyCompleted)
+        {
+            var tcg = new TaskContinuationGenerator<IntegrationThatThrows, TaskContinuationGeneratorTests, Task>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            var previousTask = alreadyCompleted ? Task.CompletedTask : tcs.Task;
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
+            tcs.SetResult(true);
+
+            // An integration failing must not reach the instrumented method's caller
+            await cTask;
         }
 
         internal class CustomException : Exception
@@ -369,7 +386,7 @@ namespace Datadog.Trace.Tests.CallTarget
 
         internal class IntegrationThatThrows
         {
-            public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 throw new CustomException("Integration Exception");
             }

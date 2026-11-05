@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Sources;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 using Xunit;
@@ -286,16 +287,57 @@ namespace Datadog.Trace.Tests.CallTarget
             Assert.Equal("ReturnValue[Modified]", rValue);
         }
 
-        [Fact]
-        public async Task ThrowingContinuationKeepsOriginalResultTest()
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationKeepsOriginalResultTest(bool alreadyCompleted)
         {
             var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
             var state = CallTargetState.GetDefault();
             var tcs = new TaskCompletionSource<string>();
-            var cTask = tcg.SetContinuation(this, new ValueTask<string>(tcs.Task), null, in state);
+            var previousTask = alreadyCompleted ? new ValueTask<string>("ReturnValue") : new ValueTask<string>(tcs.Task);
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
             tcs.SetResult("ReturnValue");
 
             // An integration failing must not change what the instrumented method returns
+            var rValue = await cTask;
+            Assert.Equal("ReturnValue", rValue);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationNoResultTest(bool alreadyCompleted)
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            var previousTask = alreadyCompleted ? default : new ValueTask(tcs.Task);
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
+            tcs.SetResult(true);
+
+            // An integration failing must not reach the instrumented method's caller
+            await cTask;
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task CompletedValueTaskIsOnlyConsumedOnceTest(bool integrationThrows)
+        {
+            // A ValueTask backed by an IValueTaskSource may only be consumed once,
+            // so after reading its result we must never hand the original back to the caller
+            ContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTask<string>> tcg;
+            if (integrationThrows)
+            {
+                tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            }
+            else
+            {
+                // Returns the original value unchanged
+                tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+            }
+
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, new ValueTask<string>(new SingleUseValueTaskSource("ReturnValue"), 0), null, in state);
+
             var rValue = await cTask;
             Assert.Equal("ReturnValue", rValue);
         }
@@ -372,10 +414,37 @@ namespace Datadog.Trace.Tests.CallTarget
 
         internal class IntegrationThatThrows
         {
-            public static string OnAsyncMethodEnd<TTarget>(TTarget instance, string returnValue, Exception exception, in CallTargetState state)
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 throw new CustomException("Integration Exception");
             }
+        }
+
+        internal class SingleUseValueTaskSource : IValueTaskSource<string>
+        {
+            private readonly string _result;
+            private bool _consumed;
+
+            public SingleUseValueTaskSource(string result)
+            {
+                _result = result;
+            }
+
+            public ValueTaskSourceStatus GetStatus(short token) => ValueTaskSourceStatus.Succeeded;
+
+            public string GetResult(short token)
+            {
+                if (_consumed)
+                {
+                    throw new InvalidOperationException("The ValueTask result was already consumed");
+                }
+
+                _consumed = true;
+                return _result;
+            }
+
+            public void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
+                => throw new NotSupportedException("The source is always completed");
         }
     }
 }

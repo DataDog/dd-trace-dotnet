@@ -277,13 +277,15 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
-        [Fact]
-        public async Task ThrowingContinuationKeepsOriginalResultTest()
+        [Theory]
+        [CombinatorialData]
+        public async Task ThrowingContinuationKeepsOriginalResultTest(bool alreadyCompleted)
         {
             var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
             var state = CallTargetState.GetDefault();
             var tcs = new TaskCompletionSource<string>();
-            var cTask = tcg.SetContinuation(this, new ValueTask<string>(tcs.Task), null, in state);
+            var previousTask = alreadyCompleted ? new ValueTask<string>("ReturnValue") : new ValueTask<string>(tcs.Task);
+            var cTask = tcg.SetContinuation(this, previousTask, null, in state);
             tcs.SetResult("ReturnValue");
 
             // An integration failing must not change what the instrumented method returns

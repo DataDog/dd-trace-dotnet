@@ -78,8 +78,24 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             if (previousValueTask.IsCompletedSuccessfully)
             {
                 // ok all good, just run synchronously
+                // Reading Result consumes the ValueTask (it may be backed by a pooled IValueTaskSource),
+                // so from here on we must always return a new ValueTask, never the original one.
                 var unwrappedResult = previousValueTask.Result;
-                var continuationResult = _continuation(instance, unwrappedResult, exception, in state);
+                TResult? continuationResult;
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
+                    // *
+                    continuationResult = _continuation(instance, unwrappedResult, exception, in state);
+                }
+                catch (Exception ex)
+                {
+                    // If the continuation throws, the caller still gets the original result
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+                    continuationResult = unwrappedResult;
+                }
+
                 return ValueTaskActivator<TReturn, TResult?>.CreateInstance(continuationResult);
             }
 

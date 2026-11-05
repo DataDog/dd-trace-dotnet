@@ -76,7 +76,18 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
             if (previousValueTask.IsCompletedSuccessfully)
             {
                 // ok all good, just run synchronously
-                _continuation(instance, returnValue, exception, in state);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
+                    _continuation(instance, returnValue, exception, in state);
+                }
+                catch (Exception ex)
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+                }
+
                 return returnValue;
             }
 

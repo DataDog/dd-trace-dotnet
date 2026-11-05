@@ -73,7 +73,18 @@ internal sealed class TaskContinuationGenerator<TIntegration, TTarget, TReturn> 
             var previousTask = FromTReturn<Task>(returnValue);
             if (previousTask.Status == TaskStatus.RanToCompletion)
             {
-                _continuation(instance, default, null, in state);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
+                    _continuation(instance, default, null, in state);
+                }
+                catch (Exception ex)
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+                }
+
                 return returnValue;
             }
 
