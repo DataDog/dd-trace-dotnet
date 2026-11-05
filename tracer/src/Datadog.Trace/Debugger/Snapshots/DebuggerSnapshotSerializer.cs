@@ -15,6 +15,7 @@ using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
@@ -24,12 +25,25 @@ namespace Datadog.Trace.Debugger.Snapshots
     internal static partial class DebuggerSnapshotSerializer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
+        private static readonly AsyncLocal<bool> SerializationTimeoutDisabled = new();
 
         private static int _maximumSerializationTime = DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds;
 
         internal static void SetConfig(DebuggerSettings debuggerSettings)
         {
             _maximumSerializationTime = debuggerSettings.MaxSerializationTimeInMilliseconds;
+        }
+
+        /// <summary>
+        /// Disables the wall-clock deadline for deterministic tests in the current execution context.
+        /// Dispose scopes in reverse order to restore the previous setting.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal static IDisposable DisableSerializationTimeout()
+        {
+            var scope = new SerializationTimeoutScope(SerializationTimeoutDisabled.Value);
+            SerializationTimeoutDisabled.Value = true;
+            return scope;
         }
 
         /// <summary>
@@ -764,12 +778,34 @@ namespace Datadog.Trace.Debugger.Snapshots
         private static CancellationTokenSource CreateCancellationTimeout()
         {
             var cts = new CancellationTokenSource();
-            if (!System.Diagnostics.Debugger.IsAttached)
+            if (!SerializationTimeoutDisabled.Value && !System.Diagnostics.Debugger.IsAttached)
             {
                 cts.CancelAfter(_maximumSerializationTime);
             }
 
             return cts;
+        }
+
+        private sealed class SerializationTimeoutScope : IDisposable
+        {
+            private readonly bool _previousValue;
+            private bool _disposed;
+
+            public SerializationTimeoutScope(bool previousValue)
+            {
+                _previousValue = previousValue;
+            }
+
+            public void Dispose()
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                SerializationTimeoutDisabled.Value = _previousValue;
+                _disposed = true;
+            }
         }
 
         private sealed class ObjectReferenceEqualityComparer : IEqualityComparer<object>

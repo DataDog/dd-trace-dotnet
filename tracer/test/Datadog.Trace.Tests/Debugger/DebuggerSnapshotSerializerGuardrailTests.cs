@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Telemetry.Metrics;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -79,8 +80,29 @@ public class DebuggerSnapshotSerializerGuardrailTests
     {
         var (snapshot, incompleteReasons) = Capture(new ThrowingMessageException());
 
-        Assert.Contains("\"type\":\"ThrowingMessageException\"", snapshot);
-        Assert.True(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError));
+        snapshot.Should().Contain("\"type\":\"ThrowingMessageException\"");
+        HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError).Should().BeTrue();
+        snapshot.Should().NotContain("\"notCapturedReason\":\"timeout\"");
+        HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Timeout).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Capture_WhenTimeoutScopeIsNested_MemberGetterFailureStillMarksRuntimeError()
+    {
+        using var timeoutScope = DebuggerSnapshotSerializer.DisableSerializationTimeout();
+        var snapshotCreator = CreateCreator();
+
+        // CaptureInto opens and disposes a nested scope. The outer scope must remain active.
+        CaptureInto(snapshotCreator, new ThrowingMessageException());
+        snapshotCreator = CreateCreator();
+        snapshotCreator.StartEntry();
+        snapshotCreator.CaptureArgument(new ThrowingMessageException(), "arg", typeof(ThrowingMessageException));
+        snapshotCreator.EndEntry();
+        snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");
+
+        HasReason(snapshotCreator.IncompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError).Should().BeTrue();
+        HasReason(snapshotCreator.IncompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Timeout).Should().BeFalse();
+        snapshotCreator.GetSnapshotJson().Should().NotContain("\"notCapturedReason\":\"timeout\"");
     }
 
     [Fact]
@@ -128,6 +150,7 @@ public class DebuggerSnapshotSerializerGuardrailTests
 
     private static void CaptureInto(DebuggerSnapshotCreator snapshotCreator, object value)
     {
+        using var timeoutScope = DebuggerSnapshotSerializer.DisableSerializationTimeout();
         snapshotCreator.StartEntry();
         snapshotCreator.CaptureArgument(value, "arg", value.GetType());
         snapshotCreator.EndEntry();
