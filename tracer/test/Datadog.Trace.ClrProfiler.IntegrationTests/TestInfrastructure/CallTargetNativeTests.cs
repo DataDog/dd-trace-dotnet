@@ -367,14 +367,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // the two skip-method-body calls.
             var skipMethodBodyCalls = IsRuntimeAsyncBuild ? 2 : 0;
 
-            // When OnAsyncMethodEnd throws on a state-machine target, the exception is logged and OnMethodEnd still runs.
-            // On a runtime-async target the exception escapes the epilog before OnMethodEnd, so the four
-            // RuntimeAsyncThrowOnAsyncEnd calls skip it.
-            var skippedByThrowOnAsyncEnd = IsRuntimeAsyncBuild ? 4 : 0;
-
             var output = processResult.StandardOutput;
             Regex.Matches(output, "ProfilerOK: BeginMethod\\(").Count.Should().Be(64 + skipMethodBodyCalls);
-            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(53 + skipMethodBodyCalls - skippedByThrowOnAsyncEnd);
+            Regex.Matches(output, "ProfilerOK: EndMethod\\(").Count.Should().Be(53 + skipMethodBodyCalls);
             Regex.Matches(output, "ProfilerOK: EndMethodAsync\\(").Count.Should().Be(60 + skipMethodBodyCalls);
             Regex.Matches(output, "Exception thrown\\.").Count.Should().Be(9);
 

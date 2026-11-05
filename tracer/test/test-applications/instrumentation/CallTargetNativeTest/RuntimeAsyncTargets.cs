@@ -111,8 +111,7 @@ partial class Program
         RunAsync(typeof(RuntimeAsyncThrowOnEnd), nameof(RuntimeAsyncThrowOnEnd.CompletesTaskOfInt), () => throwOnEnd.CompletesTaskOfInt(), 42);
         RunAsync(typeof(RuntimeAsyncThrowOnEnd), nameof(RuntimeAsyncThrowOnEnd.CompletesTask), () => throwOnEnd.CompletesTask());
 
-        // A throwing OnAsyncMethodEnd must not reach the caller. On a runtime-async target it also skips OnMethodEnd,
-        // see CallTargetNativeTests.
+        // A throwing OnAsyncMethodEnd must not reach the caller, nor stop OnMethodEnd from running
         var throwOnAsyncEnd = new RuntimeAsyncThrowOnAsyncEnd();
         RunAsync(typeof(RuntimeAsyncThrowOnAsyncEnd), nameof(RuntimeAsyncThrowOnAsyncEnd.CompletesTaskOfInt), () => throwOnAsyncEnd.CompletesTaskOfInt(), 42);
         RunAsync(typeof(RuntimeAsyncThrowOnAsyncEnd), nameof(RuntimeAsyncThrowOnAsyncEnd.CompletesTask), () => throwOnAsyncEnd.CompletesTask());
