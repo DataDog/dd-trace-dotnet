@@ -507,7 +507,7 @@ public partial class FeatureFlagsEvaluatorTests
         var metadata = result.FlagMetadata!;
         metadata["__dd_feature.looks.bool"].Should().Be("true");
         metadata["__dd_evaluation_feature.looks.number"].Should().Be("2026");
-        metadata[FeatureFlagMetadataKeys.FeatureTypes].Should().BeEmpty("the marker is present, and lists neither strings nor features that went nowhere");
+        metadata.Should().NotContainKey(FeatureFlagMetadataKeys.FeatureTypes, "no emitted feature is a boolean or a number, so there is nothing to list");
     }
 
     [Fact]

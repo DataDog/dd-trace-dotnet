@@ -771,19 +771,10 @@ namespace Datadog.Trace.FeatureFlags
                     }
                 }
 
-                if (written)
+                if (written && value is bool or double)
                 {
                     types ??= new StringBuilder();
-                    var type = value switch
-                    {
-                        bool => 'b',
-                        double => 'n',
-                        _ => '\0',
-                    };
-                    if (type != '\0')
-                    {
-                        types.Append(feature.Key.Length.ToString(CultureInfo.InvariantCulture)).Append(':').Append(feature.Key).Append(type);
-                    }
+                    types.Append(feature.Key.Length.ToString(CultureInfo.InvariantCulture)).Append(':').Append(feature.Key).Append(value is bool ? 'b' : 'n');
                 }
             }
 
