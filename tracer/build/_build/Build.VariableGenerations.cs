@@ -709,16 +709,11 @@ partial class Build : NukeBuild
                 {
                     var images = new (TargetFramework PublishFramework, string VmImage)[]
                     {
-                        // macos-11/12/13 environments are no longer available in Azure DevOps
-                        (TargetFramework.NETCOREAPP3_1, "macos-14"),
-                        (TargetFramework.NET5_0, "macos-14"),
-                        (TargetFramework.NET6_0, "macos-14"),
-                        (TargetFramework.NET7_0, "macos-14"),
-                        (TargetFramework.NET8_0, "macos-14"),
-                        (TargetFramework.NET9_0, "macos-14"),
-                        (TargetFramework.NET10_0, "macos-14"),
-                        (TargetFramework.NET11_0, "macos-14"),
+                        // Older macOS images are no longer available in Azure DevOps
+                        (TargetFramework.NETCOREAPP3_1, "macos-15"),
+                        (TargetFramework.NET5_0, "macos-15"),
                         (TargetFramework.NET6_0, "macos-15"),
+                        (TargetFramework.NET7_0, "macos-15"),
                         (TargetFramework.NET8_0, "macos-15"),
                         (TargetFramework.NET9_0, "macos-15"),
                         (TargetFramework.NET10_0, "macos-15"),
