@@ -25,7 +25,6 @@ public abstract record SmokeTestScenario
     public required string OsVersion { get; init; }
 
     public bool RunCrashTest { get; init; } = true;
-    public bool ExcludeWhenPrerelease { get; init; }
     public bool IsNoop { get; init; }
 
     public virtual string SnapshotFile

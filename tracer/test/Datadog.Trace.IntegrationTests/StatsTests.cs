@@ -583,7 +583,7 @@ namespace Datadog.Trace.IntegrationTests
                 stats.Env.Should().Be(settings.Manager.InitialMutableSettings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
                 stats.Version.Should().Be(settings.Manager.InitialMutableSettings.ServiceVersion);
-                stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
+                stats.TracerVersion.Should().Be(TracerConstants.SemanticVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);
                 stats.RuntimeId.Should().Be(Tracer.RuntimeId);
