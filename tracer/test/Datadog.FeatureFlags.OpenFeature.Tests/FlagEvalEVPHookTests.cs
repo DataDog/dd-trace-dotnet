@@ -122,6 +122,42 @@ public class FlagEvalEVPHookTests
     }
 
     [Theory]
+    [InlineData(null)]
+    [InlineData("PARSE_ERROR")]
+    public async Task TheFeaturePathForwardsEveryFieldTheFastPathDoes(string? errorCode)
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            ["__dd_allocation_key"] = "allocation",
+            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "true",
+            [FeatureFlagMetadataKeys.EvaluationFeaturePrefix + "holdout.key"] = "h1",
+        };
+        if (errorCode is not null)
+        {
+            metadata["errorCode"] = errorCode;
+        }
+
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new MetadataEvaluation(metadata), 1234);
+        var details = new FlagEvaluationDetails<bool>(resolution.FlagKey, resolution.Value, resolution.ErrorType, resolution.Reason, resolution.Variant, resolution.ErrorMessage, resolution.FlagMetadata);
+        var fast = new Fixture { AcceptsFeatures = false };
+        var slow = new Fixture { AcceptsFeatures = true };
+
+        await fast.EvaluateAndCompleteAsync(Context(), details);
+        await slow.EvaluateAndCompleteAsync(Context(), details);
+
+        fast.Enqueues.Should().Be(1);
+        slow.FeatureEnqueues.Should().Be(1);
+        slow.Variant.Should().Be("on").And.Be(fast.Variant);
+        slow.AllocationKey.Should().Be("allocation").And.Be(fast.AllocationKey);
+        slow.TargetingKey.Should().Be(fast.TargetingKey);
+        slow.EvalTimeMs.Should().Be(1234).And.Be(fast.EvalTimeMs);
+        slow.Consent.Should().BeTrue().And.Be(fast.Consent);
+        slow.ErrorCode.Should().Be(errorCode).And.Be(fast.ErrorCode);
+        slow.Attributes.Should().BeEquivalentTo(fast.Attributes);
+        slow.OmissionReasons.Should().Be(fast.OmissionReasons);
+    }
+
+    [Theory]
     [InlineData(null, null)]
     [InlineData("", null)]
     [InlineData("FLAG_NOT_FOUND", "FLAG_NOT_FOUND")]
@@ -456,10 +492,22 @@ public class FlagEvalEVPHookTests
                 () => AcceptsFeatures,
                 (flag, variant, allocation, target, time, error, attrs, features, flags) =>
                 {
+                    if (ThrowOnEnqueue)
+                    {
+                        throw new InvalidOperationException("pii-canary");
+                    }
+
                     FeatureEnqueues++;
                     FlagKey = flag;
+                    Variant = variant;
+                    AllocationKey = allocation;
                     TargetingKey = target;
+                    EvalTimeMs = time;
+                    Consent = (flags & FlagEvaluationBridge.ObserveFullEvaluationData) != 0;
+                    ErrorCode = error;
+                    Attributes = attrs;
                     Features = features;
+                    OmissionReasons = flags & ~FlagEvaluationBridge.ObserveFullEvaluationData;
                 });
         }
 

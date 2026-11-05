@@ -250,6 +250,17 @@ public class FeatureFlagsSdkTests
     }
 
     [Fact]
+    public void OnlyEvaluationDestinationFeaturesAreCounted()
+    {
+        var metadata = new Dictionary<string, string> { ["__dd_exposure_feature.holdout.key"] = "06ad", ["__dd_feature.hook"] = "x" };
+
+        var converted = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata), null).FlagMetadata!;
+
+        FeatureFlagsSdk.GetEvaluationFeatures(converted).Should().BeNull("exposure and hook features do not split evaluation counts");
+        FeatureFlagsSdk.GetHookFeatures(converted)!.Should().ContainKey("hook");
+    }
+
+    [Fact]
     public void HookFeaturesAreAbsentWithoutFeatureMetadata()
     {
         var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(new Dictionary<string, string> { ["__dd_allocation_key"] = "alloc" }), null);
