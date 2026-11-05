@@ -2845,10 +2845,58 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             var finalTags = (testMethod.RetryTest ?? lastTest).GetTags();
             finalTags.FinalStatus.Should().Be(expectedFrameworkOutcome == "Failed" ? TestTags.StatusFail : TestTags.StatusPass);
             finalTags.AttemptToFixPassed.Should().Be(expectedFrameworkOutcome == "Failed" ? "false" : null);
+            finalTags.HasFailedAllRetries.Should().BeNull();
         }
         finally
         {
             execution?.CloseTests();
+            suite?.Close();
+            module?.Close();
+            TestModule.Current = previousModule;
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public async Task MsTestAttemptToFixUsesItsOwnRetryCountForNewTests()
+    {
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(OrdinaryTest), BindingFlags.NonPublic | BindingFlags.Static);
+        var management = new Mock<ITestOptimizationTestManagementFeature>();
+        management.Setup(x => x.Enabled).Returns(true);
+        management.Setup(x => x.TestManagementAttemptToFixRetryCount).Returns(2);
+        management.Setup(x => x.GetTestProperties(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                  .Returns(new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(false, false, true));
+        var earlyFlake = new Mock<ITestOptimizationEarlyFlakeDetectionFeature>();
+        earlyFlake.Setup(x => x.Enabled).Returns(true);
+        earlyFlake.Setup(x => x.EarlyFlakeDetectionSettings).Returns(new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(true, new TestOptimizationClient.SlowTestRetriesSettingsResponse(fiveSeconds: 6, tenSeconds: null, thirtySeconds: null, fiveMinutes: null), 100));
+        var known = new Mock<ITestOptimizationKnownTestsFeature>();
+        known.Setup(x => x.Enabled).Returns(true);
+        var optimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        optimization.Setup(x => x.TestManagementFeature).Returns(management.Object);
+        optimization.Setup(x => x.EarlyFlakeDetectionFeature).Returns(earlyFlake.Object);
+        optimization.Setup(x => x.KnownTestsFeature).Returns(known.Object);
+        TestOptimization.Instance = optimization.Object;
+        var previousModule = TestModule.Current;
+        TestModule module = null;
+        TestSuite suite = null;
+        try
+        {
+            module = TestModule.Create("Annotations", CommonTags.TestingFrameworkNameMsTestV2, "4.4.0");
+            suite = module.GetOrCreateSuite("Fixture");
+            var testMethod = new MsTestMethodStub(method, [], nameof(OrdinaryTest)) { RetriesPass = true };
+            var test = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false);
+            test.GetTags().TestIsNew.Should().Be("true");
+            var state = new TestMethodAttributeExecuteAsyncIntegration.TestRunnerState(testMethod, test, execution: null, retryContext: null);
+            object[] attemptResults = [new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null }];
+
+            await TestMethodAttributeExecuteAsyncIntegration.OnAsyncMethodEnd(new object(), attemptResults, exception: null, new CallTargetState(null, state));
+
+            testMethod.InvokeCount.Should().Be(1);
+            testMethod.RetryTest.GetTags().TestRetryReason.Should().Be(TestTags.TestRetryReasonAttemptToFix);
+        }
+        finally
+        {
             suite?.Close();
             module?.Close();
             TestModule.Current = previousModule;
@@ -3057,6 +3105,8 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         public MsTestResultStub LastResult { get; private set; }
 
+        public bool RetriesPass { get; set; }
+
         public Test RetryTest { get; private set; }
 
         public Attribute[] GetAllAttributes(bool inherit) => [];
@@ -3065,7 +3115,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         {
             InvokeCount++;
             RetryTest = Test.Current;
-            return LastResult = new MsTestResultStub();
+            return LastResult = RetriesPass ? new MsTestResultStub { Outcome = UnitTestOutcome.Passed, TestFailureException = null } : new MsTestResultStub();
         }
 
         public void SetArguments(object[] arguments)

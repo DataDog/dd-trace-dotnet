@@ -515,7 +515,7 @@ internal sealed class MsTestExecution
             tags.FinalStatus = isLastAttempt
                                    ? Common.CalculateFinalStatus(anyPassed, _anyFailed, _lastAttempt.Status == TestStatus.Skip, tags)
                                    : null;
-            tags.HasFailedAllRetries = isLastAttempt && _executionCount > 1 && _allRetriesFailed ? "true" : null;
+            tags.HasFailedAllRetries = isLastAttempt && _executionCount > 1 && _allRetriesFailed && !Common.IsAttemptToFix(tags) ? "true" : null;
             if (Common.IsAttemptToFix(tags) && isLastAttempt && (_executionCount > 1 || _anyFailed))
             {
                 tags.AttemptToFixPassed = _anyFailed ? "false" : "true";

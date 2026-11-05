@@ -304,15 +304,15 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             var retryReason = string.Empty;
 
             // Get retries number and reason
-            if (attempt.IsEfdTest)
-            {
-                remainingRetries = Common.GetNumberOfExecutionsForDuration(attempt.Duration) - 1;
-                retryReason = "Early flake detection";
-            }
-            else if (attempt.IsAttemptToFix)
+            if (attempt.IsAttemptToFix)
             {
                 remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
                 retryReason = "Attempt to fix";
+            }
+            else if (attempt.IsEfdTest)
+            {
+                remainingRetries = Common.GetNumberOfExecutionsForDuration(attempt.Duration) - 1;
+                retryReason = "Early flake detection";
             }
 
             if (remainingRetries > 0)
