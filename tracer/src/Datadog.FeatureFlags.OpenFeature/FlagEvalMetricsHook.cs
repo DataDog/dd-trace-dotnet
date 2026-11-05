@@ -8,6 +8,7 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenFeature;
@@ -86,7 +87,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         Reason.Cached => "cached",
         Reason.Unknown => "unknown",
         Reason.Error => "error",
-        _ => reason.ToLowerInvariant()
+        _ => reason.ToLower(CultureInfo.InvariantCulture)
     };
 
     private static string ErrorTypeToString(ErrorType errorType)

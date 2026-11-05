@@ -26,10 +26,24 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 public class ExposureCommitTests
 {
     [Fact]
+    public void PrivatePendingBatchMarkerCrossesProviderBoundaryWithoutBecomingPublicMetadata()
+    {
+        var commits = 0;
+        var evaluation = new TestEvaluation("root", () => commits++);
+
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("root", false, evaluation, evalTimeMs: null, deferredExposure: true);
+        FeatureFlagsSdk.CommitPendingExposure(resolution.FlagMetadata, Commit);
+
+        commits.Should().Be(1);
+        resolution.FlagMetadata!.GetString(FeatureFlagMetadataKeys.PendingExposure).Should().BeNull();
+        resolution.FlagMetadata.GetBool(FeatureFlagMetadataKeys.DoLog).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task DirectProviderResolutionCommitsCompletedGraphExposures()
     {
         var commits = 0;
-        using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
+        using var provider = Provider((key, type, fallback, targetingKey, attributes) =>
             new TestEvaluation(key, () => Interlocked.Increment(ref commits)));
 
         var result = await provider.ResolveBooleanValueAsync("root", false);
@@ -43,7 +57,7 @@ public class ExposureCommitTests
     {
         var commits = 0;
         var domain = $"exposure-failure-{Guid.NewGuid():N}";
-        using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
+        using var provider = Provider((key, type, fallback, targetingKey, attributes) =>
             new TestEvaluation(key, () => Interlocked.Increment(ref commits)));
         await Api.Instance.SetProviderAsync(domain, provider);
         var client = Api.Instance.GetClient(domain);
@@ -61,7 +75,7 @@ public class ExposureCommitTests
     {
         var batches = new ConcurrentQueue<string[]>();
         var domain = $"exposure-success-{Guid.NewGuid():N}";
-        using var provider = new DatadogProvider((key, type, fallback, targetingKey, attributes) =>
+        using var provider = Provider((key, type, fallback, targetingKey, attributes) =>
         {
             var ownedBatch = new[] { $"{key}-dependency", key };
             return new TestEvaluation(key, () => batches.Enqueue(ownedBatch));
@@ -76,6 +90,15 @@ public class ExposureCommitTests
         batches.Should().HaveCount(2);
         batches.Should().Contain(batch => batch.SequenceEqual(new[] { "left-dependency", "left" }));
         batches.Should().Contain(batch => batch.SequenceEqual(new[] { "right-dependency", "right" }));
+    }
+
+    private static DatadogProvider Provider(FeatureFlagsSdk.EvaluationCallback evaluate)
+        => new(evaluate, evaluate, () => true, Commit);
+
+    private static int Commit(IDictionary<string, string> metadata)
+    {
+        ((TracerFlags.ExposureCommitMetadata)metadata).ExposureCommit();
+        return TracerFlags.ExposureCommitResult.New;
     }
 
     private sealed class FailingAfterHook : Hook
@@ -96,6 +119,12 @@ public class ExposureCommitTests
 
         public string? Error => null;
 
-        public IDictionary<string, string> FlagMetadata { get; } = new TracerFlags.ExposureCommitMetadata(null, commit);
+        public IDictionary<string, string> FlagMetadata { get; } = new TracerFlags.ExposureCommitMetadata(
+            new Dictionary<string, string>
+            {
+                [FeatureFlagMetadataKeys.PendingExposure] = "true",
+                [FeatureFlagMetadataKeys.DoLog] = "false",
+            },
+            commit);
     }
 }

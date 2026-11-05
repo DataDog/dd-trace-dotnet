@@ -92,12 +92,17 @@ namespace Datadog.Trace.FeatureFlags
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure)
         {
+            if (TryEvaluateIndependent(flagKey, resultType, defaultValue, context, out var independent) && independent is not null)
+            {
+                return CompleteIndependentEvaluation(independent, deferExposure);
+            }
+
             var trace = EvaluateWithoutDependencyTelemetry(flagKey, resultType, defaultValue, context);
             if (deferExposure)
             {
                 if (trace.DependencyExposures.Count > 0)
                 {
-                    trace.Details.PendingExposure = trace.DependencyExposures[^1];
+                    trace.Details.PendingExposure = trace.DependencyExposures[trace.DependencyExposures.Count - 1];
                 }
 
                 return trace.Details;
@@ -110,7 +115,7 @@ namespace Datadog.Trace.FeatureFlags
                     var result = _onExposureEvent?.Invoke(in exposure);
                     if (result is not null && exposure.Flag.Key == flagKey && trace.Details.FlagMetadata is { } metadata)
                     {
-                        metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = (result == Exposure.ExposureRecordResult.Repeat).ToString().ToLowerInvariant();
+                        metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = result == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
                     }
                 }
                 catch
@@ -120,6 +125,99 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return trace.Details;
+        }
+
+        internal bool TryEvaluateIndependent(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, out Evaluation? evaluation)
+        {
+            var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
+            if (HasDependencyCondition(flagKey))
+            {
+                evaluation = null;
+                return false;
+            }
+
+            try
+            {
+                evaluation = EvaluateFlag(flagKey, resultType, defaultValue, context, session: null, DateTime.UtcNow, consent);
+            }
+            catch (FormatException ex)
+            {
+                evaluation = Error(flagKey, defaultValue, "PARSE_ERROR", ex.Message, consent);
+            }
+            catch (MissingTargetingKeyException)
+            {
+                evaluation = Error(flagKey, defaultValue, "TARGETING_KEY_MISSING", null, consent);
+            }
+            catch (Exception ex)
+            {
+                evaluation = Error(flagKey, defaultValue, "GENERAL", ex.Message, consent, ex.Message);
+            }
+
+            return true;
+        }
+
+        private Evaluation CompleteIndependentEvaluation(Evaluation evaluation, bool deferExposure)
+        {
+            if (evaluation.PendingExposure is not { } exposure)
+            {
+                return evaluation;
+            }
+
+            if (deferExposure)
+            {
+                return evaluation;
+            }
+
+            evaluation.PendingExposure = null;
+            try
+            {
+                var result = _onExposureEvent?.Invoke(in exposure);
+                if (result is not null && evaluation.FlagMetadata is { } metadata)
+                {
+                    metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = result == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
+                }
+            }
+            catch
+            {
+                // Exposure delivery is best effort and must not affect flag evaluation.
+            }
+
+            return evaluation;
+        }
+
+        private bool HasDependencyCondition(string flagKey)
+        {
+            Flag? flag = null;
+            if (_config?.Flags?.Find(flagKey, out flag) != FlagLookupResult.Found || flag?.Allocations is null)
+            {
+                return false;
+            }
+
+            foreach (var allocation in flag.Allocations)
+            {
+                if (allocation.Rules is not { } rules)
+                {
+                    continue;
+                }
+
+                foreach (var rule in rules)
+                {
+                    if (rule.Conditions is not { } conditions)
+                    {
+                        continue;
+                    }
+
+                    foreach (var condition in conditions)
+                    {
+                        if (condition.FlagEvaluationField.IsPresent)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         internal EvaluationTrace EvaluateWithTrace(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
@@ -162,7 +260,8 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (DependencyGraphException ex)
             {
-                return CompleteError(Error(flagKey, defaultValue, ex.ErrorCode, ex.Message, consent));
+                var errorCode = ex.OriginFlagKey is not null && ex.OriginFlagKey != flagKey ? "GENERAL" : ex.ErrorCode;
+                return CompleteError(Error(flagKey, defaultValue, errorCode, ex.Message, consent));
             }
             catch (FormatException ex)
             {
@@ -186,7 +285,7 @@ namespace Datadog.Trace.FeatureFlags
             ValueType resultType,
             object? defaultValue,
             EvaluationContext? context,
-            DependencyEvaluationSession session,
+            DependencyEvaluationSession? session,
             DateTime now,
             string consent)
         {
@@ -234,14 +333,14 @@ namespace Datadog.Trace.FeatureFlags
                     continue;
                 }
 
-                var checkpoint = session.Checkpoint();
+                var checkpoint = session?.Checkpoint() ?? default;
                 var hadRules = false;
                 if (allocation.Rules is { Count: > 0 } rules)
                 {
                     hadRules = true;
                     if (!EvaluateRules(rules, context, session))
                     {
-                        session.Rollback(checkpoint);
+                        session?.Rollback(checkpoint);
                         continue;
                     }
                 }
@@ -287,7 +386,7 @@ namespace Datadog.Trace.FeatureFlags
                     }
                 }
 
-                session.Rollback(checkpoint);
+                session?.Rollback(checkpoint);
             }
 
             return new Evaluation(flagKey, defaultValue, EvaluationReason.Default, metadata: ConsentMetadata(consent));
@@ -310,7 +409,7 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        private static bool EvaluateRules(List<Rule> rules, EvaluationContext? context, DependencyEvaluationSession session)
+        private static bool EvaluateRules(List<Rule> rules, EvaluationContext? context, DependencyEvaluationSession? session)
         {
             foreach (var rule in rules)
             {
@@ -319,7 +418,7 @@ namespace Datadog.Trace.FeatureFlags
                     continue;
                 }
 
-                var checkpoint = session.Checkpoint();
+                var checkpoint = session?.Checkpoint() ?? default;
                 var allConditionsMatch = true;
                 foreach (var condition in rule.Conditions)
                 {
@@ -335,13 +434,13 @@ namespace Datadog.Trace.FeatureFlags
                     return true;
                 }
 
-                session.Rollback(checkpoint);
+                session?.Rollback(checkpoint);
             }
 
             return false;
         }
 
-        private static bool EvaluateCondition(ConditionConfiguration condition, EvaluationContext? context, DependencyEvaluationSession session)
+        private static bool EvaluateCondition(ConditionConfiguration condition, EvaluationContext? context, DependencyEvaluationSession? session)
         {
             if (condition.Operator is null)
             {
@@ -355,7 +454,8 @@ namespace Datadog.Trace.FeatureFlags
 
             if (isDependency)
             {
-                var variant = session.Resolve(dependencyKey ?? throw new FormatException("Dependency key is missing"));
+                var variant = (session ?? throw new InvalidOperationException("Dependency evaluation requires a trace session"))
+                             .Resolve(dependencyKey ?? throw new FormatException("Dependency key is missing"));
                 return condition.Operator == ConditionOperator.ONE_OF
                            ? IsDependencyVariantOneOf(variant, condition.Value)
                            : !IsDependencyVariantOneOf(variant, condition.Value);
@@ -924,7 +1024,7 @@ namespace Datadog.Trace.FeatureFlags
             DateTime evalTime,
             EvaluationContext? context,
             string consent,
-            DependencyEvaluationSession session)
+            DependencyEvaluationSession? session)
         {
             var variationKey = split.VariationKey!;
 
@@ -975,7 +1075,14 @@ namespace Datadog.Trace.FeatureFlags
 
             if (doLog && CreateExposure(flagKey, evaluation, evalTime, context, split, exposureFeatures) is { } exposure)
             {
-                session.RecordExposure(flagKey, exposure);
+                if (session is null)
+                {
+                    evaluation.PendingExposure = exposure;
+                }
+                else
+                {
+                    session.RecordExposure(flagKey, exposure);
+                }
             }
             else if (!doLog)
             {
@@ -1135,19 +1242,19 @@ namespace Datadog.Trace.FeatureFlags
                         EmitDepthError(flagKey);
                     }
 
-                    throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded");
+                    throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded", flagKey);
                 }
 
                 if (active.Contains(flagKey))
                 {
-                    throw new DependencyGraphException("GENERAL", "flag dependency cycle detected");
+                    throw new DependencyGraphException("GENERAL", "flag dependency cycle detected", flagKey);
                 }
 
                 if (memo.TryGetValue(flagKey, out var memoized))
                 {
                     if (depth + memoized.DescendantDepth > maxDepth)
                     {
-                        throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded");
+                        throw new DependencyGraphException("GENERAL", "maximum flag dependency depth exceeded", flagKey);
                     }
 
                     RecordReachedDepth(depth + memoized.DescendantDepth);
@@ -1161,14 +1268,14 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     var missing = Error(flagKey, DefaultValue(ValueType.String), "FLAG_NOT_FOUND", "prerequisite flag is missing", _consent);
                     EmitEvaluation(missing);
-                    throw new DependencyGraphException("FLAG_NOT_FOUND", "prerequisite flag is missing");
+                    throw new DependencyGraphException("FLAG_NOT_FOUND", "prerequisite flag is missing", flagKey);
                 }
 
                 if (lookup == FlagLookupResult.Invalid || flag?.VariationType is null)
                 {
                     var invalid = Error(flagKey, null, "PARSE_ERROR", "prerequisite flag is invalid", _consent);
                     EmitEvaluation(invalid);
-                    throw new DependencyGraphException("PARSE_ERROR", "prerequisite flag is invalid");
+                    throw new DependencyGraphException("PARSE_ERROR", "prerequisite flag is invalid", flagKey);
                 }
 
                 var type = flag.VariationType.Value;
@@ -1182,12 +1289,12 @@ namespace Datadog.Trace.FeatureFlags
                     var evaluation = _owner.EvaluateFlag(flagKey, type, defaultValue, _context, this, _evaluationTime, _consent);
                     if (evaluation.Reason == EvaluationReason.Error)
                     {
-                        throw new DependencyGraphException(ErrorCode(evaluation) ?? "GENERAL", evaluation.Error ?? "prerequisite flag evaluation failed");
+                        throw new DependencyGraphException(ErrorCode(evaluation) ?? "GENERAL", evaluation.Error ?? "prerequisite flag evaluation failed", flagKey);
                     }
 
                     if (evaluation.Variant is not { } variant)
                     {
-                        throw new DependencyGraphException("GENERAL", "prerequisite flag evaluation returned no variant");
+                        throw new DependencyGraphException("GENERAL", "prerequisite flag evaluation returned no variant", flagKey);
                     }
 
                     var trace = new List<ExposureCandidate>(frame.ExposureTrace);
@@ -1199,7 +1306,8 @@ namespace Datadog.Trace.FeatureFlags
                 }
                 catch (DependencyGraphException ex)
                 {
-                    var failed = Error(flagKey, defaultValue, ex.ErrorCode, ex.Message, _consent);
+                    var errorCode = ex.OriginFlagKey is not null && ex.OriginFlagKey != flagKey ? "GENERAL" : ex.ErrorCode;
+                    var failed = Error(flagKey, defaultValue, errorCode, ex.Message, _consent);
                     EmitEvaluation(failed);
                     throw;
                 }
@@ -1207,18 +1315,18 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     const string message = "prerequisite flag evaluation requires a targeting key";
                     EmitEvaluation(Error(flagKey, defaultValue, "TARGETING_KEY_MISSING", message, _consent));
-                    throw new DependencyGraphException("TARGETING_KEY_MISSING", message);
+                    throw new DependencyGraphException("TARGETING_KEY_MISSING", message, flagKey);
                 }
                 catch (FormatException ex)
                 {
                     EmitEvaluation(Error(flagKey, defaultValue, "PARSE_ERROR", ex.Message, _consent));
-                    throw new DependencyGraphException("PARSE_ERROR", ex.Message);
+                    throw new DependencyGraphException("PARSE_ERROR", ex.Message, flagKey);
                 }
                 catch (Exception)
                 {
                     const string message = "prerequisite flag evaluation failed";
                     EmitEvaluation(Error(flagKey, defaultValue, "GENERAL", message, _consent));
-                    throw new DependencyGraphException("GENERAL", message);
+                    throw new DependencyGraphException("GENERAL", message, flagKey);
                 }
                 finally
                 {
@@ -1371,9 +1479,11 @@ namespace Datadog.Trace.FeatureFlags
         {
         }
 
-        private sealed class DependencyGraphException(string errorCode, string message) : Exception(message)
+        private sealed class DependencyGraphException(string errorCode, string message, string? originFlagKey = null) : Exception(message)
         {
             public string ErrorCode { get; } = errorCode;
+
+            public string? OriginFlagKey { get; } = originFlagKey;
         }
     }
 }

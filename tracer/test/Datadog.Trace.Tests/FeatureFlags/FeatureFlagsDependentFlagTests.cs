@@ -110,8 +110,41 @@ public class FeatureFlagsDependentFlagTests
         var result = trace.Details;
 
         result.Reason.Should().Be(EvaluationReason.Error);
-        result.Error.Should().Be("FLAG_NOT_FOUND");
+        result.Error.Should().Be("GENERAL");
         trace.DependencyEvaluations.Should().ContainSingle().Which.Evaluation.FlagMetadata!["errorCode"].Should().Be("FLAG_NOT_FOUND");
+        trace.DependencyExposures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TransitiveDependencyFailureKeepsLeafCodeAndMapsAncestorsToGeneral()
+    {
+        var config = Configuration(
+            DependentFlag("middle", Allocation("middle", [Dependency("missing", "on")], "on")),
+            DependentFlag("root", Allocation("root", [Dependency("middle", "on")], "on")));
+
+        var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+
+        trace.Details.Error.Should().Be("GENERAL");
+        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagKey).Should().Equal("missing", "middle");
+        trace.DependencyEvaluations.Select(item => item.Evaluation.FlagMetadata!["errorCode"]).Should().Equal("FLAG_NOT_FOUND", "GENERAL");
+        trace.DependencyExposures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void MalformedPrerequisiteKeepsParseErrorAndMapsRootToGeneral()
+    {
+        var malformed = Dependency("unused", "on");
+        malformed.Attribute = "plan";
+        var config = Configuration(
+            DependentFlag("malformed", Allocation("malformed", [malformed], "on")),
+            DependentFlag("root", Allocation("root", [Dependency("malformed", "on")], "on")));
+
+        var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+
+        trace.Details.Error.Should().Be("GENERAL");
+        trace.DependencyEvaluations.Should().ContainSingle();
+        trace.DependencyEvaluations[0].Evaluation.FlagKey.Should().Be("malformed");
+        trace.DependencyEvaluations[0].Evaluation.FlagMetadata!["errorCode"].Should().Be("PARSE_ERROR");
         trace.DependencyExposures.Should().BeEmpty();
     }
 
@@ -335,6 +368,25 @@ public class FeatureFlagsDependentFlagTests
 
         result.Value.Should().Be("on");
         result.Reason.Should().NotBe(EvaluationReason.Error);
+    }
+
+    [Fact]
+    public void IndependentFastPathMatchesExplicitTraceAndDependencyPathOptsOut()
+    {
+        var independent = Evaluator(Configuration(StaticFlag("root", "on")));
+
+        independent.TryEvaluateIndependent("root", ValueType.String, "fallback", new EvaluationContext("subject"), out var fast).Should().BeTrue();
+        var traced = independent.EvaluateWithTrace("root", ValueType.String, "fallback", new EvaluationContext("subject")).Details;
+        fast.Should().NotBeNull();
+        fast!.Value.Should().Be(traced.Value);
+        fast.Reason.Should().Be(traced.Reason);
+        fast.Variant.Should().Be(traced.Variant);
+        fast.Error.Should().Be(traced.Error);
+
+        var dependent = Evaluator(Configuration(
+            StaticFlag("parent", "on"),
+            DependentFlag("root", Allocation("root", [Dependency("parent", "on")], "on"))));
+        dependent.TryEvaluateIndependent("root", ValueType.String, "fallback", new EvaluationContext("subject"), out _).Should().BeFalse();
     }
 
     [Fact]

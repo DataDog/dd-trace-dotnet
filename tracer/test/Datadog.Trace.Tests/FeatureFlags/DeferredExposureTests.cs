@@ -131,7 +131,45 @@ public class DeferredExposureTests
         verdicts.Count(v => v == ExposureCommitResult.Repeat).Should().Be(63);
     }
 
-    private static FeatureFlagsModule Module()
+    [Fact]
+    public void DependencyBatchRemainsPendingWhenRootDisablesExposureLogging()
+    {
+        var flags = Flags(doLog: true);
+        var rootAllocation = new Allocation
+        {
+            Key = "root-allocation",
+            DoLog = false,
+            Rules =
+            [
+                new Rule(
+                [
+                    new ConditionConfiguration
+                    {
+                        FlagEvaluation = new FlagEvaluationConfiguration { Key = "flag" },
+                        Operator = ConditionOperator.ONE_OF,
+                        Value = new[] { "on" },
+                    },
+                ]),
+            ],
+            Splits = [new Split { VariationKey = "on", Shards = [] }],
+        };
+        flags["root"] = new Flag
+        {
+            Key = "root",
+            Enabled = true,
+            VariationType = FeatureFlagsValueType.String,
+            Variations = new Dictionary<string, Variant> { ["on"] = new("on", "root-value") },
+            Allocations = [rootAllocation],
+        };
+        using var module = Module(flags);
+
+        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        evaluation.FlagMetadata![FeatureFlagMetadataKeys.PendingExposure].Should().Be("true");
+        module.CommitExposure(evaluation.FlagMetadata).Should().Be(ExposureCommitResult.New);
+    }
+
+    private static FeatureFlagsModule Module(FlagCollection? flags = null)
     {
         var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
         {
@@ -139,7 +177,7 @@ public class DeferredExposureTests
             { "DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED", "false" },
         }));
         var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
-        module.ApplyConfiguration(new ServerConfiguration { Flags = Flags(doLog: true) }).Should().BeTrue();
+        module.ApplyConfiguration(new ServerConfiguration { Flags = flags ?? Flags(doLog: true) }).Should().BeTrue();
         return module;
     }
 

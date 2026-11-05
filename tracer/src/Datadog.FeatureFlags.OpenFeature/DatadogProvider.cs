@@ -35,6 +35,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private static Action? _onNewConfig = null;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluateDeferred;
+    private readonly Func<IDictionary<string, string>, int> _commitExposure;
 
     // Asked once: when the tracer supports it, exposures are sent only after OpenFeature completes the
     // evaluation. Otherwise the tracer sends them during the evaluation, as older providers expect.
@@ -79,6 +80,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     private DatadogProvider(Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
     {
+        _commitExposure = commitExposure;
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
         _deferExposures = canDeferExposures();
         if (_deferExposures)
@@ -258,7 +260,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, Evaluator(), _evpHook, _deferExposures, _commitExposure);
         return Task.FromResult(res);
     }
 
@@ -271,7 +273,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, Evaluator(), _evpHook, _deferExposures, _commitExposure);
         return Task.FromResult(res);
     }
 
@@ -284,7 +286,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, Evaluator(), _evpHook, _deferExposures, _commitExposure);
         return Task.FromResult(res);
     }
 
@@ -297,7 +299,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, Evaluator(), _evpHook, _deferExposures, _commitExposure);
         return Task.FromResult(res);
     }
 
@@ -310,7 +312,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, Evaluator(), _evpHook, _deferExposures);
+        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, Evaluator(), _evpHook, _deferExposures, _commitExposure);
         return Task.FromResult(res);
     }
 

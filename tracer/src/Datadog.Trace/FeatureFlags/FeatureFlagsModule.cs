@@ -456,6 +456,38 @@ namespace Datadog.Trace.FeatureFlags
                 return notReady;
             }
 
+            if (evaluator.TryEvaluateIndependent(flagKey, resultType, defaultValue, context, out var independent) && independent is not null)
+            {
+                if (reportRootEvaluation)
+                {
+                    ReportEvaluation(independent, evaluationTime, context);
+                }
+
+                if (independent.PendingExposure is { } exposure)
+                {
+                    independent.PendingExposure = null;
+                    if (deferExposure && independent.FlagMetadata is { } independentMetadata)
+                    {
+                        independentMetadata[FeatureFlagMetadataKeys.PendingExposure] = "true";
+                        _deferredExposures.Add(independentMetadata, new StrongBox<IReadOnlyList<ExposureEvent>>(new[] { exposure }));
+                    }
+                    else
+                    {
+                        try
+                        {
+                            ReportExposure(in exposure);
+                        }
+                        catch
+                        {
+                            // Exposure delivery is best effort and must not affect resolution.
+                        }
+                    }
+                }
+
+                LogEvaluation(independent, resultType, defaultValue, targetingKey, attributes, evaluator.Configuration);
+                return independent;
+            }
+
             var collectDependencyEvaluations = Volatile.Read(ref _availableEvaluationWriter) is not null;
             var trace = collectDependencyEvaluations
                             ? evaluator.EvaluateWithTrace(flagKey, resultType, defaultValue, context)
@@ -470,6 +502,9 @@ namespace Datadog.Trace.FeatureFlags
 
             if (deferExposure && trace.DependencyExposures.Count > 0 && evaluation.FlagMetadata is { } metadata)
             {
+                // This private marker crosses the profiler boundary so the provider retains a
+                // dependency exposure batch even when the root allocation has doLog disabled.
+                metadata[FeatureFlagMetadataKeys.PendingExposure] = "true";
                 _deferredExposures.Add(metadata, new StrongBox<IReadOnlyList<ExposureEvent>>(trace.DependencyExposures));
             }
             else

@@ -140,7 +140,7 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool deferredExposure = false)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool deferredExposure = false, Func<IDictionary<string, string>, int>? commitExposure = null)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
@@ -152,7 +152,7 @@ internal static class FeatureFlagsSdk
         {
             try
             {
-                CommitPendingExposure(resolution.FlagMetadata, CommitExposure);
+                CommitPendingExposure(resolution.FlagMetadata, commitExposure ?? CommitExposure);
             }
             catch
             {
@@ -390,7 +390,7 @@ internal static class FeatureFlagsSdk
             var featureTypes = metadata.TryGetValue(FeatureFlagMetadataKeys.FeatureTypes, out var encodedTypes) ? ParseFeatureTypes(encodedTypes) : null;
             foreach (var pair in metadata)
             {
-                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes)
+                if (pair.Key == FeatureFlagMetadataKeys.FeatureTypes || pair.Key == FeatureFlagMetadataKeys.PendingExposure)
                 {
                     continue;
                 }
@@ -433,7 +433,9 @@ internal static class FeatureFlagsSdk
 
         var immutable = new ImmutableMetadata(dic);
         // Keeps the tracer's own dictionary instance, not a copy, for CommitExposure.
-        var pendingExposure = deferredExposure && metadata is not null && metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"
+        var pendingExposure = deferredExposure && metadata is not null
+                           && ((metadata.TryGetValue(FeatureFlagMetadataKeys.PendingExposure, out var pending) && pending == "true")
+                            || (metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLog) && doLog == "true"))
                                   ? metadata
                                   : null;
         if (hookFeatures is not null || evaluationFeatures is not null || pendingExposure is not null)
