@@ -320,6 +320,46 @@ namespace Datadog.Trace.Tests.CallTarget
 
         [Theory]
         [CombinatorialData]
+        public void ThrowingContinuationWhenTargetThrowsTest(bool hasResult)
+        {
+            // The target threw, so the continuation runs synchronously
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            if (hasResult)
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>();
+                tcg.SetContinuation(this, default, exception, in state);
+            }
+            else
+            {
+                var tcg = new ValueTaskContinuationGenerator<IntegrationThatThrows, ValueTaskContinuationGeneratorTests, ValueTask>();
+                tcg.SetContinuation(this, default, exception, in state);
+            }
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void BubbleUpExceptionWhenTargetThrowsReachesTheCallerTest(bool hasResult)
+        {
+            var state = CallTargetState.GetDefault();
+            var exception = new CustomException("Internal Test Exception");
+            var ex = Assert.Throws<InvalidOperationException>(
+                () =>
+                {
+                    if (hasResult)
+                    {
+                        new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskContinuationGeneratorTests, ValueTask<string>, string>().SetContinuation(this, default, exception, in state);
+                    }
+                    else
+                    {
+                        new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskContinuationGeneratorTests, ValueTask>().SetContinuation(this, default, exception, in state);
+                    }
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
+        }
+
+        [Theory]
+        [CombinatorialData]
         public async Task BubbleUpExceptionReachesTheCallerTest(bool alreadyCompleted, bool faulted)
         {
             // AppSec blocks by throwing an exception that wraps a CallTargetBubbleUpException, which must reach the application

@@ -66,7 +66,18 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
         {
             if (exception != null || returnValue == null)
             {
-                _continuation(instance, default, exception, in state);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application, unless they are a CallTargetBubbleUpException (e.g. an AppSec block)
+                    // *
+                    _continuation(instance, default, exception, in state);
+                }
+                catch (Exception ex) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(ex))
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+                }
+
                 return returnValue;
             }
 
