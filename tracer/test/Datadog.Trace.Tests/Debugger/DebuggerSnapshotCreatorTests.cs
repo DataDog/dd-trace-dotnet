@@ -595,7 +595,10 @@ namespace Datadog.Trace.Tests.Debugger
                 tags: [],
                 limitInfo: captureLimitInfo,
                 processTagsProvider: static () => null,
-                serviceNameProvider: static () => "test-service");
+                serviceNameProvider: static () => "test-service")
+            {
+                MaxSerializationTimeInMilliseconds = Timeout.Infinite
+            };
 
             var evaluationResult = new ExpressionEvaluationResult
             {
@@ -769,7 +772,10 @@ namespace Datadog.Trace.Tests.Debugger
                 tags: [],
                 limitInfo: CreateCaptureLimitInfo(),
                 processTagsProvider: static () => null,
-                serviceNameProvider: static () => "test-service");
+                serviceNameProvider: static () => "test-service")
+            {
+                MaxSerializationTimeInMilliseconds = Timeout.Infinite
+            };
 
             var method = typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
             var captureInfo = new CaptureInfo<Type>(

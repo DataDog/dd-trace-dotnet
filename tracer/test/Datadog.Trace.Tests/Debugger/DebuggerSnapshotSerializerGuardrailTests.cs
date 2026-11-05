@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
@@ -116,6 +117,8 @@ public class DebuggerSnapshotSerializerGuardrailTests
             MaxLength: maxLength,
             MaxFieldCount: maxFieldCount);
 
+        // These tests assert on which guardrail fires, so opt out of the wall-clock budget: the shared one (200ms by default, changed by
+        // other tests depending on run order) can expire during cold reflection/JIT on a busy agent and report Timeout instead.
         return new DebuggerSnapshotCreator(
             isFullSnapshot: true,
             ProbeLocation.Method,
@@ -123,7 +126,10 @@ public class DebuggerSnapshotSerializerGuardrailTests
             tags: [],
             limitInfo,
             processTagsProvider: static () => null,
-            serviceNameProvider: static () => "test-service");
+            serviceNameProvider: static () => "test-service")
+        {
+            MaxSerializationTimeInMilliseconds = Timeout.Infinite
+        };
     }
 
     private static void CaptureInto(DebuggerSnapshotCreator snapshotCreator, object value)

@@ -41,16 +41,17 @@ namespace Datadog.Trace.Debugger.Snapshots
             string name,
             JsonWriter jsonWriter,
             CaptureLimitInfo limitInfo,
+            int? maxSerializationTimeInMilliseconds,
             ref uint incompleteReasons)
         {
-            using var cts = CreateCancellationTimeout();
+            using var cts = CreateCancellationTimeout(maxSerializationTimeInMilliseconds);
             var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
             SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
-        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo, ref uint incompleteReasons)
+        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo, int? maxSerializationTimeInMilliseconds, ref uint incompleteReasons)
         {
-            using var cts = CreateCancellationTimeout();
+            using var cts = CreateCancellationTimeout(maxSerializationTimeInMilliseconds);
             var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
             WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
@@ -761,12 +762,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        private static CancellationTokenSource CreateCancellationTimeout()
+        private static CancellationTokenSource CreateCancellationTimeout(int? maxSerializationTimeInMilliseconds)
         {
             var cts = new CancellationTokenSource();
             if (!System.Diagnostics.Debugger.IsAttached)
             {
-                cts.CancelAfter(_maximumSerializationTime);
+                cts.CancelAfter(maxSerializationTimeInMilliseconds ?? _maximumSerializationTime);
             }
 
             return cts;
