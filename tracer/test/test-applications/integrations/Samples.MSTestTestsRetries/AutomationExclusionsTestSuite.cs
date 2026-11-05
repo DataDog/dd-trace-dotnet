@@ -1,3 +1,4 @@
+using System.Threading;
 using Datadog.Trace.Ci;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -7,6 +8,8 @@ namespace Samples.MSTestTestsRetries;
 [TestClass]
 public class AutomationExclusionsTestSuite
 {
+    private static int _protectedFlakyFailureExecutions;
+
     [TestMethod]
     [PreventFailureSuppression]
     public void ProtectedFailure()
@@ -19,5 +22,12 @@ public class AutomationExclusionsTestSuite
     public void NoRetryFailure()
     {
         Assert.IsTrue(false);
+    }
+
+    [TestMethod]
+    [PreventFailureSuppression]
+    public void ProtectedFlakyFailure()
+    {
+        Assert.IsTrue(Interlocked.Increment(ref _protectedFlakyFailureExecutions) > 1);
     }
 }

@@ -285,7 +285,8 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     {
         var testOptimization = TestOptimization.Instance;
         var testMethod = testMethodState.TestMethod;
-        if (TestAutomationExclusions.From(testMethod.MethodInfo).NoAutoRetry)
+        var exclusions = TestAutomationExclusions.From(testMethod.MethodInfo);
+        if (exclusions.NoAutoRetry)
         {
             return returnValueList;
         }
@@ -329,7 +330,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 }
 
                 // Calculate final results
-                returnValueList = GetFinalResults(results);
+                returnValueList = GetFinalResults(results, keepFailure: attempt.IsAttemptToFix && exclusions.PreventFailureSuppression);
             }
         }
         else if (testOptimization.FlakyRetryFeature?.Enabled == true && attempt.ResultStatus == TestStatus.Fail)
@@ -780,7 +781,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         }
     }
 
-    private static IList GetFinalResults(List<IList> executionStatuses)
+    private static IList GetFinalResults(List<IList> executionStatuses, bool keepFailure = false)
     {
         var lstExceptions = new List<Exception>();
         var initialResults = executionStatuses[0];
@@ -823,7 +824,10 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         lstExceptions.Add(testFailureException);
                     }
 
-                    if (resultsCount++ == 0 || testResult.Outcome == UnitTestOutcome.Passed)
+                    var replacesFinalResult = keepFailure
+                                                  ? finalResult is not null && GetStatusFromOutcome(finalResult.Outcome) != TestStatus.Fail && GetStatusFromOutcome(testResult.Outcome) == TestStatus.Fail
+                                                  : testResult.Outcome == UnitTestOutcome.Passed;
+                    if (resultsCount++ == 0 || replacesFinalResult)
                     {
                         finalResult = testResult;
                     }

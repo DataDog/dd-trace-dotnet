@@ -252,6 +252,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
 
+                    var frameworkResult = XUnitFrameworkResult.Unknown;
                     if (testCaseMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
                     {
                         // Quarantined or disabled test results should not be reported to the testing framework.
@@ -261,6 +262,13 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         runSummary.Total = 1;
                         runSummary.Failed = 0;
                         runSummary.Skipped = 1;
+                    }
+                    else if (testCaseMetadata.HasBlockingAttemptToFixFailure)
+                    {
+                        runSummary.Total = 1;
+                        runSummary.Skipped = 0;
+                        runSummary.Failed = 1;
+                        frameworkResult = XUnitFrameworkResult.Failed;
                     }
                     else
                     {
@@ -287,7 +295,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         }
                     }
 
-                    messageBus.FlushMessages(testCaseMetadata.UniqueID);
+                    messageBus.FlushMessages(testCaseMetadata.UniqueID, frameworkResult);
 
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {

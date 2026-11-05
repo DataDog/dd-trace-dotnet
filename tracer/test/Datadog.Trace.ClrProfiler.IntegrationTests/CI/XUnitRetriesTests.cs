@@ -45,6 +45,14 @@ public class XUnitRetriesTests : TestingFrameworkRetriesTests
         => base.AutomationExclusions(packageVersion, testName, expectedExecutions, expectedFinalStatus, expectedExitCode, expectedTag);
 
     [SkippableTheory]
+    [MemberData(nameof(PackageVersions.XUnitRetries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task ProtectedAttemptToFixFailure(string packageVersion)
+        => base.ProtectedAttemptToFixFailure(packageVersion);
+
+    [SkippableTheory]
     [MemberData(nameof(GetQuarantineRetryData))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]

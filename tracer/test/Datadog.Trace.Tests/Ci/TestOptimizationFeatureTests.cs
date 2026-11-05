@@ -2793,9 +2793,10 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     [InlineData(false, false, false, false, "Failed", "Ignored")]
     [InlineData(false, true, false, false, "Failed", "Failed")]
     [InlineData(false, false, false, true, "Failed", "Ignored")]
-    [InlineData(false, true, false, true, "Passed", "Passed")]
+    [InlineData(false, true, false, true, "Failed", "Passed")]
     [InlineData(true, false, false, false, "Ignored", "Failed")]
     [InlineData(true, true, false, false, "Failed", "Failed")]
+    [InlineData(true, true, false, true, "Failed", "Passed")]
     [InlineData(true, true, true, false, "Passed", null)]
     public async Task MsTestAttemptToFixRetainsRetriesAndHonorsFailureProtection(bool nativeRetry, bool preventSuppression, bool nativeRecovers, bool retryPasses, string expectedFrameworkOutcome, string expectedRetryOutcome)
     {

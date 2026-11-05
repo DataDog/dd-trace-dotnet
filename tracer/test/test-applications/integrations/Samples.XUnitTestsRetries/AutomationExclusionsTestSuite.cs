@@ -1,3 +1,4 @@
+using System.Threading;
 using Datadog.Trace.Ci;
 using Xunit;
 
@@ -6,6 +7,8 @@ namespace Samples.XUnitTestsRetries;
 // Kept out of TestSuite because these tests only run in the automation exclusion scenarios.
 public class AutomationExclusionsTestSuite
 {
+    private static int _protectedFlakyFailureExecutions;
+
     [Fact]
     [PreventFailureSuppression]
     public void ProtectedFailure()
@@ -18,5 +21,12 @@ public class AutomationExclusionsTestSuite
     public void NoRetryFailure()
     {
         Assert.True(false);
+    }
+
+    [Fact]
+    [PreventFailureSuppression]
+    public void ProtectedFlakyFailure()
+    {
+        Assert.True(Interlocked.Increment(ref _protectedFlakyFailureExecutions) > 1);
     }
 }

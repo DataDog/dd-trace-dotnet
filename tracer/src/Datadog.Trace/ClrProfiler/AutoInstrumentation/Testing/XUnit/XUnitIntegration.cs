@@ -119,6 +119,7 @@ internal static class XUnitIntegration
             testCaseMetadata.IsRetry = isRetry;
             testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
             testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
+            testCaseMetadata.PreventFailureSuppression = testTags.AutomationExclusions.PreventFailureSuppression;
 
             Common.ApplyRetryTags(testTags, isRetry, selectedRetryMode);
         }

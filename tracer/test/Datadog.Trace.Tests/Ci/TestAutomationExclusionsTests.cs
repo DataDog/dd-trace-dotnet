@@ -61,6 +61,20 @@ public class TestAutomationExclusionsTests
     }
 
     [Theory]
+    [InlineData(true, false, false, false, false)]
+    [InlineData(true, false, true, false, true)]
+    [InlineData(true, false, false, true, false)]
+    [InlineData(false, true, false, false, false)]
+    [InlineData(false, true, true, false, false)]
+    [InlineData(false, true, false, true, true)]
+    public void ExclusionsRestoreOrdinaryTestImpactAnalysisSelection(bool quarantined, bool attemptToFix, bool preventSuppression, bool noRetry, bool expected)
+    {
+        var assigned = new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes(quarantined, false, attemptToFix);
+
+        Common.CanApplyItrSkip(new TestAutomationExclusions(preventSuppression, noRetry).ApplyTo(assigned)).Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData(false, false, "skip")]
     [InlineData(false, true, "skip")]
     [InlineData(true, false, "fail")]
