@@ -103,6 +103,17 @@ public class BundlePublishTests : IClassFixture<BundleProjectFixture>
         result.Output.Should().Contain($"warning {warningCode}");
     }
 
+    [Fact]
+    public void WarningsCanBeSuppressed()
+    {
+        var result = Publish("-f net5.0 -r win10-x64 --no-self-contained -p:UseRidGraph=true -p:DatadogPlatforms=win-x64 -p:NoWarn=DDBUNDLE013");
+
+        using var scope = new AssertionScope();
+        result.ExitCode.Should().Be(0, result.ToString());
+        result.Output.Should().NotContain("warning DDBUNDLE013");
+        result.GetDirectories().Should().Equal("netcoreapp3.1", "win-x64");
+    }
+
     [Theory]
     [InlineData("-f net8.0 -p:DatadogPlatforms=win10-x64", "DDBUNDLE002")]
     [InlineData("-f net8.0 -p:DatadogPlatforms=\"linux-x64;alpine-x64\"", "DDBUNDLE002")]
