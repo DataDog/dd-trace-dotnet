@@ -89,7 +89,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                     // *
                     _continuation(target, default, ex, in state);
                 }
-                catch (Exception contEx)
+                catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
                 {
                     IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                 }
@@ -104,7 +104,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 // *
                 _continuation(target, default, default, in state);
             }
-            catch (Exception contEx)
+            catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
             }
@@ -148,7 +148,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                     // *
                     await _asyncContinuation(target, default, ex, in state).ConfigureAwait(_preserveContext);
                 }
-                catch (Exception contEx)
+                catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
                 {
                     IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                 }
@@ -163,7 +163,7 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
                 // *
                 await _asyncContinuation(target, default, default, in state).ConfigureAwait(_preserveContext);
             }
-            catch (Exception contEx)
+            catch (Exception contEx) when (!CallTargetBubbleUpException.IsCallTargetBubbleUpException(contEx))
             {
                 IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
             }

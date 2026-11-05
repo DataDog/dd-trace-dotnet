@@ -293,6 +293,63 @@ namespace Datadog.Trace.Tests.CallTarget
             Assert.Equal("ReturnValue", rValue);
         }
 
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerTest(bool alreadyCompleted, bool faulted)
+        {
+            // AppSec blocks by throwing an exception that wraps a CallTargetBubbleUpException, which must reach the application
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskAsyncContinuationGeneratorTests, ValueTask<string>, string>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<string>();
+            if (alreadyCompleted)
+            {
+                Complete(tcs, faulted);
+            }
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, new ValueTask<string>(tcs.Task), null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task BubbleUpExceptionReachesTheCallerNoResultTest(bool alreadyCompleted, bool faulted)
+        {
+            var tcg = new ValueTaskContinuationGenerator<IntegrationThatBubblesUp, ValueTaskAsyncContinuationGeneratorTests, ValueTask>();
+            var state = CallTargetState.GetDefault();
+            var tcs = new TaskCompletionSource<bool>();
+            if (alreadyCompleted)
+            {
+                Complete(tcs, faulted);
+            }
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () =>
+                {
+                    var cTask = tcg.SetContinuation(this, new ValueTask(tcs.Task), null, in state);
+                    Complete(tcs, faulted);
+                    await cTask;
+                });
+            Assert.IsType<BubbleUpException>(ex.InnerException);
+        }
+
+        private static void Complete<T>(TaskCompletionSource<T> tcs, bool faulted)
+        {
+            if (faulted)
+            {
+                tcs.TrySetException(new CustomException("Internal Test Exception"));
+            }
+            else
+            {
+                tcs.TrySetResult(default);
+            }
+        }
+
         internal class CustomException : Exception
         {
             public CustomException(string message)
@@ -373,6 +430,19 @@ namespace Datadog.Trace.Tests.CallTarget
                 await Task.Yield();
                 throw new CustomException("Integration Exception");
             }
+        }
+
+        internal class IntegrationThatBubblesUp
+        {
+            public static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+            {
+                await Task.Yield();
+                throw new InvalidOperationException("Blocked", new BubbleUpException());
+            }
+        }
+
+        internal class BubbleUpException : CallTargetBubbleUpException
+        {
         }
     }
 }
