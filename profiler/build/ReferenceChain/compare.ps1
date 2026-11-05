@@ -214,7 +214,7 @@ $OutputRoot = [IO.Path]::GetFullPath($OutputRoot)
 
 if ($ListLabels)
 {
-    $labels = Get-ReferenceChainBenchmarkLabels -Root $OutputRoot
+    $labels = @(Get-ReferenceChainBenchmarkLabels -Root $OutputRoot)
     if ($labels.Count -eq 0)
     {
         Write-Host "No reference-chain benchmarks found under '$OutputRoot'."

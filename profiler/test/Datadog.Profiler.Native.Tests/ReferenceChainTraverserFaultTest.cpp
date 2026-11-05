@@ -567,24 +567,32 @@ TEST(ReferenceChainTraverserFaultTest, InlineVTLookupCacheAvoidsPerObjectMapLook
     EXPECT_EQ(vtCache.GetLookupCountForTests(), 2u);
 }
 
-TEST(ReferenceChainTraverserFaultTest, ObjectHeaderMismatchDisablesTraversal)
+TEST(ReferenceChainTraverserFaultTest, ObjectHeaderMismatchStopsTraversalWithoutAddingUntrustedTypes)
 {
     alignas(64) std::uint8_t rootMt[4096]{};
-    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(64) std::uint8_t queuedMt[4096]{};
+    alignas(64) std::uint8_t expectedMt[4096]{};
     alignas(64) std::uint8_t wrongMt[4096]{};
     alignas(16) std::uint8_t rootObj[64]{};
-    alignas(16) std::uint8_t childObj[16]{};
+    alignas(16) std::uint8_t queuedObj[64]{};
+    alignas(16) std::uint8_t mismatchedObj[16]{};
 
-    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, sizeof(rootObj));
-    ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 3, sizeof(rootObj));
+    ClassID queuedClass = BuildFakeMethodTableWithRefs(queuedMt, sizeof(queuedMt), 1, sizeof(queuedObj));
+    ClassID expectedClass = BuildFakeMethodTableNoPointers(expectedMt, sizeof(expectedMt));
     ClassID wrongClass = BuildFakeMethodTableNoPointers(wrongMt, sizeof(wrongMt));
-    uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObj);
+    uintptr_t queuedAddress = reinterpret_cast<uintptr_t>(queuedObj);
+    uintptr_t mismatchedAddress = reinterpret_cast<uintptr_t>(mismatchedObj);
     *reinterpret_cast<ClassID*>(rootObj) = rootClass;
-    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = childAddress;
-    *reinterpret_cast<ClassID*>(childObj) = wrongClass;
+    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = queuedAddress;
+    *reinterpret_cast<uintptr_t*>(rootObj + (2 * sizeof(void*))) = mismatchedAddress;
+    *reinterpret_cast<uintptr_t*>(rootObj + (3 * sizeof(void*))) = mismatchedAddress;
+    *reinterpret_cast<ClassID*>(queuedObj) = queuedClass;
+    *reinterpret_cast<ClassID*>(mismatchedObj) = wrongClass;
 
     GraphMockProfiler profiler;
-    profiler.AddObject(childAddress, childClass, sizeof(childObj));
+    profiler.AddObject(queuedAddress, queuedClass, sizeof(queuedObj));
+    profiler.AddObject(mismatchedAddress, expectedClass, sizeof(mismatchedObj));
 
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
@@ -602,7 +610,16 @@ TEST(ReferenceChainTraverserFaultTest, ObjectHeaderMismatchDisablesTraversal)
 
     EXPECT_FALSE(traverser.IsGCDescTrusted());
     EXPECT_EQ(traverser.GetFaultCount(), 0u);
-    EXPECT_EQ(profiler.GetClassFromObjectCallCount, 1u);
+    EXPECT_EQ(profiler.GetClassFromObjectCallCount, 2u);
+
+    const TypeTreeNode& rootNode = tree._roots.at({rootClass, RootCategory::Stack})->node;
+    EXPECT_NE(rootNode.GetChild(queuedClass), nullptr);
+    EXPECT_EQ(rootNode.GetChild(expectedClass), nullptr);
+    EXPECT_EQ(rootNode.GetChild(wrongClass), nullptr);
+
+    // The queued object must not be scanned after the mismatch. Only the root
+    // reached the inline-VT lookup performed for each scanned object.
+    EXPECT_EQ(vtCache.GetLookupCountForTests(), 1u);
 }
 
 // The guard only recovers from memory access faults, so a C++ exception must pass straight

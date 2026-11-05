@@ -832,6 +832,10 @@ bool ReferenceChainTraverser::TryGetClassIDForFirstVisit(uintptr_t objectAddress
         _objectHeaderSelfTest = ObjectHeaderSelfTestResult::Failed;
         _selfTestFailureKind = SelfTestFailureKind::ObjectHeader;
         _selfTestFailedClassID = classID;
+
+        // ProcessDiscoveredRef skips the remaining references in the current object
+        // once trust is lost. Discard queued frames so this drain stops as well.
+        _traversalStack.clear();
         return false;
     }
 
@@ -845,7 +849,7 @@ bool ReferenceChainTraverser::TryGetClassIDForFirstVisit(uintptr_t objectAddress
 
 bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth)
 {
-    if (_stopReason != TraversalStopReason::None)
+    if (!_gcDescTrusted || (_stopReason != TraversalStopReason::None))
     {
         if (_benchmarkStats != nullptr)
         {
@@ -858,6 +862,9 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
     if (visit == VisitedAddressBitmap::VisitResult::CapacityExceeded)
     {
         _stopReason = TraversalStopReason::VisitedMemoryBudgetExhausted;
+
+        // no need to drain the traversal stack
+        _traversalStack.clear();
         return false;
     }
 
