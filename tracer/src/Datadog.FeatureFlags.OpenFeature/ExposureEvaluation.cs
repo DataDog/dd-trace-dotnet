@@ -22,6 +22,7 @@ public sealed class ExposureEvaluation
 
     private readonly bool _evaluationSucceeded;
     private readonly ImmutableMetadata? _metadata;
+    private readonly bool? _cacheHit;
 
     internal ExposureEvaluation(
         bool evaluationSucceeded,
@@ -40,6 +41,8 @@ public sealed class ExposureEvaluation
         TargetingKey = targetingKey;
         Context = context;
         Features = FeatureFlagsSdk.GetHookFeatures(metadata) ?? EmptyFeatures;
+        // A committed exposure carries the final verdict; otherwise the tracer stamped it during evaluation.
+        _cacheHit = FeatureFlagsSdk.GetExposureCacheHit(metadata) ?? metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 
     /// <summary> Gets the evaluated flag key. </summary>
@@ -72,13 +75,13 @@ public sealed class ExposureEvaluation
     /// the same allocation, variant and serial id. False for a new or changed exposure, and for an
     /// evaluation that is not an exposure.
     /// </summary>
-    public bool IsCacheHit => IsExposure && _metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit) == true;
+    public bool IsCacheHit => IsExposure && _cacheHit == true;
 
     /// <summary>
     /// Gets a value indicating whether this is a new or changed exposure: exactly the decision the
     /// provider uses for sending the exposure to Datadog.
     /// </summary>
-    public bool ShouldSend => IsExposure && _metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit) == false;
+    public bool ShouldSend => IsExposure && _cacheHit == false;
 
     /// <summary>
     /// Gets the features of the selected split whose destinations include the customer hook, keyed

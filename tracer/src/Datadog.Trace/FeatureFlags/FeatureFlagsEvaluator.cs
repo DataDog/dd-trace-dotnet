@@ -70,6 +70,14 @@ namespace Datadog.Trace.FeatureFlags
         internal ServerConfiguration? Configuration => _config;
 
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: false);
+
+        // Leaves an exposure on Evaluation.PendingExposure instead of recording and sending it, for the
+        // caller to commit once the evaluation has completed.
+        public Evaluation EvaluateWithDeferredExposure(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: true);
+
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure)
         {
             // Capture before evaluating: even an exception after a configuration update keeps this consent.
             var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
@@ -218,7 +226,7 @@ namespace Datadog.Trace.FeatureFlags
                                            : hadShards ? EvaluationReason.Split
                                            : EvaluationReason.Static;
 
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context, consent, deferExposure);
                             }
                         }
                     }
@@ -827,7 +835,8 @@ namespace Datadog.Trace.FeatureFlags
             EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context,
-            string consent)
+            string consent,
+            bool deferExposure)
         {
             var variationKey = split.VariationKey!;
 
@@ -876,19 +885,27 @@ namespace Datadog.Trace.FeatureFlags
                 variant: variant.Key,
                 metadata: metadata);
 
-            if (doLog)
+            if (doLog && CreateExposure(flagKey, evaluation, evalTime, context, split, exposureFeatures) is { } exposure)
             {
-                // The single deduplication verdict for this evaluation: the same call that records
-                // the subject and sends the exposure returns whether the subject was already
-                // exposed. A failed evaluation never gets here, so it records nothing. Nothing
-                // recorded (for example after shutdown) means no verdict at all.
-                var recorded = DispatchExposure(flagKey, evaluation, evalTime, context, split, exposureFeatures);
-                if (recorded != Exposure.ExposureRecordResult.NotRecorded)
+                if (deferExposure)
                 {
-                    metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = recorded == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
+                    // The commit after the evaluation returns the one verdict, so none is stamped here.
+                    evaluation.PendingExposure = exposure;
+                }
+                else
+                {
+                    // The single deduplication verdict for this evaluation: the same call that records
+                    // the subject and sends the exposure returns whether the subject was already
+                    // exposed. A failed evaluation never gets here, so it records nothing. Nothing
+                    // recorded (for example after shutdown) means no verdict at all.
+                    var recorded = _onExposureEvent?.Invoke(in exposure) ?? Exposure.ExposureRecordResult.NotRecorded;
+                    if (recorded != Exposure.ExposureRecordResult.NotRecorded)
+                    {
+                        metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = recorded == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
+                    }
                 }
             }
-            else
+            else if (!doLog)
             {
                 Log.Debug<string, string>("Feature Flags: exposure not recorded for {FlagKey}: allocation {AllocationKey} has exposure logging disabled", flagKey, allocation.Key);
             }
@@ -911,7 +928,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private Exposure.ExposureRecordResult DispatchExposure(
+        private Exposure.Model.ExposureEvent? CreateExposure(
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
@@ -925,10 +942,10 @@ namespace Datadog.Trace.FeatureFlags
             if (allocationKey == null || variantKey == null)
             {
                 Log.Debug<string>("Feature Flags: exposure not recorded for {FlagKey}: allocation key or variant key is missing", flagKey);
-                return Exposure.ExposureRecordResult.NotRecorded;
+                return null;
             }
 
-            var evt = new Exposure.Model.ExposureEvent(
+            return new Exposure.Model.ExposureEvent(
                 new DateTimeOffset(evalTime).ToUnixTimeMilliseconds(),
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
@@ -936,8 +953,6 @@ namespace Datadog.Trace.FeatureFlags
                 new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)),
                 split.SerialId,
                 features);
-
-            return _onExposureEvent?.Invoke(in evt) ?? Exposure.ExposureRecordResult.NotRecorded;
         }
 
         private record struct FlattenEntry(string Key, object? Value, int Level)

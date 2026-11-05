@@ -222,7 +222,7 @@ public class ExposureHookTests
 
     private static FlagEvaluationDetails<bool> Details(IEvaluation evaluation)
     {
-        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, evaluation, null);
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, evaluation, null, deferredExposure: false);
         return new FlagEvaluationDetails<bool>(resolution.FlagKey, resolution.Value, resolution.ErrorType, resolution.Reason, resolution.Variant, resolution.ErrorMessage, resolution.FlagMetadata);
     }
 

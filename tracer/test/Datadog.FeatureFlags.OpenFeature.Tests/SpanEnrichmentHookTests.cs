@@ -75,7 +75,7 @@ public class SpanEnrichmentHookTests
     private static async Task Run(IEvaluation evaluation, Action<long?, bool, string?, bool, string, object?> accumulate)
     {
         var hook = new SpanEnrichmentHook(accumulate);
-        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, evaluation, null);
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, evaluation, null, deferredExposure: false);
         var details = new FlagEvaluationDetails<bool>(resolution.FlagKey, resolution.Value, resolution.ErrorType, resolution.Reason, resolution.Variant, resolution.ErrorMessage, resolution.FlagMetadata);
         await hook.FinallyAsync(Context(), details);
     }

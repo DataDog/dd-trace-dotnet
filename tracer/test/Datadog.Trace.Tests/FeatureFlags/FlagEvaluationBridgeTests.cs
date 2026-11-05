@@ -39,6 +39,9 @@ public class FlagEvaluationBridgeTests
     [InlineData(typeof(OpenFeatureSdkEnqueueEVPIntegration))]
     [InlineData(typeof(OpenFeatureSdkCanEnqueueEVPWithFeaturesIntegration))]
     [InlineData(typeof(OpenFeatureSdkEnqueueEVPWithFeaturesIntegration))]
+    [InlineData(typeof(OpenFeatureSdkCanDeferExposuresIntegration))]
+    [InlineData(typeof(OpenFeatureSdkEvaluateDeferredIntegration))]
+    [InlineData(typeof(OpenFeatureSdkCommitExposureIntegration))]
     [InlineData(typeof(OpenFeatureSdkRecordEVPHookErrorIntegration))]
     [InlineData(typeof(OpenFeatureSdkIsEvaluationEventsEnabledIntegration))]
     public void GeneratedDefinitionsRegisterCallbacksAsOpenFeature(Type integration)
