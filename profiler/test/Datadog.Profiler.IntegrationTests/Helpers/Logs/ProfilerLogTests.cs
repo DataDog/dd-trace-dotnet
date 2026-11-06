@@ -217,6 +217,26 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
         }
 
         [Fact]
+        public void Read_WhileAnotherStreamAppends_ReturnsTheFlushedLines()
+        {
+            var path = Path.Combine(_directory, "xunit.txt");
+            using (var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))
+            using (var writer = new StreamWriter(stream) { AutoFlush = true })
+            {
+                writer.WriteLine("first line");
+
+                var log = ProfilerLogFile.Read(path);
+
+                log.Path.Should().Be(path);
+                log.Lines.Should().ContainSingle().Which.Should().Be("first line");
+
+                writer.WriteLine("second line");
+            }
+
+            ProfilerLogFile.Read(path).Lines.Should().Equal("first line", "second line");
+        }
+
+        [Fact]
         public void Search_ByExactLine_Substring_AndRegularExpression()
         {
             const string line = "[time | info |] Configuration: DD_PROFILING_LOCK_ENABLED=1";
