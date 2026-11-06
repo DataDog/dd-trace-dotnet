@@ -1,0 +1,75 @@
+{
+  "name": "duplicate-evaluation",
+  "description": "The same flag is evaluated twice. Validates that the SDK returns consistent values and that exposure dedup produces only one exposure event. Web SDK's FlagEvaluationAggregator aggregates duplicate evaluations into one event with evaluation_count=2; the web override and expectations.events matcher verify this. Non-aggregating platforms emit two separate events.",
+  "context": {
+    "targetingKey": "dedup-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "fixture.dedup.flag": {
+            "allocationKey": "alloc-dedup",
+            "variationKey": "variant-a",
+            "variationType": "string",
+            "variationValue": "alpha",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.dedup.flag",
+      "variationType": "string",
+      "defaultValue": "default",
+      "expectedResult": {
+        "value": "alpha",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant-a"
+      }
+    },
+    {
+      "flag": "fixture.dedup.flag",
+      "variationType": "string",
+      "defaultValue": "default",
+      "expectedResult": {
+        "value": "alpha",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "variant-a"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 1
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 2,
+        "_skip": [
+          {
+            "platform": "web"
+          }
+        ]
+      },
+      {
+        "_count": 1,
+        "_include": [
+          {
+            "platform": "web"
+          }
+        ],
+        "evaluation_count": 2
+      }
+    ]
+  }
+}

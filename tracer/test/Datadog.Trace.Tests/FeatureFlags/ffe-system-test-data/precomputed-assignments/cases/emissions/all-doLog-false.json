@@ -1,0 +1,86 @@
+{
+  "name": "all-doLog-false",
+  "description": "All flags have doLog=false. Evaluations succeed but zero exposure events should be emitted.",
+  "context": {
+    "targetingKey": "silent-user",
+    "attributes": {
+      "plan": "internal"
+    }
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "fixture.silent.bool": {
+            "allocationKey": "alloc-silent",
+            "variationKey": "on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": false
+          },
+          "fixture.silent.string": {
+            "allocationKey": "alloc-silent",
+            "variationKey": "greeting",
+            "variationType": "string",
+            "variationValue": "hello",
+            "reason": "TARGETING_MATCH",
+            "doLog": false
+          },
+          "fixture.silent.int": {
+            "allocationKey": "alloc-silent",
+            "variationKey": "limit-ten",
+            "variationType": "integer",
+            "variationValue": 10,
+            "reason": "TARGETING_MATCH",
+            "doLog": false
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.silent.bool",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "on"
+      }
+    },
+    {
+      "flag": "fixture.silent.string",
+      "variationType": "string",
+      "defaultValue": "default",
+      "expectedResult": {
+        "value": "hello",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "greeting"
+      }
+    },
+    {
+      "flag": "fixture.silent.int",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 10,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "limit-ten"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [],
+    "evaluationEvents": [
+      {
+        "_count": 3
+      }
+    ]
+  }
+}
