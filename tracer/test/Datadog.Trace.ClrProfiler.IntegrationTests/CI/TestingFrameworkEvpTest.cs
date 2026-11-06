@@ -369,6 +369,14 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             [PlatformKeys.Ci.Azure.BuildSourceVersionMessage] = "Fake commit for testing",
             [PlatformKeys.Ci.Azure.BuildRequestedForId] = "AuthorName",
             [PlatformKeys.Ci.Azure.BuildRequestedForEmail] = "author@company.com",
+
+            // Keep framework fixtures independent of the readable checkout.
+            [ConfigurationKeys.CIVisibility.GitRepositoryUrl] = "git@github.com:DataDog/dd-trace-dotnet.git",
+            [ConfigurationKeys.CIVisibility.GitBranch] = "main",
+            [ConfigurationKeys.CIVisibility.GitCommitSha] = "3245605c3d1edc67226d725799ee969c71f7632b",
+            [ConfigurationKeys.CIVisibility.GitCommitMessage] = "Fake commit for testing",
+            [ConfigurationKeys.CIVisibility.GitCommitAuthorName] = "AuthorName",
+            [ConfigurationKeys.CIVisibility.GitCommitAuthorEmail] = "author@company.com",
         };
 
         foreach (var item in ciDictionaryValues)
