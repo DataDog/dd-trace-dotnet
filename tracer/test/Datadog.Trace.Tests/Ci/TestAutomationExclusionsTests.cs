@@ -8,6 +8,7 @@ extern alias DatadogTraceManual;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Net;
@@ -167,6 +168,10 @@ public class TestAutomationExclusionsTests
         foreach (var attribute in new[] { typeof(NoAutoRetryAttribute), typeof(PreventFailureSuppressionAttribute), typeof(DatadogTraceManual::Datadog.Trace.Ci.NoAutoRetryAttribute), typeof(DatadogTraceManual::Datadog.Trace.Ci.PreventFailureSuppressionAttribute) })
         {
             var usage = attribute.GetCustomAttribute<AttributeUsageAttribute>();
+            // Check the emitted constructor argument directly: the API snapshot generator renders
+            // Method as Method | All, but the assembly must contain only the Method target bit.
+            var metadata = attribute.GetCustomAttributesData().Single(x => x.AttributeType == typeof(AttributeUsageAttribute));
+            metadata.ConstructorArguments.Single().Value.Should().Be((int)AttributeTargets.Method);
             usage.ValidOn.Should().Be(AttributeTargets.Method);
             usage.Inherited.Should().BeFalse();
             usage.AllowMultiple.Should().BeFalse();
