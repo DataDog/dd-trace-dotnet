@@ -45,6 +45,41 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         }
 
         ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints = memory.Memory.Span.Slice(0, count);
+        SetSourceLocation(ref methodScope, sequencePoints);
+
+        var localScopes = GetLocalSymbols(methodHandle, method, sequencePoints, methodScope);
+        methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes ?? null, localScopes);
+        return true;
+    }
+
+    protected override bool TryCreateLocalFunctionScope(TypeDefinition ownerType, MethodDefinitionHandle methodHandle, MethodDefinition method, string localFunctionName, bool declaredOnClosureClass, out Model.Scope methodScope)
+    {
+        if (!base.TryCreateLocalFunctionScope(ownerType, methodHandle, method, localFunctionName, declaredOnClosureClass, out methodScope))
+        {
+            return false;
+        }
+
+        // The code of an async or iterator local function lives in the MoveNext method of its state machine
+        var bodyHandle = DatadogMetadataReader.GetStateMachineMoveNextMethod(MetadataTokens.GetToken(methodHandle));
+        if (bodyHandle.IsNil)
+        {
+            bodyHandle = methodHandle;
+        }
+
+        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(MetadataTokens.GetToken(bodyHandle), false, out var count);
+        if (memory is null || count == 0)
+        {
+            return true;
+        }
+
+        ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints = memory.Memory.Span.Slice(0, count);
+        SetSourceLocation(ref methodScope, sequencePoints);
+        methodScope.Scopes = GetLocalSymbols(bodyHandle, MetadataReader.GetMethodDefinition(bodyHandle), sequencePoints, methodScope);
+        return true;
+    }
+
+    private void SetSourceLocation(ref Model.Scope methodScope, ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints)
+    {
         var sourcePdbInfo = GetSourceLocationInfo(sequencePoints);
         methodScope.StartLine = sourcePdbInfo.StartLine;
         methodScope.EndLine = sourcePdbInfo.EndLine;
@@ -68,10 +103,6 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
 
             methodScope.LanguageSpecifics = ls;
         }
-
-        var localScopes = GetLocalSymbols(methodHandle, method, sequencePoints, methodScope);
-        methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes ?? null, localScopes);
-        return true;
     }
 
     internal static LineRange[]? BuildInjectibleLineRanges(ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints)
@@ -175,6 +206,18 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
             return false;
         }
 
+        string? generatedMethodName = null;
+        if (MetadataReader.StringComparer.StartsWith(generatedMethod.Name, "<"))
+        {
+            generatedMethodName = MetadataReader.GetString(generatedMethod.Name);
+
+            // Local functions are surfaced as methods under their own name, not as closures of the containing method
+            if (IsLocalFunctionName(generatedMethodName))
+            {
+                return false;
+            }
+        }
+
         var methodToken = MetadataTokens.GetToken(generatedMethodHandle);
         if (!DatadogMetadataReader.HasSequencePoints(methodToken))
         {
@@ -191,8 +234,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         }
         else
         {
-            var generatedMethodName = MetadataReader.GetString(generatedMethod.Name);
-            if (generatedMethodName[0] != '<')
+            if (generatedMethodName is null)
             {
                 return false;
             }
@@ -226,59 +268,15 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
             // may still have an instance 'this', but we don't want to surface that in symbols presented to users.
             if (method.IsStaticMethod())
             {
-                var thisIndex = -1;
-                for (var i = 0; i < symbols.Length; i++)
-                {
-                    if (symbols[i].SymbolType == SymbolType.Arg && symbols[i].Name == "this")
-                    {
-                        thisIndex = i;
-                        break;
-                    }
-                }
-
-                if (thisIndex < 0)
-                {
-                    // Nothing to remove
-                    return true;
-                }
-
-                if (symbols.Length == 1)
-                {
-                    closureMethodScope.Symbols = null;
-                    return true;
-                }
-
-                var newSymbols = new Symbol[symbols.Length - 1];
-                if (thisIndex > 0)
-                {
-                    Array.Copy(symbols, 0, newSymbols, 0, thisIndex);
-                }
-
-                if (thisIndex < symbols.Length - 1)
-                {
-                    Array.Copy(symbols, thisIndex + 1, newSymbols, thisIndex, symbols.Length - thisIndex - 1);
-                }
-
-                closureMethodScope.Symbols = newSymbols;
-
-                return true;
+                closureMethodScope.Symbols = ReplaceGeneratedThis(symbols, userTypeName: null);
             }
-
-            var declaringTypeName = method.GetDeclaringType().FullName(MetadataReader);
-            if (!string.IsNullOrEmpty(declaringTypeName))
+            else
             {
-                for (var i = 0; i < symbols.Length; i++)
+                var declaringTypeName = method.GetDeclaringType().FullName(MetadataReader);
+                if (!string.IsNullOrEmpty(declaringTypeName))
                 {
-                    if (symbols[i].SymbolType == SymbolType.Arg && symbols[i].Name == "this")
-                    {
-                        var updated = symbols[i];
-                        updated.Type = declaringTypeName;
-                        symbols[i] = updated;
-                        break;
-                    }
+                    closureMethodScope.Symbols = ReplaceGeneratedThis(symbols, declaringTypeName);
                 }
-
-                closureMethodScope.Symbols = symbols;
             }
         }
 
@@ -292,7 +290,8 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
 
         var methodToken = MetadataTokens.GetToken(methodHandle);
         if (DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(methodToken).StateMachineHoistedLocal
-         && DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(methodDefinition.GetDeclaringType())))
+         && (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(methodDefinition.GetDeclaringType()))
+          || IsNestedInCompilerGeneratedType(MetadataReader.GetTypeDefinition(methodDefinition.GetDeclaringType()))))
         {
             scopes = new List<Model.Scope>();
             var scope = new Model.Scope();
