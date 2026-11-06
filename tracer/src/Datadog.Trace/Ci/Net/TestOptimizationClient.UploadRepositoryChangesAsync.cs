@@ -66,18 +66,9 @@ internal sealed partial class TestOptimizationClient
                 return 0;
             }
 
-            // After asking for 2 logs lines, if the git log command returns just one commit sha, we reconfigure the repo
-            // to ask for git commits and trees of the last month (no blobs)
             var shallowLogArray = gitShallowLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
             if (shallowLogArray.Length == 1 || !initialCommitData.HasCommits)
             {
-                // Just one commit SHA. Fetching previous commits
-
-                // ***
-                // Let's try to unshallow the repo:
-                // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`
-                // ***
-
                 var originName = GitCommandHelper.GetRemoteName(_workingDirectory);
 
                 // git rev-parse HEAD
@@ -86,7 +77,6 @@ internal sealed partial class TestOptimizationClient
                 var head = recoverSelected ? _commitSha : headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
                 var depth = recoverSelected ? "--depth=1" : "--shallow-since=\"1 month ago\"";
 
-                // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
                 Log.Information("TestOptimizationClient: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
                 var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch {depth} --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
 

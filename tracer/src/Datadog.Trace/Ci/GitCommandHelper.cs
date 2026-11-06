@@ -28,6 +28,8 @@ namespace Datadog.Trace.Ci;
 
 internal static class GitCommandHelper
 {
+    internal const string CommitFormat = "%H%x00%at%x00%an%x00%ae%x00%ct%x00%cn%x00%ce%x00%B";
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandHelper));
 
     // Regex patterns for parsing the diff output
@@ -596,7 +598,7 @@ internal static class GitCommandHelper
 
             // 3. Get commit details via `git show`
             Log.Debug("GitCommandHelper.FetchCommitData: fetching commit details for {Commit}", commitSha);
-            var showArgs = "show --no-show-signature -s --format=%H%x00%at%x00%an%x00%ae%x00%ct%x00%cn%x00%ce%x00%B " + commitSha + " --";
+            var showArgs = "show --no-show-signature -s --format=" + CommitFormat + " " + commitSha + " --";
             var showOutput = RunGitCommand(
                 workingDirectory,
                 showArgs,
@@ -608,36 +610,11 @@ internal static class GitCommandHelper
                 return null;
             }
 
-            // 4. Parse output
-            var gitLogDataArray = showOutput.Output.Trim().Split(['\0'], 8, StringSplitOptions.None);
-            if (gitLogDataArray.Length < 8)
+            if (ParseCommitData(showOutput.Output) is not { } commitData)
             {
-                Log.Warning<int>("GitCommandHelper.FetchCommitData: unexpected git show output – expected ≥ 8 tokens, got {Count}", gitLogDataArray.Length);
+                Log.Warning("GitCommandHelper.FetchCommitData: invalid git show commit data.");
                 return null;
             }
-
-            // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
-            {
-                Log.Warning("Error parsing author date from git log output");
-                return null;
-            }
-
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
-            {
-                Log.Warning("Error parsing committer date from git log output");
-                return null;
-            }
-
-            var commitData = new CommitData(
-                CommitSha: gitLogDataArray[0],
-                AuthorDate: DateTimeOffset.FromUnixTimeSeconds(authorUnixDate),
-                AuthorName: gitLogDataArray[2],
-                AuthorEmail: gitLogDataArray[3],
-                CommitterDate: DateTimeOffset.FromUnixTimeSeconds(committerUnixDate),
-                CommitterName: gitLogDataArray[5],
-                CommitterEmail: gitLogDataArray[6],
-                CommitMessage: gitLogDataArray[7].Trim());
 
             Log.Debug("GitCommandHelper.FetchCommitData: completed successfully for {Commit}", commitSha);
             return commitData;
@@ -647,6 +624,27 @@ internal static class GitCommandHelper
             Log.Warning(ex, "GitCommandHelper.FetchCommitData: unexpected error while fetching data for {Commit}", commitSha);
             return null;
         }
+    }
+
+    internal static CommitData? ParseCommitData(string output)
+    {
+        var fields = output.Trim().Split(['\0'], 8, StringSplitOptions.None);
+        if (fields.Length < 8 ||
+            !long.TryParse(fields[1], out var authorDate) ||
+            !long.TryParse(fields[4], out var committerDate))
+        {
+            return null;
+        }
+
+        return new CommitData(
+            CommitSha: fields[0],
+            AuthorDate: DateTimeOffset.FromUnixTimeSeconds(authorDate),
+            AuthorName: fields[2],
+            AuthorEmail: fields[3],
+            CommitterDate: DateTimeOffset.FromUnixTimeSeconds(committerDate),
+            CommitterName: fields[5],
+            CommitterEmail: fields[6],
+            CommitMessage: fields[7].Trim());
     }
 
     /// <summary>

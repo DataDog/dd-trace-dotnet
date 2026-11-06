@@ -77,7 +77,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             // Get the remaining data from the log -1
             var gitLogOutput = GitCommandHelper.RunGitCommand(
                 localGitInfo.SourceRoot,
-                "log --no-show-signature -1 --pretty=%H%x00%at%x00%an%x00%ae%x00%ct%x00%cn%x00%ce%x00%B",
+                "log --no-show-signature -1 --pretty=" + GitCommandHelper.CommitFormat,
                 MetricTags.CIVisibilityCommands.Fetch);
             if (gitLogOutput?.ExitCode != 0)
             {
@@ -85,35 +85,20 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 return false;
             }
 
-            var gitLogDataArray = gitLogOutput.Output.Trim().Split(['\0'], 8, StringSplitOptions.None);
-            if (gitLogDataArray.Length < 8)
+            if (GitCommandHelper.ParseCommitData(gitLogOutput.Output) is not { } commitData)
             {
-                localGitInfo.Errors.Add($"Git log output does not contain the expected number of fields: {gitLogOutput.Output}");
+                localGitInfo.Errors.Add("Error parsing git log commit data");
                 return false;
             }
 
-            // Parse author and committer dates from Unix timestamp
-            if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
-            {
-                localGitInfo.Errors.Add("Error parsing author date from git log output");
-                return false;
-            }
-
-            if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
-            {
-                localGitInfo.Errors.Add("Error parsing committer date from git log output");
-                return false;
-            }
-
-            // Populate the localGitData struct with the parsed information
-            localGitInfo.Commit = gitLogDataArray[0];
-            localGitInfo.AuthorDate = DateTimeOffset.FromUnixTimeSeconds(authorUnixDate);
-            localGitInfo.AuthorName = gitLogDataArray[2];
-            localGitInfo.AuthorEmail = gitLogDataArray[3];
-            localGitInfo.CommitterDate = DateTimeOffset.FromUnixTimeSeconds(committerUnixDate);
-            localGitInfo.CommitterName = gitLogDataArray[5];
-            localGitInfo.CommitterEmail = gitLogDataArray[6];
-            localGitInfo.Message = gitLogDataArray[7].Trim();
+            localGitInfo.Commit = commitData.CommitSha;
+            localGitInfo.AuthorDate = commitData.AuthorDate;
+            localGitInfo.AuthorName = commitData.AuthorName;
+            localGitInfo.AuthorEmail = commitData.AuthorEmail;
+            localGitInfo.CommitterDate = commitData.CommitterDate;
+            localGitInfo.CommitterName = commitData.CommitterName;
+            localGitInfo.CommitterEmail = commitData.CommitterEmail;
+            localGitInfo.Message = commitData.CommitMessage;
         }
         catch (Exception ex)
         {
