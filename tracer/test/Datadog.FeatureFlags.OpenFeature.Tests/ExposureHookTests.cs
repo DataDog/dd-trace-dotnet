@@ -125,6 +125,27 @@ public class ExposureHookTests
         features["internal.count"].Should().Be(3d);
     }
 
+    [Theory]
+    [InlineData("0", 0L)]
+    [InlineData("7", 7L)]
+    [InlineData("4294967295", 4294967295L)]
+    [InlineData(null, null)]
+    public async Task SplitSerialIdIsTheUnsignedSerialId(string? serialId, long? expected)
+    {
+        var metadata = ExposureMetadata(cacheHit: "false");
+        if (serialId is not null)
+        {
+            metadata[FeatureFlagMetadataKeys.SplitSerialId] = serialId;
+        }
+
+        var received = new List<ExposureEvaluation>();
+        var hook = new ExposureHook(e => received.Add(e));
+
+        await hook.FinallyAsync(BoolContext(), Details(new TestEvaluation(metadata)));
+
+        received.Single().SplitSerialId.Should().Be(expected);
+    }
+
     [Fact]
     public async Task FeaturesAreEmptyWithoutFeatureMetadata()
     {

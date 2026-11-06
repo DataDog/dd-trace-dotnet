@@ -12,6 +12,7 @@ using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags.Rcm;
@@ -58,7 +59,9 @@ internal sealed class FfeProduct
                         ffeConfig.Path.Path,
                         ffeConfig.Version,
                         ffeConfig.Length);
-                    var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
+                    // Strings stay strings, as in the agentless parser: with default date parsing, an ISO 8601
+                    // string (a flag value or a split feature) becomes a DateTime and loses its original text.
+                    var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>(DateParseHandling.None);
                     if (serverConfigFile.TypedFile is null)
                     {
                         // Not acknowledged either, so the file is not reported as applied anywhere.

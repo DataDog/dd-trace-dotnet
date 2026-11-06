@@ -107,6 +107,38 @@ public class DeferredExposureTests
         tracer.Commits.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData("true", ExposureCommitResult.New, true, false)]
+    [InlineData("false", ExposureCommitResult.Repeat, false, true)]
+    [InlineData("false", ExposureCommitResult.NothingPending, false, false)]
+    public async Task TheCommittedVerdictDecidesAndPlainHooksReadTheAdvisoryStamp(string advisory, int commit, bool expectedShouldSend, bool expectedCacheHit)
+    {
+        using var provider = new DatadogProvider(
+            (f, t, d, k, a) => throw new InvalidOperationException("immediate path must not run"),
+            (f, t, d, k, a) => new FakeEvaluation(
+                new Dictionary<string, string>
+                {
+                    [FeatureFlagMetadataKeys.AllocationKey] = "alloc",
+                    [FeatureFlagMetadataKeys.DoLog] = "true",
+                    [FeatureFlagMetadataKeys.ExposureCacheHit] = advisory,
+                },
+                null),
+            () => true,
+            _ => commit);
+        var client = await ClientAsync(provider);
+        var received = new List<ExposureEvaluation>();
+        var plain = new MetadataReadingHook();
+        client.AddHooks(new ExposureHook(e => received.Add(e)));
+        client.AddHooks(plain);
+
+        await client.GetBooleanDetailsAsync("flag", false, Context());
+
+        received.Should().ContainSingle().Which.IsExposure.Should().BeTrue();
+        received[0].ShouldSend.Should().Be(expectedShouldSend);
+        received[0].IsCacheHit.Should().Be(expectedCacheHit);
+        plain.CacheHits.Should().Equal([advisory == "true"]);
+    }
+
 #pragma warning disable DDFF001 // Exercise the experimental synchronous API.
     [Fact]
     public void TheSynchronousApiCommitsSuccessfulEvaluationsOnly()
@@ -122,13 +154,24 @@ public class DeferredExposureTests
     }
 #pragma warning restore DDFF001
 
-    private static EvaluationContext Context() => EvaluationContext.Builder().SetTargetingKey("user").Build();
+    internal static EvaluationContext Context() => EvaluationContext.Builder().SetTargetingKey("user").Build();
 
     private static async Task<FeatureClient> ClientAsync(DatadogProvider provider)
     {
         var domain = $"deferred-{Guid.NewGuid():N}";
         await Api.Instance.SetProviderAsync(domain, provider);
         return Api.Instance.GetClient(domain);
+    }
+
+    private sealed class MetadataReadingHook : Hook
+    {
+        public List<bool?> CacheHits { get; } = [];
+
+        public override ValueTask FinallyAsync<T>(HookContext<T> context, FlagEvaluationDetails<T> details, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
+        {
+            CacheHits.Add(details.FlagMetadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit));
+            return default;
+        }
     }
 
     private sealed class ThrowingAfterHook : Hook

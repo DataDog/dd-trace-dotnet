@@ -21,13 +21,15 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// An OpenFeature hook that hands each completed flag evaluation to a callback, with the Datadog
 /// exposure decision, so an application can record exposures in its own data store.
 /// <para>
-/// This hook is the supported way to get the exposure decision; the <c>__dd_</c> metadata keys other
-/// than <c>__dd_feature.&lt;key&gt;</c> are internal. Register it with
+/// The provider also puts the exposure data in the flag metadata, so any OpenFeature hook can read
+/// it; this hook reads it for you and uses the final exposure decision. Register it with
 /// <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. The callback runs for every evaluation,
 /// including errors and repeats; use <see cref="ExposureEvaluation.ShouldSend"/> to keep the new
-/// or changed exposures. These are exactly the exposures the provider sends to Datadog while
+/// or changed exposures. When the provider is registered directly with OpenFeature and evaluated
+/// through a client, these are exactly the exposures it sends to Datadog while
 /// <c>DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED</c> is on, and the same decision with it
-/// off.
+/// off. Inside OpenFeature's <c>MultiProvider</c>, the exposure is recorded before the client's
+/// <c>after</c> hooks run, so an evaluation that one of them fails can still have been sent.
 /// </para>
 /// </summary>
 public sealed class ExposureHook : Hook
@@ -40,12 +42,14 @@ public sealed class ExposureHook : Hook
     /// <param name="onEvaluation">Called for every completed evaluation, on the evaluation thread.</param>
     /// <param name="logger">
     /// Receives a warning for the first callback exception and debug entries for later ones. Without
-    /// a logger, those entries go to <see cref="Trace"/>; they never affect the evaluation.
+    /// a logger, only the first one is written, to <see cref="System.Diagnostics.Trace"/>. They never
+    /// affect the evaluation.
     /// </param>
     public ExposureHook(Action<ExposureEvaluation> onEvaluation, ILogger? logger = null)
     {
         _onEvaluation = onEvaluation ?? throw new ArgumentNullException(nameof(onEvaluation));
         _logger = logger;
+        FeatureFlagsSdk.OnExposureHookCreated();
     }
 
     /// <inheritdoc/>
@@ -79,19 +83,14 @@ public sealed class ExposureHook : Hook
                 }
                 else
                 {
-                    System.Diagnostics.Trace.TraceWarning($"Exposure callback failed; later failures are logged at debug level: {ex}");
+                    System.Diagnostics.Trace.TraceWarning($"Exposure callback failed; later failures are not logged without an ILogger: {ex}");
                 }
             }
             else
             {
-                if (_logger is not null)
-                {
-                    _logger.LogDebug(ex, "Exposure callback failed");
-                }
-                else
-                {
-                    System.Diagnostics.Trace.WriteLine($"Exposure callback failed: {ex}", "Datadog.FeatureFlags.OpenFeature");
-                }
+                // Without a logger, later failures are not written: formatting each exception on the
+                // evaluation thread would cost every evaluation of a callback that keeps failing.
+                _logger?.LogDebug(ex, "Exposure callback failed");
             }
         }
 

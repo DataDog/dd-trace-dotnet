@@ -247,6 +247,18 @@ internal sealed class ExposureApi : IDisposable
         return stopped ? ExposureRecordResult.NotRecorded : isNew ? ExposureRecordResult.New : ExposureRecordResult.Repeat;
     }
 
+    /// <summary>
+    /// Tells whether this exposure is already recorded, without recording it: the advisory verdict
+    /// stamped on a deferred evaluation. Null once exposure reporting has stopped.
+    /// </summary>
+    public bool? IsExposed(in ExposureEvent exposure)
+    {
+        lock (_lifecycleLock)
+        {
+            return _disposed ? null : _exposureCache.Contains(exposure);
+        }
+    }
+
     private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)
     {
         public Dictionary<string, string> Context { get; } = context;

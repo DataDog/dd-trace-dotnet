@@ -139,8 +139,9 @@ internal sealed class FeatureListJsonConverter : JsonConverter<List<Feature>?>
             case JsonToken.Boolean:
                 return (bool)reader.Value!;
             case JsonToken.Date:
-                // Remote Config parses ISO 8601 strings into dates before this converter runs. Format the
-                // value back as a round-trip string: the same instant, though not always the same text.
+                // Both delivery paths read with DateParseHandling.None, so this is only a fallback for a reader
+                // that parses dates: format the value back as a round-trip string, the same instant, though not
+                // always the same text.
                 return reader.Value switch
                 {
                     DateTimeOffset offset => offset.ToString("o", CultureInfo.InvariantCulture),

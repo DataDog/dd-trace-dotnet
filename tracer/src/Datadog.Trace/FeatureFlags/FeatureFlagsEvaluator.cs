@@ -14,6 +14,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsEvaluator
     {
-        internal const string MetadataAllocationKey = "__dd_allocation_key";
+        internal const string MetadataAllocationKey = FeatureFlagMetadataKeys.AllocationKey;
         internal const string MetadataErrorCode = "errorCode";
 
         internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
@@ -43,13 +44,17 @@ namespace Datadog.Trace.FeatureFlags
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
+        private static int _warnedDestinationCount;
+
         private readonly ReportExposureDelegate? _onExposureEvent;
+        private readonly PeekExposureDelegate? _isExposed;
         private readonly ServerConfiguration? _config;
         private readonly bool _spanEnrichmentEnabled;
 
-        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false)
+        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false, PeekExposureDelegate? isExposed = null)
         {
             _onExposureEvent = onExposureEvent;
+            _isExposed = isExposed;
             _config = config;
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
             if (_config is null)
@@ -72,8 +77,8 @@ namespace Datadog.Trace.FeatureFlags
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
             => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: false);
 
-        // Leaves an exposure on Evaluation.PendingExposure instead of recording and sending it, for the
-        // caller to commit once the evaluation has completed.
+        // Leaves the exposure pending on the returned DeferredExposureMetadata instead of recording and
+        // sending it, for the caller to commit once the evaluation has completed.
         public Evaluation EvaluateWithDeferredExposure(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
             => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: true);
 
@@ -795,8 +800,15 @@ namespace Datadog.Trace.FeatureFlags
 
             static void WarnUnknownDestination(string destination)
             {
-                if (WarnedDestinations.Count < MaxWarnedDestinations && WarnedDestinations.TryAdd(destination, 0))
+                // ConcurrentDictionary.Count takes every lock of the dictionary; ContainsKey and the counter take none.
+                if (WarnedDestinations.ContainsKey(destination) || Volatile.Read(ref _warnedDestinationCount) >= MaxWarnedDestinations)
                 {
+                    return;
+                }
+
+                if (WarnedDestinations.TryAdd(destination, 0))
+                {
+                    Interlocked.Increment(ref _warnedDestinationCount);
                     Log.Warning<string>("Ignoring unknown feature flag split feature destination {Destination}", destination);
                 }
             }
@@ -819,8 +831,8 @@ namespace Datadog.Trace.FeatureFlags
             return value switch
             {
                 bool b => b ? "true" : "false",
-                // "R" keeps the value round-trippable through the string-based metadata channel.
-                double d => d.ToString("R", CultureInfo.InvariantCulture),
+                // "G17" keeps the value round-trippable through the string-based metadata channel, also on .NET Framework.
+                double d => d.ToString("G17", CultureInfo.InvariantCulture),
                 _ => (string)value,
             };
         }
@@ -857,11 +869,10 @@ namespace Datadog.Trace.FeatureFlags
 
             var mappedValue = MapValue(resultType, variant.Value);
             var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
-            var metadata = new Dictionary<string, string>
-            {
-                [MetadataAllocationKey] = allocation.Key,
-                [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent,
-            };
+            // A deferred exposure travels with its metadata instance, which the provider hands back to commit.
+            var metadata = deferExposure && doLog ? new DeferredExposureMetadata() : new Dictionary<string, string>();
+            metadata[MetadataAllocationKey] = allocation.Key;
+            metadata[FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent;
 
             // The serial id and doLog feed both APM span enrichment and the exposure hooks, so emit
             // them whenever either consumer can run, not only when span enrichment is enabled.
@@ -887,10 +898,16 @@ namespace Datadog.Trace.FeatureFlags
 
             if (doLog && CreateExposure(flagKey, evaluation, evalTime, context, split, exposureFeatures) is { } exposure)
             {
-                if (deferExposure)
+                if (metadata is DeferredExposureMetadata deferred)
                 {
-                    // The commit after the evaluation returns the one verdict, so none is stamped here.
-                    evaluation.PendingExposure = exposure;
+                    // The commit after the evaluation returns the authoritative verdict. The metadata carries
+                    // the cache's answer at evaluation, as Java and Node.js stamp it, so a plain OpenFeature
+                    // hook can read __dd_exposure_cache_hit. Nothing is stamped once exposure reporting has stopped.
+                    deferred.SetPendingExposure(in exposure);
+                    if (_isExposed?.Invoke(in exposure) is { } seen)
+                    {
+                        metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = seen ? "true" : "false";
+                    }
                 }
                 else
                 {
@@ -965,6 +982,9 @@ namespace Datadog.Trace.FeatureFlags
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
         internal delegate Exposure.ExposureRecordResult ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
+
+        // The advisory verdict for a deferred evaluation; null once exposure reporting has stopped.
+        internal delegate bool? PeekExposureDelegate(in Exposure.Model.ExposureEvent ev);
 #pragma warning restore SA1201 // Elements should appear in the correct order
     }
 }

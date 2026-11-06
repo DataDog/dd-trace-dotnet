@@ -14,14 +14,16 @@ namespace Datadog.Trace.FeatureFlags.Exposure;
 internal sealed class ExposureCache
 {
     private readonly int _capacity;
-    private readonly Dictionary<Key, Value> _cache;
-    private readonly LinkedList<Key> _lruList;
+
+    // Each subject keeps its node in the LRU list, so a repeat moves that node in O(1) instead of searching the list.
+    private readonly Dictionary<Key, LinkedListNode<Entry>> _cache;
+    private readonly LinkedList<Entry> _lruList;
 
     public ExposureCache(int capacity)
     {
         _capacity = capacity;
-        _cache = new Dictionary<Key, Value>(capacity);
-        _lruList = new LinkedList<Key>();
+        _cache = new Dictionary<Key, LinkedListNode<Entry>>(capacity);
+        _lruList = new LinkedList<Entry>();
     }
 
     public int Size => _lruList.Count;
@@ -33,32 +35,27 @@ internal sealed class ExposureCache
             var key = new Key(exposureEvent);
             var value = new Value(exposureEvent);
 
-            bool exists = _cache.TryGetValue(key, out var oldValue);
-
-            if (exists)
+            if (_cache.TryGetValue(key, out var node))
             {
-                // Update LRU priority (move element to the begining of the queue)
-                _lruList.Remove(key);
-                _lruList.AddFirst(key);
+                // Update LRU priority (move the node to the beginning of the list)
+                _lruList.Remove(node);
+                _lruList.AddFirst(node);
 
-                if (oldValue == value)
+                if (node.Value.Recorded == value)
                 {
                     return false;
                 }
+
+                node.Value = new Entry(key, value);
+                return true;
             }
 
-            // New key or different value
-            if (!exists && _cache.Count >= _capacity)
+            if (_cache.Count >= _capacity)
             {
                 RemoveLeastRecentlyUsed();
             }
 
-            _cache[key] = value;
-            if (!exists)
-            {
-                _lruList.AddFirst(key);
-            }
-
+            _cache[key] = _lruList.AddFirst(new Entry(key, value));
             return true;
         }
     }
@@ -67,15 +64,27 @@ internal sealed class ExposureCache
     {
         lock (_cache)
         {
-            if (_cache.TryGetValue(key, out var value))
+            if (_cache.TryGetValue(key, out var node))
             {
                 // Get operation should refresh LRU priority
-                _lruList.Remove(key);
-                _lruList.AddFirst(key);
-                return value;
+                _lruList.Remove(node);
+                _lruList.AddFirst(node);
+                return node.Value.Recorded;
             }
 
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Peeks without refreshing the LRU order: true when this exact exposure (allocation, variant and
+    /// serial id) is already recorded for the subject.
+    /// </summary>
+    public bool Contains(ExposureEvent exposureEvent)
+    {
+        lock (_cache)
+        {
+            return _cache.TryGetValue(new Key(exposureEvent), out var node) && node.Value.Recorded == new Value(exposureEvent);
         }
     }
 
@@ -84,10 +93,12 @@ internal sealed class ExposureCache
         var last = _lruList.Last;
         if (last != null)
         {
-            _cache.Remove(last.Value);
+            _cache.Remove(last.Value.Key);
             _lruList.RemoveLast();
         }
     }
+
+    private readonly record struct Entry(Key Key, Value Recorded);
 
     public sealed record Key
     {

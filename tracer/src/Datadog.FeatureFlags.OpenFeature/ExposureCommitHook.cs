@@ -23,6 +23,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 internal sealed class ExposureCommitHook : Hook
 {
     private readonly Func<IDictionary<string, string>, int> _commit;
+    private int _commitFailed;
 
     internal ExposureCommitHook(Func<IDictionary<string, string>, int> commit)
     {
@@ -38,9 +39,14 @@ internal sealed class ExposureCommitHook : Hook
                 FeatureFlagsSdk.CommitPendingExposure(details.FlagMetadata, _commit);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Exposure reporting must never change the application's evaluation.
+            // Exposure reporting must never change the application's evaluation. The first failure is
+            // written, because the exposure it dropped is reported nowhere else.
+            if (Interlocked.Exchange(ref _commitFailed, 1) == 0)
+            {
+                System.Diagnostics.Trace.TraceWarning($"Datadog feature flag exposure commit failed; the exposure was not sent, and later failures are not logged: {ex}");
+            }
         }
 
         return default;

@@ -28,8 +28,9 @@ internal static class FeatureFlagsSdk
     private static readonly ConditionalWeakTable<ImmutableMetadata, ResultState> Results = new();
     private static readonly string[] FeaturePrefixes = [FeatureFlagMetadataKeys.FeaturePrefix, FeatureFlagMetadataKeys.ExposureFeaturePrefix, FeatureFlagMetadataKeys.EvaluationFeaturePrefix];
 
-    // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
-    private static readonly ConditionalWeakTable<ImmutableMetadata, EvaluationContext> EvaluatedContexts = new();
+    // Set once an ExposureHook exists: only that hook reads the evaluated context, so until then
+    // exposures skip the side table for it.
+    private static volatile bool _exposureHookCreated;
 
     internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
 
@@ -148,14 +149,17 @@ internal static class FeatureFlagsSdk
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
         var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs, deferredExposure);
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
-        // Only exposures need the context in ExposureHook, so other evaluations skip the table.
-        if (context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
+        // OpenFeature 2.3 passes the invocation context, not the one a Before hook returned, to Finally.
+        // Only ExposureHook reads it, and only for exposures, so it shares the result's single side-table entry.
+        if (_exposureHookCreated && context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)
         {
-            EvaluatedContexts.Add(metadata, context);
+            Results.GetValue(metadata, static _ => new ResultState(null, null, null)).EvaluatedContext = context;
         }
 
         return resolution;
     }
+
+    internal static void OnExposureHookCreated() => _exposureHookCreated = true;
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
     {
@@ -190,11 +194,11 @@ internal static class FeatureFlagsSdk
 
     /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
-        => metadata is not null && EvaluatedContexts.TryGetValue(metadata, out var context) ? context : null;
+        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state.EvaluatedContext : null;
 
     /// <summary>
     /// Commits the exposure that a deferred evaluation left pending, at most once per result, and keeps
-    /// the verdict for <see cref="GetExposureCacheHit"/>.
+    /// the verdict for <see cref="TryGetCommittedVerdict"/>.
     /// </summary>
     internal static void CommitPendingExposure(ImmutableMetadata? metadata, Func<IDictionary<string, string>, int> commit)
     {
@@ -207,16 +211,27 @@ internal static class FeatureFlagsSdk
         state.ExposureVerdict = commit(evaluationMetadata);
     }
 
-    /// <summary>The verdict of the committed exposure, or null when this result committed none.</summary>
-    internal static bool? GetExposureCacheHit(ImmutableMetadata? metadata)
-        => metadata is not null && Results.TryGetValue(metadata, out var state)
-               ? state.ExposureVerdict switch
-               {
-                   ExposureCommitResult.New => false,
-                   ExposureCommitResult.Repeat => true,
-                   _ => null,
-               }
-               : null;
+    /// <summary>
+    /// Gets the committed verdict when this result had a deferred exposure to commit: false for a new
+    /// exposure, true for a repeat, null when nothing was recorded. Returns false when no commit was owed,
+    /// so the caller reads the verdict the tracer stamped during evaluation.
+    /// </summary>
+    internal static bool TryGetCommittedVerdict(ImmutableMetadata? metadata, out bool? verdict)
+    {
+        if (metadata is null || !Results.TryGetValue(metadata, out var state) || !state.OwesCommit)
+        {
+            verdict = null;
+            return false;
+        }
+
+        verdict = state.ExposureVerdict switch
+        {
+            ExposureCommitResult.New => false,
+            ExposureCommitResult.Repeat => true,
+            _ => null,
+        };
+        return true;
+    }
 
     internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs, bool deferredExposure)
     {
@@ -349,6 +364,11 @@ internal static class FeatureFlagsSdk
         return immutable;
     }
 
+    /// <summary>The selected split's serial id, or null when the metadata has none.</summary>
+    internal static long? GetSplitSerialId(ImmutableMetadata? metadata)
+        // ConvertMetadataValue keeps the uint32 serial id's bits in an int; read them back as unsigned.
+        => metadata?.GetInt(FeatureFlagMetadataKeys.SplitSerialId) is { } serialBits ? unchecked((uint)serialBits) : null;
+
     // The tracer hands metadata across the package boundary as strings; OpenFeature metadata exposes
     // typed values, so the known non-feature keys are converted here. Features go through ConvertFeatureValue.
     private static object ConvertMetadataValue(string key, string value)
@@ -472,5 +492,10 @@ internal static class FeatureFlagsSdk
         internal IReadOnlyDictionary<string, object>? HookFeatures { get; } = hookFeatures;
 
         internal IReadOnlyDictionary<string, object?>? EvaluationFeatures { get; } = evaluationFeatures;
+
+        // Set at creation: the committed verdict, not the advisory stamp, decides this result.
+        internal bool OwesCommit { get; } = pendingExposure is not null;
+
+        internal EvaluationContext? EvaluatedContext { get; set; }
     }
 }

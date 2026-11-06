@@ -41,8 +41,10 @@ public sealed class ExposureEvaluation
         TargetingKey = targetingKey;
         Context = context;
         Features = FeatureFlagsSdk.GetHookFeatures(metadata) ?? EmptyFeatures;
-        // A committed exposure carries the final verdict; otherwise the tracer stamped it during evaluation.
-        _cacheHit = FeatureFlagsSdk.GetExposureCacheHit(metadata) ?? metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
+        SplitSerialId = FeatureFlagsSdk.GetSplitSerialId(metadata);
+        // A deferred exposure is decided by its commit, never by the advisory stamp; otherwise the tracer
+        // recorded the exposure during evaluation and stamped that verdict.
+        _cacheHit = FeatureFlagsSdk.TryGetCommittedVerdict(metadata, out var committed) ? committed : metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 
     /// <summary> Gets the evaluated flag key. </summary>
@@ -59,6 +61,12 @@ public sealed class ExposureEvaluation
 
     /// <summary> Gets the evaluation context, including the targeting key. </summary>
     public EvaluationContext? Context { get; }
+
+    /// <summary>
+    /// Gets the serial id of the selected split, which identifies the split in Datadog, or null when the
+    /// split has none or the tracer does not report it. Serial ids are unsigned 32-bit values.
+    /// </summary>
+    public long? SplitSerialId { get; }
 
     /// <summary>
     /// Gets a value indicating whether the evaluation succeeded and selected an allocation that logs
@@ -78,8 +86,8 @@ public sealed class ExposureEvaluation
     public bool IsCacheHit => IsExposure && _cacheHit == true;
 
     /// <summary>
-    /// Gets a value indicating whether this is a new or changed exposure: exactly the decision the
-    /// provider uses for sending the exposure to Datadog.
+    /// Gets a value indicating whether this is a new or changed exposure: the decision the provider uses
+    /// for sending the exposure to Datadog.
     /// </summary>
     public bool ShouldSend => IsExposure && _cacheHit == false;
 
