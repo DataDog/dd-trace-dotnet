@@ -25,7 +25,20 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Logs
 
         public static ProfilerLogFile Read(string path)
         {
-            return new ProfilerLogFile(path, File.ReadAllLines(path));
+            // Smoke tests read xunit.txt while the named-pipe mock agent can still append to it.
+            // File.ReadAllLines uses FileShare.Read, which throws on Windows if that append overlaps the read.
+            var lines = new List<string>();
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(stream))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    lines.Add(line);
+                }
+            }
+
+            return new ProfilerLogFile(path, lines);
         }
     }
 }
