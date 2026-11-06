@@ -6,10 +6,20 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Net;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
+using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -287,6 +297,86 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             GitCommandHelper.GetLocalCommits(checkout.Root, "--all").Should().BeEmpty();
         }
 
+        [SkippableTheory]
+        [CombinatorialData]
+        public async Task RecoversTheSelectedCommitBeforeUploadingAShallowCheckout(bool remoteAvailable)
+        {
+            using var remote = new GitCheckout();
+            string Run(string arguments, string input = null)
+            {
+                var output = GitCommandHelper.RunGitCommand(remote.Root, arguments, MetricTags.CIVisibilityCommands.GetHead, input, useCache: false)
+                          ?? throw new InvalidOperationException("Git fixture command did not start.");
+                output.ExitCode.Should().Be(0, output.Error);
+                return output.Output.Trim();
+            }
+
+            var tree = Run("hash-object -t tree -w --stdin", string.Empty);
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var selected = Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nselected\n");
+            var head = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {selected}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nhead\n");
+            Run("update-ref refs/heads/juan-fernandez/shallow-tip " + head);
+            var checkout = Path.Combine(remote.Root, "shallow");
+            Run($"clone --depth=1 --no-local --branch juan-fernandez/shallow-tip \"{remote.Root}\" \"{checkout}\"");
+            if (!remoteAvailable)
+            {
+                Run($"-C \"{checkout}\" remote set-url origin \"{Path.Combine(remote.Root, "unavailable")}\"");
+            }
+
+            GitCommandHelper.GetLocalCommits(checkout, selected).Should().BeEmpty();
+            var values = CIEnvironmentValues.Create(new Dictionary<string, string> { [ConfigurationKeys.CIVisibility.GitCommitSha] = selected });
+            values.GitSearchFolder = checkout;
+            var response = new Mock<IApiResponse>();
+            response.Setup(x => x.StatusCode).Returns(200);
+            response.Setup(x => x.GetStreamAsync()).ReturnsAsync(() => new MemoryStream(Encoding.UTF8.GetBytes("{\"data\":[]}")));
+            var packResponse = new Mock<IApiResponse>();
+            packResponse.Setup(x => x.StatusCode).Returns(204);
+            packResponse.Setup(x => x.GetStreamAsync()).ReturnsAsync(() => new MemoryStream());
+            var request = new Mock<IApiRequest>();
+            var searches = new List<string>();
+            var uploads = new List<MultipartFormItem[]>();
+            request.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>()))
+                   .Callback<ArraySegment<byte>, string>((body, _) => searches.Add(Encoding.UTF8.GetString(body.Array, body.Offset, body.Count)))
+                   .ReturnsAsync(response.Object);
+            request.Setup(x => x.PostAsync(It.IsAny<MultipartFormItem[]>(), It.IsAny<MultipartCompression>()))
+                   .Callback<MultipartFormItem[], MultipartCompression>((items, _) => uploads.Add(items))
+                   .ReturnsAsync(packResponse.Object);
+            var factory = new Mock<IApiRequestFactory>();
+            factory.Setup(x => x.GetEndpoint(It.IsAny<string>())).Returns<string>(path => new Uri("http://localhost/" + path));
+            factory.Setup(x => x.Create(It.IsAny<Uri>())).Returns(request.Object);
+            var management = new Mock<ITestOptimizationTracerManagement>();
+            management.Setup(x => x.EventPlatformProxySupport).Returns(EventPlatformProxySupport.V4);
+            management.Setup(x => x.GetRequestFactory(It.IsAny<TracerSettings>(), It.IsAny<TimeSpan>())).Returns(factory.Object);
+            var optimization = new Mock<ITestOptimization>();
+            optimization.Setup(x => x.CIValues).Returns(values);
+            optimization.Setup(x => x.Settings).Returns(new TestOptimizationSettings(new DictionaryConfigurationSource(new Dictionary<string, string>()), NullConfigurationTelemetry.Instance));
+            optimization.Setup(x => x.TracerManagement).Returns(management.Object);
+
+            var bytes = await TestOptimizationClient.Create(checkout, optimization.Object).UploadRepositoryChangesAsync();
+
+            if (remoteAvailable)
+            {
+                bytes.Should().BeGreaterThan(0);
+                searches.Should().ContainSingle().Which.Should().Contain(selected).And.NotContain(head);
+                var parts = uploads.Should().ContainSingle().Which;
+                var pushedSha = parts.Should().ContainSingle(part => part.Name == "pushedSha").Which.ContentInBytes
+                             ?? throw new InvalidOperationException("The selected SHA was not uploaded.");
+                Encoding.UTF8.GetString(pushedSha.Array, pushedSha.Offset, pushedSha.Count).Should().Contain(selected).And.NotContain(head);
+                var pack = parts.Should().ContainSingle(part => part.Name == "packfile").Which.ContentInBytes
+                        ?? throw new InvalidOperationException("The Git pack was not uploaded.");
+                var packFile = Path.Combine(remote.Root, "uploaded.pack");
+                File.WriteAllBytes(packFile, pack.ToArray());
+                Run($"index-pack \"{packFile}\"");
+                var objects = Run($"verify-pack -v \"{Path.ChangeExtension(packFile, "idx")}\"");
+                objects.Should().Contain(selected + " commit ").And.NotContain(head + " commit ");
+            }
+            else
+            {
+                bytes.Should().Be(0);
+                searches.Should().BeEmpty();
+                uploads.Should().BeEmpty();
+            }
+        }
+
         public class TestItem : IXunitSerializable
         {
             public TestItem()
@@ -396,7 +486,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             public string Root { get; }
 
-            public void Dispose() => Directory.Delete(Root, recursive: true);
+            public void Dispose()
+            {
+                foreach (var file in Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories))
+                {
+                    File.SetAttributes(file, FileAttributes.Normal);
+                }
+
+                Directory.Delete(Root, recursive: true);
+            }
         }
     }
 }

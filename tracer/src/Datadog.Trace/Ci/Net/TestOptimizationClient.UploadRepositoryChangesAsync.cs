@@ -23,8 +23,8 @@ internal sealed partial class TestOptimizationClient
         // Let's first try get the commit data from local and remote
         var initialCommitData = await GetCommitsAsync().ConfigureAwait(false);
 
-        // Let's check if we could retrieve commit data
-        if (!initialCommitData.IsOk)
+        // Missing local history may be recovered from a shallow checkout below.
+        if (!initialCommitData.IsOk && initialCommitData.HasCommits)
         {
             return 0;
         }
@@ -46,6 +46,11 @@ internal sealed partial class TestOptimizationClient
             var isShallow = GitCommandHelper.IsShallowCloneRepository(_workingDirectory);
             if (!isShallow)
             {
+                if (!initialCommitData.HasCommits)
+                {
+                    return 0;
+                }
+
                 // Repo is not in a shallow state, we continue with the pack files upload with the initial commit data we retrieved earlier.
                 Log.Debug("TestOptimizationClient: Repository is not in a shallow state, uploading changes...");
                 return await SendPackFilesAsync(initialCommitData.LocalCommits[0], initialCommitData.MissingCommits, initialCommitData.RemoteCommits).ConfigureAwait(false);
@@ -54,7 +59,7 @@ internal sealed partial class TestOptimizationClient
             Log.Debug("TestOptimizationClient: Unshallowing the repository...");
 
             // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-            var gitShallowLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow);
+            var gitShallowLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow, useCache: false);
             if (gitShallowLogOutput is null)
             {
                 Log.Warning("TestOptimizationClient: 'git log --format=oneline -n 2' command is null");
@@ -81,7 +86,7 @@ internal sealed partial class TestOptimizationClient
 
                 // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
                 Log.Information("TestOptimizationClient: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
                 {
@@ -98,7 +103,7 @@ internal sealed partial class TestOptimizationClient
 
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
                     Log.Information("TestOptimizationClient: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
-                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
                 }
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
@@ -112,7 +117,7 @@ internal sealed partial class TestOptimizationClient
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
                     Log.Information("TestOptimizationClient: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
-                    GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow);
+                    GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
                 }
             }
         }

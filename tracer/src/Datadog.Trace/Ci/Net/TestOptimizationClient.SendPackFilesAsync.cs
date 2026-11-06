@@ -133,7 +133,7 @@ internal sealed partial class TestOptimizationClient
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" --max-count=1000 " + commitSha + " " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
-        var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
+        var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects, useCache: false);
         if (getObjectsCommand is null || getObjectsCommand.ExitCode != 0)
         {
             return new ObjectPackFilesResult([], temporaryFolder);
@@ -146,7 +146,8 @@ internal sealed partial class TestOptimizationClient
             var selectedObjects = GitCommandHelper.RunGitCommand(
                 _workingDirectory,
                 "rev-list --objects --no-object-names --filter=blob:none --no-walk=unsorted " + commitSha,
-                MetricTags.CIVisibilityCommands.GetObjects);
+                MetricTags.CIVisibilityCommands.GetObjects,
+                useCache: false);
             if (selectedObjects is null || selectedObjects.ExitCode != 0)
             {
                 return new ObjectPackFilesResult([], temporaryFolder);

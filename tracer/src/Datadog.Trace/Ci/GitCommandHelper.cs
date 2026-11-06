@@ -730,7 +730,7 @@ internal static class GitCommandHelper
         }
 
         var revision = StringUtil.IsNullOrEmpty(commitSha) ? string.Empty : $" {commitSha} --";
-        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"" + revision, MetricTags.CIVisibilityCommands.GetLocalCommits);
+        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"" + revision, MetricTags.CIVisibilityCommands.GetLocalCommits, useCache: false);
         if (gitLogOutput is null || gitLogOutput.ExitCode != 0)
         {
             Log.Warning("TestOptimizationClient: 'git log...' command is null");
@@ -740,7 +740,7 @@ internal static class GitCommandHelper
         var commits = gitLogOutput.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
         if (!StringUtil.IsNullOrEmpty(commitSha) && !commits.Contains(commitSha, StringComparer.OrdinalIgnoreCase))
         {
-            var selected = RunGitCommand(workingDirectory, $"rev-parse --verify {commitSha}^{{commit}}", MetricTags.CIVisibilityCommands.GetHead);
+            var selected = RunGitCommand(workingDirectory, $"rev-parse --verify {commitSha}^{{commit}}", MetricTags.CIVisibilityCommands.GetHead, useCache: false);
             if (selected?.ExitCode != 0 || !selected.Output.AsSpan().Trim().Equals(commitSha.AsSpan(), StringComparison.OrdinalIgnoreCase))
             {
                 return [];
