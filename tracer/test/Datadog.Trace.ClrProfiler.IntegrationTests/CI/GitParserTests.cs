@@ -173,10 +173,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
-        [InlineData(false, false, null)]
-        [InlineData(true, false, "v1")]
-        [InlineData(true, true, null)]
-        public void OnlyReportsAnUnambiguousDetachedTag(bool detached, bool multiple, string expected)
+        [CombinatorialData]
+        public void OnlyReportsAnUnambiguousDetachedTag(bool detached, bool multiple)
         {
             using var checkout = new GitCheckout();
             if (detached)
@@ -197,7 +195,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 throw new InvalidOperationException(string.Join(Environment.NewLine, info?.Errors ?? []));
             }
 
-            info.Tag.Should().Be(expected);
+            info.Tag.Should().Be(detached && !multiple ? "v1" : null);
         }
 
         [SkippableFact]
@@ -223,6 +221,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             info.AuthorName.Should().Be("Author|,|Name");
             info.Message.Should().Be(message);
+            var fetched = GitCommandHelper.FetchCommitData(checkout.Root, sha)
+                       ?? throw new InvalidOperationException("Git commit details were unavailable.");
+            fetched.CommitSha.Should().Be(sha);
+            fetched.AuthorName.Should().Be("Author|,|Name");
+            fetched.CommitMessage.Should().Be(message);
         }
 
         [SkippableFact]

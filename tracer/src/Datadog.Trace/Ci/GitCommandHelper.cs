@@ -142,7 +142,7 @@ internal static class GitCommandHelper
                         gitOutput is not null &&
                         JsonHelper.SerializeObject(gitOutput) is { } jsonValue)
                 {
-                        File.WriteAllText(cacheKey, jsonValue);
+                    File.WriteAllText(cacheKey, jsonValue);
                 }
             }
             catch (Exception ex)
@@ -596,9 +596,7 @@ internal static class GitCommandHelper
 
             // 3. Get commit details via `git show`
             Log.Debug("GitCommandHelper.FetchCommitData: fetching commit details for {Commit}", commitSha);
-            // Example output:
-            // '1f808ea4e7c068a149975e1851bd905cef56779c|,|1753691341|,|Tony Redondo|,|tony.redondo@datadoghq.com|,|1753691341|,|GitHub|,|noreply@github.com|,|Merge branch 'master' into tony/topt-get-head-commit-info'
-            var showArgs = $"""show {commitSha} -s --format='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""";
+            var showArgs = "show --no-show-signature -s --format=%H%x00%at%x00%an%x00%ae%x00%ct%x00%cn%x00%ce%x00%B " + commitSha + " --";
             var showOutput = RunGitCommand(
                 workingDirectory,
                 showArgs,
@@ -611,8 +609,7 @@ internal static class GitCommandHelper
             }
 
             // 4. Parse output
-            // The delimiter is |,| to avoid issues with commit messages that may contain commas.
-            var gitLogDataArray = showOutput.Output.Trim().Split(["|,|"], StringSplitOptions.None);
+            var gitLogDataArray = showOutput.Output.Trim().Split(['\0'], 8, StringSplitOptions.None);
             if (gitLogDataArray.Length < 8)
             {
                 Log.Warning<int>("GitCommandHelper.FetchCommitData: unexpected git show output – expected ≥ 8 tokens, got {Count}", gitLogDataArray.Length);
@@ -632,28 +629,15 @@ internal static class GitCommandHelper
                 return null;
             }
 
-            var commit = gitLogDataArray[0];
-            if (commit.StartsWith("'"))
-            {
-                commit = commit.Substring(1);
-            }
-
-            // The commit message may contain the `|,|` string , so we join the remaining parts.
-            var commitMessage = gitLogDataArray.Length > 8 ? string.Join("|,|", gitLogDataArray.Skip(7)).Trim() : gitLogDataArray[7].Trim();
-            if (commitMessage.EndsWith("'"))
-            {
-                commitMessage = commitMessage.Substring(0, commitMessage.Length - 1).Trim();
-            }
-
             var commitData = new CommitData(
-                CommitSha: commit,
+                CommitSha: gitLogDataArray[0],
                 AuthorDate: DateTimeOffset.FromUnixTimeSeconds(authorUnixDate),
                 AuthorName: gitLogDataArray[2],
                 AuthorEmail: gitLogDataArray[3],
                 CommitterDate: DateTimeOffset.FromUnixTimeSeconds(committerUnixDate),
                 CommitterName: gitLogDataArray[5],
                 CommitterEmail: gitLogDataArray[6],
-                CommitMessage: commitMessage);
+                CommitMessage: gitLogDataArray[7].Trim());
 
             Log.Debug("GitCommandHelper.FetchCommitData: completed successfully for {Commit}", commitSha);
             return commitData;
