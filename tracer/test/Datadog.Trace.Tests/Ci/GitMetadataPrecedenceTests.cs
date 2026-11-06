@@ -77,7 +77,7 @@ public class GitMetadataPrecedenceTests
         values.Commit.Should().Be(expectedSha);
         values.Repository.Should().Be(source == "partial" ? null : $"https://example.com/{prefix}.git");
         values.Branch.Should().Be(source == "partial" ? null : $"{prefix}-branch");
-        values.Tag.Should().Be(source == "partial" ? null : $"{prefix}-tag");
+        values.Tag.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-tag");
         values.Message.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-message");
         values.AuthorName.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-author");
         values.AuthorEmail.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-author@example.com");
