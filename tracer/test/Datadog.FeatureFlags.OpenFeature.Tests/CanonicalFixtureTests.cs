@@ -172,7 +172,9 @@ public class CanonicalFixtureTests
                                    .Select(evaluation => new JsonLinq.JObject
                                    {
                                        ["flag"] = evaluation.FlagKey,
-                                       ["errorCode"] = TracerFlags.FeatureFlagsEvaluator.ErrorCode(evaluation),
+                                       ["errorCode"] = TracerFlags.FeatureFlagsEvaluator.ErrorCode(evaluation) is { } errorCode
+                                                           ? new JsonLinq.JValue(errorCode)
+                                                           : JsonLinq.JValue.CreateNull(),
                                    });
             AssertExpectedEvents((JsonLinq.JArray?)expectations["exposures"], exposures, expectations["noUnmatchedEvents"]?.Value<bool>() == true);
             AssertExpectedEvents((JsonLinq.JArray?)expectations["evaluationEvents"], evaluations, expectations["noUnmatchedEvents"]?.Value<bool>() == true);
