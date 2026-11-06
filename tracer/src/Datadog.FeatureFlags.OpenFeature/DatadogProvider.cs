@@ -35,6 +35,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private static Action? _onNewConfig = null;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluateDeferred;
+    private readonly Action _releaseFlagSelection;
 
     // Asked once: when the tracer supports it, exposures are sent only after OpenFeature completes the
     // evaluation. Otherwise the tracer sends them during the evaluation, as older providers expect.
@@ -55,10 +56,24 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private readonly IImmutableList<Hook> _providerHooks;
 
     private int _status = StatusInitializing;
+    private int _flagSelectionReleased;
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
-        : this(FeatureFlagsSdk.CanDeferExposures, FeatureFlagsSdk.CommitExposure)
+        : this(new DatadogProviderOptions())
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="DatadogProvider"/> class with the supplied options.</summary>
+    /// <param name="options">Options copied at construction.</param>
+    public DatadogProvider(DatadogProviderOptions options)
+        : this(options, FeatureFlagsSdk.SetFlagSelection, FeatureFlagsSdk.ReleaseFlagSelection, FeatureFlagsSdk.CanDeferExposures, FeatureFlagsSdk.CommitExposure)
+    {
+    }
+
+    // Unit tests stand in for the tracer's flag selection entry points.
+    internal DatadogProvider(DatadogProviderOptions options, Func<string[]?, string[]?, bool> setFlagSelection, Action releaseFlagSelection)
+        : this(options, setFlagSelection, releaseFlagSelection, FeatureFlagsSdk.CanDeferExposures, FeatureFlagsSdk.CommitExposure)
     {
     }
 
@@ -72,14 +87,25 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     // Unit tests stand in for both tracer entry points and for the capability probe.
     internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate, FeatureFlagsSdk.EvaluationCallback evaluateDeferred, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
-        : this(canDeferExposures, commitExposure)
+        : this(new DatadogProviderOptions(), FeatureFlagsSdk.SetFlagSelection, FeatureFlagsSdk.ReleaseFlagSelection, canDeferExposures, commitExposure)
     {
         _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
         _evaluateDeferred = evaluateDeferred ?? throw new ArgumentNullException(nameof(evaluateDeferred));
     }
 
-    private DatadogProvider(Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
+    private DatadogProvider(DatadogProviderOptions options, Func<string[]?, string[]?, bool> setFlagSelection, Action releaseFlagSelection, Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
     {
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        // Handed over at construction rather than at initialization, because an evaluation before
+        // InitializeAsync also starts delivery. The lists are copied, so later changes have no effect.
+        var selection = options.FlagSelection;
+        setFlagSelection(selection?.Tags?.ToArray(), selection?.KeyPatterns?.ToArray());
+        _releaseFlagSelection = releaseFlagSelection;
+
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
         _deferExposures = canDeferExposures();
         if (_deferExposures)
@@ -244,6 +270,22 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
         // Recorded rather than signalled, because OpenFeature marks the provider ready as soon as this
         // returns. It is what lets a later withdrawal be reported as a transition out of READY.
         Volatile.Write(ref _status, StatusReady);
+    }
+
+    /// <summary>
+    /// Shuts the provider down. A provider holds the process's flag selection from its construction
+    /// until it shuts down, so once every provider has, the next one constructed selects its own flags.
+    /// </summary>
+    /// <param name="cancellationToken"> Async cancellation token </param>
+    /// <returns> A task that completes when the provider has shut down </returns>
+    public override Task ShutdownAsync(CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.Exchange(ref _flagSelectionReleased, 1) == 0)
+        {
+            _releaseFlagSelection();
+        }
+
+        return base.ShutdownAsync(cancellationToken);
     }
 
     /// <summary> Gets provider metadata </summary>

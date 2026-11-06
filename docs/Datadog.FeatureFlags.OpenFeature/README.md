@@ -72,6 +72,42 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
+## Flag selection
+
+A service that needs only some of its flags can load only those, by tag, by key pattern, or both.
+Datadog filters the flag configuration before sending it, so the service downloads and holds less.
+
+```csharp
+using Datadog.FeatureFlags.OpenFeature;
+
+var provider = new DatadogProvider(new DatadogProviderOptions
+{
+    FlagSelection = new FlagSelection
+    {
+        Tags = ["team:payments"],
+        KeyPatterns = ["checkout.*"],
+    },
+});
+await OpenFeature.Api.Instance.SetProviderAsync(provider);
+```
+
+- A flag loads when it has any of the tags or its key matches any of the patterns. Tags match
+  exactly. A pattern matches the whole key, `*` matches any run of characters, and every other
+  character is literal. Matching is case-sensitive.
+- Evaluating a flag outside the selection returns the default value with `FLAG_NOT_FOUND`. A
+  selection that matches no flag loads no flags.
+- Each list takes at most 31 values of at most 200 UTF-8 bytes each, after surrounding white space
+  is trimmed, and the request URL that carries the selection is at most 8192 bytes. A selection
+  outside these limits, or with a `null` value, is not sent: every flag loads, and the tracer log
+  names the limit.
+- The selection is copied when the provider is constructed. The first provider constructed in a
+  process decides the selection for every provider in it, until all of them have shut down; a
+  later provider with a different selection logs a warning and uses the first one.
+- The selection applies to the default agentless configuration source. With the Remote Config
+  source, every flag loads and a warning is logged.
+- This needs tracer 3.58.0 or later. With an older tracer, the selection is not sent and every flag
+  loads, without a warning.
+
 ## Exposures in your own data store
 
 The provider sends exposures to Datadog. To record exposures in your own data store, use

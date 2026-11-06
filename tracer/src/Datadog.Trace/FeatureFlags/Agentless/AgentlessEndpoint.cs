@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
@@ -36,6 +37,12 @@ internal sealed class AgentlessEndpoint
     /// </summary>
     internal const string EnvParameterName = "dd_env";
 
+    /// <summary>
+    /// The longest request URL sent with a flag selection. Fastly answers longer URLs with 414 URI Too
+    /// Long (https://docs.fastly.com/products/network-services-resource-limits).
+    /// </summary>
+    internal const int MaxRequestUrlBytes = 8192;
+
     private AgentlessEndpoint(Uri uri, bool isManaged)
     {
         Uri = uri;
@@ -43,7 +50,7 @@ internal sealed class AgentlessEndpoint
     }
 
     /// <summary>
-    /// Gets the endpoint URI, without the environment. Use <see cref="BuildRequestUri"/> to get the
+    /// Gets the endpoint URI, without the environment. Use <see cref="BuildRequestUri(string?)"/> to get the
     /// URI to request.
     /// </summary>
     public Uri Uri { get; }
@@ -62,7 +69,7 @@ internal sealed class AgentlessEndpoint
     /// is an origin receives the canonical path; one that carries a path is used verbatim.
     /// <para>
     /// The environment is not part of the endpoint: it can be changed in code while the application
-    /// runs, so it is applied per request by <see cref="BuildRequestUri"/> instead.
+    /// runs, so it is applied per request by <see cref="BuildRequestUri(string?)"/> instead.
     /// </para>
     /// </summary>
     /// <param name="site">The Datadog site, for example <c>datadoghq.com</c>.</param>
@@ -207,7 +214,7 @@ internal sealed class AgentlessEndpoint
     }
 
     /// <summary>
-    /// Returns the environment that <see cref="BuildRequestUri"/> sends as <c>dd_env</c>, or
+    /// Returns the environment that <see cref="BuildRequestUri(string?)"/> sends as <c>dd_env</c>, or
     /// <c>null</c> when none is sent: a configured base URL never carries one, and a value that
     /// normalizes to nothing is treated as no environment at all.
     /// </summary>
@@ -232,9 +239,9 @@ internal sealed class AgentlessEndpoint
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
     /// <para>
-    /// A configured base URL is opaque: it is requested exactly as the operator wrote it, since it
-    /// may hold credentials, routing, or a scope of its own. Only the managed endpoint carries
-    /// <c>dd_env</c>, which matches the other tracers.
+    /// Without a flag selection, a configured base URL is opaque: it is requested exactly as the
+    /// operator wrote it, since it may hold credentials, routing, or a scope of its own. Only the
+    /// managed endpoint carries <c>dd_env</c>, which matches the other tracers.
     /// </para>
     /// </summary>
     /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
@@ -242,19 +249,47 @@ internal sealed class AgentlessEndpoint
     public Uri BuildRequestUri(string? env)
     {
         var normalized = RequestEnvironment(env);
-        if (normalized is null)
+        return normalized is null ? Uri : AppendQuery(Uri, EnvParameterName + "=" + Uri.EscapeDataString(normalized));
+    }
+
+    /// <summary>
+    /// Returns the URI to request configuration for <paramref name="env"/> and the flag selection,
+    /// whose parameters follow the existing query, a configured base URL's included. When they would
+    /// make the URL longer than <see cref="MaxRequestUrlBytes"/>, the URI is returned without them.
+    /// </summary>
+    /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
+    /// <param name="selection">The claimed flag selection.</param>
+    /// <param name="selectionOmitted">Whether the selection was left out because the URL would be too long with it.</param>
+    /// <returns>The URI to request.</returns>
+    public Uri BuildRequestUri(string? env, FlagSelection selection, out bool selectionOmitted)
+    {
+        selectionOmitted = false;
+        var uri = BuildRequestUri(env);
+        if (!selection.HasValues)
         {
-            return Uri;
+            return uri;
         }
 
-        var parameter = EnvParameterName + "=" + Uri.EscapeDataString(normalized);
-        var builder = new UriBuilder(Uri);
+        // The whole URL string after percent-encoding is measured, as the browser SDK measures it.
+        var withSelection = AppendQuery(uri, selection.ToQuery());
+        if (Encoding.UTF8.GetByteCount(withSelection.AbsoluteUri) > MaxRequestUrlBytes)
+        {
+            selectionOmitted = true;
+            return uri;
+        }
+
+        return withSelection;
+    }
+
+    private static Uri AppendQuery(Uri uri, string parameters)
+    {
+        var builder = new UriBuilder(uri);
 
         // The getter returns the query with its leading "?", while the setter prepends one of its
         // own on .NET Framework, so the existing query is trimmed before it is extended. A URL
         // ending in a bare "?" reports a query of "?", which the length check treats as no query.
         var existing = builder.Query;
-        builder.Query = existing.Length > 1 ? existing.TrimStart('?') + "&" + parameter : parameter;
+        builder.Query = existing.Length > 1 ? existing.TrimStart('?') + "&" + parameters : parameters;
         return builder.Uri;
     }
 }
