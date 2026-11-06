@@ -59,9 +59,9 @@ public class TestAutomationExclusionsTests
     public void ReadsAttributesFromBothPublicAssembliesWithoutSharingDeclarationState(string method, bool preventSuppression, bool noRetry)
     {
         var exclusions = TestAutomationExclusions.From(typeof(Declarations).GetMethod(method));
-        exclusions.PreventFailureSuppression.Should().Be(preventSuppression);
-        exclusions.NoAutoRetry.Should().Be(noRetry);
-        TestAutomationExclusions.From(typeof(Declarations).GetMethod(nameof(Declarations.Unannotated))).NoAutoRetry.Should().BeFalse();
+        exclusions.AllowFailureSuppression.Should().Be(!preventSuppression);
+        exclusions.AllowAutoRetry.Should().Be(!noRetry);
+        TestAutomationExclusions.From(typeof(Declarations).GetMethod(nameof(Declarations.Unannotated))).AllowAutoRetry.Should().BeTrue();
     }
 
     [Theory]
@@ -100,8 +100,8 @@ public class TestAutomationExclusionsTests
     public void NoAutoRetryDisablesAllXUnitRetryPolicies()
     {
         var optimization = new Mock<ITestOptimization>(MockBehavior.Strict);
-        XUnitIntegration.SelectRetryMode(optimization.Object, testIsNew: true, isAttemptToFix: true, noAutoRetry: true).Should().Be(TestRetryMode.None);
-        XUnitIntegration.SelectRetryMode(optimization.Object, testIsNew: true, isAttemptToFix: false, noAutoRetry: true).Should().Be(TestRetryMode.None);
+        XUnitIntegration.SelectRetryMode(optimization.Object, testIsNew: true, isAttemptToFix: true, allowAutoRetry: false).Should().Be(TestRetryMode.None);
+        XUnitIntegration.SelectRetryMode(optimization.Object, testIsNew: true, isAttemptToFix: false, allowAutoRetry: false).Should().Be(TestRetryMode.None);
     }
 
     [Fact]
@@ -114,8 +114,8 @@ public class TestAutomationExclusionsTests
             IsQuarantined = "true",
             IsAttemptToFix = "true"
         };
-        TestAutomationExclusions.From(tags).PreventFailureSuppression.Should().BeFalse();
-        TestAutomationExclusions.From(tags).NoAutoRetry.Should().BeFalse();
+        TestAutomationExclusions.From(tags).AllowFailureSuppression.Should().BeTrue();
+        TestAutomationExclusions.From(tags).AllowAutoRetry.Should().BeTrue();
         Common.IsFailureSuppressed(tags).Should().BeTrue();
         Common.IsAttemptToFix(tags).Should().BeTrue();
     }
@@ -128,8 +128,8 @@ public class TestAutomationExclusionsTests
         tags.SetTag(TestTags.TestPreventFailureSuppression, null);
         tags.SetTag(TestTags.TestNoAutoRetry, null);
 
-        TestAutomationExclusions.From(tags).PreventFailureSuppression.Should().BeTrue();
-        TestAutomationExclusions.From(tags).NoAutoRetry.Should().BeTrue();
+        TestAutomationExclusions.From(tags).AllowFailureSuppression.Should().BeFalse();
+        TestAutomationExclusions.From(tags).AllowAutoRetry.Should().BeFalse();
         Common.IsFailureSuppressed(tags).Should().BeFalse();
         Common.IsAttemptToFix(tags).Should().BeFalse();
         Common.CalculateFinalStatus(false, true, false, tags).Should().Be("fail");
@@ -144,8 +144,8 @@ public class TestAutomationExclusionsTests
 
         var exclusions = TestAutomationExclusions.From(method.Object);
 
-        exclusions.PreventFailureSuppression.Should().BeFalse();
-        exclusions.NoAutoRetry.Should().BeTrue();
+        exclusions.AllowFailureSuppression.Should().BeTrue();
+        exclusions.AllowAutoRetry.Should().BeFalse();
     }
 
     [Fact]
@@ -157,8 +157,8 @@ public class TestAutomationExclusionsTests
 
         var exclusions = TestAutomationExclusions.From(method.Object);
 
-        exclusions.PreventFailureSuppression.Should().BeTrue();
-        exclusions.NoAutoRetry.Should().BeFalse();
+        exclusions.AllowFailureSuppression.Should().BeFalse();
+        exclusions.AllowAutoRetry.Should().BeTrue();
     }
 
     [Fact]
@@ -182,12 +182,20 @@ public class TestAutomationExclusionsTests
         overridden.Should().NotBeNull();
 
         var inheritedExclusions = TestAutomationExclusions.From(inherited);
-        inheritedExclusions.PreventFailureSuppression.Should().BeTrue();
-        inheritedExclusions.NoAutoRetry.Should().BeTrue();
+        inheritedExclusions.AllowFailureSuppression.Should().BeFalse();
+        inheritedExclusions.AllowAutoRetry.Should().BeFalse();
 
         var overriddenExclusions = TestAutomationExclusions.From(overridden);
-        overriddenExclusions.PreventFailureSuppression.Should().BeFalse();
-        overriddenExclusions.NoAutoRetry.Should().BeFalse();
+        overriddenExclusions.AllowFailureSuppression.Should().BeTrue();
+        overriddenExclusions.AllowAutoRetry.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DefaultDeclarationsAllowSuppressionAndRetries()
+    {
+        var exclusions = default(TestAutomationExclusions);
+        exclusions.AllowFailureSuppression.Should().BeTrue();
+        exclusions.AllowAutoRetry.Should().BeTrue();
     }
 
     [Fact]

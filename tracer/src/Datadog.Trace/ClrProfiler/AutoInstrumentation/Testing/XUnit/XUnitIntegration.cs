@@ -113,13 +113,13 @@ internal static class XUnitIntegration
             }
 
             var testManagementData = Common.SetTestManagementFeature(test, isRetry);
-            var selectedRetryMode = SelectRetryMode(testOptimization, testIsNew, testManagementData.AttemptToFix, testTags.AutomationExclusions.NoAutoRetry);
+            var selectedRetryMode = SelectRetryMode(testOptimization, testIsNew, testManagementData.AttemptToFix, testTags.AutomationExclusions.AllowAutoRetry);
 
             testCaseMetadata.SelectedRetryMode = selectedRetryMode;
             testCaseMetadata.IsRetry = isRetry;
             testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
             testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
-            testCaseMetadata.PreventFailureSuppression = testTags.AutomationExclusions.PreventFailureSuppression;
+            testCaseMetadata.PreventFailureSuppression = !testTags.AutomationExclusions.AllowFailureSuppression;
 
             Common.ApplyRetryTags(testTags, isRetry, selectedRetryMode);
         }
@@ -385,9 +385,9 @@ internal static class XUnitIntegration
         }
     }
 
-    internal static TestRetryMode SelectRetryMode(ITestOptimization testOptimization, bool testIsNew, bool isAttemptToFix, bool noAutoRetry)
+    internal static TestRetryMode SelectRetryMode(ITestOptimization testOptimization, bool testIsNew, bool isAttemptToFix, bool allowAutoRetry)
     {
-        if (noAutoRetry)
+        if (!allowAutoRetry)
         {
             return TestRetryMode.None;
         }

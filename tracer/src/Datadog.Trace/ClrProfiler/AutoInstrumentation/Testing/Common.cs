@@ -43,13 +43,13 @@ internal static class Common
     }
 
     internal static bool IsFailureSuppressed(TestSpanTags? tags)
-        => tags?.AutomationExclusions.PreventFailureSuppression != true && (tags?.IsQuarantined == "true" || tags?.IsDisabled == "true");
+        => tags?.AutomationExclusions.AllowFailureSuppression != false && (tags?.IsQuarantined == "true" || tags?.IsDisabled == "true");
 
     internal static bool IsAttemptToFix(TestSpanTags? tags)
-        => tags?.AutomationExclusions.NoAutoRetry != true && tags?.IsAttemptToFix == "true";
+        => tags?.AutomationExclusions.AllowAutoRetry != false && tags?.IsAttemptToFix == "true";
 
     internal static bool ShouldMaskTestManagementOutcome(this TestSpanTags? tags)
-        => tags?.AutomationExclusions.PreventFailureSuppression != true && (IsFailureSuppressed(tags) || IsAttemptToFix(tags));
+        => tags?.AutomationExclusions.AllowFailureSuppression != false && (IsFailureSuppressed(tags) || IsAttemptToFix(tags));
 
     internal static bool IsDisabledByTestManagement(TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
         => testManagementProperties is { Disabled: true, AttemptToFix: false };
@@ -410,7 +410,7 @@ internal static class Common
             {
                 if (isRetry)
                 {
-                    if (!testTags.AutomationExclusions.NoAutoRetry)
+                    if (testTags.AutomationExclusions.AllowAutoRetry)
                     {
                         ApplyRetryTags(testTags, isRetry, TestRetryMode.EarlyFlakeDetection);
                     }
@@ -432,7 +432,7 @@ internal static class Common
     internal static bool SetFlakyRetryTags(Test test, bool isRetry)
     {
         var flakyRetryFeature = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
-        if (flakyRetryFeature && isRetry && !test.GetTags().AutomationExclusions.NoAutoRetry)
+        if (flakyRetryFeature && isRetry && test.GetTags().AutomationExclusions.AllowAutoRetry)
         {
             ApplyRetryTags(test.GetTags(), isRetry, TestRetryMode.AutomaticTestRetry);
         }
@@ -464,7 +464,7 @@ internal static class Common
             {
                 Log.Debug("Common: Test is an attempt to fix. [Suite: {SuiteName}, Test: {TestName}, IsRetry: {IsRetry}]", test.Suite.Name, test.Name, isRetry);
                 testTags.IsAttemptToFix = "true";
-                if (isRetry && !testTags.AutomationExclusions.NoAutoRetry)
+                if (isRetry && testTags.AutomationExclusions.AllowAutoRetry)
                 {
                     ApplyRetryTags(testTags, isRetry, TestRetryMode.AttemptToFix);
                 }

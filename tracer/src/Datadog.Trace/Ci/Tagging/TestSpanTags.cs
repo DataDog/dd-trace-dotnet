@@ -184,7 +184,7 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
         get => _automationExclusionTags?.Declarations ?? default;
         set
         {
-            if (value.PreventFailureSuppression || value.NoAutoRetry || _automationExclusionTags is not null)
+            if (!value.AllowFailureSuppression || !value.AllowAutoRetry || _automationExclusionTags is not null)
             {
                 (_automationExclusionTags ??= new()).Declarations = value;
             }
