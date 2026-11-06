@@ -8,7 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.AppSec;
 
@@ -36,7 +40,23 @@ internal sealed class ApiSecurity
         _endpointsCollectionMessageLimit = securitySettings.ApiSecurityEndpointCollectionMessageLimit;
     }
 
+    internal enum SamplingDecision
+    {
+        Skip,
+        Sample,
+
+        /// <summary>
+        /// The request has no route, so it can't be sampled. It is reported once the last WAF run tells whether the WAF
+        /// blocked it, which is the WAF's decision, as for the request_blocked tag of waf.requests.
+        /// </summary>
+        MissingRoute,
+    }
+
+    [TestingOnly]
     public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues)
+        => GetSamplingDecision(lastWafCall, localRootSpan, args, statusCode, routeValues) == SamplingDecision.Sample;
+
+    internal SamplingDecision GetSamplingDecision(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues)
     {
         try
         {
@@ -47,10 +67,18 @@ internal sealed class ApiSecurity
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 var httpMethod = localRootSpan.GetHttpMethod();
                 statusCode ??= localRootSpan.GetHttpStatusCode();
-                if (httpRouteTag == null || httpMethod == null || statusCode == null)
+                if (httpMethod == null || statusCode == null)
                 {
                     Log.Debug("Unsupported groupkey for api security {Route}, {Method}, {Status}", httpRouteTag, httpMethod, statusCode);
-                    return false;
+                    return SamplingDecision.Skip;
+                }
+
+                if (httpRouteTag == null)
+                {
+                    Log.Debug("No route for api security, {Method}, {Status}", httpMethod, statusCode);
+
+                    // a request that wasn't found or that was blocked has no route to miss
+                    return statusCode != 404 && localRootSpan.GetTag(Tags.AppSecBlocked) != "true" ? SamplingDecision.MissingRoute : SamplingDecision.Skip;
                 }
 
                 if (routeValues != null)
@@ -78,7 +106,7 @@ internal sealed class ApiSecurity
                         }
 
                         args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
-                        return true;
+                        return SamplingDecision.Sample;
                     }
                 }
                 else
@@ -97,21 +125,21 @@ internal sealed class ApiSecurity
                         }
                         else
                         {
-                            return false;
+                            return SamplingDecision.Skip;
                         }
                     }
 
                     args[AddressesConstants.WafContextProcessor] = _apiSecurityAddress;
-                    return true;
+                    return SamplingDecision.Sample;
                 }
             }
 
-            return false;
+            return SamplingDecision.Skip;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error in ShouldAnalyzeSchema");
-            return false;
+            Log.Error(ex, "Error in GetSamplingDecision");
+            return SamplingDecision.Skip;
         }
     }
 
@@ -122,7 +150,35 @@ internal sealed class ApiSecurity
     /// <returns> bool value </returns>
     public bool CanCollectEndpoints() => _endpointsCollectionEnabled;
 
+    /// <summary>
+    /// Records the outcome of a sampling decision once the WAF ran: whether a sampled request got a schema,
+    /// and whether a request without route was blocked by that last run
+    /// </summary>
+    internal static void RecordSamplingTelemetry(SamplingDecision decision, IResult? result, Span localRootSpan, IMetricsTelemetryCollector metrics)
+    {
+        switch (decision)
+        {
+            case SamplingDecision.Sample when result?.ExtractSchemaDerivatives is { Count: > 0 }:
+                metrics.RecordCountApiSecRequestSchema(GetFramework(localRootSpan));
+                break;
+            case SamplingDecision.Sample:
+                metrics.RecordCountApiSecRequestNoSchema(GetFramework(localRootSpan));
+                break;
+            case SamplingDecision.MissingRoute when result?.ShouldBlock is not true:
+                metrics.RecordCountApiSecMissingRoute(GetFramework(localRootSpan));
+                break;
+        }
+    }
+
     public int GetEndpointsCollectionMessageLimit() => _endpointsCollectionMessageLimit;
+
+    private static MetricTags.ApiSecFramework GetFramework(Span localRootSpan)
+        => localRootSpan.GetTag(Tags.InstrumentationName) switch
+        {
+            "aspnet_core" => MetricTags.ApiSecFramework.AspNetCore,
+            "aspnet" => MetricTags.ApiSecFramework.AspNet,
+            _ => MetricTags.ApiSecFramework.Unknown,
+        };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int CombineHashes(string httpRouteTag, string httpMethod, int? statusCode) => HashCode.Combine(httpRouteTag.GetHashCode(), httpMethod.GetHashCode(), statusCode?.GetHashCode());

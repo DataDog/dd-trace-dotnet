@@ -945,6 +945,36 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "api_security.missing_route": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests in which the library was unable to obtain the HTTP route.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.request.schema": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests in which schemas were generated.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "api_security.request.no_schema": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of requests without schema..",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "rasp.error": {
       "tags": [
         "waf_version",
