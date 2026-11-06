@@ -26,12 +26,17 @@ Linux artifacts do not all use the same libc build path.
 - **Ubuntu with the glibc 2.17 sysroot** builds the non-musl
   `Datadog.Tracer.Native.so` and `Datadog.Profiler.Native.so` artifacts. Native
   unit tests in those jobs use the same CMake build directory and toolchain.
+  The same sysroot is used to link the non-musl `dd-dotnet` NativeAOT
+  executables (see [NativeAOT `dd-dotnet`](#nativeaot-dd-dotnet)).
+  The non-musl `tool_artifacts_tests_linux` jobs also use this image. They
+  execute the already-built artifacts and do not link them again.
 - **Alpine** builds the musl tracer and profiler artifacts.
 - **Universal** builds the shipped native loader and Linux API wrapper as
   musl-based binaries. These artifacts are merged into the glibc package later
   in the pipeline; they do not use the glibc 2.17 sysroot.
-- **Debian** is still used for `dd-dotnet`, tool-artifact tests, and several
-  generated test matrices. Do not assume those artifacts use the sysroot.
+- **Alpine** also builds the musl `dd-dotnet` executables, without a sysroot.
+- **Debian** is still used for several generated test matrices. Do not assume
+  those runs use the sysroot.
 - **CentOS 7** remains the source of the harvested sysroot and a runtime smoke
   test target. It is not the normal compiler image for the tracer or profiler.
 
@@ -117,6 +122,30 @@ Native artifact validation rejects any dynamic import or export of
 The profiler uses its install RPATH while it is built, restricted to
 `$ORIGIN`, so CMake does not embed the temporary directory containing the
 imported `libdatadog_profiling.so`.
+
+## NativeAOT `dd-dotnet`
+
+`dotnet publish` does not read the CMake toolchain files. When
+`UseGlibc217Sysroot` is set and the RID is `linux-x64` or `linux-arm64`,
+`BuildDdDotnet` passes two MSBuild properties instead:
+
+- `SysRoot`, which NativeAOT forwards to clang as `--sysroot`;
+- `Glibc217ToolchainLibPath`, the Developer Toolset `lib` directory. The
+  `dd-dotnet` project turns it into `-B`/`-L` linker arguments plus
+  `-static-libgcc`. The sysroot has no GCC installation tree for clang to
+  discover. `devtoolset*/lib/libgcc_s.so` is a linker script
+  (`GROUP ( /lib64/libgcc_s.so.1 libgcc.a )`), and the harvest does not include
+  `libgcc_s.so.1`, so `-lgcc_s` cannot be resolved from the sysroot.
+
+The sysroot paths in `Build.cs` must match the defaults in
+`Glibc217.cmake.*`. NativeAOT keeps its default linker and links its own
+`libstdc++compat.a`, so the executable does not depend on `libstdc++`.
+
+`PublishAotCompressed` compresses the published executable with UPX, which
+removes its dynamic section. Running `nm` or `readelf` on the shipped file
+proves nothing. `BuildDdDotnet` therefore writes a `upx -d` copy of the
+published binary to `.nuke/temp/dd-dotnet-uncompressed/<rid>/dd-dotnet`.
+`ValidateDdDotnetGlibcCompatibility` checks that copy.
 
 ## Refreshing the sysroot
 
@@ -310,6 +339,18 @@ section with `readelf`. It requires exactly one RPATH/RUNPATH entry whose value
 is `$ORIGIN`. This ensures `libdatadog_profiling.so` is loaded from beside the
 profiler without preserving a temporary CMake build directory.
 
+### `dd-dotnet` executable
+
+`ValidateDdDotnetGlibcCompatibility` runs after `BuildDdDotnet` in the
+non-musl `build_dd_dotnet_linux*` jobs. On the uncompressed copy it:
+
+- applies the same glibc 2.17 ceiling and `GLIBC_PRIVATE` and
+  `__libc_single_threaded` checks used for the native libraries;
+- allows only `libc.so.6`, `libdl.so.2`, `libm.so.6`, `libpthread.so.0`,
+  `librt.so.1` and the architecture's dynamic loader as `DT_NEEDED` entries;
+- requires the program interpreter `/lib64/ld-linux-x86-64.so.2` (x64) or
+  `/lib/ld-linux-aarch64.so.1` (arm64).
+
 ### Old-distribution runtime smoke tests
 
 [`SmokeTestScenarios.cs`](../../tracer/build/_build/SmokeTests/SmokeTestScenarios.cs)
@@ -382,8 +423,9 @@ with Universal/musl loader and wrapper artifacts. Validate both build paths
 when changing package assembly, CMake target selection, or native dependency
 layout.
 
-`dd-dotnet` is built separately on Debian and is not covered by the CMake
-sysroot validation.
+Non-musl `dd-dotnet` is built in its own Ubuntu job. It uses the same
+sysroot but a separate NativeAOT link path, so changes to the CMake toolchain
+files do not apply to it, and the reverse is also true.
 
 ## Troubleshooting
 
@@ -449,6 +491,7 @@ Linux package assembly:
 - [ ] Run tracer/profiler native unit tests.
 - [ ] Run `ValidateNativeTracerGlibcCompatibility`.
 - [ ] Run `ValidateNativeProfilerGlibcCompatibility`.
+- [ ] Run `BuildDdDotnet ValidateDdDotnetGlibcCompatibility` for x64 and arm64.
 - [ ] If native dependencies changed, inspect final `DT_NEEDED` and version
       requirements.
 - [ ] Confirm C++ archives and external projects did not fall back to host
