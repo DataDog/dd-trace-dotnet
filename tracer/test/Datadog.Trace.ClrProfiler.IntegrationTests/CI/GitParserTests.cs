@@ -192,22 +192,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 File.WriteAllText(Path.Combine(tags, "stable"), "5b6f3a6dab5972d73a56dff737bd08d995255c08\n");
             }
 
-            GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var info).Should().BeTrue();
-            info!.Tag.Should().Be(expected);
+            if (!GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var info))
+            {
+                throw new InvalidOperationException(string.Join(Environment.NewLine, info?.Errors ?? []));
+            }
+
+            info.Tag.Should().Be(expected);
         }
 
         [SkippableFact]
         public void PreservesAuthorSeparatorsAndTrailingMessageQuotes()
         {
             using var checkout = new GitCheckout();
-            var tree = GitCommandHelper.RunGitCommand(checkout.Root, "rev-parse HEAD^{tree}", MetricTags.CIVisibilityCommands.GetHead)!.Output.Trim();
+            var treeOutput = GitCommandHelper.RunGitCommand(checkout.Root, "rev-parse HEAD^{tree}", MetricTags.CIVisibilityCommands.GetHead)
+                          ?? throw new InvalidOperationException("Git tree lookup did not start.");
+            treeOutput.ExitCode.Should().Be(0, treeOutput.Error);
+            var tree = treeOutput.Output.Trim();
             var message = "Update [\"a\",\"b\"]'";
             var content = $"tree {tree}\nauthor Author|,|Name <author@example.com> 1 +0000\ncommitter Committer <committer@example.com> 2 +0000\n\n{message}\n";
-            var sha = GitCommandHelper.RunGitCommand(checkout.Root, "hash-object -t commit -w --stdin", MetricTags.CIVisibilityCommands.GetHead, input: content, useCache: false)!.Output.Trim();
+            var objectOutput = GitCommandHelper.RunGitCommand(checkout.Root, "hash-object -t commit -w --stdin", MetricTags.CIVisibilityCommands.GetHead, input: content, useCache: false)
+                            ?? throw new InvalidOperationException("Git object creation did not start.");
+            objectOutput.ExitCode.Should().Be(0, objectOutput.Error);
+            var sha = objectOutput.Output.Trim();
             File.WriteAllText(Path.Combine(checkout.Root, ".git", "HEAD"), sha + "\n");
 
-            GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var info).Should().BeTrue();
-            info!.AuthorName.Should().Be("Author|,|Name");
+            if (!GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var info))
+            {
+                throw new InvalidOperationException(string.Join(Environment.NewLine, info?.Errors ?? []));
+            }
+
+            info.AuthorName.Should().Be("Author|,|Name");
             info.Message.Should().Be(message);
         }
 
@@ -303,7 +317,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             public GitCheckout()
             {
-                Root = Path.Combine(Path.GetTempPath(), "dd-git-precedence-" + Guid.NewGuid().ToString("N"));
+                Root = Path.Combine(Path.GetTempPath(), "dd-git-precedence-" + Path.GetRandomFileName());
                 var destination = Path.Combine(Root, ".git");
                 var fixture = Path.Combine(DataHelpers.GetCiDataDirectory(), "gitdata-02");
                 Directory.CreateDirectory(destination);

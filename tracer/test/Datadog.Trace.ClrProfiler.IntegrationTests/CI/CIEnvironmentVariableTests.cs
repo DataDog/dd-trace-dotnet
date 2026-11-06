@@ -469,7 +469,7 @@ Some random log line here
         {
             public TemporaryDirectory()
             {
-                Root = Path.Combine(Path.GetTempPath(), "dd-ci-provider-" + Guid.NewGuid().ToString("N"));
+                Root = Path.Combine(Path.GetTempPath(), "dd-ci-provider-" + Path.GetRandomFileName());
                 Directory.CreateDirectory(Root);
             }
 

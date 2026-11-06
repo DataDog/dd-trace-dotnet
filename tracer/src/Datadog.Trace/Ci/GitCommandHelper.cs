@@ -757,7 +757,7 @@ internal static class GitCommandHelper
         if (!StringUtil.IsNullOrEmpty(commitSha) && !commits.Contains(commitSha, StringComparer.OrdinalIgnoreCase))
         {
             var selected = RunGitCommand(workingDirectory, $"rev-parse --verify {commitSha}^{{commit}}", MetricTags.CIVisibilityCommands.GetHead);
-            if (selected?.ExitCode != 0 || !string.Equals(selected.Output.Trim(), commitSha, StringComparison.OrdinalIgnoreCase))
+            if (selected?.ExitCode != 0 || !selected.Output.AsSpan().Trim().Equals(commitSha.AsSpan(), StringComparison.OrdinalIgnoreCase))
             {
                 return [];
             }
