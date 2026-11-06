@@ -65,7 +65,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             {
                 var tagOutput = GitCommandHelper.RunGitCommand(
                     localGitInfo.SourceRoot,
-                    "tag --points-at HEAD",
+                    "tag --no-column --points-at HEAD",
                     MetricTags.CIVisibilityCommands.GetBranch);
                 if (tagOutput?.ExitCode == 0 && !StringUtil.IsNullOrEmpty(tagOutput.Output))
                 {

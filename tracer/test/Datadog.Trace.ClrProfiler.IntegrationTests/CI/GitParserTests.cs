@@ -177,6 +177,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public void OnlyReportsAnUnambiguousDetachedTag(bool detached, bool multiple)
         {
             using var checkout = new GitCheckout();
+            var config = Path.Combine(checkout.Root, ".git", "config");
+            File.AppendAllText(config, "\n[column]\nui = always\ntag = always\n");
             if (detached)
             {
                 File.WriteAllText(Path.Combine(checkout.Root, ".git", "HEAD"), "5b6f3a6dab5972d73a56dff737bd08d995255c08\n");
