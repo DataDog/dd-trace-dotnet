@@ -222,9 +222,9 @@ public partial class MainWindow : Window
 
             sb.Append(typeName);
 
-            if (node.InstanceCount > 0 || node.TotalSize > 0)
+            if (node.InstanceCount > 0)
             {
-                sb.Append($" ({node.InstanceCount:N0} instances, {node.TotalSize:N0} bytes)");
+                sb.Append($" ({node.InstanceCount:N0} instances)");
             }
 
             if (node.FieldName is not null)
@@ -277,7 +277,7 @@ public partial class MainWindow : Window
             : "?";
 
         var sb = new StringBuilder();
-        sb.AppendLine($"{typeName} ({selectedType.TotalInstanceCount:N0} instances, {selectedType.TotalSize:N0} bytes)");
+        sb.AppendLine($"{typeName} ({selectedType.TotalInstanceCount:N0} instances)");
 
         if (DataContext is MainViewModel vm)
         {
@@ -340,7 +340,7 @@ public partial class MainWindow : Window
             : "?";
 
         sb.Append(typeName);
-        sb.Append($" ({node.InstanceCount:N0} instances, {node.TotalSize:N0} bytes)");
+        sb.Append($" ({node.InstanceCount:N0} instances)");
 
         if (node.FieldName is not null)
         {

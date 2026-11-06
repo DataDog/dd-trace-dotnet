@@ -43,7 +43,8 @@ internal sealed class FlagEvaluationAggregator
         var consent = observation.ObserveFullEvaluationData;
         var attrs = consent ? FlagEvaluationContext.Copy(observation.ContextAttrs, out _) : null;
         var contextKey = FlagEvaluationContext.CanonicalKey(attrs);
-        var dimensions = new DegradedKey(observation.FlagKey, observation.Variant, observation.AllocationKey, FlagEvaluationPrivacy.ErrorCodeForOutput(observation.ErrorCode));
+        var features = observation.Features;
+        var dimensions = new DegradedKey(observation.FlagKey, observation.Variant, observation.AllocationKey, FlagEvaluationPrivacy.ErrorCodeForOutput(observation.ErrorCode), FlagEvaluationContext.CanonicalKey(features));
         var fullKey = new FullKey(dimensions, targetingKey, contextKey, consent);
         if (_full.TryGetValue(fullKey, out var existing))
         {
@@ -54,7 +55,7 @@ internal sealed class FlagEvaluationAggregator
         _perFlag.TryGetValue(observation.FlagKey, out var perFlagCount);
         if (_full.Count < _globalCap && perFlagCount < _perFlagCap)
         {
-            _full.Add(fullKey, new EvaluationEntry(observation.EvalTimeMs, consent, attrs));
+            _full.Add(fullKey, new EvaluationEntry(observation.EvalTimeMs, consent, attrs, features));
             // Only track flags with retained full buckets, so this map is bounded too.
             _perFlag[observation.FlagKey] = perFlagCount + 1;
             return;
@@ -66,7 +67,7 @@ internal sealed class FlagEvaluationAggregator
         }
         else if (_degraded.Count < _degradedCap)
         {
-            _degraded.Add(dimensions, new EvaluationEntry(observation.EvalTimeMs, consent, null));
+            _degraded.Add(dimensions, new EvaluationEntry(observation.EvalTimeMs, consent, null, features));
         }
         else
         {

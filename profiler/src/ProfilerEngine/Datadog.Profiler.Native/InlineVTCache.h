@@ -72,6 +72,10 @@ public:
     // the first time is queued and gets its attribution starting with the next snapshot.
     const InlineVTInfo* GetInlineVTInfo(ClassID classID);
 
+    // Same lookup for callers that already established ContainsGCPointers(classID).
+    // Avoids a redundant MethodTable read on the traversal hot path.
+    const InlineVTInfo* GetInlineVTInfoForScannableType(ClassID classID);
+
     // Inspects the types queued by GetInlineVTInfo and returns how many were inspected.
     //
     // MUST be called outside of the heap dump (i.e. once the EventPipe session is stopped so
@@ -242,6 +246,11 @@ public:
     {
         _cache.insert_or_assign(classID, std::move(info));
     }
+
+    size_t GetLookupCountForTests() const
+    {
+        return _lookupCountForTests;
+    }
 #endif
 
 #ifdef DD_TEST
@@ -269,4 +278,8 @@ private:
 
     // Set from ModuleUnloadStarted, consumed by the snapshot thread (see OnModuleUnloaded).
     std::atomic<bool> _moduleUnloaded{false};
+
+#ifdef DD_TEST
+    size_t _lookupCountForTests = 0;
+#endif
 };

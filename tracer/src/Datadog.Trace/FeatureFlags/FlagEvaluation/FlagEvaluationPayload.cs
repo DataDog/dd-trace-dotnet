@@ -166,6 +166,11 @@ internal static class FlagEvaluationPayload
             row["error"] = new Dictionary<string, string> { ["message"] = errorCode };
         }
 
+        if (entry.Features is { Count: > 0 } features)
+        {
+            row["features"] = features;
+        }
+
         if (!degraded)
         {
             // Serialization remains a privacy boundary even if an upstream caller bypasses

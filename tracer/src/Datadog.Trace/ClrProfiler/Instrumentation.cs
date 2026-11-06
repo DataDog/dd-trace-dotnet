@@ -149,10 +149,10 @@ namespace Datadog.Trace.ClrProfiler
 
                 var sw = RefStopwatch.Create();
 
-                bool versionMismatch = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+                bool versionMismatch = GetNativeTracerVersion() != TracerConstants.SemanticVersion;
                 if (versionMismatch)
                 {
-                    Log.Error("Version mismatch detected. This scenario should not exist. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.ThreePartVersion);
+                    Log.Error("Version mismatch detected. This scenario should not exist. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.SemanticVersion);
                 }
                 else
                 {

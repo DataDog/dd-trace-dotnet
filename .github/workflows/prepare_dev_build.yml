@@ -1,0 +1,144 @@
+name: Prepare dev build
+
+# Stamps a feature branch with a dev version (X.Y.Z-dev.<suffix>) by pushing a commit that changes only
+# DD_VersionSuffix in version.props. Runs from master and names the branch for security reasons.
+#
+# The branch's own code (build.sh, Nuke, its dependencies) runs in the 'stamp' job, which can't get the
+# push token. The 'push' job runs no branch code: it applies the stamp job's diff and pushes it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'The feature branch to stamp with a dev version. Run this workflow from master.'
+        required: true
+        type: string
+      suffix:
+        description: 'A unique suffix: the branch then builds X.Y.Z-dev.<suffix>. Letters, digits, "." and "-".'
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  stamp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      head_sha: ${{ steps.base.outputs.sha }}
+      full_version: ${{ steps.versions.outputs.full_version }}
+      patch: ${{ steps.diff.outputs.patch }}
+
+    steps:
+      - name: Validate inputs
+        env:
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/master" ]; then
+            echo "::error::Run this workflow from master, and name the branch to stamp in the 'branch' input"
+            exit 1
+          fi
+
+          git check-ref-format --branch "$BRANCH" > /dev/null
+
+          # The same branches GitLab treats as release branches
+          lower=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]')
+          case "$lower" in
+            master|main|release*|hotfix*)
+              echo "::error::Dev builds can't be prepared on '$BRANCH'"
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: refs/heads/${{ inputs.branch }}
+
+      - name: Record base commit
+        id: base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      # All the validation of the suffix lives in the Nuke target
+      - name: Set dev version suffix
+        env:
+          NewVersionSuffix: ${{ inputs.suffix }}
+        run: ./tracer/build.sh SetDevVersionSuffix
+
+      - name: Output version
+        id: versions
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+      - name: Output diff
+        id: diff
+        run: echo "patch=$(git diff | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+  push:
+    needs: stamp
+    # commit-headless does not support Windows runners.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for dd-octo-sts authentication
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.stamp.outputs.head_sha }}
+
+      # Checked before applying, because the stamp job ran the branch's own code
+      - name: Apply diff
+        env:
+          PATCH: ${{ needs.stamp.outputs.patch }}
+        run: |
+          echo "$PATCH" | base64 -d > "$RUNNER_TEMP/dev-build.patch"
+
+          changed=$(git apply --numstat "$RUNNER_TEMP/dev-build.patch" | cut -f3)
+          if [ "$changed" != "tracer/build/_build/version.props" ]; then
+            echo "::error::Expected only tracer/build/_build/version.props to change, but got: $changed"
+            exit 1
+          fi
+
+          git apply --index "$RUNNER_TEMP/dev-build.patch"
+
+      - name: Get dd-octo-sts token
+        uses: DataDog/dd-octo-sts-action@c85802a58e202b7e764b5441e4378c76043c8108 # v1.0.5
+        id: octo-sts
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.prepare_dev_build.push
+
+      # Pushed with the dd-octo-sts token rather than GITHUB_TOKEN, so that the branch's pull_request
+      # checks (including verify_version_suffix) run on the new commit
+      - name: Push dev build commit
+        uses: DataDog/commit-headless@d6afabfd690ea1dbdd7d368acbefd71304928699 # action/v3.4.1
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
+          command: commit
+          branch: ${{ inputs.branch }}
+          head-sha: ${{ needs.stamp.outputs.head_sha }}
+          message: "[Version] Prepare dev build ${{ needs.stamp.outputs.full_version }}"
+          # Keeps whoever dispatched the workflow as a Co-authored-by trailer.
+          author: "${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
+
+      - name: Summary
+        env:
+          BRANCH: ${{ inputs.branch }}
+          FULL_VERSION: ${{ needs.stamp.outputs.full_version }}
+        run: |
+          {
+            echo "## Prepared dev build \`$FULL_VERSION\`"
+            echo
+            echo "Pushed a commit to \`$BRANCH\` that sets the version to \`$FULL_VERSION\`."
+            echo
+            echo "- The branch's Azure DevOps build publishes the artifacts as \`$FULL_VERSION-release-artifacts\`. It runs for an open pull request; otherwise queue it manually."
+            echo "- **Revert the commit before merging the branch.** The verify_version_suffix check fails any pull request to a release branch that still has a dev version."
+          } >> "$GITHUB_STEP_SUMMARY"

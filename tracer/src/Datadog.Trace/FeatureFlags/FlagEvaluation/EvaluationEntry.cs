@@ -11,13 +11,14 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 internal sealed class EvaluationEntry
 {
-    public EvaluationEntry(long evalTimeMs, bool observeFullEvaluationData, IReadOnlyDictionary<string, object?>? contextAttrs)
+    public EvaluationEntry(long evalTimeMs, bool observeFullEvaluationData, IReadOnlyDictionary<string, object?>? contextAttrs, IReadOnlyDictionary<string, object?>? features = null)
     {
         Count = 1;
         FirstEvaluationMs = evalTimeMs;
         LastEvaluationMs = evalTimeMs;
         ObserveFullEvaluationData = observeFullEvaluationData;
         ContextAttrs = observeFullEvaluationData ? contextAttrs : null;
+        Features = features;
     }
 
     public long Count { get; private set; }
@@ -29,6 +30,9 @@ internal sealed class EvaluationEntry
     public bool ObserveFullEvaluationData { get; private set; }
 
     public IReadOnlyDictionary<string, object?>? ContextAttrs { get; private set; }
+
+    // Every observation in a bucket has the same features, because they are part of the bucket key.
+    public IReadOnlyDictionary<string, object?>? Features { get; }
 
     public void Observe(long evalTimeMs, bool observeFullEvaluationData)
     {

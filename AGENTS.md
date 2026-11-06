@@ -120,7 +120,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 ## Coding Standards
 
 **C# style:**
-- See `.editorconfig` (auto-enforced)
+- See `.editorconfig` (auto-enforced).
 - Add missing `using` directives instead of fully-qualified type names.
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
@@ -235,9 +235,9 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 ## Debugger / Dynamic Instrumentation Safety
 
-Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, Exception Replay, Code Origin, or symbol-resolution paths, check:
+Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, redaction, Exception Replay, Code Origin, or symbol-resolution paths, check:
 
-- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`.
+- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`, and for redacting sensitive values before they leave the process.
 
 ## Testing
 
@@ -273,9 +273,10 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration
+- `docs/development/InferredProxyServices.md` — Inferred proxy spans (AWS API Gateway, Azure APIM, Azure Front Door)
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
-- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading and customer-code execution safety guide
+- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading, customer-code execution, and redaction safety guide
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist

@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
 using DiffMatchPatch;
@@ -641,10 +642,22 @@ partial class Build
        .Before(Clean, BuildTracerHome)
        .Before(Clean, BuildProfilerHome)
        .Requires(() => NewVersion)
-       .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            var source = new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease!.Value);
+            // The samples are rewritten from the current version, and must never reference a dev build
+            if (IsDevVersionSuffix(VersionSuffix))
+            {
+                throw new Exception($"Cannot bump the version from the dev build {FullVersion}. Revert the commit that set the dev version suffix first.");
+            }
+
+            var trimmed = NewVersionSuffix?.Trim().TrimStart('-') ?? string.Empty;
+            var newVersionSuffix = trimmed.Length == 0 ? string.Empty : "-" + trimmed;
+            if (newVersionSuffix is not ("" or "-prerelease"))
+            {
+                throw new Exception($"UpdateVersion only accepts an empty suffix or 'prerelease', but NewVersionSuffix was '{NewVersionSuffix}'. Use SetDevVersionSuffix for a dev build.");
+            }
+
+            var source = new SetAllVersions.Source(TracerDirectory, NewVersion, newVersionSuffix);
 
             // The version number has to change: the samples are rewritten from the *pre-bump*
             // version (they should track the release on nuget.org, not the one under development).
@@ -652,16 +665,85 @@ partial class Build
             {
                 throw new Exception(
                     $"Cannot set versions: {NewVersion} is already the current version. Changing only " +
-                    "the prerelease flag is not supported - the version number has to change too.");
+                    "the prerelease suffix is not supported - the version number has to change too.");
             }
 
             // Samples reference the version that is published on nuget.org, which is the one we are
             // bumping *away* from, so they lag the source by one release.
-            new SetAllVersions.Samples(TracerDirectory, Version, IsPrerelease).Run();
+            new SetAllVersions.Samples(TracerDirectory, Version, VersionSuffix).Run();
 
             // version.props, which everything else derives from.
             source.Run();
         });
+
+    Target SetDevVersionSuffix => _ => _
+       .Description("Sets a dev build version suffix, producing X.Y.Z-dev.<NewVersionSuffix>, without changing the version number")
+       .Before(Clean, BuildTracerHome)
+       .Before(Clean, BuildProfilerHome)
+       .Requires(() => NewVersionSuffix)
+       .Executes(() =>
+        {
+            var suffix = ValidateDevVersionSuffix(NewVersionSuffix);
+            new SetAllVersions.Suffix(TracerDirectory, Version, suffix).Run();
+
+            static string ValidateDevVersionSuffix(string value)
+            {
+                var suffix = value.Trim().TrimStart('-').ToLowerInvariant();
+                if (suffix.Length == 0)
+                {
+                    throw new Exception("NewVersionSuffix is required, e.g. 'myfix' to produce X.Y.Z-dev.myfix");
+                }
+
+                if (suffix == "prerelease")
+                {
+                    throw new Exception("The 'prerelease' suffix is reserved for prerelease releases and should not be used for dev branches");
+                }
+
+                if (!IsDevVersionSuffix("-" + suffix))
+                {
+                    suffix = "dev." + suffix;
+                }
+
+                // Semver prerelease identifiers, restricted to lowercase so artifact names are predictable
+                if (!Regex.IsMatch(suffix, "^dev([.-][a-z0-9]+)*$"))
+                {
+                    throw new Exception($"The dev version suffix '{suffix}' is invalid: use only letters, digits, '.' and '-', with no empty parts, e.g. 'my-fix.2'");
+                }
+
+                if (suffix.Length > 32)
+                {
+                    throw new Exception($"The dev version suffix '{suffix}' is too long: it can be at most 32 characters, as it appears in every artifact name");
+                }
+
+                foreach (var identifier in suffix.Split('.'))
+                {
+                    // Semver forbids leading zeros in numeric identifiers - we just ban 0 prefix for simplicity
+                    if (identifier.Length > 1 && identifier[0] == '0' && identifier.All(char.IsDigit))
+                    {
+                        throw new Exception($"The dev version suffix '{suffix}' is invalid: the part '{identifier}' must not have a leading zero");
+                    }
+
+                    foreach (var token in identifier.Split('-'))
+                    {
+                        // Lowercase identifiers that are object-like macros in the native build could cause things to break
+                        // when we pass the values to the native build. For simplicity, just ban them
+                        string[] nativeMacroIdentifiers =
+                        {
+                            "linux", "unix", "i386", "errno", "stdin", "stdout", "stderr",
+                            "small", "hyper", "interface", "far", "near", "pascal", "cdecl",
+                        };
+                        if (nativeMacroIdentifiers.Contains(token))
+                        {
+                            throw new Exception($"The dev version suffix '{suffix}' can't contain '{token}': it is a macro in the native build, so the native code would report a different version");
+                        }
+                    }
+                }
+
+                return "-" + suffix;
+            }
+        });
+
+    static bool IsDevVersionSuffix(string suffix) => Regex.IsMatch(suffix, "^-dev([.-]|$)");
 
     Target AnalyzePipelineCriticalPath => _ => _
        .Description("Perform critical path analysis on the consolidated pipeline stages")

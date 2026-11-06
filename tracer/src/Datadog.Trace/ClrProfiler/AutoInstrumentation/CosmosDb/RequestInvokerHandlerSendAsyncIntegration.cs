@@ -62,35 +62,38 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
                 return CallTargetState.GetDefault();
             }
 
-            string? containerId = null;
-            string? databaseId = null;
-
-            if (cosmosContainerCore?.Instance != null)
-            {
-                containerId = cosmosContainerCore.Id;
-                databaseId = cosmosContainerCore.Database?.Id;
-            }
-
             var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
             var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.CosmosDb);
             var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
 
-            tags.ContainerId = containerId;
-            tags.DatabaseId = databaseId;
-            tags.SetEndpoint(instance?.Client.Endpoint);
-
-            var clientContextObject = instance?.Client.ClientContext;
-            if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
+            try
             {
-                tags.UserAgent = clientContext.UserAgent;
-
-                var connectionMode = clientContext.ClientOptions.ConnectionMode;
-                tags.ConnectionMode = connectionMode switch
+                if (cosmosContainerCore?.Instance != null)
                 {
-                    0 => "gateway",
-                    1 => "direct",
-                    _ => "other"
-                };
+                    tags.ContainerId = cosmosContainerCore.Id;
+                    tags.DatabaseId = cosmosContainerCore.Database?.Id;
+                }
+
+                var client = instance?.Client;
+                tags.SetEndpoint(client?.Endpoint);
+
+                var clientContextObject = client?.ClientContext;
+                if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
+                {
+                    tags.UserAgent = clientContext.UserAgent;
+
+                    var connectionMode = clientContext.ClientOptions.ConnectionMode;
+                    tags.ConnectionMode = connectionMode switch
+                    {
+                        0 => "gateway",
+                        1 => "direct",
+                        _ => "other"
+                    };
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Stop reading SDK properties after disposal, but still trace the operation.
             }
 
             tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);

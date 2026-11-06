@@ -394,23 +394,11 @@ namespace Datadog.Trace
 
                     void WriteOtlpExporterSettings(string signal, Uri endpoint, OtlpProtocol protocol, IEnumerable<KeyValuePair<string, string>> headers)
                     {
-                        // The metrics and logs exporters do not implement HTTP/JSON and send HTTP/protobuf instead.
-                        if (protocol == OtlpProtocol.HttpJson && signal is "METRICS" or "LOGS")
-                        {
-                            protocol = OtlpProtocol.HttpProtobuf;
-                        }
-
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_ENDPOINT");
                         writer.WriteValue(UriHelpers.CleanUri(endpoint, removeScheme: false, tryRemoveIds: false));
 
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_PROTOCOL");
-                        writer.WriteValue(protocol switch
-                        {
-                            OtlpProtocol.Grpc => "grpc",
-                            OtlpProtocol.HttpProtobuf => "http/protobuf",
-                            OtlpProtocol.HttpJson => "http/json",
-                            _ => null,
-                        });
+                        writer.WriteValue(ExporterSettings.GetOtlpProtocolName(protocol));
 
                         writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_HEADERS");
                         writer.WriteStartObject();
@@ -436,7 +424,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Environment.OSVersion.ToString());
 
                     writer.WritePropertyName("version");
-                    writer.WriteValue(TracerConstants.AssemblyVersion);
+                    writer.WriteValue(TracerConstants.SemanticVersion);
 
                     writer.WritePropertyName("native_tracer_version");
                     writer.WriteValue(Instrumentation.GetNativeTracerVersion());
@@ -590,15 +578,11 @@ namespace Datadog.Trace
                     writer.WritePropertyName("activity_listener_enabled");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
-                    writer.WritePropertyName("OTEL_ENABLED");
-                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled
-                                  || instanceSettings.OtlpMetricsExportEnabled
-                                  || instanceSettings.OtlpLogsExportEnabled
-                                  || instanceSettings.OtelSemanticsEnabled
-                                  || (mutableSettings.TraceEnabled && exporterSettings.IsOtlpTraceExport));
-
                     writer.WritePropertyName("DD_TRACE_OTEL_ENABLED");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
+
+                    writer.WritePropertyName("OTEL_TRACES_EXPORTER");
+                    writer.WriteValue(mutableSettings.TraceEnabled && exporterSettings.IsOtlpTraceExport ? "otlp" : "none");
 
                     writer.WritePropertyName("DD_METRICS_OTEL_ENABLED");
                     writer.WriteValue(instanceSettings.OpenTelemetryMetricsEnabled);
@@ -701,7 +685,7 @@ namespace Datadog.Trace
 
                     if (instanceSettings.OtlpLogsExportEnabled)
                     {
-                        WriteOtlpExporterSettings("LOGS", instanceSettings.OtlpLogsEndpoint, instanceSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
+                        WriteOtlpExporterSettings("LOGS", exporterSettings.OtlpLogsEndpoint, exporterSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
 
                         writer.WritePropertyName("OTEL_BLRP_SCHEDULE_DELAY");
                         writer.WriteValue(instanceSettings.LogSubmissionSettings.BatchPeriod.TotalMilliseconds);
