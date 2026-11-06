@@ -142,57 +142,19 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
         OnInitialize(gitInfo);
 
-        // **********
-        // Add Author, Committer and Message from git
-        // **********
-        // Merge commits have a different commit hash from the one reported by the CI.
-        if (gitInfo.Commit == Commit)
+        if (!StringUtil.IsNullOrEmpty(gitInfo.Commit))
         {
-            if (string.IsNullOrWhiteSpace(AuthorName) || string.IsNullOrWhiteSpace(AuthorEmail))
-            {
-                if (!string.IsNullOrWhiteSpace(gitInfo.AuthorEmail))
-                {
-                    AuthorEmail = gitInfo.AuthorEmail;
-                }
-
-                if (!string.IsNullOrWhiteSpace(gitInfo.AuthorName))
-                {
-                    AuthorName = gitInfo.AuthorName;
-                }
-            }
-
-            AuthorDate ??= gitInfo.AuthorDate;
-
-            if (string.IsNullOrWhiteSpace(CommitterName) || string.IsNullOrWhiteSpace(CommitterEmail))
-            {
-                if (!string.IsNullOrWhiteSpace(gitInfo.CommitterEmail))
-                {
-                    CommitterEmail = gitInfo.CommitterEmail;
-                }
-
-                if (!string.IsNullOrWhiteSpace(gitInfo.CommitterName))
-                {
-                    CommitterName = gitInfo.CommitterName;
-                }
-            }
-
-            CommitterDate ??= gitInfo.CommitterDate;
-
-            if (!string.IsNullOrWhiteSpace(gitInfo.Message))
-            {
-                // Some CI's (eg Azure) adds the `Merge X into Y` message to the Pull Request
-                // If we have the original commit message we use that.
-                if (string.IsNullOrWhiteSpace(Message) ||
-                    (Message!.StartsWith("Merge", StringComparison.Ordinal) &&
-                     !gitInfo.Message!.StartsWith("Merge", StringComparison.Ordinal)))
-                {
-                    Message = gitInfo.Message;
-                }
-            }
-        }
-        else
-        {
-            Log.Warning("CIEnvironmentValues: Git commit in .git folder is different from the one in the environment variables. [{GitCommit} != {EnvVarCommit}]", gitInfo.Commit, Commit);
+            Repository = RemoveSensitiveInformationFromUrl(gitInfo.Repository);
+            Branch = gitInfo.Branch;
+            Tag = gitInfo.Tag;
+            Commit = gitInfo.Commit;
+            AuthorName = gitInfo.AuthorName;
+            AuthorEmail = gitInfo.AuthorEmail;
+            AuthorDate = gitInfo.AuthorDate;
+            CommitterName = gitInfo.CommitterName;
+            CommitterEmail = gitInfo.CommitterEmail;
+            CommitterDate = gitInfo.CommitterDate;
+            Message = gitInfo.Message;
         }
 
         // **********

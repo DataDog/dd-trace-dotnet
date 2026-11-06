@@ -37,6 +37,11 @@ internal sealed class GitInfo : IGitInfo
     public string? Branch { get; internal set; }
 
     /// <summary>
+    /// Gets or sets the tag pointing at the checked-out commit.
+    /// </summary>
+    public string? Tag { get; internal set; }
+
+    /// <summary>
     /// Gets or sets Commit
     /// </summary>
     public string? Commit { get; internal set; }

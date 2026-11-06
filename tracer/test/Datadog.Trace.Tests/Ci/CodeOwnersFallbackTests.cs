@@ -120,6 +120,7 @@ public class CodeOwnersFallbackTests
         try
         {
             var ciValues = CIEnvironmentValues.Create(env);
+            ciValues.GitSearchFolder = repoRoot;
             var ownership = ciValues.ResolveSourceOwnership("src/SpanBenchmark.cs", useOSSeparator: false);
 
             Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
@@ -243,6 +244,7 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
+        ciValues.GitSearchFolder = repoRoot;
 
         Assert.Equal("jenkins", ciValues.Provider);
         Assert.Equal(["@gitlab-owner"], ResolveOwners(ciValues, "file.cs"));
@@ -265,6 +267,7 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
+        ciValues.GitSearchFolder = repoRoot;
 
         Assert.Equal(["@gitlab-owner"], ResolveOwners(ciValues, "file.cs"));
     }
@@ -291,6 +294,7 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
+        ciValues.GitSearchFolder = repoRoot;
         var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
         Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
@@ -533,6 +537,7 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
+        ciValues.GitSearchFolder = repoRoot;
         var foreignRelativePath = "../../../../../../_/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs";
         var ownership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
 
@@ -567,6 +572,7 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
+        ciValues.GitSearchFolder = repoRoot;
 
         var ownership = ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false);
         Assert.True(ownership.IsRepositoryRelative);
@@ -616,12 +622,17 @@ public class CodeOwnersFallbackTests
         => ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false).MatchingOwners;
 
     private static CIEnvironmentValues CreateGitHubEnvironmentForWorkspace(string workspace)
-        => CIEnvironmentValues.Create(new Dictionary<string, string>
+    {
+        var values = CIEnvironmentValues.Create(new Dictionary<string, string>
         {
             [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
             [PlatformKeys.Ci.GitHub.Workspace] = workspace,
             [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
         });
+        // Keep the SDK checkout out of these synthetic workspace fixtures.
+        values.GitSearchFolder = workspace;
+        return values;
+    }
 
     private sealed class TemporaryDirectory : IDisposable
     {

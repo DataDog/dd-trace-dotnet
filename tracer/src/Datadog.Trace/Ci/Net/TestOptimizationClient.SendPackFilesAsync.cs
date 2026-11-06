@@ -48,6 +48,7 @@ internal sealed partial class TestOptimizationClient
 
         _packFileUrl ??= GetUriFromPath(PackFileUrlPath);
 
+        commitSha = StringUtil.IsNullOrEmpty(_commitSha) ? commitSha : _commitSha;
         var jsonPushedSha = JsonHelper.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, null), _repositoryUrl), SerializerSettings);
         Log.Debug("TestOptimizationClient: ObjPack.JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);

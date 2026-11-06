@@ -62,6 +62,15 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 localGitInfo.Errors.Add($"Error getting branch name: {branchOutput?.Error}");
             }
 
+            var tagOutput = GitCommandHelper.RunGitCommand(
+                localGitInfo.SourceRoot,
+                "tag --points-at HEAD",
+                MetricTags.CIVisibilityCommands.GetBranch);
+            if (tagOutput?.ExitCode == 0 && !StringUtil.IsNullOrEmpty(tagOutput.Output))
+            {
+                localGitInfo.Tag = tagOutput.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            }
+
             // Get the remaining data from the log -1
             var gitLogOutput = GitCommandHelper.RunGitCommand(
                 localGitInfo.SourceRoot,
