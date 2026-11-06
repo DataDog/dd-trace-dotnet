@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
                 return new CallTargetState(scope, state: response);
             }
 
-            return CallTargetState.GetDefault();
+            return new CallTargetState(Tracer.Instance.InternalActiveScope, state: response);
         }
 
         /// <summary>
