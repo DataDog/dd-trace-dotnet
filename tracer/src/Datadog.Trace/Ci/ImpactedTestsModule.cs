@@ -215,7 +215,7 @@ internal sealed class ImpactedTestsModule
         var baseBranchInfo = GitCommandHelper.DetectBaseBranch(
             workingDirectory,
             defaultBranch: defaultBranch,
-            targetBranch: environmentValues.Branch,
+            targetBranch: environmentValues.Branch ?? environmentValues.Commit ?? "HEAD",
             pullRequestBaseBranch: environmentValues.PrBaseBranch);
         var value = baseBranchInfo?.MergeBaseSha ?? string.Empty;
         Log.Debug("ImpactedTestsModule: MergeBaseSha: {MergeBaseSha}", value);

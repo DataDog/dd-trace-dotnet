@@ -200,6 +200,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             info.Tag.Should().Be(detached && !multiple ? "v1" : null);
         }
 
+        [SkippableTheory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void DetectsImpactedFilesInDetachedCheckout(bool hasBaseCommit)
+        {
+            using var checkout = new GitCheckout();
+            const string commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08";
+            const string baseCommit = "98cd7c8e9cf71e02dc28bd9b13928bee0f85b74c";
+            File.WriteAllText(Path.Combine(checkout.Root, ".git", "HEAD"), commit + "\n");
+            Directory.CreateDirectory(Path.Combine(checkout.Root, ".git", "refs", "heads"));
+            File.WriteAllText(Path.Combine(checkout.Root, ".git", "refs", "heads", "main"), baseCommit + "\n");
+            var reset = GitCommandHelper.RunGitCommand(checkout.Root, "reset --hard HEAD", MetricTags.CIVisibilityCommands.GetHead);
+            reset.Should().NotBeNull();
+            reset!.ExitCode.Should().Be(0, reset.Error);
+            File.AppendAllText(Path.Combine(checkout.Root, "README.md"), "\nChanged in the checkout\n");
+            GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var gitInfo).Should().BeTrue();
+            var values = new ImpactedEnvironmentValues(checkout.Root, hasBaseCommit ? baseCommit : null, gitInfo);
+            values.Branch.Should().BeNull();
+
+            var impacted = ImpactedTestsModule.CreateInstance(values, "main");
+
+            impacted.BaseCommitSha.Should().Be(baseCommit);
+            impacted.CurrentCommitSha.Should().Be(commit);
+            impacted.ModifiedFiles.Should().NotBeEmpty();
+            values.Branch.Should().BeNull();
+        }
+
         [SkippableFact]
         public void PreservesAuthorSeparatorsAndTrailingMessageQuotes()
         {
@@ -316,6 +343,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
 
             public override string ToString() => $"GitFolderPath={GitFolderPath}";
+        }
+
+        private sealed class ImpactedEnvironmentValues : CIEnvironmentValues<DictionaryValuesProvider>
+        {
+            private readonly string _root;
+            private readonly string _baseCommit;
+
+            public ImpactedEnvironmentValues(string root, string baseCommit, IGitInfo gitInfo)
+                : base(new DictionaryValuesProvider(new Dictionary<string, string>()))
+            {
+                _root = root;
+                _baseCommit = baseCommit;
+                Setup(gitInfo);
+            }
+
+            protected override void OnInitialize(IGitInfo gitInfo)
+            {
+                Branch = "provider-branch";
+                WorkspacePath = _root;
+                PrBaseBranch = "main";
+                PrBaseCommit = _baseCommit;
+            }
         }
 
         private sealed class GitCheckout : IDisposable
