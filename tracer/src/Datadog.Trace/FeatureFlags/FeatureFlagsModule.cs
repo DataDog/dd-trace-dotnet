@@ -99,11 +99,12 @@ namespace Datadog.Trace.FeatureFlags
         private bool _activated;
         private bool _disposed;
         private bool _deliveryStarted;
-
-        // One agentless source serves every provider in the process, so the first provider constructed
-        // decides the flag selection it requests, until every provider holding a claim has shut down.
         private FlagSelection _claimedFlagSelection = FlagSelection.AllFlags;
         private int _flagSelectionClaims;
+
+        // Providers whose selection equals the claimed one, constructed before the source existed:
+        // whether the request URL is too long with it is only known once the source is created.
+        private int _flagSelectionClaimsBeforeSource;
 
         internal FeatureFlagsModule(
             TracerSettings settings,
@@ -282,6 +283,7 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             IFeatureFlagsDeliverySource? sourceToStart = null;
+            int claimsBeforeSource;
 
             lock (_stateLock)
             {
@@ -289,6 +291,9 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     return;
                 }
+
+                claimsBeforeSource = _flagSelectionClaimsBeforeSource;
+                _flagSelectionClaimsBeforeSource = 0;
 
                 SubscribeToEvaluationDelivery();
                 Volatile.Write(ref _activated, true);
@@ -313,10 +318,12 @@ namespace Datadog.Trace.FeatureFlags
                 }
             }
 
-            // Reported for the provider that claimed the selection before the source existed.
             if (sourceToStart?.OmitsFlagSelection == true)
             {
-                _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
+                for (var i = 0; i < claimsBeforeSource; i++)
+                {
+                    _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);
+                }
             }
 
             // Outside the lock, so that a source which does any work of its own before returning cannot
@@ -425,7 +432,8 @@ namespace Datadog.Trace.FeatureFlags
 
         /// <summary>
         /// Claims the flag selection a provider was constructed with, or every flag when it has none.
-        /// A provider constructed while another one holds the claim uses the claimed selection.
+        /// One agentless source serves every provider in the process, so a provider constructed while
+        /// another one holds the claim uses the claimed selection.
         /// Called from the provider's constructor rather than from its initialization, because an
         /// evaluation before initialization also activates delivery.
         /// </summary>
@@ -456,6 +464,7 @@ namespace Datadog.Trace.FeatureFlags
                     if (_flagSelectionClaims++ == 0)
                     {
                         _claimedFlagSelection = selection;
+                        _flagSelectionClaimsBeforeSource = 0;
 
                         // Under the lock, so a concurrent activation cannot start the source with the previous claim.
                         _agentlessSource?.UpdateFlagSelection(selection);
@@ -463,6 +472,10 @@ namespace Datadog.Trace.FeatureFlags
 
                     claimed = _claimedFlagSelection;
                     source = _agentlessSource;
+                    if (source is null && selection.Equals(claimed))
+                    {
+                        _flagSelectionClaimsBeforeSource++;
+                    }
                 }
 
                 if (!selection.Equals(claimed))
@@ -471,8 +484,7 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                // Logged for every provider whose selection is not sent. Whether the request URL is too
-                // long with the selection is only known once the source exists; Activate reports that.
+                // Logged for every provider whose selection is not sent.
                 if (claimed.DropReason is { } reason)
                 {
                     _flagSelectionDiagnostics.ReportDropped(_log, reason);

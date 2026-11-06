@@ -187,7 +187,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         _log.Debug<string>("Feature Flags: agentless configuration source now requests env={RequestedEnvironment}", requested ?? "none");
 
         // A longer environment can push the selection over the URL limit while the source runs. Before
-        // it starts, the module reports what the source will request.
+        // the source starts, the module's activation reports it instead.
         if (next.SelectionOmitted && !previous.SelectionOmitted && Volatile.Read(ref _started) != 0)
         {
             _flagSelectionDiagnostics.ReportDroppedForUrlLimit(_log);

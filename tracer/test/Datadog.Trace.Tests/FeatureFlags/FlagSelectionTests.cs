@@ -36,8 +36,9 @@ public class FlagSelectionTests
     [Fact]
     public void RunsEverySdkVectorAndSkipsOnlyTheRawQueryCases()
     {
-        VectorCases.Count(c => c["sdk"] is not null).Should().Be(38);
-        VectorCases.Where(c => c["sdk"] is null).Should().HaveCount(6).And.OnlyContain(c => c["rawQuery"] != null);
+        // The snapshot at e8777633 has 38 sdk cases; a later refresh can only add to them.
+        VectorCases.Count(c => c["sdk"] is not null).Should().BeGreaterThanOrEqualTo(38);
+        VectorCases.Where(c => c["sdk"] is null).Should().OnlyContain(c => c["rawQuery"] != null);
     }
 
     [Theory]
@@ -63,12 +64,11 @@ public class FlagSelectionTests
         selection.DropReason.Should().BeNull();
         selection.Tags.Should().Equal(expectedTags);
         selection.KeyPatterns.Should().Equal(expectedKeyPatterns);
-        selection.HasValues.Should().Be(expectedTags.Length + expectedKeyPatterns.Length > 0, "both lists empty means the SDK sends no selection");
+        selection.HasValues.Should().Be(expectedTags.Length + expectedKeyPatterns.Length > 0);
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [CombinatorialData]
     public void ANullElementIsMalformed(bool inTags)
     {
         string?[] values = ["mobile", null];

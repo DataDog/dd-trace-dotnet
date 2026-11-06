@@ -28,9 +28,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class OpenFeatureSdkSetFlagSelectionIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TTags, TKeyPatterns>(TTags tags, TKeyPatterns keyPatterns)
+    internal static CallTargetState OnMethodBegin<TTarget>(ref string?[]? tags, ref string?[]? keyPatterns)
     {
-        TracerManager.Instance.FeatureFlags?.SetFlagSelection((string?[]?)(object?)tags, (string?[]?)(object?)keyPatterns);
+        TracerManager.Instance.FeatureFlags?.SetFlagSelection(tags, keyPatterns);
         return CallTargetState.GetDefault();
     }
 

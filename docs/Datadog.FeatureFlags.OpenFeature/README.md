@@ -96,10 +96,10 @@ await OpenFeature.Api.Instance.SetProviderAsync(provider);
   character is literal. Matching is case-sensitive.
 - Evaluating a flag outside the selection returns the default value with `FLAG_NOT_FOUND`. A
   selection that matches no flag loads no flags.
-- Each list takes at most 31 values of at most 200 UTF-8 bytes each, after surrounding white space
-  is trimmed, and the request URL that carries the selection is at most 8192 bytes. A selection
-  outside these limits, or with a `null` value, is not sent: every flag loads, and the tracer log
-  names the limit.
+- Values are trimmed of surrounding white space, and empty and duplicate values are dropped. Each
+  list then takes at most 31 values of at most 200 UTF-8 bytes each, and the request URL that
+  carries the selection is at most 8192 bytes. A selection outside these limits, or with a `null`
+  or malformed value, is not sent: every flag loads, and the tracer log names the limit.
 - The selection is copied when the provider is constructed. The first provider constructed in a
   process decides the selection for every provider in it, until all of them have shut down; a
   later provider with a different selection logs a warning and uses the first one.

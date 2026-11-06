@@ -15,8 +15,8 @@ namespace Datadog.Trace.FeatureFlags.Agentless;
 
 /// <summary>
 /// Reports what happened to a flag selection, by reason and limit only: the selected values are never
-/// logged or counted. Each count, and each log the client SDKs write once per process, is written once
-/// per process through <see cref="Shared"/>.
+/// logged or counted. Counts, warnings and the ignored-selection log are written once per process
+/// through <see cref="Shared"/>.
 /// </summary>
 internal sealed class FlagSelectionDiagnostics
 {

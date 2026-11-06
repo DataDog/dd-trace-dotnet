@@ -447,15 +447,16 @@ public class AgentlessConfigurationSourceTests
     {
         var metrics = new Mock<IMetricsTelemetryCollector>();
         var logger = new Mock<IDatadogLogger>();
-        bool? reportedBeforeApply = null;
-        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: IgnoredHeader("tag_load_failed")));
+        var reportedAtEachApply = new List<int>();
+        Func<Uri, TestApiRequest> ignoredResponse = uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: IgnoredHeader("tag_load_failed"));
+        var factory = new TestRequestFactory(ignoredResponse, ignoredResponse);
         using var source = new AgentlessConfigurationSource(
             CreateEndpoint(),
             factory,
             TimeSpan.FromSeconds(30),
             _ =>
             {
-                reportedBeforeApply = FlagSelectionTests.Errors(logger).Count > 0;
+                reportedAtEachApply.Add(FlagSelectionTests.Errors(logger).Count);
                 return true;
             },
             waitAsync: NoWait,
@@ -466,7 +467,9 @@ public class AgentlessConfigurationSourceTests
         await source.PollAsync();
         await source.PollAsync();
 
-        reportedBeforeApply.Should().BeFalse("\"Loaded the full flag configuration\" is only true once it is applied");
+        // Nothing is reported before the first configuration is applied, and the second response, which
+        // says the same, is not reported again.
+        reportedAtEachApply.Should().Equal(0, 1);
         FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.TagLoadFailedIgnored);
         metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.TagLoadFailed, 1), Times.Once);
     }
@@ -487,7 +490,7 @@ public class AgentlessConfigurationSourceTests
 
         FlagSelectionTests.Errors(logger).Should().Equal(FlagSelectionDiagnostics.UnknownIgnored);
         metrics.Verify(m => m.RecordCountFlagSelectionIgnored(IgnoredReason.Unknown, 1), Times.Once);
-        LoggedValues(logger).OfType<string>().Should().NotContain(v => v.Contains(header), "the raw header value is never logged");
+        LoggedValues(logger).OfType<string>().Should().NotContain(v => v.Contains(header));
     }
 
     [Fact]
@@ -522,8 +525,7 @@ public class AgentlessConfigurationSourceTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [CombinatorialData]
     public async Task DoesNotReadTheIgnoredHeaderWhenNoSelectionWasSent(bool omittedForLength)
     {
         var readHeaders = new List<string>();

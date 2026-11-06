@@ -270,7 +270,8 @@ internal sealed class AgentlessEndpoint
             return uri;
         }
 
-        // The whole URL string after percent-encoding is measured, as the browser SDK measures it.
+        // The whole URL string after percent-encoding is measured, as the browser SDK does
+        // (https://github.com/DataDog/openfeature-js-client/blob/main/packages/browser/src/transport/flagSelection.ts).
         var withSelection = AppendQuery(uri, selection.ToQuery());
         if (Encoding.UTF8.GetByteCount(withSelection.AbsoluteUri) > MaxRequestUrlBytes)
         {

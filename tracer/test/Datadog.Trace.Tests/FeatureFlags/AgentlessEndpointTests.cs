@@ -204,7 +204,7 @@ public class AgentlessEndpointTests
         var endpoint = Create("datadoghq.com", baseUrl);
 
         endpoint.BuildRequestUri("production", FlagSelection.Create(["mobile"], null), out _).AbsoluteUri.Should().Be(expected);
-        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri, "without a selection a custom endpoint is still requested as written");
+        endpoint.BuildRequestUri("production", FlagSelection.AllFlags, out _).Should().Be(endpoint.Uri);
     }
 
     [Theory]
@@ -269,7 +269,7 @@ public class AgentlessEndpointTests
     [Fact]
     public void MeasuresTheRequestUrlAfterPercentEncoding()
     {
-        // 31 tags of 200 UTF-8 bytes each pass the value limits, but encode to 600 bytes each.
+        // 31 tags of 200 UTF-8 bytes each pass the value limits, but encode to 596 bytes each.
         var tags = Enumerable.Range(0, FlagSelection.MaxValues).Select(i => i.ToString("D2") + new string('\u00E9', 99)).ToArray();
         var selection = FlagSelection.Create(tags, null);
         selection.HasValues.Should().BeTrue();

@@ -1240,21 +1240,15 @@ public class FeatureFlagsModuleTests
     [InlineData(null, "true")] // the legacy key maps to the Remote Config source
     public void SetFlagSelection_WithRemoteConfig_WarnsOncePerProcessWhenASelectionIsSet(string? source, string? legacyProviderEnabled)
     {
-        var settings = new List<(string, string)>();
+        var collection = new NameValueCollection();
         if (source is not null)
         {
-            settings.Add((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, source));
+            collection[ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = source;
         }
 
         if (legacyProviderEnabled is not null)
         {
-            settings.Add((ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, legacyProviderEnabled));
-        }
-
-        var collection = new NameValueCollection();
-        foreach (var (key, value) in settings)
-        {
-            collection[key] = value;
+            collection[ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled] = legacyProviderEnabled;
         }
 
         var logger = new Mock<IDatadogLogger>();
@@ -1263,7 +1257,7 @@ public class FeatureFlagsModuleTests
 
         module.SetFlagSelection(null, null);
         module.SetFlagSelection([" "], null);
-        FlagSelectionTests.Warnings(logger).Should().BeEmpty("an empty selection asks for nothing");
+        FlagSelectionTests.Warnings(logger).Should().BeEmpty();
 
         module.SetFlagSelection(["mobile"], null);
         module.SetFlagSelection(["mobile", null], null);
@@ -1293,7 +1287,7 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void Activate_WhenTheRequestUrlWouldBeTooLong_LogsNotSentForTheClaimingProvider()
+    public void Activate_WhenTheRequestUrlWouldBeTooLong_LogsNotSentForEachProviderWithTheSelection()
     {
         var metrics = new Mock<IMetricsTelemetryCollector>();
         var logger = new Mock<IDatadogLogger>();
@@ -1301,15 +1295,19 @@ public class FeatureFlagsModuleTests
         using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source, logger.Object, new FlagSelectionDiagnostics(metrics.Object));
 
         module.SetFlagSelection(["mobile"], null);
+        module.SetFlagSelection([" mobile"], null);
+        module.SetFlagSelection(["beta"], null);
         FlagSelectionTests.Errors(logger).Should().BeEmpty("the request URL is only known once the source exists");
 
         module.Activate();
         module.Activate();
+        FlagSelectionTests.Errors(logger).Should().HaveCount(2, "two providers were constructed with the selection");
+
         module.SetFlagSelection(["mobile"], null);
         module.SetFlagSelection(["beta"], null);
 
         var notSent = FlagSelectionDiagnostics.UrlLimitNotSent;
-        FlagSelectionTests.Errors(logger).Should().Equal(notSent, notSent);
+        FlagSelectionTests.Errors(logger).Should().Equal(notSent, notSent, notSent);
         metrics.Verify(m => m.RecordCountFlagSelectionDropped(DroppedReason.TooManyValues, 1), Times.Once);
     }
 

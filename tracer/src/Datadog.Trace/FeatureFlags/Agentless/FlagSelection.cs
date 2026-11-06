@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
@@ -42,8 +43,10 @@ internal sealed class FlagSelection : IEquatable<FlagSelection>
     /// <summary>Gets the selection of a provider that selects nothing, which loads every flag.</summary>
     public static FlagSelection AllFlags { get; } = new([], [], dropReason: null);
 
+    [TestingOnly]
     public IReadOnlyList<string> Tags => _tags;
 
+    [TestingOnly]
     public IReadOnlyList<string> KeyPatterns => _keyPatterns;
 
     /// <summary>Gets why the selection cannot be sent, or <c>null</c> when it can.</summary>
@@ -62,8 +65,8 @@ internal sealed class FlagSelection : IEquatable<FlagSelection>
     /// </summary>
     public static FlagSelection Create(string?[]? tags, string?[]? keyPatterns)
     {
-        // Malformed values are left out of the canonical lists, which are still kept so that two
-        // providers can be compared.
+        // The lists are canonicalized even for a malformed selection, null elements skipped, so that
+        // two providers can still be compared.
         var malformed = IsMalformed(tags) || IsMalformed(keyPatterns);
         var canonicalTags = Canonicalize(tags);
         var canonicalKeyPatterns = Canonicalize(keyPatterns);
@@ -122,8 +125,8 @@ internal sealed class FlagSelection : IEquatable<FlagSelection>
     /// Returns the selection as query parameters, one per value, tags first. Each value is
     /// percent-encoded per RFC 3986 (https://www.rfc-editor.org/rfc/rfc3986#section-2): only the
     /// unreserved characters stay as they are, and every other UTF-8 byte is written as %XX with
-    /// uppercase hex. The server compares the encoded bytes, so <see cref="Uri.EscapeDataString"/>,
-    /// whose unreserved set has varied across runtimes, is not used.
+    /// uppercase hex. The server compares the encoded bytes, so the encoding is done here rather
+    /// than by <see cref="Uri.EscapeDataString"/>.
     /// </summary>
     internal string ToQuery()
     {
