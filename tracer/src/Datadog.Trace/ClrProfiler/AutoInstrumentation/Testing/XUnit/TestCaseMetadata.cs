@@ -36,12 +36,12 @@ internal class TestCaseMetadata
 
     public bool IsAttemptToFix => SelectedRetryMode == TestRetryMode.AttemptToFix;
 
-    public bool PreventFailureSuppression { get; set; }
+    public bool AllowFailureSuppression { get; set; } = true;
 
     /// <summary>
     /// Gets a value indicating whether a protected Attempt to Fix test must fail even if another attempt passed.
     /// </summary>
-    public bool HasBlockingAttemptToFixFailure => PreventFailureSuppression && IsAttemptToFix && (InitialExecutionFailed || !AllAttemptsPassed);
+    public bool HasBlockingAttemptToFixFailure => !AllowFailureSuppression && IsAttemptToFix && (InitialExecutionFailed || !AllAttemptsPassed);
 
     public bool IsRetry { get; set; }
 
