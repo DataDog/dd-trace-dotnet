@@ -274,17 +274,14 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     /// <summary>
     /// Shuts the provider down. A provider holds the process's flag selection from its construction
-    /// until it shuts down, so once every provider has, the next one constructed selects its own flags.
+    /// until it shuts down or is disposed, so once every provider has, the next one constructed selects
+    /// its own flags.
     /// </summary>
     /// <param name="cancellationToken"> Async cancellation token </param>
     /// <returns> A task that completes when the provider has shut down </returns>
     public override Task ShutdownAsync(CancellationToken cancellationToken = default)
     {
-        if (Interlocked.Exchange(ref _flagSelectionReleased, 1) == 0)
-        {
-            _releaseFlagSelection();
-        }
-
+        ReleaseFlagSelection();
         return base.ShutdownAsync(cancellationToken);
     }
 
@@ -364,11 +361,21 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     /// <inheritdoc/>
     public void Dispose()
     {
+        ReleaseFlagSelection();
 #if NET6_0_OR_GREATER
         _metricsHook.Dispose();
 #endif
         // The span-enrichment hook owns no resources and per-trace enrichment state is released with
         // the trace context, so there's nothing to dispose on provider close.
+    }
+
+    // Shutdown and disposal both end the provider's claim, which is released once whichever comes first.
+    private void ReleaseFlagSelection()
+    {
+        if (Interlocked.Exchange(ref _flagSelectionReleased, 1) == 0)
+        {
+            _releaseFlagSelection();
+        }
     }
 
     private FeatureFlagsSdk.EvaluationCallback? Evaluator() => _deferExposures ? _evaluateDeferred ?? EvaluateDeferred : _evaluate;

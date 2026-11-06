@@ -99,7 +99,7 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static bool SetFlagSelection(string[]? tags, string[]? keyPatterns) => false;
 
-    // Releases the claim SetFlagSelection made, once the provider shuts down.
+    // Releases the claim SetFlagSelection made, once the provider is shut down or disposed.
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static void ReleaseFlagSelection()
     {

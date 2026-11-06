@@ -101,8 +101,8 @@ await OpenFeature.Api.Instance.SetProviderAsync(provider);
   carries the selection is at most 8192 bytes. A selection outside these limits, or with a `null`
   or malformed value, is not sent: every flag loads, and the tracer log names the limit.
 - The selection is copied when the provider is constructed. The first provider constructed in a
-  process decides the selection for every provider in it, until all of them have shut down; a
-  later provider with a different selection logs a warning and uses the first one.
+  process decides the selection for every provider in it, until all of them have been shut down
+  or disposed; a later provider with a different selection logs a warning and uses the first one.
 - The selection applies to the default agentless configuration source. With the Remote Config
   source, every flag loads and a warning is logged.
 - This needs tracer 3.58.0 or later. With an older tracer, the selection is not sent and every flag

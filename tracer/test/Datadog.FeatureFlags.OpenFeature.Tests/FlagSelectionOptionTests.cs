@@ -85,10 +85,45 @@ public class FlagSelectionOptionTests
     public async Task ShutdownReleasesTheClaimOnce()
     {
         var bridge = new BridgeRecorder();
-        using var provider = new DatadogProvider(new DatadogProviderOptions(), bridge.Set, bridge.Release);
+        var provider = new DatadogProvider(new DatadogProviderOptions(), bridge.Set, bridge.Release);
 
         await provider.ShutdownAsync();
+        bridge.Releases.Should().Be(1);
         await provider.ShutdownAsync();
+
+        bridge.Releases.Should().Be(1);
+    }
+
+    [Fact]
+    public void DisposeReleasesTheClaimOnce()
+    {
+        var bridge = new BridgeRecorder();
+        var provider = new DatadogProvider(new DatadogProviderOptions(), bridge.Set, bridge.Release);
+
+        provider.Dispose();
+        bridge.Releases.Should().Be(1);
+        provider.Dispose();
+
+        bridge.Releases.Should().Be(1);
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public async Task ShutdownAndDisposeReleaseTheClaimOnceTogether(bool shutdownFirst)
+    {
+        var bridge = new BridgeRecorder();
+        var provider = new DatadogProvider(new DatadogProviderOptions(), bridge.Set, bridge.Release);
+
+        if (shutdownFirst)
+        {
+            await provider.ShutdownAsync();
+            provider.Dispose();
+        }
+        else
+        {
+            provider.Dispose();
+            await provider.ShutdownAsync();
+        }
 
         bridge.Releases.Should().Be(1);
     }
