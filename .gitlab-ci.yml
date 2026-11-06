@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: 'v0.1.6'
+    ref: 745818b5d65805d5852b07cbdf4d09c29b3da6c9   # v0.1.6 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -48,12 +48,11 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "745818b5d65805d5852b07cbdf4d09c29b3da6c9"   # v0.1.6 commit; setup requires a full SHA
+    LLMVAL_PLATFORM_REF: "745818b5d65805d5852b07cbdf4d09c29b3da6c9"   # v0.1.6 (must match include ref above)
 
-# The historical job name is retained; the setup preset exercises guidance, selected skill workflows, and controls.
+# Enable on demand or in a schedule with LLMVAL_SETUP_ENABLED=true.
 "llm validation (setup smoke)":
   variables:
-    LLMVAL_SETUP_ENABLED: "true" # For testing only; remove this override before merging.
     LLMVAL_SETUP_PRESET: "setup-calibration"
 
 build-windows-ci-image:
