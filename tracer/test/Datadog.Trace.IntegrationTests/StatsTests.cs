@@ -57,7 +57,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
             });
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null, externalEnv: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -203,7 +203,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
             });
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null, externalEnv: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -363,7 +363,7 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
                     }));
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null, externalEnv: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -583,7 +583,7 @@ namespace Datadog.Trace.IntegrationTests
                 stats.Env.Should().Be(settings.Manager.InitialMutableSettings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
                 stats.Version.Should().Be(settings.Manager.InitialMutableSettings.ServiceVersion);
-                stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
+                stats.TracerVersion.Should().Be(TracerConstants.SemanticVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);
                 stats.RuntimeId.Should().Be(Tracer.RuntimeId);

@@ -62,19 +62,19 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
             rootsJson += '"';
         }
 
-        if (!rootNode->node.children.empty())
+        if (rootNode->node.HasChildren())
         {
             rootsJson += ",\"ch\":[";
             bool firstChild = true;
-            for (const auto& [childTypeID, childNode] : rootNode->node.children)
+            rootNode->node.ForEachChild([&](const TypeTreeNode& childNode)
             {
                 if (!firstChild)
                 {
                     rootsJson += ',';
                 }
                 firstChild = false;
-                OutputNode(*childNode, types, rootsJson);
-            }
+                OutputNode(childNode, types, rootsJson);
+            });
             rootsJson += ']';
         }
         rootsJson += '}';
@@ -162,19 +162,19 @@ void TypeReferenceTreeJsonSerializer::OutputNode(const TypeTreeNode& node, TypeT
         AppendUInt64(out, node.totalSize);
     }
 
-    if (!node.children.empty())
+    if (node.HasChildren())
     {
         out += ",\"ch\":[";
         bool firstChild = true;
-        for (const auto& [childTypeID, childNode] : node.children)
+        node.ForEachChild([&](const TypeTreeNode& childNode)
         {
             if (!firstChild)
             {
                 out += ',';
             }
             firstChild = false;
-            OutputNode(*childNode, types, out);
-        }
+            OutputNode(childNode, types, out);
+        });
         out += ']';
     }
 
