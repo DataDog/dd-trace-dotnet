@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipes;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,6 +52,8 @@ namespace Datadog.Profiler.IntegrationTests
         public static HttpAgent CreateHttpAgent(ITestOutputHelper output, int retries = 5) => new HttpAgent(output, retries);
 
         public static NamedPipeAgent CreateNamedPipeAgent(ITestOutputHelper output) => new NamedPipeAgent(output);
+
+        public static UnixDomainSocketAgent CreateUnixDomainSocketAgent(ITestOutputHelper output) => new UnixDomainSocketAgent(output);
 
         public void StartEtwProxy(ITestOutputHelper output, string namedPipeEndpoint, string eventsFilename = null)
         {
@@ -357,6 +360,201 @@ namespace Datadog.Profiler.IntegrationTests
                     // abrupt one surfaces as IOException ("Pipe is broken"); OperationCanceledException
                     // happens during shutdown/dispose. These all mark the normal end of a
                     // request/response cycle, so swallow them instead of surfacing an "Unexpected exception".
+                }
+            }
+        }
+
+        // Unix-domain-socket counterpart of NamedPipeAgent (Linux only): the profiler's agent URL is
+        // configured as unix://<socket path> (DD_TRACE_AGENT_URL) and the exporter POSTs plain HTTP
+        // requests over the socket - same wire bytes as the TCP agent, so the same canned response
+        // and MockHttpParser-based request handling apply.
+        public class UnixDomainSocketAgent : MockDatadogAgent
+        {
+            private readonly Socket _listener;
+            private readonly Task _acceptLoopTask;
+            private readonly byte[] _responseBytes;
+            private readonly CancellationTokenSource _listenerCts = new();
+
+            public UnixDomainSocketAgent(ITestOutputHelper output)
+            {
+                Output = output;
+
+                // Same response as NamedPipeAgent: a canned HTTP 200 with "Connection: close",
+                // so the exporter uses one request per connection (which is also what libcurl
+                // does for UDS by default).
+                var sb = new StringBuilder();
+                sb
+                   .Append("HTTP/1.1 ")
+                   .Append("200")
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append("Date: ")
+                   .Append(DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K"))
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append("Connection: close")
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append("Server: dd-mock-agent");
+
+                var responseBody = Encoding.UTF8.GetBytes("{}");
+
+                sb
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append("Content-Type: application/json")
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append("Content-Length: ")
+                   .Append(responseBody.LongLength)
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append(Encoding.ASCII.GetString(responseBody));
+
+                _responseBytes = Encoding.UTF8.GetBytes(sb.ToString());
+
+                SocketPath = $"/tmp/dd-profiling-uds-{Guid.NewGuid()}.sock";
+
+                // A leftover socket file (from a crashed previous run) makes bind fail; remove it first.
+                File.Delete(SocketPath);
+
+                _listener = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+                _listener.Bind(new UnixDomainSocketEndPoint(SocketPath));
+                _listener.Listen(5);
+
+                _readinessNotifier.Set();
+
+                _acceptLoopTask = Task.Run(() => AcceptLoopAsync());
+            }
+
+            public string SocketPath { get; }
+
+            public override void Dispose()
+            {
+                base.Dispose();
+                _listenerCts.Cancel();
+                try
+                {
+                    _listener.Close();
+                }
+                catch (SocketException)
+                {
+                    // listener may already be closed by the accept loop teardown
+                }
+
+                try
+                {
+                    _acceptLoopTask.Wait(TimeSpan.FromSeconds(10));
+                }
+                catch (AggregateException)
+                {
+                    // accept loop was canceled - ignore
+                }
+
+                try
+                {
+                    File.Delete(SocketPath);
+                }
+                catch (IOException)
+                {
+                    // best effort cleanup
+                }
+            }
+
+            private async Task AcceptLoopAsync()
+            {
+                while (!_listenerCts.IsCancellationRequested)
+                {
+                    Socket client;
+                    try
+                    {
+                        client = await _listener.AcceptAsync(_listenerCts.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (SocketException)
+                    {
+                        // listener closed during shutdown
+                        break;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+
+                    _ = Task.Run(() => HandleClientAsync(client));
+                }
+            }
+
+            private async Task HandleClientAsync(Socket client)
+            {
+                try
+                {
+                    using (client)
+                    using (var stream = new NetworkStream(client, ownsSocket: false))
+                    {
+                        while (!_cancellationTokenSource.IsCancellationRequested)
+                        {
+                            MockHttpParser.MockHttpRequest request;
+                            try
+                            {
+                                request = await MockHttpParser.ReadRequest(stream).ConfigureAwait(false);
+                            }
+                            catch (IOException)
+                            {
+                                // client closed the connection
+                                break;
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                break;
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                // a clean close surfaces as "unexpected end of stream" here
+                                // (same as the named pipe agent)
+                                break;
+                            }
+
+                            // Count on receipt (like HttpAgent/NamedPipeAgent do), and drain the body
+                            // so the next request (if any) starts on a clean boundary.
+                            Interlocked.Increment(ref _nbCallsOnProfilingEndpoint);
+
+                            await DrainBodyAsync(stream, request.ContentLength, _cancellationTokenSource.Token).ConfigureAwait(false);
+
+                            if (!client.Connected)
+                            {
+                                break;
+                            }
+
+                            await stream.WriteAsync(_responseBytes, _cancellationTokenSource.Token).ConfigureAwait(false);
+                        }
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or InvalidOperationException or OperationCanceledException or SocketException)
+                {
+                    // normal end of a request/response cycle or shutdown - swallow, like NamedPipeAgent
+                }
+            }
+
+            // Same as NamedPipeAgent: the HTTP request body is left unread by
+            // MockHttpParser.ReadRequest, so consume the declared Content-Length bytes.
+            private static async Task DrainBodyAsync(Stream stream, long? contentLength, CancellationToken cancellationToken)
+            {
+                if (contentLength is not > 0)
+                {
+                    return;
+                }
+
+                var remaining = contentLength.Value;
+                var buffer = new byte[8192];
+                while (remaining > 0)
+                {
+                    var toRead = (int)Math.Min(buffer.Length, remaining);
+                    var read = await stream.ReadAsync(buffer, 0, toRead, cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    remaining -= read;
                 }
             }
         }

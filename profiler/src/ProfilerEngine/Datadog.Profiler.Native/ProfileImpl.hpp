@@ -9,15 +9,15 @@
 
 extern "C"
 {
-#include "datadog/common.h"
-#include "datadog/profiling.h"
+#include "datadog_poc/common.h"
+#include "datadog_poc/profiling.h"
 }
 
 namespace libdatadog {
 
 struct ProfileImpl
 {
-    ProfileImpl(ddog_prof_Profile prof) :
+    ProfileImpl(ddog_prof_profile* prof) :
         _inner(prof)
     {
         _locations.resize(_locationsSize);
@@ -25,12 +25,12 @@ struct ProfileImpl
 
     ~ProfileImpl()
     {
-        ddog_prof_Profile_drop(&_inner);
+        ddog_prof_profile_drop(_inner);
     }
 
-    operator ddog_prof_Profile*()
+    operator ddog_prof_profile*()
     {
-        return &_inner;
+        return _inner;
     }
 
     template <size_t Index>
@@ -46,10 +46,10 @@ struct ProfileImpl
     }
 
 private:
-    std::vector<ddog_prof_Location> _locations;
+    std::vector<ddog_prof_location> _locations;
     std::size_t _locationsSize = 512;
 
-    ddog_prof_Profile _inner;
+    ddog_prof_profile* _inner;
 };
 
 using profile_unique_ptr = std::unique_ptr<ProfileImpl>;
@@ -68,7 +68,7 @@ struct tuple_size<libdatadog::ProfileImpl> : std::integral_constant<size_t, 3>
 template <>
 struct tuple_element<0, libdatadog::ProfileImpl>
 {
-    using type = std::vector<ddog_prof_Location>;
+    using type = std::vector<ddog_prof_location>;
 };
 template <>
 struct tuple_element<1, libdatadog::ProfileImpl>
@@ -78,6 +78,6 @@ struct tuple_element<1, libdatadog::ProfileImpl>
 template <>
 struct tuple_element<2, libdatadog::ProfileImpl>
 {
-    using type = ddog_prof_Profile;
+    using type = ddog_prof_profile*;
 };
 } // namespace std
