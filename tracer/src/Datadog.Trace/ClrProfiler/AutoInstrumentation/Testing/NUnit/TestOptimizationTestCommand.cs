@@ -99,7 +99,7 @@ internal sealed class TestOptimizationTestCommand
         else if (atfWillRetry)
         {
             // testManagementProperties is validated non-null by the atfWillRetry pattern match above
-            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties!), context, result, keepFailure: !exclusions.AllowFailureSuppression);
+            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties!), context, result, preserveFailure: !exclusions.AllowFailureSuppression);
         }
 
         // Keep the actual outcomes for retry decisions and aggregation, then hide the final result from NUnit.
@@ -125,7 +125,7 @@ internal sealed class TestOptimizationTestCommand
            TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true &&
            testTags.TestIsNew == "true";
 
-    private static void AgregateResults(ITestResult result, ITestResult retryResult, bool keepFailure)
+    private static void AgregateResults(ITestResult result, ITestResult retryResult, bool preserveFailure)
     {
         result.Duration += retryResult.Duration;
         result.StartTime = result.StartTime < retryResult.StartTime ? result.StartTime : retryResult.StartTime;
@@ -144,7 +144,7 @@ internal sealed class TestOptimizationTestCommand
         }
 
         var resultState = result.ResultState?.Status != TestStatus.Passed ? retryResult.ResultState : result.ResultState;
-        if (keepFailure)
+        if (preserveFailure)
         {
             resultState = result.ResultState?.Status == TestStatus.Failed ? result.ResultState
                         : retryResult.ResultState?.Status == TestStatus.Failed ? retryResult.ResultState
@@ -324,7 +324,7 @@ internal sealed class TestOptimizationTestCommand
         return testResult;
     }
 
-    private ITestResult DoRetries<TBehavior>(in TBehavior behavior, ITestExecutionContext context, ITestResult result, bool keepFailure = false)
+    private ITestResult DoRetries<TBehavior>(in TBehavior behavior, ITestExecutionContext context, ITestResult result, bool preserveFailure = false)
         where TBehavior : struct, IRetryBehavior
     {
         var executionNumber = 1;
@@ -352,7 +352,7 @@ internal sealed class TestOptimizationTestCommand
             retryState.IsLastRetry = remainingRetries == 0;
             var retryResult = ExecuteTest(context, executionNumber++, ref retryState, out _, out _);
             Common.Log.Debug<string?, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Aggregating results.", behavior.RetryMode, retryNumber);
-            AgregateResults(result, retryResult, keepFailure);
+            AgregateResults(result, retryResult, preserveFailure);
             if (!behavior.ShouldRetry(result))
             {
                 Common.Log.Debug<string?, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Retry ended by the feature.", behavior.RetryMode, retryNumber);
