@@ -211,7 +211,7 @@ internal static class CiUtils
 
             // Change the .git search folder to the CurrentDirectory or WorkingFolder
             var ciValues = testOptimization.CIValues;
-            var client = TestOptimizationClient.Create(ciValues.WorkspacePath ?? Environment.CurrentDirectory, testOptimization);
+            var client = TestOptimizationClient.Create(ciValues.SourceRoot ?? ciValues.WorkspacePath ?? Environment.CurrentDirectory, testOptimization);
             if (testOptimizationSettings.GitUploadEnabled != false || testOptimizationSettings.IntelligentTestRunnerEnabled)
             {
                 // If we are in git upload only then we can defer the await until the child command exits.
