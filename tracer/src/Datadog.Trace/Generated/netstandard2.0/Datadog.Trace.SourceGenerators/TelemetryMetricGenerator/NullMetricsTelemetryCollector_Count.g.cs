@@ -291,4 +291,12 @@ internal sealed partial class NullMetricsTelemetryCollector
     public void RecordCountFlagEvaluationHookErrors(int increment = 1)
     {
     }
+
+    public void RecordCountFlagSelectionDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagSelectionDroppedReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountFlagSelectionIgnored(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagSelectionIgnoredReason tag, int increment = 1)
+    {
+    }
 }
