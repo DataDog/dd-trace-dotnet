@@ -537,7 +537,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             bool serializedKey = SerializeInternal(key, keyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
             bool serializedValue;
-            if (key is string keyName && Redaction.Instance.IsRedactedKeyword(keyName))
+            if (key is string keyName && Redaction.Instance.IsRedactedDataKey(keyName))
             {
                 WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason: RedactionReason.Identifier, ref incompleteReasons);
                 serializedValue = true;
