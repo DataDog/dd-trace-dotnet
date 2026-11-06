@@ -64,6 +64,21 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
             profile.TimestampUtc.Should().Be(File.GetLastWriteTimeUtc(path));
         }
 
+        [Fact]
+        public void ReadFile_TruncatedHeader_ThrowsAndReleasesTheFile()
+        {
+            using var directory = new TempPprofDirectory();
+            var path = Path.Combine(directory.DirectoryPath, "truncated.pprof");
+            File.WriteAllBytes(path, new byte[] { 1, 2 });
+
+            var read = () => ProfileReader.ReadFile(path);
+
+            read.Should().Throw<EndOfStreamException>();
+
+            // Deleting the file fails on Windows when the read leaked its handle.
+            File.Delete(path);
+        }
+
         private static SyntheticProfile CpuProfile(params long[] cpu)
         {
             var profile = new SyntheticProfile()

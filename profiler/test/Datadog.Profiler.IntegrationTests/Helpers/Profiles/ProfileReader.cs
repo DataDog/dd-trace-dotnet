@@ -52,21 +52,30 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         private static Stream Open(string path)
         {
             var stream = File.OpenRead(path);
-            var buffer = new byte[4];
-            stream.ReadExactly(buffer.AsSpan());
-            stream.Position = 0;
-            if (StartsWith(buffer, Lz4MagicNumber))
+            try
             {
-                return LZ4Stream.Decode(stream);
+                var buffer = new byte[4];
+                stream.ReadExactly(buffer.AsSpan());
+                stream.Position = 0;
+                if (StartsWith(buffer, Lz4MagicNumber))
+                {
+                    return LZ4Stream.Decode(stream);
+                }
+                else if (StartsWith(buffer, ZstdMagicNumber))
+                {
+                    // leaveOpen defaults to true, which keeps the file locked on Windows.
+                    return new DecompressionStream(stream, leaveOpen: false);
+                }
+                else
+                {
+                    return stream;
+                }
             }
-            else if (StartsWith(buffer, ZstdMagicNumber))
+            catch
             {
-                // leaveOpen defaults to true, which keeps the file locked on Windows.
-                return new DecompressionStream(stream, leaveOpen: false);
-            }
-            else
-            {
-                return stream;
+                // The caller owns the stream only after a successful return.
+                stream.Dispose();
+                throw;
             }
         }
 
