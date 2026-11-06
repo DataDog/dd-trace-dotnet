@@ -20,7 +20,7 @@ Update all references to the SDK version across the repository:
   - `.azure-pipelines/ultimate-pipeline.yml`
   - `.azure-pipelines/noop-pipeline.yml`
   - `.azure-pipelines/steps/install-dotnet.yml`
-  - `.github/workflows/*.yml` (all workflow files)
+  - `.github/workflows/*.yml` (all workflow files). Every workflow that runs the build (`tracer/build.sh`, `tracer/build.ps1`, `dotnet`) needs an `actions/setup-dotnet` step with `global-json-file: global.json`: without it, the job uses the runner's preinstalled SDKs and fails once `global.json` asks for a newer one. Scheduled workflows don't run on the update PR, so check them by hand.
   - `.gitlab-ci.yml`
 - **Docker Files**:
   - `docker-compose.yml`
