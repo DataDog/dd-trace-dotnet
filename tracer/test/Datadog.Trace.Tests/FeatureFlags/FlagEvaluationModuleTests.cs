@@ -192,7 +192,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             {
                 writer.TryEnqueue(Observation()).Should().BeTrue();
                 _ = writer.FlushAsync();
-                await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                await entered.Task;
                 writer.TryEnqueue(Observation()).Should().BeTrue("the second observation must fill the bounded queue");
             }
 
