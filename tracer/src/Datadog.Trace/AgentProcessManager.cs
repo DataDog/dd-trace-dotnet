@@ -346,15 +346,16 @@ namespace Datadog.Trace
             // check is logged and counted. Every decision below uses this one reading.
             var ownProcessIsRunning = metadata.OwnProcessIsRunning();
             var ownProcessExited = !ownProcessIsRunning && RecordOwnProcessExit(metadata);
-            var otherAgentHasPipe = metadata.PipeIsPresent && !ownProcessExited;
             metadata.FailedHealthChecks = isHealthy ? 0 : metadata.FailedHealthChecks + 1;
-            var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, otherAgentHasPipe, metadata.FailedHealthChecks);
 
             if (isHealthy)
             {
                 MarkHealthy(host, metadata, previousState);
                 return Task.CompletedTask;
             }
+
+            var otherAgentHasPipe = metadata.PipeIsPresent && !ownProcessExited;
+            var action = GetKeepAliveAction(isHealthy, ownProcessIsRunning, otherAgentHasPipe, metadata.FailedHealthChecks);
 
             metadata.HealthySinceMs = null;
             switch (action)
