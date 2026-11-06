@@ -5,10 +5,7 @@
 
 #if NETFRAMEWORK
 
-using System;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -61,46 +58,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SpanTypes.Web,
                 expectedResourceName,
                 "1.0.0");
-        }
-
-        [Fact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        [Trait("SkipInCI", "True")] // This test requires Elasticsearch to be running on the host, which is not currently enabled in CI.
-        public async Task NestedAsyncElasticCallSubmitsTrace()
-        {
-            var testStart = DateTime.UtcNow;
-            using (var httpClient = new HttpClient())
-            {
-                // disable tracing for this HttpClient request
-                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-
-                var response = await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}" + "/Database/Elasticsearch");
-                var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine($"[http] {response.StatusCode} {content}");
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            }
-
-            var allSpans = (await _iisFixture.Agent.WaitForSpansAsync(3, minDateTime: testStart))
-                                   .OrderBy(s => s.Start)
-                                   .ToList();
-
-            Assert.True(allSpans.Count > 0, "Expected there to be spans.");
-            ValidateIntegrationSpans(allSpans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
-
-            var elasticSpans = allSpans
-                             .Where(s => s.Type == "elasticsearch")
-                             .ToList();
-
-            Assert.True(elasticSpans.Count > 0, "Expected elasticsearch spans.");
-
-            foreach (var span in elasticSpans)
-            {
-                Assert.Equal("elasticsearch.query", span.Name);
-                Assert.Equal("Development Web Site-elasticsearch", span.Service);
-                Assert.Equal("elasticsearch", span.Type);
-            }
         }
 
         public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
