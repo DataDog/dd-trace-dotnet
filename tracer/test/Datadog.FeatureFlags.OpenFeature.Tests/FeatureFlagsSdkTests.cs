@@ -22,14 +22,10 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 public class FeatureFlagsSdkTests
 {
     [Fact]
-    public void TracerDetectsBridgesFromSdkTargetAssembly()
+    public void TracerDetectsEvaluationEventBridgeFromSdkTargetAssembly()
     {
         Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
-              .HasExposureCommitBridge(typeof(DatadogProvider)).Should().BeTrue();
-        Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
               .HasEvaluationEventBridge(typeof(DatadogProvider)).Should().BeTrue();
-        Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
-              .HasExposureCommitBridge(typeof(FeatureFlagsSdkTests)).Should().BeFalse();
         Tracer::Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration
               .HasEvaluationEventBridge(typeof(FeatureFlagsSdkTests)).Should().BeFalse();
     }

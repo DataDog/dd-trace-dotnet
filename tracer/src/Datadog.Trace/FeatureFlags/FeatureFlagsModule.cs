@@ -469,14 +469,15 @@ namespace Datadog.Trace.FeatureFlags
                     if (deferExposure && independent.FlagMetadata is { } independentMetadata)
                     {
                         independentMetadata[FeatureFlagMetadataKeys.PendingExposure] = "true";
-                        _deferredExposures.Add(independentMetadata, new PendingExposureBatch(flagKey, new[] { exposure }));
+                        _deferredExposures.Add(independentMetadata, new PendingExposureBatch(flagKey, [exposure]));
                     }
                     else
                     {
                         try
                         {
                             var result = ReportExposure(in exposure);
-                            if (independent.FlagMetadata is { } immediateMetadata)
+                            if (result != ExposureRecordResult.NotRecorded
+                             && independent.FlagMetadata is { } immediateMetadata)
                             {
                                 immediateMetadata[FeatureFlagMetadataKeys.ExposureCacheHit] = result == ExposureRecordResult.Repeat ? "true" : "false";
                             }
@@ -492,11 +493,12 @@ namespace Datadog.Trace.FeatureFlags
                 return independent;
             }
 
-            var collectDependencyEvaluations = Volatile.Read(ref _availableEvaluationWriter) is not null;
+            var evaluationWriter = Volatile.Read(ref _availableEvaluationWriter);
+            var collectDependencyEvaluations = evaluationWriter?.HasCapacity() == true;
             var trace = collectDependencyEvaluations
                             ? evaluator.EvaluateWithTrace(flagKey, resultType, defaultValue, context)
                             : evaluator.EvaluateWithoutDependencyTelemetry(flagKey, resultType, defaultValue, context);
-            ReportDependencyEvaluations(trace.DependencyEvaluations);
+            ReportDependencyEvaluations(trace.DependencyEvaluations, evaluationWriter);
 
             var evaluation = trace.Details;
             if (reportRootEvaluation)
@@ -979,10 +981,18 @@ namespace Datadog.Trace.FeatureFlags
             var result = ExposureRecordResult.NotRecorded;
             foreach (var exposure in pending.Exposures)
             {
-                var exposureResult = ReportExposure(in exposure);
-                if (exposure.Flag.Key == pending.RootFlagKey)
+                try
                 {
-                    result = exposureResult;
+                    var exposureResult = ReportExposure(in exposure);
+                    if (exposure.Flag.Key == pending.RootFlagKey)
+                    {
+                        result = exposureResult;
+                    }
+                }
+                catch
+                {
+                    // Exposure delivery is best effort. A failed prerequisite must not prevent later
+                    // candidates, including the root, from being attempted.
                 }
             }
 
@@ -1023,9 +1033,8 @@ namespace Datadog.Trace.FeatureFlags
             ReportDependencyEvaluation(writer, dependency, consent, attributes, flattenOmissions);
         }
 
-        private void ReportDependencyEvaluations(IReadOnlyList<DependencyEvaluation> dependencies)
+        private void ReportDependencyEvaluations(IReadOnlyList<DependencyEvaluation> dependencies, FlagEvaluationWriter? writer)
         {
-            var writer = Volatile.Read(ref _availableEvaluationWriter);
             if (writer is null || dependencies.Count == 0)
             {
                 return;
@@ -1037,6 +1046,13 @@ namespace Datadog.Trace.FeatureFlags
             var hasCachedContext = false;
             foreach (var dependency in dependencies)
             {
+                // Avoid context flattening and event construction when admission is already closed or
+                // saturated. TryEnqueue remains authoritative if capacity changes after this check.
+                if (!writer.HasCapacity())
+                {
+                    break;
+                }
+
                 try
                 {
                     var evaluation = dependency.Evaluation;

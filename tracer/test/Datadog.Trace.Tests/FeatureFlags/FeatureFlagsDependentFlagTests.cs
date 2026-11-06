@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -116,6 +117,45 @@ public class FeatureFlagsDependentFlagTests
         result.Error.Should().Be("GENERAL");
         trace.DependencyEvaluations.Should().ContainSingle().Which.Evaluation.FlagMetadata!["errorCode"].Should().Be("FLAG_NOT_FOUND");
         trace.DependencyExposures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void MissingTargetingKeyInDirectPrerequisiteKeepsLeafCodeAndFailsRootGenerally()
+    {
+        var prerequisite = StaticFlag("prerequisite", "on");
+        prerequisite.Allocations![0].Splits![0].Shards =
+        [
+            new Shard { Salt = "requires-targeting-key", TotalShards = 1, Ranges = [new ShardRange { Start = 0, End = 1 }] },
+        ];
+        var config = Configuration(
+            prerequisite,
+            DependentFlag("root", Allocation("root", [Dependency("prerequisite", "on")], "selected")));
+
+        var trace = Evaluator(config).EvaluateWithTrace("root", ValueType.String, "caller-default", new EvaluationContext(null));
+
+        trace.Details.Reason.Should().Be(EvaluationReason.Error);
+        trace.Details.Error.Should().Be("GENERAL");
+        trace.Details.Value.Should().Be("caller-default");
+        var dependency = trace.DependencyEvaluations.Should().ContainSingle().Subject.Evaluation;
+        dependency.FlagKey.Should().Be("prerequisite");
+        dependency.FlagMetadata!["errorCode"].Should().Be("TARGETING_KEY_MISSING");
+        trace.DependencyExposures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void NotRecordedDependentRootExposureStampsNoCacheVerdict()
+    {
+        var config = Configuration(
+            StaticFlag("prerequisite", "on"),
+            DependentFlag("root", Allocation("root", [Dependency("prerequisite", "on")], "selected")));
+        var evaluator = new FeatureFlagsEvaluator(
+            (in Datadog.Trace.FeatureFlags.Exposure.Model.ExposureEvent _) => ExposureRecordResult.NotRecorded,
+            config);
+
+        var result = evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject"));
+
+        result.Value.Should().Be("selected");
+        result.FlagMetadata!.Should().NotContainKey(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 
     [Fact]
@@ -511,7 +551,7 @@ public class FeatureFlagsDependentFlagTests
 
         result.Reason.Should().Be(EvaluationReason.Error);
         trace.DependencyEvaluations.Select(e => e.Evaluation.FlagKey).Should().Equal(
-            sharedSubtreeFirst ? new[] { "a", "leaf", "b" } : new[] { "b", "a", "leaf" });
+            sharedSubtreeFirst ? ["a", "leaf", "b"] : ["b", "a", "leaf"]);
         trace.DependencyEvaluations.Select(e => e.Evaluation.FlagKey).Should().OnlyHaveUniqueItems();
     }
 

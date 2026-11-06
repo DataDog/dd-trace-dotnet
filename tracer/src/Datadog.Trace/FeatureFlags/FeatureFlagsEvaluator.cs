@@ -95,37 +95,21 @@ namespace Datadog.Trace.FeatureFlags
         internal static IReadOnlyCollection<string> GetCapabilities() => SupportedCapabilities;
 
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
-            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: false);
-
-        // Leaves an exposure on Evaluation.PendingExposure instead of recording and sending it, for the
-        // caller to commit once the evaluation has completed.
-        public Evaluation EvaluateWithDeferredExposure(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
-            => Evaluate(flagKey, resultType, defaultValue, context, deferExposure: true);
-
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, bool deferExposure)
         {
             if (TryEvaluateIndependent(flagKey, resultType, defaultValue, context, out var independent) && independent is not null)
             {
-                return CompleteIndependentEvaluation(independent, deferExposure);
+                return CompleteIndependentEvaluation(independent);
             }
 
             var trace = EvaluateWithoutDependencyTelemetry(flagKey, resultType, defaultValue, context);
-            if (deferExposure)
-            {
-                if (trace.DependencyExposures.Count > 0)
-                {
-                    trace.Details.PendingExposure = trace.DependencyExposures[trace.DependencyExposures.Count - 1];
-                }
-
-                return trace.Details;
-            }
-
             foreach (var exposure in trace.DependencyExposures)
             {
                 try
                 {
                     var result = _onExposureEvent?.Invoke(in exposure);
-                    if (result is not null && exposure.Flag.Key == flagKey && trace.Details.FlagMetadata is { } metadata)
+                    if (result is not null and not Exposure.ExposureRecordResult.NotRecorded
+                     && exposure.Flag.Key == flagKey
+                     && trace.Details.FlagMetadata is { } metadata)
                     {
                         metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = result == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
                     }
@@ -141,7 +125,13 @@ namespace Datadog.Trace.FeatureFlags
 
         internal bool TryEvaluateIndependent(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context, out Evaluation? evaluation)
         {
-            var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
+            if (_config is null)
+            {
+                evaluation = null;
+                return false;
+            }
+
+            var consent = _config.ObserveFullEvaluationData ? "true" : "false";
             if (HasDependencyCondition(flagKey))
             {
                 evaluation = null;
@@ -168,14 +158,9 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
-        private Evaluation CompleteIndependentEvaluation(Evaluation evaluation, bool deferExposure)
+        private Evaluation CompleteIndependentEvaluation(Evaluation evaluation)
         {
             if (evaluation.PendingExposure is not { } exposure)
-            {
-                return evaluation;
-            }
-
-            if (deferExposure)
             {
                 return evaluation;
             }
@@ -184,7 +169,8 @@ namespace Datadog.Trace.FeatureFlags
             try
             {
                 var result = _onExposureEvent?.Invoke(in exposure);
-                if (result is not null && evaluation.FlagMetadata is { } metadata)
+                if (result is not null and not Exposure.ExposureRecordResult.NotRecorded
+                 && evaluation.FlagMetadata is { } metadata)
                 {
                     metadata[FeatureFlagMetadataKeys.ExposureCacheHit] = result == Exposure.ExposureRecordResult.Repeat ? "true" : "false";
                 }
@@ -1387,7 +1373,7 @@ namespace Datadog.Trace.FeatureFlags
                     }
                 }
 
-                return new EvaluationTrace(details, MaterializeEvaluations(), exposures, reachedDependencies: _memo is not null);
+                return new EvaluationTrace(details, MaterializeEvaluations(), exposures);
             }
 
             private static object DefaultValue(ValueType type) => type switch

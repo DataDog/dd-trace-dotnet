@@ -55,18 +55,13 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         return 0;
     }
 
-    internal static bool HasExposureCommitBridge(Type targetType)
-        => GetBridgeAvailability(targetType).HasExposureCommitBridge;
-
     internal static bool HasEvaluationEventBridge(Type targetType)
         => GetBridgeAvailability(targetType).HasEvaluationEventBridge;
 
     private static BridgeAvailability GetBridgeAvailability(Type targetType)
         => BridgeAvailabilityByType.GetValue(
             targetType,
-            static type => new BridgeAvailability(
-                type.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.ExposureCommitBridge", throwOnError: false) is not null,
-                type.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.FlagEvalEVPHook", throwOnError: false) is not null));
+            static type => new BridgeAvailability(type.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.FlagEvalEVPHook", throwOnError: false) is not null));
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
@@ -109,7 +104,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
 #pragma warning restore CS0649
     }
 
-    private sealed record BridgeAvailability(bool HasExposureCommitBridge, bool HasEvaluationEventBridge);
+    private sealed record BridgeAvailability(bool HasEvaluationEventBridge);
 
     internal sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes, int ContextOmissionReasons)
     {

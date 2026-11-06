@@ -9,53 +9,26 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.FeatureFlags;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
-using ExposureEvent = Datadog.Trace.FeatureFlags.Exposure.Model.ExposureEvent;
 using FeatureFlagsValueType = Datadog.Trace.FeatureFlags.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class DeferredExposureTests
 {
-    [Fact]
-    public void ADeferredEvaluationLeavesTheExposurePendingAndStampsNoVerdict()
-    {
-        var sent = new List<ExposureEvent>();
-        var evaluator = new FeatureFlagsEvaluator(Record(sent), new ServerConfiguration { Flags = Flags(doLog: true) });
-
-        var deferred = evaluator.Evaluate("flag", FeatureFlagsValueType.String, "default", new EvaluationContext("user"), deferExposure: true);
-        var immediate = evaluator.Evaluate("flag", FeatureFlagsValueType.String, "default", new EvaluationContext("user"));
-
-        deferred.PendingExposure.Should().NotBeNull();
-        deferred.PendingExposure!.Value.Subject.Id.Should().Be("user");
-        deferred.FlagMetadata!.Keys.Should().NotContain(FeatureFlagMetadataKeys.ExposureCacheHit);
-        immediate.PendingExposure.Should().BeNull();
-        immediate.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
-        sent.Should().ContainSingle("only the immediate evaluation sends during evaluation");
-    }
-
-    [Theory]
-    [InlineData("missing-flag", FeatureFlagsValueType.String)]
-    [InlineData("flag", FeatureFlagsValueType.Boolean)]
-    public void AFailedDeferredEvaluationLeavesNothingPending(string flagKey, FeatureFlagsValueType type)
-    {
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = Flags(doLog: true) });
-
-        var result = evaluator.Evaluate(flagKey, type, "default", new EvaluationContext("user"), deferExposure: true);
-
-        result.Error.Should().NotBeNull();
-        result.PendingExposure.Should().BeNull();
-    }
-
     [Fact]
     public void CommitRecordsOnceAndReturnsTheVerdict()
     {
@@ -117,6 +90,18 @@ public class DeferredExposureTests
 
         module.CommitExposure(first.FlagMetadata).Should().Be(ExposureCommitResult.NothingPending, "nothing can be recorded once exposure reporting has stopped");
         module.CommitExposure(second.FlagMetadata).Should().Be(ExposureCommitResult.NothingPending);
+    }
+
+    [Fact]
+    public async Task ImmediateEvaluationAfterShutdownStampsNoVerdict()
+    {
+        var module = Module();
+        await module.DisposeAsync();
+
+        var evaluation = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null);
+
+        evaluation.Value.Should().Be("value");
+        evaluation.FlagMetadata!.Should().NotContainKey(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 
     [Fact]
@@ -187,24 +172,50 @@ public class DeferredExposureTests
               .FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("true");
     }
 
+    [Fact]
+    public void CommitContinuesAfterDependencyReporterFailureAndReturnsRootVerdict()
+    {
+        var flags = Flags(doLog: true);
+        flags["root"] = DependentRoot(doLog: true);
+        var settings = Settings(exposuresDatadogLoggingEnabled: true);
+        using var transport = new FeatureFlagsEvpTransport(settings, NullDiscoveryService.Instance);
+        var attempts = 0;
+        var exposures = new ExposureApi(
+            settings,
+            transport,
+            TimeSpan.FromHours(1),
+            TimeSpan.FromSeconds(5),
+            () =>
+            {
+                if (Interlocked.Increment(ref attempts) == 1)
+                {
+                    throw new InvalidOperationException("dependency reporter failed");
+                }
+            });
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
+        typeof(FeatureFlagsModule).GetField("_exposureApi", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(module, exposures);
+        module.ApplyConfiguration(new ServerConfiguration { Flags = flags }).Should().BeTrue();
+
+        var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);
+
+        module.CommitExposure(evaluation.FlagMetadata).Should().Be(ExposureCommitResult.New);
+        attempts.Should().Be(2, "the root exposure must still be attempted after its dependency fails");
+    }
+
     private static FeatureFlagsModule Module(FlagCollection? flags = null)
     {
-        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
-        {
-            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config" },
-            { "DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED", "false" },
-        }));
+        var settings = Settings(exposuresDatadogLoggingEnabled: false);
         var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
         module.ApplyConfiguration(new ServerConfiguration { Flags = flags ?? Flags(doLog: true) }).Should().BeTrue();
         return module;
     }
 
-    private static FeatureFlagsEvaluator.ReportExposureDelegate Record(List<ExposureEvent> sent)
-        => (in ExposureEvent e) =>
+    private static TracerSettings Settings(bool exposuresDatadogLoggingEnabled)
+        => new(new NameValueConfigurationSource(new NameValueCollection
         {
-            sent.Add(e);
-            return ExposureRecordResult.New;
-        };
+            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config" },
+            { "DD_FEATURE_FLAGS_EXPOSURES_DATADOG_LOGGING_ENABLED", exposuresDatadogLoggingEnabled ? "true" : "false" },
+        }));
 
     private static FlagCollection Flags(bool doLog)
     {

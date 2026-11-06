@@ -14,8 +14,7 @@ namespace Datadog.Trace.FeatureFlags;
 internal sealed class EvaluationTrace(
     Evaluation details,
     IReadOnlyList<DependencyEvaluation> dependencyEvaluations,
-    IReadOnlyList<ExposureEvent> dependencyExposures,
-    bool reachedDependencies)
+    IReadOnlyList<ExposureEvent> dependencyExposures)
 {
     public Evaluation Details { get; } = details;
 
@@ -23,7 +22,5 @@ internal sealed class EvaluationTrace(
 
     public IReadOnlyList<ExposureEvent> DependencyExposures { get; } = dependencyExposures;
 
-    public bool ReachedDependencies { get; } = reachedDependencies;
-
-    public static EvaluationTrace Empty(Evaluation details) => new(details, Array.Empty<DependencyEvaluation>(), Array.Empty<ExposureEvent>(), reachedDependencies: false);
+    public static EvaluationTrace Empty(Evaluation details) => new(details, Array.Empty<DependencyEvaluation>(), Array.Empty<ExposureEvent>());
 }

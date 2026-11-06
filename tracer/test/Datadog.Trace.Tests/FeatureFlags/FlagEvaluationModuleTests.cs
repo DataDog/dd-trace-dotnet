@@ -106,6 +106,65 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task ClosedWriterSkipsDependencyTelemetrySnapshotWithoutChangingResolution()
+    {
+        using var agent = MockTracerAgent.Create(_output);
+        var settings = Settings(agent.Port, "remote_config");
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager(), discoveryService: FlagEvaluationTestDiscovery.Available(settings))!;
+        try
+        {
+            module.Activate();
+            var writer = module.EvaluationWriter!;
+            writer.Should().NotBeNull();
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+            writer.HasCapacity().Should().BeFalse();
+
+            var dependency = new Flag
+            {
+                Key = "dependency",
+                Enabled = true,
+                VariationType = FeatureFlagsValueType.String,
+                Variations = new Dictionary<string, Variant> { ["on"] = new("on", "value") },
+                Allocations = [new Allocation { Key = "dependency-allocation", DoLog = false, Splits = [new Split { VariationKey = "on", Shards = [] }] }],
+            };
+            var root = new Flag
+            {
+                Key = "root",
+                Enabled = true,
+                VariationType = FeatureFlagsValueType.String,
+                Variations = new Dictionary<string, Variant> { ["selected"] = new("selected", "value") },
+                Allocations =
+                [
+                    new Allocation
+                    {
+                        Key = "root-allocation",
+                        DoLog = false,
+                        Rules = [new Rule([new ConditionConfiguration { FlagEvaluation = new FlagEvaluationConfiguration { Key = "dependency" }, Operator = ConditionOperator.ONE_OF, Value = new[] { "on" } }])],
+                        Splits = [new Split { VariationKey = "selected", Shards = [] }],
+                    },
+                ],
+            };
+            module.ApplyConfiguration(new ServerConfiguration
+            {
+                ObserveFullEvaluationData = true,
+                Flags = new FlagCollection { ["dependency"] = dependency, ["root"] = root },
+            }).Should().BeTrue();
+            var attributes = new ThrowOnEnumerationDictionary();
+
+            var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", attributes, deferExposure: true, reportRootEvaluation: false);
+
+            evaluation.Value.Should().Be("value");
+            attributes.WasEnumerated.Should().BeFalse("a closed writer must select evaluation without dependency telemetry collection");
+            evaluation.FlagMetadata!.Should().NotContainKey(FeatureFlagMetadataKeys.PendingExposure);
+            module.CommitExposure(evaluation.FlagMetadata).Should().Be(ExposureCommitResult.NothingPending);
+        }
+        finally
+        {
+            await module.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public async Task LegacySdkRootEvaluationIsEnqueuedThroughAgentWriter()
     {
         using var agent = MockTracerAgent.Create(_output);

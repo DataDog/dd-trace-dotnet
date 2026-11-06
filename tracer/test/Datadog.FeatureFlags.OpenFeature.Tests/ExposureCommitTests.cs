@@ -84,7 +84,7 @@ public class ExposureCommitTests
 
     private static int Commit(IDictionary<string, string> metadata)
     {
-        ((TracerFlags.ExposureCommitMetadata)metadata).ExposureCommit();
+        ((TestExposureCommitMetadata)metadata).ExposureCommit();
         return TracerFlags.ExposureCommitResult.New;
     }
 
@@ -106,12 +106,18 @@ public class ExposureCommitTests
 
         public string? Error => null;
 
-        public IDictionary<string, string> FlagMetadata { get; } = new TracerFlags.ExposureCommitMetadata(
+        public IDictionary<string, string> FlagMetadata { get; } = new TestExposureCommitMetadata(
             new Dictionary<string, string>
             {
                 [FeatureFlagMetadataKeys.PendingExposure] = "true",
                 [FeatureFlagMetadataKeys.DoLog] = "false",
             },
             commit);
+    }
+
+    private sealed class TestExposureCommitMetadata(IDictionary<string, string> metadata, Action exposureCommit)
+        : Dictionary<string, string>(metadata)
+    {
+        public Action ExposureCommit { get; } = exposureCommit;
     }
 }

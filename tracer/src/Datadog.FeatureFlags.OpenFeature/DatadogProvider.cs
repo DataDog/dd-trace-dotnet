@@ -35,7 +35,6 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private static Action? _onNewConfig = null;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
     private readonly FeatureFlagsSdk.EvaluationCallback? _evaluateDeferred;
-    private readonly Func<IDictionary<string, string>, int> _commitExposure;
 
     // Asked once: when the tracer supports it, exposures are sent only after OpenFeature completes the
     // evaluation. Otherwise the tracer sends them during the evaluation, as older providers expect.
@@ -80,7 +79,6 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     private DatadogProvider(Func<bool> canDeferExposures, Func<IDictionary<string, string>, int> commitExposure)
     {
-        _commitExposure = commitExposure;
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
         _deferExposures = canDeferExposures();
         if (_deferExposures)
