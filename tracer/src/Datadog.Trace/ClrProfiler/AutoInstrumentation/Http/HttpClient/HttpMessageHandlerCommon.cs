@@ -117,6 +117,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             try
             {
 #if NETCOREAPP
+                if (state.State is true && responseMessage is not System.Net.Http.HttpResponseMessage)
+                {
+                    // the call failed before a response came back
+                    RaspModule.CloseDownstreamSubcontext(scope.Span.SpanId);
+                }
+
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;

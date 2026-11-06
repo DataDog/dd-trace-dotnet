@@ -138,6 +138,46 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
     }
 
     [Theory]
+    [InlineData(HttpStatusCode.OK, "200")]
+    [InlineData(HttpStatusCode.Found, "302")]
+    [InlineData(HttpStatusCode.Unauthorized, "401")]
+    public void GetDownstreamResponseArgs_StatusCode_IsSentAsItsNumericString(HttpStatusCode statusCode, string expected)
+    {
+        using var response = new HttpResponseMessage(statusCode);
+
+        var args = RaspModule.GetDownstreamResponseArgs(response);
+
+        args[AddressesConstants.DownstreamResponseStatus].Should().Be(expected);
+    }
+
+    [Fact]
+    public void GetDownstreamResponseArgs_ContentHeaders_AreMergedWithTheResponseHeaders()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.Found);
+        response.Headers.Location = new Uri("https://example.com/next");
+        response.Content = new ByteArrayContent([1, 2, 3]);
+        response.Content.Headers.ContentLength = 12_345_678;
+        response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+        var args = RaspModule.GetDownstreamResponseArgs(response);
+
+        var headers = args[AddressesConstants.DownstreamResponseHeaders].Should().BeAssignableTo<Dictionary<string, object>>().Subject;
+        headers.Should().ContainKey("location");
+        headers.Should().ContainKey("content-type");
+        headers["content-length"].Should().BeAssignableTo<IEnumerable<string>>().Which.Should().Equal("12345678");
+    }
+
+    [Fact]
+    public void GetDownstreamResponseArgs_NoHeaders_SendsOnlyTheStatus()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.NoContent) { Content = null };
+
+        var args = RaspModule.GetDownstreamResponseArgs(response);
+
+        args.Should().ContainSingle().Which.Key.Should().Be(AddressesConstants.DownstreamResponseStatus);
+    }
+
+    [Theory]
     [InlineData("{\"key\":\"value\"}", "application/json", true)]
     [InlineData("{\"user\":{\"name\":\"John\"}}", "application/json", true)]
     [InlineData("[1,2,3,4,5]", "application/json", true)]

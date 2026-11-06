@@ -23,6 +23,24 @@ internal interface IContext : IDisposable
     IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome);
 
     /// <summary>
+    /// Runs a batch in the subcontext identified by <paramref name="subcontextId"/>, creating it if needed,
+    /// so that several batches of one operation (e.g. the request and the response of an outbound call)
+    /// are evaluated together while staying isolated from other operations.
+    /// </summary>
+    /// <param name="subcontextId">identifies the operation the batch belongs to</param>
+    /// <param name="addressData">the addresses to evaluate</param>
+    /// <param name="closeSubcontext">whether this is the last batch of the operation</param>
+    /// <param name="timeoutMicroSeconds">the WAF budget for this run</param>
+    /// <param name="isRasp">whether this run should be reported as a RASP run</param>
+    /// <param name="outcome">why the run produced no result</param>
+    IResult? RunInSubcontext(ulong subcontextId, IDictionary<string, object> addressData, bool closeSubcontext, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome);
+
+    /// <summary>
+    /// Releases a subcontext opened by <see cref="RunInSubcontext"/> whose operation ended without a last batch.
+    /// </summary>
+    void CloseSubcontext(ulong subcontextId);
+
+    /// <summary>
     /// Here we compare with potential previous runs, and make sure we don't override previous values provided by the SDK
     /// </summary>
     /// <param name="security">security main instance</param>
