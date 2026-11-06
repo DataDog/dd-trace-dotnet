@@ -16,12 +16,14 @@ internal class DuckTypeAotCommand : CommandWithExamples
     /// Initializes a new instance of the <see cref="DuckTypeAotCommand"/> class.
     /// </summary>
     public DuckTypeAotCommand()
-        : base("ducktype-aot", "Generate NativeAOT DuckTyping registries")
+        : base("ducktype-aot", "Generate and verify NativeAOT DuckTyping registries")
     {
         AddExample("dd-trace ducktype-aot discover-mappings --proxy-assembly My.Proxy.dll --target-folder ./bin --target-filter *.dll --output ducktype-aot-mappings.json");
         AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-folder ./bin --target-filter *.dll --output Datadog.Trace.DuckType.AotRegistry.dll");
+        AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --map-file ducktype-aot-mappings.json");
 
         AddCommand(new DuckTypeAotDiscoverMappingsCommand());
         AddCommand(new DuckTypeAotGenerateCommand());
+        AddCommand(new DuckTypeAotVerifyCompatCommand());
     }
 }

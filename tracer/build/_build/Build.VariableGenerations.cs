@@ -210,11 +210,19 @@ partial class Build : NukeBuild
                 void GenerateLinuxMatrix(string platform, IEnumerable<TargetFramework> frameworks)
                 {
                     var matrix = new Dictionary<string, object>();
+                    var frameworkList = frameworks.ToList();
 
-                    foreach (var framework in frameworks)
+                    // The DuckType AOT gates run once, in a single glibc x64 job (RunManagedUnitTests --duck-type-aot-gates):
+                    // net9.0, or the newest framework if net9.0 is no longer tested.
+                    var duckTypeAotGatesFramework = platform == "x64"
+                                                        ? frameworkList.Contains(TargetFramework.NET9_0) ? TargetFramework.NET9_0 : frameworkList.LastOrDefault()
+                                                        : null;
+
+                    foreach (var framework in frameworkList)
                     {
-                        matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "debian", artifactSuffix = $"linux-{platform}"});
-                        matrix.Add($"musl_{framework}", new { framework = framework, baseImage = "alpine", artifactSuffix = $"linux-musl-{platform}"});
+                        var duckTypeAotGates = Equals(framework, duckTypeAotGatesFramework) ? "true" : "false";
+                        matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "debian", artifactSuffix = $"linux-{platform}", duckTypeAotGates = duckTypeAotGates });
+                        matrix.Add($"musl_{framework}", new { framework = framework, baseImage = "alpine", artifactSuffix = $"linux-musl-{platform}", duckTypeAotGates = "false" });
                     }
 
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
