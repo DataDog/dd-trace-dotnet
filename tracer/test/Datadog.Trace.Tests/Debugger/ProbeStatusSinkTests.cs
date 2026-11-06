@@ -478,6 +478,24 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void DrainWithoutPeriodicResendsEmptiesQueueWhenIntervalElapses()
+        {
+            _timeLord.StopTime();
+            for (var i = 0; i <= _settings.UploadBatchSize; i++)
+            {
+                _sink.AddProbeStatus($"probe-{i}", Status.RECEIVED);
+            }
+
+            var drained = _sink.GetQueuedDiagnostics();
+            _timeLord.TravelTo(_timeLord.UtcNow.AddSeconds(_settings.DiagnosticsIntervalSeconds));
+            drained.AddRange(_sink.GetQueuedDiagnostics());
+
+            drained.Select(p => p.DebuggerDiagnostics.Diagnostics.ProbeId).Should().OnlyHaveUniqueItems().And.HaveCount(_settings.UploadBatchSize + 1);
+            _sink.IsEmpty.Should().BeTrue();
+            _sink.GetDiagnostics().Should().HaveCount(_settings.UploadBatchSize);
+        }
+
+        [Fact]
         public void ReemitOnlyLatestMessage()
         {
             _timeLord.StopTime();

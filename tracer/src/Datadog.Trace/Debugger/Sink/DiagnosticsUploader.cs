@@ -26,6 +26,8 @@ namespace Datadog.Trace.Debugger.Sink
             _diagnosticsSink = diagnosticsSink;
         }
 
+        protected override bool HasPendingEvents => !_diagnosticsSink.IsEmpty;
+
         public static DiagnosticsUploader Create(DiagnosticsSink diagnosticsSink, IBatchUploader diagnosticsBatchUploader, DebuggerSettings settings)
         {
             return new DiagnosticsUploader(diagnosticsSink, diagnosticsBatchUploader, settings);
@@ -33,7 +35,8 @@ namespace Datadog.Trace.Debugger.Sink
 
         protected override async Task Upload()
         {
-            var diagnostics = _diagnosticsSink.GetDiagnostics();
+            // After disposal, drain only what is already queued. Periodic resends could otherwise refill the queue forever.
+            var diagnostics = IsDisposed ? _diagnosticsSink.GetQueuedDiagnostics() : _diagnosticsSink.GetDiagnostics();
             if (diagnostics.Count > 0)
             {
                 await _diagnosticsBatchUploader.Upload(diagnostics.Select(JsonHelper.SerializeObject)).ConfigureAwait(continueOnCapturedContext: false);
