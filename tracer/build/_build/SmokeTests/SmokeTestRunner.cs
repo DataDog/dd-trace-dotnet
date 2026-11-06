@@ -1,3 +1,5 @@
+#nullable enable annotations
+
 using System;
 using System.Collections.Generic;
 using System.Formats.Tar;
@@ -130,7 +132,8 @@ public static partial class SmokeTestRunner
                 RetryDelays);
 
             // 7. Start the smoke test app container, wait for exit
-            LogSection("Running smoke test app");
+            var testAgentIp = await DockerService.GetContainerIpAsync(testAgentContainerId, networkName);
+            LogSection($"Running smoke test app. Test agent IP: {testAgentIp ?? "unknown"}");
             smokeTestContainerId = await DockerService.CreateAndStartContainerWithRetryAsync(
                 "smoke-test", BuildSmokeTestAppContainerParams(
                     imageTag: imageTag,
@@ -138,6 +141,7 @@ public static partial class SmokeTestRunner
                     logsDir: environment.ToHostPath(logsDir),
                     dumpsDir: environment.ToHostPath(dumpsDir),
                     isWindowsScenario: scenario.IsWindows,
+                    testAgentIp: testAgentIp,
                     scenario.GetEnvironment(isCrashTest: false)));
 
             if (await DockerService.WaitForContainerAsync("Smoke test", smokeTestContainerId) is var statusCode and not 0)
@@ -240,11 +244,16 @@ public static partial class SmokeTestRunner
         string logsDir,
         string dumpsDir,
         bool isWindowsScenario,
+        string? testAgentIp,
         Dictionary<string, string> environment)
     {
+        var testAgentUrl = testAgentIp is null
+            ? $"http://{TestAgentAlias}:8126"
+            : $"http://{testAgentIp}:8126";
+
         var env = new List<string>
         {
-            $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
+            $"DD_TRACE_AGENT_URL={testAgentUrl}",
             $"dockerTag={imageTag}",
         };
 
@@ -420,6 +429,7 @@ public static partial class SmokeTestRunner
             logsDir: logsDir,
             dumpsDir: dumpsDir,
             isWindowsScenario: false, // We don't yet support windows crash-tests
+            testAgentIp: null,
             environmentVariables);
         var containerId = await DockerService.CreateAndStartContainerWithRetryAsync(
             "crash-test", containerParams, ct);
