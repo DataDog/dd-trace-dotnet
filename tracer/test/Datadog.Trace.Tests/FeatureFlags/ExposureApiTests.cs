@@ -36,6 +36,61 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class ExposureApiTests
 {
     [Fact]
+    public async Task SendExposureSynchronizesQueueAdmissionWithFlushDrain()
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local);
+        using var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(3));
+        var exposures = typeof(ExposureApi).GetField("_exposures", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(api)!;
+        var lifecycle = typeof(ExposureApi).GetField("_lifecycleLock", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(api)!;
+        var drainStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var releaseDrain = new ManualResetEventSlim();
+        var drain = Task.Factory.StartNew(
+            () =>
+            {
+                lock (exposures)
+                {
+                    drainStarted.TrySetResult(true);
+                    releaseDrain.Wait();
+                }
+            },
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+
+        try
+        {
+            (await Task.WhenAny(drainStarted.Task, Task.Delay(TimeSpan.FromSeconds(3))))
+               .Should().BeSameAs(drainStarted.Task);
+            var send = Task.Run(() => api.SendExposure(CreateExposure("concurrent")));
+            SpinWait.SpinUntil(
+                         () =>
+                         {
+                             if (!Monitor.TryEnter(lifecycle))
+                             {
+                                 return true;
+                             }
+
+                             Monitor.Exit(lifecycle);
+                             return false;
+                         },
+                         TimeSpan.FromSeconds(3))
+                    .Should().BeTrue("the producer must reach queue admission while the drain lock is held");
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromMilliseconds(100))))
+               .Should().NotBeSameAs(send, "queue admission must wait for an in-progress drain");
+
+            releaseDrain.Set();
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(3)))).Should().BeSameAs(send);
+            (await send).Should().Be(ExposureRecordResult.New);
+        }
+        finally
+        {
+            releaseDrain.Set();
+            await Task.WhenAny(drain, Task.Delay(TimeSpan.FromSeconds(3)));
+        }
+    }
+
+    [Fact]
     public async Task DisposeFlushesEventsQueuedWhileAnEarlierBatchIsSending()
     {
         var firstSendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

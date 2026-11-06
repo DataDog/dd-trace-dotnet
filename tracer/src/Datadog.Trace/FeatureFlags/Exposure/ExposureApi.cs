@@ -215,7 +215,7 @@ internal sealed class ExposureApi : IDisposable
             }
         }
 
-        return new ExposuresRequest(_context, exposures);
+        return new ExposuresRequest(Volatile.Read(ref _context), exposures);
     }
 
     /// <summary>
@@ -238,10 +238,13 @@ internal sealed class ExposureApi : IDisposable
                 isNew = _exposureCache.Add(exposure);
                 if (isNew && _datadogLoggingEnabled)
                 {
-                    full = _exposures.Count >= _queueCapacity;
-                    if (!full)
+                    lock (_exposures)
                     {
-                        _exposures.Enqueue(exposure);
+                        full = _exposures.Count >= _queueCapacity;
+                        if (!full)
+                        {
+                            _exposures.Enqueue(exposure);
+                        }
                     }
                 }
 
