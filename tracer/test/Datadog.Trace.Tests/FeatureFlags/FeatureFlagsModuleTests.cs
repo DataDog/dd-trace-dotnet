@@ -1277,7 +1277,7 @@ public class FeatureFlagsModuleTests
 
         module.SetFlagSelection(tooMany, null);
         module.Activate();
-        module.SetFlagSelection(tooMany.Reverse().ToArray(), null);
+        module.SetFlagSelection(Enumerable.Reverse(tooMany).ToArray(), null);
         module.SetFlagSelection(tooMany.Concat(["one-more"]).ToArray(), null);
 
         var notSent = FlagSelectionDiagnostics.TooManyValuesNotSent;

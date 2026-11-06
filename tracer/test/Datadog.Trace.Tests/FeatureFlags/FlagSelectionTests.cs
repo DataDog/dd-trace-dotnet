@@ -178,7 +178,7 @@ public class FlagSelectionTests
         FlagSelection.Create(["a"], null).Should().NotBe(FlagSelection.AllFlags);
 
         var tooMany = Enumerable.Range(0, 32).Select(i => $"t{i}").ToArray();
-        FlagSelection.Create(tooMany, null).Should().Be(FlagSelection.Create(tooMany.Reverse().ToArray(), null));
+        FlagSelection.Create(tooMany, null).Should().Be(FlagSelection.Create(Enumerable.Reverse(tooMany).ToArray(), null));
         FlagSelection.Create(tooMany, null).Should().NotBe(FlagSelection.Create(tooMany.Take(31).ToArray(), null));
     }
 
