@@ -60,7 +60,6 @@ internal static class GzipWarmUp
     private static void CompressOnce()
     {
         using var gzipStream = new GZipStream(Stream.Null, CompressionLevel.Fastest);
-        gzipStream.WriteByte(0);
     }
 #endif
 }
