@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
 using Xunit;
@@ -62,6 +63,38 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles.Tests
 
             profile.Path.Should().Be(path);
             profile.TimestampUtc.Should().Be(File.GetLastWriteTimeUtc(path));
+        }
+
+        [Fact]
+        public void Read_ExposedCollections_CannotBeMutated()
+        {
+            using var directory = new TempPprofDirectory();
+            CpuProfile(10).WriteRaw(directory.DirectoryPath, "profile.pprof");
+
+            var output = ProfileReader.Read(directory.DirectoryPath);
+            var profile = output.Profiles[0];
+
+            var sampleTypes = (IList<ProfileValue>)profile.SampleTypes;
+            sampleTypes.IsReadOnly.Should().BeTrue();
+            Action replaceSampleType = () => sampleTypes[0] = ProfileValue.WallTime;
+            replaceSampleType.Should().Throw<NotSupportedException>();
+
+            var samples = (IList<ProfileSample>)profile.Samples;
+            samples.IsReadOnly.Should().BeTrue();
+            Action replaceSample = () => samples[0] = null;
+            replaceSample.Should().Throw<NotSupportedException>();
+
+            var profiles = (IList<PprofProfile>)output.Profiles;
+            profiles.IsReadOnly.Should().BeTrue();
+            Action replaceProfile = () => profiles[0] = null;
+            replaceProfile.Should().Throw<NotSupportedException>();
+
+            ((IList<ProfileLabels>)output.Labels).IsReadOnly.Should().BeTrue();
+            ((IList<StackTrace>)output.CallStacks).IsReadOnly.Should().BeTrue();
+
+            var read = profile.Samples[0].Values;
+            read.TryGetValue(ProfileValue.WallTime).IsUnknown.Should().BeTrue();
+            read.GetRequired(ProfileValue.CpuTime).Should().Be(10);
         }
 
         [Fact]

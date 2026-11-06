@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
         internal static PprofProfile Create(string path, DateTime timestampUtc, Profile profile)
         {
             var origin = "'" + path + "' (" + timestampUtc.ToString("o", CultureInfo.InvariantCulture) + ")";
-            var sampleTypes = ReadSampleTypes(profile, path);
+            var sampleTypes = Array.AsReadOnly(ReadSampleTypes(profile, path));
             var locations = IndexById(profile.Location, path, "location");
             var functions = IndexById(profile.Function, path, "function");
 
@@ -44,7 +44,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                 samples[i] = ReadSample(profile, profile.Sample[i], origin, sampleTypes, locations, functions, path);
             }
 
-            return new PprofProfile(path, timestampUtc, sampleTypes, samples);
+            return new PprofProfile(path, timestampUtc, sampleTypes, Array.AsReadOnly(samples));
         }
 
         private static ProfileValue[] ReadSampleTypes(Profile profile, string path)
@@ -71,14 +71,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
             Profile profile,
             PprofSample sample,
             string origin,
-            ProfileValue[] sampleTypes,
+            IReadOnlyList<ProfileValue> sampleTypes,
             Dictionary<ulong, Location> locations,
             Dictionary<ulong, Function> functions,
             string path)
         {
-            var present = new bool[sampleTypes.Length];
-            var amounts = new long[sampleTypes.Length];
-            var valueCount = Math.Min(sample.Value.Count, sampleTypes.Length);
+            var present = new bool[sampleTypes.Count];
+            var amounts = new long[sampleTypes.Count];
+            var valueCount = Math.Min(sample.Value.Count, sampleTypes.Count);
             for (var i = 0; i < valueCount; i++)
             {
                 present[i] = true;

@@ -42,7 +42,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                     labels[i] = _samples[i].Labels;
                 }
 
-                return labels;
+                return Array.AsReadOnly(labels);
             }
         }
 
@@ -56,7 +56,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                     stacks[i] = _samples[i].CallStack;
                 }
 
-                return stacks;
+                return Array.AsReadOnly(stacks);
             }
         }
 

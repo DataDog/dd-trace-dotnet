@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
                 }
             }
 
-            Profiles = copy;
+            Profiles = Array.AsReadOnly(copy);
             Samples = new ProfileSampleSet(samples);
         }
 
