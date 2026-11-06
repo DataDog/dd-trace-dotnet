@@ -61,7 +61,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers.Profiles
             }
             else if (StartsWith(buffer, ZstdMagicNumber))
             {
-                return new DecompressionStream(stream);
+                // leaveOpen defaults to true, which keeps the file locked on Windows.
+                return new DecompressionStream(stream, leaveOpen: false);
             }
             else
             {
