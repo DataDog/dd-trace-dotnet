@@ -63,6 +63,9 @@ namespace Datadog.Trace.Debugger.Models
         public string Expression { get; set; }
 
         public string Message { get; set; }
+
+        // Internal so the generated ToString, which span decoration error tags use, doesn't print it.
+        internal bool IsRedaction { get; set; }
     }
 
     internal record struct ProbeLocation
