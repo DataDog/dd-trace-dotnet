@@ -18,7 +18,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -264,18 +263,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
     private static ApiWebRequestFactory CreateRequestFactory(AgentlessEndpoint endpoint, FeatureFlagsSettings settings)
 #endif
     {
-        var headers = GetRequestHeaders(endpoint, settings);
-
-#if NETCOREAPP
-        return new HttpClientRequestFactory(endpoint.Uri, headers, timeout: settings.RequestTimeout);
-#else
-        return new ApiWebRequestFactory(endpoint.Uri, headers, timeout: settings.RequestTimeout);
-#endif
-    }
-
-    [TestingAndPrivateOnly]
-    internal static KeyValuePair<string, string>[] GetRequestHeaders(AgentlessEndpoint endpoint, FeatureFlagsSettings settings)
-    {
         var headers = new List<KeyValuePair<string, string>>
         {
             // The endpoint serves gzip, and neither transport decompresses for us.
@@ -287,12 +274,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             new(HttpHeaderNames.TracingEnabled, "false"),
         };
 
-        var capabilities = FeatureFlagCapabilities.HeaderValue(FeatureFlagsEvaluator.GetCapabilities());
-        if (capabilities is not null)
-        {
-            headers.Add(new("X-DD-FEATURE-FLAGS-CAPABILITIES", capabilities));
-        }
-
         if (endpoint.IsManaged)
         {
             // A custom endpoint is left to report its own authentication failure rather than
@@ -300,7 +281,13 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             headers.Add(new(TelemetryConstants.ApiKeyHeader, settings.ApiKey!));
         }
 
-        return headers.ToArray();
+        // The endpoint is only the factory's default: both transports honour the URI passed to
+        // Create, which is what carries the current environment and evaluator capabilities.
+#if NETCOREAPP
+        return new HttpClientRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
+#else
+        return new ApiWebRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
+#endif
     }
 
     private async Task RunAsync()

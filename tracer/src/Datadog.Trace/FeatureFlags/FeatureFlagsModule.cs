@@ -73,7 +73,7 @@ namespace Datadog.Trace.FeatureFlags
 
         // Keyed by the metadata dictionary handed to the provider, which hands the same instance back
         // to commit. An evaluation that is never committed (an error, or no hooks ran) is collected.
-        private readonly ConditionalWeakTable<IDictionary<string, string>, StrongBox<IReadOnlyList<ExposureEvent>>> _deferredExposures = new();
+        private readonly ConditionalWeakTable<IDictionary<string, string>, PendingExposureBatch> _deferredExposures = new();
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -469,7 +469,7 @@ namespace Datadog.Trace.FeatureFlags
                     if (deferExposure && independent.FlagMetadata is { } independentMetadata)
                     {
                         independentMetadata[FeatureFlagMetadataKeys.PendingExposure] = "true";
-                        _deferredExposures.Add(independentMetadata, new StrongBox<IReadOnlyList<ExposureEvent>>(new[] { exposure }));
+                        _deferredExposures.Add(independentMetadata, new PendingExposureBatch(flagKey, new[] { exposure }));
                     }
                     else
                     {
@@ -509,7 +509,7 @@ namespace Datadog.Trace.FeatureFlags
                 // This private marker crosses the profiler boundary so the provider retains a
                 // dependency exposure batch even when the root allocation has doLog disabled.
                 metadata[FeatureFlagMetadataKeys.PendingExposure] = "true";
-                _deferredExposures.Add(metadata, new StrongBox<IReadOnlyList<ExposureEvent>>(trace.DependencyExposures));
+                _deferredExposures.Add(metadata, new PendingExposureBatch(flagKey, trace.DependencyExposures));
             }
             else
             {
@@ -526,7 +526,13 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     try
                     {
-                        ReportExposure(in exposure);
+                        var result = ReportExposure(in exposure);
+                        if (result != ExposureRecordResult.NotRecorded
+                         && exposure.Flag.Key == flagKey
+                         && evaluation.FlagMetadata is { } rootMetadata)
+                        {
+                            rootMetadata[FeatureFlagMetadataKeys.ExposureCacheHit] = result == ExposureRecordResult.Repeat ? "true" : "false";
+                        }
                     }
                     catch
                     {
@@ -970,15 +976,14 @@ namespace Datadog.Trace.FeatureFlags
                 return ExposureCommitResult.NothingPending;
             }
 
-            if (pending.Value is not { } exposures)
-            {
-                return ExposureCommitResult.NothingPending;
-            }
-
             var result = ExposureRecordResult.NotRecorded;
-            foreach (var exposure in exposures)
+            foreach (var exposure in pending.Exposures)
             {
-                result = ReportExposure(in exposure);
+                var exposureResult = ReportExposure(in exposure);
+                if (exposure.Flag.Key == pending.RootFlagKey)
+                {
+                    result = exposureResult;
+                }
             }
 
             return result switch
@@ -1136,6 +1141,13 @@ namespace Datadog.Trace.FeatureFlags
 
                 return exposureApi;
             }
+        }
+
+        private sealed class PendingExposureBatch(string rootFlagKey, IReadOnlyList<ExposureEvent> exposures)
+        {
+            public string RootFlagKey { get; } = rootFlagKey;
+
+            public IReadOnlyList<ExposureEvent> Exposures { get; } = exposures;
         }
     }
 }

@@ -15,7 +15,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -38,21 +37,6 @@ public class AgentlessConfigurationSourceTests
         """;
 
     private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
-
-    [Fact]
-    public void RequestHeadersAdvertiseDependentFlagSupport()
-    {
-        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
-        {
-            [ConfigurationKeys.ApiKey] = "test-api-key",
-        }));
-        var headers = AgentlessConfigurationSource.GetRequestHeaders(CreateEndpoint(), settings.FeatureFlags)
-                                                  .ToDictionary(pair => pair.Key, pair => pair.Value);
-
-        headers.Should().Contain(
-            "X-DD-FEATURE-FLAGS-CAPABILITIES",
-            FeatureFlagCapabilities.DependentFlagVariantKeyV1);
-    }
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
@@ -95,7 +79,7 @@ public class AgentlessConfigurationSourceTests
 
         await source.PollAsync();
 
-        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl + "?dd_env=production"));
+        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl + "?cap_dependent-flags-variant-key=v1&dd_env=production"));
     }
 
     [Fact]
@@ -113,7 +97,7 @@ public class AgentlessConfigurationSourceTests
         source.UpdateEnvironment("staging");
         await source.PollAsync();
 
-        factory.RequestsSent[1].Endpoint.Should().Be(new Uri(EndpointUrl + "?dd_env=staging"));
+        factory.RequestsSent[1].Endpoint.Should().Be(new Uri(EndpointUrl + "?cap_dependent-flags-variant-key=v1&dd_env=staging"));
         factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match");
     }
 

@@ -536,6 +536,7 @@ public class FeatureFlagsDependentFlagTests
             evaluator.Evaluate("ordinary", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("ordinary");
             logger.Invocations.Should().NotContain(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error));
             evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
+            evaluator.Evaluate("root", ValueType.String, "fallback", new EvaluationContext("subject")).Value.Should().Be("on");
             logger.Invocations.Should().ContainSingle(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error));
         }
     }
@@ -631,6 +632,7 @@ public class FeatureFlagsDependentFlagTests
 
     private static ConditionConfiguration Attribute(string key, string value)
         => new() { Attribute = key, Operator = ConditionOperator.ONE_OF, Value = new[] { value } };
+
     private static ServerConfiguration DependencyChain(int edges)
     {
         var flags = new List<Flag> { StaticFlag("node-" + edges, "on") };

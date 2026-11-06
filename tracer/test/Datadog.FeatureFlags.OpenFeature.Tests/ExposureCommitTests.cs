@@ -40,20 +40,7 @@ public class ExposureCommitTests
     }
 
     [Fact]
-    public async Task DirectProviderResolutionCommitsCompletedGraphExposures()
-    {
-        var commits = 0;
-        using var provider = Provider((key, type, fallback, targetingKey, attributes) =>
-            new TestEvaluation(key, () => Interlocked.Increment(ref commits)));
-
-        var result = await provider.ResolveBooleanValueAsync("root", false);
-
-        result.Value.Should().BeTrue();
-        Volatile.Read(ref commits).Should().Be(1);
-    }
-
-    [Fact]
-    public async Task FeatureClientAfterHookFailureDoesNotDiscardCompletedGraphExposures()
+    public async Task FeatureClientAfterHookFailureDiscardsCompletedGraphExposures()
     {
         var commits = 0;
         var domain = $"exposure-failure-{Guid.NewGuid():N}";
@@ -67,7 +54,7 @@ public class ExposureCommitTests
 
         result.ErrorType.Should().Be(ErrorType.General);
         result.Value.Should().BeFalse();
-        Volatile.Read(ref commits).Should().Be(1, "exposure transactionality ends when the evaluator graph succeeds");
+        Volatile.Read(ref commits).Should().Be(0, "the root evaluation lifecycle did not complete successfully");
     }
 
     [Fact]

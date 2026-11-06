@@ -14,6 +14,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -52,6 +53,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ServerConfiguration? _config;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IDatadogLogger _log;
+        private readonly Lazy<int>? _maxDependencyDepth;
 
         public FeatureFlagsEvaluator(
             ReportExposureDelegate? onExposureEvent,
@@ -63,6 +65,9 @@ namespace Datadog.Trace.FeatureFlags
             _config = config;
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
             _log = logger ?? Log;
+            _maxDependencyDepth = config is null
+                                      ? null
+                                      : new Lazy<int>(() => ParseMaxDependencyDepth(config, _log), LazyThreadSafetyMode.ExecutionAndPublication);
             if (_config is null)
             {
                 _log.Debug("Creating Evaluator without config");
@@ -81,6 +86,8 @@ namespace Datadog.Trace.FeatureFlags
         /// Gets the configuration this evaluator resolves against, which diagnostics use to identify it.
         /// </summary>
         internal ServerConfiguration? Configuration => _config;
+
+        private int MaxDependencyDepth => _maxDependencyDepth?.Value ?? DefaultMaxDependencyDepth;
 
         // Opt-in requires prerequisite evaluation, error propagation, and exposure reporting.
         internal static IReadOnlyCollection<string> GetCapabilities() => SupportedCapabilities;
@@ -554,7 +561,7 @@ namespace Datadog.Trace.FeatureFlags
             return matches;
         }
 
-        private static int GetMaxDependencyDepth(ServerConfiguration config, IDatadogLogger log)
+        private static int ParseMaxDependencyDepth(ServerConfiguration config, IDatadogLogger log)
         {
             try
             {
@@ -1222,7 +1229,7 @@ namespace Datadog.Trace.FeatureFlags
                 }
 
                 var depth = frames.Count + 1;
-                var maxDepth = _maxDepth ??= GetMaxDependencyDepth(_config, _owner._log);
+                var maxDepth = _maxDepth ??= _owner.MaxDependencyDepth;
 
                 if (depth > maxDepth)
                 {

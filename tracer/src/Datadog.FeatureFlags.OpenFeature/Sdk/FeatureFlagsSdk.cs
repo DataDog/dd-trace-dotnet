@@ -140,7 +140,7 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool deferredExposure = false, Func<IDictionary<string, string>, int>? commitExposure = null)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null, bool deferredExposure = false)
     {
         long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
@@ -148,18 +148,6 @@ internal static class FeatureFlagsSdk
                              ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
         var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs, deferredExposure);
-        if (deferredExposure)
-        {
-            try
-            {
-                CommitPendingExposure(resolution.FlagMetadata, commitExposure ?? CommitExposure);
-            }
-            catch
-            {
-                // Exposure delivery is best effort and cannot affect resolution.
-            }
-        }
-
         evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
         // Only exposures need the context in ExposureHook, so other evaluations skip the table.
         if (context is not null && resolution.FlagMetadata is { } metadata && metadata.GetBool(FeatureFlagMetadataKeys.DoLog) == true)

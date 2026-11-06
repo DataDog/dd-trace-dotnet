@@ -16,9 +16,6 @@ internal static class FeatureFlagCapabilities
 {
     internal const string DependentFlagVariantKeyV1 = "dependent-flag-variant-key-v1";
 
-    internal static string? HeaderValue(IReadOnlyCollection<string> capabilities)
-        => capabilities.Contains(DependentFlagVariantKeyV1) ? DependentFlagVariantKeyV1 : null;
-
     internal static BigInteger RemoteConfigMask(IReadOnlyCollection<string> capabilities)
         => RcmCapabilitiesIndices.FfeFlagConfigurationRules
          | (capabilities.Contains(DependentFlagVariantKeyV1) ? RcmCapabilitiesIndices.FfeFlagDependentFlagVariantKeyV1 : BigInteger.Zero);

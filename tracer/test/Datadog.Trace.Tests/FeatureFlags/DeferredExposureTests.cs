@@ -82,6 +82,20 @@ public class DeferredExposureTests
     }
 
     [Fact]
+    public void ImmediateDependentEvaluationStampsTheRootExposureVerdict()
+    {
+        var flags = Flags(doLog: true);
+        flags["root"] = DependentRoot(doLog: true);
+        using var module = Module(flags);
+
+        var first = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null);
+        var second = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null);
+
+        first.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
+        second.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("true");
+    }
+
+    [Fact]
     public void UncommittedEvaluationsRecordNothing()
     {
         using var module = Module();
@@ -166,7 +180,11 @@ public class DeferredExposureTests
         var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
 
         evaluation.FlagMetadata![FeatureFlagMetadataKeys.PendingExposure].Should().Be("true");
-        module.CommitExposure(evaluation.FlagMetadata).Should().Be(ExposureCommitResult.New);
+        module.CommitExposure(evaluation.FlagMetadata).Should().Be(
+            ExposureCommitResult.NothingPending,
+            "the dependency was recorded but the root itself did not authorize an exposure verdict");
+        module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null)
+              .FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("true");
     }
 
     private static FeatureFlagsModule Module(FlagCollection? flags = null)
@@ -196,4 +214,34 @@ public class DeferredExposureTests
         var flag = new Flag { Key = "flag", Enabled = true, VariationType = FeatureFlagsValueType.String, Variations = variants, Allocations = new List<Allocation> { allocation } };
         return new FlagCollection { ["flag"] = flag };
     }
+
+    private static Flag DependentRoot(bool doLog)
+        => new()
+        {
+            Key = "root",
+            Enabled = true,
+            VariationType = FeatureFlagsValueType.String,
+            Variations = new Dictionary<string, Variant> { ["on"] = new("on", "root-value") },
+            Allocations =
+            [
+                new Allocation
+                {
+                    Key = "root-allocation",
+                    DoLog = doLog,
+                    Rules =
+                    [
+                        new Rule(
+                        [
+                            new ConditionConfiguration
+                            {
+                                FlagEvaluation = new FlagEvaluationConfiguration { Key = "flag" },
+                                Operator = ConditionOperator.ONE_OF,
+                                Value = new[] { "on" },
+                            },
+                        ]),
+                    ],
+                    Splits = [new Split { VariationKey = "on", Shards = [] }],
+                },
+            ],
+        };
 }

@@ -18,10 +18,9 @@ public class FeatureFlagCapabilitiesTests
     [InlineData(null, false)]
     [InlineData("unknown-v1", false)]
     [InlineData("dependent-flag-variant-key-v1", true)]
-    public void GatesBothTransports(string? capability, bool supported)
+    public void GatesRemoteConfigurationCapability(string? capability, bool supported)
     {
         string[] capabilities = capability is null ? [] : [capability];
-        FeatureFlagCapabilities.HeaderValue(capabilities).Should().Be(supported ? "dependent-flag-variant-key-v1" : null);
         FeatureFlagCapabilities.RemoteConfigMask(capabilities).Should().Be(new BigInteger((1UL << 46) | (supported ? 1UL << 50 : 0)));
     }
 
@@ -29,7 +28,6 @@ public class FeatureFlagCapabilitiesTests
     public void CurrentEvaluatorAdvertisesDependentFlags()
     {
         FeatureFlagsEvaluator.GetCapabilities().Should().Equal(FeatureFlagCapabilities.DependentFlagVariantKeyV1);
-        FeatureFlagCapabilities.HeaderValue(FeatureFlagsEvaluator.GetCapabilities()).Should().Be(FeatureFlagCapabilities.DependentFlagVariantKeyV1);
         FeatureFlagCapabilities.RemoteConfigMask(FeatureFlagsEvaluator.GetCapabilities()).Should().Be(new BigInteger((1UL << 46) | (1UL << 50)));
     }
 }

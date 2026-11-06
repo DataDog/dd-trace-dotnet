@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -30,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class OpenFeatureSdkEvaluateIntegration
 {
+    private static readonly ConcurrentDictionary<Type, BridgeAvailability> BridgeAvailabilityByType = new();
+
     internal static CallTargetState OnMethodBegin<TTarget>(ref string flagKey, FeatureFlags.ValueType targetType, ref object? defaultValue, ref string? targetingKey, ref IDictionary<string, object?>? attributes)
     {
         return new CallTargetState(null, new State(flagKey, targetType, defaultValue, targetingKey, attributes, GetContextOmissionReasons(attributes)));
@@ -53,10 +56,17 @@ public sealed class OpenFeatureSdkEvaluateIntegration
     }
 
     internal static bool HasExposureCommitBridge(Type targetType)
-        => targetType.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.ExposureCommitBridge", throwOnError: false) is not null;
+        => GetBridgeAvailability(targetType).HasExposureCommitBridge;
 
     internal static bool HasEvaluationEventBridge(Type targetType)
-        => targetType.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.FlagEvalEVPHook", throwOnError: false) is not null;
+        => GetBridgeAvailability(targetType).HasEvaluationEventBridge;
+
+    private static BridgeAvailability GetBridgeAvailability(Type targetType)
+        => BridgeAvailabilityByType.GetOrAdd(
+            targetType,
+            static type => new BridgeAvailability(
+                type.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.ExposureCommitBridge", throwOnError: false) is not null,
+                type.Assembly.GetType("Datadog.FeatureFlags.OpenFeature.FlagEvalEVPHook", throwOnError: false) is not null));
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
@@ -98,6 +108,8 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         public int ContextOmissionReasons;
 #pragma warning restore CS0649
     }
+
+    private readonly record struct BridgeAvailability(bool HasExposureCommitBridge, bool HasEvaluationEventBridge);
 
     internal sealed record State(string FlagKey, FeatureFlags.ValueType TargetType, object? DefaultValue, string? TargetingKey, IDictionary<string, object?>? Attributes, int ContextOmissionReasons)
     {
