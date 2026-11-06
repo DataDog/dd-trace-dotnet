@@ -200,7 +200,8 @@ namespace Datadog.Trace.Agent
 
         public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {
-            return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, statsd, isOtlp) : new NullStatsAggregator();
+            var enabled = isOtlp ? settings.OtelTracesSpanMetricsEnabled : settings.StatsComputationEnabled;
+            return enabled ? new StatsAggregator(api, settings, discoveryService, statsd, isOtlp) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
