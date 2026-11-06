@@ -38,6 +38,13 @@ internal static class FeatureFlagsSdk
 
     internal static bool ExposureHookCreated => _exposureHookCreated;
 
+    // Tests only: covers the state before any ExposureHook exists, which the process-wide flag otherwise hides.
+    internal static bool ExposureHookCreatedForTests
+    {
+        get => _exposureHookCreated;
+        set => _exposureHookCreated = value;
+    }
+
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
@@ -177,8 +176,7 @@ public class DeferredExposureTests
         var evaluation = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
 
         evaluation.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
-        typeof(FeatureFlagsModule).GetField("_exposureApi", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(module)
-                                  .Should().BeNull("only a commit or an immediate report creates the exposure API and its transport");
+        module.HasExposureApi.Should().BeFalse("only a commit or an immediate report creates the exposure API and its transport");
     }
 
     [Fact]

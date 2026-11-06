@@ -6,11 +6,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -880,9 +878,8 @@ public partial class FeatureFlagsEvaluatorTests
 
         evaluator.Evaluate("features-flag", ValueType.String, "default", new EvaluationContext("user"));
 
-        var warned = (ConcurrentDictionary<string, byte>)typeof(FeatureFlagsEvaluator).GetField("WarnedDestinations", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
-        var counted = (int)typeof(FeatureFlagsEvaluator).GetField("_warnedDestinationCount", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
-        warned.Count.Should().Be(counted);
+        var counted = FeatureFlagsEvaluator.WarnedDestinationCount;
+        FeatureFlagsEvaluator.WarnedDestinationEntries.Should().Be(counted);
         counted.Should().BeInRange(64, 64 + System.Environment.ProcessorCount, "racing first warnings can pass the cap by at most one per thread");
     }
 

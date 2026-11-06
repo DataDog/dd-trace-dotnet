@@ -69,6 +69,12 @@ namespace Datadog.Trace.FeatureFlags
 
         private delegate bool NumberEquality(double a, double b);
 
+        [TestingAndPrivateOnly]
+        internal static int WarnedDestinationCount => Volatile.Read(ref _warnedDestinationCount);
+
+        [TestingAndPrivateOnly]
+        internal static int WarnedDestinationEntries => WarnedDestinations.Count;
+
         /// <summary>
         /// Gets the configuration this evaluator resolves against, which diagnostics use to identify it.
         /// </summary>

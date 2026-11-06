@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
 using FluentAssertions;
@@ -54,11 +53,10 @@ public class ExposureDiagnosticsTests
     [Fact]
     public void TheEvaluatedContextIsRecordedOnlyOnceAnExposureHookExists()
     {
-        var flag = typeof(FeatureFlagsSdk).GetField("_exposureHookCreated", BindingFlags.NonPublic | BindingFlags.Static)!;
-        var previous = flag.GetValue(null);
+        var previous = FeatureFlagsSdk.ExposureHookCreatedForTests;
         try
         {
-            flag.SetValue(null, false);
+            FeatureFlagsSdk.ExposureHookCreatedForTests = false;
             FeatureFlagsSdk.GetEvaluatedContext(Resolve().FlagMetadata).Should().BeNull("no ExposureHook reads it yet");
 
             _ = new ExposureHook(_ => { });
@@ -66,7 +64,7 @@ public class ExposureDiagnosticsTests
         }
         finally
         {
-            flag.SetValue(null, previous);
+            FeatureFlagsSdk.ExposureHookCreatedForTests = previous;
         }
     }
 

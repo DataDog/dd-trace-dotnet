@@ -137,6 +137,9 @@ namespace Datadog.Trace.FeatureFlags
         [TestingAndPrivateOnly]
         internal FeatureFlagsSettings Settings => _settings;
 
+        [TestingAndPrivateOnly]
+        internal bool HasExposureApi => Volatile.Read(ref _exposureApi) is not null;
+
         /// <summary>
         /// Gets a value indicating whether configuration is currently held, so evaluations can resolve
         /// flags. Goes back to <c>false</c> when Remote Configuration withdraws it.
