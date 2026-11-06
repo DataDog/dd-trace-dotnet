@@ -210,9 +210,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             File.WriteAllText(Path.Combine(checkout.Root, ".git", "HEAD"), commit + "\n");
             Directory.CreateDirectory(Path.Combine(checkout.Root, ".git", "refs", "heads"));
             File.WriteAllText(Path.Combine(checkout.Root, ".git", "refs", "heads", "main"), baseCommit + "\n");
-            var reset = GitCommandHelper.RunGitCommand(checkout.Root, "reset --hard HEAD", MetricTags.CIVisibilityCommands.GetHead);
-            reset.Should().NotBeNull();
-            reset!.ExitCode.Should().Be(0, reset.Error);
+            var reset = GitCommandHelper.RunGitCommand(checkout.Root, "reset --hard HEAD", MetricTags.CIVisibilityCommands.GetHead)
+                     ?? throw new InvalidOperationException("Git checkout reset did not start.");
+            reset.ExitCode.Should().Be(0, reset.Error);
             File.AppendAllText(Path.Combine(checkout.Root, "README.md"), "\nChanged in the checkout\n");
             GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var gitInfo).Should().BeTrue();
             var workspace = differentWorkspace ? checkout.Root + "-provider" : checkout.Root;
