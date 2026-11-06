@@ -27,11 +27,7 @@ internal readonly struct TestAutomationExclusions
 
     internal bool AllowFailureSuppression => !_preventFailureSuppression;
 
-    internal bool PreventFailureSuppression => _preventFailureSuppression;
-
     internal bool AllowAutoRetry => !_noAutoRetry;
-
-    internal bool NoAutoRetry => _noAutoRetry;
 
     internal static TestAutomationExclusions From(MethodInfo? method)
     {

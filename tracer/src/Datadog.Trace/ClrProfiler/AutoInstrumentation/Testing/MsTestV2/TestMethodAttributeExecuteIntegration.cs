@@ -330,7 +330,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 }
 
                 // Calculate final results
-                returnValueList = GetFinalResults(results, keepFailure: attempt.IsAttemptToFix && exclusions.PreventFailureSuppression);
+                returnValueList = GetFinalResults(results, keepFailure: attempt.IsAttemptToFix && !exclusions.AllowFailureSuppression);
             }
         }
         else if (testOptimization.FlakyRetryFeature?.Enabled == true && attempt.ResultStatus == TestStatus.Fail)
@@ -600,9 +600,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
             if (execution is not { HasNativeRetry: true } && TestOptimization.Instance.TestManagementFeature?.Enabled == true && testTags is not null)
             {
-                var isQuarantined = !testTags.AutomationExclusions.PreventFailureSuppression && testTags.IsQuarantined == "true";
-                var isAttemptToFix = !testTags.AutomationExclusions.PreventFailureSuppression && Common.IsAttemptToFix(testTags);
-                var isDisabled = !testTags.AutomationExclusions.PreventFailureSuppression && testTags.IsDisabled == "true";
+                var isQuarantined = testTags.AutomationExclusions.AllowFailureSuppression && testTags.IsQuarantined == "true";
+                var isAttemptToFix = testTags.AutomationExclusions.AllowFailureSuppression && Common.IsAttemptToFix(testTags);
+                var isDisabled = testTags.AutomationExclusions.AllowFailureSuppression && testTags.IsDisabled == "true";
 
                 // Only mask outcome on final execution for ATF.
                 // Failure protection applies independently of retry eligibility.
