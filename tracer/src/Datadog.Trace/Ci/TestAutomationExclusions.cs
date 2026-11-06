@@ -50,6 +50,9 @@ internal readonly struct TestAutomationExclusions
             Log.Debug(ex, "Unable to read test automation exclusion metadata, reading the attribute instances instead.");
             try
             {
+                // Match by name because the manual and tracer assemblies define distinct attribute types.
+                // IsDefined with the tracer type would miss the manual assembly; retain this fallback
+                // when metadata inspection fails while resolving unrelated attribute dependencies.
                 foreach (var attribute in method.GetCustomAttributes(inherit: false))
                 {
                     Read(attribute.GetType(), ref preventFailureSuppression, ref noAutoRetry);
