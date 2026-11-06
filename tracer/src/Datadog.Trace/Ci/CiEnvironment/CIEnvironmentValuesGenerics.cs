@@ -191,7 +191,6 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         // **********
         // Custom environment variables.
         // **********
-        Branch = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitBranch, Branch);
         Repository = GetVariableIfIsNotEmpty(
             ConfigurationKeys.CIVisibility.GitRepositoryUrl,
             Repository,
@@ -277,6 +276,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             });
         if (!string.Equals(collectedCommit, Commit, StringComparison.OrdinalIgnoreCase))
         {
+            Branch = CleanBranchValue(Branch).Item1;
             Tag = null;
             Message = null;
             AuthorName = null;
@@ -287,6 +287,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
             CommitterDate = null;
         }
 
+        Branch = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitBranch, Branch);
         Tag = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitTag, Tag);
         Message = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitMessage, Message);
         AuthorName = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitAuthorName, AuthorName);

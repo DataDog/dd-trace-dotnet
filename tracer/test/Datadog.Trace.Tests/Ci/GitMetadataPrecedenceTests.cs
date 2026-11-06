@@ -91,15 +91,48 @@ public class GitMetadataPrecedenceTests
         values.WorkspacePath.Should().Be("provider-workspace");
     }
 
+    [Theory]
+    [InlineData(null, null, null)]
+    [InlineData("explicit-tag", null, "explicit-tag")]
+    [InlineData(null, "refs/tags/explicit-tag", "explicit-tag")]
+    public void ShaOverrideDoesNotRestoreAnInferredProviderTag(string? tag, string? branch, string? expectedTag)
+    {
+        var variables = new Dictionary<string, string> { ["DD_GIT_COMMIT_SHA"] = new string('c', 40) };
+        if (tag is not null)
+        {
+            variables["DD_GIT_TAG"] = tag;
+        }
+
+        if (branch is not null)
+        {
+            variables["DD_GIT_BRANCH"] = branch;
+        }
+
+        var values = new TestValues(variables) { ProviderBranch = "refs/tags/provider-tag" };
+        values.Load(new GitInfo());
+
+        values.Commit.Should().Be(new string('c', 40));
+        values.Tag.Should().Be(expectedTag);
+        values.Branch.Should().BeNull();
+        values.PipelineId.Should().Be("pipeline");
+        values.PrBaseBranch.Should().Be("main");
+    }
+
     private sealed class TestValues(Dictionary<string, string> variables) : CIEnvironmentValues<DictionaryValuesProvider>(new DictionaryValuesProvider(variables))
     {
-        public void Load(IGitInfo gitInfo) => Setup(gitInfo);
+        public string ProviderBranch { get; set; } = "provider-branch";
+
+        public void Load(IGitInfo gitInfo)
+        {
+            Setup(gitInfo);
+            CleanBranchAndTag();
+        }
 
         protected override void OnInitialize(IGitInfo gitInfo)
         {
             Commit = new string('b', 40);
             Repository = "https://example.com/provider.git";
-            Branch = "provider-branch";
+            Branch = ProviderBranch;
             Tag = "provider-tag";
             Message = "provider-message";
             AuthorName = "provider-author";
