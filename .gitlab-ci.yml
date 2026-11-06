@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: 53c31bdedaf6e97b88c6884add6be169f5dc32db   # platform PR #54 (Opus 5.5)
+    ref: fad35924d78f479f7140dbf58c762aea29660bee   # platform PR #54 (Opus 5.5)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -48,7 +48,7 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "53c31bdedaf6e97b88c6884add6be169f5dc32db"   # platform PR #54 (must match include ref above)
+    LLMVAL_PLATFORM_REF: "fad35924d78f479f7140dbf58c762aea29660bee"   # platform PR #54 (must match include ref above)
 
 # The historical job name is retained; the setup preset exercises guidance, selected skill workflows, and controls.
 "llm validation (setup smoke)":
