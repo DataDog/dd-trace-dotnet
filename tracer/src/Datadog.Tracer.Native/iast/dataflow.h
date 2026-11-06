@@ -111,6 +111,7 @@ namespace iast
 
         AppDomainInfo* GetAppDomain(AppDomainID id);
         ModuleInfo* GetModuleInfo(ModuleID moduleId);
+        bool IsModuleExcluded(ModuleID moduleId);
         ModuleInfo* GetAspectsModule(AppDomainID id);
         MethodInfo* GetMethodInfo(ModuleID moduleId, mdMethodDef methodId);
 

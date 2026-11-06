@@ -1417,6 +1417,58 @@ void CorProfiler::DisableTracerCLRProfiler()
     Shutdown();
 }
 
+bool CorProfiler::WaitForPendingRejitWork(unsigned int timeoutMilliseconds)
+{
+    if (rejit_handler == nullptr)
+    {
+        return false;
+    }
+
+    // The ReJIT work offloader runs its items in order: once this one ran, everything queued before it did too (the
+    // ReJIT requests of the modules the host loaded). Abandoned (shutdown, failure), it releases the wait as well.
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    auto item = std::make_unique<RejitWorkItem>([promise]() { promise->set_value(); },
+                                                [promise]() { promise->set_value(); });
+    if (!rejit_handler->Enqueue(std::move(item)))
+    {
+        return false;
+    }
+
+    return future.wait_for(std::chrono::milliseconds(timeoutMilliseconds)) == std::future_status::ready;
+}
+
+bool CorProfiler::ProcessCallSites(ModuleID moduleId, mdToken methodToken)
+{
+    // What JITCompilationStarted does for the call sites, without its other work (the startup hook): the host has no JIT
+    // events. The dataflow requests the ReJIT of the methods it rewrites, like at runtime.
+    auto dataflow = _dataflow;
+    if (dataflow == nullptr || rejit_handler == nullptr)
+    {
+        return false;
+    }
+
+    const auto module = rejit_handler->GetModuleWithLifetime(moduleId);
+    if (module.lifetime == nullptr)
+    {
+        return false;
+    }
+
+    return dataflow->JITCompilationStarted(module, methodToken);
+}
+
+bool CorProfiler::IsCallSiteModuleExcluded(ModuleID moduleId)
+{
+    // The modules the dataflow doesn't rewrite (excluded assemblies): the host doesn't need to visit their methods.
+    auto dataflow = _dataflow;
+    if (dataflow == nullptr)
+    {
+        return true;
+    }
+
+    return dataflow->IsModuleExcluded(moduleId);
+}
+
 void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
