@@ -127,7 +127,7 @@ internal sealed class GitInfo : IGitInfo
     public static IGitInfo GetCurrent()
     {
         List<string>? errors = null;
-        List<string> searchPaths = new();
+        List<string> searchPaths = new() { Environment.CurrentDirectory };
 
         var baseDirectory = AppContext.BaseDirectory;
         if (!baseDirectory.Contains("/dotnet/sdk") && !string.IsNullOrWhiteSpace(RuntimeFolder) && !baseDirectory.Contains(RuntimeFolder))
@@ -137,8 +137,6 @@ internal sealed class GitInfo : IGitInfo
                 searchPaths.Add(baseDirectory);
             }
         }
-
-        searchPaths.Add(Environment.CurrentDirectory);
 
         DirectoryInfo? gitDirectory = null;
         foreach (var sp in searchPaths)

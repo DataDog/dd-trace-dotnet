@@ -7,7 +7,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -62,19 +61,23 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 localGitInfo.Errors.Add($"Error getting branch name: {branchOutput?.Error}");
             }
 
-            var tagOutput = GitCommandHelper.RunGitCommand(
-                localGitInfo.SourceRoot,
-                "tag --points-at HEAD",
-                MetricTags.CIVisibilityCommands.GetBranch);
-            if (tagOutput?.ExitCode == 0 && !StringUtil.IsNullOrEmpty(tagOutput.Output))
+            if (StringUtil.IsNullOrEmpty(localGitInfo.Branch))
             {
-                localGitInfo.Tag = tagOutput.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                var tagOutput = GitCommandHelper.RunGitCommand(
+                    localGitInfo.SourceRoot,
+                    "tag --points-at HEAD",
+                    MetricTags.CIVisibilityCommands.GetBranch);
+                if (tagOutput?.ExitCode == 0 && !StringUtil.IsNullOrEmpty(tagOutput.Output))
+                {
+                    var tags = tagOutput.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+                    localGitInfo.Tag = tags.Length == 1 ? tags[0] : null;
+                }
             }
 
             // Get the remaining data from the log -1
             var gitLogOutput = GitCommandHelper.RunGitCommand(
                 localGitInfo.SourceRoot,
-                """log -1 --pretty='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""",
+                "log --no-show-signature -1 --pretty=%H%x00%at%x00%an%x00%ae%x00%ct%x00%cn%x00%ce%x00%B",
                 MetricTags.CIVisibilityCommands.Fetch);
             if (gitLogOutput?.ExitCode != 0)
             {
@@ -82,7 +85,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 return false;
             }
 
-            var gitLogDataArray = gitLogOutput.Output.Trim().Split(["|,|"], StringSplitOptions.None);
+            var gitLogDataArray = gitLogOutput.Output.Trim().Split(['\0'], 8, StringSplitOptions.None);
             if (gitLogDataArray.Length < 8)
             {
                 localGitInfo.Errors.Add($"Git log output does not contain the expected number of fields: {gitLogOutput.Output}");
@@ -110,16 +113,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             localGitInfo.CommitterDate = DateTimeOffset.FromUnixTimeSeconds(committerUnixDate);
             localGitInfo.CommitterName = gitLogDataArray[5];
             localGitInfo.CommitterEmail = gitLogDataArray[6];
-            localGitInfo.Message = string.Join("|,|", gitLogDataArray.Skip(7)).Trim();
-            if (localGitInfo.Commit.StartsWith("'"))
-            {
-                localGitInfo.Commit = localGitInfo.Commit.Substring(1);
-            }
-
-            if (localGitInfo.Message.EndsWith("'"))
-            {
-                localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1).Trim();
-            }
+            localGitInfo.Message = gitLogDataArray[7].Trim();
         }
         catch (Exception ex)
         {

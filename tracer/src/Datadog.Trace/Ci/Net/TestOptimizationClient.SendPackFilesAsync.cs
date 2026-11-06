@@ -35,7 +35,13 @@ internal sealed partial class TestOptimizationClient
     {
         Log.Debug("TestOptimizationClient: Packing and sending delta of commits and tree objects...");
 
-        var packFilesObject = GetObjectsPackFileFromWorkingDirectory(commitsToInclude, commitsToExclude);
+        commitSha = StringUtil.IsNullOrEmpty(_commitSha) ? commitSha : _commitSha;
+        if (!GitCommandHelper.IsValidCommitSha(commitSha))
+        {
+            return 0;
+        }
+
+        var packFilesObject = GetObjectsPackFileFromWorkingDirectory(commitSha, commitsToInclude, commitsToExclude);
         if (packFilesObject.Files.Length == 0)
         {
             return 0;
@@ -48,7 +54,6 @@ internal sealed partial class TestOptimizationClient
 
         _packFileUrl ??= GetUriFromPath(PackFileUrlPath);
 
-        commitSha = StringUtil.IsNullOrEmpty(_commitSha) ? commitSha : _commitSha;
         var jsonPushedSha = JsonHelper.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, null), _repositoryUrl), SerializerSettings);
         Log.Debug("TestOptimizationClient: ObjPack.JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
@@ -119,7 +124,7 @@ internal sealed partial class TestOptimizationClient
         return totalUploadSize;
     }
 
-    private ObjectPackFilesResult GetObjectsPackFileFromWorkingDirectory(string[]? commitsToInclude, string[]? commitsToExclude)
+    private ObjectPackFilesResult GetObjectsPackFileFromWorkingDirectory(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
     {
         Log.Debug("TestOptimizationClient: Getting objects...");
         commitsToInclude ??= [];
@@ -127,7 +132,7 @@ internal sealed partial class TestOptimizationClient
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
+        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --max-count=1000 " + commitSha + " " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
         var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {

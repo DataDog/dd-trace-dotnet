@@ -6,7 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,6 +16,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [Trait("Area", "CIVisibility")]
+    [Collection(nameof(CIEnvironmentVariableTests))]
     public class GitParserTests
     {
         public static IEnumerable<object[]> GetData()
@@ -169,6 +172,67 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             gitInfo.SourceRoot.Should().NotBeNullOrEmpty();
         }
 
+        [SkippableTheory]
+        [InlineData(false, false, null)]
+        [InlineData(true, false, "v1")]
+        [InlineData(true, true, null)]
+        public void OnlyReportsAnUnambiguousDetachedTag(bool detached, bool multiple, string expected)
+        {
+            using var checkout = new GitCheckout();
+            if (detached)
+            {
+                File.WriteAllText(Path.Combine(checkout.Root, ".git", "HEAD"), "5b6f3a6dab5972d73a56dff737bd08d995255c08\n");
+            }
+
+            var tags = Path.Combine(checkout.Root, ".git", "refs", "tags");
+            Directory.CreateDirectory(tags);
+            File.WriteAllText(Path.Combine(tags, "v1"), "5b6f3a6dab5972d73a56dff737bd08d995255c08\n");
+            if (multiple)
+            {
+                File.WriteAllText(Path.Combine(tags, "stable"), "5b6f3a6dab5972d73a56dff737bd08d995255c08\n");
+            }
+
+            GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var info).Should().BeTrue();
+            info!.Tag.Should().Be(expected);
+        }
+
+        [SkippableFact]
+        public void PreservesAuthorSeparatorsAndTrailingMessageQuotes()
+        {
+            using var checkout = new GitCheckout();
+            var tree = GitCommandHelper.RunGitCommand(checkout.Root, "rev-parse HEAD^{tree}", MetricTags.CIVisibilityCommands.GetHead)!.Output.Trim();
+            var message = "Update [\"a\",\"b\"]'";
+            var content = $"tree {tree}\nauthor Author|,|Name <author@example.com> 1 +0000\ncommitter Committer <committer@example.com> 2 +0000\n\n{message}\n";
+            var sha = GitCommandHelper.RunGitCommand(checkout.Root, "hash-object -t commit -w --stdin", MetricTags.CIVisibilityCommands.GetHead, input: content, useCache: false)!.Output.Trim();
+            File.WriteAllText(Path.Combine(checkout.Root, ".git", "HEAD"), sha + "\n");
+
+            GitCommandGitInfoProvider.Instance.TryGetFrom(checkout.Root, out var info).Should().BeTrue();
+            info!.AuthorName.Should().Be("Author|,|Name");
+            info.Message.Should().Be(message);
+        }
+
+        [SkippableFact]
+        public void UsesTheCurrentCheckoutRootAndSelectedCommitHistory()
+        {
+            using var checkout = new GitCheckout();
+            var originalDirectory = Environment.CurrentDirectory;
+            try
+            {
+                Environment.CurrentDirectory = checkout.Root;
+                GitInfo.GetCurrent().SourceRoot.Should().Be(Environment.CurrentDirectory);
+            }
+            finally
+            {
+                Environment.CurrentDirectory = originalDirectory;
+            }
+
+            var selected = "98cd7c8e9cf71e02dc28bd9b13928bee0f85b74c";
+            var commits = GitCommandHelper.GetLocalCommits(checkout.Root, selected);
+            commits.Should().StartWith(selected).And.NotContain("5b6f3a6dab5972d73a56dff737bd08d995255c08");
+            GitCommandHelper.GetLocalCommits(checkout.Root, new string('f', 40)).Should().BeEmpty();
+            GitCommandHelper.GetLocalCommits(checkout.Root, "--all").Should().BeEmpty();
+        }
+
         public class TestItem : IXunitSerializable
         {
             public TestItem()
@@ -233,6 +297,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
 
             public override string ToString() => $"GitFolderPath={GitFolderPath}";
+        }
+
+        private sealed class GitCheckout : IDisposable
+        {
+            public GitCheckout()
+            {
+                Root = Path.Combine(Path.GetTempPath(), "dd-git-precedence-" + Guid.NewGuid().ToString("N"));
+                var destination = Path.Combine(Root, ".git");
+                var fixture = Path.Combine(DataHelpers.GetCiDataDirectory(), "gitdata-02");
+                Directory.CreateDirectory(destination);
+                foreach (var folder in Directory.EnumerateDirectories(fixture, "*", SearchOption.AllDirectories))
+                {
+                    Directory.CreateDirectory(Path.Combine(destination, folder.Substring(fixture.Length + 1)));
+                }
+
+                foreach (var file in Directory.EnumerateFiles(fixture, "*", SearchOption.AllDirectories))
+                {
+                    File.Copy(file, Path.Combine(destination, file.Substring(fixture.Length + 1)));
+                }
+            }
+
+            public string Root { get; }
+
+            public void Dispose() => Directory.Delete(Root, recursive: true);
         }
     }
 }

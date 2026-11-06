@@ -736,18 +736,40 @@ internal static class GitCommandHelper
     /// Retrieves a list of local commits from the repository located at <paramref name="workingDirectory"/>.
     /// </summary>
     /// <param name="workingDirectory">Path to the git working directory.</param>
+    /// <param name="commitSha">Selected commit to walk instead of HEAD, when provided.</param>
     /// <returns>String array containing commit SHAs, or an empty array if no commits are found.</returns>
-    public static string[] GetLocalCommits(string workingDirectory)
+    public static string[] GetLocalCommits(string workingDirectory, string? commitSha = null)
     {
-        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
-        if (gitLogOutput is null)
+        if (!StringUtil.IsNullOrEmpty(commitSha) && !IsValidCommitSha(commitSha))
+        {
+            return [];
+        }
+
+        var revision = StringUtil.IsNullOrEmpty(commitSha) ? string.Empty : $" {commitSha} --";
+        var gitLogOutput = RunGitCommand(workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"" + revision, MetricTags.CIVisibilityCommands.GetLocalCommits);
+        if (gitLogOutput is null || gitLogOutput.ExitCode != 0)
         {
             Log.Warning("TestOptimizationClient: 'git log...' command is null");
             return [];
         }
 
-        return gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
+        var commits = gitLogOutput.Output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        if (!StringUtil.IsNullOrEmpty(commitSha) && !commits.Contains(commitSha, StringComparer.OrdinalIgnoreCase))
+        {
+            var selected = RunGitCommand(workingDirectory, $"rev-parse --verify {commitSha}^{{commit}}", MetricTags.CIVisibilityCommands.GetHead);
+            if (selected?.ExitCode != 0 || !string.Equals(selected.Output.Trim(), commitSha, StringComparison.OrdinalIgnoreCase))
+            {
+                return [];
+            }
+
+            return [commitSha, .. commits];
+        }
+
+        return commits;
     }
+
+    internal static bool IsValidCommitSha(string commitSha)
+        => Regex.IsMatch(commitSha, @"\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z", RegexOptions.IgnoreCase);
 
     private static void CheckAndFetchBranch(string workingDirectory, string branch, string remoteName)
     {

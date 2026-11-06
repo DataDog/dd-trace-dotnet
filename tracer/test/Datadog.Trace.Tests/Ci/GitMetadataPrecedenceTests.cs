@@ -20,6 +20,7 @@ public class GitMetadataPrecedenceTests
     [InlineData("override")]
     [InlineData("partial")]
     [InlineData("credentials")]
+    [InlineData("sha-only")]
     public void SelectsGitMetadataAsOneSource(string source)
     {
         var variables = new Dictionary<string, string>();
@@ -38,6 +39,11 @@ public class GitMetadataPrecedenceTests
             variables["DD_GIT_COMMIT_COMMITTER_DATE"] = "2025-01-02T01:02:03+00:00";
         }
 
+        if (source == "sha-only")
+        {
+            variables["DD_GIT_COMMIT_SHA"] = new string('c', 40);
+        }
+
         if (source == "credentials")
         {
             variables["DD_GIT_REPOSITORY_URL"] = "invalid URL";
@@ -47,6 +53,7 @@ public class GitMetadataPrecedenceTests
         if (source != "provider")
         {
             local.Commit = new string('a', 40);
+            local.SourceRoot = "local-source-root";
             if (source != "partial")
             {
                 local.Repository = source == "credentials" ? "https://username:password@example.com/local.git" : "https://example.com/local.git";
@@ -66,20 +73,22 @@ public class GitMetadataPrecedenceTests
         values.Load(local);
 
         var prefix = source switch { "provider" => "provider", "override" => "user", _ => "local" };
-        var expectedSha = source switch { "provider" => new string('b', 40), "override" => new string('c', 40), _ => new string('a', 40) };
+        var expectedSha = source switch { "provider" => new string('b', 40), "override" or "sha-only" => new string('c', 40), _ => new string('a', 40) };
         values.Commit.Should().Be(expectedSha);
         values.Repository.Should().Be(source == "partial" ? null : $"https://example.com/{prefix}.git");
         values.Branch.Should().Be(source == "partial" ? null : $"{prefix}-branch");
         values.Tag.Should().Be(source == "partial" ? null : $"{prefix}-tag");
-        values.Message.Should().Be(source == "partial" ? null : $"{prefix}-message");
-        values.AuthorName.Should().Be(source == "partial" ? null : $"{prefix}-author");
-        values.AuthorEmail.Should().Be(source == "partial" ? null : $"{prefix}-author@example.com");
-        values.CommitterName.Should().Be(source == "partial" ? null : $"{prefix}-committer");
-        values.CommitterEmail.Should().Be(source == "partial" ? null : $"{prefix}-committer@example.com");
-        values.AuthorDate.Should().Be(source == "provider" ? DateTimeOffset.FromUnixTimeSeconds(3) : source == "override" ? new DateTimeOffset(2025, 1, 1, 1, 2, 3, TimeSpan.Zero) : local.AuthorDate);
-        values.CommitterDate.Should().Be(source == "provider" ? DateTimeOffset.FromUnixTimeSeconds(4) : source == "override" ? new DateTimeOffset(2025, 1, 2, 1, 2, 3, TimeSpan.Zero) : local.CommitterDate);
+        values.Message.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-message");
+        values.AuthorName.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-author");
+        values.AuthorEmail.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-author@example.com");
+        values.CommitterName.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-committer");
+        values.CommitterEmail.Should().Be(source is "partial" or "sha-only" ? null : $"{prefix}-committer@example.com");
+        values.AuthorDate.Should().Be(source == "sha-only" ? null : source == "provider" ? DateTimeOffset.FromUnixTimeSeconds(3) : source == "override" ? new DateTimeOffset(2025, 1, 1, 1, 2, 3, TimeSpan.Zero) : local.AuthorDate);
+        values.CommitterDate.Should().Be(source == "sha-only" ? null : source == "provider" ? DateTimeOffset.FromUnixTimeSeconds(4) : source == "override" ? new DateTimeOffset(2025, 1, 2, 1, 2, 3, TimeSpan.Zero) : local.CommitterDate);
         values.PipelineId.Should().Be("pipeline");
         values.PrBaseBranch.Should().Be("main");
+        values.SourceRoot.Should().Be(source == "provider" ? "provider-source-root" : "local-source-root");
+        values.WorkspacePath.Should().Be("provider-workspace");
     }
 
     private sealed class TestValues(Dictionary<string, string> variables) : CIEnvironmentValues<DictionaryValuesProvider>(new DictionaryValuesProvider(variables))
@@ -100,6 +109,8 @@ public class GitMetadataPrecedenceTests
             CommitterEmail = "provider-committer@example.com";
             CommitterDate = DateTimeOffset.FromUnixTimeSeconds(4);
             PipelineId = "pipeline";
+            SourceRoot = "provider-source-root";
+            WorkspacePath = "provider-workspace";
             PrBaseBranch = "main";
         }
     }

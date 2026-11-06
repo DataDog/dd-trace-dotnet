@@ -85,6 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
+            using var checkout = new TemporaryDirectory();
             var context = new SpanContext(null, null, null);
             var time = DateTimeOffset.UtcNow;
             var testIndex = -1;
@@ -95,7 +96,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 testIndex++;
 
                 var span = new Span(context, time);
-                CIEnvironmentValues.Create(envData).DecorateSpan(span);
+                var values = CIEnvironmentValues.Create(envData);
+                values.GitSearchFolder = checkout.Root;
+                values.DecorateSpan(span);
 
                 foreach (var spanDataItem in spanData)
                 {
@@ -460,6 +463,19 @@ Some random log line here
             }
 
             public override string ToString() => $"Name={Name}";
+        }
+
+        private sealed class TemporaryDirectory : IDisposable
+        {
+            public TemporaryDirectory()
+            {
+                Root = Path.Combine(Path.GetTempPath(), "dd-ci-provider-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(Root);
+            }
+
+            public string Root { get; }
+
+            public void Dispose() => Directory.Delete(Root, recursive: true);
         }
     }
 }

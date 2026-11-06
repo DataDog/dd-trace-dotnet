@@ -144,6 +144,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
         if (!StringUtil.IsNullOrEmpty(gitInfo.Commit))
         {
+            SourceRoot = gitInfo.SourceRoot;
             Repository = RemoveSensitiveInformationFromUrl(gitInfo.Repository);
             Branch = gitInfo.Branch;
             Tag = gitInfo.Tag;
@@ -163,7 +164,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         if (!StringUtil.IsNullOrEmpty(HeadCommit))
         {
             // fetching commit data from head commit
-            if (GitCommandHelper.FetchCommitData(WorkspacePath ?? Environment.CurrentDirectory, HeadCommit) is { } commitData &&
+            if (GitCommandHelper.FetchCommitData(SourceRoot ?? WorkspacePath ?? Environment.CurrentDirectory, HeadCommit) is { } commitData &&
                 commitData.CommitSha == HeadCommit)
             {
                 HeadAuthorDate = commitData.AuthorDate;
@@ -240,6 +241,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // If not set use the default value
                 return false;
             });
+        var collectedCommit = Commit;
         Commit = GetVariableIfIsNotEmpty(
             ConfigurationKeys.CIVisibility.GitCommitSha,
             Commit,
@@ -274,6 +276,17 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // If not set use the default value
                 return false;
             });
+        if (!string.Equals(collectedCommit, Commit, StringComparison.OrdinalIgnoreCase))
+        {
+            Message = null;
+            AuthorName = null;
+            AuthorEmail = null;
+            AuthorDate = null;
+            CommitterName = null;
+            CommitterEmail = null;
+            CommitterDate = null;
+        }
+
         Message = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitMessage, Message);
         AuthorName = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitAuthorName, AuthorName);
         AuthorEmail = GetVariableIfIsNotEmpty(ConfigurationKeys.CIVisibility.GitCommitAuthorEmail, AuthorEmail);
