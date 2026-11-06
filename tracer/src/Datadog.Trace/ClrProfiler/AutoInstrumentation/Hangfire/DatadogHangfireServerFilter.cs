@@ -24,7 +24,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerforming(object context)
         {
-            if (!context.TryDuckCast<IPerformingContextProxy>(out var performingContext))
+            // A job can see this filter twice when its providers combine two filter collections.
+            if (!context.TryDuckCast<IPerformingContextProxy>(out var performingContext)
+             || performingContext.Items.ContainsKey(HangfireConstants.DatadogScopeKey))
             {
                 return;
             }
@@ -39,7 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
 
             var parentContext = propagationContext.SpanContext;
             Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(), performingContext, parentContext);
-            ((Dictionary<string, object?>)performingContext.Items).Add(HangfireConstants.DatadogScopeKey, scope);
+            performingContext.Items[HangfireConstants.DatadogScopeKey] = scope;
+            performingContext.Items[HangfireConstants.DatadogScopeOwnerKey] = this;
         }
 
         /// <summary>
@@ -49,12 +52,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
-            if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
+            // Only the instance that started the scope ends it, so filters between duplicates stay inside the span.
+            if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext)
+             && performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeOwnerKey, out var owner)
+             && ReferenceEquals(owner, this))
             {
+                performedContext.Items.Remove(HangfireConstants.DatadogScopeOwnerKey);
                 try
                 {
                     if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope))
                     {
+                        performedContext.Items.Remove(HangfireConstants.DatadogScopeKey);
                         if (scope is not Scope typedScope)
                         {
                             return;
@@ -73,6 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                     if (performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var baggageScope)
                      && baggageScope is BaggageScope typedBaggageScope)
                     {
+                        performedContext.Items.Remove(HangfireConstants.DatadogBaggageKey);
                         typedBaggageScope.Dispose();
                     }
                 }

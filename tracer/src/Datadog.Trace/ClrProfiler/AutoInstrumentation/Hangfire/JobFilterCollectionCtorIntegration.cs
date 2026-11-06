@@ -6,7 +6,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -30,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 public sealed class JobFilterCollectionCtorIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionCtorIntegration));
-    private static int _filtersRegistered = 1;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : IJobFilterCollectionProxy
@@ -47,13 +45,9 @@ public sealed class JobFilterCollectionCtorIntegration
             return CallTargetReturn.GetDefault();
         }
 
-        if (Interlocked.Exchange(ref _filtersRegistered, 0) != 1)
-        {
-            // filters already registered, skip injection of datadog job filter
-            return CallTargetReturn.GetDefault();
-        }
-
-        HangfireCommon.CreateDatadogFilter(out var serverFilter, out var clientFilter);
+        // Hangfire reads GlobalJobFilters.Filters, but jobs can also take filters from an application
+        // collection, so every collection gets the filters; they are idempotent when combined.
+        HangfireCommon.CreateDatadogFilter(instance.Type.Assembly, out var serverFilter, out var clientFilter);
         if (serverFilter is not null && clientFilter is not null)
         {
             instance.Add(serverFilter);

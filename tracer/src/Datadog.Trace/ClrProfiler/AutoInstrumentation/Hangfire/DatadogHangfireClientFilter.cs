@@ -29,8 +29,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
-            if (context.TryDuckCast<ICreatingContextProxy>(out var creatingContext))
+            if (context.TryDuckCast<ICreatingContextProxy>(out var creatingContext)
+             && !creatingContext.Items.ContainsKey(HangfireConstants.DatadogContextKey))
             {
+                creatingContext.Items[HangfireConstants.DatadogContextKey] = true;
                 PropagationContext contextToInject = new PropagationContext(scope.Span.Context, Baggage.Current, null);
                 var contextDetails = new Dictionary<string, string>();
                 Tracer.Instance.TracerManager.SpanContextPropagator.Inject(contextToInject, contextDetails, HangfireCommon.InjectSpanProperties);

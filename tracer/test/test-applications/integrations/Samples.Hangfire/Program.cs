@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Hangfire;
+using Hangfire.Common;
 using Hangfire.MemoryStorage;
 using Hangfire.States;
 using Samples.Hangfire.Infrastructure;
@@ -16,6 +17,10 @@ public class Program
     private static readonly ActivitySource AdditionalActivitySource = new("AdditionalActivitySource");
     public static async Task Main(string[] args)
     {
+        var scenario = args.Length > 0 ? args[0] : string.Empty;
+        // Application filter collections, built before GlobalJobFilters.
+        var customFilters = scenario.StartsWith("custom-filter") ? new JobFilterCollection() : null;
+
         GlobalConfiguration.Configuration
                            .UseSimpleAssemblyNameTypeSerializer()
                            .UseRecommendedSerializerSettings()
@@ -30,7 +35,15 @@ public class Program
         GlobalJobFilters.Filters.Add(new JobCompletionFilter());
 
         Console.WriteLine("Starting Hangfire server...");
-        var isBaggageScenario = args.Length > 0 && args[0] == "baggage";
+        if (scenario == "custom-filter-combined")
+        {
+            // Client and server read both collections, so each Datadog filter runs twice per job,
+            // with this global filter between the two copies.
+            GlobalJobFilters.Filters.Add(new PostPerformSpanFilter());
+            JobFilterProviders.Providers.Add(customFilters!);
+        }
+
+        var isBaggageScenario = scenario == "baggage";
         using var server = CreateServer(isBaggageScenario);
 
         try
@@ -48,6 +61,19 @@ public class Program
             if (isBaggageScenario)
             {
                 await Should_Not_Accumulate_Baggage_Across_Jobs();
+                return;
+            }
+
+            if (scenario == "custom-filter-provider")
+            {
+                // The client reads only the application collection.
+                await Should_Create_Span(new BackgroundJobClient(JobStorage.Current, customFilters!));
+                return;
+            }
+
+            if (customFilters is not null)
+            {
+                await Should_Create_Span();
                 return;
             }
 
@@ -106,9 +132,9 @@ public class Program
         Console.WriteLine($"Job {result.JobId} completed successfully = {result.Succeeded}");
     }
 
-    private static async Task Should_Create_Span()
+    private static async Task Should_Create_Span(IBackgroundJobClient? client = null)
     {
-        var jobId = BackgroundJob.Enqueue<TestJob>(x => x.Execute());
+        var jobId = client is null ? BackgroundJob.Enqueue<TestJob>(x => x.Execute()) : client.Enqueue<TestJob>(x => x.Execute());
 
         var result = await JobCompletion.Register(jobId, new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token);
 
