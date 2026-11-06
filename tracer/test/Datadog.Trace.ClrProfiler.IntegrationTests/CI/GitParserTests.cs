@@ -299,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         [SkippableTheory]
         [CombinatorialData]
-        public async Task RecoversTheSelectedCommitBeforeUploadingAShallowCheckout(bool remoteAvailable)
+        public async Task RecoversTheSelectedCommitBeforeUploadingAShallowCheckout(bool remoteAvailable, bool unrelated)
         {
             using var remote = new GitCheckout();
             string Run(string arguments, string input = null)
@@ -313,10 +313,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var tree = Run("hash-object -t tree -w --stdin", string.Empty);
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var selected = Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nselected\n");
-            var head = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {selected}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nhead\n");
+            var root = unrelated ? Run("hash-object -t commit -w --stdin", $"tree {tree}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nother root\n") : selected;
+            var middle = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {root}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nmiddle\n");
+            var head = Run("hash-object -t commit -w --stdin", $"tree {tree}\nparent {middle}\nauthor Test <test@example.com> {timestamp} +0000\ncommitter Test <test@example.com> {timestamp} +0000\n\nhead\n");
             Run("update-ref refs/heads/juan-fernandez/shallow-tip " + head);
             var checkout = Path.Combine(remote.Root, "shallow");
-            Run($"clone --depth=1 --no-local --branch juan-fernandez/shallow-tip \"{remote.Root}\" \"{checkout}\"");
+            Run($"clone --depth=2 --no-local --branch juan-fernandez/shallow-tip \"{remote.Root}\" \"{checkout}\"");
             if (!remoteAvailable)
             {
                 Run($"-C \"{checkout}\" remote set-url origin \"{Path.Combine(remote.Root, "unavailable")}\"");

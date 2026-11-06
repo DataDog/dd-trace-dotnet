@@ -69,7 +69,7 @@ internal sealed partial class TestOptimizationClient
             // After asking for 2 logs lines, if the git log command returns just one commit sha, we reconfigure the repo
             // to ask for git commits and trees of the last month (no blobs)
             var shallowLogArray = gitShallowLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
-            if (shallowLogArray.Length == 1)
+            if (shallowLogArray.Length == 1 || !initialCommitData.HasCommits)
             {
                 // Just one commit SHA. Fetching previous commits
 
@@ -82,11 +82,18 @@ internal sealed partial class TestOptimizationClient
 
                 // git rev-parse HEAD
                 var headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
-                var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
+                var recoverSelected = !initialCommitData.HasCommits && GitCommandHelper.IsValidCommitSha(_commitSha);
+                var head = recoverSelected ? _commitSha : headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
+                var depth = recoverSelected ? "--depth=1" : "--shallow-since=\"1 month ago\"";
 
                 // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
                 Log.Information("TestOptimizationClient: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch {depth} --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow, useCache: false);
+
+                if (recoverSelected && (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0))
+                {
+                    return 0;
+                }
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
                 {
