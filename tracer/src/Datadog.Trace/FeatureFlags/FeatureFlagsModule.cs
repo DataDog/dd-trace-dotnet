@@ -142,6 +142,10 @@ namespace Datadog.Trace.FeatureFlags
 
         internal bool EvaluationEventsEnabled => _settings.EvaluationEventsEnabled;
 
+        [TestingOnly]
+        internal void SetEvaluationWriterForTesting(FlagEvaluationWriter? writer)
+            => Volatile.Write(ref _availableEvaluationWriter, writer);
+
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
@@ -1018,21 +1022,6 @@ namespace Datadog.Trace.FeatureFlags
             return ExposureRecordResult.NotRecorded;
         }
 
-        private void ReportDependencyEvaluation(DependencyEvaluation dependency)
-        {
-            var writer = Volatile.Read(ref _availableEvaluationWriter);
-            if (writer is null)
-            {
-                return;
-            }
-
-            var evaluation = dependency.Evaluation;
-            var consent = HasFullEvaluationDataConsent(evaluation);
-            var flattenOmissions = ContextOmissionReason.None;
-            var attributes = consent ? DependencyEvaluation.FlattenContext(dependency.ContextAttributes, out flattenOmissions) : null;
-            ReportDependencyEvaluation(writer, dependency, consent, attributes, flattenOmissions);
-        }
-
         private void ReportDependencyEvaluations(IReadOnlyList<DependencyEvaluation> dependencies, FlagEvaluationWriter? writer)
         {
             if (writer is null || dependencies.Count == 0)
@@ -1105,7 +1094,8 @@ namespace Datadog.Trace.FeatureFlags
             // Legacy SDKs rely on this compatibility path for their root event. Avoid detaching a
             // consented context when delivery is unavailable; the snapshot can visit up to 1,280
             // nodes and ReportDependencyEvaluation would discard it immediately.
-            if (Volatile.Read(ref _availableEvaluationWriter) is null)
+            var writer = Volatile.Read(ref _availableEvaluationWriter);
+            if (writer?.HasCapacity() != true)
             {
                 return;
             }
@@ -1114,7 +1104,10 @@ namespace Datadog.Trace.FeatureFlags
             {
                 var consent = HasFullEvaluationDataConsent(evaluation);
                 var attributes = DependencyEvaluation.SnapshotContext(context, consent, out var omissions);
-                ReportDependencyEvaluation(DependencyEvaluation.Snapshot(evaluation, evaluationTime, context.TargetingKey, attributes, omissions));
+                var dependency = DependencyEvaluation.Snapshot(evaluation, evaluationTime, context.TargetingKey, attributes, omissions);
+                var flattenOmissions = ContextOmissionReason.None;
+                var flattenedAttributes = consent ? DependencyEvaluation.FlattenContext(dependency.ContextAttributes, out flattenOmissions) : null;
+                ReportDependencyEvaluation(writer, dependency, consent, flattenedAttributes, flattenOmissions);
             }
             catch
             {
@@ -1158,6 +1151,10 @@ namespace Datadog.Trace.FeatureFlags
                 return exposureApi;
             }
         }
+
+        [TestingOnly]
+        internal void SetExposureApiForTesting(ExposureApi exposureApi)
+            => Volatile.Write(ref _exposureApi, exposureApi);
 
         private sealed class PendingExposureBatch(string rootFlagKey, IReadOnlyList<ExposureEvent> exposures)
         {

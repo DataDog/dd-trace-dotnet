@@ -75,6 +75,8 @@ public class ExposureCommitTests
             client.GetBooleanDetailsAsync("right", false));
 
         batches.Should().HaveCount(2);
+        // FluentAssertions captures these predicates as expression trees, which cannot contain
+        // collection expressions (CS9175).
         batches.Should().Contain(batch => batch.SequenceEqual(new[] { "left-dependency", "left" }));
         batches.Should().Contain(batch => batch.SequenceEqual(new[] { "right-dependency", "right" }));
     }

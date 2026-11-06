@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -193,7 +192,7 @@ public class DeferredExposureTests
                 }
             });
         using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
-        typeof(FeatureFlagsModule).GetField("_exposureApi", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(module, exposures);
+        module.SetExposureApiForTesting(exposures);
         module.ApplyConfiguration(new ServerConfiguration { Flags = flags }).Should().BeTrue();
 
         var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true, reportRootEvaluation: false);

@@ -151,7 +151,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             }).Should().BeTrue();
             var attributes = new ThrowOnEnumerationDictionary();
 
-            var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", attributes, deferExposure: true, reportRootEvaluation: false);
+            var evaluation = module.Evaluate("root", FeatureFlagsValueType.String, "fallback", "subject", attributes, deferExposure: true, reportRootEvaluation: true);
 
             evaluation.Value.Should().Be("value");
             attributes.WasEnumerated.Should().BeFalse("a closed writer must select evaluation without dependency telemetry collection");
@@ -160,6 +160,63 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         }
         finally
         {
+            await module.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ClosedOrFullWriterSkipsLegacyRootTelemetrySnapshot(bool closed)
+    {
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var writer = new FlagEvaluationWriter(
+            _ =>
+            {
+                entered.TrySetResult(true);
+                return release.Task;
+            },
+            new Dictionary<string, string>(),
+            queueCap: 1,
+            flushInterval: TimeSpan.FromHours(1));
+        var settings = Settings(8126, "remote_config");
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
+        try
+        {
+            if (closed)
+            {
+                await writer.CloseAsync(TimeSpan.FromSeconds(2));
+            }
+            else
+            {
+                writer.TryEnqueue(Observation()).Should().BeTrue();
+                _ = writer.FlushAsync();
+                await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                writer.TryEnqueue(Observation()).Should().BeTrue("the second observation must fill the bounded queue");
+            }
+
+            writer.HasCapacity().Should().BeFalse();
+            module.SetEvaluationWriterForTesting(writer);
+            var flag = FeatureFlagsHelpers.CreateExposureFlag();
+            flag.Allocations![0].DoLog = false;
+            module.ApplyConfiguration(new ServerConfiguration
+            {
+                ObserveFullEvaluationData = true,
+                Flags = new FlagCollection { ["flag"] = flag },
+            }).Should().BeTrue();
+            var attributes = new ThrowOnEnumerationDictionary();
+
+            var evaluation = module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "subject", attributes, deferExposure: false, reportRootEvaluation: true);
+
+            evaluation.Value.Should().Be("tracked-value");
+            attributes.WasEnumerated.Should().BeFalse("closed or saturated delivery must not snapshot root context");
+        }
+        finally
+        {
+            module.SetEvaluationWriterForTesting(null);
+            release.TrySetResult(true);
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
             await module.DisposeAsync();
         }
     }
