@@ -12,12 +12,20 @@
       <Component>
         <File Id="loader.conf.x64" Source="$(var.MonitoringHomeDirectory)\win-x64\loader.conf" />
       </Component>
-      <Component>
+      <Component Id="Datadog.Trace.ClrProfiler.Native">
         <File Id="Datadog.Trace.ClrProfiler.Native"
               Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
         </File>
-
+        <!-- CompanionFile: libdatadog has no VERSIONINFO resource of its own (as of
+             this writing), so it defers its MSI version-replacement decision on
+             upgrade to this component's keypath file instead of Windows falling back
+             to unreliable created-vs-modified timestamp comparison. Must stay in the
+             same component as its companion. -->
+        <File Id="libdatadog"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\datadog_profiling_ffi.dll"
+              CompanionFile="Datadog.Trace.ClrProfiler.Native">
+        </File>
       </Component>
     </ComponentGroup>
 
@@ -28,33 +36,15 @@
       <Component>
         <File Id="loader.conf.x86" Source="$(var.MonitoringHomeDirectory)\win-x86\loader.conf" />
       </Component>
-      <Component>
+      <Component Id="Datadog.Trace.ClrProfiler.Native.32">
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
-      </Component>
-    </ComponentGroup>
-
-    <?if $(var.Win64) = yes ?>
-    <ComponentGroup Id="Shared.Files.Libdatadog.64" Directory="INSTALLFOLDER.win_x64">
-      <Component>
-        <File Id="libdatadog"
-              Source="$(var.MonitoringHomeDirectory)\win-x64\datadog_profiling_ffi.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-    </ComponentGroup>
-
-    <?endif ?>
-
-    <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
-    <ComponentGroup Id="Shared.Files.Libdatadog.32" Directory="INSTALLFOLDER.win_x86">
-      <Component>
         <File Id="libdatadog.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\datadog_profiling_ffi.dll"
-              Checksum="yes">
+              CompanionFile="Datadog.Trace.ClrProfiler.Native.32">
         </File>
       </Component>
     </ComponentGroup>
