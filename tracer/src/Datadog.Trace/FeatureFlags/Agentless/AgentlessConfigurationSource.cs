@@ -32,7 +32,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 {
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
-
     private static readonly TimeSpan FirstRetryMin = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan FirstRetryMax = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan SecondRetryMin = TimeSpan.FromSeconds(5);
@@ -270,7 +269,6 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
             new("Accept-Encoding", "gzip"),
             new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
             new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.SemanticVersion),
-
             // Without this the poll is itself instrumented, producing a span per poll and letting
             // auto-instrumentation recurse through the poller's own client.
             new(HttpHeaderNames.TracingEnabled, "false"),
@@ -284,7 +282,7 @@ internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
         }
 
         // The endpoint is only the factory's default: both transports honour the URI passed to
-        // Create, which is what carries the current environment.
+        // Create, which is what carries the current environment and evaluator capabilities.
 #if NETCOREAPP
         return new HttpClientRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
 #else

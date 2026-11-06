@@ -31,11 +31,6 @@ internal static class FlagEvaluationContextSnapshot
     private sealed class Snapshot
     {
         private const string TargetingKey = "targetingKey";
-        private const int MaxFields = 256;
-        private const int MaxTextLength = 256;
-        private const int MaxContainerItems = 256;
-        private const int MaxDepth = 4;
-        private const int MaxVisits = 1280;
         private int _visits;
         private bool _stopped;
 
@@ -48,12 +43,12 @@ internal static class FlagEvaluationContextSnapshot
             // The root targetingKey is never captured as an attribute, so it does not consume the
             // attribute budget. A string value is reported separately as the event's targeting key.
             var attributeCount = map.Count - (depth == 0 && map.ContainsKey(TargetingKey) ? 1 : 0);
-            if (attributeCount > MaxContainerItems)
+            if (attributeCount > ContextSnapshotLimits.ContainerItems)
             {
                 Reasons |= depth == 0 ? ContextOmissionReason.MaxContextFields : ContextOmissionReason.MaxStructureProperties;
             }
 
-            var remaining = Math.Min(attributeCount, MaxContainerItems);
+            var remaining = Math.Min(attributeCount, ContextSnapshotLimits.ContainerItems);
             // Bound enumeration without collecting/sorting the input. Rebuilt oversized maps with
             // colliding key hashes can select different subsets; evaluation results are unaffected.
             using var iterator = map.GetEnumerator();
@@ -72,7 +67,7 @@ internal static class FlagEvaluationContextSnapshot
                     break;
                 }
 
-                if (pair.Key.Length > MaxTextLength || (depth != 0 && prefix.Length + 1 + pair.Key.Length > MaxTextLength))
+                if (pair.Key.Length > ContextSnapshotLimits.TextLength || (depth != 0 && prefix.Length + 1 + pair.Key.Length > ContextSnapshotLimits.TextLength))
                 {
                     Reasons |= ContextOmissionReason.MaxKeyLength;
                     continue;
@@ -90,14 +85,14 @@ internal static class FlagEvaluationContextSnapshot
                 return false;
             }
 
-            if (Fields.Count == MaxFields)
+            if (Fields.Count == ContextSnapshotLimits.Fields)
             {
                 Reasons |= ContextOmissionReason.MaxContextFields;
                 _stopped = true;
                 return false;
             }
 
-            if (_visits == MaxVisits)
+            if (_visits == ContextSnapshotLimits.Visits)
             {
                 Reasons |= ContextOmissionReason.MaxVisitedNodes;
                 _stopped = true;
@@ -110,7 +105,7 @@ internal static class FlagEvaluationContextSnapshot
 
         private void VisitValue(string key, Value? value, int depth)
         {
-            if (depth > MaxDepth)
+            if (depth > ContextSnapshotLimits.Depth)
             {
                 Reasons |= ContextOmissionReason.MaxSnapshotDepth;
                 return;
@@ -122,16 +117,16 @@ internal static class FlagEvaluationContextSnapshot
             }
             else if (value?.AsList is { } list)
             {
-                if (list.Count > MaxContainerItems)
+                if (list.Count > ContextSnapshotLimits.ContainerItems)
                 {
                     Reasons |= ContextOmissionReason.MaxListElements;
                 }
 
-                var count = Math.Min(list.Count, MaxContainerItems);
+                var count = Math.Min(list.Count, ContextSnapshotLimits.ContainerItems);
                 for (var i = 0; i < count && TryVisit(); i++)
                 {
                     var childKey = key + "." + i.ToString(CultureInfo.InvariantCulture);
-                    if (childKey.Length > MaxTextLength)
+                    if (childKey.Length > ContextSnapshotLimits.TextLength)
                     {
                         Reasons |= ContextOmissionReason.MaxKeyLength;
                         continue;
@@ -142,7 +137,7 @@ internal static class FlagEvaluationContextSnapshot
             }
             else if (value?.AsString is { } text)
             {
-                if (text.Length > MaxTextLength)
+                if (text.Length > ContextSnapshotLimits.TextLength)
                 {
                     Reasons |= ContextOmissionReason.MaxValueLength;
                 }

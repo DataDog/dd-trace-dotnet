@@ -22,6 +22,7 @@ namespace Datadog.Trace.FeatureFlags.Exposure;
 internal sealed class ExposureApi : IDisposable
 {
     private const int DefaultCapacity = 1 << 16; // 65536 elements
+    private const int DefaultBatchSize = 1_000;
     private static readonly TimeSpan DefaultSendInterval = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(10);
 
@@ -39,12 +40,15 @@ internal sealed class ExposureApi : IDisposable
     private readonly object _lifecycleLock = new();
     private readonly TimeSpan _sendInterval;
     private readonly TimeSpan _shutdownTimeout;
+    private readonly int _queueCapacity;
+    private readonly int _batchSize;
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
     private readonly ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
     private readonly FeatureFlagsEvpTransport _transport;
     private readonly IDisposable _settingsSubscription;
     private readonly IDatadogLogger _log;
     private readonly bool _datadogLoggingEnabled;
+    private readonly Action? _queueAdmissionCallback;
 
     private Dictionary<string, string> _context;
     private Task? _sendLoopTask;
@@ -55,12 +59,26 @@ internal sealed class ExposureApi : IDisposable
         FeatureFlagsEvpTransport transport,
         TimeSpan? sendInterval = null,
         TimeSpan? shutdownTimeout = null,
-        IDatadogLogger? logger = null)
+        IDatadogLogger? logger = null,
+        int queueCapacity = DefaultCapacity,
+        int batchSize = DefaultBatchSize)
     {
+        if (queueCapacity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(queueCapacity));
+        }
+
+        if (batchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(batchSize));
+        }
+
         _log = logger ?? DatadogLogging.GetLoggerFor(typeof(ExposureApi));
         _transport = transport;
         _sendInterval = sendInterval ?? DefaultSendInterval;
         _shutdownTimeout = shutdownTimeout ?? DefaultShutdownTimeout;
+        _queueCapacity = queueCapacity;
+        _batchSize = batchSize;
         _datadogLoggingEnabled = tracerSettings.FeatureFlags.ExposuresDatadogLoggingEnabled;
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
@@ -84,6 +102,18 @@ internal sealed class ExposureApi : IDisposable
             };
             Interlocked.Exchange(ref _context!, context);
         }
+    }
+
+    [TestingAndPrivateOnly]
+    internal ExposureApi(
+        TracerSettings tracerSettings,
+        FeatureFlagsEvpTransport transport,
+        TimeSpan? sendInterval,
+        TimeSpan? shutdownTimeout,
+        Action queueAdmissionCallback)
+        : this(tracerSettings, transport, sendInterval, shutdownTimeout)
+    {
+        _queueAdmissionCallback = queueAdmissionCallback;
     }
 
     public void Dispose()
@@ -119,7 +149,7 @@ internal sealed class ExposureApi : IDisposable
         _log.Debug("ExposureApi::SendLoopAsync -> Enter");
         while (!_processExit.Task.IsCompleted)
         {
-            await FlushAsync().ConfigureAwait(false);
+            await FlushPendingAsync().ConfigureAwait(false);
 
             try
             {
@@ -133,7 +163,7 @@ internal sealed class ExposureApi : IDisposable
 
         // Dispose signals the loop and then waits for this bounded final flush. This prevents the
         // common short-lived-process loss mode without allowing shutdown to hang indefinitely.
-        var flushed = await FlushAsync().ConfigureAwait(false);
+        var flushed = await FlushPendingAsync().ConfigureAwait(false);
         _log.Debug<int>("Feature Flags: final exposure flush handed {ExposureCount} exposure(s) to the transport; see transport outcome", flushed);
         _log.Debug("ExposureApi::SendLoopAsync -> Exit");
     }
@@ -162,6 +192,23 @@ internal sealed class ExposureApi : IDisposable
         return 0;
     }
 
+    private async Task<int> FlushPendingAsync()
+    {
+        int batchCount;
+        lock (_exposures)
+        {
+            batchCount = _exposures.Count == 0 ? 0 : ((_exposures.Count - 1) / _batchSize) + 1;
+        }
+
+        var flushed = 0;
+        for (var i = 0; i < batchCount; i++)
+        {
+            flushed += await FlushAsync().ConfigureAwait(false);
+        }
+
+        return flushed;
+    }
+
     private ExposuresRequest? TryGetPayload()
     {
         List<ExposureEvent> exposures;
@@ -173,11 +220,15 @@ internal sealed class ExposureApi : IDisposable
                 return null;
             }
 
-            exposures = [.. _exposures];
-            _exposures.Clear();
+            var count = Math.Min(_batchSize, _exposures.Count);
+            exposures = new List<ExposureEvent>(count);
+            for (var i = 0; i < count; i++)
+            {
+                exposures.Add(_exposures.Dequeue());
+            }
         }
 
-        return new ExposuresRequest(_context, exposures);
+        return new ExposuresRequest(Volatile.Read(ref _context), exposures);
     }
 
     /// <summary>
@@ -189,6 +240,7 @@ internal sealed class ExposureApi : IDisposable
     public ExposureRecordResult SendExposure(in ExposureEvent exposure)
     {
         bool stopped;
+        var full = false;
         var isNew = false;
 
         lock (_lifecycleLock)
@@ -199,9 +251,14 @@ internal sealed class ExposureApi : IDisposable
                 isNew = _exposureCache.Add(exposure);
                 if (isNew && _datadogLoggingEnabled)
                 {
+                    _queueAdmissionCallback?.Invoke();
                     lock (_exposures)
                     {
-                        _exposures.Enqueue(exposure);
+                        full = _exposures.Count >= _queueCapacity;
+                        if (!full)
+                        {
+                            _exposures.Enqueue(exposure);
+                        }
                     }
                 }
 
@@ -222,6 +279,10 @@ internal sealed class ExposureApi : IDisposable
         if (stopped)
         {
             _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure reporting has stopped", exposure.Flag.Key);
+        }
+        else if (full)
+        {
+            _log.Debug<string>("Feature Flags: exposure for {FlagKey} dropped: exposure queue is full", exposure.Flag.Key);
         }
         else if (!isNew)
         {

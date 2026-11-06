@@ -31,7 +31,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             values.Sort();
 
-            var expectedValues = Enumerable.Range(0, fields.Length)
+            // Indices 47-49 are reserved centrally; dependent-flag evaluation is assigned bit 50.
+            var expectedValues = Enumerable.Range(0, 47)
+                .Append(50)
                 .Select(i => 1UL << i);
 
             values.Should().BeEquivalentTo(expectedValues);

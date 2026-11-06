@@ -163,6 +163,22 @@ public class SynchronousHookTests
 
 #if NET6_0_OR_GREATER
     [Theory]
+    [InlineData(Reason.TargetingMatch, "targeting_match")]
+    [InlineData("CUSTOM_REASON", "custom_reason")]
+    public async Task EvaluationMetricKeepsLowerSnakeCaseReasonTag(string reason, string expected)
+    {
+        var flagKey = $"reason-{Guid.NewGuid():N}";
+        using var metrics = new EvaluationMetrics(flagKey);
+        using var hook = new FlagEvalMetricsHook();
+        var context = new HookContext<bool>(flagKey, false, FlagValueType.Boolean, new ClientMetadata(null, null), new Metadata("test"), EvaluationContext.Empty);
+        var details = new FlagEvaluationDetails<bool>(flagKey, true, ErrorType.None, reason, "on");
+
+        await hook.FinallyAsync(context, details);
+
+        metrics.Reasons.Should().Equal(expected);
+    }
+
+    [Theory]
     [InlineData("Boolean")]
     [InlineData("Double")]
     [InlineData("Integer")]
@@ -235,6 +251,7 @@ public class SynchronousHookTests
     {
         private readonly MeterListener _listener = new();
         private readonly List<string?> _errorTypes = [];
+        private readonly List<string?> _reasons = [];
 
         public EvaluationMetrics(string flagKey)
         {
@@ -247,11 +264,12 @@ public class SynchronousHookTests
             };
             _listener.SetMeasurementEventCallback<long>((_, _, tags, _) =>
             {
-                string? key = null, errorType = null;
+                string? key = null, errorType = null, reason = null;
                 foreach (var tag in tags)
                 {
                     key = tag.Key == "feature_flag.key" ? tag.Value as string : key;
                     errorType = tag.Key == "error.type" ? tag.Value as string : errorType;
+                    reason = tag.Key == "feature_flag.result.reason" ? tag.Value as string : reason;
                 }
 
                 if (key == flagKey)
@@ -259,6 +277,7 @@ public class SynchronousHookTests
                     lock (_errorTypes)
                     {
                         _errorTypes.Add(errorType);
+                        _reasons.Add(reason);
                     }
                 }
             });
@@ -272,6 +291,17 @@ public class SynchronousHookTests
                 lock (_errorTypes)
                 {
                     return _errorTypes.ToArray();
+                }
+            }
+        }
+
+        public IReadOnlyList<string?> Reasons
+        {
+            get
+            {
+                lock (_errorTypes)
+                {
+                    return _reasons.ToArray();
                 }
             }
         }

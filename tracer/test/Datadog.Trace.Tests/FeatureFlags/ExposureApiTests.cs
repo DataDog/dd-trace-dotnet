@@ -36,6 +36,67 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class ExposureApiTests
 {
     [Fact]
+    public async Task SendExposureSynchronizesQueueAdmissionWithFlushDrain()
+    {
+        var local = new TestRequestFactory(new Uri("http://agent:8126/"));
+        using var transport = CreateLocalTransport(local);
+        var producerReachedAdmission = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var api = new ExposureApi(
+            CreateSettings(),
+            transport,
+            TimeSpan.FromHours(1),
+            TimeSpan.FromSeconds(30),
+            () => producerReachedAdmission.TrySetResult(true));
+        var exposures = typeof(ExposureApi).GetField("_exposures", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(api)!;
+        var drainStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var releaseDrain = new ManualResetEventSlim();
+        var drain = Task.Factory.StartNew(
+            () =>
+            {
+                lock (exposures)
+                {
+                    drainStarted.TrySetResult(true);
+                    if (!releaseDrain.Wait(TimeSpan.FromSeconds(30)))
+                    {
+                        throw new TimeoutException("Timed out waiting to release the simulated exposure drain");
+                    }
+                }
+            },
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+
+        try
+        {
+            (await Task.WhenAny(drainStarted.Task, Task.Delay(TimeSpan.FromSeconds(30))))
+               .Should().BeSameAs(drainStarted.Task);
+            var send = Task.Run(() => api.SendExposure(CreateExposure("concurrent")));
+            (await Task.WhenAny(producerReachedAdmission.Task, Task.Delay(TimeSpan.FromSeconds(30))))
+               .Should().BeSameAs(producerReachedAdmission.Task);
+
+            // This is deliberately short: all failure bounds are 30 seconds, but after the callback
+            // proves admission has reached the held queue monitor, 100ms is enough to prove blocking.
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromMilliseconds(100))))
+               .Should().NotBeSameAs(send, "queue admission must wait for an in-progress drain");
+
+            releaseDrain.Set();
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(30)))).Should().BeSameAs(send);
+            (await send).Should().Be(ExposureRecordResult.New);
+        }
+        finally
+        {
+            releaseDrain.Set();
+            var completed = await Task.WhenAny(drain, Task.Delay(TimeSpan.FromSeconds(30)));
+            if (completed != drain)
+            {
+                throw new TimeoutException("Timed out waiting for the simulated exposure drain to finish");
+            }
+
+            await drain;
+        }
+    }
+
+    [Fact]
     public async Task DisposeFlushesEventsQueuedWhileAnEarlierBatchIsSending()
     {
         var firstSendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -159,6 +220,45 @@ public class ExposureApiTests
         await Task.Delay(TimeSpan.FromMilliseconds(20));
 
         local.RequestsSent.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task QueueOverflowDropsNewExposureWithoutGrowingThePendingBatch()
+    {
+        var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSend = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var logger = CreateDebugLogger();
+        var local = new TestRequestFactory(
+            new Uri("http://agent:8126/"),
+            uri => new BlockingApiRequest(uri, sendStarted, releaseSend),
+            uri => new RecordingJsonApiRequest(uri),
+            uri => new RecordingJsonApiRequest(uri));
+        using var transport = CreateLocalTransport(local, logger.Object);
+        using var api = new ExposureApi(
+            CreateSettings(),
+            transport,
+            TimeSpan.FromHours(1),
+            TimeSpan.FromSeconds(3),
+            logger.Object,
+            queueCapacity: 2,
+            batchSize: 1);
+
+        api.SendExposure(CreateExposure("in-flight"));
+        (await Task.WhenAny(sendStarted.Task, Task.Delay(TimeSpan.FromSeconds(30))))
+           .Should().BeSameAs(sendStarted.Task);
+
+        api.SendExposure(CreateExposure("queued-1"));
+        api.SendExposure(CreateExposure("queued-2"));
+        api.SendExposure(CreateExposure("overflow"));
+
+        ArgumentsOf(logger, "queue is full").Should().Equal("overflow");
+        releaseSend.TrySetResult(true);
+        api.Dispose();
+
+        local.RequestsSent.Should().HaveCount(3);
+        local.RequestsSent.Cast<RecordingJsonApiRequest>().Should().OnlyContain(
+            request => JObject.Parse(request.PayloadJson)["exposures"]!.Count() == 1,
+            "each queue drain is bounded by the configured batch size");
     }
 
     [Fact]
