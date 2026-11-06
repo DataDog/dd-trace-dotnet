@@ -324,8 +324,15 @@ namespace Datadog.Trace.ClrProfiler
             // inherit it even if spawned before the first telemetry flush.
             _ = RuntimeId.GetRootSessionId();
 
+#if !NETFRAMEWORK
             // Before any product starts threads that compress.
-            GzipWarmUp.RunOnce();
+            var frameworkDescription = FrameworkDescription.Instance;
+            if (frameworkDescription.RuntimeVersion.Major < 9 &&
+                frameworkDescription.IsWindows())
+            {
+                GzipWarmUp.RunOnce();
+            }
+#endif
 
             try
             {

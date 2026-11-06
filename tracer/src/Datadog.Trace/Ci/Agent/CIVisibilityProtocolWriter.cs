@@ -86,8 +86,15 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         // To scale the number of senders with a hard limit.
         var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 4);
 
+#if !NETFRAMEWORK
         // No-op if startup already ran it; covers entry points that bypass Instrumentation.Initialize().
-        GzipWarmUp.RunOnce();
+        var frameworkDescription = FrameworkDescription.Instance;
+        if (frameworkDescription.RuntimeVersion.Major < 9 &&
+            frameworkDescription.IsWindows())
+        {
+            GzipWarmUp.RunOnce();
+        }
+#endif
 
         _buffersArray = new Buffers[concurrencyLevel];
         for (var i = 0; i < _buffersArray.Length; i++)
