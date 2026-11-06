@@ -198,6 +198,12 @@ public sealed partial class DatadogProvider
     // asynchronous work.
     private static IReadOnlyList<Hook> WithApiExposureHooks(IImmutableList<Hook> providerHooks)
     {
+        // Api.GetHooks() allocates on every call. No ExposureHook can be registered before one is constructed.
+        if (!FeatureFlagsSdk.ExposureHookCreated)
+        {
+            return providerHooks;
+        }
+
         List<Hook>? hooks = null;
         foreach (var hook in global::OpenFeature.Api.Instance.GetHooks())
         {

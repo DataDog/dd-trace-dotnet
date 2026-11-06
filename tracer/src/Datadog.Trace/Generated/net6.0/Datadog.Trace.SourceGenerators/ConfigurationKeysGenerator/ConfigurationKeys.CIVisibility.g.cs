@@ -18,16 +18,6 @@ internal static partial class ConfigurationKeys
     internal static class CIVisibility
     {
         /// <summary>
-        /// An internal key used to "tell" tracer settings that we're running in CI Visibility mode
-        /// </summary>
-        public const string IsRunningInCiVisMode = "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY";
-
-        /// <summary>
-        /// An internal key used to share a runtime ID across all the processes started in a test session
-        /// </summary>
-        public const string TestOptimizationRunId = "_DD_INTERNAL_TOPT_RUNID";
-
-        /// <summary>
         /// AWS CodePipeline action execution ID for CI correlation.
         /// </summary>
         public const string ActionExecutionId = "DD_ACTION_EXECUTION_ID";
@@ -55,14 +45,14 @@ internal static partial class ConfigurationKeys
         public const string CodeCoverageCollectorPath = "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH";
 
         /// <summary>
-        /// Configuration key for enabling or disabling jit optimizations in the Code Coverage
-        /// </summary>
-        public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
-
-        /// <summary>
         /// Configuration key for enabling or disabling Code Coverage in CI Visibility.
         /// </summary>
         public const string CodeCoverage = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling jit optimizations in the Code Coverage
+        /// </summary>
+        public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
 
         /// <summary>
         /// Configuration key for selecting the code coverage mode LineExecution or LineCallCount
@@ -258,6 +248,18 @@ internal static partial class ConfigurationKeys
         public const string PipelineExecutionId = "DD_PIPELINE_EXECUTION_ID";
 
         /// <summary>
+        /// Configuration key for the test session command that was executed.
+        /// This is used to track the command line that initiated the test session.
+        /// </summary>
+        public const string TestSessionCommand = "DD_TESTSESSION_COMMAND";
+
+        /// <summary>
+        /// Configuration key for the test session working directory.
+        /// This is used to track the working directory where the test session was executed.
+        /// </summary>
+        public const string TestSessionWorkingDirectory = "DD_TESTSESSION_WORKINGDIRECTORY";
+
+        /// <summary>
         /// Configuration key for the number of retries to fix a flaky test.
         /// </summary>
         public const string TestManagementAttemptToFixRetries = "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES";
@@ -273,15 +275,13 @@ internal static partial class ConfigurationKeys
         public const string TestSessionName = "DD_TEST_SESSION_NAME";
 
         /// <summary>
-        /// Configuration key for the test session command that was executed.
-        /// This is used to track the command line that initiated the test session.
+        /// An internal key used to "tell" tracer settings that we're running in CI Visibility mode
         /// </summary>
-        public const string TestSessionCommand = "DD_TESTSESSION_COMMAND";
+        public const string IsRunningInCiVisMode = "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY";
 
         /// <summary>
-        /// Configuration key for the test session working directory.
-        /// This is used to track the working directory where the test session was executed.
+        /// An internal key used to share a runtime ID across all the processes started in a test session
         /// </summary>
-        public const string TestSessionWorkingDirectory = "DD_TESTSESSION_WORKINGDIRECTORY";
+        public const string TestOptimizationRunId = "_DD_INTERNAL_TOPT_RUNID";
     }
 }

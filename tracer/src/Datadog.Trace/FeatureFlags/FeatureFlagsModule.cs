@@ -919,11 +919,17 @@ namespace Datadog.Trace.FeatureFlags
 
         private void WarnIfExposuresStayUncommitted()
         {
+            // After the warning, evaluations stop writing the shared counter.
+            if (Volatile.Read(ref _uncommittedExposuresWarned) != 0)
+            {
+                return;
+            }
+
             if (Interlocked.Increment(ref _exposuresDeferredSinceCommit) == UncommittedExposureWarningThreshold
                 && Interlocked.Exchange(ref _uncommittedExposuresWarned, 1) == 0)
             {
                 _log.Warning<int>(
-                    "Feature Flags: the last {Count} exposures were not sent, because the Datadog provider's OpenFeature hooks did not run for them or the evaluations failed. Exposures are sent from those hooks: evaluate flags through an OpenFeature client, and if you wrap DatadogProvider, return its GetProviderHooks() and pass its flag metadata through unchanged.",
+                    "Feature Flags: {Count} exposures in a row have not been recorded: their evaluations failed, or the Datadog provider's OpenFeature hooks did not commit them. Exposures are recorded and sent from those hooks: evaluate flags through an OpenFeature client, and if you wrap DatadogProvider, return its GetProviderHooks() and pass its flag metadata through unchanged.",
                     UncommittedExposureWarningThreshold);
             }
         }

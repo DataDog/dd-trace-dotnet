@@ -148,6 +148,22 @@ public class ExposureApiTests
     }
 
     [Fact]
+    public void IsExposedPeeksWithoutRecordingAndGivesNoAnswerAfterDispose()
+    {
+        var transport = CreateLocalTransport(new TestRequestFactory(new Uri("http://agent:8126/")));
+        var api = new ExposureApi(CreateSettings(), transport, TimeSpan.FromHours(1), TimeSpan.FromSeconds(1));
+
+        api.IsExposed(CreateExposure("peeked")).Should().BeFalse();
+        api.IsExposed(CreateExposure("peeked")).Should().BeFalse("a peek records nothing");
+        api.SendExposure(CreateExposure("peeked")).Should().Be(ExposureRecordResult.New);
+        api.IsExposed(CreateExposure("peeked")).Should().BeTrue();
+
+        api.Dispose();
+
+        api.IsExposed(CreateExposure("peeked")).Should().BeNull("there is no answer once exposure reporting has stopped");
+    }
+
+    [Fact]
     public async Task SendExposureAfterDisposeIsIgnored()
     {
         var local = new TestRequestFactory(new Uri("http://agent:8126/"));

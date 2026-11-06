@@ -16,11 +16,6 @@ namespace Datadog.Trace.Configuration;
 internal static partial class ConfigurationKeys
 {
     /// <summary>
-    /// Configuration key for configuring the interval (in seconds) for sending stats (aka trace metrics).
-    /// </summary>
-    public const string StatsComputationInterval = "_DD_TRACE_STATS_COMPUTATION_INTERVAL";
-
-    /// <summary>
     /// Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
     /// Default value is true (polling enabled).
     /// </summary>
@@ -194,15 +189,15 @@ internal static partial class ConfigurationKeys
     public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
 
     /// <summary>
+    /// Configuration key for enabling or disabling the injection of products via single step instrumentation.
+    /// </summary>
+    public const string SsiDeployed = "DD_INJECTION_ENABLED";
+
+    /// <summary>
     /// SSI variable that allows unsupported runtimes to be instrumented.
     /// Used for correlation purposes in telemetry.
     /// </summary>
     public const string InjectForce = "DD_INJECT_FORCE";
-
-    /// <summary>
-    /// Configuration key for enabling or disabling the injection of products via single step instrumentation.
-    /// </summary>
-    public const string SsiDeployed = "DD_INJECTION_ENABLED";
 
     /// <summary>
     /// This variable is set by the native loader after trying to load the profiler.
@@ -568,6 +563,18 @@ internal static partial class ConfigurationKeys
     public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
     /// <summary>
+    /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
+    /// </summary>
+    public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
+
+    /// <summary>
+    /// Configuration key for setting the number of seconds between,
+    /// identical log messages, for Tracer log files.
+    /// Default value is 0 and setting to 0 disables rate limiting.
+    /// </summary>
+    public const string LogRateLimit = "DD_TRACE_LOGGING_RATE";
+
+    /// <summary>
     /// Configuration key for setting the directory of the .NET Tracer logs.
     /// Overrides the value in <see cref="Datadog.Trace.Configuration.ConfigurationKeys.TraceLogPath"/> if present.
     /// Default value is "%ProgramData%"\Datadog .NET Tracer\logs\" on Windows
@@ -587,18 +594,6 @@ internal static partial class ConfigurationKeys
     /// Defaults to <c>file</c>
     /// </summary>
     public const string LogSinks = "DD_TRACE_LOG_SINKS";
-
-    /// <summary>
-    /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
-    /// </summary>
-    public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
-
-    /// <summary>
-    /// Configuration key for setting the number of seconds between,
-    /// identical log messages, for Tracer log files.
-    /// Default value is 0 and setting to 0 disables rate limiting.
-    /// </summary>
-    public const string LogRateLimit = "DD_TRACE_LOGGING_RATE";
 
     /// <summary>
     /// Configuration key for enabling automatic instrumentation on specified methods.
@@ -829,4 +824,9 @@ internal static partial class ConfigurationKeys
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceVersion"/>
     public const string ServiceVersion = "DD_VERSION";
+
+    /// <summary>
+    /// Configuration key for configuring the interval (in seconds) for sending stats (aka trace metrics).
+    /// </summary>
+    public const string StatsComputationInterval = "_DD_TRACE_STATS_COMPUTATION_INTERVAL";
 }

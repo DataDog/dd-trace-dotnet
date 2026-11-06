@@ -33,46 +33,35 @@ internal sealed class ExposureCache
         lock (_cache)
         {
             var key = new Key(exposureEvent);
-            var value = new Value(exposureEvent);
-
             if (_cache.TryGetValue(key, out var node))
             {
                 // Update LRU priority (move the node to the beginning of the list)
                 _lruList.Remove(node);
                 _lruList.AddFirst(node);
 
-                if (node.Value.Recorded == value)
+                if (Matches(node.Value.Recorded, in exposureEvent))
                 {
                     return false;
                 }
 
-                node.Value = new Entry(key, value);
+                node.Value = new Entry(node.Value.Key, new Value(exposureEvent));
                 return true;
             }
 
-            if (_cache.Count >= _capacity)
+            var entry = new Entry(key, new Value(exposureEvent));
+            if (_cache.Count >= _capacity && _lruList.Last is { } evicted)
             {
-                RemoveLeastRecentlyUsed();
+                // Reuses the evicted node, so a full cache does not leave a long-lived node behind per new subject.
+                _cache.Remove(evicted.Value.Key);
+                _lruList.RemoveLast();
+                evicted.Value = entry;
+                _lruList.AddFirst(evicted);
+                _cache[key] = evicted;
+                return true;
             }
 
-            _cache[key] = _lruList.AddFirst(new Entry(key, value));
+            _cache[key] = _lruList.AddFirst(entry);
             return true;
-        }
-    }
-
-    public Value? Get(Key key)
-    {
-        lock (_cache)
-        {
-            if (_cache.TryGetValue(key, out var node))
-            {
-                // Get operation should refresh LRU priority
-                _lruList.Remove(node);
-                _lruList.AddFirst(node);
-                return node.Value.Recorded;
-            }
-
-            return null;
         }
     }
 
@@ -84,19 +73,15 @@ internal sealed class ExposureCache
     {
         lock (_cache)
         {
-            return _cache.TryGetValue(new Key(exposureEvent), out var node) && node.Value.Recorded == new Value(exposureEvent);
+            return _cache.TryGetValue(new Key(exposureEvent), out var node) && Matches(node.Value.Recorded, in exposureEvent);
         }
     }
 
-    private void RemoveLeastRecentlyUsed()
-    {
-        var last = _lruList.Last;
-        if (last != null)
-        {
-            _cache.Remove(last.Value.Key);
-            _lruList.RemoveLast();
-        }
-    }
+    // Value's equality, field by field, without allocating a Value to compare.
+    private static bool Matches(Value recorded, in ExposureEvent exposureEvent)
+        => recorded.Variant == exposureEvent.Variant.Key
+           && recorded.Allocation == exposureEvent.Allocation.Key
+           && recorded.SerialId == exposureEvent.SerialId;
 
     private readonly record struct Entry(Key Key, Value Recorded);
 

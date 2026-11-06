@@ -139,6 +139,45 @@ public class DeferredExposureTests
         plain.CacheHits.Should().Equal([advisory == "true"]);
     }
 
+    [Theory]
+    [InlineData("false", false, true, false)]
+    [InlineData("true", false, false, true)]
+    [InlineData("false", true, true, false)]
+    [InlineData("true", true, false, true)]
+    public async Task WithoutDeferralTheStampedVerdictDecidesEvenWhenTheResultHasSideState(string stamped, bool withFeature, bool expectedShouldSend, bool expectedCacheHit)
+    {
+        // An older tracer: it recorded the exposure during evaluation and stamped the verdict. The ExposureHook
+        // below makes the provider record the evaluated context in a side-table entry that owes no commit; a
+        // HOOK feature adds the same kind of entry.
+        var metadata = new Dictionary<string, string>
+        {
+            [FeatureFlagMetadataKeys.AllocationKey] = "alloc",
+            [FeatureFlagMetadataKeys.DoLog] = "true",
+            [FeatureFlagMetadataKeys.ExposureCacheHit] = stamped,
+        };
+        if (withFeature)
+        {
+            metadata[FeatureFlagMetadataKeys.FeaturePrefix + "holdout.key"] = "h1";
+        }
+
+        using var provider = new DatadogProvider(
+            (f, t, d, k, a) => new FakeEvaluation(new Dictionary<string, string>(metadata), null),
+            (f, t, d, k, a) => throw new InvalidOperationException("deferred path must not run"),
+            () => false,
+            _ => throw new InvalidOperationException("nothing is owed a commit"));
+        var client = await ClientAsync(provider);
+        var received = new List<ExposureEvaluation>();
+        client.AddHooks(new ExposureHook(e => received.Add(e)));
+
+        await client.GetBooleanDetailsAsync("flag", false, Context());
+
+        var evaluation = received.Should().ContainSingle().Subject;
+        evaluation.IsExposure.Should().BeTrue();
+        evaluation.ShouldSend.Should().Be(expectedShouldSend);
+        evaluation.IsCacheHit.Should().Be(expectedCacheHit);
+        evaluation.Features.ContainsKey("holdout.key").Should().Be(withFeature);
+    }
+
 #pragma warning disable DDFF001 // Exercise the experimental synchronous API.
     [Fact]
     public void TheSynchronousApiCommitsSuccessfulEvaluationsOnly()

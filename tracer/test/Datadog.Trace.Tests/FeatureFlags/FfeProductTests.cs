@@ -7,12 +7,15 @@
 
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
+
+using FeatureFlagsValueType = Datadog.Trace.FeatureFlags.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
@@ -41,8 +44,8 @@ public class FfeProductTests
     [InlineData("2026-11-02T00:00:00")]
     public void UpdateFromRcm_KeepsDateLikeStringsAsConfigured(string text)
     {
-        // Default Newtonsoft date parsing turns these into dates, converted to the host's time zone, before the
-        // model sees them; the agentless parser keeps them as strings.
+        // Default Newtonsoft date parsing turns these into dates before the model sees them, and converts an
+        // offset to the host's time zone; the agentless parser keeps them as strings.
         var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
         var product = new FfeProduct(configurations => delivered = configurations);
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
@@ -58,6 +61,34 @@ public class FfeProductTests
         var flag = delivered.Should().ContainSingle().Subject.Value.Flags!["date-flag"];
         flag.Variations!["on"].Value.Should().Be(text);
         flag.Allocations![0].Splits![0].Features![0].Value.Should().Be(text);
+    }
+
+    [Theory]
+    [InlineData("2020-11-02T00:00:00+05:00")]
+    [InlineData("2020-11-02T00:00:00.123456Z")]
+    public void UpdateFromRcm_KeepsDateLikeStringsInConditionsJsonValuesAndAllocationDates(string text)
+    {
+        var delivered = new List<KeyValuePair<string, ServerConfiguration>>();
+        var product = new FfeProduct(configurations => delivered = configurations);
+        var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+        var json = """
+            {"flags":{"json-flag":{"key":"json-flag","enabled":true,"variationType":"JSON",
+              "variations":{"on":{"key":"on","value":{"launch":{"at":"TEXT"}}}},
+              "allocations":[{"key":"alloc","startAt":"TEXT",
+                "rules":[{"conditions":[{"attribute":"launch","operator":"ONE_OF","value":["TEXT"]}]}],
+                "splits":[{"variationKey":"on","shards":[]}]}]}}}
+            """.Replace("TEXT", text);
+
+        product.UpdateFromRcm(ConfigUpdate(path, 1, json), null);
+
+        var configuration = delivered.Should().ContainSingle().Subject.Value;
+        configuration.Flags!["json-flag"].Allocations![0].StartAt.Should().Be(text);
+        var result = new FeatureFlagsEvaluator(null, configuration)
+            .Evaluate("json-flag", FeatureFlagsValueType.Json, null, new EvaluationContext("user", new Dictionary<string, object?> { ["launch"] = text }));
+
+        result.Reason.Should().Be(EvaluationReason.TargetingMatch, "the ONE_OF value keeps its configured text");
+        var launch = result.Value.Should().BeOfType<Dictionary<string, object?>>().Subject["launch"];
+        launch.Should().BeOfType<Dictionary<string, object?>>().Which["at"].Should().Be(text, "a nested date-like string stays a string");
     }
 
     private static Dictionary<string, List<RemoteConfiguration>> ConfigUpdate(RemoteConfigurationPath path, int version, string? json = null)

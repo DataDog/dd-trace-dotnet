@@ -23,7 +23,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public byte[] RawFile { get; }
 
+        /// <summary>Deserializes the file.</summary>
+        /// <typeparam name="T">The type to read.</typeparam>
         /// <param name="dateParseHandling">How date-like strings are read; <see cref="DateParseHandling.None"/> keeps them as strings.</param>
+        /// <returns>The file path and its deserialized content.</returns>
         public NamedTypedFile<T?> Deserialize<T>(DateParseHandling dateParseHandling = DateParseHandling.DateTime)
         {
             using var stream = new MemoryStream(RawFile);

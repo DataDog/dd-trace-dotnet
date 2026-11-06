@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
@@ -29,7 +30,7 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class DeferredExposureTests
 {
     [Fact]
-    public void ADeferredEvaluationLeavesTheExposurePendingAndStampsNoVerdict()
+    public void ADeferredEvaluationWithoutAPeekLeavesTheExposurePendingAndStampsNothing()
     {
         var sent = new List<ExposureEvent>();
         var evaluator = new FeatureFlagsEvaluator(Record(sent), new ServerConfiguration { Flags = Flags(doLog: true) });
@@ -153,6 +154,34 @@ public class DeferredExposureTests
     }
 
     [Fact]
+    public void TheAdvisoryAnswerRecordsNothingOnceExposuresAreRecorded()
+    {
+        using var module = Module();
+        // Recording another subject first creates the exposure API, so the peeks below reach the cache.
+        var other = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "other", null, deferExposure: true);
+        module.CommitExposure(other.FlagMetadata).Should().Be(ExposureCommitResult.New);
+
+        var uncommitted = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        var later = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        uncommitted.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
+        later.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false", "the first peek recorded nothing");
+        module.CommitExposure(later.FlagMetadata).Should().Be(ExposureCommitResult.New, "an uncommitted evaluation must not consume the subject's first exposure");
+    }
+
+    [Fact]
+    public void TheAdvisoryAnswerDoesNotCreateTheExposureApi()
+    {
+        using var module = Module();
+
+        var evaluation = module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+
+        evaluation.FlagMetadata![FeatureFlagMetadataKeys.ExposureCacheHit].Should().Be("false");
+        typeof(FeatureFlagsModule).GetField("_exposureApi", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(module)
+                                  .Should().BeNull("only a commit or an immediate report creates the exposure API and its transport");
+    }
+
+    [Fact]
     public async Task NoCacheAnswerIsStampedOnceExposureReportingHasStopped()
     {
         var module = Module();
@@ -181,7 +210,7 @@ public class DeferredExposureTests
     [Theory]
     [InlineData(false, 1)]
     [InlineData(true, 0)]
-    public void UncommittedExposuresLogOneWarning(bool commit, int expectedWarnings)
+    public void TheUncommittedExposureWarningIsLoggedOnceAndOnlyWithoutCommits(bool commit, int expectedWarnings)
     {
         var logger = new Mock<IDatadogLogger>();
         using var module = Module(logger.Object);
@@ -195,10 +224,44 @@ public class DeferredExposureTests
             }
         }
 
-        logger.Invocations.Count(i => i.Method.Name == nameof(IDatadogLogger.Warning)
-                                   && i.Arguments.OfType<string>().Any(a => a.Contains("OpenFeature hooks did not run")))
-              .Should().Be(expectedWarnings);
+        UncommittedWarnings(logger).Should().Be(expectedWarnings);
     }
+
+    [Fact]
+    public void AnyCommitCallRestartsTheCountAndEachModuleWarnsOnce()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        using var module = Module(logger.Object);
+
+        Defer(module, 999);
+        module.CommitExposure(null).Should().Be(ExposureCommitResult.NothingPending);
+        Defer(module, 999);
+        UncommittedWarnings(logger).Should().Be(0, "a commit call, even one that finds nothing pending, shows the provider's hooks run");
+
+        Defer(module, 1);
+        UncommittedWarnings(logger).Should().Be(1, "the 1,000th uncommitted exposure since the last commit warns");
+
+        module.CommitExposure(null);
+        Defer(module, 1_000);
+        UncommittedWarnings(logger).Should().Be(1, "the warning is written once per module");
+
+        var replacementLogger = new Mock<IDatadogLogger>();
+        using var replacement = Module(replacementLogger.Object);
+        Defer(replacement, 1_000);
+        UncommittedWarnings(replacementLogger).Should().Be(1, "a module that replaces it after Tracer.Configure warns again");
+    }
+
+    private static void Defer(FeatureFlagsModule module, int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            module.Evaluate("flag", FeatureFlagsValueType.String, "default", "user", null, deferExposure: true);
+        }
+    }
+
+    private static int UncommittedWarnings(Mock<IDatadogLogger> logger)
+        => logger.Invocations.Count(i => i.Method.Name == nameof(IDatadogLogger.Warning)
+                                      && i.Arguments.OfType<string>().Any(a => a.Contains("OpenFeature hooks did not commit")));
 
     private static FeatureFlagsModule Module(IDatadogLogger? logger = null)
     {

@@ -901,7 +901,7 @@ namespace Datadog.Trace.FeatureFlags
                 if (metadata is DeferredExposureMetadata deferred)
                 {
                     // The commit after the evaluation returns the authoritative verdict. The metadata carries
-                    // the cache's answer at evaluation, as Java and Node.js stamp it, so a plain OpenFeature
+                    // the cache's answer at evaluation, as the Java SDK stamps it, so a plain OpenFeature
                     // hook can read __dd_exposure_cache_hit. Nothing is stamped once exposure reporting has stopped.
                     deferred.SetPendingExposure(in exposure);
                     if (_isExposed?.Invoke(in exposure) is { } seen)
@@ -983,7 +983,7 @@ namespace Datadog.Trace.FeatureFlags
 #pragma warning disable SA1201 // Elements should appear in the correct order
         internal delegate Exposure.ExposureRecordResult ReportExposureDelegate(in Exposure.Model.ExposureEvent ev);
 
-        // The advisory verdict for a deferred evaluation; null once exposure reporting has stopped.
+        // The advisory answer for a deferred evaluation; null once exposure reporting has stopped.
         internal delegate bool? PeekExposureDelegate(in Exposure.Model.ExposureEvent ev);
 #pragma warning restore SA1201 // Elements should appear in the correct order
     }

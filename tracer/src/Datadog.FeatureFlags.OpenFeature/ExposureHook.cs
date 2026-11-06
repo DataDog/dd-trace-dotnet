@@ -23,7 +23,9 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// <para>
 /// The provider also puts the exposure data in the flag metadata, so any OpenFeature hook can read
 /// it; this hook reads it for you and uses the final exposure decision. Register it with
-/// <c>OpenFeature.Api.Instance.AddHooks</c> or on a client. The callback runs for every evaluation,
+/// <c>OpenFeature.Api.Instance.AddHooks</c> or on a client; only a hook added with
+/// <c>Api.Instance.AddHooks</c> also receives evaluations from the experimental synchronous methods.
+/// The callback runs for every evaluation,
 /// including errors and repeats; use <see cref="ExposureEvaluation.ShouldSend"/> to keep the new
 /// or changed exposures. When the provider is registered directly with OpenFeature and evaluated
 /// through a client, these are exactly the exposures it sends to Datadog while
@@ -61,7 +63,8 @@ public sealed class ExposureHook : Hook
     {
         try
         {
-            var evaluationContext = FeatureFlagsSdk.GetEvaluatedContext(details.FlagMetadata) ?? context.EvaluationContext;
+            var result = FeatureFlagsSdk.GetResult(details.FlagMetadata);
+            var evaluationContext = result?.EvaluatedContext ?? context.EvaluationContext;
             _onEvaluation(
                 new ExposureEvaluation(
                     details.ErrorType == ErrorType.None,
@@ -70,7 +73,8 @@ public sealed class ExposureHook : Hook
                     details.FlagMetadata?.GetString(FeatureFlagMetadataKeys.AllocationKey),
                     evaluationContext?.TargetingKey,
                     evaluationContext,
-                    details.FlagMetadata));
+                    details.FlagMetadata,
+                    result));
         }
         catch (Exception ex)
         {

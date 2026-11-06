@@ -31,7 +31,8 @@ public sealed class ExposureEvaluation
         string? allocationKey,
         string? targetingKey,
         EvaluationContext? context,
-        ImmutableMetadata? metadata)
+        ImmutableMetadata? metadata,
+        FeatureFlagsSdk.ResultState? result)
     {
         _evaluationSucceeded = evaluationSucceeded;
         _metadata = metadata;
@@ -40,11 +41,11 @@ public sealed class ExposureEvaluation
         AllocationKey = allocationKey;
         TargetingKey = targetingKey;
         Context = context;
-        Features = FeatureFlagsSdk.GetHookFeatures(metadata) ?? EmptyFeatures;
+        Features = result?.HookFeatures ?? EmptyFeatures;
         SplitSerialId = FeatureFlagsSdk.GetSplitSerialId(metadata);
         // A deferred exposure is decided by its commit, never by the advisory stamp; otherwise the tracer
         // recorded the exposure during evaluation and stamped that verdict.
-        _cacheHit = FeatureFlagsSdk.TryGetCommittedVerdict(metadata, out var committed) ? committed : metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
+        _cacheHit = result is not null && result.TryGetCommittedVerdict(out var committed) ? committed : metadata?.GetBool(FeatureFlagMetadataKeys.ExposureCacheHit);
     }
 
     /// <summary> Gets the evaluated flag key. </summary>

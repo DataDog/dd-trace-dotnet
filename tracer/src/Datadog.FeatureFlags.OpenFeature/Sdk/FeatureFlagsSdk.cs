@@ -27,12 +27,16 @@ internal static class FeatureFlagsSdk
 {
     private static readonly ConditionalWeakTable<ImmutableMetadata, ResultState> Results = new();
     private static readonly string[] FeaturePrefixes = [FeatureFlagMetadataKeys.FeaturePrefix, FeatureFlagMetadataKeys.ExposureFeaturePrefix, FeatureFlagMetadataKeys.EvaluationFeaturePrefix];
+    private static readonly object BoxedTrue = true;
+    private static readonly object BoxedFalse = false;
 
     // Set once an ExposureHook exists: only that hook reads the evaluated context, so until then
     // exposures skip the side table for it.
     private static volatile bool _exposureHookCreated;
 
     internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
+
+    internal static bool ExposureHookCreated => _exposureHookCreated;
 
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
@@ -159,7 +163,14 @@ internal static class FeatureFlagsSdk
         return resolution;
     }
 
-    internal static void OnExposureHookCreated() => _exposureHookCreated = true;
+    internal static void OnExposureHookCreated()
+    {
+        // Every Resolve reads the flag, so it is written once, not on every ExposureHook construction.
+        if (!_exposureHookCreated)
+        {
+            _exposureHookCreated = true;
+        }
+    }
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
     {
@@ -186,19 +197,26 @@ internal static class FeatureFlagsSdk
     /// records the typed map beside the result it built; the entry dies with the result.
     /// </summary>
     internal static IReadOnlyDictionary<string, object>? GetHookFeatures(ImmutableMetadata? metadata)
-        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state.HookFeatures : null;
+        => GetResult(metadata)?.HookFeatures;
 
     /// <summary>The selected split's EVALUATION-destination features, for evaluation counts.</summary>
     internal static IReadOnlyDictionary<string, object?>? GetEvaluationFeatures(ImmutableMetadata? metadata)
-        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state.EvaluationFeatures : null;
+        => GetResult(metadata)?.EvaluationFeatures;
 
     /// <summary>The context the provider evaluated for an exposure result, or null when none was recorded.</summary>
     internal static EvaluationContext? GetEvaluatedContext(ImmutableMetadata? metadata)
-        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state.EvaluatedContext : null;
+        => GetResult(metadata)?.EvaluatedContext;
+
+    /// <summary>
+    /// The state the provider recorded beside a result, or null when it recorded none. One lookup gives
+    /// <see cref="ExposureHook"/> everything it reads; on .NET Framework each lookup takes the table's lock.
+    /// </summary>
+    internal static ResultState? GetResult(ImmutableMetadata? metadata)
+        => metadata is not null && Results.TryGetValue(metadata, out var state) ? state : null;
 
     /// <summary>
     /// Commits the exposure that a deferred evaluation left pending, at most once per result, and keeps
-    /// the verdict for <see cref="TryGetCommittedVerdict"/>.
+    /// the verdict for <see cref="ResultState.TryGetCommittedVerdict"/>.
     /// </summary>
     internal static void CommitPendingExposure(ImmutableMetadata? metadata, Func<IDictionary<string, string>, int> commit)
     {
@@ -209,28 +227,6 @@ internal static class FeatureFlagsSdk
         }
 
         state.ExposureVerdict = commit(evaluationMetadata);
-    }
-
-    /// <summary>
-    /// Gets the committed verdict when this result had a deferred exposure to commit: false for a new
-    /// exposure, true for a repeat, null when nothing was recorded. Returns false when no commit was owed,
-    /// so the caller reads the verdict the tracer stamped during evaluation.
-    /// </summary>
-    internal static bool TryGetCommittedVerdict(ImmutableMetadata? metadata, out bool? verdict)
-    {
-        if (metadata is null || !Results.TryGetValue(metadata, out var state) || !state.OwesCommit)
-        {
-            verdict = null;
-            return false;
-        }
-
-        verdict = state.ExposureVerdict switch
-        {
-            ExposureCommitResult.New => false,
-            ExposureCommitResult.Repeat => true,
-            _ => null,
-        };
-        return true;
     }
 
     internal static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long? evalTimeMs, bool deferredExposure)
@@ -375,7 +371,7 @@ internal static class FeatureFlagsSdk
     {
         if (key == FeatureFlagMetadataKeys.DoLog || key == FeatureFlagMetadataKeys.ExposureCacheHit)
         {
-            return value == "true";
+            return value == "true" ? BoxedTrue : BoxedFalse;
         }
 
         if (key == FeatureFlagMetadataKeys.SplitSerialId
@@ -482,7 +478,7 @@ internal static class FeatureFlagsSdk
         return new Value(array.Select(ConvertObject).ToList());
     }
 
-    private sealed class ResultState(IReadOnlyDictionary<string, object>? hookFeatures, IReadOnlyDictionary<string, object?>? evaluationFeatures, IDictionary<string, string>? pendingExposure)
+    internal sealed class ResultState(IReadOnlyDictionary<string, object>? hookFeatures, IReadOnlyDictionary<string, object?>? evaluationFeatures, IDictionary<string, string>? pendingExposure)
     {
 #pragma warning disable SA1401 // Fields should be private: exchanged atomically, so a commit runs at most once
         internal IDictionary<string, string>? PendingExposure = pendingExposure;
@@ -497,5 +493,27 @@ internal static class FeatureFlagsSdk
         internal bool OwesCommit { get; } = pendingExposure is not null;
 
         internal EvaluationContext? EvaluatedContext { get; set; }
+
+        /// <summary>
+        /// Gets the committed verdict when this result had a deferred exposure to commit: false for a new
+        /// exposure, true for a repeat, null when nothing was recorded. Returns false when no commit was owed,
+        /// so the caller reads the verdict the tracer stamped during evaluation.
+        /// </summary>
+        internal bool TryGetCommittedVerdict(out bool? verdict)
+        {
+            if (!OwesCommit)
+            {
+                verdict = null;
+                return false;
+            }
+
+            verdict = ExposureVerdict switch
+            {
+                ExposureCommitResult.New => false,
+                ExposureCommitResult.Repeat => true,
+                _ => null,
+            };
+            return true;
+        }
     }
 }

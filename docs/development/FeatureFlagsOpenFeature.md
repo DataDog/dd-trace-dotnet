@@ -10,7 +10,7 @@ runs. An After failure produces the caller's default and error
 details; Error and Finally failures do not prevent the remaining hooks from
 running. Each hook completes before resolution returns.
 
-Both built-in hooks currently complete synchronously. The helper also waits for
+The built-in hooks and `ExposureHook` currently complete synchronously. The helper also waits for
 incomplete hook tasks, so future provider hooks must avoid capturing a caller's
 synchronization context. The synchronous path also runs any `ExposureHook` registered
 on the OpenFeature API, placed so that its Finally stage runs after the provider's

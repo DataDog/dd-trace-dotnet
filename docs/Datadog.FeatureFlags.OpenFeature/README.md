@@ -74,13 +74,14 @@ Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/
 
 ## Exposures in your own data store
 
-The provider sends exposures to Datadog. It also puts its exposure decision and the selected split's
-features into the flag metadata of every evaluation, so any OpenFeature hook can record exposures
-in your own data store (see [Flag metadata](#flag-metadata)).
+The provider sends exposures to Datadog. It also puts exposure data and the selected split's
+features into the flag metadata, so any OpenFeature hook can record exposures in your own data
+store (see [Flag metadata](#flag-metadata)).
 
-For convenience, this package ships `ExposureHook`, which reads that metadata for you. It receives
-every completed evaluation, with the same exposure decision the provider uses for Datadog, and the
-features of the selected split.
+This package ships `ExposureHook`, which reads that metadata for you and uses the final exposure
+decision, the one the provider uses for Datadog. It receives every completed evaluation, with the
+features of the selected split. Only an `ExposureHook` added with `Api.Instance.AddHooks` also
+receives the [synchronous evaluations](#synchronous-evaluation-experimental).
 
 ```csharp
 using System.Collections.Concurrent;
@@ -141,19 +142,23 @@ without an error, so an evaluation that a later hook fails sends and records not
 tracer version that supports it; with an older tracer, the tracer sends the exposure during the
 evaluation, before hooks run.
 
-With a tracer that supports it, the exposure is sent from a provider hook, so the provider's hooks
-must run:
+With a tracer that supports it, the exposure is sent from a provider hook, so it depends on how
+the provider's hooks run:
 
 - If you call the provider's `Resolve...ValueAsync` methods directly instead of through an
   OpenFeature client, no hooks run and no exposure is sent or recorded. The synchronous methods
   below run the provider's hooks and do send exposures.
 - If you wrap `DatadogProvider` in your own `FeatureProvider`, return its `GetProviderHooks()` from
   your wrapper and pass its `FlagMetadata` instance through unchanged; otherwise no exposure is
-  sent. The tracer logs a warning once when many exposures in a row were not sent.
+  sent, and the exposure decisions that `ExposureHook` reports are not reliable. When 1,000
+  exposures in a row are not recorded, the tracer logs a warning, once per tracer configuration.
 - Inside OpenFeature's `MultiProvider`, the provider's hooks run inside the multi-provider, before
   your client's `after` hooks. If one of those hooks then fails the evaluation, the exposure has
   already been recorded and queued for Datadog, and `ExposureHook` reports the evaluation as
-  failed.
+  failed. With a strategy that can return another provider's result, such as `ComparisonStrategy`,
+  the exposure can also be recorded for a value that your application does not receive.
+- If recording an exposure fails, the provider writes the first failure to
+  `System.Diagnostics.Trace`.
 
 ### Features
 
@@ -167,17 +172,20 @@ does not know and logs a warning once for each one.
 
 ### Flag metadata
 
-The same data is in the evaluation's flag metadata, for hooks that use only the OpenFeature API.
-Read it in the hook's `finally` stage, where the details match what the application receives, and
-skip details that have an error. `ExposureHook` does both.
+The exposure data is also in the evaluation's flag metadata, for hooks that use only the OpenFeature
+API. Read it in the hook's `finally` stage, where the details match what the application receives,
+and skip details that have an error. `ExposureHook` reads it in the `finally` stage; for an
+evaluation with an error, `IsExposure` and `ShouldSend` are false.
 
 | Key | Type | Meaning |
 |---|---|---|
 | `__dd_allocation_key` | String | The selected allocation |
 | `__dd_do_log` | Boolean | Whether the allocation logs exposures. Present when the allocation logs exposures or span enrichment is on |
-| `__dd_exposure_cache_hit` | Boolean | The subject was already exposed when the flag was evaluated. Present only when `__dd_do_log` is true. When the tracer sends exposures after the evaluation, this is the exposure cache's answer at evaluation; `ExposureHook` uses the final decision, which can differ when evaluations of one subject run at the same time |
+| `__dd_exposure_cache_hit` | Boolean | The subject was already exposed when the flag was evaluated. Present only when `__dd_do_log` is true. When the tracer sends exposures after the evaluation, this is the exposure cache's answer at evaluation, not the final decision: it can differ when evaluations of one subject run at the same time, and it stays `false` when the provider's hooks never run for that subject (see [When exposures are sent](#when-exposures-are-sent)). `ExposureHook` uses the final decision |
 | `__dd_split_serial_id` | Integer | The split's serial id, an unsigned 32-bit value stored in an `int` (read it as `unchecked((uint)value)`). Present when `__dd_do_log` is present and the split has a serial id |
 | `__dd_feature.<key>` | String, Double or Boolean | One entry for each feature of the selected split that lists the `HOOK` destination |
+
+Other keys that start with `__dd_` are internal. They can change, and they can be missing.
 
 The tracer and this package ship separately, and the tracer fills the metadata. An older tracer
 emits fewer keys, and the hooks treat a missing key as its fail-safe value.
@@ -222,7 +230,7 @@ These methods are Datadog extensions, outside OpenFeature's `IFeatureClient` API
 They use only the context you pass; global, client, and transaction context are
 not merged, and OpenFeature client lifecycle checks do not run. The provider's
 own hooks run before the call returns, recording evaluation metrics on supported
-frameworks, span enrichment when enabled, and exposures. An `ExposureHook` added
+frameworks, span enrichment and evaluation events when enabled, and exposures. An `ExposureHook` added
 with `Api.Instance.AddHooks` then receives the evaluation, with the final exposure
 decision. Other hooks registered on the OpenFeature API or a client do not run.
 

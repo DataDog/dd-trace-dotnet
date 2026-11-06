@@ -189,9 +189,9 @@ public partial class ExposureCacheTests
     {
         var cache = new ExposureCache(5);
 
-        Assert.True(cache.Add(Exposure(serialId: null)));
-        Assert.True(cache.Add(Exposure(serialId: 340132)));
-        Assert.False(cache.Add(Exposure(serialId: 340132)));
+        Assert.True(cache.Add(CreateSerialIdEvent(null)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.False(cache.Add(CreateSerialIdEvent(340132)));
         Assert.Equal(1, cache.Size);
     }
 
@@ -200,9 +200,9 @@ public partial class ExposureCacheTests
     {
         var cache = new ExposureCache(5);
 
-        Assert.True(cache.Add(Exposure(serialId: 340132)));
-        Assert.True(cache.Add(Exposure(serialId: 340133)));
-        Assert.True(cache.Add(Exposure(serialId: 340132)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340133)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
 
         // The three events share one flag and subject, so they share one cache key. Each Add
         // replaces the stored value rather than adding an entry.
@@ -214,9 +214,9 @@ public partial class ExposureCacheTests
     {
         var cache = new ExposureCache(5);
 
-        Assert.True(cache.Add(Exposure(serialId: 340132)));
-        Assert.True(cache.Add(Exposure(serialId: null)));
-        Assert.False(cache.Add(Exposure(serialId: null)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.True(cache.Add(CreateSerialIdEvent(null)));
+        Assert.False(cache.Add(CreateSerialIdEvent(null)));
         Assert.Equal(1, cache.Size);
     }
 
@@ -225,9 +225,9 @@ public partial class ExposureCacheTests
     {
         var cache = new ExposureCache(5);
 
-        Assert.True(cache.Add(Exposure(serialId: null)));
-        Assert.True(cache.Add(Exposure(serialId: 0)));
-        Assert.False(cache.Add(Exposure(serialId: 0)));
+        Assert.True(cache.Add(CreateSerialIdEvent(null)));
+        Assert.True(cache.Add(CreateSerialIdEvent(0)));
+        Assert.False(cache.Add(CreateSerialIdEvent(0)));
         Assert.Equal(1, cache.Size);
     }
 
@@ -279,6 +279,8 @@ public partial class ExposureCacheTests
         cache.Contains(Exposure("a")).Should().BeFalse("the peek did not make a recently used");
         cache.Contains(Exposure("b")).Should().BeTrue();
     }
+
+    private static ExposureEvent CreateSerialIdEvent(long? serialId) => Exposure(serialId: serialId);
 
     private static ExposureEvent Exposure(string subject = "subject", string variant = "variant", long? serialId = null)
     {
