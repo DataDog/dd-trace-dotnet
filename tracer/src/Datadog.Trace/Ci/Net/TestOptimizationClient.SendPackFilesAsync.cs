@@ -132,17 +132,30 @@ internal sealed partial class TestOptimizationClient
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --max-count=1000 " + commitSha + " " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
+        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" --max-count=1000 " + commitSha + " " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
         var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
-        if (string.IsNullOrEmpty(getObjectsCommand?.Output))
+        if (getObjectsCommand is null || getObjectsCommand.ExitCode != 0)
         {
-            // If not objects has been returned we skip the pack + upload.
-            Log.Debug("TestOptimizationClient: No objects were returned from the git rev-list command.");
             return new ObjectPackFilesResult([], temporaryFolder);
         }
 
-        // Sanitize object list (on some cases we get a "fatal: expected object ID, got garbage" error because the object list has invalid escape chars)
-        var objectsOutput = getObjectsCommand!.Output;
+        var objectsOutput = getObjectsCommand.Output;
+        if (!commitsToExclude.Contains(commitSha, StringComparer.OrdinalIgnoreCase) &&
+            objectsOutput.IndexOf(commitSha, StringComparison.OrdinalIgnoreCase) < 0)
+        {
+            var selectedObjects = GitCommandHelper.RunGitCommand(
+                _workingDirectory,
+                "rev-list --objects --no-object-names --filter=blob:none --no-walk=unsorted " + commitSha,
+                MetricTags.CIVisibilityCommands.GetObjects);
+            if (selectedObjects is null || selectedObjects.ExitCode != 0)
+            {
+                return new ObjectPackFilesResult([], temporaryFolder);
+            }
+
+            objectsOutput += "\n" + selectedObjects.Output;
+        }
+
+        // Sanitize object IDs before passing them to pack-objects.
         var matches = ShaRegex.Matches(objectsOutput);
         var lstObjectsSha = new List<string>(matches.Count);
         foreach (Match? match in matches)
@@ -187,7 +200,7 @@ internal sealed partial class TestOptimizationClient
 
                 temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
                 getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-                packObjectsResultCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output);
+                packObjectsResultCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput);
                 if (packObjectsResultCommand is null)
                 {
                     Log.Warning("TestOptimizationClient: 'git pack-objects...' command is null");
